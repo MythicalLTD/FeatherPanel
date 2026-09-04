@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react';
 import { isCloudflareChallengeText } from '@/lib/cloudflare-challenge';
 import { useSettings } from '@/contexts/SettingsContext';
+import { writeLocaleCookie } from '@/lib/locale-cookie';
 
 interface Language {
     code: string;
@@ -32,7 +33,8 @@ interface TranslationContextType {
     setLocale: (locale: string) => Promise<void>;
     t: (key: string, params?: Record<string, string>) => string;
     loading: boolean;
-    initialLoading: boolean;
+    /** False until at least one translation catalog is available (SSR, cache, or network). */
+    ready: boolean;
     /** When true, admin forced language and users cannot change it. */
     isLocaleLocked: boolean;
 }
@@ -49,11 +51,28 @@ function normalizeLocaleCode(code: string): string {
     return code.trim().toLowerCase().replace(/_/g, '-');
 }
 
+function translationCacheKey(lang: string): string {
+    return `translations_${lang}_${CACHE_VERSION}`;
+}
+
+function readCachedTranslations(lang: string): Record<string, unknown> | null {
+    if (typeof window === 'undefined') return null;
+    try {
+        const cached = localStorage.getItem(translationCacheKey(lang));
+        if (!cached) return null;
+        const parsed: unknown = JSON.parse(cached);
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+        const obj = parsed as Record<string, unknown>;
+        return Object.keys(obj).length > 0 ? obj : null;
+    } catch {
+        return null;
+    }
+}
+
 function hasLocaleUserOverride(): boolean {
     return localStorage.getItem(LOCALE_USER_OVERRIDE_KEY) === 'true';
 }
 
-/** Preserve pre-feature saved locales as explicit user preferences (one-time). */
 function migrateLegacyLocalePreference(): void {
     if (typeof window === 'undefined') return;
     if (localStorage.getItem(LOCALE_MIGRATION_KEY) === 'true') return;
@@ -63,25 +82,56 @@ function migrateLegacyLocalePreference(): void {
     localStorage.setItem(LOCALE_MIGRATION_KEY, 'true');
 }
 
-export function TranslationProvider({ children }: { children: ReactNode }) {
+function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
+    const output = { ...target };
+    for (const key in source) {
+        if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+            output[key] = deepMerge(
+                (target[key] as Record<string, unknown>) || {},
+                source[key] as Record<string, unknown>,
+            );
+        } else {
+            output[key] = source[key];
+        }
+    }
+    return output;
+}
+
+function seedClientTranslationCache(lang: string, translations: Record<string, unknown>) {
+    if (typeof window === 'undefined') return;
+    if (Object.keys(translations).length === 0) return;
+    try {
+        localStorage.setItem(translationCacheKey(lang), JSON.stringify(translations));
+    } catch {
+        // ignore quota / private mode
+    }
+}
+
+type TranslationProviderProps = {
+    children: ReactNode;
+    initialLocale?: string;
+    initialTranslations?: Record<string, unknown>;
+};
+
+export function TranslationProvider({ children, initialLocale, initialTranslations }: TranslationProviderProps) {
     const { settings, loading: settingsLoading } = useSettings();
     const isLocaleLocked = settings?.app_locale_lock === 'true';
     const adminLocaleDefault = normalizeLocaleCode(settings?.app_locale_default || '') || DEFAULT_LOCALE;
 
-    const [locale, setLocaleState] = useState(() => {
-        if (typeof window !== 'undefined') {
-            const stored = localStorage.getItem('locale');
-            return stored ? normalizeLocaleCode(stored) || DEFAULT_LOCALE : DEFAULT_LOCALE;
-        }
-        return DEFAULT_LOCALE;
-    });
-    const hasStoredLocaleRef = useRef(typeof window !== 'undefined' && !!localStorage.getItem('locale'));
-    const [translations, setTranslations] = useState<Record<string, unknown>>({});
+    const ssrLocale = normalizeLocaleCode(initialLocale || '') || DEFAULT_LOCALE;
+    const ssrTranslations =
+        initialTranslations && Object.keys(initialTranslations).length > 0 ? initialTranslations : null;
+
+    const [locale, setLocaleState] = useState(ssrLocale);
+    const hasStoredLocaleRef = useRef(
+        typeof window !== 'undefined' ? !!localStorage.getItem('locale') : Boolean(initialLocale),
+    );
+    const [translations, setTranslations] = useState<Record<string, unknown>>(() => ssrTranslations || {});
     const [availableLanguages, setAvailableLanguages] = useState<Language[]>([
         { code: 'en', name: 'English', nativeName: 'English' },
     ]);
     const [loading, setLoading] = useState(false);
-    const [initialLoading, setInitialLoading] = useState(true);
+    const [ready, setReady] = useState(() => Boolean(ssrTranslations));
 
     const fetchJsonObject = useCallback(async (url: string): Promise<Record<string, unknown> | null> => {
         const response = await fetch(url, { credentials: 'same-origin' });
@@ -102,101 +152,92 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
-    const deepMerge = (target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> => {
-        const output = { ...target };
-        for (const key in source) {
-            if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
-                output[key] = deepMerge(
-                    (target[key] as Record<string, unknown>) || {},
-                    source[key] as Record<string, unknown>,
-                );
-            } else {
-                output[key] = source[key];
-            }
-        }
-        return output;
-    };
+    const loadFullTranslations = useCallback(
+        async (lang: string) => {
+            let frontendTranslations: Record<string, unknown> = {};
+            let backendPrimaryTranslations: Record<string, unknown> = {};
+            let backendLangTranslations: Record<string, unknown> = {};
+            const cacheKey = translationCacheKey(lang);
 
-    const loadFullTranslations = useCallback(async (lang: string) => {
-        let frontendTranslations: Record<string, unknown> = {};
-        let backendPrimaryTranslations: Record<string, unknown> = {};
-        let backendLangTranslations: Record<string, unknown> = {};
-        const cacheKey = `translations_${lang}_${CACHE_VERSION}`;
-
-        try {
-            const cached = localStorage.getItem(cacheKey);
+            const cached =
+                readCachedTranslations(lang) ||
+                (lang !== PRIMARY_LOCALE ? readCachedTranslations(PRIMARY_LOCALE) : null);
             if (cached) {
-                const parsed: unknown = JSON.parse(cached);
-                if (parsed && typeof parsed === 'object') {
-                    setTranslations(parsed as Record<string, unknown>);
+                setTranslations(cached);
+                setReady(true);
+            }
+
+            try {
+                let frontendData = await fetchJsonObject(`/locales/${lang}.json`);
+                if (!frontendData && lang !== PRIMARY_LOCALE) {
+                    frontendData = await fetchJsonObject(`/locales/${PRIMARY_LOCALE}.json`);
+                }
+                if (frontendData) {
+                    frontendTranslations = frontendData;
+                }
+            } catch (error) {
+                console.warn('Failed to load frontend translations:', error);
+            }
+
+            if (lang !== PRIMARY_LOCALE) {
+                try {
+                    const backendPrimaryData = await fetchJsonObject(`/api/system/translations/${PRIMARY_LOCALE}`);
+                    if (backendPrimaryData) {
+                        if (
+                            'success' in backendPrimaryData &&
+                            'data' in backendPrimaryData &&
+                            backendPrimaryData.success
+                        ) {
+                            backendPrimaryTranslations = (backendPrimaryData.data || {}) as Record<string, unknown>;
+                        } else {
+                            backendPrimaryTranslations = backendPrimaryData as Record<string, unknown>;
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Failed to load backend primary translations:', error);
                 }
             }
-        } catch {
-            // Ignore cache parsing errors and continue with network fetch.
-        }
 
-        try {
-            let frontendData = await fetchJsonObject(`/locales/${lang}.json`);
-            if (!frontendData && lang !== PRIMARY_LOCALE) {
-                frontendData = await fetchJsonObject(`/locales/${PRIMARY_LOCALE}.json`);
-            }
-            if (frontendData) {
-                frontendTranslations = frontendData;
-            }
-        } catch (error) {
-            console.warn('Failed to load frontend translations:', error);
-        }
-
-        if (lang !== PRIMARY_LOCALE) {
             try {
-                const backendPrimaryData = await fetchJsonObject(`/api/system/translations/${PRIMARY_LOCALE}`);
-                if (backendPrimaryData) {
-                    if ('success' in backendPrimaryData && 'data' in backendPrimaryData && backendPrimaryData.success) {
-                        backendPrimaryTranslations = (backendPrimaryData.data || {}) as Record<string, unknown>;
+                const backendData = await fetchJsonObject(`/api/system/translations/${lang}`);
+                if (backendData) {
+                    if ('success' in backendData && 'data' in backendData && backendData.success) {
+                        backendLangTranslations = (backendData.data || {}) as Record<string, unknown>;
                     } else {
-                        backendPrimaryTranslations = backendPrimaryData as Record<string, unknown>;
+                        backendLangTranslations = backendData as Record<string, unknown>;
                     }
                 }
             } catch (error) {
-                console.warn('Failed to load backend primary translations:', error);
+                console.warn('Failed to load backend language translations:', error);
             }
-        }
 
-        try {
-            const backendData = await fetchJsonObject(`/api/system/translations/${lang}`);
-            if (backendData) {
-                if ('success' in backendData && 'data' in backendData && backendData.success) {
-                    backendLangTranslations = (backendData.data || {}) as Record<string, unknown>;
-                } else {
-                    backendLangTranslations = backendData as Record<string, unknown>;
-                }
+            let mergedTranslations = frontendTranslations;
+            if (Object.keys(backendPrimaryTranslations).length > 0) {
+                mergedTranslations = deepMerge(mergedTranslations, backendPrimaryTranslations);
             }
-        } catch (error) {
-            console.warn('Failed to load backend language translations:', error);
-        }
+            if (Object.keys(backendLangTranslations).length > 0) {
+                mergedTranslations = deepMerge(mergedTranslations, backendLangTranslations);
+            }
 
-        let mergedTranslations = frontendTranslations;
-        if (Object.keys(backendPrimaryTranslations).length > 0) {
-            mergedTranslations = deepMerge(mergedTranslations, backendPrimaryTranslations);
-        }
-        if (Object.keys(backendLangTranslations).length > 0) {
-            mergedTranslations = deepMerge(mergedTranslations, backendLangTranslations);
-        }
-
-        setTranslations(mergedTranslations);
-        localStorage.setItem(cacheKey, JSON.stringify(mergedTranslations));
-
-        setInitialLoading(false);
-
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+            if (Object.keys(mergedTranslations).length > 0) {
+                setTranslations(mergedTranslations);
+                localStorage.setItem(cacheKey, JSON.stringify(mergedTranslations));
+                setReady(true);
+            } else if (cached) {
+                setTranslations(cached);
+                setReady(true);
+            } else {
+                setReady(true);
+            }
+        },
+        [fetchJsonObject],
+    );
 
     const loadAvailableLanguages = useCallback(async () => {
         try {
             const response = await fetch('/api/system/translations/languages');
             if (response.ok) {
                 const data = await response.json();
-                console.log('[TranslationContext] Languages API response:', data);
 
                 if (data && typeof data === 'object') {
                     if (data.success === true && Array.isArray(data.data)) {
@@ -220,18 +261,43 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
+    // Seed client caches from SSR so soft navigations / later boots stay warm.
     useEffect(() => {
-        // For first-time visitors with no stored/overridden locale, wait for admin locale
-        // settings to resolve before the first fetch. Otherwise we'd load the default locale
-        // and then immediately reload once the admin default is applied below, causing a
-        // duplicate network fetch and a visible language flash.
-        if (!hasStoredLocaleRef.current && settingsLoading) return;
+        if (ssrTranslations) {
+            seedClientTranslationCache(ssrLocale, ssrTranslations);
+        }
+
+        // After hydrate: if the user has an unlocked stored locale that differs from SSR, switch.
+        if (isLocaleLocked) {
+            writeLocaleCookie(ssrLocale);
+            return;
+        }
+
+        const stored = normalizeLocaleCode(localStorage.getItem('locale') || '');
+        if (stored && hasLocaleUserOverride() && stored !== locale) {
+            hasStoredLocaleRef.current = true;
+            setLocaleState(stored);
+            writeLocaleCookie(stored);
+            return;
+        }
+
+        if (!stored) {
+            localStorage.setItem('locale', ssrLocale);
+        }
+        writeLocaleCookie(stored || ssrLocale);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot hydrate sync
+    }, []);
+
+    useEffect(() => {
+        const hasCache = Boolean(
+            ssrTranslations || readCachedTranslations(locale) || readCachedTranslations(PRIMARY_LOCALE),
+        );
+        if (!hasStoredLocaleRef.current && settingsLoading && !hasCache) return;
         loadFullTranslations(locale);
         loadAvailableLanguages();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [locale, settingsLoading]);
 
-    // Apply admin default / lock once public settings are available.
     useEffect(() => {
         if (!settings) return;
 
@@ -243,6 +309,7 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
 
         setLocaleState(adminLocaleDefault);
         localStorage.setItem('locale', adminLocaleDefault);
+        writeLocaleCookie(adminLocaleDefault);
     }, [settings, isLocaleLocked, adminLocaleDefault, locale]);
 
     const setLocale = async (newLocale: string) => {
@@ -253,6 +320,7 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
         setLocaleState(normalized);
         localStorage.setItem('locale', normalized);
         localStorage.setItem(LOCALE_USER_OVERRIDE_KEY, 'true');
+        writeLocaleCookie(normalized);
         await loadFullTranslations(normalized);
         setLoading(false);
     };
@@ -294,7 +362,7 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
                 setLocale,
                 t,
                 loading,
-                initialLoading,
+                ready,
                 isLocaleLocked,
             }}
         >

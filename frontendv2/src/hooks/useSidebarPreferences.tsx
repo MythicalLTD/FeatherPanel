@@ -15,8 +15,18 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+    useState,
+    type ReactNode,
+} from 'react';
 import type { IconLibrary } from '@/lib/iconLibrary';
+import { ICON_LIBRARY_COOKIE_NAME } from '@/lib/locale-constants';
 
 export type { IconLibrary } from '@/lib/iconLibrary';
 
@@ -37,11 +47,27 @@ const TOGGLE_PLACEMENT_KEY = 'featherpanel_sidebar_toggle_placement';
 const SIDEBAR_GLOW_KEY = 'featherpanel_chrome_glow';
 const ICON_LIBRARY_KEY = 'featherpanel_icon_library';
 const EVENT_NAME = 'featherpanel-sidebar-preferences-change';
+const COOKIE_MAX_AGE = 365 * 24 * 60 * 60;
 
 const listeners = new Set<() => void>();
 
 function notifyListeners() {
     listeners.forEach((listener) => listener());
+}
+
+function writeIconLibraryCookie(library: IconLibrary) {
+    if (typeof document === 'undefined') return;
+    document.cookie = `${ICON_LIBRARY_COOKIE_NAME}=${encodeURIComponent(library)}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+}
+
+type SidebarPrefsBoot = {
+    iconLibrary?: IconLibrary;
+};
+
+const SidebarPrefsBootContext = createContext<SidebarPrefsBoot>({});
+
+export function SidebarPrefsBootstrap({ iconLibrary, children }: { iconLibrary?: IconLibrary; children: ReactNode }) {
+    return <SidebarPrefsBootContext.Provider value={{ iconLibrary }}>{children}</SidebarPrefsBootContext.Provider>;
 }
 
 function readDensity(): SidebarDensity {
@@ -107,14 +133,14 @@ function readSidebarGlow(): SidebarGlow {
     }
 }
 
-function readIconLibrary(): IconLibrary {
-    if (typeof window === 'undefined') return 'lucide';
+function readIconLibrary(fallback: IconLibrary = 'lucide'): IconLibrary {
+    if (typeof window === 'undefined') return fallback;
     try {
         const raw = localStorage.getItem(ICON_LIBRARY_KEY);
         if (raw === 'tabler' || raw === 'mdi' || raw === 'phosphor') return raw;
         return 'lucide';
     } catch {
-        return 'lucide';
+        return fallback;
     }
 }
 
@@ -130,6 +156,9 @@ function readTogglePlacement(): SidebarTogglePlacement {
 }
 
 export function useSidebarPreferences() {
+    const boot = useContext(SidebarPrefsBootContext);
+    const bootIconLibrary = boot.iconLibrary ?? 'lucide';
+
     const [sidebarDensity, setSidebarDensityState] = useState<SidebarDensity>(() =>
         typeof window === 'undefined' ? 'comfortable' : readDensity(),
     );
@@ -148,12 +177,11 @@ export function useSidebarPreferences() {
     const [sidebarGlow, setSidebarGlowState] = useState<SidebarGlow>(() =>
         typeof window === 'undefined' ? 'none' : readSidebarGlow(),
     );
-    const [iconLibrary, setIconLibraryState] = useState<IconLibrary>(() =>
-        typeof window === 'undefined' ? 'lucide' : readIconLibrary(),
-    );
+    const [iconLibrary, setIconLibraryState] = useState<IconLibrary>(bootIconLibrary);
     const [sidebarTogglePlacement, setSidebarTogglePlacementState] = useState<SidebarTogglePlacement>(() =>
         typeof window === 'undefined' ? 'sidebar' : readTogglePlacement(),
     );
+    const iconSyncGeneration = useRef(0);
 
     useLayoutEffect(() => {
         const sync = () => {
@@ -163,7 +191,14 @@ export function useSidebarPreferences() {
             setDockDisplayState(readDockDisplay());
             setDockSizeState(readDockSize());
             setSidebarGlowState(readSidebarGlow());
-            setIconLibraryState(readIconLibrary());
+            const nextLibrary = readIconLibrary(bootIconLibrary);
+            writeIconLibraryCookie(nextLibrary);
+            // First sync: keep SSR boot library to avoid a visible Lucide↔other morph.
+            // Cookie is written so the next hard refresh matches localStorage.
+            if (iconSyncGeneration.current > 0 || nextLibrary === bootIconLibrary) {
+                setIconLibraryState(nextLibrary);
+            }
+            iconSyncGeneration.current += 1;
             setSidebarTogglePlacementState(readTogglePlacement());
         };
         listeners.add(sync);
@@ -171,7 +206,7 @@ export function useSidebarPreferences() {
         return () => {
             listeners.delete(sync);
         };
-    }, []);
+    }, [bootIconLibrary]);
 
     useEffect(() => {
         const onStorage = (e: StorageEvent) => {
@@ -263,6 +298,7 @@ export function useSidebarPreferences() {
         } catch {
             // ignore
         }
+        writeIconLibraryCookie(next);
         window.dispatchEvent(new Event(EVENT_NAME));
         notifyListeners();
     }, []);

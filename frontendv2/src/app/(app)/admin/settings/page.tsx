@@ -48,6 +48,8 @@ import {
     X,
     Send,
     Link2,
+    Lock,
+    Smartphone,
 } from 'lucide-react';
 import { copyToClipboard, cn } from '@/lib/utils';
 import { ImageAttachmentField } from '@/components/featherui/ImageAttachmentField';
@@ -66,6 +68,24 @@ const UPDATE_PROGRESS_TTL_MS = 10 * 60 * 1000;
 const ADMIN_SETTING_DISPLAY_NAMES: Record<string, string> = {
     server_lifecycle_hooks_enabled: 'Lifecycle hooks (pre-start / pre-stop / post-start / crash)',
     server_lifecycle_hooks_container_shell_enabled: 'Lifecycle Container Shell (docker exec)',
+    auth_shell_tagline: 'Auth marketing tagline',
+    auth_aside_title: 'Marketing panel title',
+    auth_login_headline: 'Login headline',
+    auth_login_subheadline: 'Login subheadline',
+    auth_register_headline: 'Register headline',
+    auth_register_subheadline: 'Register subheadline',
+    auth_sso_headline: 'SSO portal headline',
+    auth_sso_subheadline: 'SSO portal subheadline',
+    auth_show_qr_login: 'QR code login',
+    auth_show_marketing_panel: 'Marketing panel (desktop)',
+    auth_aside_image_url: 'Marketing panel image',
+    auth_form_density: 'Form density',
+    auth_secondary_layout: 'Alternate methods layout',
+    auth_show_theme_customizer: 'Theme customizer on auth',
+    auth_footer_style: 'Auth footer style',
+    login_default_method: 'Default login method',
+    login_methods_order: 'Login methods order',
+    login_hidden_methods: 'Hidden login methods',
 };
 
 function formatSettingName(name: string, key: string) {
@@ -478,6 +498,9 @@ export default function SettingsPage() {
                 return Settings;
             case 'links':
                 return Link2;
+            case 'auth_page':
+            case 'auth':
+                return Lock;
             case 'mail':
                 return Mail;
             case 'security':
@@ -486,6 +509,10 @@ export default function SettingsPage() {
                 return Database;
             case 'server':
                 return Server;
+            case 'seo':
+                return Search;
+            case 'pwa':
+                return Smartphone;
             case 'advanced':
                 return Globe;
             default:

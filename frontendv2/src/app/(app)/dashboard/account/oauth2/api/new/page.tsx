@@ -18,11 +18,12 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ShieldCheck, Loader2, ExternalLink, Globe, KeyRound, TriangleAlert } from 'lucide-react';
+import { ShieldCheck, Loader2, KeyRound, TriangleAlert, Globe, Lock, Link2 } from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
-import Image from 'next/image';
+import { useSession } from '@/contexts/SessionContext';
+import { OAuthConsentCard, OAuthConsentShell } from '@/components/auth/OAuthConsentCard';
 
 type OAuthRequestPayload = {
     request_token: string;
@@ -41,6 +42,7 @@ type OAuthRequestPayload = {
 
 export default function OAuth2ApiAuthorizePage() {
     const { t } = useTranslation();
+    const { user } = useSession();
     const router = useRouter();
     const searchParams = useSearchParams();
     const [loading, setLoading] = useState(false);
@@ -112,6 +114,10 @@ export default function OAuth2ApiAuthorizePage() {
                 throw new Error(response.data?.message || 'Approval failed');
             }
             if (response.data?.data?.mode === 'server') {
+                setServerModeAuthorized(true);
+                return;
+            }
+            if (response.data?.data?.mode === 'device' && response.data?.data?.public_key) {
                 setServerModeAuthorized(true);
                 return;
             }
@@ -286,98 +292,53 @@ export default function OAuth2ApiAuthorizePage() {
     const appTitle = payload.request.appName || payload.request.name;
 
     return (
-        <div className='flex min-h-[70vh] items-center justify-center p-6'>
-            <div className='border-border/60 bg-card/70 w-full max-w-3xl space-y-6 rounded-2xl border p-6 shadow-sm backdrop-blur-xl md:p-8'>
-                <div className='flex items-center justify-between gap-4'>
-                    <div className='flex min-w-0 items-center gap-4'>
-                        {payload.request.appLogo ? (
-                            <Image
-                                src={payload.request.appLogo}
-                                alt={appTitle}
-                                width={56}
-                                height={56}
-                                className='h-14 w-14 shrink-0 rounded-xl border object-cover'
-                            />
-                        ) : (
-                            <div className='bg-muted flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border'>
-                                <ShieldCheck className='text-muted-foreground h-6 w-6' />
-                            </div>
-                        )}
-                        <div className='min-w-0'>
-                            <h1 className='truncate text-xl font-semibold md:text-2xl'>
-                                {t('account.apiKeys.oauth2.authorizeTitle', { app: appTitle })}
-                            </h1>
-                            <p className='text-muted-foreground truncate text-sm'>
-                                {t('account.apiKeys.oauth2.authorizeSubtitle')}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className='rounded-xl border border-amber-500/30 bg-amber-500/10 p-4'>
-                    <p className='text-sm font-medium text-amber-900 dark:text-amber-100'>
-                        {t('account.apiKeys.oauth2.warning')}
-                    </p>
-                </div>
-
-                <div className='grid gap-3 text-sm md:grid-cols-2'>
-                    <div className='border-border/60 bg-background/40 rounded-lg border p-3'>
-                        <p className='text-muted-foreground'>{t('account.apiKeys.oauth2.requestName')}</p>
-                        <p className='font-medium break-all'>{payload.request.name}</p>
-                    </div>
-                    {payload.request.description ? (
-                        <div className='border-border/60 bg-background/40 rounded-lg border p-3'>
-                            <p className='text-muted-foreground'>{t('account.apiKeys.oauth2.description')}</p>
-                            <p className='font-medium break-all'>{payload.request.description}</p>
-                        </div>
-                    ) : null}
-                    <div className='border-border/60 bg-background/40 rounded-lg border p-3 md:col-span-2'>
-                        <p className='text-muted-foreground inline-flex items-center gap-2'>
-                            <Globe className='h-3.5 w-3.5' />
-                            {t('account.apiKeys.oauth2.callbackUrl')}
-                        </p>
-                        <a
-                            href={payload.request.callbackurl}
-                            target='_blank'
-                            rel='noreferrer'
-                            className='inline-flex items-center gap-2 font-medium break-all hover:underline'
-                        >
-                            {payload.request.callbackurl}
-                            <ExternalLink className='h-3 w-3' />
-                        </a>
-                    </div>
-                    <div className='border-border/60 bg-background/40 rounded-lg border p-3'>
-                        <p className='text-muted-foreground'>{t('account.apiKeys.oauth2.allowedIps')}</p>
-                        <p className='font-medium break-all whitespace-pre-wrap'>
-                            {payload.request.allowedips || t('account.apiKeys.oauth2.allowedIpsAny')}
-                        </p>
-                    </div>
-                    <div className='border-border/60 bg-background/40 rounded-lg border p-3'>
-                        <p className='text-muted-foreground'>{t('account.apiKeys.oauth2.foreignIpAlert')}</p>
-                        <p className='font-medium'>
-                            {payload.request.alertCors
-                                ? t('account.apiKeys.oauth2.enabled')
-                                : t('account.apiKeys.oauth2.disabled')}
-                        </p>
-                    </div>
-                </div>
-
-                <div className='flex flex-col-reverse gap-3 pt-2 sm:flex-row'>
-                    <Button variant='outline' className='sm:flex-1' disabled={submitting} onClick={handleDeny}>
-                        {t('account.apiKeys.oauth2.deny')}
-                    </Button>
-                    <Button className='sm:flex-1' disabled={submitting} onClick={handleApprove}>
-                        {submitting ? (
-                            <span className='inline-flex items-center gap-2'>
-                                <Loader2 className='h-4 w-4 animate-spin' />
-                                {t('account.apiKeys.oauth2.processing')}
-                            </span>
-                        ) : (
-                            t('account.apiKeys.oauth2.authorize')
-                        )}
-                    </Button>
-                </div>
-            </div>
-        </div>
+        <OAuthConsentShell>
+            <OAuthConsentCard
+                appName={appTitle}
+                appLogo={payload.request.appLogo}
+                subtitle={t('account.apiKeys.oauth2.authorizeSubtitle')}
+                signedInAs={user?.username}
+                permissions={[
+                    { label: t('account.apiKeys.oauth2.permissionAccount') },
+                    { label: t('account.apiKeys.oauth2.permissionServers') },
+                    { label: t('account.apiKeys.oauth2.permissionApi') },
+                ]}
+                meta={[
+                    {
+                        icon: <Link2 className='h-3.5 w-3.5' />,
+                        text: (
+                            <>
+                                {t('account.apiKeys.oauth2.callbackUrl')}:{' '}
+                                <span className='text-foreground/80 break-all'>{payload.request.callbackurl}</span>
+                            </>
+                        ),
+                    },
+                    {
+                        icon: <Globe className='h-3.5 w-3.5' />,
+                        text: (
+                            <>
+                                {t('account.apiKeys.oauth2.allowedIps')}:{' '}
+                                {payload.request.allowedips || t('account.apiKeys.oauth2.allowedIpsAny')}
+                            </>
+                        ),
+                    },
+                    {
+                        icon: <Lock className='h-3.5 w-3.5' />,
+                        text: t('account.apiKeys.oauth2.cannotReadMessages'),
+                    },
+                    {
+                        icon: <ShieldCheck className='h-3.5 w-3.5' />,
+                        text: t('account.apiKeys.oauth2.privacyNote'),
+                    },
+                ]}
+                cancelLabel={t('account.apiKeys.oauth2.deny')}
+                authorizeLabel={
+                    submitting ? t('account.apiKeys.oauth2.processing') : t('account.apiKeys.oauth2.authorize')
+                }
+                submitting={submitting}
+                onCancel={() => void handleDeny()}
+                onAuthorize={() => void handleApprove()}
+            />
+        </OAuthConsentShell>
     );
 }

@@ -17,7 +17,6 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Dialog, DialogHeader, DialogTitleCustom, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -30,6 +29,7 @@ import { isCaptchaConfigured, obtainCaptchaResponseToken } from '@/lib/captchaGa
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useEffect } from 'react';
+import { AuthAlert, AuthFooterPrompt, AuthPage, AuthPageHeader, AuthPanel } from '@/components/auth/AuthUi';
 
 export default function ForgotPasswordForm() {
     const router = useRouter();
@@ -119,66 +119,57 @@ export default function ForgotPasswordForm() {
 
     return (
         <>
-            <div className='space-y-6'>
+            <AuthPage>
                 <WidgetRenderer widgets={getWidgets('auth-forgot-password', 'auth-forgot-password-top')} />
 
-                <div className='space-y-2 text-center'>
-                    <h2 className='text-2xl font-bold tracking-tight'>{t('auth.forgot_password.title')}</h2>
-                    <p className='text-muted-foreground text-sm'>{t('auth.forgot_password.subtitle')}</p>
-                </div>
+                <AuthPageHeader title={t('auth.forgot_password.title')} subtitle={t('auth.forgot_password.subtitle')} />
 
-                <WidgetRenderer widgets={getWidgets('auth-forgot-password', 'auth-forgot-password-before-form')} />
-                <form onSubmit={handleSubmit} className='space-y-5'>
-                    <Input
-                        label={t('auth.forgot_password.email')}
-                        type='email'
-                        value={form.email}
-                        onChange={(e) => setForm({ ...form, email: e.target.value })}
-                        required
-                        autoComplete='email'
-                        icon={<Mail className='h-5 w-5' />}
-                        placeholder={t('auth.register.email_placeholder')}
-                    />
+                <AuthPanel>
+                    <WidgetRenderer widgets={getWidgets('auth-forgot-password', 'auth-forgot-password-before-form')} />
+                    <form onSubmit={handleSubmit} className='space-y-4'>
+                        <Input
+                            label={t('auth.forgot_password.email')}
+                            type='email'
+                            value={form.email}
+                            onChange={(e) => setForm({ ...form, email: e.target.value })}
+                            required
+                            autoComplete='email'
+                            icon={<Mail className='h-5 w-5' />}
+                            placeholder={t('auth.register.email_placeholder')}
+                        />
 
-                    <Captcha
-                        refreshKey={turnstileKey}
-                        onVerify={handleTurnstileSuccess}
-                        onError={() => {
-                            setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                        }}
-                        onExpire={() => {
-                            setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                        }}
-                    />
+                        <Captcha
+                            refreshKey={turnstileKey}
+                            onVerify={handleTurnstileSuccess}
+                            onError={() => {
+                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                            }}
+                            onExpire={() => {
+                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                            }}
+                        />
 
-                    <Button type='submit' className='group w-full' loading={loading}>
-                        {!loading && (
-                            <>
-                                {t('auth.forgot_password.submit')}
-                                <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
-                            </>
-                        )}
-                    </Button>
+                        <Button type='submit' className='group w-full' loading={loading}>
+                            {!loading && (
+                                <>
+                                    {t('auth.forgot_password.submit')}
+                                    <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                                </>
+                            )}
+                        </Button>
 
-                    {error && (
-                        <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
-                            {error}
-                        </div>
-                    )}
-                </form>
-                <WidgetRenderer widgets={getWidgets('auth-forgot-password', 'auth-forgot-password-after-form')} />
+                        <AuthAlert variant='error'>{error}</AuthAlert>
+                    </form>
+                    <WidgetRenderer widgets={getWidgets('auth-forgot-password', 'auth-forgot-password-after-form')} />
+                </AuthPanel>
 
-                <div className='text-muted-foreground text-center text-sm'>
-                    {t('auth.forgot_password.remember')}{' '}
-                    <Link
-                        href='/auth/login'
-                        className='text-primary hover:text-primary/80 font-semibold transition-colors'
-                    >
-                        {t('auth.forgot_password.sign_in')}
-                    </Link>
-                </div>
+                <AuthFooterPrompt
+                    prompt={t('auth.forgot_password.remember')}
+                    href='/auth/login'
+                    linkLabel={t('auth.forgot_password.sign_in')}
+                />
                 <WidgetRenderer widgets={getWidgets('auth-forgot-password', 'auth-forgot-password-bottom')} />
-            </div>
+            </AuthPage>
 
             <Dialog open={showSuccessDialog} onClose={handleDialogClose}>
                 <DialogHeader>

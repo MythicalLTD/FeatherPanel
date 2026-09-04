@@ -17,7 +17,6 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { useSession } from '@/contexts/SessionContext';
 import { Input } from '@/components/featherui/Input';
 import { Button } from '@/components/featherui/Button';
@@ -32,6 +31,16 @@ import { isCaptchaConfigured, obtainCaptchaResponseToken } from '@/lib/captchaGa
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { AuthLegalNotice } from '@/components/auth/AuthLegalNotice';
+import {
+    AuthAlert,
+    AuthDivider,
+    AuthFooterPrompt,
+    AuthPage,
+    AuthPageHeader,
+    AuthPanel,
+} from '@/components/auth/AuthUi';
+import { authFormGapClass, authPageGapClass, parseAuthFormDensity } from '@/lib/authPageConfig';
+import { cn } from '@/lib/utils';
 
 export default function RegisterForm() {
     const router = useRouter();
@@ -61,6 +70,11 @@ export default function RegisterForm() {
     const registrationEnabled = settings?.registration_enabled === 'true';
     const showCaptcha = isCaptchaConfigured(settings);
     const discordEnabled = settings?.discord_oauth_enabled === 'true';
+    const formDensity = parseAuthFormDensity(settings?.auth_form_density);
+    const pageGap = authPageGapClass(formDensity);
+    const formGap = authFormGapClass(formDensity);
+    const registerHeadline = settings?.auth_register_headline?.trim() || '';
+    const registerSubheadline = settings?.auth_register_subheadline?.trim() || '';
 
     const formatRegistrationError = (err: unknown, fallbackMessage?: string): string => {
         if (axios.isAxiosError(err)) {
@@ -101,8 +115,12 @@ export default function RegisterForm() {
 
             if (response.success) {
                 setSuccess(t('common.success'));
-                await fetchSession(true);
-                router.push('/dashboard');
+                const ok = await fetchSession(true);
+                if (!ok) {
+                    await new Promise((resolve) => setTimeout(resolve, 250));
+                    await fetchSession(true);
+                }
+                router.replace('/dashboard');
             } else {
                 setError(response.message || t('common.error'));
             }
@@ -196,8 +214,14 @@ export default function RegisterForm() {
                 } else {
                     setSuccess(t('common.success'));
 
+                    const ok = await fetchSession(true);
+                    if (!ok) {
+                        await new Promise((resolve) => setTimeout(resolve, 250));
+                        await fetchSession(true);
+                    }
+
                     setTimeout(() => {
-                        router.push('/dashboard');
+                        router.replace('/dashboard');
                     }, 1000);
                 }
             } else {
@@ -235,203 +259,185 @@ export default function RegisterForm() {
 
     if (discordLinkToken) {
         return (
-            <div className='space-y-6'>
-                <div className='text-center'>
-                    <h1 className='text-2xl font-bold tracking-tight'>{t('auth.discordRegistration.title')}</h1>
-                    <p className='text-muted-foreground mt-2'>{t('auth.discordRegistration.question')}</p>
-                </div>
-
-                {error && <div className='bg-destructive/15 text-destructive rounded-lg p-3 text-sm'>{error}</div>}
-                {success && <div className='bg-primary/15 text-primary rounded-lg p-3 text-sm'>{success}</div>}
-
-                <AuthLegalNotice variant='register' />
-
-                <div className='flex flex-col gap-3'>
-                    <Button onClick={handleDiscordRegister} disabled={loading} className='w-full'>
-                        {loading ? t('common.loading') : t('auth.discordRegistration.submit')}
-                    </Button>
-                    <Button
-                        variant='outline'
-                        onClick={() =>
-                            router.replace(
-                                discordLinkToken
-                                    ? `/auth/login?discord_link_token=${discordLinkToken}`
-                                    : '/auth/register',
-                            )
-                        }
-                        disabled={loading}
-                        className='w-full'
-                    >
-                        {t('auth.discordRegistration.cancel')}
-                    </Button>
-                </div>
-            </div>
+            <AuthPage>
+                <AuthPageHeader
+                    align='center'
+                    title={t('auth.discordRegistration.title')}
+                    subtitle={t('auth.discordRegistration.question')}
+                />
+                <AuthPanel className='space-y-4'>
+                    <AuthAlert variant='error'>{error}</AuthAlert>
+                    <AuthAlert variant='success'>{success}</AuthAlert>
+                    <AuthLegalNotice variant='register' />
+                    <div className='flex flex-col gap-3'>
+                        <Button onClick={handleDiscordRegister} disabled={loading} className='w-full'>
+                            {loading ? t('common.loading') : t('auth.discordRegistration.submit')}
+                        </Button>
+                        <Button
+                            variant='outline'
+                            onClick={() =>
+                                router.replace(
+                                    discordLinkToken
+                                        ? `/auth/login?discord_link_token=${discordLinkToken}`
+                                        : '/auth/register',
+                                )
+                            }
+                            disabled={loading}
+                            className='w-full'
+                        >
+                            {t('auth.discordRegistration.cancel')}
+                        </Button>
+                    </div>
+                </AuthPanel>
+            </AuthPage>
         );
     }
 
     if (!registrationEnabled) {
         return (
-            <div className='space-y-6'>
-                <div className='space-y-2 text-center'>
-                    <h2 className='text-2xl font-bold tracking-tight'>{t('auth.register.title')}</h2>
-                    <p className='text-muted-foreground text-sm'>{t('auth.register.subtitle')}</p>
-                </div>
-
-                <div className='bg-destructive/10 border-destructive/20 space-y-4 rounded-xl border p-6 text-center'>
-                    <p className='text-destructive font-medium'>{t('auth.register.disabled_title')}</p>
-                    <p className='text-muted-foreground text-sm'>{t('auth.register.disabled_message')}</p>
-                </div>
-
-                <div className='text-muted-foreground text-center text-sm'>
-                    {t('auth.register.have_account')}{' '}
-                    <Link
-                        href='/auth/login'
-                        className='text-primary hover:text-primary/80 font-semibold transition-colors'
-                    >
-                        {t('auth.register.sign_in')}
-                    </Link>
-                </div>
-            </div>
+            <AuthPage>
+                <AuthPageHeader
+                    align='center'
+                    title={t('auth.register.title')}
+                    subtitle={t('auth.register.subtitle')}
+                />
+                <AuthPanel>
+                    <AuthAlert variant='error'>
+                        <p className='font-medium'>{t('auth.register.disabled_title')}</p>
+                        <p className='mt-1 opacity-90'>{t('auth.register.disabled_message')}</p>
+                    </AuthAlert>
+                </AuthPanel>
+                <AuthFooterPrompt
+                    prompt={t('auth.register.have_account')}
+                    href='/auth/login'
+                    linkLabel={t('auth.register.sign_in')}
+                />
+            </AuthPage>
         );
     }
 
     return (
-        <div className='space-y-6'>
+        <AuthPage className={cn(pageGap)}>
             <WidgetRenderer widgets={getWidgets('auth-register', 'auth-register-top')} />
 
-            <div className='space-y-2 text-center'>
-                <h2 className='text-2xl font-bold tracking-tight'>{t('auth.register.title')}</h2>
-                <p className='text-muted-foreground text-sm'>{t('auth.register.subtitle')}</p>
-            </div>
+            <AuthPageHeader
+                align='center'
+                title={registerHeadline || t('auth.register.title')}
+                subtitle={registerSubheadline || t('auth.register.subtitle')}
+            />
 
-            <WidgetRenderer widgets={getWidgets('auth-register', 'auth-register-before-form')} />
-            <form onSubmit={handleSubmit} className='space-y-5'>
-                <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+            <AuthPanel>
+                <WidgetRenderer widgets={getWidgets('auth-register', 'auth-register-before-form')} />
+                <form onSubmit={handleSubmit} className={formGap}>
+                    <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>
+                        <Input
+                            label={t('auth.register.first_name')}
+                            type='text'
+                            value={form.first_name}
+                            onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                            required
+                            autoComplete='given-name'
+                            icon={<User className='h-5 w-5' />}
+                            placeholder={t('auth.register.first_name_placeholder')}
+                        />
+                        <Input
+                            label={t('auth.register.last_name')}
+                            type='text'
+                            value={form.last_name}
+                            onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                            required
+                            autoComplete='family-name'
+                            icon={<User className='h-5 w-5' />}
+                            placeholder={t('auth.register.last_name_placeholder')}
+                        />
+                    </div>
+
                     <Input
-                        label={t('auth.register.first_name')}
-                        type='text'
-                        value={form.first_name}
-                        onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                        label={t('auth.register.email')}
+                        type='email'
+                        value={form.email}
+                        onChange={(e) => setForm({ ...form, email: e.target.value })}
                         required
-                        autoComplete='given-name'
-                        icon={<User className='h-5 w-5' />}
-                        placeholder={t('auth.register.first_name_placeholder')}
+                        autoComplete='email'
+                        icon={<Mail className='h-5 w-5' />}
+                        placeholder={t('auth.register.email_placeholder')}
                     />
+
                     <Input
-                        label={t('auth.register.last_name')}
+                        label={t('auth.register.username')}
                         type='text'
-                        value={form.last_name}
-                        onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                        value={form.username}
+                        onChange={(e) => setForm({ ...form, username: e.target.value })}
                         required
-                        autoComplete='family-name'
+                        autoComplete='username'
                         icon={<User className='h-5 w-5' />}
-                        placeholder={t('auth.register.last_name_placeholder')}
+                        placeholder={t('auth.register.username_placeholder')}
                     />
-                </div>
 
-                <Input
-                    label={t('auth.register.email')}
-                    type='email'
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    required
-                    autoComplete='email'
-                    icon={<Mail className='h-5 w-5' />}
-                    placeholder={t('auth.register.email_placeholder')}
-                />
+                    <Input
+                        label={t('auth.register.password')}
+                        type='password'
+                        value={form.password}
+                        onChange={(e) => setForm({ ...form, password: e.target.value })}
+                        required
+                        autoComplete='new-password'
+                        icon={<Lock className='h-5 w-5' />}
+                        placeholder={t('auth.register.password_placeholder')}
+                    />
 
-                <Input
-                    label={t('auth.register.username')}
-                    type='text'
-                    value={form.username}
-                    onChange={(e) => setForm({ ...form, username: e.target.value })}
-                    required
-                    autoComplete='username'
-                    icon={<User className='h-5 w-5' />}
-                    placeholder={t('auth.register.username_placeholder')}
-                />
-
-                <Input
-                    label={t('auth.register.password')}
-                    type='password'
-                    value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    required
-                    autoComplete='new-password'
-                    icon={<Lock className='h-5 w-5' />}
-                    placeholder={t('auth.register.password_placeholder')}
-                />
-
-                <Captcha
-                    refreshKey={turnstileKey}
-                    onVerify={handleTurnstileSuccess}
-                    onError={() => {
-                        setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                    }}
-                    onExpire={() => {
-                        setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                    }}
-                />
-
-                <AuthLegalNotice variant='register' />
-
-                <Button type='submit' className='group w-full' loading={loading}>
-                    {!loading && (
-                        <>
-                            {t('auth.register.submit')}
-                            <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
-                        </>
-                    )}
-                </Button>
-
-                {error && (
-                    <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
-                        {error}
-                    </div>
-                )}
-                {success && (
-                    <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
-                        {success}
-                    </div>
-                )}
-            </form>
-            <WidgetRenderer widgets={getWidgets('auth-register', 'auth-register-after-form')} />
-
-            <div className='text-muted-foreground text-center text-sm'>
-                {t('auth.register.have_account')}{' '}
-                <Link href='/auth/login' className='text-primary hover:text-primary/80 font-semibold transition-colors'>
-                    {t('auth.register.sign_in')}
-                </Link>
-            </div>
-
-            {discordEnabled && (
-                <>
-                    <div className='relative'>
-                        <div className='absolute inset-0 flex items-center'>
-                            <div className='border-border w-full border-t' />
-                        </div>
-                        <div className='relative flex justify-center text-xs uppercase'>
-                            <span className='bg-card text-muted-foreground px-2'>{t('auth.login.or_continue')}</span>
-                        </div>
-                    </div>
-
-                    <Button
-                        type='button'
-                        variant='outline'
-                        className='w-full'
-                        onClick={() => {
-                            // Hard navigation required: backend OAuth endpoint redirects off-site.
-                            window.location.href = window.location.origin + '/api/user/auth/discord/login';
+                    <Captcha
+                        refreshKey={turnstileKey}
+                        onVerify={handleTurnstileSuccess}
+                        onError={() => {
+                            setForm((prev) => ({ ...prev, turnstile_token: '' }));
                         }}
-                    >
-                        <svg className='mr-2 h-5 w-5' viewBox='0 0 24 24' fill='currentColor'>
-                            <path d='M20.317 4.369a19.791 19.791 0 00-4.885-1.515.07.07 0 00-.075.035 13.812 13.812 0 00-.605 1.246 18.016 18.016 0 00-5.427 0 12.217 12.217 0 00-.617-1.246.064.064 0 00-.075-.035c-1.724.285-3.362.83-4.885 1.515a.06.06 0 00-.024.022C.533 8.059-.32 11.591.099 15.08a.078.078 0 00.028.055 20.53 20.53 0 006.104 3.108.073.073 0 00.078-.023c.472-.651.889-1.341 1.246-2.065a.07.07 0 00-.038-.094 13.235 13.235 0 01-1.885-.884.07.07 0 01-.007-.117c.126-.094.252-.192.374-.291a.06.06 0 01.061-.011c3.927 1.792 8.18 1.792 12.061 0 a.062.062 0 01.063.008c.122.099.248.197.374.291a.07.07 0 01-.006.117 12.298 12.298 0 01-1.885.883.07.07 0 00-.038.095c.36.723.777 1.413 1.246 2.064a.073.073 0 00.078.023 20.477 20.477 0 006.105-3.107.075.075 0 00.028-.055c.5-4.101-.838-7.597-3.548-10.692a.061.061 0 00-.024-.023zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.949-2.418 2.157-2.418 1.222 0 2.172 1.101 2.157 2.418 0 1.334-.949 2.419-2.157 2.419zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.948-2.418 2.157-2.418 1.221 0 2.171 1.101 2.157 2.418 0 1.334-.936 2.419-2.157 2.419z' />
-                        </svg>
-                        {t('auth.login.discord')}
+                        onExpire={() => {
+                            setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                        }}
+                    />
+
+                    <AuthLegalNotice variant='register' />
+
+                    <Button type='submit' className='group w-full' loading={loading}>
+                        {!loading && (
+                            <>
+                                {t('auth.register.submit')}
+                                <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                            </>
+                        )}
                     </Button>
-                </>
-            )}
+
+                    <AuthAlert variant='error'>{error}</AuthAlert>
+                    <AuthAlert variant='success'>{success}</AuthAlert>
+                </form>
+                <WidgetRenderer widgets={getWidgets('auth-register', 'auth-register-after-form')} />
+
+                {discordEnabled ? (
+                    <div className='mt-5 space-y-3'>
+                        <AuthDivider label={t('auth.login.or_continue')} />
+                        <Button
+                            type='button'
+                            variant='outline'
+                            className='w-full'
+                            onClick={() => {
+                                window.location.href = window.location.origin + '/api/user/auth/discord/login';
+                            }}
+                        >
+                            <svg className='mr-2 h-5 w-5' viewBox='0 0 24 24' fill='currentColor'>
+                                <path d='M20.317 4.369a19.791 19.791 0 00-4.885-1.515.07.07 0 00-.075.035 13.812 13.812 0 00-.605 1.246 18.016 18.016 0 00-5.427 0 12.217 12.217 0 00-.617-1.246.064.064 0 00-.075-.035c-1.724.285-3.362.83-4.885 1.515a.06.06 0 00-.024.022C.533 8.059-.32 11.591.099 15.08a.078.078 0 00.028.055 20.53 20.53 0 006.104 3.108.073.073 0 00.078-.023c.472-.651.889-1.341 1.246-2.065a.07.07 0 00-.038-.094 13.235 13.235 0 01-1.885-.884.07.07 0 01-.007-.117c.126-.094.252-.192.374-.291a.06.06 0 01.061-.011c3.927 1.792 8.18 1.792 12.061 0 a.062.062 0 01.063.008c.122.099.248.197.374.291a.07.07 0 01-.006.117 12.298 12.298 0 01-1.885.883.07.07 0 00-.038.095c.36.723.777 1.413 1.246 2.064a.073.073 0 00.078.023 20.477 20.477 0 006.105-3.107.075.075 0 00.028-.055c.5-4.101-.838-7.597-3.548-10.692a.061.061 0 00-.024-.023zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.949-2.418 2.157-2.418 1.222 0 2.172 1.101 2.157 2.418 0 1.334-.949 2.419-2.157 2.419zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.948-2.418 2.157-2.418 1.221 0 2.171 1.101 2.157 2.418 0 1.334-.936 2.419-2.157 2.419z' />
+                            </svg>
+                            {t('auth.login.discord')}
+                        </Button>
+                    </div>
+                ) : null}
+            </AuthPanel>
+
+            <AuthFooterPrompt
+                prompt={t('auth.register.have_account')}
+                href='/auth/login'
+                linkLabel={t('auth.register.sign_in')}
+            />
             <WidgetRenderer widgets={getWidgets('auth-register', 'auth-register-bottom')} />
-        </div>
+        </AuthPage>
     );
 }

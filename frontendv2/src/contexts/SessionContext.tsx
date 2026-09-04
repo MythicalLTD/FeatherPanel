@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useState, ReactNode, useCallback, useRef } from 'react';
 import type { AxiosError } from 'axios';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
@@ -74,6 +74,42 @@ interface SessionContextType {
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
+const SESSION_CACHE_KEY = 'fp:session:snapshot:v1';
+
+type SessionSnapshot = {
+    user: UserInfo;
+    permissions: PermissionsList;
+};
+
+function readCachedSession(): SessionSnapshot | null {
+    if (typeof window === 'undefined') return null;
+    try {
+        const raw = sessionStorage.getItem(SESSION_CACHE_KEY);
+        if (!raw) return null;
+        const parsed: unknown = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return null;
+        const snap = parsed as SessionSnapshot;
+        if (!snap.user || typeof snap.user.username !== 'string' || typeof snap.user.uuid !== 'string') return null;
+        if (!Array.isArray(snap.permissions)) return null;
+        return snap;
+    } catch {
+        return null;
+    }
+}
+
+function writeCachedSession(user: UserInfo | null, permissions: PermissionsList = []) {
+    if (typeof window === 'undefined') return;
+    try {
+        if (!user) {
+            sessionStorage.removeItem(SESSION_CACHE_KEY);
+            return;
+        }
+        sessionStorage.setItem(SESSION_CACHE_KEY, JSON.stringify({ user, permissions } satisfies SessionSnapshot));
+    } catch {
+        // ignore quota / private mode
+    }
+}
+
 function normalizePathname(pathname: string): string {
     if (pathname.length > 1 && pathname.endsWith('/')) {
         return pathname.slice(0, -1);
@@ -93,6 +129,7 @@ function isCorePublicNoAuthRoute(pathname: string): boolean {
 }
 
 export function SessionProvider({ children }: { children: ReactNode }) {
+    // Start empty on server + first client hydrate so markup matches; hydrate cache before paint.
     const [user, setUser] = useState<UserInfo | null>(null);
     const [permissions, setPermissions] = useState<PermissionsList>([]);
     const [adminTicketStats, setAdminTicketStats] = useState<AdminTicketStats | null>(null);
@@ -101,6 +138,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const [pluginPublicPaths, setPluginPublicPaths] = useState<string[]>([]);
     const [pluginPathsLoaded, setPluginPathsLoaded] = useState(false);
     const router = useRouter();
+    // Ignore out-of-order session responses (e.g. guest probe finishing after login refresh).
+    const fetchGenerationRef = useRef(0);
+
+    useLayoutEffect(() => {
+        const cached = readCachedSession();
+        if (!cached) return;
+        setUser(cached.user);
+        setPermissions(cached.permissions);
+        setIsSessionChecked(true);
+        setIsLoading(false);
+    }, []);
 
     const isPublicNoAuthRoute = useCallback(
         (pathname: string): boolean => {
@@ -126,8 +174,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
                 return true;
             }
 
+            const generation = ++fetchGenerationRef.current;
+
             try {
                 const res = await api.get('/user/session');
+
+                if (generation !== fetchGenerationRef.current) {
+                    return false;
+                }
 
                 // Cloudflare Under Attack / Precursor can return HTML instead of JSON.
                 // Do not wipe the session or treat the user as a guest.
@@ -148,6 +202,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
                 ) {
                     setUser(res.data.data.user_info as UserInfo);
                     setPermissions((res.data.data.permissions as PermissionsList) || []);
+                    writeCachedSession(
+                        res.data.data.user_info as UserInfo,
+                        (res.data.data.permissions as PermissionsList) || [],
+                    );
                     setAdminTicketStats((res.data.data.admin_ticket_stats as AdminTicketStats | undefined) ?? null);
                     setIsSessionChecked(true);
                     setIsLoading(false);
@@ -168,11 +226,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
                     return false;
                 }
             } catch (error) {
+                if (generation !== fetchGenerationRef.current) {
+                    return false;
+                }
+
                 if (isCloudflareChallengeAxios(error)) {
                     console.warn('Session fetch blocked by Cloudflare challenge; retrying once after clearance');
                     try {
                         await new Promise((resolve) => setTimeout(resolve, 1500));
                         const retry = await api.get('/user/session');
+                        if (generation !== fetchGenerationRef.current) {
+                            return false;
+                        }
                         if (
                             !isCloudflareChallengeAxios(retry) &&
                             !isCloudflareChallengeResponseData(retry.data) &&
@@ -182,6 +247,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
                         ) {
                             setUser(retry.data.data.user_info as UserInfo);
                             setPermissions((retry.data.data.permissions as PermissionsList) || []);
+                            writeCachedSession(
+                                retry.data.data.user_info as UserInfo,
+                                (retry.data.data.permissions as PermissionsList) || [],
+                            );
                             setAdminTicketStats(
                                 (retry.data.data.admin_ticket_stats as AdminTicketStats | undefined) ?? null,
                             );
@@ -192,6 +261,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
                     } catch {
                         // Fall through keep existing session if any.
                     }
+                    if (generation !== fetchGenerationRef.current) {
+                        return false;
+                    }
                     setIsSessionChecked(true);
                     setIsLoading(false);
                     return false;
@@ -199,19 +271,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
                 const axiosError = error as AxiosError<{ error_code?: string; error_message?: string }>;
                 const errorCode = axiosError?.response?.data?.error_code;
+                const onAuthPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/auth');
                 if (
                     errorCode === 'INVALID_ACCOUNT_TOKEN' ||
                     errorCode === 'USER_BANNED' ||
                     axiosError?.response?.status === 401
                 ) {
-                    clearSession();
-                    if (
-                        typeof window !== 'undefined' &&
-                        !window.location.pathname.startsWith('/auth') &&
-                        !isPublicNoAuthRoute(window.location.pathname)
-                    ) {
-                        const redirect = `${window.location.pathname}${window.location.search}`;
-                        router.push(`/auth/login?redirect=${encodeURIComponent(redirect)}`);
+                    // On auth pages a failed probe is expected for guests. Clearing here can
+                    // race with a just-completed login refresh and wipe the hydrated user.
+                    if (!onAuthPage) {
+                        clearSession();
+                        if (!isPublicNoAuthRoute(window.location.pathname)) {
+                            const redirect = `${window.location.pathname}${window.location.search}`;
+                            router.push(`/auth/login?redirect=${encodeURIComponent(redirect)}`);
+                        }
                     }
                 }
                 setIsSessionChecked(true);
@@ -229,6 +302,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
     const clearSession = () => {
         setUser(null);
+        writeCachedSession(null);
         setIsSessionChecked(false);
         setPermissions([]);
         setAdminTicketStats(null);
@@ -289,7 +363,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        fetchSession();
+        fetchSession(true);
     }, [fetchSession, isPublicNoAuthRoute, pluginPathsLoaded]);
 
     return (

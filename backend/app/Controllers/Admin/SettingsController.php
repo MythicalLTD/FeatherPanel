@@ -218,15 +218,37 @@ class SettingsController
                 ConfigInterface::LEGAL_PRIVACY,
             ],
         ],
+        'auth_page' => [
+            'name' => 'Auth Page',
+            'description' => 'Customize the login and register experience, marketing panel, QR sign-in, and method layout',
+            'icon' => 'lock',
+            'settings' => [
+                ConfigInterface::AUTH_SHELL_TAGLINE,
+                ConfigInterface::AUTH_ASIDE_TITLE,
+                ConfigInterface::AUTH_LOGIN_HEADLINE,
+                ConfigInterface::AUTH_LOGIN_SUBHEADLINE,
+                ConfigInterface::AUTH_REGISTER_HEADLINE,
+                ConfigInterface::AUTH_REGISTER_SUBHEADLINE,
+                ConfigInterface::AUTH_SSO_HEADLINE,
+                ConfigInterface::AUTH_SSO_SUBHEADLINE,
+                ConfigInterface::AUTH_SHOW_MARKETING_PANEL,
+                ConfigInterface::AUTH_ASIDE_IMAGE_URL,
+                ConfigInterface::AUTH_SHOW_QR_LOGIN,
+                ConfigInterface::AUTH_FORM_DENSITY,
+                ConfigInterface::AUTH_SECONDARY_LAYOUT,
+                ConfigInterface::AUTH_SHOW_THEME_CUSTOMIZER,
+                ConfigInterface::AUTH_FOOTER_STYLE,
+                ConfigInterface::LOGIN_DEFAULT_METHOD,
+                ConfigInterface::LOGIN_METHODS_ORDER,
+                ConfigInterface::LOGIN_HIDDEN_METHODS,
+            ],
+        ],
         'security' => [
             'name' => 'Security',
             'description' => 'Security and authentication settings',
             'icon' => 'shield',
             'settings' => [
                 ConfigInterface::EMAIL_LOGIN_ENABLED,
-                ConfigInterface::LOGIN_DEFAULT_METHOD,
-                ConfigInterface::LOGIN_METHODS_ORDER,
-                ConfigInterface::LOGIN_HIDDEN_METHODS,
                 ConfigInterface::CAPTCHA_PROVIDER,
                 ConfigInterface::TURNSTILE_ENABLED,
                 ConfigInterface::TURNSTILE_KEY_PUB,
@@ -1408,7 +1430,7 @@ class SettingsController
                 'placeholder' => 'local',
                 'validation' => 'required|string|max:64',
                 'options' => ['local', 'ldap', 'email_code', 'discord', 'oidc'],
-                'category' => 'security',
+                'category' => 'auth_page',
             ],
             ConfigInterface::LOGIN_METHODS_ORDER => [
                 'name' => ConfigInterface::LOGIN_METHODS_ORDER,
@@ -1421,7 +1443,7 @@ class SettingsController
                 'placeholder' => 'local,passkey,ldap,email_code,discord,oidc',
                 'validation' => 'required|string|max:255',
                 'options' => [],
-                'category' => 'security',
+                'category' => 'auth_page',
             ],
             ConfigInterface::LOGIN_HIDDEN_METHODS => [
                 'name' => ConfigInterface::LOGIN_HIDDEN_METHODS,
@@ -1434,7 +1456,202 @@ class SettingsController
                 'placeholder' => 'passkey',
                 'validation' => 'nullable|string|max:255',
                 'options' => [],
-                'category' => 'security',
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_SHELL_TAGLINE => [
+                'name' => ConfigInterface::AUTH_SHELL_TAGLINE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_SHELL_TAGLINE, ''),
+                'description' => 'Short marketing line under the brand on the auth left panel. This is auth-only copy — it does NOT use SEO description. Leave empty for the default translated tagline.',
+                'type' => 'textarea',
+                'required' => false,
+                'placeholder' => 'Manage your game servers from anywhere.',
+                'validation' => 'nullable|string|max:500',
+                'options' => [],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_ASIDE_TITLE => [
+                'name' => ConfigInterface::AUTH_ASIDE_TITLE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_ASIDE_TITLE, ''),
+                'description' => 'Optional bold heading under the brand name on the marketing panel (e.g. “Welcome to our panel”). Leave empty to hide.',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'Welcome',
+                'validation' => 'nullable|string|max:120',
+                'options' => [],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_LOGIN_HEADLINE => [
+                'name' => ConfigInterface::AUTH_LOGIN_HEADLINE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_LOGIN_HEADLINE, ''),
+                'description' => 'Override the login form title (default: Welcome back). Leave empty for the translated default.',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'Welcome back',
+                'validation' => 'nullable|string|max:120',
+                'options' => [],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_LOGIN_SUBHEADLINE => [
+                'name' => ConfigInterface::AUTH_LOGIN_SUBHEADLINE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_LOGIN_SUBHEADLINE, ''),
+                'description' => 'Override the login form subtitle. Leave empty for the translated default.',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'Enter your credentials to access your account',
+                'validation' => 'nullable|string|max:240',
+                'options' => [],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_REGISTER_HEADLINE => [
+                'name' => ConfigInterface::AUTH_REGISTER_HEADLINE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_REGISTER_HEADLINE, ''),
+                'description' => 'Override the register page title. Leave empty for the translated default.',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'Create an account',
+                'validation' => 'nullable|string|max:120',
+                'options' => [],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_REGISTER_SUBHEADLINE => [
+                'name' => ConfigInterface::AUTH_REGISTER_SUBHEADLINE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_REGISTER_SUBHEADLINE, ''),
+                'description' => 'Override the register page subtitle. Leave empty for the translated default.',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'Get started with us today',
+                'validation' => 'nullable|string|max:240',
+                'options' => [],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_SSO_HEADLINE => [
+                'name' => ConfigInterface::AUTH_SSO_HEADLINE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_SSO_HEADLINE, ''),
+                'description' => 'Headline when Discord/OIDC is the primary login panel (third-party SSO portal). Leave empty for the default “Continue with SSO” style copy.',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'Sign in with your organization',
+                'validation' => 'nullable|string|max:120',
+                'options' => [],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_SSO_SUBHEADLINE => [
+                'name' => ConfigInterface::AUTH_SSO_SUBHEADLINE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_SSO_SUBHEADLINE, ''),
+                'description' => 'Supporting text under the SSO portal headline. Leave empty for the translated default.',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'Use your company or Discord account to continue.',
+                'validation' => 'nullable|string|max:240',
+                'options' => [],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_SHOW_MARKETING_PANEL => [
+                'name' => ConfigInterface::AUTH_SHOW_MARKETING_PANEL,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_SHOW_MARKETING_PANEL, 'true'),
+                'description' => 'Show the full-bleed left marketing column on large screens (brand, tagline, QR). When false, auth pages use a centered form column only.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:16',
+                'options' => ['true', 'false'],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_ASIDE_IMAGE_URL => [
+                'name' => ConfigInterface::AUTH_ASIDE_IMAGE_URL,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_ASIDE_IMAGE_URL, ''),
+                'description' => 'Optional hero image for the auth marketing panel (shown behind brand/QR). Leave empty for gradient atmosphere only.',
+                'type' => 'image',
+                'required' => false,
+                'placeholder' => 'https://example.com/auth-hero.jpg',
+                'validation' => 'nullable|string|max:2048',
+                'options' => [],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_SHOW_QR_LOGIN => [
+                'name' => ConfigInterface::AUTH_SHOW_QR_LOGIN,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_SHOW_QR_LOGIN, 'true'),
+                'description' => 'Enable Discord-style QR code login (phone already signed in approves the desktop session).',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:16',
+                'options' => ['true', 'false'],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_FORM_DENSITY => [
+                'name' => ConfigInterface::AUTH_FORM_DENSITY,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_FORM_DENSITY, 'compact'),
+                'description' => 'Vertical spacing on auth forms: comfortable (roomy), compact (default), or dense (minimal scroll).',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'compact',
+                'validation' => 'required|string|max:32',
+                'options' => ['comfortable', 'compact', 'dense'],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_SECONDARY_LAYOUT => [
+                'name' => ConfigInterface::AUTH_SECONDARY_LAYOUT,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_SECONDARY_LAYOUT, 'chips'),
+                'description' => 'How alternate login methods appear: chips (compact wrap), stack (full-width rows), or collapsed (hidden behind “More ways to sign in”).',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'chips',
+                'validation' => 'required|string|max:32',
+                'options' => ['chips', 'stack', 'collapsed'],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_SHOW_THEME_CUSTOMIZER => [
+                'name' => ConfigInterface::AUTH_SHOW_THEME_CUSTOMIZER,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_SHOW_THEME_CUSTOMIZER, 'true'),
+                'description' => 'Show the theme/appearance button on auth pages (top-right).',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:16',
+                'options' => ['true', 'false'],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_FOOTER_STYLE => [
+                'name' => ConfigInterface::AUTH_FOOTER_STYLE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_FOOTER_STYLE, 'full'),
+                'description' => 'Auth footer under the form: full (links + powered-by), minimal (links only), or hidden.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'full',
+                'validation' => 'required|string|max:32',
+                'options' => ['full', 'minimal', 'hidden'],
+                'category' => 'auth_page',
             ],
             ConfigInterface::LEGAL_TOS => [
                 'name' => ConfigInterface::LEGAL_TOS,
@@ -2337,7 +2554,7 @@ class SettingsController
                 'value' => $this->app
                     ->getConfig()
                     ->getSetting(ConfigInterface::APP_PWA_ENABLED, 'false'),
-                'description' => 'Enable Progressive Web App features',
+                'description' => 'Allow users to install the panel as an app on desktop, Android, and iOS',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',
@@ -2351,13 +2568,13 @@ class SettingsController
                     ->getConfig()
                     ->getSetting(
                         ConfigInterface::APP_PWA_SHORT_NAME,
-                        'FeatherPanel',
+                        '',
                     ),
-                'description' => 'Short name for the PWA (used in app launcher)',
+                'description' => 'Short name under the home-screen icon (falls back to app name)',
                 'type' => 'text',
-                'required' => true,
-                'placeholder' => 'FeatherPanel',
-                'validation' => 'required|string|max:50',
+                'required' => false,
+                'placeholder' => 'My Panel',
+                'validation' => 'nullable|string|max:12',
                 'options' => [],
                 'category' => 'pwa',
             ],
@@ -2367,13 +2584,13 @@ class SettingsController
                     ->getConfig()
                     ->getSetting(
                         ConfigInterface::APP_PWA_DESCRIPTION,
-                        'Manage your game servers on the go.',
+                        '',
                     ),
-                'description' => 'Description for the PWA',
+                'description' => 'PWA description (falls back to SEO description, then app name)',
                 'type' => 'textarea',
-                'required' => true,
-                'placeholder' => 'Manage your game servers on the go.',
-                'validation' => 'required|string|max:500',
+                'required' => false,
+                'placeholder' => 'Manage your servers on the go.',
+                'validation' => 'nullable|string|max:500',
                 'options' => [],
                 'category' => 'pwa',
             ],

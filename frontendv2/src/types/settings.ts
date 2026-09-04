@@ -186,6 +186,31 @@ export interface AppSettings {
     login_methods_order?: string;
     /** Comma-separated login method ids to hide on the login page */
     login_hidden_methods?: string;
+    /** Auth marketing tagline (auth-only; never falls back to SEO) */
+    auth_shell_tagline?: string;
+    /** Optional heading under brand on the marketing panel */
+    auth_aside_title?: string;
+    auth_login_headline?: string;
+    auth_login_subheadline?: string;
+    auth_register_headline?: string;
+    auth_register_subheadline?: string;
+    /** SSO / OIDC / Discord primary portal copy */
+    auth_sso_headline?: string;
+    auth_sso_subheadline?: string;
+    /** When 'true', show Discord-style QR login */
+    auth_show_qr_login?: string;
+    /** When 'true', show left marketing panel on large screens */
+    auth_show_marketing_panel?: string;
+    /** Optional hero image for the auth marketing panel */
+    auth_aside_image_url?: string;
+    /** comfortable | compact | dense */
+    auth_form_density?: string;
+    /** chips | stack | collapsed */
+    auth_secondary_layout?: string;
+    /** When 'true', show theme customizer on auth pages */
+    auth_show_theme_customizer?: string;
+    /** full | minimal | hidden */
+    auth_footer_style?: string;
 }
 
 export interface CoreInfo {

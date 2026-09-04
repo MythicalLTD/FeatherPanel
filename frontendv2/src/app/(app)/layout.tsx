@@ -26,21 +26,35 @@ import { Toaster } from 'sonner';
 
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
-import { settingsApi } from '@/lib/settings-api';
 import { ANALYTICS_COOKIE_NAME } from '@/lib/analytics-cookie';
+import { getServerBootData, ICON_LIBRARY_COOKIE_NAME, LOCALE_COOKIE_NAME } from '@/lib/server-boot';
+import { SidebarPrefsBootstrap } from '@/hooks/useSidebarPreferences';
 
 import { APP_FONT_BOOT_STACKS_JSON } from '@/lib/app-fonts';
 import { ACCENT_COLORS_BOOT_JSON, ACCENT_FOREGROUNDS_BOOT_JSON } from '@/lib/accent-colors';
 
+import SystemHealthCheck from '@/components/SystemHealthCheck';
+import PluginAssets from '@/components/common/PluginAssets';
+import ChunkLoadErrorHandler from '@/components/common/ChunkLoadErrorHandler';
+import { PwaInstaller } from '@/components/common/PwaInstaller';
+import AnalyticsScript from '@/components/common/AnalyticsScript';
+
 export async function generateMetadata(): Promise<Metadata> {
-    const data = await settingsApi.getPublicSettings();
-    const settings = data?.settings;
+    const cookieStore = await cookies();
+    const boot = await getServerBootData(
+        cookieStore.get(LOCALE_COOKIE_NAME)?.value,
+        cookieStore.get(ICON_LIBRARY_COOKIE_NAME)?.value,
+    );
+    const settings = boot.settings;
 
     const title = settings?.app_seo_title || settings?.app_name || 'FeatherPanel';
     const description = settings?.app_seo_description || 'A powerful game server management panel.';
     const keywords = settings?.app_seo_keywords || 'game, server, management, panel, hosting';
-    const logo = settings?.app_logo_dark || '/assets/logo.png';
+    const logo = settings?.app_logo_dark || settings?.app_logo_white || '/assets/logo.png';
     const indexingEnabled = settings?.app_seo_indexing === 'true';
+    const pwaEnabled = settings?.app_pwa_enabled === 'true';
+    const appName = settings?.app_name || 'FeatherPanel';
+    const themeColor = settings?.app_pwa_theme_color || '#000000';
 
     return {
         title: {
@@ -49,19 +63,36 @@ export async function generateMetadata(): Promise<Metadata> {
         },
         description: description,
         keywords: keywords.split(',').map((k) => k.trim()),
+        applicationName: appName,
+        appleWebApp: pwaEnabled
+            ? {
+                  capable: true,
+                  title: settings?.app_pwa_short_name?.trim() || appName,
+                  statusBarStyle: 'black-translucent',
+              }
+            : undefined,
+        formatDetection: {
+            telephone: false,
+        },
+        themeColor: [
+            { media: '(prefers-color-scheme: light)', color: themeColor },
+            { media: '(prefers-color-scheme: dark)', color: themeColor },
+        ],
         icons: {
-            icon: logo,
-            shortcut: logo,
-            apple: logo,
-            other: {
-                rel: 'apple-touch-icon-precomposed',
-                url: logo,
-            },
+            icon: [{ url: logo }],
+            shortcut: [{ url: logo }],
+            apple: [{ url: logo, sizes: '180x180' }],
+            other: [
+                {
+                    rel: 'apple-touch-icon-precomposed',
+                    url: logo,
+                },
+            ],
         },
         openGraph: {
             title: title,
             description: description,
-            siteName: settings?.app_name || 'FeatherPanel',
+            siteName: appName,
             images: [
                 {
                     url: logo,
@@ -78,7 +109,6 @@ export async function generateMetadata(): Promise<Metadata> {
             description: description,
             images: [logo],
         },
-        applicationName: settings?.app_name || 'FeatherPanel',
         robots: indexingEnabled
             ? {
                   index: true,
@@ -90,24 +120,27 @@ export async function generateMetadata(): Promise<Metadata> {
                   nocache: true,
               },
         other: {
-            author: 'FeatherPanel',
+            author: appName,
+            ...(pwaEnabled
+                ? {
+                      'mobile-web-app-capable': 'yes',
+                  }
+                : {}),
         },
     };
 }
-
-import SystemHealthCheck from '@/components/SystemHealthCheck';
-import PluginAssets from '@/components/common/PluginAssets';
-import ChunkLoadErrorHandler from '@/components/common/ChunkLoadErrorHandler';
-import { PwaInstaller } from '@/components/common/PwaInstaller';
-import AnalyticsScript from '@/components/common/AnalyticsScript';
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
     const cookieStore = await cookies();
     const analyticsCookie = cookieStore.get(ANALYTICS_COOKIE_NAME)?.value;
     const analyticsEnabled = analyticsCookie !== '0';
+    const boot = await getServerBootData(
+        cookieStore.get(LOCALE_COOKIE_NAME)?.value,
+        cookieStore.get(ICON_LIBRARY_COOKIE_NAME)?.value,
+    );
 
     return (
-        <html lang='en' suppressHydrationWarning className={panelFontClassName}>
+        <html lang={boot.locale || 'en'} suppressHydrationWarning className={panelFontClassName}>
             <head>
                 <noscript
                     dangerouslySetInnerHTML={{
@@ -178,6 +211,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     document.documentElement.style.setProperty('--app-font-family', fontStacks[savedFont]);
                   }
 
+                  // Keep SSR locale cookie aligned with localStorage preference.
+                  var savedLocale = localStorage.getItem('locale');
+                  if (savedLocale) {
+                    document.cookie = '${LOCALE_COOKIE_NAME}=' + encodeURIComponent(savedLocale) + '; path=/; max-age=' + (365*24*60*60) + '; SameSite=Lax';
+                  }
+
+                  // Keep SSR icon library cookie aligned so nav icons do not morph after hydrate.
+                  var savedIconLibrary = localStorage.getItem('featherpanel_icon_library');
+                  if (savedIconLibrary === 'lucide' || savedIconLibrary === 'tabler' || savedIconLibrary === 'mdi' || savedIconLibrary === 'phosphor') {
+                    document.cookie = '${ICON_LIBRARY_COOKIE_NAME}=' + encodeURIComponent(savedIconLibrary) + '; path=/; max-age=' + (365*24*60*60) + '; SameSite=Lax';
+                  }
+
                   // UI preference sync id (keeps theme/layout prefs aligned across tabs).
                   var syncKey = 'fp:ui:pref:sync';
                   var syncCookie = '_fp_ui_sid';
@@ -200,19 +245,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <body className='bg-background text-foreground'>
                 <div dangerouslySetInnerHTML={{ __html: '<!-- FEATHERPANEL_APP_PLACEHOLDER_START -->' }} />
                 <AnalyticsScript enabled={analyticsEnabled} />
-                <SettingsProvider>
+                <SettingsProvider initialSettings={boot.settings} initialCore={boot.core}>
                     <ThemeProvider>
-                        <TranslationProvider>
+                        <TranslationProvider initialLocale={boot.locale} initialTranslations={boot.translations}>
                             <SessionProvider>
                                 <PreferencesProvider>
-                                    <NotificationProvider>
-                                        <PluginAssets />
-                                        <ChunkLoadErrorHandler />
-                                        <SystemHealthCheck />
-                                        <PwaInstaller />
-                                        <AppContent>{children}</AppContent>
-                                        <Toaster richColors position='top-right' />
-                                    </NotificationProvider>
+                                    <SidebarPrefsBootstrap iconLibrary={boot.iconLibrary}>
+                                        <NotificationProvider>
+                                            <PluginAssets />
+                                            <ChunkLoadErrorHandler />
+                                            <SystemHealthCheck />
+                                            <PwaInstaller />
+                                            <AppContent>{children}</AppContent>
+                                            <Toaster richColors position='top-right' />
+                                        </NotificationProvider>
+                                    </SidebarPrefsBootstrap>
                                 </PreferencesProvider>
                             </SessionProvider>
                         </TranslationProvider>

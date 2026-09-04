@@ -19,11 +19,13 @@ namespace App\Controllers\User\User;
 
 use App\App;
 use App\Chat\User;
+use App\Cache\Cache;
 use App\Permissions;
 use App\Chat\Activity;
 use GuzzleHttp\Client;
 use App\Chat\ApiClient;
 use App\Helpers\ApiResponse;
+use App\Helpers\AppUrlHelper;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Helpers\IpAddressMatcher;
@@ -149,6 +151,9 @@ class ApiClientController
 {
     private const OAUTH2_MAX_NAME_LENGTH = 191;
     private const OAUTH2_MAX_APP_NAME_LENGTH = 191;
+    private const OAUTH2_DEVICE_EXPIRES_IN = 900;
+    private const OAUTH2_DEVICE_POLL_INTERVAL = 5;
+    private const OAUTH2_DEVICE_USER_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
     #[OA\Get(
         path: '/api/user/api-clients',
@@ -1062,6 +1067,279 @@ class ApiClientController
         ], 'API client validated successfully', 200);
     }
 
+    #[OA\Post(
+        path: '/api/user/api-clients/oauth2/device',
+        summary: 'Start OAuth2 device authorization',
+        description: 'Starts a serverless/device-code OAuth2 API consent grant that does not require a callback URL. The client polls /oauth2/device/token while the user visits the verification URI.',
+        tags: ['User - API Clients'],
+        responses: [
+            new OA\Response(response: 200, description: 'Device authorization started'),
+            new OA\Response(response: 400, description: 'Invalid request data'),
+        ]
+    )]
+    public function oauth2DeviceStart(Request $request): Response
+    {
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            $data = [];
+        }
+
+        $normalized = $this->normalizeOAuth2DeviceRequest($data);
+        if ($normalized instanceof Response) {
+            return $normalized;
+        }
+
+        $requestToken = $this->generateOpaqueToken('fpoauthreq_');
+        $deviceCode = $this->generateOpaqueToken('fpdev_');
+        $userCode = $this->generateDeviceUserCode();
+        if ($userCode === null) {
+            return ApiResponse::error(
+                'Failed to generate a unique user code',
+                'OAUTH2_USER_CODE_GENERATION_FAILED',
+                500
+            );
+        }
+
+        $expiresAt = gmdate('Y-m-d H:i:s', time() + self::OAUTH2_DEVICE_EXPIRES_IN);
+        $authorizationId = OAuth2ApiAuthorization::createAuthorization([
+            'user_uuid' => null,
+            'request_token' => $requestToken,
+            'device_code' => $deviceCode,
+            'user_code' => $userCode,
+            'status' => 'pending',
+            'request_name' => $normalized['name'],
+            'request_description' => $normalized['description'],
+            'app_name' => $normalized['app_name'],
+            'app_logo' => $normalized['app_logo'],
+            'callback_url' => null,
+            'allowed_ips' => $normalized['allowed_ips'],
+            'notify_foreign_ip' => $normalized['notify_foreign_ip'],
+            'request_state' => null,
+            'request_nonce' => 'device',
+            'expires_at' => $expiresAt,
+        ]);
+
+        if ($authorizationId === false) {
+            return ApiResponse::error(
+                'Failed to initialize OAuth2 device authorization',
+                'OAUTH2_DEVICE_INIT_FAILED',
+                500
+            );
+        }
+
+        $verificationUri = AppUrlHelper::baseUrl() . '/dashboard/account/oauth2/api/device';
+        $verificationUriComplete = $verificationUri . '?user_code=' . rawurlencode($userCode);
+
+        return ApiResponse::success([
+            'device_code' => $deviceCode,
+            'user_code' => $userCode,
+            'verification_uri' => $verificationUri,
+            'verification_uri_complete' => $verificationUriComplete,
+            'expires_in' => self::OAUTH2_DEVICE_EXPIRES_IN,
+            'interval' => self::OAUTH2_DEVICE_POLL_INTERVAL,
+        ], 'OAuth2 device authorization started', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/user/api-clients/oauth2/device/token',
+        summary: 'Poll OAuth2 device authorization',
+        description: 'Polls a device authorization grant until the user approves or denies, or the grant expires.',
+        tags: ['User - API Clients'],
+        responses: [
+            new OA\Response(response: 200, description: 'Credentials issued or pending status'),
+            new OA\Response(response: 400, description: 'Invalid or denied device code'),
+        ]
+    )]
+    public function oauth2DeviceToken(Request $request): Response
+    {
+        OAuth2ApiAuthorization::markExpiredPending();
+
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data) || !isset($data['device_code']) || !is_string($data['device_code'])) {
+            return ApiResponse::error('device_code is required', 'DEVICE_CODE_REQUIRED', 400);
+        }
+
+        $deviceCode = trim($data['device_code']);
+        if ($deviceCode === '') {
+            return ApiResponse::error('device_code is required', 'DEVICE_CODE_REQUIRED', 400);
+        }
+
+        $authorization = OAuth2ApiAuthorization::getByDeviceCode($deviceCode);
+        if ($authorization === null || ($authorization['request_nonce'] ?? '') !== 'device') {
+            return ApiResponse::error('Invalid device code', 'INVALID_DEVICE_CODE', 400);
+        }
+
+        $pollKey = 'oauth2_device_last_poll:' . hash('sha256', $deviceCode);
+        $lastPoll = Cache::get($pollKey);
+        $now = time();
+        if (is_numeric($lastPoll) && ($now - (int) $lastPoll) < self::OAUTH2_DEVICE_POLL_INTERVAL) {
+            Cache::put($pollKey, $now, 1);
+
+            return ApiResponse::error(
+                'Polling too frequently',
+                'slow_down',
+                400,
+                [
+                    'error' => 'slow_down',
+                    'interval' => self::OAUTH2_DEVICE_POLL_INTERVAL,
+                ]
+            );
+        }
+        Cache::put($pollKey, $now, 1);
+
+        if ($authorization['status'] === 'expired' || ($authorization['status'] === 'pending' && strtotime((string) $authorization['expires_at']) < $now)) {
+            if ($authorization['status'] === 'pending') {
+                OAuth2ApiAuthorization::updateAuthorization((int) $authorization['id'], [
+                    'status' => 'expired',
+                ]);
+            }
+
+            return ApiResponse::error(
+                'Device code has expired',
+                'expired_token',
+                400,
+                ['error' => 'expired_token']
+            );
+        }
+
+        if ($authorization['status'] === 'denied') {
+            return ApiResponse::error(
+                'The resource owner denied the request',
+                'access_denied',
+                400,
+                ['error' => 'access_denied']
+            );
+        }
+
+        if ($authorization['status'] === 'pending') {
+            return ApiResponse::error(
+                'Authorization pending',
+                'authorization_pending',
+                400,
+                ['error' => 'authorization_pending']
+            );
+        }
+
+        if ($authorization['status'] !== 'approved') {
+            return ApiResponse::error('Invalid device authorization state', 'INVALID_DEVICE_STATE', 400);
+        }
+
+        if (!empty($authorization['used_at'])) {
+            return ApiResponse::error(
+                'Device code already used',
+                'expired_token',
+                400,
+                ['error' => 'expired_token']
+            );
+        }
+
+        $apiClient = ApiClient::getApiClientById((int) $authorization['api_client_id']);
+        if ($apiClient === null) {
+            return ApiResponse::error('Associated API client not found', 'API_CLIENT_NOT_FOUND', 404);
+        }
+
+        OAuth2ApiAuthorization::updateAuthorization((int) $authorization['id'], [
+            'used_at' => gmdate('Y-m-d H:i:s'),
+        ]);
+        Cache::forget($pollKey);
+
+        $issuedAt = $authorization['approved_at']
+            ? gmdate('c', strtotime((string) $authorization['approved_at']))
+            : gmdate('c');
+
+        return ApiResponse::success([
+            'token_type' => 'featherpanel_api_key',
+            'public_key' => $apiClient['public_key'],
+            'private_key' => $apiClient['private_key'],
+            'authorization_code' => $authorization['auth_code'] ?: null,
+            'issued_at' => $issuedAt,
+        ], 'Device authorization completed', 200);
+    }
+
+    #[OA\Get(
+        path: '/api/user/api-clients/oauth2/device/claim',
+        summary: 'Claim OAuth2 device authorization',
+        description: 'Binds a pending device authorization to the logged-in user and returns the consent payload.',
+        tags: ['User - API Clients'],
+        responses: [
+            new OA\Response(response: 200, description: 'Device authorization claimed'),
+            new OA\Response(response: 400, description: 'Invalid user code'),
+            new OA\Response(response: 403, description: 'Feature disabled for account'),
+        ]
+    )]
+    public function oauth2DeviceClaim(Request $request): Response
+    {
+        OAuth2ApiAuthorization::markExpiredPending();
+
+        $user = AuthMiddleware::getCurrentUser($request);
+        if ($user === null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+
+        $allowCheck = $this->ensureApiKeyCreationAllowed($user);
+        if ($allowCheck !== null) {
+            return $allowCheck;
+        }
+
+        $userCode = trim((string) $request->query->get('user_code', ''));
+        if ($userCode === '') {
+            return ApiResponse::error('user_code is required', 'USER_CODE_REQUIRED', 400);
+        }
+
+        $authorization = OAuth2ApiAuthorization::getByUserCode($userCode);
+        if ($authorization === null || ($authorization['request_nonce'] ?? '') !== 'device') {
+            return ApiResponse::error('Invalid user code', 'INVALID_USER_CODE', 400);
+        }
+
+        if ($authorization['status'] === 'expired' || ($authorization['status'] === 'pending' && strtotime((string) $authorization['expires_at']) < time())) {
+            if ($authorization['status'] === 'pending') {
+                OAuth2ApiAuthorization::updateAuthorization((int) $authorization['id'], [
+                    'status' => 'expired',
+                ]);
+            }
+
+            return ApiResponse::error('This device code has expired', 'expired_token', 400);
+        }
+
+        if ($authorization['status'] !== 'pending') {
+            return ApiResponse::error('Authorization request is no longer pending', 'AUTHORIZATION_NOT_PENDING', 400);
+        }
+
+        if (!empty($authorization['user_uuid']) && $authorization['user_uuid'] !== $user['uuid']) {
+            return ApiResponse::error(
+                'This device code is already claimed by another account',
+                'DEVICE_CODE_CLAIMED',
+                403
+            );
+        }
+
+        if (empty($authorization['user_uuid'])) {
+            $claimed = OAuth2ApiAuthorization::updateAuthorization((int) $authorization['id'], [
+                'user_uuid' => $user['uuid'],
+            ]);
+            if (!$claimed) {
+                return ApiResponse::error('Failed to claim device authorization', 'DEVICE_CLAIM_FAILED', 500);
+            }
+            $authorization['user_uuid'] = $user['uuid'];
+        }
+
+        return ApiResponse::success([
+            'request_token' => $authorization['request_token'],
+            'request' => [
+                'name' => $authorization['request_name'],
+                'description' => $authorization['request_description'],
+                'callbackurl' => null,
+                'callback_origin' => null,
+                'allowedips' => $authorization['allowed_ips'],
+                'alertCors' => ($authorization['notify_foreign_ip'] ?? 'false') === 'true',
+                'appName' => $authorization['app_name'],
+                'appLogo' => $authorization['app_logo'],
+                'mode' => 'device',
+                'user_code' => OAuth2ApiAuthorization::formatUserCode((string) $authorization['user_code']),
+            ],
+        ], 'OAuth2 device authorization claimed', 200);
+    }
+
     #[OA\Get(
         path: '/api/user/api-clients/oauth2/metadata',
         summary: 'Validate OAuth2 API consent request metadata',
@@ -1213,13 +1491,13 @@ class ApiClientController
             if ($authorization['status'] === 'approved') {
                 $approvedApiClient = ApiClient::getApiClientById((int) $authorization['api_client_id']);
                 if ($approvedApiClient !== null) {
-                    $mode = $authorization['request_nonce'] === 'server' ? 'server' : 'user';
+                    $mode = $this->resolveOAuth2Mode($authorization);
 
                     return $this->buildApprovedResponse($mode, $authorization, $approvedApiClient);
                 }
             }
             if ($authorization['status'] === 'denied') {
-                $mode = $authorization['request_nonce'] === 'server' ? 'server' : 'user';
+                $mode = $this->resolveOAuth2Mode($authorization);
 
                 return $this->buildDeniedResponse($mode, $authorization);
             }
@@ -1257,7 +1535,7 @@ class ApiClientController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
-        $mode = $authorization['request_nonce'] === 'server' ? 'server' : 'user';
+        $mode = $this->resolveOAuth2Mode($authorization);
 
         return $this->buildApprovedResponse($mode, $authorization, [
             'public_key' => $publicKey,
@@ -1299,24 +1577,14 @@ class ApiClientController
             return ApiResponse::error('You are not allowed to deny this request', 'UNAUTHORIZED_ACCESS', 403);
         }
         if ($authorization['status'] !== 'pending') {
-            $mode = $authorization['request_nonce'] === 'server' ? 'server' : 'user';
+            $mode = $this->resolveOAuth2Mode($authorization);
             if ($authorization['status'] === 'denied') {
                 return $this->buildDeniedResponse($mode, $authorization);
             }
             if ($authorization['status'] === 'approved') {
                 $approvedApiClient = ApiClient::getApiClientById((int) $authorization['api_client_id']);
                 if ($approvedApiClient !== null) {
-                    $redirectUrl = $this->buildCallbackFragmentRedirect((string) $authorization['callback_url'], [
-                        'public_key' => $approvedApiClient['public_key'],
-                        'private_key' => $approvedApiClient['private_key'],
-                        'token_type' => 'featherpanel_api_key',
-                        'issued_at' => $authorization['approved_at'] ? gmdate('c', strtotime((string) $authorization['approved_at'])) : gmdate('c'),
-                        'authorization_code' => $authorization['auth_code'] ?: null,
-                    ]);
-
-                    return ApiResponse::success([
-                        'redirect_url' => $redirectUrl,
-                    ], 'OAuth2 API authorization already approved', 200);
+                    return $this->buildApprovedResponse($mode, $authorization, $approvedApiClient);
                 }
             }
 
@@ -1335,7 +1603,7 @@ class ApiClientController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
-        $mode = $authorization['request_nonce'] === 'server' ? 'server' : 'user';
+        $mode = $this->resolveOAuth2Mode($authorization);
 
         return $this->buildDeniedResponse($mode, $authorization);
     }
@@ -1412,6 +1680,13 @@ class ApiClientController
         }
         if ($appName !== '' && strlen($appName) > self::OAUTH2_MAX_APP_NAME_LENGTH) {
             return ApiResponse::error('appName is too long', 'INVALID_APP_NAME_LENGTH', 400);
+        }
+        if ($mode === 'device') {
+            return ApiResponse::error(
+                'Use POST /api/user/api-clients/oauth2/device for serverless/device authorization',
+                'USE_DEVICE_ENDPOINT',
+                400
+            );
         }
         if (!in_array($mode, ['user', 'server'], true)) {
             return ApiResponse::error('mode must be user or server', 'INVALID_MODE', 400);
@@ -1510,6 +1785,80 @@ class ApiClientController
         return $prefix . bin2hex(random_bytes(32));
     }
 
+    private function resolveOAuth2Mode(array $authorization): string
+    {
+        $mode = (string) ($authorization['request_nonce'] ?? 'user');
+        if (in_array($mode, ['user', 'server', 'device'], true)) {
+            return $mode;
+        }
+
+        return 'user';
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array{name: string, allowed_ips: ?string, notify_foreign_ip: string, app_name: ?string, app_logo: ?string, description: ?string}|Response
+     */
+    private function normalizeOAuth2DeviceRequest(array $data): array | Response
+    {
+        $name = trim((string) ($data['name'] ?? ''));
+        $allowedIpsInput = (string) ($data['allowedips'] ?? '');
+        $alertCorsInput = (string) ($data['alertCors'] ?? 'false');
+        $appName = trim((string) ($data['appName'] ?? ''));
+        $appLogo = trim((string) ($data['appLogo'] ?? ''));
+        $description = trim((string) ($data['description'] ?? ''));
+
+        if ($name === '') {
+            return ApiResponse::error('Missing required field: name', 'MISSING_REQUIRED_FIELDS', 400);
+        }
+        if (strlen($name) > self::OAUTH2_MAX_NAME_LENGTH) {
+            return ApiResponse::error('name is too long', 'INVALID_NAME_LENGTH', 400);
+        }
+        if ($appName !== '' && strlen($appName) > self::OAUTH2_MAX_APP_NAME_LENGTH) {
+            return ApiResponse::error('appName is too long', 'INVALID_APP_NAME_LENGTH', 400);
+        }
+        if ($appLogo !== '' && filter_var($appLogo, FILTER_VALIDATE_URL) === false) {
+            return ApiResponse::error('appLogo must be a valid URL', 'INVALID_APP_LOGO_URL', 400);
+        }
+
+        $allowedErr = IpAddressMatcher::validateAllowedIpsInput($allowedIpsInput);
+        if ($allowedErr !== null) {
+            return ApiResponse::error($allowedErr, 'INVALID_ALLOWED_IPS', 400);
+        }
+        $normalizedAllowedIps = IpAddressMatcher::normalizeAllowedIpsInput($allowedIpsInput);
+        $allowedIps = $normalizedAllowedIps === '' ? null : $normalizedAllowedIps;
+        $notifyForeignIp = $this->normalizeNotifyForeignIpFlag($alertCorsInput === 'true', $allowedIps !== null);
+
+        return [
+            'name' => $name,
+            'allowed_ips' => $allowedIps,
+            'notify_foreign_ip' => $notifyForeignIp,
+            'app_name' => $appName !== '' ? $appName : null,
+            'app_logo' => $appLogo !== '' ? $appLogo : null,
+            'description' => $description !== '' ? $description : null,
+        ];
+    }
+
+    private function generateDeviceUserCode(): ?string
+    {
+        $alphabet = self::OAUTH2_DEVICE_USER_CODE_ALPHABET;
+        $alphabetLength = strlen($alphabet);
+
+        for ($attempt = 0; $attempt < 20; ++$attempt) {
+            $raw = '';
+            for ($i = 0; $i < 8; ++$i) {
+                $raw .= $alphabet[random_int(0, $alphabetLength - 1)];
+            }
+            $formatted = OAuth2ApiAuthorization::formatUserCode($raw);
+            if (OAuth2ApiAuthorization::getByUserCode($formatted) === null) {
+                return $formatted;
+            }
+        }
+
+        return null;
+    }
+
     private function buildApprovedResponse(
         string $mode,
         array $authorization,
@@ -1550,6 +1899,18 @@ class ApiClientController
                 'authorized' => true,
                 'delivery' => $callbackDelivery,
             ], 'App authorized and credentials delivered to callback endpoint', 200);
+        }
+
+        if ($mode === 'device') {
+            return ApiResponse::success([
+                'mode' => 'device',
+                'authorized' => true,
+                'token_type' => 'featherpanel_api_key',
+                'public_key' => $publicKey,
+                'private_key' => $privateKey,
+                'authorization_code' => $code,
+                'issued_at' => $issuedAt,
+            ], 'OAuth2 device authorization approved', 200);
         }
 
         $redirectUrl = $this->buildCallbackFragmentRedirect((string) $authorization['callback_url'], [
@@ -1593,6 +1954,15 @@ class ApiClientController
                 'authorized' => false,
                 'delivery' => $callbackDelivery,
             ], 'Request denied and callback notified', 200);
+        }
+
+        if ($mode === 'device') {
+            return ApiResponse::success([
+                'mode' => 'device',
+                'authorized' => false,
+                'error' => 'access_denied',
+                'error_description' => 'The resource owner denied the request',
+            ], 'OAuth2 device authorization denied', 200);
         }
 
         $redirectUrl = $this->buildCallbackFragmentRedirect((string) $authorization['callback_url'], [

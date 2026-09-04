@@ -40,31 +40,45 @@ function iconifyIdForSpec(spec: PanelIconSpec): string | null {
     return null;
 }
 
+function isSyncSpec(spec: PanelIconSpec): boolean {
+    return spec.type === 'lucide' || spec.type === 'component' || spec.type === 'emoji' || spec.type === 'image';
+}
+
 async function canRenderSpec(spec: PanelIconSpec): Promise<boolean> {
-    if (spec.type === 'component' || spec.type === 'emoji' || spec.type === 'image') return true;
+    if (isSyncSpec(spec)) return true;
     const iconId = iconifyIdForSpec(spec);
     if (!iconId) return false;
     if (iconLoaded(iconId)) return true;
     try {
         await loadIcon(iconId);
-        return iconLoaded(iconId);
     } catch {
         return false;
     }
+    return iconLoaded(iconId);
 }
 
-function usePanelIconSpec(source: PanelIconSource, library: IconLibrary): PanelIconSpec {
+function initialSpec(specs: PanelIconSpec[]): PanelIconSpec | null {
+    const preferred = specs[0];
+    if (!preferred) return { type: 'lucide', name: 'circle-help' };
+    if (isSyncSpec(preferred)) return preferred;
+    if (preferred.type === 'iconify' && iconLoaded(preferred.icon)) return preferred;
+    // Keep a reserved empty slot until the preferred set is ready — never flash a different library.
+    return null;
+}
+
+function useResolvedIconSpec(source: PanelIconSource, library: IconLibrary): PanelIconSpec | null {
     const specs = useMemo(() => resolvePanelIconFallbacks(source, { iconLibrary: library }), [source, library]);
-    const [spec, setSpec] = useState<PanelIconSpec>(specs[0] ?? { type: 'lucide', name: 'circle-help' });
+    const [spec, setSpec] = useState<PanelIconSpec | null>(() => initialSpec(specs));
 
     useEffect(() => {
         let cancelled = false;
+        setSpec(initialSpec(specs));
 
         void (async () => {
             for (const candidate of specs) {
                 if (cancelled) return;
                 if (await canRenderSpec(candidate)) {
-                    setSpec(candidate);
+                    if (!cancelled) setSpec(candidate);
                     return;
                 }
             }
@@ -138,7 +152,17 @@ function RenderPanelIconSpec({
 export function PanelIcon({ source, className, size = 18, label, iconLibrary }: PanelIconProps) {
     const { iconLibrary: preferredLibrary } = useSidebarPreferences();
     const library = iconLibrary ?? preferredLibrary;
-    const spec = usePanelIconSpec(source, library);
+    const spec = useResolvedIconSpec(source, library);
+
+    if (!spec) {
+        return (
+            <span
+                className={cn('inline-block shrink-0', className)}
+                style={{ width: size, height: size }}
+                aria-hidden
+            />
+        );
+    }
 
     return <RenderPanelIconSpec spec={spec} className={className} size={size} label={label} />;
 }

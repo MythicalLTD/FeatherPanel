@@ -49,7 +49,7 @@ export default function PluginPage({ context, serverUuid, vdsId, webspaceUuid }:
     const challengeRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const iframeReadyRef = useRef(false);
 
-    const pluginData = usePluginRoutes();
+    const { data: pluginData } = usePluginRoutes();
 
     const injectThemeStyles = () => {
         if (!iframeRef.current) return;

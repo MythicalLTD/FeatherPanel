@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useContext, useEffect, useState } from 'react';
-import { CircleUser } from 'lucide-react';
+import { CircleUser, Smartphone } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession } from '@/contexts/SessionContext';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -60,7 +60,10 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         <WebSpaceSwitcher fallbackTitle={webSpaceName ?? undefined} />
     ) : undefined;
 
-    const userNavigation = [{ name: t('navbar.profile'), href: '/dashboard/account', icon: CircleUser }];
+    const userNavigation = [
+        { name: t('navbar.profile'), href: '/dashboard/account', icon: CircleUser },
+        { name: t('account.loginDevice.menuLabel'), href: '/dashboard/account/login-device', icon: Smartphone },
+    ];
 
     const handleLogout = async () => {
         await logout();

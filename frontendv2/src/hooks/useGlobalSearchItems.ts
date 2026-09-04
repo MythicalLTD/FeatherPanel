@@ -230,7 +230,7 @@ export function useGlobalSearchItems(open: boolean, query: string) {
     const { settings } = useSettings();
     const { t } = useTranslation();
     const { isDeveloperModeEnabled } = useDeveloperMode();
-    const pluginRoutes = usePluginRoutes();
+    const { data: pluginRoutes } = usePluginRoutes();
     const enabled = open && !!user;
 
     const parsedQuery = useMemo(() => parseGlobalSearchQuery(query), [query]);
@@ -320,10 +320,9 @@ export function useGlobalSearchItems(open: boolean, query: string) {
     const baseItems = useMemo(() => {
         const items: GlobalSearchResult[] = [...accountItems];
 
-        const mainItems = getMainNavigationItems(t, settings, hasPermission, {
-            gameServersTotal: null,
-            vmInstancesTotal: null,
-        }).filter((item) => !item.permission || hasPermission(item.permission));
+        const mainItems = getMainNavigationItems(t, settings, hasPermission).filter(
+            (item) => !item.permission || hasPermission(item.permission),
+        );
 
         items.push(...navigationToSearchResults(mainItems, 'pages', t('globalSearch.categories.pages')));
 

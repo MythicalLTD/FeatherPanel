@@ -1100,7 +1100,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             if (!suggestionMenu) return;
             const selected = completionListRef.current?.querySelector('[data-completion-selected="true"]');
             selected?.scrollIntoView({ block: 'nearest' });
-        }, [suggestionMenu?.highlight, suggestionMenu?.suggestions.length]);
+        }, [suggestionMenu]);
 
         const completionGhostText = useMemo(
             () => (suggestionMenu ? completionGhostRemainder(suggestionMenu, commandInput) : ''),

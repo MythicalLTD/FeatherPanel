@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/featherui/Button';
 import { LogOut } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { AuthPage, AuthPageHeader, AuthPanel } from '@/components/auth/AuthUi';
 
 export default function LogoutPage() {
     const router = useRouter();
@@ -77,20 +78,15 @@ export default function LogoutPage() {
     }, [router]);
 
     return (
-        <div className='flex flex-col items-center justify-center gap-6'>
-            <div className='flex flex-col items-center gap-4 text-center'>
-                <div className='relative'>
-                    <div className='bg-primary/10 relative rounded-full p-4'>
-                        <LogOut className='text-primary size-12' />
-                    </div>
-                </div>
+        <AuthPage>
+            <AuthPageHeader
+                icon={<LogOut className='h-6 w-6' />}
+                title={t('auth.logout.title')}
+                subtitle={t('auth.logout.subtitle')}
+            />
 
-                <div className='space-y-2'>
-                    <h1 className='text-foreground text-2xl font-bold'>{t('auth.logout.title')}</h1>
-                    <p className='text-muted-foreground max-w-sm'>{t('auth.logout.subtitle')}</p>
-                </div>
-
-                <div className='mt-4 flex items-center gap-2'>
+            <AuthPanel className='space-y-5'>
+                <div className='flex items-center justify-center gap-2'>
                     <div className='flex space-x-1'>
                         {[1, 2, 3].map((i) => (
                             <div
@@ -100,27 +96,25 @@ export default function LogoutPage() {
                             />
                         ))}
                     </div>
-                    <span className='text-muted-foreground ml-2 text-sm'>{t('auth.logout.cleaning_up')}</span>
+                    <span className='text-muted-foreground text-sm'>{t('auth.logout.cleaning_up')}</span>
                 </div>
-            </div>
 
-            <div className='w-full max-w-xs'>
-                <div className='bg-muted h-1.5 w-full rounded-full'>
+                <div className='bg-muted h-1.5 w-full overflow-hidden rounded-full'>
                     <div
                         className='bg-primary h-1.5 rounded-full transition-all duration-1000 ease-out'
                         style={{ width: `${Math.min(logoutProgress, 100)}%` }}
                     />
                 </div>
-            </div>
 
-            {showManualRedirect && (
-                <div className='animate-fade-in text-center'>
-                    <p className='text-muted-foreground mb-3 text-sm'>{t('auth.logout.taking_too_long')}</p>
-                    <Button variant='outline' size='sm' onClick={manualRedirect}>
-                        {t('auth.logout.continue_to_login')}
-                    </Button>
-                </div>
-            )}
-        </div>
+                {showManualRedirect ? (
+                    <div className='animate-fade-in space-y-3 text-center'>
+                        <p className='text-muted-foreground text-sm'>{t('auth.logout.taking_too_long')}</p>
+                        <Button variant='outline' className='w-full' onClick={manualRedirect}>
+                            {t('auth.logout.continue_to_login')}
+                        </Button>
+                    </div>
+                ) : null}
+            </AuthPanel>
+        </AuthPage>
     );
 }

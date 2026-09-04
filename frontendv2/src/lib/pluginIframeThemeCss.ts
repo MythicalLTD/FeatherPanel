@@ -32,23 +32,14 @@ export function getPluginIframeThemeOverrideCss(theme: 'light' | 'dark'): string
                 }
             `;
 
-    // Dark: strip only the outer shell (direct children of body). Inner routes
-    // and cards keep `bg-card` / etc. so typography matches dark theme without
-    // a second opaque slab hiding the panel's custom backdrop.
-    const darkShellTransparency =
-        theme === 'dark'
-            ? `
-                html.dark > body > * {
-                    background: transparent !important;
-                    background-color: transparent !important;
-                    background-image: none !important;
-                }
-            `
-            : '';
+    // Do NOT strip `body > *` backgrounds. Borderless HTML widgets (e.g. Discord
+    // Plus link banner) put their card chrome on a direct body child — wiping it
+    // leaves muted text on the panel backdrop with unreadable contrast.
+    // Framework shells are cleared via the #__next / #app / #__nuxt / #root
+    // selectors below instead.
 
     return `
                 ${colorSchemeBlock}
-                ${darkShellTransparency}
                 [data-fp-theme="light"] {
                     --fp-bg: #ffffff;
                     --fp-fg: #0a0a0a;

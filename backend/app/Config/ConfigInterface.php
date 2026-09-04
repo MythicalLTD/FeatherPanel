@@ -178,6 +178,25 @@ interface ConfigInterface
     public const LOGIN_HIDDEN_METHODS = 'login_hidden_methods';
 
     /**
+     * Auth page chrome / marketing shell (public).
+     */
+    public const AUTH_SHELL_TAGLINE = 'auth_shell_tagline';
+    public const AUTH_ASIDE_TITLE = 'auth_aside_title';
+    public const AUTH_LOGIN_HEADLINE = 'auth_login_headline';
+    public const AUTH_LOGIN_SUBHEADLINE = 'auth_login_subheadline';
+    public const AUTH_REGISTER_HEADLINE = 'auth_register_headline';
+    public const AUTH_REGISTER_SUBHEADLINE = 'auth_register_subheadline';
+    public const AUTH_SSO_HEADLINE = 'auth_sso_headline';
+    public const AUTH_SSO_SUBHEADLINE = 'auth_sso_subheadline';
+    public const AUTH_SHOW_QR_LOGIN = 'auth_show_qr_login';
+    public const AUTH_SHOW_MARKETING_PANEL = 'auth_show_marketing_panel';
+    public const AUTH_ASIDE_IMAGE_URL = 'auth_aside_image_url';
+    public const AUTH_FORM_DENSITY = 'auth_form_density';
+    public const AUTH_SECONDARY_LAYOUT = 'auth_secondary_layout';
+    public const AUTH_SHOW_THEME_CUSTOMIZER = 'auth_show_theme_customizer';
+    public const AUTH_FOOTER_STYLE = 'auth_footer_style';
+
+    /**
      * Telemetry.
      */
     public const TELEMETRY = 'telemetry';

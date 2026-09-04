@@ -72,13 +72,6 @@ import { supportsDaemonFeature, type DaemonFeature } from '@/lib/daemonCapabilit
 
 type TFunction = (key: string) => string;
 
-/** Totals for the signed-in user (game servers include subuser access). Pass only from dashboard shell; omit to always show Servers / VDS links. */
-export type MainNavResourceCounts = {
-    /** Null while loading links stay visible until counts resolve. */
-    gameServersTotal: number | null;
-    vmInstancesTotal: number | null;
-};
-
 export const getAdminNavigationItems = (
     t: TFunction,
     settings: AppSettings | null,
@@ -1005,13 +998,7 @@ export const getMainNavigationItems = (
     t: TFunction,
     settings: AppSettings | null,
     hasPermission: (permission: string) => boolean,
-    resourceCounts?: MainNavResourceCounts,
 ): NavigationItem[] => {
-    const showServersLink =
-        !resourceCounts || resourceCounts.gameServersTotal === null || resourceCounts.gameServersTotal > 0;
-    const showVmsLink =
-        !resourceCounts || resourceCounts.vmInstancesTotal === null || resourceCounts.vmInstancesTotal > 0;
-
     const items: NavigationItem[] = [
         {
             id: 'dashboard',
@@ -1023,10 +1010,7 @@ export const getMainNavigationItems = (
             category: 'main',
             group: 'overview',
         },
-    ];
-
-    if (showServersLink) {
-        items.push({
+        {
             id: 'servers',
             name: t('navigation.items.servers'),
             title: t('navigation.items.servers'),
@@ -1035,11 +1019,8 @@ export const getMainNavigationItems = (
             isActive: false,
             category: 'main',
             group: 'overview',
-        });
-    }
-
-    if (showVmsLink) {
-        items.push({
+        },
+        {
             id: 'vms',
             name: t('navigation.items.virtualServersVds'),
             title: t('navigation.items.virtualServersVds'),
@@ -1048,41 +1029,38 @@ export const getMainNavigationItems = (
             isActive: false,
             category: 'main',
             group: 'overview',
-        });
-    }
-
-    items.push({
-        id: 'webspaces',
-        name: t('navigation.items.webSpaces'),
-        title: t('navigation.items.webSpaces'),
-        url: '/dashboard/webspaces',
-        icon: AppWindow,
-        isActive: false,
-        category: 'main',
-        group: 'overview',
-    });
-
-    items.push({
-        id: 'account',
-        name: t('navigation.items.account'),
-        title: t('navigation.items.account'),
-        url: '/dashboard/account',
-        icon: User,
-        isActive: false,
-        category: 'main',
-        group: 'account',
-    });
-
-    items.push({
-        id: 'preferences',
-        name: t('navigation.items.preferences'),
-        title: t('appearance.settingsMenuTitle'),
-        url: '/dashboard/preferences',
-        icon: Palette,
-        isActive: false,
-        category: 'main',
-        group: 'account',
-    });
+        },
+        {
+            id: 'webspaces',
+            name: t('navigation.items.webSpaces'),
+            title: t('navigation.items.webSpaces'),
+            url: '/dashboard/webspaces',
+            icon: AppWindow,
+            isActive: false,
+            category: 'main',
+            group: 'overview',
+        },
+        {
+            id: 'account',
+            name: t('navigation.items.account'),
+            title: t('navigation.items.account'),
+            url: '/dashboard/account',
+            icon: User,
+            isActive: false,
+            category: 'main',
+            group: 'account',
+        },
+        {
+            id: 'preferences',
+            name: t('navigation.items.preferences'),
+            title: t('appearance.settingsMenuTitle'),
+            url: '/dashboard/preferences',
+            icon: Palette,
+            isActive: false,
+            category: 'main',
+            group: 'account',
+        },
+    ];
 
     if (hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)) {
         items.push({

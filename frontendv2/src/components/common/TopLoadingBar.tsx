@@ -13,79 +13,42 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-/*
-This file is part of FeatherPanel.
-
-Copyright (C) 2025 MythicalSystems Studios
-Copyright (C) 2025 FeatherPanel Contributors
-Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published
-by the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-See the LICENSE file or <https://www.gnu.org/licenses/>.
-*/
-
 'use client';
 
 import { useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { resolveAccentHsl } from '@/lib/accent-colors';
 
 export default function TopLoadingBar() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const [loading, setLoading] = useState(false);
-    const [accentColor] = useState(() => {
+    const [visible, setVisible] = useState(false);
+    const [accentHsl] = useState(() => {
         if (typeof window === 'undefined') return '262 83% 58%';
-
-        const savedAccent = localStorage.getItem('accentColor') || 'purple';
-        const colors: Record<string, string> = {
-            purple: '262 83% 58%',
-            blue: '217 91% 60%',
-            green: '142 71% 45%',
-            red: '0 84% 60%',
-            orange: '25 95% 53%',
-            pink: '330 81% 60%',
-            teal: '173 80% 40%',
-            yellow: '48 96% 53%',
-            white: '210 20% 92%',
-            violet: '270 75% 55%',
-            cyan: '188 78% 41%',
-            lime: '84 69% 35%',
-            amber: '38 92% 50%',
-            rose: '347 77% 50%',
-            slate: '215 20% 45%',
-        };
-        return colors[savedAccent] || colors.purple;
+        return resolveAccentHsl(localStorage.getItem('accentColor') || 'purple');
     });
 
     useEffect(() => {
-        let timeoutId: NodeJS.Timeout;
-        const rafId = requestAnimationFrame(() => {
-            setLoading(true);
-
-            timeoutId = setTimeout(() => {
-                setLoading(false);
-            }, 200);
+        let hideTimer: number | undefined;
+        const showRaf = requestAnimationFrame(() => {
+            setVisible(true);
+            hideTimer = window.setTimeout(() => setVisible(false), 280);
         });
+
         return () => {
-            cancelAnimationFrame(rafId);
-            if (timeoutId) {
-                clearTimeout(timeoutId);
-            }
+            cancelAnimationFrame(showRaf);
+            if (hideTimer) window.clearTimeout(hideTimer);
         };
     }, [pathname, searchParams]);
 
-    if (!loading) return null;
+    if (!visible) return null;
 
     return (
-        <div className='fixed top-0 right-0 left-0 z-[9999] h-1'>
+        <div className='pointer-events-none fixed top-0 right-0 left-0 z-[9999] h-0.5 overflow-hidden'>
             <div
-                className='animate-loading-bar h-full'
+                className='animate-loading-bar h-full w-full'
                 style={{
-                    background: `linear-gradient(90deg, transparent, hsl(${accentColor}), transparent)`,
+                    background: `linear-gradient(90deg, transparent 0%, hsl(${accentHsl}) 45%, hsl(${accentHsl}) 55%, transparent 100%)`,
                     backgroundSize: '200% 100%',
                 }}
             />

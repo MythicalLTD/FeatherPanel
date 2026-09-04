@@ -18,6 +18,7 @@
 namespace App\Controllers\User\Auth;
 
 use App\App;
+use App\Chat\Role;
 use App\Chat\User;
 use App\Chat\Activity;
 use App\Chat\SsoToken;
@@ -321,6 +322,20 @@ class LoginController
             $userInfo['first_ip'] = $app->getIPIntoFBIFormat();
             $userInfo['last_ip'] = $app->getIPIntoFBIFormat();
         }
+
+        // Attach role so clients that hydrate from the login payload match /user/session. CUz it was broken and didn't load shit XD
+        $roleId = $userInfo['role_id'] ?? null;
+        $role = null;
+        if ($roleId && is_numeric($roleId)) {
+            $role = Role::getById((int) $roleId);
+        }
+        $userInfo['role'] = [
+            'name' => $role ? ($role['name'] ?? $roleId) : $roleId,
+            'display_name' => $role ? ($role['display_name'] ?? 'User') : 'User',
+            'custom_badge' => $role ? ($role['custom_badge'] ?? null) : null,
+            'badge_icon' => $role ? ($role['badge_icon'] ?? null) : null,
+            'color' => $role ? ($role['color'] ?? '#666666') : '#666666',
+        ];
 
         // Load user preferences
         $preferences = UserPreference::getPreferences($userInfo['uuid']);

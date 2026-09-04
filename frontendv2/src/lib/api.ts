@@ -150,10 +150,15 @@ const attachCommonResponseInterceptor = (client: AxiosInstance) => {
             // for external credential issues and should not clear the user's panel session.
             const isSessionEndpoint = requestUrl.includes('/api/user/session') || requestUrl.includes('/user/session');
             const isAuthEndpoint = requestUrl.includes('/api/user/auth/') || requestUrl.includes('/user/auth/');
+            // Guest probes on /auth/* (e.g. GET /user/session while logging in) often 400/401.
+            // Clearing cookies there races with a concurrent successful login Set-Cookie and
+            // leaves the SPA on the dashboard with a null session until a hard refresh.
+            const onAuthPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/auth');
             const shouldForceLogout =
-                errorCode === 'INVALID_ACCOUNT_TOKEN' ||
-                errorCode === 'USER_BANNED' ||
-                (status === 401 && (isSessionEndpoint || isAuthEndpoint) && errorCode !== 'TWO_FACTOR_REQUIRED');
+                !onAuthPage &&
+                (errorCode === 'INVALID_ACCOUNT_TOKEN' ||
+                    errorCode === 'USER_BANNED' ||
+                    (status === 401 && (isSessionEndpoint || isAuthEndpoint) && errorCode !== 'TWO_FACTOR_REQUIRED'));
 
             if (shouldForceLogout) {
                 handleAuthStateFailure();

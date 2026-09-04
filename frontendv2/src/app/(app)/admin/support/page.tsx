@@ -41,11 +41,7 @@ export default function AdminSupportPage() {
 
     return (
         <div className='space-y-6'>
-            <PageHeader
-                title={t('admin.support.title')}
-                description={t('admin.support.description')}
-                icon={LifeBuoy}
-            />
+            <PageHeader title={t('admin.support.title')} description={t('admin.support.description')} icon={LifeBuoy} />
 
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as SupportTab)}>
                 <TabsList className='bg-card/30 border-border/50 flex h-auto w-full flex-wrap gap-2 rounded-2xl border p-2'>

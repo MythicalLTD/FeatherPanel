@@ -18,8 +18,10 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { AuthLoadingState, AuthPage, AuthPageHeader, AuthPanel } from '@/components/auth/AuthUi';
 
 export default function VerifyEmailForm() {
     const router = useRouter();
@@ -61,27 +63,27 @@ export default function VerifyEmailForm() {
     }, [token, t]);
 
     if (loading) {
-        return (
-            <div className='py-12 text-center'>
-                <div className='border-primary inline-block h-8 w-8 animate-spin rounded-full border-2 border-t-transparent' />
-                <p className='text-muted-foreground mt-4 text-sm'>{t('auth.verify_email.verifying')}</p>
-            </div>
-        );
+        return <AuthLoadingState label={t('auth.verify_email.verifying')} />;
     }
 
     return (
-        <div className='space-y-6 text-center'>
-            <div className='space-y-2'>
-                <h2
-                    className={`text-2xl font-bold tracking-tight ${success ? 'text-green-600 dark:text-green-400' : 'text-destructive'}`}
-                >
-                    {success ? t('auth.verify_email.success_title') : t('auth.verify_email.failed_title')}
-                </h2>
-                <p className='text-muted-foreground text-sm'>{message}</p>
-            </div>
-            <Button type='button' className='w-full' onClick={() => router.push('/auth/login')}>
-                {t('auth.verify_email.continue_to_login')}
-            </Button>
-        </div>
+        <AuthPage>
+            <AuthPageHeader
+                icon={
+                    success ? (
+                        <CheckCircle2 className='h-6 w-6 text-emerald-500' />
+                    ) : (
+                        <XCircle className='text-destructive h-6 w-6' />
+                    )
+                }
+                title={success ? t('auth.verify_email.success_title') : t('auth.verify_email.failed_title')}
+                subtitle={message}
+            />
+            <AuthPanel>
+                <Button type='button' className='w-full' onClick={() => router.push('/auth/login')}>
+                    {t('auth.verify_email.continue_to_login')}
+                </Button>
+            </AuthPanel>
+        </AuthPage>
     );
 }

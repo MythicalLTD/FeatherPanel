@@ -4,6 +4,9 @@
 
 ### Added 
 
+- Widgets are now a part of the customization system. by @nayskutzu
+- Added full support for progressive web apps (PWA). by @nayskutzu
+- QR Code login was added to the panel for easy access to the panel. by @nayskutzu
 - Plugins can now add WebSpace sidebar pages, widgets, and listen to WebSpace events (`featherpanel:webspace:*`), matching server and VDS plugin integration. by @nayskutzu
 - WebSpaces now appear in the dashboard Resources list (with a WebSpaces filter) and use the left sidebar for navigation like servers and VDS. by @nayskutzu
 - The user WebSpaces list now matches the servers/VMs list UI (search, sort, grid/list). Self-service “Order WebSpace” was removed; admins provision WebSpaces. by @nayskutzu
@@ -37,6 +40,7 @@
 - English translations were improved to not reflect LLM generated text. by @nayskutzu
 - Complete rewrite of the customization system. by @nayskutzu
 - The crash page was improved with a better design and a better message. by @nayskutzu
+- Widget rendering system was improved to more fit the responsive design. by @nayskutzu
 
 ### Fixed
 

@@ -15,31 +15,26 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import TopLoadingBar from '@/components/common/TopLoadingBar';
-import AppPreloader from '@/components/common/AppPreloader';
 import PageTransition from '@/components/common/PageTransition';
 import HackerEasterEgg from '@/components/common/HackerEasterEgg';
 
 export default function AppContent({ children }: { children: React.ReactNode }) {
-    const { initialLoading } = useTranslation();
-    const [forceUnblock, setForceUnblock] = useState(false);
+    const { ready } = useTranslation();
 
     useEffect(() => {
         document.documentElement.dataset.fpHydrated = '1';
     }, []);
 
-    useEffect(() => {
-        if (!initialLoading) return;
-
-        // Guard against indefinite preloader state caused by challenge loops or hanging requests.
-        const timer = window.setTimeout(() => setForceUnblock(true), 12000);
-        return () => window.clearTimeout(timer);
-    }, [initialLoading]);
-
-    if (initialLoading && !forceUnblock) {
-        return <AppPreloader />;
+    // Cold start only (no translation cache yet). Cached visits paint immediately.
+    if (!ready) {
+        return (
+            <div className='bg-background flex min-h-svh items-center justify-center'>
+                <div className='border-muted-foreground/30 border-t-primary h-8 w-8 animate-spin rounded-full border-2' />
+            </div>
+        );
     }
 
     return (

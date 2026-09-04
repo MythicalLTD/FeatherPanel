@@ -17,12 +17,13 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePreferences, useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { Button } from '@/components/featherui/Button';
-import { ShieldCheck, Check, Fingerprint, Pencil, FileText, Clock, Network, Trash2 } from 'lucide-react';
+import { ShieldCheck, Check, Fingerprint, Pencil, FileText, Clock, Network, Trash2, Smartphone } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Captcha } from '@/components/Captcha';
@@ -802,6 +803,19 @@ export default function SettingsTab() {
                 <h3 className='text-foreground text-lg font-semibold'>{t('account.securitySettings')}</h3>
                 <p className='text-muted-foreground mt-1 text-sm'>{t('account.securitySettingsDescription')}</p>
             </div>
+
+            <Link
+                href='/dashboard/account/login-device'
+                className='border-border/50 bg-card/50 hover:border-primary/30 flex items-start gap-4 rounded-lg border p-5 transition-colors'
+            >
+                <div className='bg-primary/10 flex h-12 w-12 shrink-0 items-center justify-center rounded-lg'>
+                    <Smartphone className='text-primary h-6 w-6' />
+                </div>
+                <div className='min-w-0 flex-1'>
+                    <h4 className='text-foreground text-sm font-medium'>{t('account.loginDevice.title')}</h4>
+                    <p className='text-muted-foreground mt-1 text-sm'>{t('account.loginDevice.subtitle')}</p>
+                </div>
+            </Link>
 
             <div className='border-border/50 bg-card/50 rounded-lg border p-6 backdrop-blur-xl'>
                 <div className='flex items-start gap-4'>

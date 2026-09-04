@@ -183,11 +183,13 @@ export default function DashboardPage() {
 
     const {
         hidden,
+        hiddenPluginWidgets,
         leftOrder,
         rightOrder,
         columnsReversed,
         heroAtBottom,
         toggleHidden,
+        toggleHiddenPluginWidget,
         moveInLeft,
         moveInRight,
         removeFromLeft,
@@ -203,6 +205,12 @@ export default function DashboardPage() {
     } = useDashboardLayout();
 
     const [isCustomizing, setIsCustomizing] = useState(false);
+
+    const pluginWidgetProps = {
+        isCustomizing,
+        hiddenWidgets: hiddenPluginWidgets,
+        onToggleHidden: toggleHiddenPluginWidget,
+    };
 
     useEffect(() => {
         fetchWidgets();
@@ -392,7 +400,7 @@ export default function DashboardPage() {
 
     const resourcesSection = (
         <div className='space-y-6'>
-            <WidgetRenderer widgets={getWidgets('dashboard', 'before-server-list')} />
+            <WidgetRenderer widgets={getWidgets('dashboard', 'before-server-list')} {...pluginWidgetProps} />
             <div className='space-y-3'>
                 <h2 className='truncate text-lg font-bold sm:text-xl'>{t('dashboard.resources.title')}</h2>
                 {showResourceFilterTabs ? (
@@ -419,8 +427,14 @@ export default function DashboardPage() {
             </div>
 
             {loadingServers || loadingVms || loadingWebspaces ? (
-                <div className='flex items-center justify-center py-12'>
-                    <Server className='text-muted-foreground h-8 w-8 animate-spin' />
+                <div className='space-y-2.5 py-1' aria-busy='true'>
+                    {[0, 1, 2].map((i) => (
+                        <div
+                            key={i}
+                            className='border-border/40 bg-card/40 h-[3.25rem] rounded-xl border'
+                            style={{ opacity: 1 - i * 0.18 }}
+                        />
+                    ))}
                 </div>
             ) : (
                 <>
@@ -534,7 +548,7 @@ export default function DashboardPage() {
                 </>
             )}
 
-            <WidgetRenderer widgets={getWidgets('dashboard', 'after-server-list')} />
+            <WidgetRenderer widgets={getWidgets('dashboard', 'after-server-list')} {...pluginWidgetProps} />
         </div>
     );
 
@@ -551,8 +565,9 @@ export default function DashboardPage() {
                 <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-6'>
                     <div className='min-w-0 flex-1 space-y-2'>
                         <h1 className='text-foreground text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl'>
-                            {t('dashboard.welcome')}
-                            {user ? `, ${user.first_name}` : ''}
+                            {user
+                                ? `${t('dashboard.welcome').replace(/!+\s*$/, '')}, ${user.first_name}!`
+                                : t('dashboard.welcome')}
                         </h1>
                         <p className='text-muted-foreground max-w-2xl text-sm sm:text-base md:text-lg'>
                             {t('dashboard.subtitle')}
@@ -676,8 +691,16 @@ export default function DashboardPage() {
             </div>
 
             {loadingActivity ? (
-                <div className='flex items-center justify-center py-8'>
-                    <Clock className='text-muted-foreground h-6 w-6 animate-spin' />
+                <div className='space-y-3 py-2' aria-busy='true'>
+                    {[0, 1, 2].map((i) => (
+                        <div key={i} className='flex items-start gap-3' style={{ opacity: 1 - i * 0.2 }}>
+                            <div className='bg-muted/40 mt-0.5 h-8 w-8 shrink-0 rounded-full' />
+                            <div className='min-w-0 flex-1 space-y-2 pt-1'>
+                                <div className='bg-muted/40 h-3 max-w-[12rem] rounded' style={{ width: '75%' }} />
+                                <div className='bg-muted/30 h-2.5 max-w-[8rem] rounded' style={{ width: '50%' }} />
+                            </div>
+                        </div>
+                    ))}
                 </div>
             ) : activities.length > 0 ? (
                 <ActivityFeed activities={activities} formatDate={formatDate} />
@@ -877,7 +900,7 @@ export default function DashboardPage() {
 
     return (
         <div className='space-y-8'>
-            <WidgetRenderer widgets={getWidgets('dashboard', 'top-of-page')} />
+            <WidgetRenderer widgets={getWidgets('dashboard', 'top-of-page')} {...pluginWidgetProps} />
 
             {!heroAtBottom && (
                 <div className={cn('transition-all duration-500', !isVisible('hero', isCustomizing) && 'hidden')}>
@@ -898,7 +921,7 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            <WidgetRenderer widgets={getWidgets('dashboard', 'bottom-of-page')} />
+            <WidgetRenderer widgets={getWidgets('dashboard', 'bottom-of-page')} {...pluginWidgetProps} />
         </div>
     );
 }

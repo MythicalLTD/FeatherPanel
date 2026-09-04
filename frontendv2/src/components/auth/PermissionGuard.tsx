@@ -31,7 +31,7 @@ export default function PermissionGuard({
     permission = PermissionsClass.ADMIN_ROOT,
     fallbackUrl = '/dashboard',
 }: PermissionGuardProps) {
-    const { hasPermission, isSessionChecked, isLoading } = useSession();
+    const { hasPermission, isSessionChecked, isLoading, user } = useSession();
     const router = useRouter();
 
     useEffect(() => {
@@ -41,11 +41,15 @@ export default function PermissionGuard({
     }, [isSessionChecked, isLoading, hasPermission, permission, router, fallbackUrl]);
 
     if (!isSessionChecked || isLoading) {
-        return (
-            <div className='bg-background flex h-screen w-full items-center justify-center'>
-                <div className='border-primary h-12 w-12 animate-spin rounded-full border-2 border-t-transparent' />
-            </div>
-        );
+        // Cached session already hydrated — keep the shell visible while we refresh.
+        if (user) {
+            if (!hasPermission(permission)) {
+                return null;
+            }
+            return <>{children}</>;
+        }
+
+        return null;
     }
 
     if (!hasPermission(permission)) {

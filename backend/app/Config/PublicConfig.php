@@ -101,8 +101,8 @@ class PublicConfig extends ConfigFactory
 
             // PWA Settings
             ConfigInterface::APP_PWA_ENABLED => 'false',
-            ConfigInterface::APP_PWA_SHORT_NAME => 'FeatherPanel',
-            ConfigInterface::APP_PWA_DESCRIPTION => 'Manage your game servers on the go.',
+            ConfigInterface::APP_PWA_SHORT_NAME => '',
+            ConfigInterface::APP_PWA_DESCRIPTION => '',
             ConfigInterface::APP_PWA_THEME_COLOR => '#000000',
             ConfigInterface::APP_PWA_BG_COLOR => '#ffffff',
 
@@ -242,6 +242,22 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::LOGIN_DEFAULT_METHOD => 'local',
             ConfigInterface::LOGIN_METHODS_ORDER => 'local,passkey,ldap,email_code,discord,oidc',
             ConfigInterface::LOGIN_HIDDEN_METHODS => '',
+
+            ConfigInterface::AUTH_SHELL_TAGLINE => '',
+            ConfigInterface::AUTH_ASIDE_TITLE => '',
+            ConfigInterface::AUTH_LOGIN_HEADLINE => '',
+            ConfigInterface::AUTH_LOGIN_SUBHEADLINE => '',
+            ConfigInterface::AUTH_REGISTER_HEADLINE => '',
+            ConfigInterface::AUTH_REGISTER_SUBHEADLINE => '',
+            ConfigInterface::AUTH_SSO_HEADLINE => '',
+            ConfigInterface::AUTH_SSO_SUBHEADLINE => '',
+            ConfigInterface::AUTH_SHOW_QR_LOGIN => 'true',
+            ConfigInterface::AUTH_SHOW_MARKETING_PANEL => 'true',
+            ConfigInterface::AUTH_ASIDE_IMAGE_URL => '',
+            ConfigInterface::AUTH_FORM_DENSITY => 'compact',
+            ConfigInterface::AUTH_SECONDARY_LAYOUT => 'chips',
+            ConfigInterface::AUTH_SHOW_THEME_CUSTOMIZER => 'true',
+            ConfigInterface::AUTH_FOOTER_STYLE => 'full',
         ];
     }
 }

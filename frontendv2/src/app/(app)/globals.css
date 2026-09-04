@@ -272,10 +272,87 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
     animation: fadeInUp 0.4s ease-out forwards;
 }
 
-/* Page shell only: opacity fade avoids transform so fixed sidebar/nav stay viewport-bound */
+/* Discord-style QR login: QR ↔ scanned avatar transition */
+@keyframes qr-pop-in {
+    0% {
+        opacity: 0;
+        transform: scale(0.72);
+    }
+    70% {
+        opacity: 1;
+        transform: scale(1.06);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes qr-ring-pulse {
+    0% {
+        opacity: 0.55;
+        transform: scale(0.92);
+    }
+    70% {
+        opacity: 0;
+        transform: scale(1.35);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.35);
+    }
+}
+
+@keyframes qr-soft-float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+@keyframes qr-check-in {
+    0% {
+        opacity: 0;
+        transform: scale(0.4);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-qr-pop {
+    animation: qr-pop-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-qr-ring {
+    animation: qr-ring-pulse 1.8s ease-out infinite;
+}
+
+.animate-qr-float {
+    animation: qr-soft-float 2.8s ease-in-out infinite;
+}
+
+.animate-qr-check {
+    animation: qr-check-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-qr-pop,
+    .animate-qr-ring,
+    .animate-qr-float,
+    .animate-qr-check {
+        animation: none !important;
+    }
+}
+
+/* Page shell only: soft opacity fade (no transform) so fixed sidebar/nav stay viewport-bound */
 @keyframes pageShellEnter {
     from {
-        opacity: 0;
+        opacity: 0.92;
     }
     to {
         opacity: 1;
@@ -283,11 +360,11 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
 }
 
 .animate-page-shell {
-    animation: pageShellEnter 0.35s ease-out forwards;
+    animation: pageShellEnter 0.16s ease-out forwards;
 }
 
 .animate-page-shell-reduced {
-    animation: pageShellEnter 0.2s ease-out forwards;
+    animation: pageShellEnter 0.1s ease-out forwards;
 }
 
 .animate-scale-in {

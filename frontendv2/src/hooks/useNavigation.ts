@@ -31,7 +31,6 @@ import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useVdsPermissions } from '@/hooks/useVdsPermissions';
 import { useWebSpacePermissions } from '@/hooks/useWebSpacePermissions';
 import { useDeveloperMode } from '@/hooks/useDeveloperMode';
-import { useMainNavResourceCounts } from '@/hooks/useMainNavResourceCounts';
 import { applySidebarCustomization, parseSidebarNavigationConfig, type SidebarScope } from '@/lib/sidebarCustomization';
 import { WebSpaceSubuserPermissions } from '@/lib/webspace-permissions';
 
@@ -53,13 +52,13 @@ const isSpellAllowedForPlugin = (
 
 export function useNavigation() {
     const pathname = usePathname();
-    const { hasPermission, user, isLoading, isSessionChecked } = useSession();
+    const { hasPermission, isLoading, isSessionChecked } = useSession();
     const { settings } = useSettings();
     const { t } = useTranslation();
     const { isDeveloperModeEnabled } = useDeveloperMode();
 
     // Use shared plugin routes hook
-    const pluginRoutes = usePluginRoutes();
+    const { data: pluginRoutes, ready: pluginRoutesReady } = usePluginRoutes();
 
     const isServer = pathname.startsWith('/server/');
     const serverUuid = isServer ? pathname.split('/')[2] : null;
@@ -74,17 +73,6 @@ export function useNavigation() {
     const { hasPermission: hasServerPermission, server } = useServerPermissions(serverUuid || '');
     const { hasPermission: hasVdsPermission } = useVdsPermissions();
     const { hasPermission: hasWebSpacePermission } = useWebSpacePermissions(webspaceUuid || '');
-
-    const mainNavResourceCountsEnabled =
-        isSessionChecked &&
-        !isLoading &&
-        !!user &&
-        !pathname.startsWith('/admin') &&
-        !pathname.startsWith('/server/') &&
-        !pathname.startsWith('/vds/') &&
-        !pathname.startsWith('/webspace/');
-
-    const mainNavResourceCounts = useMainNavResourceCounts(mainNavResourceCountsEnabled, user?.uuid);
 
     // Get server's spell_id for filtering plugin sidebar items
     const serverSpellId = server?.spell_id || null;
@@ -253,8 +241,7 @@ export function useNavigation() {
                 return { ...item, isActive: active };
             });
 
-            // Add Plugin Admin Items
-            if (pluginRoutes?.admin) {
+            if (pluginRoutesReady && pluginRoutes?.admin) {
                 const pluginItems = convertPluginItems(pluginRoutes.admin, 'admin');
                 items.push(...pluginItems);
             }
@@ -282,8 +269,7 @@ export function useNavigation() {
                 isActive: checkActive(item.url),
             }));
 
-            // Add Server Plugin Items
-            if (pluginRoutes?.server) {
+            if (pluginRoutesReady && pluginRoutes?.server) {
                 const serverPlugins = convertPluginItems(
                     pluginRoutes.server,
                     'server',
@@ -310,7 +296,7 @@ export function useNavigation() {
                 isActive: checkActive(item.url, item.url === `/vds/${vdsId}`),
             }));
 
-            if (pluginRoutes?.vds) {
+            if (pluginRoutesReady && pluginRoutes?.vds) {
                 const vdsPlugins = convertPluginItems(pluginRoutes.vds, 'vds', undefined, vdsId);
                 items.push(...vdsPlugins);
             }
@@ -325,7 +311,7 @@ export function useNavigation() {
                 isActive: checkActive(item.url, item.url === `/webspace/${webspaceUuid}`),
             }));
 
-            if (pluginRoutes?.webspace) {
+            if (pluginRoutesReady && pluginRoutes?.webspace) {
                 const webspacePlugins = convertPluginItems(
                     pluginRoutes.webspace,
                     'webspace',
@@ -347,15 +333,15 @@ export function useNavigation() {
         }
 
         // MAIN NAVIGATION
-        let items = getMainNavigationItems(t, settings, hasPermission, mainNavResourceCounts);
+        // Wait for plugin sidebar to settle so plugin links don't pop in after first paint.
+        let items = getMainNavigationItems(t, settings, hasPermission);
 
         items = items.map((item) => ({
             ...item,
             isActive: checkActive(item.url, item.url === '/dashboard'),
         }));
 
-        // Add Plugin Items
-        if (pluginRoutes?.client) {
+        if (pluginRoutesReady && pluginRoutes?.client) {
             const pluginItems = convertPluginItems(pluginRoutes.client, 'main');
             items.push(...pluginItems);
         }
@@ -371,6 +357,7 @@ export function useNavigation() {
         pathname,
         hasPermission,
         pluginRoutes,
+        pluginRoutesReady,
         convertPluginItems,
         settings,
         t,
@@ -387,8 +374,10 @@ export function useNavigation() {
         isWebspace,
         webspaceUuid,
         hasWebSpacePermission,
-        mainNavResourceCounts,
     ]);
 
-    return { navigationItems };
+    // Session is enough to show a useful sidebar; plugins may append once when ready.
+    const navReady = isSessionChecked && !isLoading;
+
+    return { navigationItems, navReady };
 }

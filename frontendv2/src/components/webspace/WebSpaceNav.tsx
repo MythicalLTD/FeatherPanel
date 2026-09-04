@@ -75,7 +75,7 @@ export function WebSpaceNav() {
     const uuidShort = String(params.uuidShort || '');
     const base = `/webspace/${uuidShort}`;
     const { hasPermission, webspace } = useWebSpacePermissions(uuidShort);
-    const pluginRoutes = usePluginRoutes();
+    const { data: pluginRoutes } = usePluginRoutes();
     const showAppsTab = hasWebSpaceApps(webspace?.webplate_runtime, webspace?.available_apps);
 
     const tabs = useMemo(() => {

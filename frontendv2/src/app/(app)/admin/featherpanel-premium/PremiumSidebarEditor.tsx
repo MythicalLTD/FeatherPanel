@@ -70,7 +70,7 @@ export function PremiumSidebarEditor({ config, onConfigChange }: Props) {
     const { settings } = useSettings();
     const { hasPermission } = useSession();
     const { isDeveloperModeEnabled } = useDeveloperMode();
-    const pluginRoutes = usePluginRoutes();
+    const { data: pluginRoutes } = usePluginRoutes();
     const [scope, setScope] = useState<SidebarScope>('admin');
 
     const catalog = useMemo(() => {

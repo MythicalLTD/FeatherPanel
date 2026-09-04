@@ -24,7 +24,7 @@ import { Select } from '@/components/ui/select-native';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSession } from '@/contexts/SessionContext';
-import { Mail, Lock, ArrowRight, KeyRound, ArrowLeft, Fingerprint, Network } from 'lucide-react';
+import { Mail, Lock, ArrowRight, KeyRound, ArrowLeft, Fingerprint, Network, Building2 } from 'lucide-react';
 import { Captcha } from '@/components/Captcha';
 import { isCaptchaConfigured, isRecaptchaV3Configured, obtainCaptchaResponseToken } from '@/lib/captchaGate';
 import { startAuthentication } from '@simplewebauthn/browser';
@@ -32,6 +32,9 @@ import { authApi } from '@/lib/api/auth';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { AuthLegalNotice } from '@/components/auth/AuthLegalNotice';
+import LoginQrPanel from '@/components/auth/LoginQrPanel';
+import { AuthAlert, AuthFooterPrompt, AuthHeroCard, AuthLoadingState, AuthPageHeader } from '@/components/auth/AuthUi';
+import { authFormGapClass, authPageGapClass, parseAuthFormDensity } from '@/lib/authPageConfig';
 import {
     buildLoginMethodAvailability,
     buildLoginPageLayout,
@@ -40,10 +43,15 @@ import {
     parseLoginMethodsOrder,
     type LoginMethodId,
 } from '@/lib/loginPageConfig';
+import { cn } from '@/lib/utils';
 
 /** Reject protocol-relative URLs (e.g. `//evil.com`) while allowing same-origin paths. */
 function isSafeInternalRedirectPath(redirect: string | null): redirect is string {
     return Boolean(redirect && redirect.startsWith('/') && !redirect.startsWith('//'));
+}
+
+function resolvePostLoginPath(redirect: string | null): string {
+    return isSafeInternalRedirectPath(redirect) ? redirect : '/dashboard';
 }
 
 export default function LoginForm() {
@@ -55,6 +63,50 @@ export default function LoginForm() {
     const { fetchSession } = useSession();
     const { getWidgets, fetchWidgets } = usePluginWidgets('auth-login');
     const loginFormsRootRef = useRef<HTMLDivElement | null>(null);
+    /** QR is desktop-only — mounting it on phones starts useless challenges and wrecks the layout. */
+    const [isDesktopLayout, setIsDesktopLayout] = useState(false);
+
+    const formDensity = parseAuthFormDensity(settings?.auth_form_density);
+    const qrEnabled = settings?.auth_show_qr_login !== 'false';
+    const loginHeadline = settings?.auth_login_headline?.trim() || '';
+    const loginSubheadline = settings?.auth_login_subheadline?.trim() || '';
+    const pageGap = authPageGapClass(formDensity);
+    const formGap = authFormGapClass(formDensity);
+
+    useEffect(() => {
+        const mq = window.matchMedia('(min-width: 768px)');
+        const apply = () => setIsDesktopLayout(mq.matches);
+        apply();
+        mq.addEventListener('change', apply);
+        return () => mq.removeEventListener('change', apply);
+    }, []);
+
+    /** Load session after Set-Cookie; soft-nav if ready, otherwise full reload. */
+    const completeLoginNavigation = async (options?: { delayMs?: number; hardNavigate?: boolean }) => {
+        const delayMs = options?.delayMs ?? 0;
+        const hardNavigate = options?.hardNavigate === true;
+        const target = resolvePostLoginPath(searchParams.get('redirect'));
+
+        let ok = await fetchSession(true);
+        if (!ok) {
+            await new Promise((resolve) => setTimeout(resolve, 250));
+            ok = await fetchSession(true);
+        }
+
+        const navigate = () => {
+            if (hardNavigate || !ok) {
+                window.location.assign(target);
+            } else {
+                router.push(target);
+            }
+        };
+
+        if (delayMs > 0) {
+            setTimeout(navigate, delayMs);
+        } else {
+            navigate();
+        }
+    };
 
     useEffect(() => {
         fetchWidgets();
@@ -154,21 +206,25 @@ export default function LoginForm() {
         if (!error) return null;
 
         return (
-            <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
-                <p>{error}</p>
-                {unverifiedIdentifier && (
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='sm'
-                        className='mt-3 w-full'
-                        loading={resendVerificationLoading}
-                        onClick={handleResendVerificationEmail}
-                    >
-                        {t('auth.verify_email.resend')}
-                    </Button>
-                )}
-            </div>
+            <AuthAlert
+                variant='error'
+                action={
+                    unverifiedIdentifier ? (
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            className='w-full'
+                            loading={resendVerificationLoading}
+                            onClick={handleResendVerificationEmail}
+                        >
+                            {t('auth.verify_email.resend')}
+                        </Button>
+                    ) : undefined
+                }
+            >
+                {error}
+            </AuthAlert>
         );
     };
 
@@ -199,17 +255,7 @@ export default function LoginForm() {
                 }
 
                 setSuccess(t('common.success'));
-
-                await fetchSession(true);
-
-                setTimeout(() => {
-                    const redirect = searchParams.get('redirect');
-                    if (isSafeInternalRedirectPath(redirect)) {
-                        router.push(redirect);
-                    } else {
-                        router.push('/dashboard');
-                    }
-                }, 1000);
+                await completeLoginNavigation({ delayMs: 1000 });
             } else {
                 if (response.error_code === 'EMAIL_NOT_VERIFIED') {
                     setUnverifiedIdentifier(usernameOrEmail);
@@ -281,9 +327,7 @@ export default function LoginForm() {
                 .then(async (response) => {
                     if (response.success) {
                         setSuccess(response.message || t('auth.loginSuccess'));
-                        await fetchSession(true);
-                        const redirect = searchParams.get('redirect');
-                        location.href = isSafeInternalRedirectPath(redirect) ? redirect : '/dashboard';
+                        await completeLoginNavigation({ hardNavigate: true });
                     } else {
                         setIsDiscordLogin(false);
                         setError(response.message || t('common.error'));
@@ -322,10 +366,7 @@ export default function LoginForm() {
 
             if (response.success) {
                 setSuccess(response.message || t('auth.loginSuccess'));
-                await fetchSession(true);
-
-                const redirect = searchParams.get('redirect');
-                location.href = isSafeInternalRedirectPath(redirect) ? redirect : '/dashboard';
+                await completeLoginNavigation({ hardNavigate: true });
             } else {
                 setIsSsoLogin(false);
                 setError(response.message || t('common.error'));
@@ -367,9 +408,7 @@ export default function LoginForm() {
 
             if (response.success) {
                 setSuccess(t('auth.discordLinking.success'));
-                setTimeout(() => {
-                    router.push('/dashboard');
-                }, 1500);
+                await completeLoginNavigation({ delayMs: 1500 });
             } else {
                 setError(response.message || t('common.error'));
             }
@@ -436,16 +475,7 @@ export default function LoginForm() {
 
             if (json.success) {
                 setSuccess(t('common.success'));
-                await fetchSession(true);
-
-                setTimeout(() => {
-                    const redirect = searchParams.get('redirect');
-                    if (isSafeInternalRedirectPath(redirect)) {
-                        router.push(redirect);
-                    } else {
-                        router.push('/dashboard');
-                    }
-                }, 1000);
+                await completeLoginNavigation({ delayMs: 1000 });
             } else {
                 setError(json.message || t('common.error'));
 
@@ -550,16 +580,7 @@ export default function LoginForm() {
 
             if (response.success) {
                 setSuccess(t('auth.login.success'));
-                await fetchSession(true);
-
-                setTimeout(() => {
-                    const redirect = searchParams.get('redirect');
-                    if (isSafeInternalRedirectPath(redirect)) {
-                        router.push(redirect);
-                    } else {
-                        router.push('/dashboard');
-                    }
-                }, 1000);
+                await completeLoginNavigation({ delayMs: 1000 });
             } else {
                 setError(response.message || t('common.error'));
             }
@@ -667,15 +688,7 @@ export default function LoginForm() {
             });
             if (vr.success) {
                 setSuccess(t('common.success'));
-                await fetchSession(true);
-                setTimeout(() => {
-                    const redirect = searchParams.get('redirect');
-                    if (isSafeInternalRedirectPath(redirect)) {
-                        router.push(redirect);
-                    } else {
-                        router.push('/dashboard');
-                    }
-                }, 800);
+                await completeLoginNavigation({ delayMs: 800 });
             } else if (!silent) {
                 setError(vr.message || t('common.error'));
             }
@@ -816,7 +829,7 @@ export default function LoginForm() {
             return null;
         }
         return (
-            <div className='border-border/60 bg-muted/15 w-full rounded-xl border px-4 py-3'>
+            <div className='border-border/50 bg-muted/10 w-full rounded-lg border px-3 py-2'>
                 <Captcha
                     layout='auth'
                     refreshKey={turnstileKey}
@@ -832,26 +845,21 @@ export default function LoginForm() {
         );
     };
 
+    /** Compact Discord-style alt method chips; override Button `sm` uppercase. */
+    const methodBtnClass =
+        'h-9 w-full justify-center gap-1.5 rounded-md border border-border/60 bg-muted/40 px-2.5 text-xs font-semibold normal-case tracking-normal text-foreground shadow-none hover:bg-muted/70';
+
     const renderLdapLoginButton = (className = '') => (
         <Button
             type='button'
             variant='outline'
-            className={`group h-auto w-full !justify-between px-3 py-3 text-left ${className}`}
+            size='sm'
+            className={`${methodBtnClass} ${className}`}
             disabled={loading}
             onClick={() => setPrimaryPanel('ldap')}
         >
-            <span className='flex min-w-0 items-center gap-3'>
-                <span className='bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
-                    <Network className='h-4 w-4' />
-                </span>
-                <span className='min-w-0 text-left'>
-                    <span className='text-foreground block text-sm font-semibold'>{t('auth.login.ldapLogin')}</span>
-                    <span className='text-muted-foreground block truncate text-xs font-normal'>
-                        {t('auth.login.ldapLoginDescription')}
-                    </span>
-                </span>
-            </span>
-            <ArrowRight className='text-muted-foreground group-hover:text-primary h-4 w-4 shrink-0 transition-colors' />
+            <Network className='h-3.5 w-3.5 shrink-0 opacity-80' />
+            {t('auth.login.ldapLogin')}
         </Button>
     );
 
@@ -859,22 +867,13 @@ export default function LoginForm() {
         <Button
             type='button'
             variant='outline'
-            className='group h-auto w-full !justify-between px-3 py-3 text-left'
+            size='sm'
+            className={methodBtnClass}
             disabled={loading}
             onClick={() => setPrimaryPanel('local')}
         >
-            <span className='flex min-w-0 items-center gap-3'>
-                <span className='bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
-                    <Lock className='h-4 w-4' />
-                </span>
-                <span className='min-w-0 text-left'>
-                    <span className='text-foreground block text-sm font-semibold'>{t('auth.login.passwordLogin')}</span>
-                    <span className='text-muted-foreground block truncate text-xs font-normal'>
-                        {t('auth.login.continue_with_password')}
-                    </span>
-                </span>
-            </span>
-            <ArrowRight className='text-muted-foreground group-hover:text-primary h-4 w-4 shrink-0 transition-colors' />
+            <Lock className='h-3.5 w-3.5 shrink-0 opacity-80' />
+            {t('auth.login.passwordLogin')}
         </Button>
     );
 
@@ -882,7 +881,8 @@ export default function LoginForm() {
         <Button
             type='button'
             variant='outline'
-            className='group h-auto w-full !justify-between px-3 py-3 text-left'
+            size='sm'
+            className={methodBtnClass}
             disabled={loading}
             onClick={() => {
                 if (showCaptcha && !isRecaptchaV3Configured(settings) && !form.turnstile_token.trim()) {
@@ -897,20 +897,8 @@ export default function LoginForm() {
                 setShowEmailLogin(true);
             }}
         >
-            <span className='flex min-w-0 items-center gap-3'>
-                <span className='bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
-                    <KeyRound className='h-4 w-4' />
-                </span>
-                <span className='min-w-0 text-left'>
-                    <span className='text-foreground block text-sm font-semibold'>
-                        {t('auth.login.requestLoginCode')}
-                    </span>
-                    <span className='text-muted-foreground block truncate text-xs font-normal'>
-                        {t('auth.emailLogin.title')}
-                    </span>
-                </span>
-            </span>
-            <ArrowRight className='text-muted-foreground group-hover:text-primary h-4 w-4 shrink-0 transition-colors' />
+            <KeyRound className='h-3.5 w-3.5 shrink-0 opacity-80' />
+            {t('auth.login.emailLogin')}
         </Button>
     );
 
@@ -920,91 +908,52 @@ export default function LoginForm() {
     ) => {
         switch (methodId) {
             case 'ldap':
-                return <div key='ldap'>{renderLdapLoginButton()}</div>;
+                return (
+                    <div key='ldap' className='contents'>
+                        {renderLdapLoginButton()}
+                    </div>
+                );
             case 'local':
-                return <div key='local'>{renderSwitchToLocalButton()}</div>;
+                return (
+                    <div key='local' className='contents'>
+                        {renderSwitchToLocalButton()}
+                    </div>
+                );
             case 'passkey':
-                if (options?.compact) {
-                    if (!hasPasskeys) {
-                        return null;
-                    }
-                    return (
-                        <Button
-                            key='passkey'
-                            type='button'
-                            variant='outline'
-                            size='sm'
-                            className='min-w-36'
-                            disabled={loading}
-                            onClick={() => void runPasskeyAuthentication(options.passkeyUsername ?? identifierValue)}
-                        >
-                            <Fingerprint className='mr-2 h-4 w-4' />
-                            {t('auth.passkey.signIn')}
-                        </Button>
-                    );
+                // Method-step compact: only offer passkey when this account has one.
+                if (options?.passkeyUsername !== undefined && !hasPasskeys) {
+                    return null;
                 }
                 return (
                     <Button
                         key='passkey'
                         type='button'
                         variant='outline'
-                        className='group h-auto w-full !justify-between px-3 py-3 text-left'
+                        size='sm'
+                        className={methodBtnClass}
                         disabled={loading}
                         onClick={() => {
                             const u = (options?.passkeyUsername ?? form.username_or_email ?? '').trim();
                             void runPasskeyAuthentication(u || undefined);
                         }}
                     >
-                        <span className='flex min-w-0 items-center gap-3'>
-                            <span className='bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
-                                <Fingerprint className='h-4 w-4' />
-                            </span>
-                            <span className='min-w-0 text-left'>
-                                <span className='text-foreground block text-sm font-semibold'>
-                                    {t('auth.passkey.signIn')}
-                                </span>
-                                <span className='text-muted-foreground block truncate text-xs font-normal'>
-                                    {t('auth.passkey.description')}
-                                </span>
-                            </span>
-                        </span>
-                        <ArrowRight className='text-muted-foreground group-hover:text-primary h-4 w-4 shrink-0 transition-colors' />
+                        <Fingerprint className='h-3.5 w-3.5 shrink-0 opacity-80' />
+                        {t('auth.passkey.signIn')}
                     </Button>
                 );
             case 'email_code':
                 if (!emailLoginEnabled) {
                     return null;
                 }
-                if (options?.compact) {
-                    if (!options.showEmailCode) {
-                        return null;
-                    }
-                    return (
-                        <Button
-                            key='email_code'
-                            type='button'
-                            variant='outline'
-                            size='sm'
-                            className='min-w-36'
-                            disabled={loading}
-                            onClick={() => {
-                                if (showCaptcha && !isRecaptchaV3Configured(settings) && !form.turnstile_token.trim()) {
-                                    setError(t('validation.captcha_required'));
-                                    return;
-                                }
-                                setEmailLoginForm((prev) => ({
-                                    ...prev,
-                                    email: identifierValue,
-                                }));
-                                setShowEmailLogin(true);
-                            }}
-                        >
-                            <KeyRound className='mr-2 h-4 w-4' />
-                            {t('auth.login.requestLoginCode')}
-                        </Button>
-                    );
+                // Method-step: only offer email code when identifier looks like an email.
+                if (options?.showEmailCode === false) {
+                    return null;
                 }
-                return <div key='email_code'>{renderSwitchToEmailCodeButton()}</div>;
+                return (
+                    <div key='email_code' className='contents'>
+                        {renderSwitchToEmailCodeButton()}
+                    </div>
+                );
             case 'discord':
                 if (!discordEnabled) {
                     return null;
@@ -1014,11 +963,12 @@ export default function LoginForm() {
                         key='discord'
                         type='button'
                         variant='outline'
-                        className='w-full'
+                        size='sm'
+                        className={methodBtnClass}
                         disabled={loading}
                         onClick={handleDiscordLogin}
                     >
-                        <svg className='mr-2 h-5 w-5' viewBox='0 0 24 24' fill='currentColor'>
+                        <svg className='h-3.5 w-3.5 shrink-0' viewBox='0 0 24 24' fill='currentColor' aria-hidden>
                             <path d='M20.317 4.369a19.791 19.791 0 00-4.885-1.515.07.07 0 00-.075.035 13.812 13.812 0 00-.605 1.246 18.016 18.016 0 00-5.427 0 12.217 12.217 0 00-.617-1.246.064.064 0 00-.075-.035c-1.724.285-3.362.83-4.885 1.515a.06.06 0 00-.024.022C.533 8.059-.32 11.591.099 15.08a.078.078 0 00.028.055 20.53 20.53 0 006.104 3.108.073.073 0 00.078-.023c.472-.651.889-1.341 1.246-2.065a.07.07 0 00-.038-.094 13.235 13.235 0 01-1.885-.884.07.07 0 01-.007-.117c.126-.094.252-.192.374-.291a.06.06 0 01.061-.011c3.927 1.792 8.18 1.792 12.061 0a.062.062 0 01.063.008c.122.099.248.197.374.291a.07.07 0 01-.006.117 12.298 12.298 0 01-1.885.883.07.07 0 00-.038.095c.36.723.777 1.413 1.246 2.064a.073.073 0 00.078.023 20.477 20.477 0 006.105-3.107.075.075 0 00.028-.055c.5-4.101-.838-7.597-3.548-10.692a.061.061 0 00-.024-.023zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.949-2.418 2.157-2.418 1.222 0 2.172 1.101 2.157 2.418 0 1.334-.949 2.419-2.157 2.419zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.948-2.418 2.157-2.418 1.221 0 2.171 1.101 2.157 2.418 0 1.334-.936 2.419-2.157 2.419z' />
                         </svg>
                         {t('auth.login.discord')}
@@ -1029,16 +979,18 @@ export default function LoginForm() {
                     return null;
                 }
                 return (
-                    <div key='oidc' className='flex flex-col gap-2'>
+                    <div key='oidc' className='contents'>
                         {oidcProviders.map((provider) => (
                             <Button
                                 key={provider.uuid}
                                 type='button'
                                 variant='outline'
-                                className='w-full'
+                                size='sm'
+                                className={methodBtnClass}
                                 disabled={loading}
                                 onClick={() => handleOidcLogin(provider.uuid)}
                             >
+                                <Building2 className='h-3.5 w-3.5 shrink-0 opacity-80' />
                                 {provider.name}
                             </Button>
                         ))}
@@ -1059,9 +1011,9 @@ export default function LoginForm() {
         const nodes = methods
             .map((id) =>
                 renderAltLoginMethod(id, {
-                    compact: options?.compact,
+                    compact: options?.compact ?? true,
                     passkeyUsername: options?.passkeyUsername,
-                    showEmailCode: options?.showEmailCode,
+                    showEmailCode: options?.showEmailCode ?? true,
                 }),
             )
             .filter((node) => node !== null);
@@ -1071,314 +1023,173 @@ export default function LoginForm() {
         }
 
         return (
-            <div className='border-border/70 flex flex-col gap-2 border-t pt-3'>
-                <p className='text-muted-foreground text-center text-[11px] font-medium tracking-wide'>
-                    {t('auth.login.or')}
-                </p>
-                <div className={options?.compact ? 'flex flex-wrap justify-center gap-2' : 'flex flex-col gap-2'}>
+            <div className='w-full space-y-3'>
+                <div className='flex items-center gap-3'>
+                    <div className='bg-border/70 h-px flex-1' />
+                    <span className='text-muted-foreground text-[11px] font-semibold tracking-wide uppercase'>
+                        {t('auth.login.or')}
+                    </span>
+                    <div className='bg-border/70 h-px flex-1' />
+                </div>
+                <div className='grid grid-cols-1 gap-2 min-[380px]:grid-cols-2 [&>*:last-child:nth-child(odd)]:min-[380px]:col-span-2'>
                     {nodes}
                 </div>
             </div>
         );
     };
 
-    const renderOidcPrimaryPanel = () => (
-        <div className='space-y-4'>
-            <div className='border-primary/20 bg-primary/5 rounded-2xl border p-4'>
-                <p className='text-muted-foreground text-sm'>{t('auth.login.sso')}</p>
-            </div>
-            {oidcProviders.map((provider) => (
-                <Button
-                    key={provider.uuid}
-                    type='button'
-                    variant='outline'
-                    className='w-full'
-                    disabled={loading}
-                    onClick={() => handleOidcLogin(provider.uuid)}
-                >
-                    {provider.name}
-                </Button>
-            ))}
-            {renderLoginSecondarySection()}
-        </div>
-    );
+    const renderOidcPrimaryPanel = () => {
+        const ssoHeadline = settings?.auth_sso_headline?.trim() || t('auth.sso.headline');
+        const ssoSubtitle = settings?.auth_sso_subheadline?.trim() || t('auth.sso.subtitle');
 
-    const renderDiscordPrimaryPanel = () => (
-        <div className='space-y-4'>
-            <Button type='button' variant='outline' className='w-full' disabled={loading} onClick={handleDiscordLogin}>
-                <svg className='mr-2 h-5 w-5' viewBox='0 0 24 24' fill='currentColor'>
-                    <path d='M20.317 4.369a19.791 19.791 0 00-4.885-1.515.07.07 0 00-.075.035 13.812 13.812 0 00-.605 1.246 18.016 18.016 0 00-5.427 0 12.217 12.217 0 00-.617-1.246.064.064 0 00-.075-.035c-1.724.285-3.362.83-4.885 1.515a.06.06 0 00-.024.022C.533 8.059-.32 11.591.099 15.08a.078.078 0 00.028.055 20.53 20.53 0 006.104 3.108.073.073 0 00.078-.023c.472-.651.889-1.341 1.246-2.065a.07.07 0 00-.038-.094 13.235 13.235 0 01-1.885-.884.07.07 0 01-.007-.117c.126-.094.252-.192.374-.291a.06.06 0 01.061-.011c3.927 1.792 8.18 1.792 12.061 0a.062.062 0 01.063.008c.122.099.248.197.374.291a.07.07 0 01-.006.117 12.298 12.298 0 01-1.885.883.07.07 0 00-.038.095c.36.723.777 1.413 1.246 2.064a.073.073 0 00.078.023 20.477 20.477 0 006.105-3.107.075.075 0 00.028-.055c.5-4.101-.838-7.597-3.548-10.692a.061.061 0 00-.024-.023zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.949-2.418 2.157-2.418 1.222 0 2.172 1.101 2.157 2.418 0 1.334-.949 2.419-2.157 2.419zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.948-2.418 2.157-2.418 1.221 0 2.171 1.101 2.157 2.418 0 1.334-.936 2.419-2.157 2.419z' />
-                </svg>
-                {t('auth.login.discord')}
-            </Button>
-            {renderLoginSecondarySection()}
-        </div>
-    );
+        return (
+            <div className='space-y-4'>
+                <AuthHeroCard icon={<Building2 className='h-6 w-6' />} title={ssoHeadline} subtitle={ssoSubtitle} />
+
+                <div className='space-y-2'>
+                    <p className='text-muted-foreground text-center text-[10px] font-medium tracking-[0.14em] uppercase'>
+                        {t('auth.sso.chooseProvider')}
+                    </p>
+                    {oidcProviders.map((provider) => (
+                        <Button
+                            key={provider.uuid}
+                            type='button'
+                            className='group h-12 w-full justify-between px-4 text-left'
+                            disabled={loading}
+                            onClick={() => handleOidcLogin(provider.uuid)}
+                        >
+                            <span className='flex min-w-0 items-center gap-3'>
+                                <span className='bg-background/20 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold'>
+                                    {provider.name.slice(0, 1).toUpperCase()}
+                                </span>
+                                <span className='truncate font-semibold'>
+                                    {t('auth.sso.continueWith', { provider: provider.name })}
+                                </span>
+                            </span>
+                            <ArrowRight className='h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5' />
+                        </Button>
+                    ))}
+                </div>
+
+                {renderLoginSecondarySection()}
+            </div>
+        );
+    };
+
+    const renderDiscordPrimaryPanel = () => {
+        const ssoHeadline = settings?.auth_sso_headline?.trim() || t('auth.sso.discordHeadline');
+        const ssoSubtitle = settings?.auth_sso_subheadline?.trim() || t('auth.sso.discordSubtitle');
+
+        return (
+            <div className='space-y-4'>
+                <AuthHeroCard
+                    tone='discord'
+                    icon={
+                        <svg className='h-6 w-6' viewBox='0 0 24 24' fill='currentColor' aria-hidden>
+                            <path d='M20.317 4.369a19.791 19.791 0 00-4.885-1.515.07.07 0 00-.075.035 13.812 13.812 0 00-.605 1.246 18.016 18.016 0 00-5.427 0 12.217 12.217 0 00-.617-1.246.064.064 0 00-.075-.035c-1.724.285-3.362.83-4.885 1.515a.06.06 0 00-.024.022C.533 8.059-.32 11.591.099 15.08a.078.078 0 00.028.055 20.53 20.53 0 006.104 3.108.073.073 0 00.078-.023c.472-.651.889-1.341 1.246-2.065a.07.07 0 00-.038-.094 13.235 13.235 0 01-1.885-.884.07.07 0 01-.007-.117c.126-.094.252-.192.374-.291a.06.06 0 01.061-.011c3.927 1.792 8.18 1.792 12.061 0a.062.062 0 01.063.008c.122.099.248.197.374.291a.07.07 0 01-.006.117 12.298 12.298 0 01-1.885.883.07.07 0 00-.038.095c.36.723.777 1.413 1.246 2.064a.073.073 0 00.078.023 20.477 20.477 0 006.105-3.107.075.075 0 00.028-.055c.5-4.101-.838-7.597-3.548-10.692a.061.061 0 00-.024-.023zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.949-2.418 2.157-2.418 1.222 0 2.172 1.101 2.157 2.418 0 1.334-.949 2.419-2.157 2.419zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.948-2.418 2.157-2.418 1.221 0 2.171 1.101 2.157 2.418 0 1.334-.936 2.419-2.157 2.419z' />
+                        </svg>
+                    }
+                    title={ssoHeadline}
+                    subtitle={ssoSubtitle}
+                />
+
+                <Button
+                    type='button'
+                    className='group h-12 w-full justify-between bg-[#5865F2] px-4 text-white hover:bg-[#4752C4]'
+                    disabled={loading}
+                    onClick={handleDiscordLogin}
+                >
+                    <span className='flex items-center gap-3'>
+                        <svg className='h-5 w-5' viewBox='0 0 24 24' fill='currentColor' aria-hidden>
+                            <path d='M20.317 4.369a19.791 19.791 0 00-4.885-1.515.07.07 0 00-.075.035 13.812 13.812 0 00-.605 1.246 18.016 18.016 0 00-5.427 0 12.217 12.217 0 00-.617-1.246.064.064 0 00-.075-.035c-1.724.285-3.362.83-4.885 1.515a.06.06 0 00-.024.022C.533 8.059-.32 11.591.099 15.08a.078.078 0 00.028.055 20.53 20.53 0 006.104 3.108.073.073 0 00.078-.023c.472-.651.889-1.341 1.246-2.065a.07.07 0 00-.038-.094 13.235 13.235 0 01-1.885-.884.07.07 0 01-.007-.117c.126-.094.252-.192.374-.291a.06.06 0 01.061-.011c3.927 1.792 8.18 1.792 12.061 0a.062.062 0 01.063.008c.122.099.248.197.374.291a.07.07 0 01-.006.117 12.298 12.298 0 01-1.885.883.07.07 0 00-.038.095c.36.723.777 1.413 1.246 2.064a.073.073 0 00.078.023 20.477 20.477 0 006.105-3.107.075.075 0 00.028-.055c.5-4.101-.838-7.597-3.548-10.692a.061.061 0 00-.024-.023zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.949-2.418 2.157-2.418 1.222 0 2.172 1.101 2.157 2.418 0 1.334-.949 2.419-2.157 2.419zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.948-2.418 2.157-2.418 1.221 0 2.171 1.101 2.157 2.418 0 1.334-.936 2.419-2.157 2.419z' />
+                        </svg>
+                        <span className='font-semibold'>{t('auth.login.discord')}</span>
+                    </span>
+                    <ArrowRight className='h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5' />
+                </Button>
+
+                {renderLoginSecondarySection()}
+            </div>
+        );
+    };
+
+    const showQrLogin = qrEnabled && isDesktopLayout && !isSsoLogin && !isDiscordLogin && !discordLinkToken;
+
+    const defaultLoginTitle = discordLinkToken
+        ? t('auth.discordLinking.title')
+        : isLoginMethodPasswordStep
+          ? t('auth.login.welcome_back')
+          : isEmailLoginVerifyStep
+            ? t('auth.emailLogin.enterCode')
+            : t('auth.login.title');
+    const defaultLoginSubtitle = discordLinkToken
+        ? t('auth.discordLinking.subtitle')
+        : isLoginMethodPasswordStep
+          ? isEmail
+              ? identifierValue
+              : t('auth.login.continue_with_password')
+          : isEmailLoginVerifyStep
+            ? t('auth.emailLogin.codeSentTo', { email: emailForLoginCodeSubtitle })
+            : t('auth.login.subtitle');
 
     return (
-        <div ref={loginFormsRootRef} className='space-y-6'>
+        <div ref={loginFormsRootRef} className='w-full'>
             <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-top')} />
 
-            {!isSsoLogin && !isDiscordLogin && (
-                <div className='space-y-2 text-center'>
-                    <h2 className='from-foreground via-foreground to-primary bg-linear-to-r bg-clip-text text-2xl font-bold tracking-tight text-transparent'>
-                        {discordLinkToken
-                            ? t('auth.discordLinking.title')
-                            : isLoginMethodPasswordStep
-                              ? t('auth.login.welcome_back')
-                              : isEmailLoginVerifyStep
-                                ? t('auth.emailLogin.enterCode')
-                                : t('auth.login.title')}
-                    </h2>
-                    <p className='text-muted-foreground text-sm'>
-                        {discordLinkToken
-                            ? t('auth.discordLinking.subtitle')
-                            : isLoginMethodPasswordStep
-                              ? isEmail
-                                  ? identifierValue
-                                  : t('auth.login.continue_with_password')
-                              : isEmailLoginVerifyStep
-                                ? t('auth.emailLogin.codeSentTo', { email: emailForLoginCodeSubtitle })
-                                : t('auth.login.subtitle')}
-                    </p>
-                </div>
-            )}
-
-            {isSsoLogin ? (
-                <div className='flex flex-col items-center gap-4 py-6'>
-                    <div className='flex items-center gap-3'>
-                        <div className='border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent'></div>
-                        <span className='text-muted-foreground'>{ssoStatus}</span>
-                    </div>
-                    <p className='text-muted-foreground text-center text-xs'>{t('auth.ssoPleaseWait')}</p>
-                    {error && (
-                        <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in w-full rounded-xl border p-4 text-center text-sm'>
-                            {error}
-                        </div>
-                    )}
-                </div>
-            ) : isDiscordLogin ? (
-                <div className='flex flex-col items-center gap-4 py-6'>
-                    <div className='flex items-center gap-3'>
-                        <div className='border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent'></div>
-                        <span className='text-muted-foreground'>{t('auth.discordLoggingIn')}</span>
-                    </div>
-                    <p className='text-muted-foreground text-center text-xs'>{t('auth.ssoPleaseWait')}</p>
-                    {error && (
-                        <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in w-full rounded-xl border p-4 text-center text-sm'>
-                            {error}
-                        </div>
-                    )}
-                </div>
-            ) : discordLinkToken ? (
-                <>
-                    <form onSubmit={handleDiscordLink} className='space-y-5'>
-                        <Input
-                            label={t('auth.login.username')}
-                            type='text'
-                            value={form.username_or_email || ''}
-                            onChange={(e) => setForm({ ...form, username_or_email: e.target.value })}
-                            required
-                            autoComplete='username'
-                            icon={<Mail className='h-5 w-5' />}
-                            placeholder={t('auth.login.username')}
+            <div
+                className={cn(
+                    'bg-card/95 flex w-full flex-col overflow-hidden rounded-xl shadow-2xl',
+                    showQrLogin && 'md:flex-row',
+                )}
+            >
+                <div className='flex min-w-0 flex-1 flex-col justify-center p-5 sm:p-7 md:p-8'>
+                    {!isSsoLogin && !isDiscordLogin && (
+                        <AuthPageHeader
+                            align='left'
+                            className='mb-4 sm:mb-5'
+                            title={
+                                !discordLinkToken &&
+                                !isLoginMethodPasswordStep &&
+                                !isEmailLoginVerifyStep &&
+                                loginHeadline
+                                    ? loginHeadline
+                                    : defaultLoginTitle
+                            }
+                            subtitle={
+                                !discordLinkToken &&
+                                !isLoginMethodPasswordStep &&
+                                !isEmailLoginVerifyStep &&
+                                loginSubheadline
+                                    ? loginSubheadline
+                                    : defaultLoginSubtitle
+                            }
                         />
+                    )}
 
-                        <Input
-                            label={t('auth.login.password')}
-                            type='password'
-                            value={form.password}
-                            onChange={(e) => setForm({ ...form, password: e.target.value })}
-                            required
-                            autoComplete='current-password'
-                            icon={<Lock className='h-5 w-5' />}
-                            placeholder={t('auth.login.password')}
-                        />
-
-                        <Button type='submit' className='group w-full' loading={loading}>
-                            {!loading && (
-                                <>
-                                    {t('auth.discordLinking.submit')}
-                                    <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
-                                </>
-                            )}
-                        </Button>
-
-                        <Button
-                            type='button'
-                            variant='outline'
-                            className='w-full'
-                            onClick={() => {
-                                setDiscordLinkToken(null);
-                                router.replace('/auth/login');
-                            }}
-                        >
-                            {t('auth.discordLinking.cancel')}
-                        </Button>
-
-                        {error && (
-                            <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
-                                {error}
-                            </div>
-                        )}
-                        {success && (
-                            <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
-                                {success}
-                            </div>
-                        )}
-                    </form>
-                </>
-            ) : (
-                <>
-                    <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-before-form')} />
-
-                    {/* Multi-step login flow when email login is enabled */}
-                    {isMultiStepEmailLoginFlow ? (
-                        loginStep === 'identifier' ? (
-                            // Step 1: Enter email/username
-                            <form onSubmit={handleIdentifierSubmit} className='space-y-4'>
+                    <div className={pageGap}>
+                        {isSsoLogin ? (
+                            <>
+                                <AuthLoadingState label={ssoStatus || t('auth.ssoPleaseWait')} />
+                                <AuthAlert variant='error'>{error}</AuthAlert>
+                            </>
+                        ) : isDiscordLogin ? (
+                            <>
+                                <AuthLoadingState label={t('auth.discordLoggingIn')} />
+                                <AuthAlert variant='error'>{error}</AuthAlert>
+                            </>
+                        ) : discordLinkToken ? (
+                            <form onSubmit={handleDiscordLink} className='space-y-4'>
                                 <Input
                                     label={t('auth.login.username')}
                                     type='text'
-                                    value={identifierValue}
-                                    onChange={(e) => {
-                                        setIdentifierValue(e.target.value);
-                                        setUnverifiedIdentifier(null);
-                                    }}
+                                    value={form.username_or_email || ''}
+                                    onChange={(e) => setForm({ ...form, username_or_email: e.target.value })}
                                     required
-                                    autoComplete='username webauthn'
-                                    autoFocus
+                                    autoComplete='username'
                                     icon={<Mail className='h-5 w-5' />}
                                     placeholder={t('auth.login.username')}
                                 />
 
-                                <Button type='submit' className='group w-full' loading={loading}>
-                                    {!loading && (
-                                        <>
-                                            {t('common.next')}
-                                            <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
-                                        </>
-                                    )}
-                                </Button>
-
-                                {error && (
-                                    <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-3 text-sm'>
-                                        {error}
-                                    </div>
-                                )}
-
-                                {renderLoginSecondarySection()}
-                            </form>
-                        ) : showEmailLogin ? (
-                            // Email code login flow (when user clicked "Request Login Code")
-                            emailLoginStep === 'email' ? (
-                                <form onSubmit={handleEmailLoginRequest} className='space-y-5'>
-                                    <div className='mb-4 space-y-2 text-center'>
-                                        <h3 className='text-lg font-semibold'>{t('auth.emailLogin.title')}</h3>
-                                        <p className='text-muted-foreground text-sm'>
-                                            {t('auth.emailLogin.codeSentTo', { email: identifierValue })}
-                                        </p>
-                                    </div>
-
-                                    <Button type='submit' className='group w-full' loading={loading}>
-                                        {!loading && (
-                                            <>
-                                                {t('auth.emailLogin.sendCode')}
-                                                <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
-                                            </>
-                                        )}
-                                    </Button>
-
-                                    <Button
-                                        type='button'
-                                        variant='outline'
-                                        className='w-full'
-                                        onClick={() => setShowEmailLogin(false)}
-                                    >
-                                        <ArrowLeft className='mr-2 h-4 w-4' />
-                                        {t('auth.login.usePasswordInstead')}
-                                    </Button>
-
-                                    {error && (
-                                        <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
-                                            {error}
-                                        </div>
-                                    )}
-                                    {success && (
-                                        <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
-                                            {success}
-                                        </div>
-                                    )}
-                                </form>
-                            ) : (
-                                // Enter 6-digit code
-                                <form onSubmit={handleEmailLoginVerify} className='space-y-5'>
-                                    <Input
-                                        label={t('auth.emailLogin.code')}
-                                        type='text'
-                                        value={emailLoginForm.code}
-                                        onChange={(e) => {
-                                            const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-                                            setEmailLoginForm({ ...emailLoginForm, code: value });
-                                        }}
-                                        required
-                                        autoComplete='one-time-code'
-                                        inputMode='numeric'
-                                        pattern='[0-9]{6}'
-                                        maxLength={6}
-                                        icon={<KeyRound className='h-5 w-5' />}
-                                        placeholder='000000'
-                                        className='text-center text-2xl tracking-[0.5em]'
-                                        autoFocus
-                                    />
-
-                                    <Button type='submit' className='group w-full' loading={loading}>
-                                        {!loading && (
-                                            <>
-                                                {t('auth.login.submit')}
-                                                <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
-                                            </>
-                                        )}
-                                    </Button>
-
-                                    <div className='flex gap-2'>
-                                        <Button
-                                            type='button'
-                                            variant='outline'
-                                            className='flex-1'
-                                            onClick={() => setShowEmailLogin(false)}
-                                        >
-                                            <ArrowLeft className='mr-2 h-4 w-4' />
-                                            {t('common.back')}
-                                        </Button>
-                                        <Button
-                                            type='button'
-                                            variant='outline'
-                                            className='flex-1'
-                                            onClick={() =>
-                                                handleEmailLoginRequest({ preventDefault: () => {} } as React.FormEvent)
-                                            }
-                                            disabled={loading}
-                                        >
-                                            {t('auth.emailLogin.resend')}
-                                        </Button>
-                                    </div>
-
-                                    {error && (
-                                        <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
-                                            {error}
-                                        </div>
-                                    )}
-                                    {success && (
-                                        <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
-                                            {success}
-                                        </div>
-                                    )}
-                                </form>
-                            )
-                        ) : (
-                            // Step 2: Password (+ captcha) then sign-in, passkey, or email code
-                            <form onSubmit={handlePasswordLoginFromMethod} className='space-y-4'>
                                 <Input
                                     label={t('auth.login.password')}
                                     type='password'
@@ -1386,171 +1197,14 @@ export default function LoginForm() {
                                     onChange={(e) => setForm({ ...form, password: e.target.value })}
                                     required
                                     autoComplete='current-password'
-                                    autoFocus
                                     icon={<Lock className='h-5 w-5' />}
                                     placeholder={t('auth.login.password')}
                                 />
 
-                                <div className='flex items-center justify-end'>
-                                    <Link
-                                        href='/auth/forgot-password'
-                                        className='text-primary hover:text-primary/80 text-sm font-medium transition-colors'
-                                    >
-                                        {t('auth.login.forgot_password')}
-                                    </Link>
-                                </div>
-
-                                {renderLoginCaptchaField()}
-
                                 <Button type='submit' className='group w-full' loading={loading}>
                                     {!loading && (
                                         <>
-                                            {t('auth.login.submit')}
-                                            <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
-                                        </>
-                                    )}
-                                </Button>
-
-                                {renderLoginSecondarySection({
-                                    compact: true,
-                                    passkeyUsername: identifierValue,
-                                    showEmailCode: isEmail,
-                                })}
-
-                                <Button
-                                    type='button'
-                                    variant='ghost'
-                                    size='sm'
-                                    className='text-muted-foreground hover:text-foreground h-8 w-full text-xs'
-                                    onClick={handleBackToIdentifier}
-                                >
-                                    <ArrowLeft className='mr-1 h-3.5 w-3.5' />
-                                    {t('common.back')}
-                                </Button>
-
-                                {renderLoginError()}
-                                {success && (
-                                    <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
-                                        {success}
-                                    </div>
-                                )}
-                            </form>
-                        )
-                    ) : activePrimary === 'oidc' && oidcEnabled ? (
-                        renderOidcPrimaryPanel()
-                    ) : activePrimary === 'discord' && discordEnabled ? (
-                        renderDiscordPrimaryPanel()
-                    ) : showLdapLogin && ldapEnabled ? (
-                        <form onSubmit={handleLdapLogin} className='space-y-5'>
-                            <div className='border-primary/20 bg-primary/5 rounded-2xl border p-4'>
-                                <div className='flex items-start gap-3'>
-                                    <div className='bg-primary/15 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-xl'>
-                                        <Network className='h-5 w-5' />
-                                    </div>
-                                    <div className='min-w-0 flex-1'>
-                                        <h3 className='text-foreground text-sm font-semibold'>
-                                            {t('auth.login.ldapLoginTitle')}
-                                        </h3>
-                                        <p className='text-muted-foreground mt-1 text-xs leading-relaxed'>
-                                            {t('auth.login.ldapLoginSubtitle')}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Select
-                                label={t('auth.login.ldapProvider')}
-                                value={selectedLdapProvider}
-                                onChange={(e) => setSelectedLdapProvider(e.target.value)}
-                                required
-                            >
-                                {ldapProviders.map((provider) => (
-                                    <option key={provider.uuid} value={provider.uuid}>
-                                        {provider.name}
-                                    </option>
-                                ))}
-                            </Select>
-
-                            <Input
-                                label={t('auth.login.ldapUsername')}
-                                type='text'
-                                value={form.username_or_email || ''}
-                                onChange={(e) => setForm({ ...form, username_or_email: e.target.value })}
-                                required
-                                autoComplete='username'
-                                icon={<Mail className='h-5 w-5' />}
-                                placeholder={t('auth.login.ldapUsernamePlaceholder')}
-                            />
-
-                            <Input
-                                label={t('auth.login.password')}
-                                type='password'
-                                value={form.password}
-                                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                                required
-                                autoComplete='current-password'
-                                icon={<Lock className='h-5 w-5' />}
-                                placeholder={t('auth.login.password')}
-                            />
-
-                            {renderLoginCaptchaField()}
-
-                            <Button type='submit' className='group w-full' loading={loading}>
-                                {!loading && (
-                                    <>
-                                        {t('auth.login.loginWithLdap')}
-                                        <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
-                                    </>
-                                )}
-                            </Button>
-
-                            {renderLoginSecondarySection({ filter: (id) => id !== 'ldap' })}
-
-                            {loginPageLayout.ordered.includes('local') && (
-                                <Button
-                                    type='button'
-                                    variant='ghost'
-                                    size='sm'
-                                    className='text-muted-foreground hover:text-foreground h-8 w-full text-xs'
-                                    onClick={() => setPrimaryPanel('local')}
-                                >
-                                    <ArrowLeft className='mr-1 h-3.5 w-3.5' />
-                                    {t('auth.login.use_password_instead')}
-                                </Button>
-                            )}
-
-                            {renderLoginError()}
-                            {success && (
-                                <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
-                                    {success}
-                                </div>
-                            )}
-                        </form>
-                    ) : showEmailLogin ? (
-                        emailLoginStep === 'email' ? (
-                            <form onSubmit={handleEmailLoginRequest} className='space-y-5'>
-                                <div className='space-y-2 text-center'>
-                                    <h3 className='text-lg font-semibold'>{t('auth.emailLogin.title')}</h3>
-                                    <p className='text-muted-foreground text-sm'>{t('auth.emailLogin.subtitle')}</p>
-                                </div>
-
-                                <Input
-                                    label={t('auth.login.email')}
-                                    type='email'
-                                    value={emailLoginForm.email}
-                                    onChange={(e) => setEmailLoginForm({ ...emailLoginForm, email: e.target.value })}
-                                    required
-                                    autoComplete='email'
-                                    icon={<Mail className='h-5 w-5' />}
-                                    placeholder={t('auth.login.email')}
-                                />
-
-                                {renderLoginCaptchaField()}
-
-                                <Button type='submit' className='group w-full' loading={loading}>
-                                    {!loading && (
-                                        <>
-                                            {t('auth.emailLogin.sendCode')}
+                                            {t('auth.discordLinking.submit')}
                                             <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                                         </>
                                     )}
@@ -1560,166 +1214,483 @@ export default function LoginForm() {
                                     type='button'
                                     variant='outline'
                                     className='w-full'
-                                    onClick={() => setShowEmailLogin(false)}
+                                    onClick={() => {
+                                        setDiscordLinkToken(null);
+                                        router.replace('/auth/login');
+                                    }}
                                 >
-                                    <ArrowLeft className='mr-2 h-4 w-4' />
-                                    {t('common.back')}
+                                    {t('auth.discordLinking.cancel')}
                                 </Button>
 
-                                {error && (
-                                    <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
-                                        {error}
-                                    </div>
-                                )}
-                                {success && (
-                                    <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
-                                        {success}
-                                    </div>
-                                )}
+                                <AuthAlert variant='error'>{error}</AuthAlert>
+                                <AuthAlert variant='success'>{success}</AuthAlert>
                             </form>
                         ) : (
-                            <form onSubmit={handleEmailLoginVerify} className='space-y-5'>
-                                <Input
-                                    label={t('auth.emailLogin.code')}
-                                    type='text'
-                                    value={emailLoginForm.code}
-                                    onChange={(e) => {
-                                        const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-                                        setEmailLoginForm({ ...emailLoginForm, code: value });
-                                    }}
-                                    required
-                                    autoComplete='one-time-code'
-                                    inputMode='numeric'
-                                    pattern='[0-9]{6}'
-                                    maxLength={6}
-                                    icon={<KeyRound className='h-5 w-5' />}
-                                    placeholder='000000'
-                                    className='text-center text-2xl tracking-[0.5em]'
-                                />
+                            <>
+                                <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-before-form')} />
 
-                                <Button type='submit' className='group w-full' loading={loading}>
-                                    {!loading && (
-                                        <>
-                                            {t('auth.login.submit')}
-                                            <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
-                                        </>
-                                    )}
-                                </Button>
+                                {/* Multi-step login flow when email login is enabled */}
+                                {isMultiStepEmailLoginFlow ? (
+                                    loginStep === 'identifier' ? (
+                                        // Step 1: Enter email/username
+                                        <form onSubmit={handleIdentifierSubmit} className='space-y-4'>
+                                            <Input
+                                                label={t('auth.login.username')}
+                                                type='text'
+                                                value={identifierValue}
+                                                onChange={(e) => {
+                                                    setIdentifierValue(e.target.value);
+                                                    setUnverifiedIdentifier(null);
+                                                }}
+                                                required
+                                                autoComplete='username webauthn'
+                                                autoFocus
+                                                icon={<Mail className='h-5 w-5' />}
+                                                placeholder={t('auth.login.username')}
+                                            />
 
-                                <div className='flex gap-2'>
-                                    <Button
-                                        type='button'
-                                        variant='outline'
-                                        className='flex-1'
-                                        onClick={() => setEmailLoginStep('email')}
-                                    >
-                                        <ArrowLeft className='mr-2 h-4 w-4' />
-                                        {t('common.back')}
-                                    </Button>
-                                    <Button
-                                        type='button'
-                                        variant='outline'
-                                        className='flex-1'
-                                        onClick={() =>
-                                            handleEmailLoginRequest({ preventDefault: () => {} } as React.FormEvent)
-                                        }
-                                        disabled={loading}
-                                    >
-                                        {t('auth.emailLogin.resend')}
-                                    </Button>
-                                </div>
+                                            <Button type='submit' className='group w-full' loading={loading}>
+                                                {!loading && (
+                                                    <>
+                                                        {t('common.next')}
+                                                        <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                                                    </>
+                                                )}
+                                            </Button>
 
-                                {error && (
-                                    <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
-                                        {error}
+                                            <AuthAlert variant='error'>{error}</AuthAlert>
+
+                                            {renderLoginSecondarySection()}
+                                        </form>
+                                    ) : showEmailLogin ? (
+                                        // Email code login flow (when user clicked "Request Login Code")
+                                        emailLoginStep === 'email' ? (
+                                            <form onSubmit={handleEmailLoginRequest} className='space-y-4'>
+                                                <div className='mb-1 space-y-1 text-center'>
+                                                    <h3 className='text-base font-semibold'>
+                                                        {t('auth.emailLogin.title')}
+                                                    </h3>
+                                                    <p className='text-muted-foreground text-sm'>
+                                                        {t('auth.emailLogin.codeSentTo', { email: identifierValue })}
+                                                    </p>
+                                                </div>
+
+                                                <Button type='submit' className='group w-full' loading={loading}>
+                                                    {!loading && (
+                                                        <>
+                                                            {t('auth.emailLogin.sendCode')}
+                                                            <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                                                        </>
+                                                    )}
+                                                </Button>
+
+                                                <Button
+                                                    type='button'
+                                                    variant='outline'
+                                                    className='w-full'
+                                                    onClick={() => setShowEmailLogin(false)}
+                                                >
+                                                    <ArrowLeft className='mr-2 h-4 w-4' />
+                                                    {t('auth.login.usePasswordInstead')}
+                                                </Button>
+
+                                                <AuthAlert variant='error'>{error}</AuthAlert>
+                                                <AuthAlert variant='success'>{success}</AuthAlert>
+                                            </form>
+                                        ) : (
+                                            // Enter 6-digit code
+                                            <form onSubmit={handleEmailLoginVerify} className='space-y-4'>
+                                                <Input
+                                                    label={t('auth.emailLogin.code')}
+                                                    type='text'
+                                                    value={emailLoginForm.code}
+                                                    onChange={(e) => {
+                                                        const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                                        setEmailLoginForm({ ...emailLoginForm, code: value });
+                                                    }}
+                                                    required
+                                                    autoComplete='one-time-code'
+                                                    inputMode='numeric'
+                                                    pattern='[0-9]{6}'
+                                                    maxLength={6}
+                                                    icon={<KeyRound className='h-5 w-5' />}
+                                                    placeholder='000000'
+                                                    className='text-center text-2xl tracking-[0.5em]'
+                                                    autoFocus
+                                                />
+
+                                                <Button type='submit' className='group w-full' loading={loading}>
+                                                    {!loading && (
+                                                        <>
+                                                            {t('auth.login.submit')}
+                                                            <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                                                        </>
+                                                    )}
+                                                </Button>
+
+                                                <div className='flex gap-2'>
+                                                    <Button
+                                                        type='button'
+                                                        variant='outline'
+                                                        className='flex-1'
+                                                        onClick={() => setShowEmailLogin(false)}
+                                                    >
+                                                        <ArrowLeft className='mr-2 h-4 w-4' />
+                                                        {t('common.back')}
+                                                    </Button>
+                                                    <Button
+                                                        type='button'
+                                                        variant='outline'
+                                                        className='flex-1'
+                                                        onClick={() =>
+                                                            handleEmailLoginRequest({
+                                                                preventDefault: () => {},
+                                                            } as React.FormEvent)
+                                                        }
+                                                        disabled={loading}
+                                                    >
+                                                        {t('auth.emailLogin.resend')}
+                                                    </Button>
+                                                </div>
+
+                                                <AuthAlert variant='error'>{error}</AuthAlert>
+                                                <AuthAlert variant='success'>{success}</AuthAlert>
+                                            </form>
+                                        )
+                                    ) : (
+                                        // Step 2: Password (+ captcha) then sign-in, passkey, or email code
+                                        <form onSubmit={handlePasswordLoginFromMethod} className='space-y-4'>
+                                            <Input
+                                                label={t('auth.login.password')}
+                                                type='password'
+                                                value={form.password}
+                                                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                                required
+                                                autoComplete='current-password'
+                                                autoFocus
+                                                icon={<Lock className='h-5 w-5' />}
+                                                placeholder={t('auth.login.password')}
+                                            />
+
+                                            <div className='flex items-center justify-end'>
+                                                <Link
+                                                    href='/auth/forgot-password'
+                                                    className='text-primary hover:text-primary/80 text-sm font-medium transition-colors'
+                                                >
+                                                    {t('auth.login.forgot_password')}
+                                                </Link>
+                                            </div>
+
+                                            {renderLoginCaptchaField()}
+
+                                            <Button type='submit' className='group w-full' loading={loading}>
+                                                {!loading && (
+                                                    <>
+                                                        {t('auth.login.submit')}
+                                                        <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                                                    </>
+                                                )}
+                                            </Button>
+
+                                            {renderLoginSecondarySection({
+                                                compact: true,
+                                                passkeyUsername: identifierValue,
+                                                showEmailCode: isEmail,
+                                            })}
+
+                                            <Button
+                                                type='button'
+                                                variant='ghost'
+                                                size='sm'
+                                                className='text-muted-foreground hover:text-foreground h-8 w-full text-xs'
+                                                onClick={handleBackToIdentifier}
+                                            >
+                                                <ArrowLeft className='mr-1 h-3.5 w-3.5' />
+                                                {t('common.back')}
+                                            </Button>
+
+                                            {renderLoginError()}
+                                            <AuthAlert variant='success'>{success}</AuthAlert>
+                                        </form>
+                                    )
+                                ) : activePrimary === 'oidc' && oidcEnabled ? (
+                                    renderOidcPrimaryPanel()
+                                ) : activePrimary === 'discord' && discordEnabled ? (
+                                    renderDiscordPrimaryPanel()
+                                ) : showLdapLogin && ldapEnabled ? (
+                                    <form onSubmit={handleLdapLogin} className='space-y-4'>
+                                        <div className='border-primary/20 bg-primary/5 rounded-2xl border p-4'>
+                                            <div className='flex items-start gap-3'>
+                                                <div className='bg-primary/15 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-xl'>
+                                                    <Network className='h-5 w-5' />
+                                                </div>
+                                                <div className='min-w-0 flex-1'>
+                                                    <h3 className='text-foreground text-sm font-semibold'>
+                                                        {t('auth.login.ldapLoginTitle')}
+                                                    </h3>
+                                                    <p className='text-muted-foreground mt-1 text-xs leading-relaxed'>
+                                                        {t('auth.login.ldapLoginSubtitle')}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <Select
+                                            label={t('auth.login.ldapProvider')}
+                                            value={selectedLdapProvider}
+                                            onChange={(e) => setSelectedLdapProvider(e.target.value)}
+                                            required
+                                        >
+                                            {ldapProviders.map((provider) => (
+                                                <option key={provider.uuid} value={provider.uuid}>
+                                                    {provider.name}
+                                                </option>
+                                            ))}
+                                        </Select>
+
+                                        <Input
+                                            label={t('auth.login.ldapUsername')}
+                                            type='text'
+                                            value={form.username_or_email || ''}
+                                            onChange={(e) => setForm({ ...form, username_or_email: e.target.value })}
+                                            required
+                                            autoComplete='username'
+                                            icon={<Mail className='h-5 w-5' />}
+                                            placeholder={t('auth.login.ldapUsernamePlaceholder')}
+                                        />
+
+                                        <Input
+                                            label={t('auth.login.password')}
+                                            type='password'
+                                            value={form.password}
+                                            onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                            required
+                                            autoComplete='current-password'
+                                            icon={<Lock className='h-5 w-5' />}
+                                            placeholder={t('auth.login.password')}
+                                        />
+
+                                        {renderLoginCaptchaField()}
+
+                                        <Button type='submit' className='group w-full' loading={loading}>
+                                            {!loading && (
+                                                <>
+                                                    {t('auth.login.loginWithLdap')}
+                                                    <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                                                </>
+                                            )}
+                                        </Button>
+
+                                        {renderLoginSecondarySection({ filter: (id) => id !== 'ldap' })}
+
+                                        {loginPageLayout.ordered.includes('local') && (
+                                            <Button
+                                                type='button'
+                                                variant='ghost'
+                                                size='sm'
+                                                className='text-muted-foreground hover:text-foreground h-8 w-full text-xs'
+                                                onClick={() => setPrimaryPanel('local')}
+                                            >
+                                                <ArrowLeft className='mr-1 h-3.5 w-3.5' />
+                                                {t('auth.login.use_password_instead')}
+                                            </Button>
+                                        )}
+
+                                        {renderLoginError()}
+                                        <AuthAlert variant='success'>{success}</AuthAlert>
+                                    </form>
+                                ) : showEmailLogin ? (
+                                    emailLoginStep === 'email' ? (
+                                        <form onSubmit={handleEmailLoginRequest} className='space-y-4'>
+                                            <div className='space-y-1 text-center'>
+                                                <h3 className='text-base font-semibold'>
+                                                    {t('auth.emailLogin.title')}
+                                                </h3>
+                                                <p className='text-muted-foreground text-sm'>
+                                                    {t('auth.emailLogin.subtitle')}
+                                                </p>
+                                            </div>
+
+                                            <Input
+                                                label={t('auth.login.email')}
+                                                type='email'
+                                                value={emailLoginForm.email}
+                                                onChange={(e) =>
+                                                    setEmailLoginForm({ ...emailLoginForm, email: e.target.value })
+                                                }
+                                                required
+                                                autoComplete='email'
+                                                icon={<Mail className='h-5 w-5' />}
+                                                placeholder={t('auth.login.email')}
+                                            />
+
+                                            {renderLoginCaptchaField()}
+
+                                            <Button type='submit' className='group w-full' loading={loading}>
+                                                {!loading && (
+                                                    <>
+                                                        {t('auth.emailLogin.sendCode')}
+                                                        <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                                                    </>
+                                                )}
+                                            </Button>
+
+                                            <Button
+                                                type='button'
+                                                variant='outline'
+                                                className='w-full'
+                                                onClick={() => setShowEmailLogin(false)}
+                                            >
+                                                <ArrowLeft className='mr-2 h-4 w-4' />
+                                                {t('common.back')}
+                                            </Button>
+
+                                            <AuthAlert variant='error'>{error}</AuthAlert>
+                                            <AuthAlert variant='success'>{success}</AuthAlert>
+                                        </form>
+                                    ) : (
+                                        <form onSubmit={handleEmailLoginVerify} className='space-y-4'>
+                                            <Input
+                                                label={t('auth.emailLogin.code')}
+                                                type='text'
+                                                value={emailLoginForm.code}
+                                                onChange={(e) => {
+                                                    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                                    setEmailLoginForm({ ...emailLoginForm, code: value });
+                                                }}
+                                                required
+                                                autoComplete='one-time-code'
+                                                inputMode='numeric'
+                                                pattern='[0-9]{6}'
+                                                maxLength={6}
+                                                icon={<KeyRound className='h-5 w-5' />}
+                                                placeholder='000000'
+                                                className='text-center text-2xl tracking-[0.5em]'
+                                            />
+
+                                            <Button type='submit' className='group w-full' loading={loading}>
+                                                {!loading && (
+                                                    <>
+                                                        {t('auth.login.submit')}
+                                                        <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                                                    </>
+                                                )}
+                                            </Button>
+
+                                            <div className='flex gap-2'>
+                                                <Button
+                                                    type='button'
+                                                    variant='outline'
+                                                    className='flex-1'
+                                                    onClick={() => setEmailLoginStep('email')}
+                                                >
+                                                    <ArrowLeft className='mr-2 h-4 w-4' />
+                                                    {t('common.back')}
+                                                </Button>
+                                                <Button
+                                                    type='button'
+                                                    variant='outline'
+                                                    className='flex-1'
+                                                    onClick={() =>
+                                                        handleEmailLoginRequest({
+                                                            preventDefault: () => {},
+                                                        } as React.FormEvent)
+                                                    }
+                                                    disabled={loading}
+                                                >
+                                                    {t('auth.emailLogin.resend')}
+                                                </Button>
+                                            </div>
+
+                                            <AuthAlert variant='error'>{error}</AuthAlert>
+                                            <AuthAlert variant='success'>{success}</AuthAlert>
+                                        </form>
+                                    )
+                                ) : showLocalLogin ? (
+                                    <form onSubmit={handleSubmit} className={formGap}>
+                                        <Input
+                                            label={t('auth.login.username')}
+                                            type='text'
+                                            value={form.username_or_email || ''}
+                                            onChange={(e) => {
+                                                setForm({ ...form, username_or_email: e.target.value });
+                                                setUnverifiedIdentifier(null);
+                                            }}
+                                            required
+                                            autoComplete='username webauthn'
+                                            icon={<Mail className='h-5 w-5' />}
+                                            placeholder={t('auth.login.username')}
+                                        />
+
+                                        <Input
+                                            label={t('auth.login.password')}
+                                            type='password'
+                                            value={form.password}
+                                            onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                            required
+                                            autoComplete='current-password'
+                                            icon={<Lock className='h-5 w-5' />}
+                                            placeholder={t('auth.login.password')}
+                                        />
+
+                                        <div className='flex items-center justify-end'>
+                                            <Link
+                                                href='/auth/forgot-password'
+                                                className='text-primary hover:text-primary/80 text-sm font-medium transition-colors'
+                                            >
+                                                {t('auth.login.forgot_password')}
+                                            </Link>
+                                        </div>
+
+                                        {renderLoginCaptchaField()}
+
+                                        <Button type='submit' className='group w-full' loading={loading}>
+                                            {!loading && (
+                                                <>
+                                                    {t('auth.login.submit')}
+                                                    <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5' />
+                                                </>
+                                            )}
+                                        </Button>
+
+                                        {error ? renderLoginError() : null}
+                                        <AuthAlert variant='success'>{success}</AuthAlert>
+                                    </form>
+                                ) : null}
+
+                                <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-after-form')} />
+
+                                {!isSsoLogin && !isDiscordLogin ? (
+                                    <div className='mt-5 space-y-4 sm:mt-4'>
+                                        {!isLoginMethodStep && !discordLinkToken ? renderLoginSecondarySection() : null}
+
+                                        <div className='flex flex-col items-center gap-2.5 pt-1 text-center'>
+                                            <AuthLegalNotice
+                                                variant='login'
+                                                className='max-w-[20rem] text-[11px] sm:text-xs'
+                                            />
+                                            {!isLoginMethodStep ? (
+                                                <AuthFooterPrompt
+                                                    align='center'
+                                                    prompt={t('auth.login.no_account')}
+                                                    href='/auth/register'
+                                                    linkLabel={t('auth.login.create_account')}
+                                                />
+                                            ) : null}
+                                        </div>
                                     </div>
-                                )}
-                                {success && (
-                                    <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
-                                        {success}
-                                    </div>
-                                )}
-                            </form>
-                        )
-                    ) : showLocalLogin ? (
-                        <form onSubmit={handleSubmit} className='space-y-4'>
-                            <Input
-                                label={t('auth.login.username')}
-                                type='text'
-                                value={form.username_or_email || ''}
-                                onChange={(e) => {
-                                    setForm({ ...form, username_or_email: e.target.value });
-                                    setUnverifiedIdentifier(null);
-                                }}
-                                required
-                                autoComplete='username webauthn'
-                                icon={<Mail className='h-5 w-5' />}
-                                placeholder={t('auth.login.username')}
-                            />
+                                ) : null}
+                            </>
+                        )}
+                    </div>
+                </div>
 
-                            <Input
-                                label={t('auth.login.password')}
-                                type='password'
-                                value={form.password}
-                                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                                required
-                                autoComplete='current-password'
-                                icon={<Lock className='h-5 w-5' />}
-                                placeholder={t('auth.login.password')}
-                            />
-
-                            <div className='flex items-center justify-end'>
-                                <Link
-                                    href='/auth/forgot-password'
-                                    className='text-primary hover:text-primary/80 text-sm font-medium transition-colors'
-                                >
-                                    {t('auth.login.forgot_password')}
-                                </Link>
-                            </div>
-
-                            {renderLoginCaptchaField()}
-
-                            <Button type='submit' className='group w-full' loading={loading}>
-                                {!loading && (
-                                    <>
-                                        {t('auth.login.submit')}
-                                        <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
-                                    </>
-                                )}
-                            </Button>
-
-                            {renderLoginSecondarySection()}
-
-                            {error && (
-                                <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
-                                    {error}
-                                </div>
-                            )}
-                            {success && (
-                                <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
-                                    {success}
-                                </div>
-                            )}
-                        </form>
-                    ) : null}
-
-                    <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-after-form')} />
-
-                    {!isSsoLogin && !isDiscordLogin && <AuthLegalNotice variant='login' />}
-
-                    {!isLoginMethodStep && (
-                        <div className='text-muted-foreground text-center text-sm'>
-                            {t('auth.login.no_account')}{' '}
-                            <Link
-                                href='/auth/register'
-                                className='text-primary hover:text-primary/80 font-semibold transition-colors'
-                            >
-                                {t('auth.login.create_account')}
-                            </Link>
-                        </div>
-                    )}
-                </>
-            )}
+                {showQrLogin ? (
+                    <div className='border-border/30 bg-muted/20 flex w-[17.5rem] shrink-0 items-center justify-center border-l px-5 py-8 lg:w-[19rem]'>
+                        <LoginQrPanel />
+                    </div>
+                ) : null}
+            </div>
         </div>
     );
 }

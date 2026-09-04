@@ -15,30 +15,16 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { ReactNode, useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
-import clsx from 'clsx';
-import { useTheme } from '@/contexts/ThemeContext';
+import { ReactNode } from 'react';
 
 interface PageTransitionProps {
     children: ReactNode;
 }
 
+/**
+ * Pass-through wrapper. Do NOT remount children on pathname change — that tears down
+ * DashboardShell / navbar / widgets and causes chrome flash on every navigation.
+ */
 export default function PageTransition({ children }: PageTransitionProps) {
-    const pathname = usePathname();
-    const { motionLevel } = useTheme();
-    const [currentPath, setCurrentPath] = useState(pathname);
-
-    useEffect(() => {
-        setCurrentPath(pathname);
-    }, [pathname]);
-
-    const animationClass =
-        motionLevel === 'none' ? '' : motionLevel === 'reduced' ? 'animate-page-shell-reduced' : 'animate-page-shell';
-
-    return (
-        <div key={currentPath} className={clsx('motion-content min-h-screen', animationClass)}>
-            {children}
-        </div>
-    );
+    return <div className='motion-content min-h-screen'>{children}</div>;
 }

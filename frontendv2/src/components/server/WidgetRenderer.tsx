@@ -21,7 +21,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/featherui/Button';
-import { RotateCcw, AlertTriangle } from 'lucide-react';
+import { RotateCcw, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PluginWidget } from '@/types/plugin-widgets';
 import { isCloudflareChallengeDocument, withCacheBuster } from '@/lib/cloudflare-challenge';
@@ -31,9 +31,20 @@ interface WidgetRendererProps {
     widgets: PluginWidget[];
     height?: string;
     context?: Record<string, string | number | null | undefined>;
+    /** When set with onToggleHidden, shows per-widget hide controls during layout customization. */
+    isCustomizing?: boolean;
+    hiddenWidgets?: string[];
+    onToggleHidden?: (widgetId: string) => void;
 }
 
-export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRendererProps) {
+export function WidgetRenderer({
+    widgets,
+    height = '400px',
+    context,
+    isCustomizing = false,
+    hiddenWidgets,
+    onToggleHidden,
+}: WidgetRendererProps) {
     const { t } = useTranslation();
     const { theme } = useTheme();
     const pathname = usePathname();
@@ -44,11 +55,17 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
     const iframeReadyRef = useRef<Record<string, boolean>>({});
 
     const MAX_CHALLENGE_RETRIES = 4;
+    const customizationEnabled = Boolean(isCustomizing || hiddenWidgets || onToggleHidden);
+    const hiddenSet = hiddenWidgets ?? [];
+
+    const visibleWidgets = customizationEnabled
+        ? widgets.filter((widget) => isCustomizing || !hiddenSet.includes(widget.id))
+        : widgets;
 
     // Stable fingerprints so useEffect does not re-fire every render when parents pass
     // a new `widgets` array (e.g. getWidgets()) or a new `context` object with the same values.
     const widgetsKey = JSON.stringify(
-        widgets.map((w) => ({
+        visibleWidgets.map((w) => ({
             id: w.id,
             plugin: w.plugin,
             component: w.component,
@@ -95,8 +112,9 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
             });
         }
 
-        // Bust browser / CDN caches for plugin widget documents (HTML entry + hashed assets).
-        merged.set('_fp_wcb', String(Date.now()));
+        // Stable per session so theme/route updates do not force a full iframe reload flash.
+        // Explicit retries still bust via withCacheBuster() in retry handlers.
+        merged.set('_fp_wcb', `${widget.plugin}:${widget.component}:${theme}`);
 
         const qs = merged.toString();
         return qs ? `${baseUrl}?${qs}` : baseUrl;
@@ -106,7 +124,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
     // Uses widgetsKey/contextKey so a fresh array/object reference does not retrigger the effect.
     useEffect(() => {
         const newSrcs: Record<string, string> = {};
-        widgets.forEach((widget) => {
+        visibleWidgets.forEach((widget) => {
             newSrcs[widget.id] = buildWidgetSrc(widget);
         });
         setWidgetSrcs((prev) => {
@@ -127,7 +145,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
 
     // Send theme to all ready widget iframes when theme changes and inject styles
     useEffect(() => {
-        widgets.forEach((widget) => {
+        visibleWidgets.forEach((widget) => {
             const iframe = document.querySelector(`iframe[data-widget-id="${widget.id}"]`) as HTMLIFrameElement;
             if (iframe?.contentWindow && iframeReadyRef.current[widget.id]) {
                 iframe.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
@@ -156,7 +174,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [theme]);
 
-    if (!widgets || widgets.length === 0) return null;
+    if (!visibleWidgets || visibleWidgets.length === 0) return null;
 
     const injectThemeStyles = (iframe: HTMLIFrameElement) => {
         try {
@@ -326,101 +344,154 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
 
     return (
         <div className='grid w-full grid-cols-12 gap-4'>
-            {widgets.map((widget) => {
+            {visibleWidgets.map((widget) => {
                 const iframeProps = getIframeDomProps(widget);
+                const isHidden = hiddenSet.includes(widget.id);
+                const showHideToggle = Boolean(isCustomizing && onToggleHidden);
 
                 return (
-                    <div key={widget.id} className={cn('w-full min-w-0 transition-all', getGridClass(widget))}>
-                        {shouldRenderAsCard(widget) ? (
-                            <Card
-                                className={cn(
-                                    'flex h-full flex-col overflow-hidden transition-all duration-300',
-                                    'from-primary/10 via-primary/5 bg-linear-to-br to-transparent',
-                                    'border-primary/20 hover:border-primary/30',
-                                    widget.card?.variant === 'outline' && 'border-primary/40',
-                                    widget.classes?.card,
-                                )}
+                    <div key={widget.id} className={cn('relative w-full min-w-0 transition-all', getGridClass(widget))}>
+                        {showHideToggle && (
+                            <button
+                                type='button'
+                                onClick={() => onToggleHidden?.(widget.id)}
+                                title={
+                                    isHidden
+                                        ? t('dashboard.layout.show_plugin_widget')
+                                        : t('dashboard.layout.hide_plugin_widget')
+                                }
+                                aria-label={
+                                    isHidden
+                                        ? t('dashboard.layout.show_plugin_widget')
+                                        : t('dashboard.layout.hide_plugin_widget')
+                                }
+                                className='bg-background border-border text-muted-foreground absolute -top-2 -right-2 z-20 rounded-full border p-2 shadow-sm transition-transform hover:scale-105'
                             >
-                                {shouldShowHeader(widget) && (
-                                    <CardHeader className={cn('space-y-1 pb-4', widget.classes?.header)}>
-                                        <div className='flex items-center gap-3'>
-                                            {getCardIcon(widget) && (
-                                                <div className='bg-primary/10 text-primary border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
-                                                    <span className='text-sm font-bold tracking-wider uppercase'>
-                                                        {getCardIcon(widget)}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            <div className='flex flex-1 flex-col justify-center gap-0.5'>
-                                                {getHeaderTitle(widget) && (
-                                                    <CardTitle className='text-foreground/90 text-base font-bold tracking-tight'>
-                                                        {getHeaderTitle(widget)}
-                                                    </CardTitle>
-                                                )}
-                                                {getHeaderDescription(widget) && (
-                                                    <CardDescription className='text-muted-foreground/70 line-clamp-1 text-xs'>
-                                                        {getHeaderDescription(widget)}
-                                                    </CardDescription>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </CardHeader>
+                                {isHidden ? (
+                                    <Eye className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
+                                ) : (
+                                    <EyeOff className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
                                 )}
-                                <CardContent
+                            </button>
+                        )}
+                        <div className={cn(isHidden && isCustomizing && 'rounded-xl opacity-30 grayscale')}>
+                            {shouldRenderAsCard(widget) ? (
+                                <Card
                                     className={cn(
-                                        'relative flex-1 p-4',
-                                        widget.card?.padding === 'none' && 'p-0',
-                                        widget.card?.padding === 'sm' && 'p-3',
-                                        widget.card?.padding === 'md' && 'p-5',
-                                        widget.card?.padding === 'lg' && 'p-8',
-                                        widget.classes?.content,
+                                        'flex h-full flex-col overflow-hidden transition-all duration-300',
+                                        'from-primary/10 via-primary/5 bg-linear-to-br to-transparent',
+                                        'border-primary/20 hover:border-primary/30',
+                                        widget.card?.variant === 'outline' && 'border-primary/40',
+                                        widget.classes?.card,
                                     )}
                                 >
+                                    {shouldShowHeader(widget) && (
+                                        <CardHeader className={cn('space-y-1 pb-4', widget.classes?.header)}>
+                                            <div className='flex items-center gap-3'>
+                                                {getCardIcon(widget) && (
+                                                    <div className='bg-primary/10 text-primary border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                                                        <span className='text-sm font-bold tracking-wider uppercase'>
+                                                            {getCardIcon(widget)}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                <div className='flex flex-1 flex-col justify-center gap-0.5'>
+                                                    {getHeaderTitle(widget) && (
+                                                        <CardTitle className='text-foreground/90 text-base font-bold tracking-tight'>
+                                                            {getHeaderTitle(widget)}
+                                                        </CardTitle>
+                                                    )}
+                                                    {getHeaderDescription(widget) && (
+                                                        <CardDescription className='text-muted-foreground/70 line-clamp-1 text-xs'>
+                                                            {getHeaderDescription(widget)}
+                                                        </CardDescription>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </CardHeader>
+                                    )}
+                                    <CardContent
+                                        className={cn(
+                                            'relative flex-1 p-4',
+                                            widget.card?.padding === 'none' && 'p-0',
+                                            widget.card?.padding === 'sm' && 'p-3',
+                                            widget.card?.padding === 'md' && 'p-5',
+                                            widget.card?.padding === 'lg' && 'p-8',
+                                            widget.classes?.content,
+                                        )}
+                                    >
+                                        <div className='relative h-full w-full' style={iframeProps.containerStyle}>
+                                            {loadingStates[widget.id] !== false && (
+                                                <div className='bg-muted/20 absolute inset-0 z-20 flex items-center justify-center'>
+                                                    <div className='border-muted-foreground/30 border-t-primary h-7 w-7 animate-spin rounded-full border-2' />
+                                                </div>
+                                            )}
+
+                                            {errorStates[widget.id] && (
+                                                <div className='bg-background/60 animate-fade-in absolute inset-0 z-20 flex items-center justify-center p-6 backdrop-blur-md'>
+                                                    <div className='max-w-[80%] text-center'>
+                                                        <div className='bg-destructive/10 text-destructive mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl'>
+                                                            <AlertTriangle className='h-6 w-6' />
+                                                        </div>
+                                                        <p className='text-foreground/80 mb-6 text-sm font-medium'>
+                                                            {errorStates[widget.id] || widget.behavior?.errorMessage}
+                                                        </p>
+                                                        <Button
+                                                            size='sm'
+                                                            variant='outline'
+                                                            className='border-primary/20 bg-primary/5 hover:bg-primary/10 h-9'
+                                                            onClick={() => retryLoad(widget.id)}
+                                                        >
+                                                            <RotateCcw className='mr-2 h-4 w-4' />
+                                                            {widget.behavior?.retryLabel || t('plugins.retry')}
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {!errorStates[widget.id] && widgetSrcs[widget.id] && (
+                                                <iframe
+                                                    key={`${widget.id}-${theme}`}
+                                                    data-widget-id={widget.id}
+                                                    src={widgetSrcs[widget.id]}
+                                                    className={cn(
+                                                        'h-full w-full border-0 transition-opacity duration-200',
+                                                        loadingStates[widget.id] !== false
+                                                            ? 'opacity-0'
+                                                            : 'opacity-100',
+                                                        widget.classes?.iframe,
+                                                    )}
+                                                    style={iframeProps.iframeStyle}
+                                                    {...iframeProps.domAttrs}
+                                                    aria-label={iframeProps.ariaLabel}
+                                                    referrerPolicy={iframeProps.referrerPolicy}
+                                                    onLoad={(event) => handleIframeLoad(widget.id, event.currentTarget)}
+                                                    onError={() => handleIframeError(widget.id)}
+                                                    {...{ allowtransparency: 'true' }}
+                                                />
+                                            )}
+                                        </div>
+                                    </CardContent>
+
+                                    {widget.card?.footer?.show && widget.card.footer.text && (
+                                        <CardFooter
+                                            className={cn('text-muted-foreground text-sm', widget.classes?.footer)}
+                                        >
+                                            {widget.card.footer.text}
+                                        </CardFooter>
+                                    )}
+                                </Card>
+                            ) : (
+                                <div className={cn('relative w-full', widget.classes?.card)}>
                                     <div className='relative h-full w-full' style={iframeProps.containerStyle}>
-                                        {loadingStates[widget.id] !== false && (
-                                            <div className='bg-background/50 absolute inset-0 z-20 flex items-center justify-center backdrop-blur-sm transition-all duration-300'>
-                                                <div className='flex flex-col items-center space-y-4'>
-                                                    <div className='relative flex items-center justify-center'>
-                                                        <div className='border-primary h-10 w-10 animate-spin rounded-full border-2 border-t-transparent' />
-                                                        <div className='bg-primary/20 absolute h-6 w-6 animate-pulse rounded-full' />
-                                                    </div>
-                                                    <p className='text-muted-foreground text-xs font-medium tracking-tight'>
-                                                        {widget.behavior?.loadingMessage || t('plugins.loadingContent')}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {errorStates[widget.id] && (
-                                            <div className='bg-background/60 animate-fade-in absolute inset-0 z-20 flex items-center justify-center p-6 backdrop-blur-md'>
-                                                <div className='max-w-[80%] text-center'>
-                                                    <div className='bg-destructive/10 text-destructive mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl'>
-                                                        <AlertTriangle className='h-6 w-6' />
-                                                    </div>
-                                                    <p className='text-foreground/80 mb-6 text-sm font-medium'>
-                                                        {errorStates[widget.id] || widget.behavior?.errorMessage}
-                                                    </p>
-                                                    <Button
-                                                        size='sm'
-                                                        variant='outline'
-                                                        className='border-primary/20 bg-primary/5 hover:bg-primary/10 h-9'
-                                                        onClick={() => retryLoad(widget.id)}
-                                                    >
-                                                        <RotateCcw className='mr-2 h-4 w-4' />
-                                                        {widget.behavior?.retryLabel || t('plugins.retry')}
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        )}
-
                                         {!errorStates[widget.id] && widgetSrcs[widget.id] && (
                                             <iframe
-                                                key={`${widget.id}-${theme}-${widgetSrcs[widget.id]}`}
+                                                key={`${widget.id}-${theme}`}
                                                 data-widget-id={widget.id}
                                                 src={widgetSrcs[widget.id]}
                                                 className={cn(
-                                                    'h-full w-full border-0 transition-opacity duration-300',
-                                                    loadingStates[widget.id] ? 'opacity-0' : 'opacity-100',
+                                                    'h-full w-full border-0 transition-opacity duration-200',
+                                                    loadingStates[widget.id] !== false ? 'opacity-0' : 'opacity-100',
                                                     widget.classes?.iframe,
                                                 )}
                                                 style={iframeProps.iframeStyle}
@@ -433,39 +504,9 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                                             />
                                         )}
                                     </div>
-                                </CardContent>
-
-                                {widget.card?.footer?.show && widget.card.footer.text && (
-                                    <CardFooter className={cn('text-muted-foreground text-sm', widget.classes?.footer)}>
-                                        {widget.card.footer.text}
-                                    </CardFooter>
-                                )}
-                            </Card>
-                        ) : (
-                            <div className={cn('relative w-full', widget.classes?.card)}>
-                                <div className='relative h-full w-full' style={iframeProps.containerStyle}>
-                                    {!errorStates[widget.id] && widgetSrcs[widget.id] && (
-                                        <iframe
-                                            key={`${widget.id}-${theme}-${widgetSrcs[widget.id]}`}
-                                            data-widget-id={widget.id}
-                                            src={widgetSrcs[widget.id]}
-                                            className={cn(
-                                                'h-full w-full border-0 transition-opacity duration-300',
-                                                loadingStates[widget.id] ? 'opacity-0' : 'opacity-100',
-                                                widget.classes?.iframe,
-                                            )}
-                                            style={iframeProps.iframeStyle}
-                                            {...iframeProps.domAttrs}
-                                            aria-label={iframeProps.ariaLabel}
-                                            referrerPolicy={iframeProps.referrerPolicy}
-                                            onLoad={(event) => handleIframeLoad(widget.id, event.currentTarget)}
-                                            onError={() => handleIframeError(widget.id)}
-                                            {...{ allowtransparency: 'true' }}
-                                        />
-                                    )}
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 );
             })}

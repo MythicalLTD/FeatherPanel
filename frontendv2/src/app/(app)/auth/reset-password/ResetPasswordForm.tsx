@@ -28,6 +28,14 @@ import axios from 'axios';
 import { isCaptchaConfigured, obtainCaptchaResponseToken } from '@/lib/captchaGate';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import {
+    AuthAlert,
+    AuthFooterPrompt,
+    AuthLoadingState,
+    AuthPage,
+    AuthPageHeader,
+    AuthPanel,
+} from '@/components/auth/AuthUi';
 
 export default function ResetPasswordForm() {
     const router = useRouter();
@@ -164,107 +172,88 @@ export default function ResetPasswordForm() {
     };
 
     if (loading) {
-        return (
-            <div className='py-12 text-center'>
-                <div className='border-primary inline-block h-8 w-8 animate-spin rounded-full border-2 border-t-transparent' />
-                <p className='text-muted-foreground mt-4 text-sm'>{t('auth.reset_password.validating')}</p>
-            </div>
-        );
+        return <AuthLoadingState label={t('auth.reset_password.validating')} />;
     }
 
     if (!tokenValid) {
         return (
-            <div className='space-y-6'>
-                <div className='space-y-2 text-center'>
-                    <h2 className='text-destructive text-2xl font-bold tracking-tight'>
-                        {t('auth.reset_password.invalid_token')}
-                    </h2>
-                    <p className='text-muted-foreground text-sm'>{error || t('auth.reset_password.invalid_message')}</p>
-                </div>
-                <Button variant='outline' className='w-full' onClick={() => router.push('/auth/forgot-password')}>
-                    {t('auth.reset_password.request_new')}
-                </Button>
-            </div>
+            <AuthPage>
+                <AuthPageHeader
+                    title={t('auth.reset_password.invalid_token')}
+                    subtitle={error || t('auth.reset_password.invalid_message')}
+                />
+                <AuthPanel>
+                    <Button variant='outline' className='w-full' onClick={() => router.push('/auth/forgot-password')}>
+                        {t('auth.reset_password.request_new')}
+                    </Button>
+                </AuthPanel>
+            </AuthPage>
         );
     }
 
     return (
-        <div className='space-y-6'>
+        <AuthPage>
             <WidgetRenderer widgets={getWidgets('auth-reset-password', 'auth-reset-password-top')} />
 
-            <div className='space-y-2 text-center'>
-                <h2 className='text-2xl font-bold tracking-tight'>{t('auth.reset_password.title')}</h2>
-                <p className='text-muted-foreground text-sm'>{t('auth.reset_password.subtitle')}</p>
-            </div>
+            <AuthPageHeader title={t('auth.reset_password.title')} subtitle={t('auth.reset_password.subtitle')} />
 
-            <WidgetRenderer widgets={getWidgets('auth-reset-password', 'auth-reset-password-before-form')} />
-            <form onSubmit={handleSubmit} className='space-y-5'>
-                <Input
-                    label={t('auth.reset_password.new_password')}
-                    type='password'
-                    value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    required
-                    autoComplete='new-password'
-                    icon={<Lock className='h-5 w-5' />}
-                    placeholder={t('auth.register.password_placeholder')}
-                />
+            <AuthPanel>
+                <WidgetRenderer widgets={getWidgets('auth-reset-password', 'auth-reset-password-before-form')} />
+                <form onSubmit={handleSubmit} className='space-y-4'>
+                    <Input
+                        label={t('auth.reset_password.new_password')}
+                        type='password'
+                        value={form.password}
+                        onChange={(e) => setForm({ ...form, password: e.target.value })}
+                        required
+                        autoComplete='new-password'
+                        icon={<Lock className='h-5 w-5' />}
+                        placeholder={t('auth.register.password_placeholder')}
+                    />
 
-                <Input
-                    label={t('auth.reset_password.confirm_password')}
-                    type='password'
-                    value={form.confirmPassword}
-                    onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-                    required
-                    autoComplete='new-password'
-                    icon={<Lock className='h-5 w-5' />}
-                    placeholder={t('auth.register.password_placeholder')}
-                />
+                    <Input
+                        label={t('auth.reset_password.confirm_password')}
+                        type='password'
+                        value={form.confirmPassword}
+                        onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                        required
+                        autoComplete='new-password'
+                        icon={<Lock className='h-5 w-5' />}
+                        placeholder={t('auth.register.password_placeholder')}
+                    />
 
-                <Captcha
-                    refreshKey={turnstileKey}
-                    onVerify={handleTurnstileSuccess}
-                    onError={() => {
-                        setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                    }}
-                    onExpire={() => {
-                        setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                    }}
-                />
+                    <Captcha
+                        refreshKey={turnstileKey}
+                        onVerify={handleTurnstileSuccess}
+                        onError={() => {
+                            setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                        }}
+                        onExpire={() => {
+                            setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                        }}
+                    />
 
-                <Button type='submit' className='group w-full' loading={submitting}>
-                    {!submitting && (
-                        <>
-                            {t('auth.reset_password.submit')}
-                            <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
-                        </>
-                    )}
-                </Button>
+                    <Button type='submit' className='group w-full' loading={submitting}>
+                        {!submitting && (
+                            <>
+                                {t('auth.reset_password.submit')}
+                                <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                            </>
+                        )}
+                    </Button>
 
-                {error && (
-                    <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
-                        {error}
-                    </div>
-                )}
-                {success && (
-                    <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
-                        {success}
-                    </div>
-                )}
-            </form>
-            <WidgetRenderer widgets={getWidgets('auth-reset-password', 'auth-reset-password-after-form')} />
+                    <AuthAlert variant='error'>{error}</AuthAlert>
+                    <AuthAlert variant='success'>{success}</AuthAlert>
+                </form>
+                <WidgetRenderer widgets={getWidgets('auth-reset-password', 'auth-reset-password-after-form')} />
+            </AuthPanel>
 
-            <div className='text-muted-foreground text-center text-sm'>
-                {t('auth.reset_password.remember')}{' '}
-                <button
-                    type='button'
-                    className='text-primary hover:text-primary/80 font-semibold transition-colors'
-                    onClick={() => router.push('/auth/login')}
-                >
-                    {t('auth.reset_password.sign_in')}
-                </button>
-            </div>
+            <AuthFooterPrompt
+                prompt={t('auth.reset_password.remember')}
+                href='/auth/login'
+                linkLabel={t('auth.reset_password.sign_in')}
+            />
             <WidgetRenderer widgets={getWidgets('auth-reset-password', 'auth-reset-password-bottom')} />
-        </div>
+        </AuthPage>
     );
 }

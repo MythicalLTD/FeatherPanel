@@ -67,7 +67,13 @@ function UserAvatar({
         />
     ) : (
         <div className='bg-primary/10 text-primary flex h-full w-full items-center justify-center rounded-full'>
-            <span className={cn('font-semibold', size === 'lg' ? 'text-base' : 'text-sm')}>{getUserInitials()}</span>
+            {user ? (
+                <span className={cn('font-semibold', size === 'lg' ? 'text-base' : 'text-sm')}>
+                    {getUserInitials()}
+                </span>
+            ) : (
+                <CircleUser className={cn(size === 'lg' ? 'h-5 w-5' : 'h-4 w-4')} aria-hidden />
+            )}
         </div>
     );
 
@@ -140,7 +146,7 @@ export function NavbarUserMenu({
         <Menu as='div' className='relative shrink-0'>
             <Menu.Button
                 className={cn(
-                    'group focus-visible:ring-ring focus-visible:ring-offset-background flex items-center transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                    'group focus-visible:ring-ring focus-visible:ring-offset-background flex items-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                     isModern
                         ? 'border-border/35 bg-muted/10 hover:bg-muted/25 data-[headlessui-state=open]:bg-muted/35 gap-2 rounded-xl border px-1.5 py-1 sm:px-2'
                         : 'hover:bg-accent/60 data-[headlessui-state=open]:bg-accent/80 gap-2 rounded-xl px-1.5 py-1 sm:px-2',
@@ -160,8 +166,10 @@ export function NavbarUserMenu({
                     </span>
                     {user?.role ? (
                         <RoleBadge role={user.role} size='xs' className='mt-0.5 max-w-[8.5rem]' />
-                    ) : (
+                    ) : user ? (
                         <span className='text-muted-foreground mt-0.5 truncate text-[11px]'>{t('navbar.noRole')}</span>
+                    ) : (
+                        <span className='text-muted-foreground/70 mt-0.5 h-[11px] text-[11px]'>&nbsp;</span>
                     )}
                 </span>
                 <ChevronDown
@@ -198,9 +206,9 @@ export function NavbarUserMenu({
                                     <div className='mt-2'>
                                         <RoleBadge role={user.role} size='sm' />
                                     </div>
-                                ) : (
+                                ) : user ? (
                                     <p className='text-muted-foreground mt-2 text-xs'>{t('navbar.noRole')}</p>
-                                )}
+                                ) : null}
                             </div>
                         </div>
 

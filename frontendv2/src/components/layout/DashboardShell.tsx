@@ -49,8 +49,9 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     const router = useRouter();
     const pathname = usePathname();
     const [mobileOpen, setMobileOpen] = useState(false);
-    const [mounted, setMounted] = useState(false);
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
+        typeof window === 'undefined' ? false : readSidebarCollapsed(),
+    );
 
     useEffect(() => {
         setSidebarCollapsed(readSidebarCollapsed());
@@ -58,7 +59,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     }, []);
 
     const pluginData = usePluginRoutes();
-    const pluginPaths = getPluginPaths(pluginData);
+    const pluginPaths = getPluginPaths(pluginData.data);
 
     const isActualPluginPage = pluginPaths.some((pluginPath) => {
         if (pathname.startsWith('/server/')) {
@@ -115,25 +116,23 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     const navbarHoverDockActive = navbarHoverReveal && chromeLayout === 'modern';
 
     useEffect(() => {
-        setMounted(true);
-
         const token = getCookie('remember_token');
         if (!token) {
             router.push('/auth/login');
         }
     }, [router]);
 
-    if (!mounted) {
-        return (
-            <div className='bg-background flex h-svh items-center justify-center'>
-                <div className='border-primary h-12 w-12 animate-spin rounded-full border-2 border-t-transparent' />
-            </div>
-        );
-    }
-
     return (
         <GlobalSearchProvider>
             <PanelDebugProvider>
+                {/* Outside overflow shells so fixed desktop rail is in first paint (no portal pop-in). */}
+                {!hideAppChrome && (
+                    <Sidebar
+                        mobileOpen={mobileOpen}
+                        setMobileOpen={setMobileOpen}
+                        pluginFullBleed={useFullBleedLayout}
+                    />
+                )}
                 <BackgroundWrapper fillViewport>
                     <GlobalSearchDialog />
                     <PanelDebugConsole />
@@ -141,17 +140,9 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                         className='motion-content flex min-h-0 flex-1 flex-col overflow-hidden'
                         data-fp-dashboard-shell
                     >
-                        {!hideAppChrome && (
-                            <Sidebar
-                                mobileOpen={mobileOpen}
-                                setMobileOpen={setMobileOpen}
-                                pluginFullBleed={useFullBleedLayout}
-                            />
-                        )}
-
                         <div
                             className={cn(
-                                'fp-chrome-motion flex min-h-0 min-w-0 flex-1 flex-col transition-[padding] duration-300 ease-out',
+                                'fp-chrome-motion flex min-h-0 min-w-0 flex-1 flex-col',
                                 !hideAppChrome &&
                                     getShellContentInset({
                                         chromeLayout,
@@ -181,20 +172,23 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                             >
                                 <div
                                     className={cn(
-                                        'flex min-h-0 flex-1 flex-col',
-                                        useFullBleedLayout && 'h-full',
+                                        'flex w-full flex-col',
+                                        // Full-bleed consoles need a height-locked flex child.
+                                        // Scrollable pages must NOT use min-h-0 or overflow:hidden
+                                        // siblings (e.g. ticket banner) get crushed and clipped.
+                                        useFullBleedLayout ? 'h-full min-h-0 flex-1' : 'min-h-full flex-1',
                                         !useFullBleedLayout &&
                                             (isServerConsoleHome || isWebSpaceConsoleHome
-                                                ? 'mx-auto w-full max-w-[min(100rem,calc(100vw-1.5rem))] sm:max-w-[min(100rem,calc(100vw-2rem))]'
+                                                ? 'mx-auto max-w-[min(100rem,calc(100vw-1.5rem))] sm:max-w-[min(100rem,calc(100vw-2rem))]'
                                                 : isTicketDetailPage
-                                                  ? 'mx-auto w-full max-w-[min(112rem,calc(100vw-1.5rem))] sm:max-w-[min(112rem,calc(100vw-2rem))]'
-                                                  : 'mx-auto w-full max-w-7xl'),
+                                                  ? 'mx-auto max-w-[min(112rem,calc(100vw-1.5rem))] sm:max-w-[min(112rem,calc(100vw-2rem))]'
+                                                  : 'mx-auto max-w-7xl'),
                                     )}
                                 >
-                                    {!useFullBleedLayout && <AdminOpenTicketsBanner className='mb-5' />}
+                                    {!useFullBleedLayout && <AdminOpenTicketsBanner className='mb-5 shrink-0' />}
                                     {children}
                                     {!useFullBleedLayout ? (
-                                        <footer className='border-border/40 mt-6 border-t pt-4 pb-2'>
+                                        <footer className='border-border/40 mt-6 shrink-0 border-t pt-4 pb-2'>
                                             <ConfiguredLinks variant='compact' />
                                         </footer>
                                     ) : null}

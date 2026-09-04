@@ -15,8 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { Fragment, useState, useEffect, useMemo, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import { Fragment, useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Dialog, Transition } from '@headlessui/react';
 import { X, ChevronRight, ChevronDown } from 'lucide-react';
@@ -66,14 +65,7 @@ function navIconSize(sizeClass: string): number {
 }
 
 function NavIcon({ item, sizeClass }: { item: NavigationItem; sizeClass: string }) {
-    return (
-        <PanelIcon
-            source={item}
-            size={navIconSize(sizeClass)}
-            label={item.name}
-            className='shrink-0 transition-transform group-hover:scale-110'
-        />
-    );
+    return <PanelIcon source={item} size={navIconSize(sizeClass)} label={item.name} className='shrink-0' />;
 }
 
 function SidebarContent({
@@ -805,7 +797,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
     const pathname = usePathname();
     const router = useRouter();
     const { settings } = useSettings();
-    const { navigationItems } = useNavigation();
+    const { navigationItems, navReady } = useNavigation();
     const { chromeLayout } = useChromeLayout();
     const {
         sidebarDensity,
@@ -818,14 +810,19 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
     } = useSidebarPreferences();
     const { t } = useTranslation();
     const [collapsed, setCollapsed] = useState(() => (typeof window === 'undefined' ? false : readSidebarCollapsed()));
-    const [portalReady, setPortalReady] = useState(false);
+    // Prefer the last settled list (session + plugins). Until then, show the live
+    // base items so the sidebar is never an empty chrome shell.
+    const [settledItems, setSettledItems] = useState<NavigationItem[] | null>(null);
 
-    useEffect(() => {
-        setPortalReady(true);
-    }, []);
+    useLayoutEffect(() => {
+        if (!navReady) return;
+        setSettledItems(navigationItems);
+    }, [navReady, navigationItems]);
+
+    const displayItems = settledItems ?? navigationItems;
 
     const groupedItems = useMemo(() => {
-        const grouped = navigationItems.reduce(
+        const grouped = displayItems.reduce(
             (acc, item) => {
                 const group = item.group || 'Other';
                 if (!acc[group]) acc[group] = [];
@@ -840,7 +837,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
         });
 
         return grouped;
-    }, [navigationItems]);
+    }, [displayItems]);
 
     useEffect(() => subscribeSidebarCollapsed(setCollapsed), []);
 
@@ -932,42 +929,42 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
                 </Dialog>
             </Transition.Root>
 
-            {portalReady
-                ? createPortal(
-                      <div className={getDesktopSidebarShellClass(sidebarPosition, chromeLayout)}>
-                          <div
-                              className={getDesktopSidebarPanelClass({
-                                  chromeLayout,
-                                  sidebarPosition,
-                                  sidebarStyle,
-                                  sidebarGlow,
-                                  collapsed,
-                                  dockDisplay,
-                                  dockSize,
-                              })}
-                              data-fp-plugin-sidebar-dock={pluginFullBleed ? '' : undefined}
-                          >
-                              <SidebarContent
-                                  collapsed={collapsed}
-                                  settings={settings}
-                                  pathname={pathname}
-                                  router={router}
-                                  setMobileOpen={setMobileOpen}
-                                  groupedItems={groupedItems}
-                                  chromeLayout={chromeLayout}
-                                  sidebarDensity={sidebarDensity}
-                                  sidebarStyle={sidebarStyle}
-                                  sidebarPosition={sidebarPosition}
-                                  dockDisplay={dockDisplay}
-                                  dockSize={dockSize}
-                                  sidebarGlow={sidebarGlow}
-                                  sidebarTogglePlacement={sidebarTogglePlacement}
-                              />
-                          </div>
-                      </div>,
-                      document.body,
-                  )
-                : null}
+            {/*
+              Render fixed desktop chrome in-tree (not a post-hydrate body portal).
+              Parent must not use overflow:hidden or the rail gets clipped — DashboardShell
+              mounts this outside BackgroundWrapper's overflow shell.
+            */}
+            <div className={getDesktopSidebarShellClass(sidebarPosition, chromeLayout)}>
+                <div
+                    className={getDesktopSidebarPanelClass({
+                        chromeLayout,
+                        sidebarPosition,
+                        sidebarStyle,
+                        sidebarGlow,
+                        collapsed,
+                        dockDisplay,
+                        dockSize,
+                    })}
+                    data-fp-plugin-sidebar-dock={pluginFullBleed ? '' : undefined}
+                >
+                    <SidebarContent
+                        collapsed={collapsed}
+                        settings={settings}
+                        pathname={pathname}
+                        router={router}
+                        setMobileOpen={setMobileOpen}
+                        groupedItems={groupedItems}
+                        chromeLayout={chromeLayout}
+                        sidebarDensity={sidebarDensity}
+                        sidebarStyle={sidebarStyle}
+                        sidebarPosition={sidebarPosition}
+                        dockDisplay={dockDisplay}
+                        dockSize={dockSize}
+                        sidebarGlow={sidebarGlow}
+                        sidebarTogglePlacement={sidebarTogglePlacement}
+                    />
+                </div>
+            </div>
         </>
     );
 }
