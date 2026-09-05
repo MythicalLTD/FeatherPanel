@@ -26,6 +26,7 @@ use App\Config\ConfigInterface;
 use PragmaRX\Google2FA\Google2FA;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\AccountLockoutHelper;
+use App\Helpers\SessionCookieHelper;
 use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -317,7 +318,7 @@ class TwoFactorController
             return ApiResponse::error('Remember token not set', 'REMEMBER_TOKEN_NOT_SET');
         }
         $userInfo['remember_token'] = $token;
-        setcookie('remember_token', $token, time() + 60 * 60 * 24 * 30, '/');
+        SessionCookieHelper::set($token, time() + 60 * 60 * 24 * 30);
         User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
 
         Activity::createActivity([

@@ -147,7 +147,7 @@ class ForgotPasswordController
             // success path instead of returning EMAIL_DOES_NOT_EXIST.
             return $genericSuccess();
         }
-        $resetToken = bin2hex(random_bytes(32));
+        $resetToken = bin2hex(random_bytes(32)) . '.' . (time() + 3600);
 
         if (User::updateUser($userInfo['uuid'], ['mail_verify' => $resetToken])) {
             // Send reset password email
