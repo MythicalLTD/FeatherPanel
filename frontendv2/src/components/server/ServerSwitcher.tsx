@@ -135,6 +135,15 @@ export function ServerSwitcher({ fallbackTitle }: ServerSwitcherProps) {
         return null;
     }, [sortedServers, currentUuidShort, serverContext?.server]);
 
+    const currentServerStatus = useMemo(() => {
+        if (!currentServer) return null;
+        // Prefer live Wings status from console over cached list stats (which go stale after stop).
+        if (serverContext?.liveStatus) {
+            return serverContext.liveStatus;
+        }
+        return displayStatus(currentServer);
+    }, [currentServer, serverContext?.liveStatus]);
+
     const filteredServers = useMemo(() => {
         let list = filterServersForSwitcherTab(sortedServers, activeTab, favoriteUuids, recentUuidShorts);
         list = filterServersBySearch(list, searchQuery);
@@ -230,16 +239,16 @@ export function ServerSwitcher({ fallbackTitle }: ServerSwitcherProps) {
                             <Star className='text-primary ml-1 inline h-3 w-3 fill-current' aria-hidden />
                         )}
                     </span>
-                    {currentServer && (
+                    {currentServer && currentServerStatus && (
                         <span className='text-muted-foreground hidden items-center gap-1 text-[11px] sm:flex'>
                             <span
                                 className={cn(
                                     'h-1.5 w-1.5 shrink-0 rounded-full',
-                                    getStatusDotColor(displayStatus(currentServer)),
+                                    getStatusDotColor(currentServerStatus),
                                 )}
                             />
-                            {t(`servers.status.${displayStatus(currentServer)}`, {
-                                defaultValue: displayStatus(currentServer),
+                            {t(`servers.status.${currentServerStatus}`, {
+                                defaultValue: currentServerStatus,
                             })}
                         </span>
                     )}
@@ -364,7 +373,10 @@ export function ServerSwitcher({ fallbackTitle }: ServerSwitcherProps) {
                             filteredServers.map((server) => {
                                 const id = getServerRouteId(server);
                                 const isCurrent = id === currentUuidShort;
-                                const status = displayStatus(server);
+                                const status =
+                                    isCurrent && serverContext?.liveStatus
+                                        ? serverContext.liveStatus
+                                        : displayStatus(server);
                                 const favorited = favoriteUuidSet.has(server.uuid);
 
                                 return (

@@ -35,6 +35,8 @@ export function useServerPermissions(_uuidShort: string) {
         server: null,
         loading: false,
         error: null,
+        liveStatus: null,
+        setLiveStatus: () => {},
         refreshServer: async () => {},
         hasPermission: () => false,
     };

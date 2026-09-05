@@ -1,8 +1,8 @@
 # Changelog
 
-## v1.4.0 STABLE 
+## v1.4.0 STABLE
 
-### Added 
+### Added
 
 - Widgets are now a part of the customization system. by @nayskutzu
 - Added full support for progressive web apps (PWA). by @nayskutzu
@@ -24,7 +24,7 @@
 - Support for custom color schemes was added. So now users can chose their own colors for the panel. by @nayskutzu
 - Support for more icons engines were added. So now you can chose from lucide, tabler, react-icons, and more. by @nayskutzu
 
-### Improved 
+### Improved
 
 - Admin WebPlates list/create/edit now match Spells/Realms UI (filter chrome, ResourceCards, ghost actions, dual pagination, help cards). by @nayskutzu
 - Removed mistaken `user.webspaces.*` role permission nodes; panel roles stay `admin.*` only, and user WebSpace access uses subuser permissions (`settings.update`, etc.). by @nayskutzu
@@ -51,6 +51,7 @@
 - Fixed an issue where the Schedules tab was incorrectly hidden when the `server_allow_schedules` setting was unset; it now defaults to visible as intended. by @nayskutzu
 - Fixed: Schedule creation no longer fails with a 500 error when `is_active` is submitted as a boolean; boolean values are handled correctly.
 - Fixes related to server transfers with bunch of allocations were fixed by @nayskutzu
+- The navbar server state was stuck to the last server state instead of updating when the server state changes. by @nayskutzu
 
 ## v1.3.7.10 STABLE
 

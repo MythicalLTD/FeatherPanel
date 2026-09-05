@@ -102,7 +102,7 @@ export default function ServerConsolePage() {
 
     const hasInitializedStatus = useRef(false);
 
-    const { hasPermission, loading: permissionsLoading, server } = useServerPermissions(serverUuid);
+    const { hasPermission, loading: permissionsLoading, server, setLiveStatus } = useServerPermissions(serverUuid);
     const [serverStatus, setServerStatus] = useState('offline');
     const [wingsUptime, setWingsUptime] = useState<string>('');
     const [showLogDialog, setShowLogDialog] = useState(false);
@@ -117,11 +117,12 @@ export default function ServerConsolePage() {
         if (server?.status && !hasInitializedStatus.current) {
             const timer = setTimeout(() => {
                 setServerStatus(server.status);
+                setLiveStatus(server.status);
                 hasInitializedStatus.current = true;
             }, 0);
             return () => clearTimeout(timer);
         }
-    }, [server?.status]);
+    }, [server?.status, setLiveStatus]);
 
     const [cpuData, setCpuData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const [memoryData, setMemoryData] = useState<Array<{ timestamp: number; value: number }>>([]);
@@ -276,128 +277,136 @@ export default function ServerConsolePage() {
         [processLog, compiledConsoleFilters, consoleAppDisplayName],
     );
 
-    const handleStatusUpdate = useCallback((status: string) => {
-        setServerStatus(status);
-        if (pendingActionResolveRef.current) {
-            pendingActionResolveRef.current();
-            pendingActionResolveRef.current = null;
-        }
-    }, []);
+    const handleStatusUpdate = useCallback(
+        (status: string) => {
+            setServerStatus(status);
+            setLiveStatus(status);
+            if (pendingActionResolveRef.current) {
+                pendingActionResolveRef.current();
+                pendingActionResolveRef.current = null;
+            }
+        },
+        [setLiveStatus],
+    );
 
-    const handleStatsUpdate = useCallback((stats: WingsStats) => {
-        const timestamp = new Date().getTime();
-        // Light EMA so bursty Wings samples don't make rates / charts jump every tick.
-        const smoothRate = (previous: number, next: number, alpha = 0.35) => previous * (1 - alpha) + next * alpha;
+    const handleStatsUpdate = useCallback(
+        (stats: WingsStats) => {
+            const timestamp = new Date().getTime();
+            // Light EMA so bursty Wings samples don't make rates / charts jump every tick.
+            const smoothRate = (previous: number, next: number, alpha = 0.35) => previous * (1 - alpha) + next * alpha;
 
-        if (stats.state) {
-            setServerStatus(stats.state);
-        }
-
-        if (stats.uptime) {
-            setWingsUptime(formatUptime(stats.uptime));
-        }
-
-        if (stats.cpu_absolute !== undefined && stats.cpu_absolute !== null) {
-            const cpuValue = Number(stats.cpu_absolute) || 0;
-            setCurrentCpu(cpuValue);
-            setCpuData((prev) => {
-                const newData = [...prev, { timestamp, value: cpuValue }];
-                return newData.slice(-maxDataPoints);
-            });
-        }
-
-        if (stats.memory_bytes !== undefined && stats.memory_bytes !== null) {
-            const memoryMiB = Number(stats.memory_bytes) / (1024 * 1024);
-            setCurrentMemory(memoryMiB);
-            setMemoryData((prev) => {
-                const newData = [...prev, { timestamp, value: memoryMiB }];
-                return newData.slice(-maxDataPoints);
-            });
-        }
-
-        if (stats.disk_bytes !== undefined && stats.disk_bytes !== null) {
-            const diskMiB = Number(stats.disk_bytes) / (1024 * 1024);
-            setCurrentDisk(diskMiB);
-            setDiskData((prev) => {
-                const newData = [...prev, { timestamp, value: diskMiB }];
-                return newData.slice(-maxDataPoints);
-            });
-        }
-
-        if (stats.network && stats.network.rx_bytes !== undefined && stats.network.tx_bytes !== undefined) {
-            const currentRxBytes = Number(stats.network.rx_bytes);
-            const currentTxBytes = Number(stats.network.tx_bytes);
-            const now = new Date().getTime();
-
-            setNetworkRxTotal(Math.max(0, currentRxBytes));
-            setNetworkTxTotal(Math.max(0, currentTxBytes));
-
-            if (prevNetworkRef.current.timestamp > 0) {
-                const timeDiff = (now - prevNetworkRef.current.timestamp) / 1000;
-                if (timeDiff > 0) {
-                    const rxRate = Math.max(0, currentRxBytes - prevNetworkRef.current.rx) / timeDiff;
-                    const txRate = Math.max(0, currentTxBytes - prevNetworkRef.current.tx) / timeDiff;
-
-                    smoothNetworkRef.current = {
-                        rx: smoothRate(smoothNetworkRef.current.rx, rxRate),
-                        tx: smoothRate(smoothNetworkRef.current.tx, txRate),
-                    };
-
-                    setCurrentNetworkRx(smoothNetworkRef.current.rx);
-                    setCurrentNetworkTx(smoothNetworkRef.current.tx);
-
-                    const totalRate = smoothNetworkRef.current.rx + smoothNetworkRef.current.tx;
-                    setNetworkData((prev) => {
-                        const newData = [...prev, { timestamp, value: totalRate }];
-                        return newData.slice(-maxDataPoints);
-                    });
-                }
+            if (stats.state) {
+                setServerStatus(stats.state);
+                setLiveStatus(stats.state);
             }
 
-            prevNetworkRef.current = {
-                rx: currentRxBytes,
-                tx: currentTxBytes,
-                timestamp: now,
-            };
-        }
-
-        if (stats.disk_io?.read_bytes !== undefined && stats.disk_io?.write_bytes !== undefined) {
-            const currentReadBytes = Number(stats.disk_io.read_bytes);
-            const currentWriteBytes = Number(stats.disk_io.write_bytes);
-            const now = new Date().getTime();
-
-            setDiskIoReadTotal(Math.max(0, currentReadBytes));
-            setDiskIoWriteTotal(Math.max(0, currentWriteBytes));
-
-            if (prevDiskIoRef.current.timestamp > 0) {
-                const timeDiff = (now - prevDiskIoRef.current.timestamp) / 1000;
-                if (timeDiff > 0) {
-                    const readRate = Math.max(0, currentReadBytes - prevDiskIoRef.current.read) / timeDiff;
-                    const writeRate = Math.max(0, currentWriteBytes - prevDiskIoRef.current.write) / timeDiff;
-
-                    smoothDiskIoRef.current = {
-                        read: smoothRate(smoothDiskIoRef.current.read, readRate),
-                        write: smoothRate(smoothDiskIoRef.current.write, writeRate),
-                    };
-
-                    setCurrentDiskIoRead(smoothDiskIoRef.current.read);
-                    setCurrentDiskIoWrite(smoothDiskIoRef.current.write);
-
-                    const totalRate = smoothDiskIoRef.current.read + smoothDiskIoRef.current.write;
-                    setDiskIoData((prev) => {
-                        const newData = [...prev, { timestamp, value: totalRate }];
-                        return newData.slice(-maxDataPoints);
-                    });
-                }
+            if (stats.uptime) {
+                setWingsUptime(formatUptime(stats.uptime));
             }
 
-            prevDiskIoRef.current = {
-                read: currentReadBytes,
-                write: currentWriteBytes,
-                timestamp: now,
-            };
-        }
-    }, []);
+            if (stats.cpu_absolute !== undefined && stats.cpu_absolute !== null) {
+                const cpuValue = Number(stats.cpu_absolute) || 0;
+                setCurrentCpu(cpuValue);
+                setCpuData((prev) => {
+                    const newData = [...prev, { timestamp, value: cpuValue }];
+                    return newData.slice(-maxDataPoints);
+                });
+            }
+
+            if (stats.memory_bytes !== undefined && stats.memory_bytes !== null) {
+                const memoryMiB = Number(stats.memory_bytes) / (1024 * 1024);
+                setCurrentMemory(memoryMiB);
+                setMemoryData((prev) => {
+                    const newData = [...prev, { timestamp, value: memoryMiB }];
+                    return newData.slice(-maxDataPoints);
+                });
+            }
+
+            if (stats.disk_bytes !== undefined && stats.disk_bytes !== null) {
+                const diskMiB = Number(stats.disk_bytes) / (1024 * 1024);
+                setCurrentDisk(diskMiB);
+                setDiskData((prev) => {
+                    const newData = [...prev, { timestamp, value: diskMiB }];
+                    return newData.slice(-maxDataPoints);
+                });
+            }
+
+            if (stats.network && stats.network.rx_bytes !== undefined && stats.network.tx_bytes !== undefined) {
+                const currentRxBytes = Number(stats.network.rx_bytes);
+                const currentTxBytes = Number(stats.network.tx_bytes);
+                const now = new Date().getTime();
+
+                setNetworkRxTotal(Math.max(0, currentRxBytes));
+                setNetworkTxTotal(Math.max(0, currentTxBytes));
+
+                if (prevNetworkRef.current.timestamp > 0) {
+                    const timeDiff = (now - prevNetworkRef.current.timestamp) / 1000;
+                    if (timeDiff > 0) {
+                        const rxRate = Math.max(0, currentRxBytes - prevNetworkRef.current.rx) / timeDiff;
+                        const txRate = Math.max(0, currentTxBytes - prevNetworkRef.current.tx) / timeDiff;
+
+                        smoothNetworkRef.current = {
+                            rx: smoothRate(smoothNetworkRef.current.rx, rxRate),
+                            tx: smoothRate(smoothNetworkRef.current.tx, txRate),
+                        };
+
+                        setCurrentNetworkRx(smoothNetworkRef.current.rx);
+                        setCurrentNetworkTx(smoothNetworkRef.current.tx);
+
+                        const totalRate = smoothNetworkRef.current.rx + smoothNetworkRef.current.tx;
+                        setNetworkData((prev) => {
+                            const newData = [...prev, { timestamp, value: totalRate }];
+                            return newData.slice(-maxDataPoints);
+                        });
+                    }
+                }
+
+                prevNetworkRef.current = {
+                    rx: currentRxBytes,
+                    tx: currentTxBytes,
+                    timestamp: now,
+                };
+            }
+
+            if (stats.disk_io?.read_bytes !== undefined && stats.disk_io?.write_bytes !== undefined) {
+                const currentReadBytes = Number(stats.disk_io.read_bytes);
+                const currentWriteBytes = Number(stats.disk_io.write_bytes);
+                const now = new Date().getTime();
+
+                setDiskIoReadTotal(Math.max(0, currentReadBytes));
+                setDiskIoWriteTotal(Math.max(0, currentWriteBytes));
+
+                if (prevDiskIoRef.current.timestamp > 0) {
+                    const timeDiff = (now - prevDiskIoRef.current.timestamp) / 1000;
+                    if (timeDiff > 0) {
+                        const readRate = Math.max(0, currentReadBytes - prevDiskIoRef.current.read) / timeDiff;
+                        const writeRate = Math.max(0, currentWriteBytes - prevDiskIoRef.current.write) / timeDiff;
+
+                        smoothDiskIoRef.current = {
+                            read: smoothRate(smoothDiskIoRef.current.read, readRate),
+                            write: smoothRate(smoothDiskIoRef.current.write, writeRate),
+                        };
+
+                        setCurrentDiskIoRead(smoothDiskIoRef.current.read);
+                        setCurrentDiskIoWrite(smoothDiskIoRef.current.write);
+
+                        const totalRate = smoothDiskIoRef.current.read + smoothDiskIoRef.current.write;
+                        setDiskIoData((prev) => {
+                            const newData = [...prev, { timestamp, value: totalRate }];
+                            return newData.slice(-maxDataPoints);
+                        });
+                    }
+                }
+
+                prevDiskIoRef.current = {
+                    read: currentReadBytes,
+                    write: currentWriteBytes,
+                    timestamp: now,
+                };
+            }
+        },
+        [setLiveStatus],
+    );
 
     const handleInstallOutput = useCallback(
         (output: string) => {
@@ -483,6 +492,7 @@ export default function ServerConsolePage() {
                 kill: 'stopping',
             };
             setServerStatus(optimisticStatus[action]);
+            setLiveStatus(optimisticStatus[action]);
 
             return new Promise<void>((resolve) => {
                 if (pendingActionResolveRef.current) {
@@ -504,7 +514,7 @@ export default function ServerConsolePage() {
                 }, 2000);
             });
         },
-        [sendPowerAction],
+        [sendPowerAction, setLiveStatus],
     );
 
     const handleUploadLogs = useCallback(() => {

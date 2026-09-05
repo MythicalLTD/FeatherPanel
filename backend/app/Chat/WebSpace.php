@@ -488,7 +488,7 @@ class WebSpace
         }
 
         if (array_key_exists('ssl', $fields)) {
-            $updates[] = 'ssl = :ssl';
+            $updates[] = '`ssl` = :ssl';
             $params['ssl'] = !empty($fields['ssl']) ? 1 : 0;
         }
 

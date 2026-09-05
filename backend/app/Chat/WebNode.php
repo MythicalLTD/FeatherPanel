@@ -289,6 +289,7 @@ class WebNode
             'maintenance_mode',
             'sftpEnabled',
             'sftpDisablePasswordAuth',
+            'ftpEnabled',
             'backupsS3ForcePathStyle',
         ];
         foreach ($booleanFields as $field) {
@@ -388,7 +389,7 @@ class WebNode
             $data['ftpPassivePortMax'] = 50100;
         }
 
-        if (!isset($data['ftpEnabled'])) {
+        if (!isset($data['ftpEnabled']) || $data['ftpEnabled'] === '') {
             $data['ftpEnabled'] = 0;
         }
 
@@ -652,6 +653,7 @@ class WebNode
             'maintenance_mode',
             'sftpEnabled',
             'sftpDisablePasswordAuth',
+            'ftpEnabled',
             'backupsS3ForcePathStyle',
         ];
         foreach ($booleanFields as $field) {
