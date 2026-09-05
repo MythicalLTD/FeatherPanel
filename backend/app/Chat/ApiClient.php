@@ -68,6 +68,15 @@ class ApiClient
             return false;
         }
 
+        // Store a SHA-256 lookup hash of the plaintext private key alongside
+        // the encrypted value, so getApiClientByPrivateKey() can still do an
+        // exact-match WHERE lookup even though the stored private_key itself
+        // is now ciphertext (non-deterministic per-encryption nonce, so it
+        // can never be matched directly). The hash is a one-way, non-secret
+        // index - it does not let anyone recover or forge the private key.
+        $data['private_key_hash'] = hash('sha256', $data['private_key']);
+        $data['private_key'] = App::getInstance(true)->encryptValue($data['private_key']);
+
         $pdo = Database::getPdoConnection();
         $fields = array_keys($data);
         $placeholders = array_map(fn ($f) => ':' . $f, $fields);
@@ -94,8 +103,9 @@ class ApiClient
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
 
-        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        return $row !== null ? self::decryptPrivateKey($row) : null;
     }
 
     /**
@@ -109,12 +119,17 @@ class ApiClient
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE public_key = :public_key LIMIT 1');
         $stmt->execute(['public_key' => $publicKey]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
 
-        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        return $row !== null ? self::decryptPrivateKey($row) : null;
     }
 
     /**
      * Fetch an API client by private key.
+     *
+     * Looks up via the deterministic SHA-256 lookup hash (private_key is
+     * stored encrypted and therefore cannot be matched directly with an
+     * exact WHERE clause), then decrypts private_key before returning.
      */
     public static function getApiClientByPrivateKey(string $privateKey): ?array
     {
@@ -122,10 +137,11 @@ class ApiClient
             return null;
         }
         $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE private_key = :private_key LIMIT 1');
-        $stmt->execute(['private_key' => $privateKey]);
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE private_key_hash = :private_key_hash LIMIT 1');
+        $stmt->execute(['private_key_hash' => hash('sha256', $privateKey)]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
 
-        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        return $row !== null ? self::decryptPrivateKey($row) : null;
     }
 
     /**
@@ -136,7 +152,7 @@ class ApiClient
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->query('SELECT * FROM ' . self::$table . ' ORDER BY id ASC');
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return array_map([self::class, 'decryptPrivateKey'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     /**
@@ -151,7 +167,7 @@ class ApiClient
         $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE user_uuid = :user_uuid ORDER BY id ASC');
         $stmt->execute(['user_uuid' => $userUuid]);
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return array_map([self::class, 'decryptPrivateKey'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     /**
@@ -218,7 +234,7 @@ class ApiClient
 
         $stmt->execute();
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return array_map([self::class, 'decryptPrivateKey'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     /**
@@ -238,6 +254,13 @@ class ApiClient
             // Prevent updating primary key/id
             if (isset($data['id'])) {
                 unset($data['id']);
+            }
+            // Same treatment as createApiClient(): keep the lookup hash in
+            // sync whenever the plaintext private key is rotated, and never
+            // write plaintext private_key to the database.
+            if (isset($data['private_key'])) {
+                $data['private_key_hash'] = hash('sha256', $data['private_key']);
+                $data['private_key'] = App::getInstance(true)->encryptValue($data['private_key']);
             }
             $columns = self::getColumns();
             $columns = array_map(fn ($c) => $c['Field'], $columns);
@@ -338,6 +361,21 @@ class ApiClient
         $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE user_uuid = :user_uuid');
 
         return $stmt->execute(['user_uuid' => $userUuid]);
+    }
+
+    /**
+     * Decrypt an API client row's private_key in place, tolerating rows
+     * that predate this migration (plaintext private_key, no
+     * private_key_hash yet) by leaving them unchanged - decryptValue()
+     * already no-ops on values that don't look like ciphertext.
+     */
+    private static function decryptPrivateKey(array $row): array
+    {
+        if (isset($row['private_key']) && $row['private_key'] !== '') {
+            $row['private_key'] = App::getInstance(true)->decryptValue($row['private_key']);
+        }
+
+        return $row;
     }
 
     /**
