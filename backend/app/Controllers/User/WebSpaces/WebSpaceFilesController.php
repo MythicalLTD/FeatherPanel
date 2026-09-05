@@ -1104,7 +1104,24 @@ class WebSpaceFilesController
             $this->logFileActivity($resolved, $activityEvent, $activityMeta);
         }
 
+        // FeatherQuilld daemon endpoints are inconsistent: some return a bare payload
+        // (e.g. {"ok": true}, or {"ok": true, "data": {"path": ...}}), others wrap their
+        // *entire* payload in a "data" key with nothing else alongside it, as a list or object
+        // (list/search/pull-jobs return {"data": [...]} or {"data": {"entries": [...]}}).
+        // ApiResponse::success() always wraps whatever we pass it in another "data" key, so
+        // blindly forwarding the full daemon body for the latter group used to produce
+        // {"data": {"data": [...]}} — the frontend reads response.data and got the wrapper
+        // object instead of the actual list, showing "No Files Found" even though the daemon
+        // returned real entries. Unwrap the daemon's own "data" key only when it is the sole
+        // top-level key AND itself an array/object, so there is always exactly one "data"
+        // envelope for those endpoints. Endpoints that pair "data" with sibling keys (e.g.
+        // "ok") keep both intact, and endpoints whose "data" value is a bare scalar (e.g.
+        // files/contents returning {"data": "<file text>"}) are left untouched — the frontend
+        // already expects that shape as response.data.data for the file editor.
         $body = is_array($daemon['body']) ? $daemon['body'] : ['data' => $daemon['body']];
+        if (array_keys($body) === ['data'] && is_array($body['data'])) {
+            $body = $body['data'];
+        }
 
         return ApiResponse::success($body, 'OK', 200);
     }
