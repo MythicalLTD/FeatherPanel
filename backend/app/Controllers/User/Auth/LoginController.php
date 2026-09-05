@@ -27,6 +27,7 @@ use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Helpers\UserDeviceTracker;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\AccountLockoutHelper;
 use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -203,7 +204,13 @@ class LoginController
                 );
             }
 
-            return ApiResponse::error('Invalid username or email address', 'INVALID_USERNAME_OR_EMAIL');
+            // Run a dummy password_verify against a fixed bcrypt hash so that the
+            // response timing for "unknown user" is close to the "wrong password"
+            // path below, and return the same generic error/code in both cases
+            // to avoid leaking whether an account exists (account enumeration).
+            password_verify($data['password'], '$2y$12$hKs6swAiRf/kPjRDC6xEWun.GMew67fz3jytWTurlD/p4Ag7xyCf6');
+
+            return ApiResponse::error('Invalid username, email address, or password', 'INVALID_CREDENTIALS');
         }
         if ($userInfo['banned'] == 'true') {
             // Emit login failed event
@@ -224,6 +231,20 @@ class LoginController
 
         if (($userInfo['deleted'] ?? 'false') === 'true') {
             return ApiResponse::error('Account is deleted', 'ACCOUNT_DELETED', 403);
+        }
+
+        // Per-account lockout: independent of IP-based rate limiting so that
+        // rotating IPs (proxy/botnet) cannot be used to brute-force a single
+        // known account's password.
+        $lockoutId = 'login:' . $userInfo['uuid'];
+        $lockoutRemaining = AccountLockoutHelper::getLockoutRemaining($lockoutId);
+        if ($lockoutRemaining > 0) {
+            return ApiResponse::error(
+                'Too many failed login attempts. Try again in ' . ceil($lockoutRemaining / 60) . ' minute(s).',
+                'ACCOUNT_LOCKED',
+                429,
+                ['retry_after' => $lockoutRemaining]
+            );
         }
 
         // When OIDC has disabled local login, only allow local login for admins (before password check to avoid leaking valid-credential signal)
@@ -247,8 +268,14 @@ class LoginController
                 );
             }
 
-            return ApiResponse::error('Invalid password', 'INVALID_PASSWORD');
+            AccountLockoutHelper::recordFailure($lockoutId);
+
+            return ApiResponse::error('Invalid username, email address, or password', 'INVALID_CREDENTIALS');
         }
+
+        // Successful password check: clear any prior failure count for this account.
+        AccountLockoutHelper::clear($lockoutId);
+
 
         $requiresEmailVerification = $config->getSetting(ConfigInterface::REGISTRATION_REQUIRE_EMAIL_VERIFICATION, 'false') === 'true';
         $isEmailVerified = !isset($userInfo['mail_verify']) || $userInfo['mail_verify'] === null || trim((string) $userInfo['mail_verify']) === '';
