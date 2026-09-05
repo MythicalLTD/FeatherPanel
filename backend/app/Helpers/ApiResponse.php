@@ -23,6 +23,32 @@ class ApiResponse
 {
     public const PRETTYPRINT = true;
 
+    /**
+     * Security headers applied to every API response, in addition to the
+     * existing CORS headers. This is a pure JSON API (see ApiResponse
+     * usage across all controllers) - it never returns HTML - so these are
+     * safe, low-risk defense-in-depth headers with no functional impact on
+     * legitimate API clients:
+     *
+     * - X-Content-Type-Options: nosniff - stops browsers from ever
+     *   MIME-sniffing a JSON response as HTML/JS if it's ever loaded in a
+     *   context where that matters (e.g. a misconfigured <script src>).
+     * - X-Frame-Options: DENY - this API is not meant to be framed.
+     * - Content-Security-Policy: default-src 'none' - belt-and-suspenders
+     *   for a JSON-only API; has no effect on JSON responses processed via
+     *   fetch/XHR, only relevant if a response were ever rendered as a
+     *   document.
+     * - Referrer-Policy: no-referrer - avoid leaking API URLs (which can
+     *   contain tokens in query strings, e.g. reset-password/upload-signed
+     *   links) via the Referer header on any outbound navigation/request.
+     */
+    private const SECURITY_HEADERS = [
+        'X-Content-Type-Options' => 'nosniff',
+        'X-Frame-Options' => 'DENY',
+        'Content-Security-Policy' => "default-src 'none'",
+        'Referrer-Policy' => 'no-referrer',
+    ];
+
     public static function success(?array $data = null, string $message = 'OK', int $status = 200): Response
     {
         $status = self::normalizeStatusForCdnSafeJson($status);
@@ -34,7 +60,7 @@ class ApiResponse
             'error' => false,
             'error_message' => null,
             'error_code' => null,
-        ], self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), $status, [
+        ], self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), $status, self::SECURITY_HEADERS + [
             'Content-Type' => 'application/json',
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
@@ -61,7 +87,7 @@ class ApiResponse
                     'status' => $status,
                 ],
             ],
-        ], self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), $status, [
+        ], self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), $status, self::SECURITY_HEADERS + [
             'Content-Type' => 'application/json',
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
@@ -91,7 +117,7 @@ class ApiResponse
                 ],
             ],
             'trace' => $trace,
-        ], self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), 500, [
+        ], self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), 500, self::SECURITY_HEADERS + [
             'Content-Type' => 'application/json',
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
@@ -104,7 +130,7 @@ class ApiResponse
     {
         $status = self::normalizeStatusForCdnSafeJson($status);
 
-        return new Response(json_encode($data, self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), $status, [
+        return new Response(json_encode($data, self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), $status, self::SECURITY_HEADERS + [
             'Content-Type' => 'application/json',
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
