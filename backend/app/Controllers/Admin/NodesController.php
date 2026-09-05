@@ -257,6 +257,13 @@ class NodesController
         $nodes = Node::searchNodes(page: $page, limit: $limit, search: $search, locationId: $locationId, excludeNodeId: $excludeNodeId);
         $total = Node::getNodesCount(search: $search, locationId: $locationId, excludeNodeId: $excludeNodeId);
 
+        // See enrichNode() for why the daemon token must not appear in list
+        // responses (it grants full API access to the node).
+        foreach ($nodes as &$node) {
+            unset($node['daemon_token'], $node['daemon_token_id']);
+        }
+        unset($node);
+
         $totalPages = ceil($total / $limit);
         $from = ($page - 1) * $limit + 1;
         $to = min($from + $limit - 1, $total);
@@ -2226,6 +2233,15 @@ class NodesController
         $caps = DaemonCapabilities::fromNode($node);
         $node['daemon_type'] = $caps->getType();
         $node['capabilities'] = $caps->toArray();
+
+        // The daemon token grants full API access to the node. It must not
+        // be returned from general list/detail responses - only the
+        // dedicated /setup-command endpoint (which requires the same admin
+        // permission but is an explicit, auditable "reveal" action) should
+        // expose it. Leaving it in every index()/show() response meant it
+        // could end up in browser history, proxy/access logs, or dev tools
+        // for any admin who merely views the nodes list.
+        unset($node['daemon_token'], $node['daemon_token_id']);
 
         return $node;
     }

@@ -834,6 +834,28 @@ class UsersController
             $data['reason']
         );
 
+        // Privilege-escalation guard: this endpoint only requires
+        // ADMIN_USERS_EDIT, but several columns are security-sensitive
+        // (role, 2FA state, session token). An admin with only "edit users"
+        // permission (not full ADMIN_ROOT) must not be able to grant
+        // themselves or another account a higher role, disable/hijack 2FA,
+        // or forge a session by setting remember_token directly. Restrict
+        // those fields to ADMIN_ROOT regardless of what the DB-column-based
+        // denylist above allows through.
+        $rootOnlyFields = ['role_id', 'two_fa_enabled', 'two_fa_key', 'two_fa_blocked', 'remember_token', 'external_id', 'deleted'];
+        $staffUuid = $request->attributes->get('user')['uuid'] ?? null;
+        $isRootAdmin = $staffUuid !== null && \App\Helpers\PermissionHelper::hasPermission($staffUuid, \App\Permissions::ADMIN_ROOT);
+        if (!$isRootAdmin) {
+            $attemptedRootFields = array_intersect($rootOnlyFields, array_keys($data));
+            if (!empty($attemptedRootFields)) {
+                return ApiResponse::error(
+                    'You do not have permission to modify: ' . implode(', ', $attemptedRootFields),
+                    'INSUFFICIENT_PERMISSIONS_FOR_FIELD',
+                    403
+                );
+            }
+        }
+
         if ($app->isDemoMode()) {
             if ($user['id'] === 1) {
                 return ApiResponse::error('Unmanaged actions are not permitted in demo mode', 'UNMANAGED_ACTIONS_NOT_PERMITTED', 400);
