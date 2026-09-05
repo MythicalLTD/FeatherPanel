@@ -24,6 +24,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Helpers\CaptchaHelper;
 use App\Config\ConfigInterface;
+use App\Helpers\SessionCookieHelper;
 use PragmaRX\Google2FA\Google2FA;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\AccountDeletionOtp;
@@ -372,7 +373,7 @@ class AccountDeletionController
 
     private function clearSessionCookie(): void
     {
-        setcookie('remember_token', '', time() - 3600, '/');
+        SessionCookieHelper::clear();
         unset($_COOKIE['remember_token']);
     }
 }

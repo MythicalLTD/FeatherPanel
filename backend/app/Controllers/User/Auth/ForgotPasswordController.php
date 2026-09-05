@@ -121,6 +121,12 @@ class ForgotPasswordController
             return ApiResponse::error('Invalid email address', 'INVALID_EMAIL_ADDRESS');
         }
 
+        // Generic response message used regardless of whether the account exists.
+        // Returning a distinct error for unknown emails allows trivial account
+        // enumeration (see security audit), so we always respond the same way
+        // and only perform the reset side-effects when the account is real.
+        $genericSuccess = static fn () => ApiResponse::success(null, 'If an account with that email exists, we have sent a password reset link', 200);
+
         // Login user
         $userInfo = User::getUserByEmail($data['email']);
         if ($userInfo == null) {
@@ -137,9 +143,11 @@ class ForgotPasswordController
                 );
             }
 
-            return ApiResponse::error('Email does not exist', 'EMAIL_DOES_NOT_EXIST');
+            // Do not reveal whether the email exists: respond identically to the
+            // success path instead of returning EMAIL_DOES_NOT_EXIST.
+            return $genericSuccess();
         }
-        $resetToken = bin2hex(random_bytes(32));
+        $resetToken = bin2hex(random_bytes(32)) . '.' . (time() + 3600);
 
         if (User::updateUser($userInfo['uuid'], ['mail_verify' => $resetToken])) {
             // Send reset password email
@@ -182,9 +190,11 @@ class ForgotPasswordController
                 'ip_address' => CloudFlareRealIP::getRealIP(),
             ]);
 
-            return ApiResponse::success(null, 'We have sent you an email to reset your password', 200);
+            return $genericSuccess();
         }
 
-        return ApiResponse::error('Failed to update user', 'FAILED_TO_UPDATE_USER');
+        // Even on internal failure, do not leak account existence via a different
+        // response than the generic one.
+        return $genericSuccess();
     }
 }

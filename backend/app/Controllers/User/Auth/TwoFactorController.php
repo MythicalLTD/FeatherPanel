@@ -25,6 +25,8 @@ use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use PragmaRX\Google2FA\Google2FA;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\AccountLockoutHelper;
+use App\Helpers\SessionCookieHelper;
 use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -266,6 +268,21 @@ class TwoFactorController
         if (!$userInfo || $userInfo['two_fa_enabled'] !== 'true') {
             return ApiResponse::error('2FA not enabled', 'two_fa_NOT_ENABLED');
         }
+
+        // Per-account lockout for 2FA verification: a 6-digit TOTP code has
+        // only 1,000,000 possible values, so this must be tighter than the
+        // login password lockout to prevent brute-forcing it via IP rotation.
+        $lockoutId = '2fa:' . $userInfo['uuid'];
+        $lockoutRemaining = AccountLockoutHelper::getLockoutRemaining($lockoutId);
+        if ($lockoutRemaining > 0) {
+            return ApiResponse::error(
+                'Too many failed 2FA attempts. Try again in ' . ceil($lockoutRemaining / 60) . ' minute(s).',
+                'ACCOUNT_LOCKED',
+                429,
+                ['retry_after' => $lockoutRemaining]
+            );
+        }
+
         $google2fa = new Google2FA();
         if (!$google2fa->verifyKey($userInfo['two_fa_key'], $data['code'])) {
             // Emit 2FA failed event
@@ -280,8 +297,12 @@ class TwoFactorController
                 );
             }
 
+            AccountLockoutHelper::recordFailure($lockoutId, maxAttempts: 5, lockoutSeconds: 900);
+
             return ApiResponse::error('Invalid 2FA code', 'INVALID_CODE');
         }
+
+        AccountLockoutHelper::clear($lockoutId);
 
         // Logging in cancels a pending self-service account deletion request
         if (\App\Services\User\UserDeletionService::hasPendingDeletion($userInfo)) {
@@ -297,7 +318,7 @@ class TwoFactorController
             return ApiResponse::error('Remember token not set', 'REMEMBER_TOKEN_NOT_SET');
         }
         $userInfo['remember_token'] = $token;
-        setcookie('remember_token', $token, time() + 60 * 60 * 24 * 30, '/');
+        SessionCookieHelper::set($token, time() + 60 * 60 * 24 * 30);
         User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
 
         Activity::createActivity([

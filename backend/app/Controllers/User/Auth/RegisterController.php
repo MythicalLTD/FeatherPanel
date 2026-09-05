@@ -30,6 +30,7 @@ use App\Helpers\UserDeviceTracker;
 use App\Mail\templates\VerifyEmail;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\EmailDomainValidator;
+use App\Helpers\SessionCookieHelper;
 use App\Plugins\Events\Events\AuthEvent;
 use App\Helpers\AbuseIPDBRegistrationGuard;
 use App\Helpers\UserDeviceRegistrationGuard;
@@ -345,7 +346,7 @@ class RegisterController
             // Set session/cookie
             if (isset($createdUser['remember_token'])) {
                 $token = $createdUser['remember_token'];
-                setcookie('remember_token', $token, time() + 60 * 60 * 24 * 30, '/');
+                SessionCookieHelper::set($token, time() + 60 * 60 * 24 * 30);
                 User::updateUser($createdUser['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
 
                 // Create login activity (user is automatically logged in)
