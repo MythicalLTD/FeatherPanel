@@ -1,0 +1,100 @@
+From 964eecd1d0ab4f7781e42609f4b0811d3154cf68 Mon Sep 17 00:00:00 2001
+From: Crackhead-gsk <145661878+Crackhead-gsk@users.noreply.github.com>
+Date: Sat, 5 Sep 2026 06:33:39 +0200
+Subject: [PATCH] security: add security headers to all API responses
+
+Found during an internal security review. ApiResponse (used by every
+controller for every JSON response) set only Content-Type and CORS
+headers, with no X-Content-Type-Options, X-Frame-Options, or
+Content-Security-Policy. Added a shared SECURITY_HEADERS set applied to
+success(), error(), exception(), and sendManualResponse():
+
+- X-Content-Type-Options: nosniff
+- X-Frame-Options: DENY
+- Content-Security-Policy: default-src 'none' (this is a pure JSON API -
+  it never returns HTML - so a maximally restrictive CSP has no functional
+  impact)
+- Referrer-Policy: no-referrer (several endpoints put tokens in query
+  strings, e.g. reset-password/upload-signed URLs; this avoids leaking
+  them via the Referer header)
+
+Testing: deployed live and confirmed via curl that all four headers are
+now present on both success and error responses, with the JSON body
+unchanged (no functional regression). php -l clean.
+---
+ backend/app/Helpers/ApiResponse.php | 34 +++++++++++++++++++++++++----
+ 1 file changed, 30 insertions(+), 4 deletions(-)
+
+diff --git a/backend/app/Helpers/ApiResponse.php b/backend/app/Helpers/ApiResponse.php
+index a96021bb..6d135036 100755
+--- a/backend/app/Helpers/ApiResponse.php
++++ b/backend/app/Helpers/ApiResponse.php
+@@ -23,6 +23,32 @@ class ApiResponse
+ {
+     public const PRETTYPRINT = true;
+ 
++    /**
++     * Security headers applied to every API response, in addition to the
++     * existing CORS headers. This is a pure JSON API (see ApiResponse
++     * usage across all controllers) - it never returns HTML - so these are
++     * safe, low-risk defense-in-depth headers with no functional impact on
++     * legitimate API clients:
++     *
++     * - X-Content-Type-Options: nosniff - stops browsers from ever
++     *   MIME-sniffing a JSON response as HTML/JS if it's ever loaded in a
++     *   context where that matters (e.g. a misconfigured <script src>).
++     * - X-Frame-Options: DENY - this API is not meant to be framed.
++     * - Content-Security-Policy: default-src 'none' - belt-and-suspenders
++     *   for a JSON-only API; has no effect on JSON responses processed via
++     *   fetch/XHR, only relevant if a response were ever rendered as a
++     *   document.
++     * - Referrer-Policy: no-referrer - avoid leaking API URLs (which can
++     *   contain tokens in query strings, e.g. reset-password/upload-signed
++     *   links) via the Referer header on any outbound navigation/request.
++     */
++    private const SECURITY_HEADERS = [
++        'X-Content-Type-Options' => 'nosniff',
++        'X-Frame-Options' => 'DENY',
++        'Content-Security-Policy' => "default-src 'none'",
++        'Referrer-Policy' => 'no-referrer',
++    ];
++
+     public static function success(?array $data = null, string $message = 'OK', int $status = 200): Response
+     {
+         $status = self::normalizeStatusForCdnSafeJson($status);
+@@ -34,7 +60,7 @@ public static function success(?array $data = null, string $message = 'OK', int
+             'error' => false,
+             'error_message' => null,
+             'error_code' => null,
+-        ], self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), $status, [
++        ], self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), $status, self::SECURITY_HEADERS + [
+             'Content-Type' => 'application/json',
+             'Access-Control-Allow-Origin' => '*',
+             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+@@ -61,7 +87,7 @@ public static function error(string $error_message = 'Error', ?string $error_cod
+                     'status' => $status,
+                 ],
+             ],
+-        ], self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), $status, [
++        ], self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), $status, self::SECURITY_HEADERS + [
+             'Content-Type' => 'application/json',
+             'Access-Control-Allow-Origin' => '*',
+             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+@@ -91,7 +117,7 @@ public static function exception(string $message = 'Error', ?string $error = nul
+                 ],
+             ],
+             'trace' => $trace,
+-        ], self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), 500, [
++        ], self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), 500, self::SECURITY_HEADERS + [
+             'Content-Type' => 'application/json',
+             'Access-Control-Allow-Origin' => '*',
+             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+@@ -104,7 +130,7 @@ public static function sendManualResponse(array $data, int $status = 200): Respo
+     {
+         $status = self::normalizeStatusForCdnSafeJson($status);
+ 
+-        return new Response(json_encode($data, self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), $status, [
++        return new Response(json_encode($data, self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), $status, self::SECURITY_HEADERS + [
+             'Content-Type' => 'application/json',
+             'Access-Control-Allow-Origin' => '*',
+             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
