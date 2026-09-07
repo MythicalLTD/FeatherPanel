@@ -26,6 +26,7 @@ use App\Helpers\WebSpaceGateway;
 use App\Helpers\WebSpaceFileShare;
 use App\WebSpaceSubuserPermissions;
 use App\Helpers\FeatherQuilldClient;
+use App\Helpers\WebSpacePathValidator;
 use App\Helpers\WebSpacePluginEvents;
 use App\Helpers\CheckWebSpacePermission;
 use App\Plugins\Events\Events\WebSpaceEvent;
@@ -90,6 +91,9 @@ class WebSpaceFilesController
         if ($file === '') {
             return ApiResponse::error('Missing file query parameter', 'MISSING_FILE', 400);
         }
+        if (($rejected = WebSpacePathValidator::reject($file, 'file')) !== null) {
+            return $rejected;
+        }
 
         $daemon = FeatherQuilldClient::getWebSpaceFileContents($resolved['webNode'], $resolved['uuid'], $file);
 
@@ -112,6 +116,9 @@ class WebSpaceFilesController
         $file = (string) ($content['file'] ?? '');
         if ($file === '') {
             return ApiResponse::error('file is required', 'MISSING_FILE', 400);
+        }
+        if (($rejected = WebSpacePathValidator::reject($file, 'file')) !== null) {
+            return $rejected;
         }
 
         $contents = array_key_exists('contents', $content) ? (string) $content['contents'] : '';
@@ -136,6 +143,9 @@ class WebSpaceFilesController
         $name = trim((string) ($content['name'] ?? ''));
         if ($name === '') {
             return ApiResponse::error('name is required', 'MISSING_NAME', 400);
+        }
+        if (($rejected = WebSpacePathValidator::reject($name, 'name')) !== null) {
+            return $rejected;
         }
 
         $daemon = FeatherQuilldClient::createWebSpaceDirectory($resolved['webNode'], $resolved['uuid'], $name);
@@ -173,6 +183,12 @@ class WebSpaceFilesController
         if ($from === '' || $to === '') {
             return ApiResponse::error('from and to are required', 'MISSING_PATHS', 400);
         }
+        if (($rejected = WebSpacePathValidator::reject($from, 'from')) !== null) {
+            return $rejected;
+        }
+        if (($rejected = WebSpacePathValidator::reject($to, 'to')) !== null) {
+            return $rejected;
+        }
 
         $daemon = FeatherQuilldClient::renameWebSpaceFile($resolved['webNode'], $resolved['uuid'], $from, $to);
 
@@ -199,6 +215,12 @@ class WebSpaceFilesController
         $to = isset($content['to']) ? trim((string) $content['to']) : (isset($content['destination']) ? trim((string) $content['destination']) : '');
         if ($from === '') {
             return ApiResponse::error('from is required', 'MISSING_PATH', 400);
+        }
+        if (($rejected = WebSpacePathValidator::reject($from, 'from')) !== null) {
+            return $rejected;
+        }
+        if ($to !== '' && ($rejected = WebSpacePathValidator::reject($to, 'to')) !== null) {
+            return $rejected;
         }
 
         $daemon = FeatherQuilldClient::copyWebSpaceFile(
@@ -236,8 +258,14 @@ class WebSpaceFilesController
         if ($paths === []) {
             return ApiResponse::error('files must be a non-empty array', 'MISSING_FILES', 400);
         }
+        if (($invalid = WebSpacePathValidator::firstInvalid($paths)) !== null) {
+            return ApiResponse::error("Invalid path in files: {$invalid}", 'INVALID_PATH', 400);
+        }
 
         $destination = isset($content['destination']) ? trim((string) $content['destination']) : '';
+        if ($destination !== '' && ($rejected = WebSpacePathValidator::reject($destination, 'destination')) !== null) {
+            return $rejected;
+        }
 
         $daemon = FeatherQuilldClient::copyManyWebSpaceFiles(
             $resolved['webNode'],
@@ -269,6 +297,12 @@ class WebSpaceFilesController
         $target = trim((string) ($content['target'] ?? ''));
         if ($link === '' || $target === '') {
             return ApiResponse::error('link and target are required', 'MISSING_PATH', 400);
+        }
+        if (($rejected = WebSpacePathValidator::reject($link, 'link')) !== null) {
+            return $rejected;
+        }
+        if (($rejected = WebSpacePathValidator::reject($target, 'target')) !== null) {
+            return $rejected;
         }
 
         $daemon = FeatherQuilldClient::createWebSpaceSymlink(
@@ -314,6 +348,9 @@ class WebSpaceFilesController
         if ($paths === []) {
             return ApiResponse::error('files must be a non-empty array', 'MISSING_FILES', 400);
         }
+        if (($invalid = WebSpacePathValidator::firstInvalid($paths)) !== null) {
+            return ApiResponse::error("Invalid path in files: {$invalid}", 'INVALID_PATH', 400);
+        }
 
         $algorithm = strtolower(trim((string) $request->query->get('algorithm', 'sha256')));
         if (!in_array($algorithm, ['sha1', 'sha256'], true)) {
@@ -354,6 +391,9 @@ class WebSpaceFilesController
         $paths = array_values(array_filter(array_map('strval', $files), static fn (string $p): bool => $p !== ''));
         if ($paths === []) {
             return ApiResponse::error('files must be a non-empty array', 'MISSING_FILES', 400);
+        }
+        if (($invalid = WebSpacePathValidator::firstInvalid($paths)) !== null) {
+            return ApiResponse::error("Invalid path in files: {$invalid}", 'INVALID_PATH', 400);
         }
 
         $permanent = !empty($content['permanent']);
@@ -400,6 +440,9 @@ class WebSpaceFilesController
         }
 
         $root = (string) ($content['root'] ?? $content['directory'] ?? '/');
+        if (($rejected = WebSpacePathValidator::reject($root, 'root')) !== null) {
+            return $rejected;
+        }
         $files = $content['files'] ?? null;
         if (!is_array($files) || $files === []) {
             return ApiResponse::error('files must be a non-empty array', 'MISSING_FILES', 400);
@@ -409,8 +452,14 @@ class WebSpaceFilesController
         if ($paths === []) {
             return ApiResponse::error('files must be a non-empty array', 'MISSING_FILES', 400);
         }
+        if (($invalid = WebSpacePathValidator::firstInvalid($paths)) !== null) {
+            return ApiResponse::error("Invalid path in files: {$invalid}", 'INVALID_PATH', 400);
+        }
 
         $name = isset($content['name']) ? trim((string) $content['name']) : null;
+        if ($name !== null && $name !== '' && !WebSpacePathValidator::isSafeFilename($name)) {
+            return ApiResponse::error("Invalid name: must not contain '/', '\\', or be '.'/'..'", 'INVALID_NAME', 400);
+        }
         $extension = trim((string) ($content['extension'] ?? 'tar.gz'));
         if ($extension === '') {
             $extension = 'tar.gz';
@@ -447,6 +496,12 @@ class WebSpaceFilesController
         $root = (string) ($content['root'] ?? '/');
         if ($file === '') {
             return ApiResponse::error('file is required', 'MISSING_FILE', 400);
+        }
+        if (($rejected = WebSpacePathValidator::reject($file, 'file')) !== null) {
+            return $rejected;
+        }
+        if (($rejected = WebSpacePathValidator::reject($root, 'root')) !== null) {
+            return $rejected;
         }
 
         $daemon = FeatherQuilldClient::decompressWebSpaceFile(
@@ -488,6 +543,9 @@ class WebSpaceFilesController
             $mode = trim((string) ($entry['mode'] ?? ''));
             if ($path === '' || $mode === '') {
                 continue;
+            }
+            if (WebSpacePathValidator::sanitizeRelativePath($path) === null) {
+                return ApiResponse::error("Invalid path in files: {$path}", 'INVALID_PATH', 400);
             }
             $normalized[] = ['file' => $path, 'mode' => $mode];
         }
@@ -548,7 +606,13 @@ class WebSpaceFilesController
         }
 
         $directory = (string) ($content['directory'] ?? $content['root'] ?? '/');
+        if (($rejected = WebSpacePathValidator::reject($directory, 'directory')) !== null) {
+            return $rejected;
+        }
         $fileName = isset($content['file_name']) ? trim((string) $content['file_name']) : (isset($content['filename']) ? trim((string) $content['filename']) : null);
+        if ($fileName !== null && $fileName !== '' && !WebSpacePathValidator::isSafeFilename($fileName)) {
+            return ApiResponse::error("Invalid file_name: must not contain '/', '\\', or be '.'/'..'", 'INVALID_NAME', 400);
+        }
 
         if (!empty($content['background'])) {
             $daemon = FeatherQuilldClient::pullWebSpaceFileBackground(
@@ -592,6 +656,9 @@ class WebSpaceFilesController
         if ($file === '') {
             return ApiResponse::error('file is required', 'MISSING_FILE', 400);
         }
+        if (($rejected = WebSpacePathValidator::reject($file, 'file')) !== null) {
+            return $rejected;
+        }
 
         $daemon = FeatherQuilldClient::downloadWebSpaceFile($resolved['webNode'], $resolved['uuid'], $file);
         if (!$daemon['ok']) {
@@ -623,6 +690,9 @@ class WebSpaceFilesController
         }
 
         $directory = (string) $request->query->get('directory', $request->request->get('directory', '/'));
+        if (($rejected = WebSpacePathValidator::reject($directory, 'directory')) !== null) {
+            return $rejected;
+        }
         $files = $request->files->all();
         if ($files === []) {
             return ApiResponse::error('No files uploaded', 'MISSING_FILES', 400);
@@ -635,11 +705,15 @@ class WebSpaceFilesController
                     if (!$one) {
                         continue;
                     }
+                    $originalName = (string) $one->getClientOriginalName();
+                    if (!WebSpacePathValidator::isSafeFilename($originalName)) {
+                        return ApiResponse::error("Invalid uploaded filename: {$originalName}", 'INVALID_FILENAME', 400);
+                    }
                     $last = FeatherQuilldClient::uploadWebSpaceFile(
                         $resolved['webNode'],
                         $resolved['uuid'],
                         $directory !== '' ? $directory : '/',
-                        (string) $one->getClientOriginalName(),
+                        $originalName,
                         (string) $one->getPathname(),
                         (string) ($one->getMimeType() ?: 'application/octet-stream'),
                     );
@@ -652,11 +726,15 @@ class WebSpaceFilesController
             if (!$uploaded) {
                 continue;
             }
+            $originalName = (string) $uploaded->getClientOriginalName();
+            if (!WebSpacePathValidator::isSafeFilename($originalName)) {
+                return ApiResponse::error("Invalid uploaded filename: {$originalName}", 'INVALID_FILENAME', 400);
+            }
             $last = FeatherQuilldClient::uploadWebSpaceFile(
                 $resolved['webNode'],
                 $resolved['uuid'],
                 $directory !== '' ? $directory : '/',
-                (string) $uploaded->getClientOriginalName(),
+                $originalName,
                 (string) $uploaded->getPathname(),
                 (string) ($uploaded->getMimeType() ?: 'application/octet-stream'),
             );
@@ -789,6 +867,9 @@ class WebSpaceFilesController
         if ($directory === '') {
             return ApiResponse::error('path is required', 'MISSING_PATH', 400);
         }
+        if (($rejected = WebSpacePathValidator::reject($directory, 'path')) !== null) {
+            return $rejected;
+        }
 
         $daemon = FeatherQuilldClient::downloadWebSpaceDirectory(
             $resolved['webNode'],
@@ -824,6 +905,12 @@ class WebSpaceFilesController
         if ($file === '') {
             return ApiResponse::error('file is required', 'MISSING_FILE', 400);
         }
+        if (($rejected = WebSpacePathValidator::reject($directory, 'directory')) !== null) {
+            return $rejected;
+        }
+        if (($rejected = WebSpacePathValidator::reject($file, 'file')) !== null) {
+            return $rejected;
+        }
 
         $daemon = FeatherQuilldClient::listWebSpaceArchive(
             $resolved['webNode'],
@@ -853,12 +940,25 @@ class WebSpaceFilesController
             return ApiResponse::error('entries must be a non-empty array', 'MISSING_ENTRIES', 400);
         }
 
+        $root = (string) ($content['root'] ?? '/');
+        $file = (string) ($content['file'] ?? '');
+        $destination = (string) ($content['destination'] ?? '/');
+        if (($rejected = WebSpacePathValidator::reject($root, 'root')) !== null) {
+            return $rejected;
+        }
+        if (($rejected = WebSpacePathValidator::reject($file, 'file')) !== null) {
+            return $rejected;
+        }
+        if (($rejected = WebSpacePathValidator::reject($destination, 'destination')) !== null) {
+            return $rejected;
+        }
+
         $daemon = FeatherQuilldClient::extractWebSpaceArchiveSelection(
             $resolved['webNode'],
             $resolved['uuid'],
-            (string) ($content['root'] ?? '/'),
-            (string) ($content['file'] ?? ''),
-            (string) ($content['destination'] ?? '/'),
+            $root,
+            $file,
+            $destination,
             array_values(array_map('strval', $entries)),
         );
 
@@ -914,7 +1014,13 @@ class WebSpaceFilesController
         }
 
         $directory = (string) $request->query->get('directory', '/');
+        if (($rejected = WebSpacePathValidator::reject($directory, 'directory')) !== null) {
+            return $rejected;
+        }
         $fileName = trim((string) $request->query->get('file_name', ''));
+        if ($fileName !== '' && !WebSpacePathValidator::isSafeFilename($fileName)) {
+            return ApiResponse::error("Invalid file_name: must not contain '/', '\\', or be '.'/'..'", 'INVALID_NAME', 400);
+        }
         $token = FeatherQuilldClient::createWebSpaceUploadToken(
             $resolved['webNode'],
             $resolved['uuid'],
@@ -945,6 +1051,9 @@ class WebSpaceFilesController
         $file = trim((string) ($content['file'] ?? ''));
         if ($file === '') {
             return ApiResponse::error('file is required', 'MISSING_FILE', 400);
+        }
+        if (($rejected = WebSpacePathValidator::reject($file, 'file')) !== null) {
+            return $rejected;
         }
 
         $ttlDays = (int) ($content['ttl_days'] ?? 1);
