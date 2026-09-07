@@ -29,6 +29,7 @@ use App\Config\ConfigInterface;
 use App\Helpers\WebAuthnHelper;
 use App\Helpers\PermissionHelper;
 use Webauthn\PublicKeyCredential;
+use App\Helpers\TwoFactorChallengeHelper;
 use Webauthn\PublicKeyCredentialDescriptor;
 use Webauthn\PublicKeyCredentialParameters;
 use Webauthn\PublicKeyCredentialUserEntity;
@@ -241,9 +242,12 @@ class PasskeyController
         );
 
         if (isset($userInfo['two_fa_enabled']) && $userInfo['two_fa_enabled'] === 'true') {
-            return ApiResponse::error('2FA required', 'TWO_FACTOR_REQUIRED', 401, [
+            $challenge = TwoFactorChallengeHelper::issue($userInfo['uuid']);
+
+            return ApiResponse::error('2FA required', 'TWO_FACTOR_REQUIRED', 401, array_filter([
                 'email' => $userInfo['email'],
-            ]);
+                'challenge' => $challenge,
+            ], static fn ($v) => $v !== null));
         }
 
         return (new LoginController())->completeLogin($userInfo);

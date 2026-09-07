@@ -59,16 +59,15 @@ class ForgotPasswordController
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'Password reset email sent successfully',
+                description: 'Generic success whether or not the email belongs to an account, including when User::updateUser() fails (anti-enumeration). Reset email is queued asynchronously when an account exists.',
                 content: new OA\JsonContent(ref: '#/components/schemas/ForgotPasswordResponse')
             ),
             new OA\Response(response: 400, description: 'Bad request - Missing required fields, invalid email format, Turnstile validation failed, or Turnstile keys not set'),
-            new OA\Response(response: 404, description: 'Not found - Email does not exist'),
-            new OA\Response(response: 500, description: 'Internal server error - Failed to send reset email or update user'),
         ]
     )]
     public function put(Request $request): Response
     {
+        $timingStart = hrtime(true);
         $app = App::getInstance(true);
         $config = $app->getConfig();
         $data = json_decode($request->getContent(), true);
@@ -121,6 +120,18 @@ class ForgotPasswordController
             return ApiResponse::error('Invalid email address', 'INVALID_EMAIL_ADDRESS');
         }
 
+        // Generic response message used regardless of whether the account exists.
+        // Returning a distinct error for unknown emails allows trivial account
+        // enumeration (see security audit), so we always respond the same way
+        // and only perform the reset side-effects when the account is real.
+        // Bounded floor keeps unknown-email timing closer to the existing-account
+        // path (DB update + async mail queue) without waiting on SMTP delivery.
+        $genericSuccess = function () use ($timingStart): Response {
+            self::padResponseTiming($timingStart);
+
+            return ApiResponse::success(null, 'If an account with that email exists, we have sent a password reset link', 200);
+        };
+
         // Login user
         $userInfo = User::getUserByEmail($data['email']);
         if ($userInfo == null) {
@@ -137,12 +148,19 @@ class ForgotPasswordController
                 );
             }
 
-            return ApiResponse::error('Email does not exist', 'EMAIL_DOES_NOT_EXIST');
+            // Cheap work approximating token generation + queued mail path cost
+            // so unknown emails are not trivially faster than existing accounts.
+            bin2hex(random_bytes(32));
+            hash('sha256', $data['email'] . microtime(true));
+
+            // Do not reveal whether the email exists: respond identically to the
+            // success path instead of returning EMAIL_DOES_NOT_EXIST.
+            return $genericSuccess();
         }
-        $resetToken = bin2hex(random_bytes(32));
+        $resetToken = bin2hex(random_bytes(32)) . '.' . (time() + 3600);
 
         if (User::updateUser($userInfo['uuid'], ['mail_verify' => $resetToken])) {
-            // Send reset password email
+            // Queue reset email asynchronously (MailQueue) — do not wait for SMTP.
             $appUrl = $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
             if (!preg_match('#^https?://#i', $appUrl)) {
                 $appUrl = 'https://' . ltrim($appUrl, '/');
@@ -182,9 +200,24 @@ class ForgotPasswordController
                 'ip_address' => CloudFlareRealIP::getRealIP(),
             ]);
 
-            return ApiResponse::success(null, 'We have sent you an email to reset your password', 200);
+            return $genericSuccess();
         }
 
-        return ApiResponse::error('Failed to update user', 'FAILED_TO_UPDATE_USER');
+        // Even on internal failure, do not leak account existence via a different
+        // response than the generic one.
+        return $genericSuccess();
+    }
+
+    /**
+     * Pad response time to a small floor so unknown-email and existing-account
+     * paths are closer in wall-clock time (anti-enumeration). Does not wait for SMTP.
+     */
+    private static function padResponseTiming(int $startedHrtime): void
+    {
+        $minNs = 40_000_000; // 40ms floor
+        $elapsed = hrtime(true) - $startedHrtime;
+        if ($elapsed < $minNs) {
+            usleep((int) (($minNs - $elapsed) / 1000));
+        }
     }
 }

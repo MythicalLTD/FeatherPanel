@@ -35,7 +35,7 @@
 - You can now use ENV variables in the server lifecycle hooks. by @nayskutzu
 - Security headers for the API requests by @Crackhead-gsk
 - If you change the server while editing a file no longer fails. by @nayskutzu
-- Security for cookies were improved. by @nayskutzu
+- Session cookies now set HttpOnly, Secure (when HTTPS), and SameSite=Lax via SessionCookieHelper. by @Crackhead-gsk
 - Multiple ui improvements were made. by @nayskutzu
 - Admin nav: WebSpaces sit under Servers (with game/VDS), WebPlates under Realms (with Spells); Web Nodes stay under Locations & Nodes. Admin Area from a user WebSpace goes to `/admin/webspaces/{uuid}/edit`. by @nayskutzu
 - English translations were improved to not reflect LLM generated text. by @nayskutzu
@@ -46,6 +46,7 @@
 
 ### Fixed
 
+- Security: stop auth account enumeration on forgot-password and login (generic responses + timing-safe unknown-user path); Redis-backed per-account escalating login delay and tighter 2FA lockout; expire password reset tokens after 1 hour. by @Crackhead-gsk
 - Security: block admin privilege escalation via UsersController::update() (role/2FA/session fields require ADMIN_ROOT) and stop leaking daemon tokens from node list/detail responses; harden Node::searchNodes() sort allowlist. by @Crackhead-gsk
 - WebSpace schedule create/update no longer deadlocks MySQL (transaction used a second PDO connection) or hangs the UI waiting on daemon sync. by @nayskutzu
 - Fixed: Missing authorization in ServerUserController::updateServer allowed a low-privilege subuser to perform server reinstalls, wipe files, and change the server egg/spell without the proper subuser permissions. by @nayskutzu

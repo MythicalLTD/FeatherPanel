@@ -250,6 +250,14 @@ export default function LoginForm() {
 
             if (response.success) {
                 if (response.data?.requires_2fa) {
+                    const challenge = response.data?.challenge as string | undefined;
+                    if (challenge) {
+                        try {
+                            sessionStorage.setItem('fp_2fa_challenge', challenge);
+                        } catch {
+                            /* ignore */
+                        }
+                    }
                     router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(usernameOrEmail)}`);
                     return;
                 }
@@ -265,11 +273,21 @@ export default function LoginForm() {
             }
         } catch (err: unknown) {
             const error = err as {
-                response?: { data?: { message?: string; error_code?: string; data?: { email?: string } } };
+                response?: {
+                    data?: { message?: string; error_code?: string; data?: { email?: string; challenge?: string } };
+                };
             };
 
             if (error.response?.data?.error_code === 'TWO_FACTOR_REQUIRED') {
                 const email = error.response.data.data?.email || usernameOrEmail;
+                const challenge = error.response.data.data?.challenge;
+                if (challenge) {
+                    try {
+                        sessionStorage.setItem('fp_2fa_challenge', challenge);
+                    } catch {
+                        /* ignore */
+                    }
+                }
                 router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(email)}`);
                 return;
             }
@@ -586,11 +604,21 @@ export default function LoginForm() {
             }
         } catch (err: unknown) {
             const error = err as {
-                response?: { data?: { message?: string; error_code?: string; data?: { email?: string } } };
+                response?: {
+                    data?: { message?: string; error_code?: string; data?: { email?: string; challenge?: string } };
+                };
             };
 
             if (error.response?.data?.error_code === 'TWO_FACTOR_REQUIRED') {
                 const email = error.response.data.data?.email || emailLoginForm.email;
+                const challenge = error.response.data.data?.challenge;
+                if (challenge) {
+                    try {
+                        sessionStorage.setItem('fp_2fa_challenge', challenge);
+                    } catch {
+                        /* ignore */
+                    }
+                }
                 router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(email)}`);
                 return;
             }
@@ -695,11 +723,21 @@ export default function LoginForm() {
         } catch (err: unknown) {
             const ax = err as {
                 name?: string;
-                response?: { data?: { error_code?: string; message?: string; data?: { email?: string } } };
+                response?: {
+                    data?: { error_code?: string; message?: string; data?: { email?: string; challenge?: string } };
+                };
             };
             if (ax.response?.data?.error_code === 'TWO_FACTOR_REQUIRED') {
                 const email =
                     ax.response.data.data?.email || usernameOrEmailHint || identifierValue || form.username_or_email;
+                const challenge = ax.response.data.data?.challenge;
+                if (challenge) {
+                    try {
+                        sessionStorage.setItem('fp_2fa_challenge', challenge);
+                    } catch {
+                        /* ignore */
+                    }
+                }
                 router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(String(email))}`);
                 return;
             }

@@ -28,7 +28,10 @@ use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Helpers\UserDeviceTracker;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\SessionCookieHelper;
+use App\Helpers\AccountLockoutHelper;
 use App\Plugins\Events\Events\AuthEvent;
+use App\Helpers\TwoFactorChallengeHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -57,6 +60,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
     type: 'object',
     properties: [
         new OA\Property(property: 'email', type: 'string', description: 'User email address'),
+        new OA\Property(property: 'challenge', type: 'string', description: 'Short-lived token proving password auth succeeded; required for /two-factor'),
         new OA\Property(property: 'message', type: 'string', description: '2FA required message'),
     ]
 )]
@@ -83,7 +87,7 @@ class LoginController
                 )
             ),
             new OA\Response(response: 400, description: 'Bad request - Missing required fields, invalid username or email format, Turnstile validation failed, or Turnstile keys not set'),
-            new OA\Response(response: 401, description: 'Unauthorized - Username or email does not exist, user is banned, or invalid password'),
+            new OA\Response(response: 401, description: 'Unauthorized - Invalid credentials, user is banned, or authentication otherwise rejected'),
             new OA\Response(response: 500, description: 'Internal server error - Remember token not set'),
         ]
     )]
@@ -204,7 +208,13 @@ class LoginController
                 );
             }
 
-            return ApiResponse::error('Invalid username or email address', 'INVALID_USERNAME_OR_EMAIL');
+            // Run a dummy password_verify against a fixed bcrypt hash so that the
+            // response timing for "unknown user" is close to the "wrong password"
+            // path below, and return the same generic error/code in both cases
+            // to avoid leaking whether an account exists (account enumeration).
+            password_verify($data['password'], '$2y$12$hKs6swAiRf/kPjRDC6xEWun.GMew67fz3jytWTurlD/p4Ag7xyCf6');
+
+            return ApiResponse::error('Invalid username, email address, or password', 'INVALID_CREDENTIALS');
         }
         if ($userInfo['banned'] == 'true') {
             // Emit login failed event
@@ -225,6 +235,15 @@ class LoginController
 
         if (($userInfo['deleted'] ?? 'false') === 'true') {
             return ApiResponse::error('Account is deleted', 'ACCOUNT_DELETED', 403);
+        }
+
+        // Per-account escalating delay (not a hard lockout): slows credential
+        // stuffing across rotating IPs without denying the account owner.
+        // Always continue to password_verify so a correct password still wins.
+        $lockoutId = 'login:' . $userInfo['uuid'];
+        $throttleDelay = AccountLockoutHelper::getEscalatingDelaySeconds($lockoutId);
+        if ($throttleDelay > 0) {
+            sleep($throttleDelay);
         }
 
         // When OIDC has disabled local login, only allow local login for admins (before password check to avoid leaking valid-credential signal)
@@ -248,8 +267,14 @@ class LoginController
                 );
             }
 
-            return ApiResponse::error('Invalid password', 'INVALID_PASSWORD');
+            // Count failures for escalating delay; do not hard-lock the account.
+            AccountLockoutHelper::recordFailure($lockoutId, hardLock: false);
+
+            return ApiResponse::error('Invalid username, email address, or password', 'INVALID_CREDENTIALS');
         }
+
+        // Successful password check: clear any prior failure count for this account.
+        AccountLockoutHelper::clear($lockoutId);
 
         $requiresEmailVerification = $config->getSetting(ConfigInterface::REGISTRATION_REQUIRE_EMAIL_VERIFICATION, 'false') === 'true';
         $isEmailVerified = !isset($userInfo['mail_verify']) || $userInfo['mail_verify'] === null || trim((string) $userInfo['mail_verify']) === '';
@@ -260,9 +285,12 @@ class LoginController
         // 2FA logic
         if (isset($userInfo['two_fa_enabled']) && $userInfo['two_fa_enabled'] == 'true') {
             // Do NOT set session/cookie yet
-            return ApiResponse::error('2FA required', 'TWO_FACTOR_REQUIRED', 401, [
+            $challenge = TwoFactorChallengeHelper::issue($userInfo['uuid']);
+
+            return ApiResponse::error('2FA required', 'TWO_FACTOR_REQUIRED', 401, array_filter([
                 'email' => $userInfo['email'],
-            ]);
+                'challenge' => $challenge,
+            ], static fn ($v) => $v !== null));
         }
 
         // Use the common login completion method
@@ -293,7 +321,7 @@ class LoginController
             return ApiResponse::error('Remember token not set', 'REMEMBER_TOKEN_NOT_SET');
         }
         $userInfo['remember_token'] = $token;
-        setcookie('remember_token', $token, time() + 60 * 60 * 24 * 30, '/');
+        SessionCookieHelper::set($token, time() + 60 * 60 * 24 * 30);
         User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
         UserDeviceTracker::trackFromGlobals($userInfo);
 

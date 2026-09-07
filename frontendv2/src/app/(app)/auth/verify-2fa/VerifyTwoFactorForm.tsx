@@ -67,16 +67,24 @@ export default function VerifyTwoFactorForm() {
             return;
         }
 
+        const challenge = typeof window !== 'undefined' ? sessionStorage.getItem('fp_2fa_challenge') || '' : '';
+
         setLoading(true);
 
         try {
             const response = await axios.post('/api/user/auth/two-factor', {
                 email: email,
                 code: code.trim(),
+                challenge,
             });
 
             if (response.data && response.data.success) {
                 setSuccess(t('common.success'));
+                try {
+                    sessionStorage.removeItem('fp_2fa_challenge');
+                } catch {
+                    /* ignore */
+                }
 
                 const ok = await fetchSession(true);
                 if (!ok) {

@@ -22,6 +22,7 @@ use App\Chat\Activity;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\SessionCookieHelper;
 use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -53,7 +54,7 @@ class AuthLogoutController
     {
         global $eventManager;
         if (!isset($_COOKIE['remember_token'])) {
-            setcookie('remember_token', '', time() - 3600 - 1500 * 120);
+            SessionCookieHelper::clear();
 
             return ApiResponse::success([], 'Logged out and we did not find a remember_token', 200);
         }
@@ -62,6 +63,8 @@ class AuthLogoutController
          */
         $user = User::getUserByRememberToken($_COOKIE['remember_token']);
         if ($user == null) {
+            SessionCookieHelper::clear();
+
             return ApiResponse::success([], 'Logged out no user found', 200);
         }
         if (isset($user['remember_token'])) {
@@ -94,7 +97,7 @@ class AuthLogoutController
                 'ip_address' => CloudFlareRealIP::getRealIP(),
             ]);
         }
-        setcookie('remember_token', '', time() - 3600 - 1500 * 120);
+        SessionCookieHelper::clear();
 
         return ApiResponse::success([], 'Logged out', 200);
     }

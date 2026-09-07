@@ -26,6 +26,7 @@ use App\Helpers\CaptchaHelper;
 use App\Config\ConfigInterface;
 use PragmaRX\Google2FA\Google2FA;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\SessionCookieHelper;
 use App\Mail\templates\AccountDeletionOtp;
 use App\Services\User\UserDeletionService;
 use Symfony\Component\HttpFoundation\Request;
@@ -372,7 +373,7 @@ class AccountDeletionController
 
     private function clearSessionCookie(): void
     {
-        setcookie('remember_token', '', time() - 3600, '/');
+        SessionCookieHelper::clear();
         unset($_COOKIE['remember_token']);
     }
 }

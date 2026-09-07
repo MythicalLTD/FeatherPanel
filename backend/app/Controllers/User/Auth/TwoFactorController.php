@@ -25,7 +25,10 @@ use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use PragmaRX\Google2FA\Google2FA;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\SessionCookieHelper;
+use App\Helpers\AccountLockoutHelper;
 use App\Plugins\Events\Events\AuthEvent;
+use App\Helpers\TwoFactorChallengeHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -59,10 +62,11 @@ use Symfony\Component\HttpFoundation\Response;
 #[OA\Schema(
     schema: 'TwoFactorVerifyRequest',
     type: 'object',
-    required: ['email', 'code'],
+    required: ['email', 'code', 'challenge'],
     properties: [
         new OA\Property(property: 'email', type: 'string', format: 'email', description: 'User email address'),
         new OA\Property(property: 'code', type: 'string', minLength: 6, maxLength: 6, description: '6-digit TOTP code'),
+        new OA\Property(property: 'challenge', type: 'string', minLength: 64, maxLength: 64, description: 'Challenge token from the password authentication step (TWO_FACTOR_REQUIRED)'),
     ]
 )]
 #[OA\Schema(
@@ -249,8 +253,25 @@ class TwoFactorController
                 description: 'Two-factor authentication verified successfully',
                 content: new OA\JsonContent(ref: '#/components/schemas/TwoFactorVerifyResponse')
             ),
-            new OA\Response(response: 400, description: 'Bad request - Missing email or code'),
-            new OA\Response(response: 401, description: 'Unauthorized - 2FA not enabled or invalid code'),
+            new OA\Response(response: 400, description: 'Bad request - Missing email, code, or challenge'),
+            new OA\Response(response: 401, description: 'Unauthorized - 2FA not enabled, invalid code, or missing/invalid challenge'),
+            new OA\Response(
+                response: 429,
+                description: 'Too many failed 2FA attempts for this account',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'error_code', type: 'string', example: 'ACCOUNT_LOCKED'),
+                        new OA\Property(property: 'error_message', type: 'string'),
+                        new OA\Property(
+                            property: 'data',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(property: 'retry_after', type: 'integer', description: 'Seconds until lockout expires'),
+                            ]
+                        ),
+                    ]
+                )
+            ),
             new OA\Response(response: 500, description: 'Internal server error - Failed to verify 2FA'),
         ]
     )]
@@ -266,6 +287,28 @@ class TwoFactorController
         if (!$userInfo || $userInfo['two_fa_enabled'] !== 'true') {
             return ApiResponse::error('2FA not enabled', 'two_fa_NOT_ENABLED');
         }
+
+        // Require proof that primary auth (password/passkey/email OTP) succeeded.
+        // Without this, anyone could brute-force TOTP codes with only an email.
+        $challenge = isset($data['challenge']) && is_string($data['challenge']) ? trim($data['challenge']) : '';
+        if (!TwoFactorChallengeHelper::validate($challenge, $userInfo['uuid'])) {
+            return ApiResponse::error('Invalid or expired 2FA challenge', 'INVALID_2FA_CHALLENGE', 401);
+        }
+
+        // Atomic per-account attempt gate: reserve before verifyKey so concurrent
+        // requests cannot all pass a non-atomic getLockoutRemaining check.
+        $lockoutId = '2fa:' . $userInfo['uuid'];
+        if (!AccountLockoutHelper::reserveHardLockAttempt($lockoutId, maxAttempts: 5, lockoutSeconds: 900)) {
+            $lockoutRemaining = AccountLockoutHelper::getLockoutRemaining($lockoutId);
+
+            return ApiResponse::error(
+                'Too many failed 2FA attempts. Try again in ' . ceil(max(1, $lockoutRemaining) / 60) . ' minute(s).',
+                'ACCOUNT_LOCKED',
+                429,
+                ['retry_after' => max(1, $lockoutRemaining)]
+            );
+        }
+
         $google2fa = new Google2FA();
         if (!$google2fa->verifyKey($userInfo['two_fa_key'], $data['code'])) {
             // Emit 2FA failed event
@@ -280,8 +323,12 @@ class TwoFactorController
                 );
             }
 
+            // Failure already counted by reserveHardLockAttempt().
             return ApiResponse::error('Invalid 2FA code', 'INVALID_CODE');
         }
+
+        AccountLockoutHelper::clear($lockoutId);
+        TwoFactorChallengeHelper::clear($challenge);
 
         // Logging in cancels a pending self-service account deletion request
         if (\App\Services\User\UserDeletionService::hasPendingDeletion($userInfo)) {
@@ -297,7 +344,7 @@ class TwoFactorController
             return ApiResponse::error('Remember token not set', 'REMEMBER_TOKEN_NOT_SET');
         }
         $userInfo['remember_token'] = $token;
-        setcookie('remember_token', $token, time() + 60 * 60 * 24 * 30, '/');
+        SessionCookieHelper::set($token, time() + 60 * 60 * 24 * 30);
         User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
 
         Activity::createActivity([

@@ -626,19 +626,6 @@ class Node
     }
 
     /**
-     * Allowlist for ORDER BY column names in searchNodes(). $sortBy is not
-     * currently passed through from any route (index() uses the defaults),
-     * but validating it here closes the SQL injection vector defensively in
-     * case that changes later, consistent with Spell::getColumns()/Mount.php.
-     */
-    private static function sanitizeSortColumn(string $sortBy): string
-    {
-        $allowed = ['id', 'uuid', 'name', 'fqdn', 'location_id', 'created_at', 'updated_at'];
-
-        return in_array($sortBy, $allowed, true) ? $sortBy : 'name';
-    }
-
-    /**
      * Generate a cryptographically secure UUID for nodes.
      */
     public static function generateUuid(): string
@@ -924,6 +911,19 @@ class Node
         $yaml .= "remote: '" . $remote . "'\n";
 
         return $yaml;
+    }
+
+    /**
+     * Allowlist for ORDER BY column names in searchNodes(). $sortBy is not
+     * currently passed through from any route (index() uses the defaults),
+     * but validating it here closes the SQL injection vector defensively in
+     * case that changes later, consistent with Spell::getColumns()/Mount.php.
+     */
+    private static function sanitizeSortColumn(string $sortBy): string
+    {
+        $allowed = ['id', 'uuid', 'name', 'fqdn', 'location_id', 'created_at', 'updated_at'];
+
+        return in_array($sortBy, $allowed, true) ? $sortBy : 'name';
     }
 
     /**

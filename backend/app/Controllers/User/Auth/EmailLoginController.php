@@ -25,6 +25,7 @@ use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\EmailLoginCode;
 use App\Plugins\Events\Events\AuthEvent;
+use App\Helpers\TwoFactorChallengeHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -336,9 +337,12 @@ class EmailLoginController
             ]);
 
             // Return 2FA required response
-            return ApiResponse::error('2FA required', 'TWO_FACTOR_REQUIRED', 401, [
+            $challenge = TwoFactorChallengeHelper::issue($userInfo['uuid']);
+
+            return ApiResponse::error('2FA required', 'TWO_FACTOR_REQUIRED', 401, array_filter([
                 'email' => $userInfo['email'],
-            ]);
+                'challenge' => $challenge,
+            ], static fn ($v) => $v !== null));
         }
 
         // Clear the code since it's been used
