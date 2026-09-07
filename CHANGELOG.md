@@ -46,6 +46,7 @@
 
 ### Fixed
 
+- Security: block admin privilege escalation via UsersController::update() (role/2FA/session fields require ADMIN_ROOT) and stop leaking daemon tokens from node list/detail responses; harden Node::searchNodes() sort allowlist. by @Crackhead-gsk
 - WebSpace schedule create/update no longer deadlocks MySQL (transaction used a second PDO connection) or hangs the UI waiting on daemon sync. by @nayskutzu
 - Fixed: Missing authorization in ServerUserController::updateServer allowed a low-privilege subuser to perform server reinstalls, wipe files, and change the server egg/spell without the proper subuser permissions. by @nayskutzu
 - Fixed: FeatherCloud OAuth2 callback previously ran without middleware and skipped the conditional identity check, allowing a single unauthenticated POST to overwrite Mythic-credential integration keys. by @nayskutzu
