@@ -33,6 +33,7 @@
 - WebSpace resource pages (`/webspace/...`) now match server chrome: compact header/info tiles on overview, themed console, settings/SFTP copy fields, glass file toolbars, and no jumbo PageHeader icons. by @nayskutzu
 - The colors of the power buttons were improved. by @nayskutzu
 - You can now use ENV variables in the server lifecycle hooks. by @nayskutzu
+- Security headers for the API requests by @Crackhead-gsk
 - If you change the server while editing a file no longer fails. by @nayskutzu
 - Security for cookies were improved. by @nayskutzu
 - Multiple ui improvements were made. by @nayskutzu
@@ -41,6 +42,7 @@
 - Complete rewrite of the customization system. by @nayskutzu
 - The crash page was improved with a better design and a better message. by @nayskutzu
 - Widget rendering system was improved to more fit the responsive design. by @nayskutzu
+- The api key encryption system was improved to use the new encryption system. by @nayskutzu & @Crackhead-gsk
 
 ### Fixed
 
