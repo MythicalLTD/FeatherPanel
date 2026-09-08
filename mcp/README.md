@@ -62,6 +62,14 @@ pnpm start:stdio
 | `MCP_OAUTH_STORE_PATH`                      | `/data/oauth-store.json` (Docker volume `mcp_oauth_data`) / `/tmp/…` locally | Persist OAuth clients/tokens across restarts                |
 | `MCP_DANGEROUSLY_ALLOW_INSECURE_ISSUER_URL` | `true`                                                                       | Allow `http://` issuer (local / HTTP panels)                |
 
+## CI / images
+
+| Workflow | When | What |
+| -------- | ---- | ---- |
+| `MCP Jobs` (`.github/workflows/mcp.yml`) | `mcp/**` push/PR | typecheck + build (Node 22/24), tool inventory, Docker smoke `/health` |
+| `Docker Build & Publish (Dev)` | `develop` | multi-arch push `ghcr.io/mythicalltd/featherpanel-mcp:dev*` |
+| `Docker Build & Publish (Release)` | `v*` tags | multi-arch push version + `latest` |
+
 ## Tools
 
 - **Account:** `whoami`

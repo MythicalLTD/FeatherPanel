@@ -1,0 +1,154 @@
+name: MCP Jobs
+
+on:
+  push:
+    paths:
+      - "mcp/**"
+      - ".github/workflows/mcp.yml"
+  pull_request:
+    paths:
+      - "mcp/**"
+      - ".github/workflows/mcp.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: mcp-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: MCP Typecheck & Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: mcp
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22, 24]
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+          cache-dependency-path: mcp/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            pnpm install --frozen-lockfile
+          else
+            echo "pnpm-lock.yaml file not found"
+            exit 1
+          fi
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+
+      - name: Verify dist entrypoints
+        run: |
+          test -f dist/index.js
+          test -f dist/stdio.js
+          test -f dist/server.js
+          test -f dist/paths.js
+          test -f dist/errors.js
+
+  inventory:
+    name: MCP Tool Inventory
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v4
+
+      - name: Count MCP surface
+        working-directory: mcp
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import pathlib
+          import re
+          import os
+
+          root = pathlib.Path("src")
+          text = "\n".join(p.read_text(encoding="utf-8") for p in root.rglob("*.ts"))
+          tools = sorted(set(re.findall(r'registerTool\(\s*["\']([^"\']+)["\']', text)))
+          files = list(root.rglob("*.ts"))
+          lines = sum(len(p.read_text(encoding="utf-8").splitlines()) for p in files)
+
+          summary = os.environ["GITHUB_STEP_SUMMARY"]
+          with open(summary, "a", encoding="utf-8") as out:
+              out.write("## MCP inventory\n\n")
+              out.write("| Metric | Count |\n|--------|------:|\n")
+              out.write(f"| Tools | {len(tools)} |\n")
+              out.write(f"| TypeScript files | {len(files)} |\n")
+              out.write(f"| Lines (src/**/*.ts) | {lines} |\n\n")
+              out.write("### Registered tools\n\n")
+              for name in tools:
+                  out.write(f"- `{name}`\n")
+
+          print(f"MCP tools ({len(tools)}):")
+          print("\n".join(tools))
+          print(f"files={len(files)} lines={lines}")
+          if len(tools) < 1:
+              raise SystemExit("Expected at least one registered MCP tool")
+          PY
+
+  docker:
+    name: MCP Docker build (smoke)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build MCP image (no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./mcp
+          file: ./mcp/Dockerfile
+          push: false
+          load: true
+          tags: featherpanel-mcp:ci
+          cache-from: type=gha,scope=mcp-ci
+          cache-to: type=gha,mode=max,scope=mcp-ci
+
+      - name: Smoke health endpoint
+        run: |
+          set -euo pipefail
+          docker run -d --name mcp-ci \
+            -e FEATHERPANEL_URL=http://127.0.0.1:9 \
+            -p 3001:3001 \
+            featherpanel-mcp:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3001/health >/dev/null; then
+              echo "health ok"
+              docker logs mcp-ci
+              docker rm -f mcp-ci
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "health check failed"
+          docker logs mcp-ci || true
+          docker rm -f mcp-ci || true
+          exit 1

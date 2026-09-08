@@ -3,7 +3,8 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Pin pnpm (matches packageManager); avoid corepack "latest" tag resolution flakiness in CI
+RUN npm install -g pnpm@12.3.4
 
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
