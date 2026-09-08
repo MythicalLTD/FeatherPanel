@@ -3,3 +3,6 @@ dist/
 *.log
 .env
 .DS_Store
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml

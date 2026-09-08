@@ -1,0 +1,40 @@
+{
+	"name": "@featherpanel/mcp",
+	"version": "1.2.0",
+	"description": "FeatherPanel MCP server — manage game servers from Claude, Cursor, and other MCP clients",
+	"type": "module",
+	"main": "dist/index.js",
+	"packageManager": "pnpm@12.3.4",
+	"bin": {
+		"featherpanel-mcp": "dist/stdio.js"
+	},
+	"scripts": {
+		"dev": "tsx watch src/index.ts",
+		"dev:stdio": "tsx watch src/stdio.ts",
+		"dev:http": "tsx watch src/index.ts",
+		"build": "tsc",
+		"start": "node dist/index.js",
+		"start:stdio": "node dist/stdio.js",
+		"typecheck": "tsc --noEmit"
+	},
+	"engines": {
+		"node": ">=20"
+	},
+	"keywords": [
+		"featherpanel",
+		"mcp",
+		"model-context-protocol"
+	],
+	"license": "MIT",
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.30.0",
+		"express": "^5.2.1",
+		"zod": "^4.5.4"
+	},
+	"devDependencies": {
+		"@types/express": "^5.0.6",
+		"@types/node": "^26.5.0",
+		"tsx": "^4.23.13",
+		"typescript": "^7.0.2"
+	}
+}
