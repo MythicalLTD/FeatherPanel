@@ -28,6 +28,7 @@ import ProfileTab from '@/components/account/ProfileTab';
 import SettingsTab from '@/components/account/SettingsTab';
 import SshKeysTab from '@/components/account/SshKeysTab';
 import ApiKeysTab from '@/components/account/ApiKeysTab';
+import McpTab from '@/components/account/McpTab';
 import ActivityTab from '@/components/account/ActivityTab';
 import MailTab from '@/components/account/MailTab';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -51,6 +52,7 @@ export default function AccountPage() {
         { id: 'settings', name: t('account.settings'), component: SettingsTab },
         { id: 'ssh-keys', name: t('account.sshKeys.title'), component: SshKeysTab },
         { id: 'api-keys', name: t('account.apiKeys.title'), component: ApiKeysTab },
+        { id: 'mcp', name: t('account.mcp.title'), component: McpTab },
         { id: 'activity', name: t('account.activity.title'), component: ActivityTab },
         { id: 'mail', name: t('account.mail.title'), component: MailTab },
     ];

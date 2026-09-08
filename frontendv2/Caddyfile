@@ -55,6 +55,22 @@
 		reverse_proxy backend:80
 	}
 
+	# FeatherPanel MCP (Streamable HTTP + OAuth AS)
+	@mcp path /mcp*
+	handle @mcp {
+		reverse_proxy mcp:3001 {
+			transport http {
+				read_timeout 86400s
+			}
+		}
+	}
+
+	# MCP OAuth discovery + endpoints (must not hit Next login)
+	@mcp_oauth path /.well-known/oauth-protected-resource* /.well-known/oauth-authorization-server* /authorize* /token* /register* /revoke* /oauth*
+	handle @mcp_oauth {
+		reverse_proxy mcp:3001
+	}
+
 	handle {
 		reverse_proxy 127.0.0.1:3000 {
 			transport http {

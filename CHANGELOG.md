@@ -4,6 +4,7 @@
 
 ### Added
 
+- FeatherPanel **MCP OAuth 2.1** (DCR + PKCE + refresh) so Claude.ai custom connectors can **Connect** with panel sign-in / API-key consent; static Bearer / `x-api-key` headers still work. by @nayskutzu
 - Widgets are now a part of the customization system. by @nayskutzu
 - Added full support for progressive web apps (PWA). by @nayskutzu
 - QR Code login was added to the panel for easy access to the panel. by @nayskutzu

@@ -680,7 +680,6 @@ class WingsConnection
      */
     private function handleHttpError(int $httpCode, ?array $responseData, string $endpoint): void
     {
-        // Try to extract error message from various possible fields
         $errorMessage = $responseData['error'] ??
             $responseData['message'] ??
             $responseData['error_message'] ??
@@ -688,24 +687,31 @@ class WingsConnection
             ($responseData['errors'][0]['message'] ?? null) ??
             'Unknown error';
 
-        // Include full response data in the exception message for debugging
-        $fullError = is_array($responseData) ? json_encode($responseData, JSON_PRETTY_PRINT) : (string) $responseData;
-        $errorDetails = $errorMessage . (strlen($fullError) > 100 ? ' (Response: ' . substr($fullError, 0, 200) . '...)' : ' (Response: ' . $fullError . ')');
-
-        switch ($httpCode) {
-            case 401:
-                throw new WingsAuthenticationException("Authentication failed: {$errorDetails}", 401);
-            case 403:
-                throw new WingsAuthenticationException("Access forbidden: {$errorDetails}", 403);
-            case 404:
-                throw new WingsRequestException("Wings request failed (404) for {$endpoint}: {$errorDetails}", 404);
-            case 429:
-                throw new WingsRequestException("Rate limit exceeded: {$errorDetails}", 429);
-            case 500:
-                throw new WingsRequestException("Server error: {$errorDetails}", 500);
-            default:
-                throw new WingsRequestException("HTTP {$httpCode}: {$errorDetails}", $httpCode);
+        $requestId = null;
+        if (is_array($responseData)) {
+            $requestId = isset($responseData['request_id']) ? (string) $responseData['request_id'] : null;
         }
+
+        // Keep the Wings message clean — do not dump the whole JSON body into the message
+        // (that made MCP/Claude see only "unexpected error" + truncated Response blobs).
+        $message = match ($httpCode) {
+            401 => "Authentication failed: {$errorMessage}",
+            403 => "Access forbidden: {$errorMessage}",
+            404 => "Wings request failed (404) for {$endpoint}: {$errorMessage}",
+            429 => "Rate limit exceeded: {$errorMessage}",
+            500, 502, 503, 504 => $errorMessage,
+            default => "HTTP {$httpCode}: {$errorMessage}",
+        };
+
+        if ($requestId !== null && $requestId !== '' && !str_contains($message, $requestId)) {
+            $message .= " [wings_request_id={$requestId}]";
+        }
+
+        if ($httpCode === 401 || $httpCode === 403) {
+            throw new WingsAuthenticationException($message, $httpCode);
+        }
+
+        throw new WingsRequestException($message, $httpCode, null, $requestId, is_array($responseData) ? $responseData : null);
     }
 
     /**

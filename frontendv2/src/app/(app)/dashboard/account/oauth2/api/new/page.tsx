@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ShieldCheck, Loader2, KeyRound, TriangleAlert, Globe, Lock, Link2 } from 'lucide-react';
+import { ShieldCheck, KeyRound, TriangleAlert, Globe, Lock, Link2 } from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -190,102 +190,98 @@ export default function OAuth2ApiAuthorizePage() {
 
     if (serverModeAuthorized) {
         return (
-            <div className='flex min-h-[70vh] items-center justify-center p-6'>
-                <div className='bg-card/80 w-full max-w-2xl space-y-5 rounded-2xl border border-emerald-500/30 p-7 backdrop-blur-xl'>
-                    <div className='flex items-start gap-3'>
-                        <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400'>
-                            <ShieldCheck className='h-5 w-5' />
-                        </div>
-                        <div>
-                            <h1 className='text-foreground text-xl font-semibold'>
-                                {t('account.apiKeys.oauth2.serverAuthorizedTitle')}
-                            </h1>
-                            <p className='text-muted-foreground mt-1 text-sm'>
-                                {t('account.apiKeys.oauth2.serverAuthorizedDescription')}
-                            </p>
-                        </div>
-                    </div>
-                    <div className='flex flex-wrap gap-3'>
-                        <Button onClick={() => router.push('/dashboard/account?tab=api-keys')}>
-                            {t('account.apiKeys.oauth2.returnToApiKeys')}
-                        </Button>
-                    </div>
+            <OAuthConsentShell>
+                <div className='border-border bg-card/95 space-y-4 rounded-3xl border p-7 text-center shadow-[0_24px_48px_hsl(var(--background)/0.35)]'>
+                    <ShieldCheck className='mx-auto h-10 w-10 text-emerald-500' />
+                    <h1 className='text-foreground text-[1.0625rem] font-semibold'>
+                        {t('account.apiKeys.oauth2.serverAuthorizedTitle')}
+                    </h1>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
+                        {t('account.apiKeys.oauth2.serverAuthorizedDescription')}
+                    </p>
+                    <Button className='rounded-xl' onClick={() => router.push('/dashboard/account?tab=api-keys')}>
+                        {t('account.apiKeys.oauth2.returnToApiKeys')}
+                    </Button>
                 </div>
-            </div>
+            </OAuthConsentShell>
         );
     }
 
-    if (loading) {
+    if (loading || (hasRequestParams && !payload && !error)) {
         return (
-            <div className='flex min-h-[70vh] items-center justify-center p-6'>
-                <div className='border-border/60 bg-card/60 text-muted-foreground flex items-center gap-3 rounded-xl border px-6 py-5 backdrop-blur-xl'>
-                    <Loader2 className='text-primary h-5 w-5 animate-spin' />
-                    <span>{t('account.apiKeys.oauth2.prepareLoading')}</span>
+            <OAuthConsentShell>
+                <div className='border-border bg-card/95 space-y-4 rounded-3xl border p-8 text-center shadow-[0_24px_48px_hsl(var(--background)/0.35)]'>
+                    <div
+                        className='border-border border-t-primary mx-auto h-11 w-11 animate-spin rounded-full border-2'
+                        role='status'
+                        aria-label={t('account.apiKeys.oauth2.prepareLoading')}
+                    />
+                    <h2 className='text-foreground text-[1.0625rem] font-semibold'>
+                        {t('account.apiKeys.oauth2.prepareLoading')}
+                    </h2>
+                    <p className='text-muted-foreground text-sm'>Preparing your authorization request…</p>
                 </div>
-            </div>
+            </OAuthConsentShell>
         );
     }
 
     if (!hasRequestParams) {
         return (
-            <div className='flex min-h-[70vh] items-center justify-center p-6'>
-                <div className='border-border/60 bg-card/70 w-full max-w-2xl space-y-5 rounded-2xl border p-7 backdrop-blur-xl'>
-                    <div className='flex items-start gap-3'>
-                        <div className='bg-primary/15 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-lg'>
-                            <KeyRound className='h-5 w-5' />
-                        </div>
-                        <div>
-                            <h1 className='text-foreground text-xl font-semibold'>
-                                {t('account.apiKeys.oauth2.noRequestTitle')}
-                            </h1>
-                            <p className='text-muted-foreground mt-1 text-sm'>
-                                {t('account.apiKeys.oauth2.noRequestDescription')}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className='rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100'>
+            <OAuthConsentShell>
+                <div className='border-border bg-card/95 space-y-4 rounded-3xl border p-7 text-center shadow-[0_24px_48px_hsl(var(--background)/0.35)]'>
+                    <KeyRound className='text-primary mx-auto h-10 w-10' />
+                    <h1 className='text-foreground text-[1.0625rem] font-semibold'>
+                        {t('account.apiKeys.oauth2.noRequestTitle')}
+                    </h1>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
+                        {t('account.apiKeys.oauth2.noRequestDescription')}
+                    </p>
+                    <div className='border-border bg-muted/30 rounded-2xl border p-3 text-left text-sm'>
                         <p className='font-medium'>{t('account.apiKeys.oauth2.noRequestWarningTitle')}</p>
-                        <p className='mt-1 opacity-90'>{t('account.apiKeys.oauth2.noRequestWarningBody')}</p>
+                        <p className='text-muted-foreground mt-1'>{t('account.apiKeys.oauth2.noRequestWarningBody')}</p>
                     </div>
-
-                    <div className='flex flex-wrap gap-3'>
-                        <Button onClick={() => router.push('/dashboard/account?tab=api-keys')}>
+                    <div className='flex flex-wrap justify-center gap-3'>
+                        <Button className='rounded-xl' onClick={() => router.push('/dashboard/account?tab=api-keys')}>
                             {t('account.apiKeys.oauth2.returnToApiKeys')}
                         </Button>
                         <Button
                             variant='outline'
+                            className='rounded-xl'
                             onClick={() => window.open('/icanhasfeatherpanel/api/oauth2-playground.html', '_blank')}
                         >
                             {t('account.apiKeys.oauth2.openPlayground')}
                         </Button>
                     </div>
                 </div>
-            </div>
+            </OAuthConsentShell>
         );
     }
 
     if (error || !payload) {
         return (
-            <div className='flex min-h-[70vh] items-center justify-center p-6'>
-                <div className='bg-card/80 w-full max-w-xl space-y-4 rounded-2xl border border-red-500/30 p-6 backdrop-blur-xl'>
-                    <div className='flex items-center gap-3 text-red-400'>
-                        <TriangleAlert className='h-5 w-5' />
-                        <h1 className='text-lg font-semibold'>{t('account.apiKeys.oauth2.initFailedTitle')}</h1>
-                    </div>
-                    <p className='text-muted-foreground text-sm'>
+            <OAuthConsentShell>
+                <div className='border-border bg-card/95 space-y-4 rounded-3xl border p-7 text-center shadow-[0_24px_48px_hsl(var(--background)/0.35)]'>
+                    <TriangleAlert className='text-destructive mx-auto h-10 w-10' />
+                    <h1 className='text-destructive text-[1.0625rem] font-semibold'>
+                        {t('account.apiKeys.oauth2.initFailedTitle')}
+                    </h1>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {error || t('account.apiKeys.oauth2.initFailedDefault')}
                     </p>
-                    <div className='flex gap-3'>
-                        <Button variant='outline' onClick={() => router.push('/dashboard/account?tab=api-keys')}>
+                    <div className='flex flex-wrap justify-center gap-3'>
+                        <Button
+                            variant='outline'
+                            className='rounded-xl'
+                            onClick={() => router.push('/dashboard/account?tab=api-keys')}
+                        >
                             {t('account.apiKeys.oauth2.returnToApiKeys')}
                         </Button>
-                        <Button variant='ghost' onClick={() => window.location.reload()}>
+                        <Button variant='ghost' className='rounded-xl' onClick={() => window.location.reload()}>
                             {t('account.apiKeys.oauth2.retry')}
                         </Button>
                     </div>
                 </div>
-            </div>
+            </OAuthConsentShell>
         );
     }
 

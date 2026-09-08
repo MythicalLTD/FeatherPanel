@@ -1940,8 +1940,34 @@ class ServerFilesController
 
             if (!$response->isSuccessful()) {
                 $error = $response->getError();
+                $requestId = is_array($response->getData()) ? ($response->getData()['request_id'] ?? null) : null;
+                $status = $response->getStatusCode() ?: 500;
+                $errorLower = strtolower((string) $error);
+                $hint = 'Use a direct binary download URL (with Content-Length), not an HTML page. Prefer CDN/object URLs. For Paper jars use fill.papermc.io/v3 (api.papermc.io/v2 is sunset). download.getbukkit.org often fails DNS — use cdn.getbukkit.org or Paper fill-data URLs.';
+                if (str_contains($errorLower, 'dns') || str_contains($errorLower, 'no such host') || str_contains($errorLower, 'network/dns')) {
+                    $hint = 'DNS/network failure reaching that hostname from Wings — almost always a dead/bad download URL, not a panel outage. Retry pull_file with another direct CDN URL.';
+                } elseif (str_contains($errorLower, 'html page') || str_contains($errorLower, 'content-length')) {
+                    $hint = 'That URL is not a direct file download. Use a final object/CDN URL that returns the binary with Content-Length.';
+                } elseif (str_contains($errorLower, 'tls') || str_contains($errorLower, 'certificate')) {
+                    $hint = 'TLS failure to the remote host. Use a valid public HTTPS URL or another mirror.';
+                }
 
-                return ApiResponse::error('Failed to pull file: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+                return ApiResponse::error(
+                    'Failed to pull file: ' . $error,
+                    'WINGS_ERROR',
+                    $status,
+                    array_filter([
+                        'wings_request_id' => $requestId,
+                        'wings_status' => $status,
+                        'requested_url' => $data['url'] ?? null,
+                        'hint' => $hint,
+                        'next_steps' => [
+                            'Retry with a different direct file URL',
+                            'After success, confirm server.jar is tens of MB (not a tiny JSON/HTML error body)',
+                            'Do not assume the node is down from a single pull failure',
+                        ],
+                    ], static fn ($v) => $v !== null && $v !== ''),
+                );
             }
 
             // Log activity

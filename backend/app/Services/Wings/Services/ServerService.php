@@ -942,9 +942,21 @@ class ServerService
 
             $response = $this->connection->post("/api/servers/{$serverUuid}/files/pull", $data);
 
-            return new WingsResponse($response, $foreground ? 200 : 204);
+            // Background pulls return 202; foreground success is 200.
+            return new WingsResponse(is_array($response) ? $response : [], $foreground ? 200 : 202);
+        } catch (\App\Services\Wings\Exceptions\WingsRequestException $e) {
+            $payload = [
+                'error' => $e->getMessage(),
+            ];
+            if ($e->getRequestId()) {
+                $payload['request_id'] = $e->getRequestId();
+            }
+
+            return new WingsResponse($payload, $e->getCode() > 0 ? (int) $e->getCode() : 500);
         } catch (\Exception $e) {
-            return new WingsResponse(['error' => $e->getMessage()], 500);
+            $code = $e->getCode() > 0 ? (int) $e->getCode() : 500;
+
+            return new WingsResponse(['error' => $e->getMessage()], $code);
         }
     }
 

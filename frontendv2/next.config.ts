@@ -62,7 +62,8 @@ const nextConfig: NextConfig = {
     async headers() {
         return [
             {
-                source: '/((?!_next/static)(?!_next/image)(?!api)(?!attachments)(?!addons)(?!components)(?!pma).*)',
+                // Skip API/MCP/static assets
+                source: '/((?!_next/static)(?!_next/image)(?!api)(?!mcp)(?!attachments)(?!addons)(?!components)(?!pma).*)',
                 headers: [
                     {
                         key: 'Cache-Control',
@@ -86,8 +87,10 @@ const nextConfig: NextConfig = {
         ],
     },
 
-    // Proxy API requests to backend during development (like Vite proxy)
+    // Proxy API + MCP like production Caddy (api → PHP, /mcp → MCP service)
     async rewrites() {
+        const mcpOrigin = process.env.MCP_DEV_URL?.replace(/\/+$/, '') || 'http://127.0.0.1:3001';
+
         return [
             {
                 source: '/api/:path*',
@@ -108,6 +111,46 @@ const nextConfig: NextConfig = {
             {
                 source: '/pma/:path*',
                 destination: 'http://localhost:8721/pma/:path*',
+            },
+            {
+                source: '/mcp',
+                destination: `${mcpOrigin}/mcp`,
+            },
+            {
+                source: '/mcp/',
+                destination: `${mcpOrigin}/mcp`,
+            },
+            {
+                source: '/.well-known/oauth-protected-resource',
+                destination: `${mcpOrigin}/.well-known/oauth-protected-resource`,
+            },
+            {
+                source: '/.well-known/oauth-protected-resource/:path*',
+                destination: `${mcpOrigin}/.well-known/oauth-protected-resource/:path*`,
+            },
+            {
+                source: '/.well-known/oauth-authorization-server',
+                destination: `${mcpOrigin}/.well-known/oauth-authorization-server`,
+            },
+            {
+                source: '/authorize',
+                destination: `${mcpOrigin}/authorize`,
+            },
+            {
+                source: '/token',
+                destination: `${mcpOrigin}/token`,
+            },
+            {
+                source: '/register',
+                destination: `${mcpOrigin}/register`,
+            },
+            {
+                source: '/revoke',
+                destination: `${mcpOrigin}/revoke`,
+            },
+            {
+                source: '/oauth/:path*',
+                destination: `${mcpOrigin}/oauth/:path*`,
             },
         ];
     },

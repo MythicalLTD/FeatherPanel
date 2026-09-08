@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
 import { cn } from '@/lib/utils';
@@ -37,16 +37,7 @@ import { readSidebarCollapsed, subscribeSidebarCollapsed } from '@/lib/sidebarCh
 import { useSidebarPreferences } from '@/hooks/useSidebarPreferences';
 import { getShellContentInset } from '@/lib/sidebarLayout';
 
-function getCookie(name: string): string | null {
-    if (typeof document === 'undefined') return null;
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
-    return null;
-}
-
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
-    const router = useRouter();
     const pathname = usePathname();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
@@ -114,13 +105,6 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     const { chromeLayout } = useChromeLayout();
     const { sidebarPosition, dockDisplay, dockSize } = useSidebarPreferences();
     const navbarHoverDockActive = navbarHoverReveal && chromeLayout === 'modern';
-
-    useEffect(() => {
-        const token = getCookie('remember_token');
-        if (!token) {
-            router.push('/auth/login');
-        }
-    }, [router]);
 
     return (
         <GlobalSearchProvider>

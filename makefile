@@ -5,6 +5,7 @@
 FRONTENDV2_DIR = frontendv2
 BACKEND_DIR = backend
 RUNNER_DIR = runner
+MCP_DIR = mcp
 
 # Commands
 PNPM = pnpm
@@ -40,7 +41,7 @@ DEV = 🔍
 # Make sure we use bash
 SHELL := /bin/bash
 
-.PHONY: help frontend backend dev release install clean test set-prod set-dev
+.PHONY: help frontend backend mcp mcp-dev mcp-build release install clean test set-prod set-dev
 
 # Default target
 help:
@@ -49,6 +50,9 @@ help:
 	@echo -e "${BOLD}Available commands:${NC}"
 	@echo -e "  ${GREEN}make frontend${NC}    ${ROCKET} Builds the frontend for production"
 	@echo -e "  ${GREEN}make backend${NC}     ${BUILD} Builds the backend components"
+	@echo -e "  ${GREEN}make mcp${NC}         ${BUILD} Builds the MCP server"
+	@echo -e "  ${GREEN}make mcp-dev${NC}     ${SERVER} Runs MCP HTTP server with pnpm (tsx watch)"
+	@echo -e "  ${GREEN}make mcp-build${NC}   ${BUILD} Alias for make mcp"
 	@echo -e "  ${GREEN}make release${NC}     ${PACKAGE} Prepares a full release build"
 	@echo -e "  ${GREEN}make install${NC}     ${INFO} Installs all dependencies"
 	@echo -e "  ${GREEN}make clean${NC}       ${CLEAN} Cleans all build artifacts"
@@ -73,6 +77,24 @@ backend:
 	@cd $(BACKEND_DIR) && $(COMPOSER) install
 	@cd $(BACKEND_DIR) && $(COMPOSER) dump-autoload
 	@echo -e "${GREEN}${CHECK} Backend build complete!${NC}\n"
+
+# MCP server
+mcp mcp-build:
+	@echo -e "\n${BOLD}${BLUE}MCP Build${NC} ${BUILD}"
+	@echo -e "${CYAN}=================${NC}"
+	@echo -e "${GREEN}${INFO} Building FeatherPanel MCP server...${NC}"
+	@cd $(MCP_DIR) && $(PNPM) install
+	@cd $(MCP_DIR) && $(PNPM) run build
+	@echo -e "${GREEN}${CHECK} MCP build complete!${NC}\n"
+
+# Local MCP HTTP server (Streamable HTTP on :3001)
+# Env: FEATHERPANEL_URL (default http://127.0.0.1:4831), optional FEATHERPANEL_API_KEY for stdio only
+mcp-dev:
+	@echo -e "\n${BOLD}${BLUE}MCP Dev Server${NC} ${SERVER}"
+	@echo -e "${CYAN}=================${NC}"
+	@echo -e "${GREEN}${INFO} Starting MCP on http://0.0.0.0:$${MCP_PORT:-3001}/mcp${NC}"
+	@echo -e "${YELLOW}${INFO} Set FEATHERPANEL_URL to your panel (default http://127.0.0.1:4831)${NC}"
+	@cd $(MCP_DIR) && FEATHERPANEL_URL=$${FEATHERPANEL_URL:-http://127.0.0.1:4831} MCP_HOST=$${MCP_HOST:-0.0.0.0} MCP_PORT=$${MCP_PORT:-3001} $(PNPM) run dev
 
 clean-license:
 	@echo -e "\n${BOLD}${BLUE}Cleaning License${NC} ${CLEAN}"
@@ -112,6 +134,7 @@ release:
 	
 	@echo -e "${PURPLE}${INFO} Building applications...${NC}"
 	@cd $(FRONTENDV2_DIR) && $(PNPM) build
+	@cd $(MCP_DIR) && $(PNPM) install && $(PNPM) run build
 	@cd $(BACKEND_DIR) && $(COMPOSER) dump-autoload
 	@cd $(BACKEND_DIR) && $(COMPOSER) install --optimize-autoloader
 	@echo -e "${GREEN}${CHECK} Build complete${NC}\n"
@@ -147,6 +170,9 @@ install:
 	@echo -e "${GREEN}${INFO} Installing backend packages...${NC}"
 	@cd $(BACKEND_DIR) && $(COMPOSER) install
 	@echo -e "${GREEN}${CHECK} Backend packages installed${NC}\n"
+	@echo -e "${GREEN}${INFO} Installing MCP packages...${NC}"
+	@cd $(MCP_DIR) && $(PNPM) install
+	@echo -e "${GREEN}${CHECK} MCP packages installed${NC}\n"
 
 # Clean build artifacts
 clean:
@@ -154,6 +180,7 @@ clean:
 	@echo -e "${CYAN}=======================${NC}"
 	@echo -e "${YELLOW}${WARN} Removing artifacts and caches...${NC}"
 	@cd $(FRONTENDV2_DIR) && rm -rf dist node_modules/
+	@cd $(MCP_DIR) && rm -rf dist node_modules/
 	@echo -e "${GREEN}${CHECK} Clean complete!${NC}\n"
 
 # Run tests

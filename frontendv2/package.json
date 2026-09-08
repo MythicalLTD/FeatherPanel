@@ -4,9 +4,12 @@
 	"license": "AGPL-3.0-or-later",
 	"type": "module",
 	"scripts": {
-		"dev": "next dev -H 127.0.0.1",
+		"dev": "run-p --print-label next mcp",
+		"dev:next": "next dev -H 127.0.0.1",
 		"dev:turbo": "NODE_OPTIONS='--max-old-space-size=8192' next dev -H 127.0.0.1",
 		"dev:clean": "rm -rf .next/dev && pnpm dev",
+		"next": "next dev -H 127.0.0.1",
+		"mcp": "pnpm --dir ../mcp exec env FEATHERPANEL_URL=${FEATHERPANEL_URL:-http://127.0.0.1:8721} MCP_HOST=127.0.0.1 MCP_PORT=${MCP_PORT:-3001} MCP_OAUTH_STORE_PATH=${MCP_OAUTH_STORE_PATH:-/tmp/featherpanel-mcp-oauth.json} tsx watch src/index.ts",
 		"build": "run-s scan:translations scan:hardcoded-ui lint build:next",
 		"build:next": "next build && node scripts/fix-standalone-swc-helpers.js",
 		"start": "next start",

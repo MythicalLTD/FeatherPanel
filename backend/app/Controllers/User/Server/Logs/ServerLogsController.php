@@ -136,12 +136,12 @@ class ServerLogsController
                     return ApiResponse::error('Invalid server data: ' . $error, 'INVALID_SERVER_DATA', 422);
                 }
 
-                return ApiResponse::error('Failed to send power action to Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+                return ApiResponse::error('Failed to fetch server logs from Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
             }
         } catch (\Exception $e) {
-            App::getInstance(true)->getLogger()->error('Failed to send power action to Wings: ' . $e->getMessage());
+            App::getInstance(true)->getLogger()->error('Failed to fetch server logs from Wings: ' . $e->getMessage());
 
-            return ApiResponse::error('Failed to send power action to Wings: ' . $e->getMessage(), 'FAILED_TO_SEND_POWER_ACTION_TO_WINGS', 500);
+            return ApiResponse::error('Failed to fetch server logs from Wings: ' . $e->getMessage(), 'FAILED_TO_FETCH_SERVER_LOGS', 500);
         }
 
         return ApiResponse::success(['response' => $response->getData()], 'Response from Wings', 200);
@@ -235,12 +235,12 @@ class ServerLogsController
                     return ApiResponse::error('Invalid server data: ' . $error, 'INVALID_SERVER_DATA', 422);
                 }
 
-                return ApiResponse::error('Failed to send power action to Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+                return ApiResponse::error('Failed to fetch install logs from Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
             }
         } catch (\Exception $e) {
-            App::getInstance(true)->getLogger()->error('Failed to send power action to Wings: ' . $e->getMessage());
+            App::getInstance(true)->getLogger()->error('Failed to fetch install logs from Wings: ' . $e->getMessage());
 
-            return ApiResponse::error('Failed to send power action to Wings: ' . $e->getMessage(), 'FAILED_TO_SEND_POWER_ACTION_TO_WINGS', 500);
+            return ApiResponse::error('Failed to fetch install logs from Wings: ' . $e->getMessage(), 'FAILED_TO_FETCH_INSTALL_LOGS', 500);
         }
 
         return ApiResponse::success(['response' => $response->getData()], 'Response from Wings', 200);
