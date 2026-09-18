@@ -143,7 +143,7 @@ export function useWingsWebSocket({
     const jwtTokenRef = useRef<string>('');
     const [isConnected, setIsConnected] = useState(false);
     const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>(
-        'disconnected',
+        'connecting',
     );
     const [ping, setPing] = useState<number | null>(null);
     const [stats, setStats] = useState<WingsStats | null>(null);

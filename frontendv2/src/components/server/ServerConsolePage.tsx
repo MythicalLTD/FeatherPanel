@@ -30,6 +30,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { AlertTriangle, Wifi, WifiOff, Loader2, Copy } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useFeatureDetector } from '@/hooks/useFeatureDetector';
 import { EulaDialog } from '@/components/server/features/EulaDialog';
@@ -103,7 +104,9 @@ export default function ServerConsolePage() {
     const hasInitializedStatus = useRef(false);
 
     const { hasPermission, loading: permissionsLoading, server, setLiveStatus } = useServerPermissions(serverUuid);
-    const [serverStatus, setServerStatus] = useState('offline');
+    const { user: sessionUser, isLoading: sessionLoading, isSessionChecked } = useSession();
+    const sessionReady = isSessionChecked && !sessionLoading && !!sessionUser;
+    const [serverStatus, setServerStatus] = useState('unknown');
     const [wingsUptime, setWingsUptime] = useState<string>('');
     const [showLogDialog, setShowLogDialog] = useState(false);
     const [uploadedLogs, setUploadedLogs] = useState<{ id: string; url: string; raw: string } | null>(null);
@@ -111,18 +114,20 @@ export default function ServerConsolePage() {
     useEffect(() => {
         hasRequestedLogsRef.current = false;
         hasInitializedStatus.current = false;
+        setServerStatus('unknown');
     }, [serverUuid]);
 
     useEffect(() => {
-        if (server?.status && !hasInitializedStatus.current) {
-            const timer = setTimeout(() => {
-                setServerStatus(server.status);
-                setLiveStatus(server.status);
-                hasInitializedStatus.current = true;
-            }, 0);
-            return () => clearTimeout(timer);
-        }
-    }, [server?.status, setLiveStatus]);
+        if (hasInitializedStatus.current) return;
+        const seed = server?.stats?.state || server?.status;
+        if (!seed) return;
+        const timer = setTimeout(() => {
+            setServerStatus(seed);
+            setLiveStatus(seed);
+            hasInitializedStatus.current = true;
+        }, 0);
+        return () => clearTimeout(timer);
+    }, [server?.stats?.state, server?.status, setLiveStatus]);
 
     const [cpuData, setCpuData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const [memoryData, setMemoryData] = useState<Array<{ timestamp: number; value: number }>>([]);
@@ -485,6 +490,11 @@ export default function ServerConsolePage() {
 
     const handlePowerAction = useCallback(
         async (action: 'start' | 'stop' | 'restart' | 'kill') => {
+            if (connectionStatus !== 'connected') {
+                toast.error(t('servers.console.connection.disconnected_hint'));
+                return;
+            }
+
             const optimisticStatus: Record<'start' | 'stop' | 'restart' | 'kill', string> = {
                 start: 'starting',
                 stop: 'stopping',
@@ -514,7 +524,7 @@ export default function ServerConsolePage() {
                 }, 2000);
             });
         },
-        [sendPowerAction, setLiveStatus],
+        [connectionStatus, sendPowerAction, setLiveStatus, t],
     );
 
     const handleUploadLogs = useCallback(() => {
@@ -557,6 +567,7 @@ export default function ServerConsolePage() {
                 return {
                     icon: Loader2,
                     message: t('servers.console.connection.connecting'),
+                    hint: t('servers.console.connection.info'),
                     color: 'text-blue-500',
                     bgColor: 'bg-blue-500/10 border-blue-500/20',
                     iconClass: 'animate-spin',
@@ -565,6 +576,7 @@ export default function ServerConsolePage() {
                 return {
                     icon: Wifi,
                     message: t('servers.console.connection.connected'),
+                    hint: t('servers.console.connection.info'),
                     color: 'text-green-500',
                     bgColor: 'bg-green-500/10 border-green-500/20',
                     iconClass: '',
@@ -573,22 +585,24 @@ export default function ServerConsolePage() {
                 return {
                     icon: AlertTriangle,
                     message: t('servers.console.connection.error'),
-                    color: 'text-yellow-500',
-                    bgColor: 'bg-yellow-500/10 border-yellow-500/20',
+                    hint: t('servers.console.connection.error_hint'),
+                    color: 'text-amber-500',
+                    bgColor: 'bg-amber-500/10 border-amber-500/20',
                     iconClass: '',
                 };
             default:
                 return {
                     icon: WifiOff,
                     message: t('servers.console.connection.disconnected'),
-                    color: 'text-red-500',
-                    bgColor: 'bg-red-500/10 border-red-500/20',
+                    hint: t('servers.console.connection.disconnected_hint'),
+                    color: 'text-amber-500',
+                    bgColor: 'bg-amber-500/10 border-amber-500/20',
                     iconClass: '',
                 };
         }
     };
 
-    if (permissionsLoading) {
+    if (permissionsLoading || !sessionReady) {
         return (
             <div className='flex min-h-screen items-center justify-center'>
                 <div className='flex flex-col items-center gap-4'>
@@ -681,24 +695,23 @@ export default function ServerConsolePage() {
 
             <div className='grid grid-cols-1 items-stretch gap-4 xl:grid-cols-12 xl:gap-5 2xl:gap-6'>
                 <div className='flex h-full min-h-0 min-w-0 flex-col gap-4 xl:col-span-9'>
-                    {shouldConnectToWings && connectionStatus !== 'connected' && (
+                    {/* Disconnected/error cable message lives in ServerNodeConnectionBanner (layout). */}
+                    {shouldConnectToWings && connectionStatus === 'connecting' && (
                         <Card className={`border-2 ${connectionInfo.bgColor}`}>
                             <CardContent className='p-4'>
                                 <div className='flex items-center gap-4'>
                                     <div
-                                        className={`flex h-12 w-12 items-center justify-center rounded-lg ${connectionInfo.bgColor}`}
+                                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${connectionInfo.bgColor}`}
                                     >
                                         <connectionInfo.icon
                                             className={`h-6 w-6 ${connectionInfo.color} ${connectionInfo.iconClass}`}
                                         />
                                     </div>
-                                    <div className='flex-1'>
+                                    <div className='min-w-0 flex-1'>
                                         <p className={`font-semibold ${connectionInfo.color}`}>
                                             {connectionInfo.message}
                                         </p>
-                                        <p className='text-muted-foreground text-sm'>
-                                            {t('servers.console.connection.info')}
-                                        </p>
+                                        <p className='text-muted-foreground mt-1 text-sm'>{connectionInfo.hint}</p>
                                     </div>
                                 </div>
                             </CardContent>
@@ -780,6 +793,7 @@ export default function ServerConsolePage() {
                             diskLimit={server.disk || 0}
                             wingsUptime={wingsUptime}
                             ping={ping}
+                            statsReady={connectionStatus === 'connected'}
                             cpuUsage={currentCpu}
                             memoryUsage={currentMemory}
                             diskUsage={currentDisk}

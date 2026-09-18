@@ -22,6 +22,7 @@ use App\Chat\Server;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Plugins\Events\Events\WingsEvent;
+use App\Services\Server\ServerAutoStartService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -71,6 +72,15 @@ class WingsServersResetController
         // Reset each server's status
         $resetResult = Server::resetAllServerStatuses($node['id']);
 
+        $queuedAutoStarts = 0;
+        try {
+            $queuedAutoStarts = (new ServerAutoStartService())->queueForNodeReconnect($node);
+        } catch (\Exception $e) {
+            \App\App::getInstance(true)->getLogger()->error(
+                'Failed to queue auto-starts after node reset: ' . $e->getMessage()
+            );
+        }
+
         // Emit event
         global $eventManager;
         $eventManager->emit(
@@ -78,12 +88,14 @@ class WingsServersResetController
             [
                 'node' => $node,
                 'reset_result' => $resetResult,
+                'queued_auto_starts' => $queuedAutoStarts,
             ]
         );
 
         return ApiResponse::sendManualResponse([
             'success' => true,
             'message' => 'Servers reset successfully',
+            'queued_auto_starts' => $queuedAutoStarts,
         ], 200);
     }
 }

@@ -368,7 +368,7 @@ class WingsServerListController
                     'name' => $server['name'],
                     'description' => $server['description'],
                 ],
-                'suspended' => $server['status'] === 'suspended',
+                'suspended' => !empty($server['suspended']) || $server['status'] === 'suspended',
                 'invocation' => $startupCommand,
                 'skip_egg_scripts' => (bool) $server['skip_scripts'],
                 'environment' => $environment,
@@ -403,6 +403,11 @@ class WingsServerListController
                 'fastdl' => [
                     'enabled' => !empty($server['fastdl_enabled']),
                     'directory' => (string) ($server['fastdl_directory'] ?? 'fastdl'),
+                ],
+                'auto_start' => [
+                    'enabled' => !empty($server['auto_start']),
+                    'manually_stopped' => !empty($server['manually_stopped']),
+                    'delay' => (int) ($server['auto_start_delay'] ?? 0),
                 ],
             ];
             $listMounts = Mount::getWingsMountsForServer((int) $server['id']);

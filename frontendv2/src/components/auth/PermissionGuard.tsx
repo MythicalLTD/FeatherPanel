@@ -19,6 +19,7 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@/contexts/SessionContext';
 import PermissionsClass from '@/lib/permissions';
+import { PageLoading } from '@/components/featherui/PageLoading';
 
 interface PermissionGuardProps {
     children: React.ReactNode;
@@ -44,16 +45,16 @@ export default function PermissionGuard({
         // Cached session already hydrated — keep the shell visible while we refresh.
         if (user) {
             if (!hasPermission(permission)) {
-                return null;
+                return <PageLoading />;
             }
             return <>{children}</>;
         }
 
-        return null;
+        return <PageLoading />;
     }
 
     if (!hasPermission(permission)) {
-        return null;
+        return <PageLoading />;
     }
 
     return <>{children}</>;

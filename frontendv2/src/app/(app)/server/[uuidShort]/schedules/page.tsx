@@ -53,6 +53,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn, isEnabledUnlessExplicitlyFalse } from '@/lib/utils';
 import type { Schedule, SchedulePagination } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
+import { PageLoading } from '@/components/featherui/PageLoading';
 
 export default function ServerSchedulesPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -260,7 +261,9 @@ export default function ServerSchedulesPage() {
     };
     const showHeaderCreateAction = canCreate && schedules.length > 0;
 
-    if (permissionsLoading || settingsLoading) return null;
+    if (permissionsLoading || settingsLoading) {
+        return <PageLoading />;
+    }
 
     if (!isEnabledUnlessExplicitlyFalse(settings?.server_allow_schedules)) {
         return (

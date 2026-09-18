@@ -33,6 +33,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import type { SubdomainCreateRequest, SubdomainOverview } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
+import { PageLoading } from '@/components/featherui/PageLoading';
 
 export default function CreateSubdomainPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -110,7 +111,9 @@ export default function CreateSubdomainPage() {
         }
     };
 
-    if (permissionsLoading || settingsLoading || loading) return null;
+    if (permissionsLoading || settingsLoading || loading) {
+        return <PageLoading />;
+    }
 
     if (!canManage) {
         return (

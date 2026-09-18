@@ -41,7 +41,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
     const { t } = useTranslation();
     const [updating, setUpdating] = useState(false);
     const [versionStatus, setVersionStatus] = useState<VersionStatus | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const [options, setOptions] = useState({
         source: 'github' as 'github' | 'url',
@@ -141,7 +141,11 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                     className='h-full'
                 >
                     <h3 className='text-primary font-mono text-3xl font-bold'>
-                        {systemData?.wings?.version || t('common.unknown')}
+                        {!systemData ? (
+                            <RefreshCw className='text-primary h-8 w-8 animate-spin' />
+                        ) : (
+                            systemData?.wings?.version || t('common.unknown')
+                        )}
                     </h3>
                 </PageCard>
 

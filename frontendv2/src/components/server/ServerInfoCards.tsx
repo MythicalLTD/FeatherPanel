@@ -82,6 +82,8 @@ interface ServerInfoCardsProps {
     diskLimit: number;
     wingsUptime: string;
     ping: number | null;
+    /** False until Wings is connected and metrics are meaningful (avoids 0% flash). */
+    statsReady?: boolean;
 
     cpuUsage?: number;
     memoryUsage?: number;
@@ -105,6 +107,7 @@ export default React.memo(function ServerInfoCards({
     diskLimit,
     wingsUptime,
     ping,
+    statsReady = true,
     cpuUsage = 0,
     memoryUsage = 0,
     diskUsage = 0,
@@ -119,6 +122,9 @@ export default React.memo(function ServerInfoCards({
     className,
 }: ServerInfoCardsProps) {
     const { t } = useTranslation();
+    const pendingValue = (
+        <span className='bg-muted/40 inline-block h-3.5 w-12 animate-pulse rounded-md align-middle' aria-busy='true' />
+    );
 
     const formatCpu = (cpu: number): string => {
         if (cpu === 0) return t('servers.console.info_cards.unlimited');
@@ -215,14 +221,18 @@ export default React.memo(function ServerInfoCards({
                                 <Clock className='h-3 w-3' />
                                 {t('servers.console.info_cards.uptime')}
                             </p>
-                            <p className='text-sm font-medium tabular-nums'>{wingsUptime || 'N/A'}</p>
+                            <p className='text-sm font-medium tabular-nums'>
+                                {statsReady ? wingsUptime || 'N/A' : pendingValue}
+                            </p>
                         </div>
                         <div>
                             <p className='text-muted-foreground mb-1 flex items-center gap-1 text-xs'>
                                 <Activity className='h-3 w-3' />
                                 {t('servers.console.info_cards.ping')}
                             </p>
-                            <p className='text-sm font-medium tabular-nums'>{ping !== null ? `${ping}ms` : 'N/A'}</p>
+                            <p className='text-sm font-medium tabular-nums'>
+                                {statsReady ? (ping !== null ? `${ping}ms` : 'N/A') : pendingValue}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -242,10 +252,10 @@ export default React.memo(function ServerInfoCards({
                                 {t('servers.cpu')}
                             </span>
                             <span className={cn('font-medium tabular-nums', cpuOverLimit && 'text-destructive')}>
-                                {cpuUsage.toFixed(1)}%
+                                {statsReady ? `${cpuUsage.toFixed(1)}%` : pendingValue}
                             </span>
                         </div>
-                        {cpuLimit > 0 && (
+                        {statsReady && cpuLimit > 0 && (
                             <Progress
                                 value={cpuPercent}
                                 className='h-1.5'
@@ -264,10 +274,10 @@ export default React.memo(function ServerInfoCards({
                                 {t('servers.memory')}
                             </span>
                             <span className={cn('font-medium tabular-nums', memoryOverLimit && 'text-destructive')}>
-                                {formatMib(memoryUsage)}
+                                {statsReady ? formatMib(memoryUsage) : pendingValue}
                             </span>
                         </div>
-                        {memoryLimit > 0 && (
+                        {statsReady && memoryLimit > 0 && (
                             <Progress
                                 value={memoryPercent}
                                 className='h-1.5'
@@ -286,10 +296,10 @@ export default React.memo(function ServerInfoCards({
                                 {t('servers.disk')}
                             </span>
                             <span className={cn('font-medium tabular-nums', diskOverLimit && 'text-destructive')}>
-                                {formatMib(diskUsage)}
+                                {statsReady ? formatMib(diskUsage) : pendingValue}
                             </span>
                         </div>
-                        {diskLimit > 0 && (
+                        {statsReady && diskLimit > 0 && (
                             <Progress
                                 value={diskPercent}
                                 className='h-1.5'

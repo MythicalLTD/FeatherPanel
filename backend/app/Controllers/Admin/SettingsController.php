@@ -376,6 +376,10 @@ class SettingsController
                 ConfigInterface::SERVER_ALLOW_USER_MADE_IMPORT,
                 ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL,
                 ConfigInterface::SERVER_ALLOW_USER_MADE_SUBDOMAINS,
+                ConfigInterface::SERVER_AUTO_START_ON_NODE_RECONNECT,
+                ConfigInterface::SERVER_AUTO_START_STAGGER_SECONDS,
+                ConfigInterface::SERVER_AUTO_START_INITIAL_DELAY_SECONDS,
+                ConfigInterface::SERVER_ALLOW_USER_AUTO_START,
                 ConfigInterface::SERVER_HIDE_IPS,
                 ConfigInterface::FILE_TRASH_ENABLED,
                 ConfigInterface::FILE_TRASH_MAX_SIZE_MB,
@@ -2416,6 +2420,70 @@ class SettingsController
                         'false',
                     ),
                 'description' => 'Allow users to create and manage server subdomains',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'servers',
+            ],
+            ConfigInterface::SERVER_AUTO_START_ON_NODE_RECONNECT => [
+                'name' => ConfigInterface::SERVER_AUTO_START_ON_NODE_RECONNECT,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_AUTO_START_ON_NODE_RECONNECT,
+                        'true',
+                    ),
+                'description' => 'When a game node reconnects after reboot or downtime, automatically start servers that have Auto Start enabled (skips manually stopped and suspended servers). Configure stagger delays below instead of Wings YAML.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'servers',
+            ],
+            ConfigInterface::SERVER_AUTO_START_STAGGER_SECONDS => [
+                'name' => ConfigInterface::SERVER_AUTO_START_STAGGER_SECONDS,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_AUTO_START_STAGGER_SECONDS,
+                        '5',
+                    ),
+                'description' => 'Seconds between each auto-started server on the same node after reconnect. Prevents starting every server at once.',
+                'type' => 'number',
+                'required' => true,
+                'placeholder' => '5',
+                'validation' => 'required|integer|min:0|max:300',
+                'options' => [],
+                'category' => 'servers',
+            ],
+            ConfigInterface::SERVER_AUTO_START_INITIAL_DELAY_SECONDS => [
+                'name' => ConfigInterface::SERVER_AUTO_START_INITIAL_DELAY_SECONDS,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_AUTO_START_INITIAL_DELAY_SECONDS,
+                        '15',
+                    ),
+                'description' => 'Seconds to wait after Wings reconnects before starting the first auto-start server (gives Docker time to settle).',
+                'type' => 'number',
+                'required' => true,
+                'placeholder' => '15',
+                'validation' => 'required|integer|min:0|max:600',
+                'options' => [],
+                'category' => 'servers',
+            ],
+            ConfigInterface::SERVER_ALLOW_USER_AUTO_START => [
+                'name' => ConfigInterface::SERVER_ALLOW_USER_AUTO_START,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_ALLOW_USER_AUTO_START,
+                        'false',
+                    ),
+                'description' => 'Allow server owners to toggle Auto Start after node reboot from the server settings page. Admins can always configure this per server.',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',

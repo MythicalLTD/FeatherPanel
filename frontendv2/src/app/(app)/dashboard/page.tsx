@@ -160,7 +160,7 @@ function DashboardBlockChrome({
 
 export default function DashboardPage() {
     const { t } = useTranslation();
-    const { user } = useSession();
+    const { user, isLoading: sessionLoading } = useSession();
     const dateOpts = useDateFormatOptions();
     const [allServers, setAllServers] = useState<ServerData[]>([]);
     const [vms, setVms] = useState<VmInstance[]>([]);
@@ -565,9 +565,19 @@ export default function DashboardPage() {
                 <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-6'>
                     <div className='min-w-0 flex-1 space-y-2'>
                         <h1 className='text-foreground text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl'>
-                            {user
-                                ? `${t('dashboard.welcome').replace(/!+\s*$/, '')}, ${user.first_name}!`
-                                : t('dashboard.welcome')}
+                            {user ? (
+                                `${t('dashboard.welcome').replace(/!+\s*$/, '')}, ${user.first_name}!`
+                            ) : sessionLoading ? (
+                                <span className='inline-flex items-center gap-2'>
+                                    {t('dashboard.welcome').replace(/!+\s*$/, '')},
+                                    <span
+                                        className='bg-muted/50 inline-block h-7 w-28 animate-pulse rounded-md sm:h-8 sm:w-36'
+                                        aria-busy='true'
+                                    />
+                                </span>
+                            ) : (
+                                t('dashboard.welcome')
+                            )}
                         </h1>
                         <p className='text-muted-foreground max-w-2xl text-sm sm:text-base md:text-lg'>
                             {t('dashboard.subtitle')}

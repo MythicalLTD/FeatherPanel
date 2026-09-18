@@ -180,6 +180,8 @@ use App\Services\Subdomain\SubdomainCleanupService;
         new OA\Property(property: 'image', type: 'string', nullable: true, description: 'Docker image'),
         new OA\Property(property: 'spell_id', type: 'integer', nullable: true, description: 'Spell ID to change server spell'),
         new OA\Property(property: 'wipe_files', type: 'boolean', nullable: true, description: 'Whether to delete all server files before reinstalling (only applies when changing spell_id)', default: false),
+        new OA\Property(property: 'auto_start', type: 'boolean', nullable: true, description: 'Start automatically after node reboot/reconnect'),
+        new OA\Property(property: 'auto_start_delay', type: 'integer', nullable: true, description: 'Extra delay in seconds before auto-start'),
         new OA\Property(property: 'variables', type: 'array', items: new OA\Items(type: 'object', properties: [
             new OA\Property(property: 'variable_id', type: 'integer'),
             new OA\Property(property: 'variable_value', type: 'string'),
@@ -1330,6 +1332,25 @@ class ServerUserController
             }
         }
 
+        if (array_key_exists('auto_start', $data) || array_key_exists('auto_start_delay', $data)) {
+            $appCfg = App::getInstance(true)->getConfig();
+            $allowAutoStart = $appCfg->getSetting(ConfigInterface::SERVER_ALLOW_USER_AUTO_START, 'false');
+            $allowAutoStart = ($allowAutoStart === 'true' || $allowAutoStart === true || $allowAutoStart === '1' || $allowAutoStart === 1);
+            if (!$allowAutoStart) {
+                return ApiResponse::error('Auto start settings are disabled by the administrator', 'AUTO_START_EDIT_DISABLED', 403);
+            }
+
+            if (array_key_exists('auto_start', $data)) {
+                $updateData['auto_start'] = (int) (bool) $data['auto_start'];
+            }
+            if (array_key_exists('auto_start_delay', $data)) {
+                if (!is_numeric($data['auto_start_delay']) || (int) $data['auto_start_delay'] < 0 || (int) $data['auto_start_delay'] > 3600) {
+                    return ApiResponse::error('Auto start delay must be between 0 and 3600 seconds', 'INVALID_AUTO_START_DELAY', 400);
+                }
+                $updateData['auto_start_delay'] = (int) $data['auto_start_delay'];
+            }
+        }
+
         // Normalize variables payload if provided
         $variablesPayload = null;
         if (isset($data['variables'])) {
@@ -1360,7 +1381,7 @@ class ServerUserController
         }
 
         // Additional security check: only allow specific fields
-        $allowedFields = ['name', 'description', 'startup', 'image', 'spell_id', 'realms_id', 'backup_retention_mode'];
+        $allowedFields = ['name', 'description', 'startup', 'image', 'spell_id', 'realms_id', 'backup_retention_mode', 'auto_start', 'auto_start_delay'];
         $updateData = array_intersect_key($updateData, array_flip($allowedFields));
 
         // Double check that we only have allowed fields

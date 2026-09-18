@@ -21,7 +21,7 @@ export function displayWebSpaceStatus(webspace: Pick<WebSpace, 'status' | 'state
     if (lifecycle && ['installing', 'reinstalling', 'transferring', 'failed'].includes(lifecycle)) {
         return lifecycle;
     }
-    return webspace.state || webspace.status || 'stopped';
+    return webspace.state || webspace.status || 'unknown';
 }
 
 export function getWebSpaceStatusDotColor(status: string): string {
@@ -38,6 +38,8 @@ export function getWebSpaceStatusDotColor(status: string): string {
         case 'stopped':
         case 'offline':
             return 'bg-gray-500';
+        case 'unknown':
+            return 'bg-muted-foreground/40';
         case 'suspended':
         case 'failed':
         case 'error':

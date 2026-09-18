@@ -133,7 +133,7 @@ export default function ServerFilesIDEPage({
     const editorRef = useRef<any>(null);
     const blockedInitialToastKeyRef = useRef<string | null>(null);
 
-    const { hasPermission } = useServerPermissions(uuidShort);
+    const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
     const canEdit = hasPermission('file.update');
     const canRead = hasPermission('file.read');
 
@@ -351,6 +351,17 @@ export default function ServerFilesIDEPage({
         // Fallback to navigating back to regular file manager
         router.push(filesListHref);
     };
+
+    if (permissionsLoading) {
+        return (
+            <div className='bg-background flex h-full min-h-0 items-center justify-center'>
+                <div className='flex flex-col items-center gap-4'>
+                    <Loader2 className='text-primary h-8 w-8 animate-spin' />
+                    <p className='text-muted-foreground text-sm'>{t('common.loading')}</p>
+                </div>
+            </div>
+        );
+    }
 
     if (!canRead) {
         return (

@@ -136,6 +136,8 @@ export default function ServerHeader({
             case 'offline':
             case 'stopped':
                 return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+            case 'unknown':
+                return 'bg-muted/40 text-muted-foreground border-border/40';
             case 'error':
                 return 'bg-red-600/20 text-red-600 border-red-600/40';
             default:
@@ -190,7 +192,9 @@ export default function ServerHeader({
                 <Button
                     variant='outline'
                     size='sm'
-                    disabled={actionLoading === 'start' || (connectionLive ? !isOfflineStatus(serverStatus) : false)}
+                    disabled={
+                        actionLoading === 'start' || !connectionLive || !isOfflineStatus(serverStatus)
+                    }
                     onClick={() => handleAction('start', onStart)}
                     className='flex items-center gap-2 border-emerald-600/40 bg-emerald-600 text-white hover:bg-emerald-600/90 hover:text-white disabled:border-emerald-600/20 disabled:bg-emerald-600/40 disabled:text-white/70'
                 >
@@ -207,7 +211,7 @@ export default function ServerHeader({
                 <Button
                     variant='outline'
                     size='sm'
-                    disabled={actionLoading === 'restart' || (connectionLive ? serverStatus !== 'running' : false)}
+                    disabled={actionLoading === 'restart' || !connectionLive || serverStatus !== 'running'}
                     onClick={() => handleAction('restart', onRestart)}
                     className='flex items-center gap-2 border-sky-600/40 bg-sky-600 text-white hover:bg-sky-600/90 hover:text-white disabled:border-sky-600/20 disabled:bg-sky-600/40 disabled:text-white/70'
                 >
@@ -224,7 +228,7 @@ export default function ServerHeader({
                 <Button
                     variant='outline'
                     size='sm'
-                    disabled={actionLoading === 'stop' || (connectionLive ? !isRunningStatus(serverStatus) : false)}
+                    disabled={actionLoading === 'stop' || !connectionLive || !isRunningStatus(serverStatus)}
                     onClick={() => handleAction('stop', onStop)}
                     className='flex items-center gap-2 border-orange-600/40 bg-orange-600 text-white hover:bg-orange-600/90 hover:text-white disabled:border-orange-600/20 disabled:bg-orange-600/40 disabled:text-white/70'
                 >
@@ -241,7 +245,7 @@ export default function ServerHeader({
                 <Button
                     variant='destructive'
                     size='sm'
-                    disabled={actionLoading === 'kill' || (connectionLive ? isOfflineStatus(serverStatus) : false)}
+                    disabled={actionLoading === 'kill' || !connectionLive || isOfflineStatus(serverStatus)}
                     onClick={() => handleAction('kill', onKill)}
                     className='flex items-center gap-2'
                 >

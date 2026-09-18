@@ -74,7 +74,7 @@ export function WebSpaceNav() {
     const { t } = useTranslation();
     const uuidShort = String(params.uuidShort || '');
     const base = `/webspace/${uuidShort}`;
-    const { hasPermission, webspace } = useWebSpacePermissions(uuidShort);
+    const { hasPermission, webspace, loading } = useWebSpacePermissions(uuidShort);
     const { data: pluginRoutes } = usePluginRoutes();
     const showAppsTab = hasWebSpaceApps(webspace?.webplate_runtime, webspace?.available_apps);
 
@@ -111,6 +111,16 @@ export function WebSpaceNav() {
 
         return [...builtIn, ...pluginTabs];
     }, [base, hasPermission, pluginRoutes?.webspace, showAppsTab, t]);
+
+    if (loading) {
+        return (
+            <nav className='border-border flex flex-wrap gap-1 border-b pb-2' aria-busy='true'>
+                {Array.from({ length: 6 }).map((_, index) => (
+                    <span key={index} className='bg-muted/40 h-8 w-16 animate-pulse rounded-lg sm:w-20' />
+                ))}
+            </nav>
+        );
+    }
 
     return (
         <nav className='border-border flex flex-wrap gap-1 border-b pb-2'>

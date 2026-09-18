@@ -29,6 +29,10 @@ export interface AppSettings {
     server_allow_user_made_proxy: string;
     server_allow_user_made_fastdl: string;
     server_allow_user_made_subdomains: string;
+    server_auto_start_on_node_reconnect?: string;
+    server_auto_start_stagger_seconds?: string;
+    server_auto_start_initial_delay_seconds?: string;
+    server_allow_user_auto_start?: string;
     server_allow_user_server_deletion: string;
     server_hide_ips: string;
     smtp_enabled: string;

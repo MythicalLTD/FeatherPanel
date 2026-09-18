@@ -49,9 +49,9 @@ export default function WebSpaceDomainsPage() {
     const params = useParams();
     const uuidShort = String(params.uuidShort || '');
     const { t } = useTranslation();
-    const { hasPermission } = useWebSpacePermissions(uuidShort);
-    const canDnsRead = hasPermission(WebSpaceSubuserPermissions['dns.read']);
-    const canDnsManage = hasPermission(WebSpaceSubuserPermissions['dns.manage']);
+    const { hasPermission, loading: permissionsLoading } = useWebSpacePermissions(uuidShort);
+    const canDnsRead = !permissionsLoading && hasPermission(WebSpaceSubuserPermissions['dns.read']);
+    const canDnsManage = !permissionsLoading && hasPermission(WebSpaceSubuserPermissions['dns.manage']);
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -252,7 +252,7 @@ export default function WebSpaceDomainsPage() {
         }
     };
 
-    if (loading || !space) {
+    if (loading || permissionsLoading || !space) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
                 <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />

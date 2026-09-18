@@ -18,12 +18,15 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ShieldCheck, KeyRound, TriangleAlert, Globe, Lock, Link2 } from 'lucide-react';
-import { Button } from '@/components/featherui/Button';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
-import { OAuthConsentCard, OAuthConsentShell } from '@/components/auth/OAuthConsentCard';
+import {
+    OAuthConsentButton,
+    OAuthConsentCard,
+    OAuthConsentMessage,
+    OAuthConsentShell,
+} from '@/components/auth/OAuthConsentCard';
 
 type OAuthRequestPayload = {
     request_token: string;
@@ -101,7 +104,6 @@ export default function OAuth2ApiAuthorizePage() {
         if (!payload && !hasRequestParams) return;
         setSubmitting(true);
         try {
-            // Always use a fresh token to avoid stale/prefetched request state.
             let activePayload = payload;
             if (hasRequestParams) {
                 activePayload = await refreshRequestToken();
@@ -129,7 +131,6 @@ export default function OAuth2ApiAuthorizePage() {
             const isPendingStateError =
                 axios.isAxiosError(err) && err.response?.data?.error_code === 'AUTHORIZATION_NOT_PENDING';
 
-            // One automatic retry with a newly minted token.
             if (isPendingStateError && hasRequestParams) {
                 try {
                     const freshPayload = await refreshRequestToken();
@@ -147,7 +148,7 @@ export default function OAuth2ApiAuthorizePage() {
                         }
                     }
                 } catch {
-                    // Fall through to standard error toast below.
+                    // Fall through
                 }
             }
 
@@ -191,18 +192,14 @@ export default function OAuth2ApiAuthorizePage() {
     if (serverModeAuthorized) {
         return (
             <OAuthConsentShell>
-                <div className='border-border bg-card/95 space-y-4 rounded-3xl border p-7 text-center shadow-[0_24px_48px_hsl(var(--background)/0.35)]'>
-                    <ShieldCheck className='mx-auto h-10 w-10 text-emerald-500' />
-                    <h1 className='text-foreground text-[1.0625rem] font-semibold'>
-                        {t('account.apiKeys.oauth2.serverAuthorizedTitle')}
-                    </h1>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('account.apiKeys.oauth2.serverAuthorizedDescription')}
-                    </p>
-                    <Button className='rounded-xl' onClick={() => router.push('/dashboard/account?tab=api-keys')}>
+                <OAuthConsentMessage
+                    title={t('account.apiKeys.oauth2.serverAuthorizedTitle')}
+                    body={t('account.apiKeys.oauth2.serverAuthorizedDescription')}
+                >
+                    <OAuthConsentButton primary onClick={() => router.push('/dashboard/account?tab=api-keys')}>
                         {t('account.apiKeys.oauth2.returnToApiKeys')}
-                    </Button>
-                </div>
+                    </OAuthConsentButton>
+                </OAuthConsentMessage>
             </OAuthConsentShell>
         );
     }
@@ -210,17 +207,7 @@ export default function OAuth2ApiAuthorizePage() {
     if (loading || (hasRequestParams && !payload && !error)) {
         return (
             <OAuthConsentShell>
-                <div className='border-border bg-card/95 space-y-4 rounded-3xl border p-8 text-center shadow-[0_24px_48px_hsl(var(--background)/0.35)]'>
-                    <div
-                        className='border-border border-t-primary mx-auto h-11 w-11 animate-spin rounded-full border-2'
-                        role='status'
-                        aria-label={t('account.apiKeys.oauth2.prepareLoading')}
-                    />
-                    <h2 className='text-foreground text-[1.0625rem] font-semibold'>
-                        {t('account.apiKeys.oauth2.prepareLoading')}
-                    </h2>
-                    <p className='text-muted-foreground text-sm'>Preparing your authorization request…</p>
-                </div>
+                <OAuthConsentMessage title={t('account.apiKeys.oauth2.prepareLoading')} body='Please wait.' />
             </OAuthConsentShell>
         );
     }
@@ -228,31 +215,26 @@ export default function OAuth2ApiAuthorizePage() {
     if (!hasRequestParams) {
         return (
             <OAuthConsentShell>
-                <div className='border-border bg-card/95 space-y-4 rounded-3xl border p-7 text-center shadow-[0_24px_48px_hsl(var(--background)/0.35)]'>
-                    <KeyRound className='text-primary mx-auto h-10 w-10' />
-                    <h1 className='text-foreground text-[1.0625rem] font-semibold'>
-                        {t('account.apiKeys.oauth2.noRequestTitle')}
-                    </h1>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('account.apiKeys.oauth2.noRequestDescription')}
+                <OAuthConsentMessage
+                    title={t('account.apiKeys.oauth2.noRequestTitle')}
+                    body={t('account.apiKeys.oauth2.noRequestDescription')}
+                >
+                    <p className='mb-4 border border-[#333] bg-[#141414] px-3 py-2 text-[12px] text-[#a0a0a0]'>
+                        <strong className='text-[#e8e8e8]'>{t('account.apiKeys.oauth2.noRequestWarningTitle')}</strong>
+                        <br />
+                        {t('account.apiKeys.oauth2.noRequestWarningBody')}
                     </p>
-                    <div className='border-border bg-muted/30 rounded-2xl border p-3 text-left text-sm'>
-                        <p className='font-medium'>{t('account.apiKeys.oauth2.noRequestWarningTitle')}</p>
-                        <p className='text-muted-foreground mt-1'>{t('account.apiKeys.oauth2.noRequestWarningBody')}</p>
-                    </div>
-                    <div className='flex flex-wrap justify-center gap-3'>
-                        <Button className='rounded-xl' onClick={() => router.push('/dashboard/account?tab=api-keys')}>
+                    <div className='flex flex-wrap gap-2'>
+                        <OAuthConsentButton primary onClick={() => router.push('/dashboard/account?tab=api-keys')}>
                             {t('account.apiKeys.oauth2.returnToApiKeys')}
-                        </Button>
-                        <Button
-                            variant='outline'
-                            className='rounded-xl'
+                        </OAuthConsentButton>
+                        <OAuthConsentButton
                             onClick={() => window.open('/icanhasfeatherpanel/api/oauth2-playground.html', '_blank')}
                         >
                             {t('account.apiKeys.oauth2.openPlayground')}
-                        </Button>
+                        </OAuthConsentButton>
                     </div>
-                </div>
+                </OAuthConsentMessage>
             </OAuthConsentShell>
         );
     }
@@ -260,27 +242,20 @@ export default function OAuth2ApiAuthorizePage() {
     if (error || !payload) {
         return (
             <OAuthConsentShell>
-                <div className='border-border bg-card/95 space-y-4 rounded-3xl border p-7 text-center shadow-[0_24px_48px_hsl(var(--background)/0.35)]'>
-                    <TriangleAlert className='text-destructive mx-auto h-10 w-10' />
-                    <h1 className='text-destructive text-[1.0625rem] font-semibold'>
-                        {t('account.apiKeys.oauth2.initFailedTitle')}
-                    </h1>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {error || t('account.apiKeys.oauth2.initFailedDefault')}
-                    </p>
-                    <div className='flex flex-wrap justify-center gap-3'>
-                        <Button
-                            variant='outline'
-                            className='rounded-xl'
-                            onClick={() => router.push('/dashboard/account?tab=api-keys')}
-                        >
+                <OAuthConsentMessage
+                    error
+                    title={t('account.apiKeys.oauth2.initFailedTitle')}
+                    body={error || t('account.apiKeys.oauth2.initFailedDefault')}
+                >
+                    <div className='flex flex-wrap gap-2'>
+                        <OAuthConsentButton onClick={() => router.push('/dashboard/account?tab=api-keys')}>
                             {t('account.apiKeys.oauth2.returnToApiKeys')}
-                        </Button>
-                        <Button variant='ghost' className='rounded-xl' onClick={() => window.location.reload()}>
+                        </OAuthConsentButton>
+                        <OAuthConsentButton primary onClick={() => window.location.reload()}>
                             {t('account.apiKeys.oauth2.retry')}
-                        </Button>
+                        </OAuthConsentButton>
                     </div>
-                </div>
+                </OAuthConsentMessage>
             </OAuthConsentShell>
         );
     }
@@ -301,16 +276,14 @@ export default function OAuth2ApiAuthorizePage() {
                 ]}
                 meta={[
                     {
-                        icon: <Link2 className='h-3.5 w-3.5' />,
                         text: (
                             <>
                                 {t('account.apiKeys.oauth2.callbackUrl')}:{' '}
-                                <span className='text-foreground/80 break-all'>{payload.request.callbackurl}</span>
+                                <span className='break-all text-[#c8c8c8]'>{payload.request.callbackurl}</span>
                             </>
                         ),
                     },
                     {
-                        icon: <Globe className='h-3.5 w-3.5' />,
                         text: (
                             <>
                                 {t('account.apiKeys.oauth2.allowedIps')}:{' '}
@@ -319,11 +292,9 @@ export default function OAuth2ApiAuthorizePage() {
                         ),
                     },
                     {
-                        icon: <Lock className='h-3.5 w-3.5' />,
                         text: t('account.apiKeys.oauth2.cannotReadMessages'),
                     },
                     {
-                        icon: <ShieldCheck className='h-3.5 w-3.5' />,
                         text: t('account.apiKeys.oauth2.privacyNote'),
                     },
                 ]}

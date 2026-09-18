@@ -896,7 +896,7 @@
 				"playgroundTitle": "OAuth2 Request Playground",
 				"playgroundDescription": "Build and validate a request from the user side before opening the consent screen.",
 				"authorizeTitle": "{app}",
-				"authorizeSubtitle": "wants to access your FeatherPanel account",
+				"authorizeSubtitle": "wants to connect via AI Connector",
 				"warning": "This app will get full access to your account and servers. Only approve apps you trust.",
 				"permissionAccount": "Access your username and profile",
 				"permissionServers": "Access and manage your servers",
@@ -1072,6 +1072,7 @@
 			"stopped": "Stopped",
 			"starting": "Starting",
 			"null": "Unknown",
+			"unknown": "Unknown",
 			"installation_failed": "Installation Failed",
 			"installation_pending": "Installation Pending",
 			"installation_running": "Installation Running",
@@ -1156,8 +1157,10 @@
 			"connection": {
 				"connecting": "Connecting to Wings...",
 				"connected": "Connected to Wings",
-				"error": "Connection error - retrying...",
-				"disconnected": "Disconnected from Wings",
+				"error": "Oh uh… we might have accidentally pulled the wrong cable out of the server.",
+				"error_hint": "Can't reach the node over WebSocket. Live status, power actions, and the console are paused until the connection comes back.",
+				"disconnected": "Oh uh… we might have accidentally pulled the wrong cable out of the server.",
+				"disconnected_hint": "Can't reach the node over WebSocket. Live status, power actions, and the console are paused until the connection comes back.",
 				"info": "Real-time console and stats will be available once connected"
 			},
 			"kill": "Kill",
@@ -3293,7 +3296,15 @@
 		"backupPolicySave": "Save backup policy",
 		"backupPolicySaveSuccess": "Backup policy updated",
 		"backupPolicySaveError": "Failed to update backup policy",
-		"backupPolicyDisabled": "Backup policy changes are disabled by the administrator."
+		"backupPolicyDisabled": "Backup policy changes are disabled by the administrator.",
+		"autoStartTitle": "Auto Start",
+		"autoStartDescription": "Start this server automatically after the game node reboots or reconnects. Manually stopped and suspended servers are never auto-started.",
+		"autoStartLabel": "Start after node reconnect",
+		"autoStartDelayLabel": "Extra delay (seconds)",
+		"autoStartDelayHelp": "Optional extra wait for this server during staggered recovery (0–3600).",
+		"autoStartSave": "Save auto start",
+		"autoStartSaveSuccess": "Auto start settings updated",
+		"autoStartSaveError": "Failed to update auto start settings"
 	},
 	"lifecycleHooks": {
 		"title": "Lifecycle Hooks",
@@ -6805,6 +6816,10 @@
 					"skip_zerotrust_help": "Skip zero trust checks during server operations",
 					"show_on_status": "Show on Status Page",
 					"show_on_status_help": "When disabled, this server is hidden from the public status page. Panel operation and monitoring are unaffected.",
+					"auto_start": "Auto Start on Node Reconnect",
+					"auto_start_help": "When enabled, this server starts automatically after the game node reboots or FeatherWings reconnects. Manually stopped and suspended servers are skipped.",
+					"auto_start_delay": "Extra Auto Start Delay (seconds)",
+					"auto_start_delay_help": "Additional wait before this server starts during a staggered node recovery (0–3600). Global stagger settings still apply.",
 					"location_node": "Node & Location",
 					"location_node_help": "Use the Server Transfer feature to change node or location"
 				},

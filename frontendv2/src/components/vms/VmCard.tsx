@@ -31,6 +31,7 @@ interface VmCardProps {
 function StatusDot({ status, suspended }: { status?: string; suspended?: number }) {
     const isSuspended = suspended === 1 || status === 'suspended';
     const isRunning = status === 'running' && !isSuspended;
+    const isUnknown = !status || status === 'unknown';
     return (
         <span
             className={cn(
@@ -39,16 +40,24 @@ function StatusDot({ status, suspended }: { status?: string; suspended?: number 
                     ? 'bg-amber-500/15 text-amber-400'
                     : isRunning
                       ? 'bg-green-500/15 text-green-400'
-                      : 'bg-red-500/15 text-red-400',
+                      : isUnknown
+                        ? 'bg-muted/40 text-muted-foreground'
+                        : 'bg-red-500/15 text-red-400',
             )}
         >
-            <span
-                className={cn(
-                    'h-1.5 w-1.5 rounded-full',
-                    isSuspended ? 'bg-amber-400' : isRunning ? 'animate-pulse bg-green-400' : 'bg-red-400',
-                )}
-            />
-            {isSuspended ? 'suspended' : (status ?? 'unknown')}
+            {isUnknown ? (
+                <span className='bg-muted-foreground/40 h-2.5 w-12 animate-pulse rounded-md' aria-busy='true' />
+            ) : (
+                <>
+                    <span
+                        className={cn(
+                            'h-1.5 w-1.5 rounded-full',
+                            isSuspended ? 'bg-amber-400' : isRunning ? 'animate-pulse bg-green-400' : 'bg-red-400',
+                        )}
+                    />
+                    {isSuspended ? 'suspended' : status}
+                </>
+            )}
         </span>
     );
 }

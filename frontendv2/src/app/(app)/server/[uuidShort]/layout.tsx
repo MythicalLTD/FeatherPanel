@@ -17,16 +17,18 @@ import DashboardShell from '@/components/layout/DashboardShell';
 import { Metadata } from 'next';
 import ChatbotWidget from '@/components/ai/ChatbotWidget';
 import { ServerAnnouncementBanner } from '@/components/server/ServerAnnouncementBanner';
+import { ServerNodeConnectionBanner } from '@/components/server/ServerNodeConnectionBanner';
 import { ServerSpellBackdrop } from '@/components/server/ServerSpellBackdrop';
+import { ServerWingsReachabilityProvider } from '@/contexts/ServerWingsReachabilityContext';
+import { ServerProvider } from '@/contexts/ServerContext';
+import { ServerSuspendedWrapper } from '@/components/server/ServerSuspendedWrapper';
+import { getBaseUrl } from '@/lib/settings-api';
+import { cookies } from 'next/headers';
+import { Server } from '@/types/server';
 
 type Props = {
     params: Promise<{ uuidShort: string }>;
 };
-
-import { getBaseUrl } from '@/lib/settings-api';
-
-import { cookies } from 'next/headers';
-import { Server } from '@/types/server';
 
 async function getServer(uuidShort: string): Promise<Server | null> {
     try {
@@ -79,9 +81,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
 }
 
-import { ServerProvider } from '@/contexts/ServerContext';
-import { ServerSuspendedWrapper } from '@/components/server/ServerSuspendedWrapper';
-
 export default async function ServerLayout({
     children,
     params,
@@ -94,15 +93,18 @@ export default async function ServerLayout({
 
     return (
         <ServerProvider uuidShort={uuidShort} initialServer={server}>
-            <DashboardShell>
-                <ServerSuspendedWrapper>
-                    <ServerSpellBackdrop>
-                        <ServerAnnouncementBanner />
-                        {children}
-                    </ServerSpellBackdrop>
-                </ServerSuspendedWrapper>
-            </DashboardShell>
-            <ChatbotWidget />
+            <ServerWingsReachabilityProvider>
+                <DashboardShell>
+                    <ServerSuspendedWrapper>
+                        <ServerSpellBackdrop>
+                            <ServerAnnouncementBanner />
+                            <ServerNodeConnectionBanner />
+                            {children}
+                        </ServerSpellBackdrop>
+                    </ServerSuspendedWrapper>
+                </DashboardShell>
+                <ChatbotWidget />
+            </ServerWingsReachabilityProvider>
         </ServerProvider>
     );
 }

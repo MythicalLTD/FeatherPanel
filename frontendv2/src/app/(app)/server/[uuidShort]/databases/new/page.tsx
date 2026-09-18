@@ -32,6 +32,7 @@ import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { HeadlessSelect } from '@/components/ui/headless-select';
 import type { DatabaseHost, Server } from '@/types/server';
+import { PageLoading } from '@/components/featherui/PageLoading';
 
 export default function CreateDatabasePage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -143,7 +144,7 @@ export default function CreateDatabasePage() {
     };
 
     if (permissionsLoading || loading) {
-        return null;
+        return <PageLoading />;
     }
 
     if (!canCreate) {

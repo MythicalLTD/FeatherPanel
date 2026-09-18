@@ -35,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { formatBackupLimitLabel, isBackupLimitDisabled } from '@/lib/server-utils';
 import type { Database as ServerDatabase, Server } from '@/types/server';
 import { BackupTaskFields } from '@/components/server/backup/BackupTaskFields';
+import { PageLoading } from '@/components/featherui/PageLoading';
 import {
     buildBackupPayload,
     emptyBackupFields,
@@ -241,7 +242,9 @@ export default function CreateBackupPage() {
         }
     };
 
-    if (permissionsLoading) return null;
+    if (permissionsLoading) {
+        return <PageLoading />;
+    }
 
     if (!canCreate) {
         return (

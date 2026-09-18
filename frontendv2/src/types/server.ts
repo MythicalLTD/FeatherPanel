@@ -212,6 +212,11 @@ export interface Server {
     backup_retention_mode_override?: string | null;
     effective_backup_retention_mode?: string;
     fifo_rolling_enabled?: boolean;
+    /** Start automatically after node reboot/reconnect */
+    auto_start?: number | boolean;
+    /** Extra delay (seconds) before this server auto-starts */
+    auto_start_delay?: number;
+    manually_stopped?: number | boolean;
 
     // Timestamps
     created_at: string;

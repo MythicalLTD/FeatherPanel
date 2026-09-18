@@ -46,6 +46,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn, isEnabled } from '@/lib/utils';
 import { buildSpellDockerImageOptions, resolveSpellDefaultDockerImage } from '@/lib/spellDockerImages';
 import type { Variable, Server, CustomVariable } from '@/types/server';
+import { PageLoading } from '@/components/featherui/PageLoading';
 
 interface ServerResponse {
     success: boolean;
@@ -438,7 +439,9 @@ export default function ServerStartupPage() {
         return startupChanged || imageChanged || variablesChanged;
     };
 
-    if (permissionsLoading || settingsLoading) return null;
+    if (permissionsLoading || settingsLoading) {
+        return <PageLoading />;
+    }
 
     if (!canRead) {
         return (

@@ -16,51 +16,69 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { Check, Lock, Shield } from 'lucide-react';
-import { Button } from '@/components/featherui/Button';
-import { useTheme } from '@/contexts/ThemeContext';
-import { useSettings } from '@/contexts/SettingsContext';
 import { cn } from '@/lib/utils';
 
-/**
- * Matches backend/storage/modules/pma auth transition layout:
- * centered shell → brand block → one card. No dashboard chrome / glow layers.
- */
+/** Flat dark consent chrome — no glow, no motion, no light theme. */
 export function OAuthConsentShell({ children, className }: { children: ReactNode; className?: string }) {
-    const { theme } = useTheme();
-    const { settings } = useSettings();
-    const panelName = settings?.app_name || 'FeatherPanel';
-    const panelLogo =
-        theme === 'dark'
-            ? settings?.app_logo_dark || settings?.app_logo_white || '/assets/logo.png'
-            : settings?.app_logo_white || settings?.app_logo_dark || '/assets/logo.png';
-
     return (
-        <div className='bg-background text-foreground flex min-h-dvh items-center justify-center p-6'>
-            <div className={cn('w-full max-w-md', className)}>
-                <div className='mb-6 flex flex-col items-center gap-4'>
-                    <div className='border-border/80 bg-card/80 flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border'>
-                        <Image
-                            src={panelLogo}
-                            alt={panelName}
-                            width={56}
-                            height={56}
-                            className='object-contain p-1.5'
-                            unoptimized
-                        />
-                    </div>
-                    <div className='text-center'>
-                        <Link href='/' className='text-foreground text-xl font-bold tracking-tight hover:opacity-90'>
-                            {panelName}
-                        </Link>
-                        <p className='text-muted-foreground mt-1 text-[0.8125rem]'>Application authorization</p>
-                    </div>
+        <div
+            className={cn('flex min-h-dvh items-start justify-center px-4 py-10 sm:items-center', className)}
+            style={{
+                background: '#111111',
+                color: '#e8e8e8',
+                fontFamily: 'ui-sans-serif, system-ui, Segoe UI, Tahoma, sans-serif',
+            }}
+        >
+            <div className='w-full max-w-[440px]'>
+                <div
+                    className='border border-[#333] px-3 py-2 text-[13px] font-semibold tracking-wide'
+                    style={{ background: '#1a1a1a', color: '#f0f0f0' }}
+                >
+                    AI Connector
                 </div>
                 {children}
             </div>
         </div>
+    );
+}
+
+function Panel({ children, className }: { children: ReactNode; className?: string }) {
+    return (
+        <div
+            className={cn('border border-t-0 border-[#333] px-4 py-4 text-[13px] leading-relaxed', className)}
+            style={{ background: '#1a1a1a' }}
+        >
+            {children}
+        </div>
+    );
+}
+
+export function OAuthConsentButton({
+    children,
+    onClick,
+    primary,
+    disabled,
+}: {
+    children: ReactNode;
+    onClick: () => void;
+    primary?: boolean;
+    disabled?: boolean;
+}) {
+    return (
+        <button
+            type='button'
+            onClick={onClick}
+            disabled={disabled}
+            className='cursor-pointer border px-3.5 py-1.5 text-[13px] font-medium disabled:cursor-not-allowed disabled:opacity-50'
+            style={
+                primary
+                    ? { background: '#e8e8e8', color: '#111', borderColor: '#e8e8e8' }
+                    : { background: '#1a1a1a', color: '#e8e8e8', borderColor: '#555' }
+            }
+        >
+            {children}
+        </button>
     );
 }
 
@@ -94,110 +112,85 @@ export function OAuthConsentCard({
     footer?: ReactNode;
 }) {
     return (
-        <div className='border-border bg-card/95 text-card-foreground rounded-3xl border p-7 shadow-[0_24px_48px_hsl(var(--background)/0.35)] sm:px-7 sm:py-8'>
-            <div className='space-y-5 text-center'>
-                <div className='flex items-center justify-center gap-3'>
-                    <div className='bg-muted/60 border-border flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border'>
-                        {appLogo ? (
-                            <Image src={appLogo} alt={appName} width={48} height={48} className='object-cover' />
-                        ) : (
-                            <Shield className='text-muted-foreground h-5 w-5' />
-                        )}
-                    </div>
-                    <span className='text-muted-foreground text-sm' aria-hidden>
-                        →
-                    </span>
-                    <div className='bg-muted/60 border-border text-muted-foreground flex h-12 w-12 items-center justify-center rounded-full border text-xs font-semibold'>
-                        You
-                    </div>
-                </div>
-
-                <div className='space-y-1'>
-                    <h1 className='text-foreground text-[1.0625rem] font-semibold tracking-tight'>{appName}</h1>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>{subtitle}</p>
+        <Panel>
+            <div className='mb-4 flex items-start gap-3'>
+                {appLogo ? (
+                    <Image
+                        src={appLogo}
+                        alt={appName}
+                        width={36}
+                        height={36}
+                        className='border border-[#444] object-contain'
+                        unoptimized
+                    />
+                ) : null}
+                <div>
+                    <h1 className='text-[15px] font-semibold text-[#f5f5f5]'>{appName}</h1>
+                    <p className='mt-1 text-[#a0a0a0]'>{subtitle}</p>
                     {signedInAs ? (
-                        <p className='text-muted-foreground pt-1 text-xs'>
-                            Signed in as <span className='text-foreground font-medium'>{signedInAs}</span>
+                        <p className='mt-1 text-[#a0a0a0]'>
+                            Signed in as <span className='text-[#e8e8e8]'>{signedInAs}</span>
                         </p>
                     ) : null}
                 </div>
+            </div>
 
-                {permissions.length > 0 ? (
-                    <div className='border-border space-y-2.5 rounded-2xl border px-3.5 py-3 text-left'>
+            {permissions.length > 0 ? (
+                <div className='mb-4 border border-[#333] px-3 py-2.5'>
+                    <p className='mb-2 text-[11px] font-semibold tracking-wide text-[#888] uppercase'>This app can</p>
+                    <ul className='space-y-1.5 text-[#d0d0d0]'>
                         {permissions.map((item) => (
-                            <div key={item.label} className='flex items-start gap-2.5 text-sm'>
-                                <span
-                                    className={cn(
-                                        'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full',
-                                        item.allowed === false
-                                            ? 'bg-destructive/15 text-destructive'
-                                            : 'bg-primary/15 text-primary',
-                                    )}
-                                >
-                                    {item.allowed === false ? (
-                                        <span className='text-xs font-bold'>×</span>
-                                    ) : (
-                                        <Check className='h-3 w-3' />
-                                    )}
-                                </span>
-                                <span className='text-foreground/90 leading-snug'>{item.label}</span>
-                            </div>
-                        ))}
-                    </div>
-                ) : null}
-
-                {meta && meta.length > 0 ? (
-                    <ul className='text-muted-foreground space-y-2 text-left text-xs leading-relaxed'>
-                        {meta.map((row, idx) => (
-                            <li key={idx} className='flex items-start gap-2'>
-                                <span className='mt-0.5 shrink-0 opacity-70'>
-                                    {row.icon || <Lock className='h-3.5 w-3.5' />}
-                                </span>
-                                <span>{row.text}</span>
+                            <li key={item.label} className={item.allowed === false ? 'text-[#e07070]' : undefined}>
+                                {item.allowed === false ? 'Denied — ' : '• '}
+                                {item.label}
                             </li>
                         ))}
                     </ul>
-                ) : null}
-
-                {error ? (
-                    <div className='border-destructive/30 bg-destructive/10 text-destructive rounded-2xl border px-3 py-2 text-left text-sm'>
-                        {error}
-                    </div>
-                ) : null}
-
-                {footer}
-
-                <div className='flex items-center justify-between gap-3 pt-1'>
-                    <button
-                        type='button'
-                        onClick={onCancel}
-                        disabled={submitting}
-                        className='text-muted-foreground hover:text-foreground text-sm font-medium transition-colors disabled:opacity-50'
-                    >
-                        {cancelLabel}
-                    </button>
-                    <Button
-                        type='button'
-                        className='min-w-[7.5rem] rounded-xl'
-                        loading={submitting}
-                        onClick={onAuthorize}
-                    >
-                        {authorizeLabel}
-                    </Button>
                 </div>
-            </div>
+            ) : null}
 
-            <div className='border-border text-muted-foreground mt-8 border-t pt-4 text-center text-xs'>
-                Powered by{' '}
-                <a
-                    href='https://featherpanel.com'
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='text-foreground underline underline-offset-2 hover:opacity-85'
-                >
-                    FeatherPanel
-                </a>
+            {meta && meta.length > 0 ? (
+                <dl className='mb-4 space-y-2 text-[12px] text-[#888]'>
+                    {meta.map((row, idx) => (
+                        <div key={idx}>{row.text}</div>
+                    ))}
+                </dl>
+            ) : null}
+
+            {error ? <p className='mb-3 font-medium text-[#e07070]'>{error}</p> : null}
+
+            {footer}
+
+            <div className='mt-1 flex flex-wrap items-center gap-2'>
+                <OAuthConsentButton primary onClick={onAuthorize} disabled={submitting}>
+                    {authorizeLabel}
+                </OAuthConsentButton>
+                <OAuthConsentButton onClick={onCancel} disabled={submitting}>
+                    {cancelLabel}
+                </OAuthConsentButton>
             </div>
-        </div>
+        </Panel>
+    );
+}
+
+export function OAuthConsentMessage({
+    title,
+    body,
+    children,
+    error,
+}: {
+    title: string;
+    body?: string;
+    children?: ReactNode;
+    error?: boolean;
+}) {
+    return (
+        <Panel>
+            <h1 className={cn('mb-2 text-[15px] font-semibold', error ? 'text-[#e07070]' : 'text-[#f5f5f5]')}>
+                {title}
+            </h1>
+            {body ? <p className='mb-4 text-[#a0a0a0]'>{body}</p> : null}
+            {children}
+        </Panel>
     );
 }

@@ -50,7 +50,8 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
     const [loading, setLoading] = useState(!initialServer);
     const [error, setError] = useState<Error | null>(null);
     const [liveStatus, setLiveStatus] = useState<string | null>(null);
-    const { user: sessionUser, hasPermission: hasGlobalPermission } = useSession();
+    const { user: sessionUser, hasPermission: hasGlobalPermission, isLoading: sessionLoading, isSessionChecked } =
+        useSession();
 
     useEffect(() => {
         setLiveStatus(null);
@@ -196,7 +197,8 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
         <ServerContext.Provider
             value={{
                 server,
-                loading,
+                // Permission checks need sessionUser; keep consumers spinning until session is ready.
+                loading: loading || sessionLoading || !isSessionChecked,
                 error,
                 liveStatus,
                 setLiveStatus,

@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { AlertCircle, CheckCircle2, Download, Upload, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Download, Loader2, Upload, X } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -162,7 +162,7 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
     const { t } = useTranslation();
     const { settings } = useSettings();
     const filesApi = useFileManagerApi();
-    const { hasPermission } = useWebSpacePermissions(uuidShort);
+    const { hasPermission, loading: permissionsLoading } = useWebSpacePermissions(uuidShort);
     const [fileCaps, setFileCaps] = useState<WebSpaceFileCapabilitiesMap | null>(null);
 
     useEffect(() => {
@@ -887,6 +887,15 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
             items,
         }));
     }, [uploadQueue]);
+
+    if (permissionsLoading) {
+        return (
+            <div className='flex min-h-[40vh] flex-col items-center justify-center gap-4'>
+                <Loader2 className='text-primary h-8 w-8 animate-spin' />
+                <p className='text-muted-foreground text-sm'>{t('common.loading')}</p>
+            </div>
+        );
+    }
 
     if (!canRead) {
         return (

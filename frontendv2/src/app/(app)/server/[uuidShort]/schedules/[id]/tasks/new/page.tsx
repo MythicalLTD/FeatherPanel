@@ -37,6 +37,7 @@ import type { Database, TaskCreateRequest } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { BackupTaskFields } from '@/components/server/backup/BackupTaskFields';
 import { buildBackupPayload, emptyBackupFields, type BackupFields } from '@/components/server/backup/backup-payload';
+import { PageLoading } from '@/components/featherui/PageLoading';
 
 export default function CreateTaskPage() {
     const { uuidShort, id: scheduleId } = useParams() as { uuidShort: string; id: string };
@@ -127,7 +128,9 @@ export default function CreateTaskPage() {
         }
     };
 
-    if (permissionsLoading || settingsLoading) return null;
+    if (permissionsLoading || settingsLoading) {
+        return <PageLoading />;
+    }
 
     if (!canUpdate) {
         return (

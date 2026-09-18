@@ -47,7 +47,7 @@ export default function WebSpaceTrashPage({ params }: { params: Promise<{ uuidSh
     const { uuidShort } = use(params);
     const { t } = useTranslation();
     const { settings } = useSettings();
-    const { hasPermission } = useWebSpacePermissions(uuidShort);
+    const { hasPermission, loading: permissionsLoading } = useWebSpacePermissions(uuidShort);
 
     const [entries, setEntries] = useState<Awaited<ReturnType<typeof webspaceFilesApi.listTrash>>['entries']>([]);
     const [totalSize, setTotalSize] = useState(0);
@@ -64,8 +64,8 @@ export default function WebSpaceTrashPage({ params }: { params: Promise<{ uuidSh
 
     const caps = useMemo(() => resolveWebSpaceFileCapabilities(fileCaps), [fileCaps]);
     const trashEnabled = isEnabled(settings?.file_trash_enabled) && caps.trash;
-    const canUpdate = hasPermission(WebSpaceSubuserPermissions['file.update']);
-    const canDelete = hasPermission(WebSpaceSubuserPermissions['file.delete']);
+    const canUpdate = !permissionsLoading && hasPermission(WebSpaceSubuserPermissions['file.update']);
+    const canDelete = !permissionsLoading && hasPermission(WebSpaceSubuserPermissions['file.delete']);
 
     const refresh = useCallback(async () => {
         if (!uuidShort || !trashEnabled) return;

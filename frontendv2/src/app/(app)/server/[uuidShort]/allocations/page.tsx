@@ -38,6 +38,7 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
+import { PageLoading } from '@/components/featherui/PageLoading';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import {
     DropdownMenu,
@@ -279,7 +280,11 @@ export default function ServerAllocationsPage() {
         );
     });
 
-    if (!permissionsLoading && !canRead) {
+    if (permissionsLoading) {
+        return <PageLoading />;
+    }
+
+    if (!canRead) {
         return (
             <div className='flex min-h-[400px] flex-col items-center justify-center p-4 text-center'>
                 <div className='mb-4 rounded-full bg-red-500/10 p-4'>

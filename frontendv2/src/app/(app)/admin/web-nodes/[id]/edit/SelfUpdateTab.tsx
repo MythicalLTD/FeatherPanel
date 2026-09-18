@@ -53,7 +53,7 @@ const DEFAULT_OPTIONS = {
 export function SelfUpdateTab({ nodeId, currentVersion, onRefresh }: SelfUpdateTabProps) {
     const { t } = useTranslation();
     const [updating, setUpdating] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [versionStatus, setVersionStatus] = useState<VersionStatus | null>(null);
     const [options, setOptions] = useState({
         source: 'github' as 'github' | 'url',
@@ -138,6 +138,7 @@ export function SelfUpdateTab({ nodeId, currentVersion, onRefresh }: SelfUpdateT
     };
 
     const installedVersion = versionStatus?.current_version || currentVersion || t('common.unknown');
+    const currentVersionReady = Boolean(versionStatus?.current_version || currentVersion) || !loading;
 
     return (
         <div className='space-y-6'>
@@ -148,7 +149,13 @@ export function SelfUpdateTab({ nodeId, currentVersion, onRefresh }: SelfUpdateT
                     icon={Terminal}
                     className='h-full'
                 >
-                    <h3 className='text-primary font-mono text-3xl font-bold'>{installedVersion}</h3>
+                    <h3 className='text-primary font-mono text-3xl font-bold'>
+                        {!currentVersionReady ? (
+                            <RefreshCw className='text-primary h-8 w-8 animate-spin' />
+                        ) : (
+                            installedVersion
+                        )}
+                    </h3>
                 </PageCard>
 
                 <PageCard

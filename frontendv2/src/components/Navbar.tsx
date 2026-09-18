@@ -41,8 +41,9 @@ interface NavbarProps {
 export default function Navbar({ onMenuClick }: NavbarProps) {
     const router = useRouter();
     const pathname = usePathname();
-    const { user, logout, hasPermission } = useSession();
+    const { user, logout, hasPermission, isLoading: sessionLoading } = useSession();
     const { t } = useTranslation();
+    const userLoading = sessionLoading && !user;
     const serverContext = useContext(ServerContext);
     const vmInstanceContext = useContext(VmInstanceContext);
     const webSpaceContext = useContext(WebSpaceContext);
@@ -121,6 +122,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         showAdminAreaButton,
         adminAreaHref,
         user,
+        userLoading,
         router,
         userNavigation,
         t,

@@ -45,6 +45,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { FormSection } from '@/components/featherui/FormSection';
 import { safeBack } from '@/lib/safe-back';
+import { PageLoading } from '@/components/featherui/PageLoading';
 
 export default function CreateServerImportPage() {
     const { uuidShort } = useParams();
@@ -140,7 +141,9 @@ export default function CreateServerImportPage() {
         isEnabled(settings?.server_allow_user_made_import) &&
         supportsDaemonFeature(server?.node?.capabilities, 'import', server?.node?.daemon_type);
 
-    if (permissionsLoading || settingsLoading) return null;
+    if (permissionsLoading || settingsLoading) {
+        return <PageLoading />;
+    }
     if (!canManage) {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center'>

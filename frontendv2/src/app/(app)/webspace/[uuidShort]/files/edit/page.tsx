@@ -59,7 +59,7 @@ function WebSpaceFileEditorInner({
     const editorRef = useRef<any>(null);
     const { engine, toggleEngine } = useFileEditorEngine();
 
-    const { hasPermission } = useWebSpacePermissions(uuidShort);
+    const { hasPermission, loading: permissionsLoading } = useWebSpacePermissions(uuidShort);
     const canEdit = hasPermission(WebSpaceSubuserPermissions['file.update']);
     const canReadContent =
         hasPermission(WebSpaceSubuserPermissions['file.read-content']) ||
@@ -138,6 +138,21 @@ function WebSpaceFileEditorInner({
 
     const editorEngineLabel =
         engine === 'monaco' ? t('files.editor.engine_monaco') : t('files.editor.engine_codemirror');
+
+    if (permissionsLoading) {
+        return (
+            <div className='relative flex min-h-screen flex-col gap-6 overflow-hidden pb-20'>
+                <div className='border-border/50 bg-card/50 relative flex min-h-[600px] flex-1 items-center justify-center overflow-hidden rounded-4xl border p-1 backdrop-blur-3xl'>
+                    <div className='relative z-10 flex flex-col items-center gap-6'>
+                        <Loader2 className='text-primary h-10 w-10 animate-spin' />
+                        <p className='text-muted-foreground text-xs font-medium tracking-[0.3em] uppercase'>
+                            {t('files.editor.loading_description')}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (!canReadContent) {
         return (

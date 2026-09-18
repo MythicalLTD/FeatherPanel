@@ -75,6 +75,7 @@ function SidebarContent({
     pathname,
     setMobileOpen,
     groupedItems,
+    navLoading = false,
     chromeLayout,
     sidebarDensity,
     sidebarStyle,
@@ -98,6 +99,7 @@ function SidebarContent({
     router: ReturnType<typeof useRouter>;
     setMobileOpen: (open: boolean) => void;
     groupedItems: Record<string, NavigationItem[]>;
+    navLoading?: boolean;
     chromeLayout: ChromeLayout;
     sidebarDensity: SidebarDensity;
     sidebarStyle: SidebarStyle;
@@ -486,20 +488,42 @@ function SidebarContent({
                           ),
                 )}
             >
-                {sortedGroups.map((group, groupIndex) => {
-                    const isCollapsed = collapsedGroups.includes(group);
+                {navLoading ? (
+                    <div
+                        className={cn(
+                            'space-y-2',
+                            collapsed && !mobile ? 'px-1.5' : 'px-2',
+                            isBottomDock && 'flex flex-row items-center gap-2 space-y-0',
+                        )}
+                        aria-busy='true'
+                    >
+                        {Array.from({ length: isBottomDock ? 5 : 8 }).map((_, index) => (
+                            <div
+                                key={index}
+                                className={cn(
+                                    'bg-muted/40 animate-pulse rounded-xl',
+                                    collapsed && !mobile ? 'mx-auto h-9 w-9' : 'h-9 w-full',
+                                    isBottomDock && 'h-9 w-9 shrink-0',
+                                )}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <>
+                        {sortedGroups.map((group, groupIndex) => {
+                            const isCollapsed = collapsedGroups.includes(group);
 
-                    return (
-                        <div key={group} className={cn(isBottomDock && 'flex shrink-0 items-center gap-1')}>
-                            {groupIndex > 0 && !isClassicChrome && (!collapsed || mobile || isBottomDock) && (
-                                <div
-                                    className={cn(
-                                        'border-border/25 shrink-0',
-                                        isBottomDock ? 'mx-0.5 h-8 w-px' : 'mb-3 border-t',
+                            return (
+                                <div key={group} className={cn(isBottomDock && 'flex shrink-0 items-center gap-1')}>
+                                    {groupIndex > 0 && !isClassicChrome && (!collapsed || mobile || isBottomDock) && (
+                                        <div
+                                            className={cn(
+                                                'border-border/25 shrink-0',
+                                                isBottomDock ? 'mx-0.5 h-8 w-px' : 'mb-3 border-t',
+                                            )}
+                                            aria-hidden='true'
+                                        />
                                     )}
-                                    aria-hidden='true'
-                                />
-                            )}
                             {(!collapsed || mobile) && !isBottomDock && (
                                 <button
                                     type='button'
@@ -750,8 +774,10 @@ function SidebarContent({
                                 })}
                             </div>
                         </div>
-                    );
-                })}
+                            );
+                        })}
+                    </>
+                )}
             </nav>
 
             {!mobile && (
@@ -797,7 +823,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
     const pathname = usePathname();
     const router = useRouter();
     const { settings } = useSettings();
-    const { navigationItems, navReady } = useNavigation();
+    const { navigationItems, navReady, entityLoading } = useNavigation();
     const { chromeLayout } = useChromeLayout();
     const {
         sidebarDensity,
@@ -913,6 +939,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
                                         router={router}
                                         setMobileOpen={setMobileOpen}
                                         groupedItems={groupedItems}
+                                        navLoading={Boolean(entityLoading)}
                                         chromeLayout={chromeLayout}
                                         sidebarDensity={sidebarDensity}
                                         sidebarStyle={sidebarStyle}
@@ -954,6 +981,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
                         router={router}
                         setMobileOpen={setMobileOpen}
                         groupedItems={groupedItems}
+                        navLoading={Boolean(entityLoading)}
                         chromeLayout={chromeLayout}
                         sidebarDensity={sidebarDensity}
                         sidebarStyle={sidebarStyle}

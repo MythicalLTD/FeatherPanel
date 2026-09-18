@@ -24,7 +24,7 @@ import { NotificationProvider } from '@/contexts/NotificationContext';
 import AppContent from '@/components/common/AppContent';
 import { Toaster } from 'sonner';
 
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
 import { ANALYTICS_COOKIE_NAME } from '@/lib/analytics-cookie';
 import { getServerBootData, ICON_LIBRARY_COOKIE_NAME, LOCALE_COOKIE_NAME } from '@/lib/server-boot';
@@ -38,6 +38,22 @@ import PluginAssets from '@/components/common/PluginAssets';
 import ChunkLoadErrorHandler from '@/components/common/ChunkLoadErrorHandler';
 import { PwaInstaller } from '@/components/common/PwaInstaller';
 import AnalyticsScript from '@/components/common/AnalyticsScript';
+
+export async function generateViewport(): Promise<Viewport> {
+    const cookieStore = await cookies();
+    const boot = await getServerBootData(
+        cookieStore.get(LOCALE_COOKIE_NAME)?.value,
+        cookieStore.get(ICON_LIBRARY_COOKIE_NAME)?.value,
+    );
+    const themeColor = boot.settings?.app_pwa_theme_color || '#000000';
+
+    return {
+        themeColor: [
+            { media: '(prefers-color-scheme: light)', color: themeColor },
+            { media: '(prefers-color-scheme: dark)', color: themeColor },
+        ],
+    };
+}
 
 export async function generateMetadata(): Promise<Metadata> {
     const cookieStore = await cookies();
@@ -54,7 +70,6 @@ export async function generateMetadata(): Promise<Metadata> {
     const indexingEnabled = settings?.app_seo_indexing === 'true';
     const pwaEnabled = settings?.app_pwa_enabled === 'true';
     const appName = settings?.app_name || 'FeatherPanel';
-    const themeColor = settings?.app_pwa_theme_color || '#000000';
 
     return {
         title: {
@@ -74,10 +89,6 @@ export async function generateMetadata(): Promise<Metadata> {
         formatDetection: {
             telephone: false,
         },
-        themeColor: [
-            { media: '(prefers-color-scheme: light)', color: themeColor },
-            { media: '(prefers-color-scheme: dark)', color: themeColor },
-        ],
         icons: {
             icon: [{ url: logo }],
             shortcut: [{ url: logo }],

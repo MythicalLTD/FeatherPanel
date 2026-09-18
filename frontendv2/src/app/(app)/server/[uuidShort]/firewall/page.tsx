@@ -43,6 +43,7 @@ import type {
 } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
+import { PageLoading } from '@/components/featherui/PageLoading';
 
 export default function ServerFirewallPage() {
     const params = useParams();
@@ -309,7 +310,9 @@ export default function ServerFirewallPage() {
         { id: 'udp', name: 'UDP' },
     ];
 
-    if (permissionsLoading || settingsLoading) return null;
+    if (permissionsLoading || settingsLoading) {
+        return <PageLoading />;
+    }
 
     if (!canRead) {
         return (

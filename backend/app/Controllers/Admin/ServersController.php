@@ -84,6 +84,9 @@ use App\Services\Subdomain\SubdomainCleanupService;
         new OA\Property(property: 'threads', type: 'string', nullable: true, description: 'Specific CPU threads this process can run on. Single number, comma list, or ranges like 0,1,3 or 0-1,3'),
         new OA\Property(property: 'skip_scripts', type: 'boolean', description: 'Skip scripts flag'),
         new OA\Property(property: 'show_on_status', type: 'boolean', description: 'Whether this server appears on the public status page'),
+        new OA\Property(property: 'auto_start', type: 'boolean', description: 'Automatically start this server after the node reconnects (default off)'),
+        new OA\Property(property: 'auto_start_delay', type: 'integer', description: 'Extra seconds to wait before auto-starting this server after reconnect'),
+        new OA\Property(property: 'manually_stopped', type: 'boolean', description: 'Whether the server was intentionally stopped (auto-start skips these)'),
         new OA\Property(property: 'oom_killer', type: 'boolean', description: 'Whether the OOM killer is enabled (true) or disabled (false)'),
         new OA\Property(property: 'suspended', type: 'boolean', description: 'Suspended flag'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
@@ -131,6 +134,8 @@ use App\Services\Subdomain\SubdomainCleanupService;
         new OA\Property(property: 'threads', type: 'string', nullable: true, description: 'Specific CPU threads this process can run on. Single number, comma list, or ranges like 0,1,3 or 0-1,3'),
         new OA\Property(property: 'skip_scripts', type: 'boolean', description: 'Skip scripts flag'),
         new OA\Property(property: 'show_on_status', type: 'boolean', description: 'Whether this server appears on the public status page'),
+        new OA\Property(property: 'auto_start', type: 'boolean', description: 'Automatically start this server after the node reconnects (default off)'),
+        new OA\Property(property: 'auto_start_delay', type: 'integer', description: 'Extra seconds to wait before auto-starting this server after reconnect', minimum: 0),
         new OA\Property(property: 'oom_disabled', type: 'boolean', description: 'OOM disabled flag'),
         new OA\Property(property: 'variables', type: 'object', description: 'Server variables as key-value pairs'),
         new OA\Property(property: 'mount_ids', type: 'array', items: new OA\Items(type: 'integer'), description: 'Optional: Wings bind mounts to attach (validated against node/spell rules)'),
@@ -162,6 +167,8 @@ use App\Services\Subdomain\SubdomainCleanupService;
         new OA\Property(property: 'threads', type: 'string', nullable: true, description: 'Specific CPU threads this process can run on. Single number, comma list, or ranges like 0,1,3 or 0-1,3'),
         new OA\Property(property: 'skip_scripts', type: 'boolean', description: 'Skip scripts flag'),
         new OA\Property(property: 'show_on_status', type: 'boolean', description: 'Whether this server appears on the public status page'),
+        new OA\Property(property: 'auto_start', type: 'boolean', description: 'Automatically start this server after the node reconnects (default off)'),
+        new OA\Property(property: 'auto_start_delay', type: 'integer', description: 'Extra seconds to wait before auto-starting this server after reconnect', minimum: 0),
         new OA\Property(property: 'oom_disabled', type: 'boolean', description: 'OOM disabled flag'),
         new OA\Property(property: 'variables', type: 'object', description: 'Server variables as key-value pairs'),
         new OA\Property(property: 'mount_ids', type: 'array', items: new OA\Items(type: 'integer'), description: 'Optional: replace Wings bind mounts for this server'),
@@ -1052,6 +1059,12 @@ class ServersController
             ) === 'true';
             $data['show_on_status'] = $visibleByDefault ? 1 : 0;
         }
+        $data['auto_start'] = isset($data['auto_start']) ? (int) (bool) $data['auto_start'] : 0;
+        if (array_key_exists('auto_start_delay', $data)) {
+            $data['auto_start_delay'] = max(0, min(3600, (int) $data['auto_start_delay']));
+        } else {
+            $data['auto_start_delay'] = 0;
+        }
         // Map oom_killer -> oom_disabled for DB (oom_disabled true when killer is false)
         if (array_key_exists('oom_killer', $data)) {
             $data['oom_disabled'] = $data['oom_killer'] ? 0 : 1;
@@ -1472,13 +1485,20 @@ class ServersController
         }
 
         // Validate boolean fields
-        $booleanFields = ['skip_scripts', 'skip_zerotrust', 'show_on_status', 'oom_disabled', 'oom_killer'];
+        $booleanFields = ['skip_scripts', 'skip_zerotrust', 'show_on_status', 'auto_start', 'oom_disabled', 'oom_killer'];
         foreach ($data as $field => $value) {
             if (in_array($field, $booleanFields) && isset($data[$field])) {
                 if (!is_bool($value) && !in_array($value, [0, 1, '0', '1'], true)) {
                     return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a boolean value', 'INVALID_DATA_TYPE', 400);
                 }
             }
+        }
+
+        if (array_key_exists('auto_start_delay', $data)) {
+            if (!is_numeric($data['auto_start_delay']) || (int) $data['auto_start_delay'] < 0 || (int) $data['auto_start_delay'] > 3600) {
+                return ApiResponse::error('Auto start delay must be between 0 and 3600 seconds', 'INVALID_AUTO_START_DELAY', 400);
+            }
+            $data['auto_start_delay'] = (int) $data['auto_start_delay'];
         }
 
         // Validate status field if provided
@@ -1746,6 +1766,8 @@ class ServersController
             'skip_scripts',
             'skip_zerotrust',
             'show_on_status',
+            'auto_start',
+            'auto_start_delay',
             'oom_disabled',
             'suspended',
         ];

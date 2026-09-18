@@ -37,6 +37,7 @@ import { listSupportedTimezones } from '@/lib/dateUtils';
 import { useUserTimezone } from '@/contexts/PreferencesContext';
 import type { ScheduleCreateRequest } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
+import { PageLoading } from '@/components/featherui/PageLoading';
 
 export default function CreateSchedulePage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -114,7 +115,9 @@ export default function CreateSchedulePage() {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    if (permissionsLoading || settingsLoading) return null;
+    if (permissionsLoading || settingsLoading) {
+        return <PageLoading />;
+    }
 
     if (!canCreate) {
         return (

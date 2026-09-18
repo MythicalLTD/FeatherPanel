@@ -270,6 +270,14 @@ interface ConfigInterface
     public const SERVER_ALLOW_USER_MADE_IMPORT = 'server_allow_user_made_import';
     public const SERVER_ALLOW_USER_MADE_FASTDL = 'server_allow_user_made_fastdl';
     public const SERVER_ALLOW_USER_MADE_SUBDOMAINS = 'server_allow_user_made_subdomains';
+    /** When true, panel queues auto-start for servers with auto_start enabled after a node reconnect. */
+    public const SERVER_AUTO_START_ON_NODE_RECONNECT = 'server_auto_start_on_node_reconnect';
+    /** Seconds between each queued auto-start on the same node (stagger). */
+    public const SERVER_AUTO_START_STAGGER_SECONDS = 'server_auto_start_stagger_seconds';
+    /** Extra delay before the first auto-start after Wings reconnects (lets Docker settle). */
+    public const SERVER_AUTO_START_INITIAL_DELAY_SECONDS = 'server_auto_start_initial_delay_seconds';
+    /** When true, server owners/subusers may toggle auto_start from server settings. */
+    public const SERVER_ALLOW_USER_AUTO_START = 'server_allow_user_auto_start';
     public const SERVER_HIDE_IPS = 'server_hide_ips';
     /** When false, lifecycle hook UI and execution are disabled (default off until enabled by an administrator). */
     public const SERVER_LIFECYCLE_HOOKS_ENABLED = 'server_lifecycle_hooks_enabled';

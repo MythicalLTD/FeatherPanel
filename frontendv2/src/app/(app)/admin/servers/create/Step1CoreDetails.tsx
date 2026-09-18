@@ -142,6 +142,40 @@ export function Step1CoreDetails({
                             onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, showOnStatus: checked }))}
                         />
                     </div>
+
+                    <div className='bg-muted/20 border-border/50 flex items-center justify-between rounded-xl border p-4'>
+                        <div className='space-y-0.5'>
+                            <Label>{t('admin.servers.edit.details.auto_start')}</Label>
+                            <p className='text-muted-foreground text-xs'>
+                                {t('admin.servers.edit.details.auto_start_help')}
+                            </p>
+                        </div>
+                        <Switch
+                            checked={formData.autoStart}
+                            onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, autoStart: checked }))}
+                        />
+                    </div>
+
+                    <div className='space-y-3 rounded-xl border border-border/50 bg-muted/20 p-4'>
+                        <Label>{t('admin.servers.edit.details.auto_start_delay')}</Label>
+                        <Input
+                            type='number'
+                            min={0}
+                            max={3600}
+                            value={formData.autoStartDelay}
+                            disabled={!formData.autoStart}
+                            onChange={(e) =>
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    autoStartDelay: Math.max(0, Math.min(3600, parseInt(e.target.value) || 0)),
+                                }))
+                            }
+                            className='bg-muted/30 h-11'
+                        />
+                        <p className='text-muted-foreground text-xs'>
+                            {t('admin.servers.edit.details.auto_start_delay_help')}
+                        </p>
+                    </div>
                 </div>
             </PageCard>
         </div>

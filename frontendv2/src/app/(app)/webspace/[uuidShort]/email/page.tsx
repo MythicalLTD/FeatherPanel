@@ -135,7 +135,7 @@ export default function WebSpaceEmailPage() {
     const params = useParams();
     const { t } = useTranslation();
     const uuidShort = String(params.uuidShort || '');
-    const { hasPermission } = useWebSpacePermissions(uuidShort);
+    const { hasPermission, loading: permissionsLoading } = useWebSpacePermissions(uuidShort);
     const { webspace } = useWebSpace();
     const [loading, setLoading] = useState(true);
     const [rows, setRows] = useState<MailboxRow[]>([]);
@@ -168,10 +168,10 @@ export default function WebSpaceEmailPage() {
     const [listMembers, setListMembers] = useState('');
     const [viewingMailbox, setViewingMailbox] = useState<MailboxRow | null>(null);
 
-    const canCreate = hasPermission(WebSpaceSubuserPermissions['mail.create']);
-    const canDelete = hasPermission(WebSpaceSubuserPermissions['mail.delete']);
-    const canReset = hasPermission(WebSpaceSubuserPermissions['mail.update']);
-    const canViewPassword = hasPermission(WebSpaceSubuserPermissions['mail.view_password']);
+    const canCreate = !permissionsLoading && hasPermission(WebSpaceSubuserPermissions['mail.create']);
+    const canDelete = !permissionsLoading && hasPermission(WebSpaceSubuserPermissions['mail.delete']);
+    const canReset = !permissionsLoading && hasPermission(WebSpaceSubuserPermissions['mail.update']);
+    const canViewPassword = !permissionsLoading && hasPermission(WebSpaceSubuserPermissions['mail.view_password']);
     const mailboxLimit = Number(webspace?.mailbox_limit ?? 0);
     const atLimit = mailboxLimit > 0 && rows.length >= mailboxLimit;
     const domains = useMemo(
@@ -479,7 +479,7 @@ export default function WebSpaceEmailPage() {
         }
     };
 
-    if (loading) {
+    if (loading || permissionsLoading) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
                 <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />

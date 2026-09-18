@@ -173,7 +173,7 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
     const router = useRouter();
     const serverCtx = useContext(ServerContext);
     const server = serverCtx?.server ?? null;
-    const { user } = useSession();
+    const { user, isLoading: sessionLoading, isSessionChecked } = useSession();
     const { settings } = useSettings();
     const { theme } = useTheme();
     const lastConversationStorageKey = `featherpanel_chatbot_last_conversation_${mode}`;
@@ -263,38 +263,54 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
         return t('chatbot.welcome', { name: userName });
     };
 
+    const sessionUserName = user?.first_name || user?.username || null;
+
     useEffect(() => {
-        if (open) {
-            loadConversationsList().then((convs) => {
-                if (currentConversationId || messages.length > 0) return;
+        if (!open) return;
+        if (!isSessionChecked || sessionLoading) return;
 
-                const storedConversationId =
-                    typeof window !== 'undefined' ? window.localStorage.getItem(lastConversationStorageKey) : null;
-                const conversationToRestore =
-                    (storedConversationId && convs.find((conv) => conv.id === Number(storedConversationId))) ||
-                    convs[0];
+        loadConversationsList().then((convs) => {
+            if (currentConversationId || messages.length > 0) return;
 
-                if (conversationToRestore) {
-                    loadConversation(conversationToRestore.id);
-                    return;
-                }
+            const storedConversationId =
+                typeof window !== 'undefined' ? window.localStorage.getItem(lastConversationStorageKey) : null;
+            const conversationToRestore =
+                (storedConversationId && convs.find((conv) => conv.id === Number(storedConversationId))) || convs[0];
 
-                const userName = user?.first_name || user?.username || 'there';
-                setMessages([
-                    {
-                        id: 'welcome',
-                        role: 'assistant',
-                        content: getWelcomeMessage(userName),
-                        timestamp: new Date(),
-                    },
-                ]);
-            });
-            setTimeout(() => {
-                textareaRef.current?.focus();
-            }, 100);
-        }
+            if (conversationToRestore) {
+                loadConversation(conversationToRestore.id);
+                return;
+            }
+
+            const userName = sessionUserName || 'there';
+            setMessages([
+                {
+                    id: 'welcome',
+                    role: 'assistant',
+                    content: getWelcomeMessage(userName),
+                    timestamp: new Date(),
+                },
+            ]);
+        });
+        setTimeout(() => {
+            textareaRef.current?.focus();
+        }, 100);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open]);
+    }, [open, isSessionChecked, sessionLoading]);
+
+    useEffect(() => {
+        if (!sessionUserName) return;
+        setMessages((prev) => {
+            const welcome = prev.find((message) => message.id === 'welcome');
+            if (!welcome) return prev;
+            const nextContent = getWelcomeMessage(sessionUserName);
+            if (welcome.content === nextContent) return prev;
+            return prev.map((message) =>
+                message.id === 'welcome' ? { ...message, content: nextContent } : message,
+            );
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sessionUserName, mode]);
 
     const loadConversationsList = async () => {
         setLoadingConversations(true);
@@ -316,7 +332,7 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
         if (typeof window !== 'undefined') {
             window.localStorage.removeItem(lastConversationStorageKey);
         }
-        const userName = user?.first_name || user?.username || 'there';
+        const userName = sessionUserName || 'there';
         setMessages([
             {
                 id: 'welcome',

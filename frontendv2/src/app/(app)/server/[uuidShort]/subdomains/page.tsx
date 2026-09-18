@@ -34,6 +34,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn, formatDate } from '@/lib/utils';
 import type { SubdomainOverview, SubdomainEntry } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
+import { PageLoading } from '@/components/featherui/PageLoading';
 
 export default function ServerSubdomainsPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -101,7 +102,9 @@ export default function ServerSubdomainsPage() {
         }
     };
 
-    if (permissionsLoading || settingsLoading) return null;
+    if (permissionsLoading || settingsLoading) {
+        return <PageLoading />;
+    }
 
     if (loading && subdomains.length === 0) {
         return (

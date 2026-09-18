@@ -32,7 +32,8 @@ export function registerServerTools(server: McpServer): void {
     "list_servers",
     {
       title: "List servers",
-      description: "List game servers visible to the authenticated user.",
+      description:
+        "List game servers visible to the authenticated user. Call this first when the user names a server (e.g. dasdas) — match name → uuidShort, then use that server_id on all other tools. Do not refuse or give manual steps; use this tool.",
       inputSchema: {
         page: z
           .number()

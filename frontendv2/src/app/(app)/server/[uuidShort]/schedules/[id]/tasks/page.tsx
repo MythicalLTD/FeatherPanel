@@ -35,6 +35,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import type { Task, Schedule, SchedulePagination, Database } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { formatBackupPayloadDisplay, isBackupAction } from '@/components/server/backup/backup-payload';
+import { PageLoading } from '@/components/featherui/PageLoading';
 
 export default function ServerTasksPage() {
     const { uuidShort, id: scheduleId } = useParams() as { uuidShort: string; id: string };
@@ -239,7 +240,9 @@ export default function ServerTasksPage() {
         return task.payload || t('serverTasks.noPayload');
     };
 
-    if (permissionsLoading || settingsLoading || loading) return null;
+    if (permissionsLoading || settingsLoading || loading) {
+        return <PageLoading />;
+    }
 
     if (!canRead) {
         return (

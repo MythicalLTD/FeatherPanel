@@ -42,10 +42,10 @@ export default function WebSpaceUsersPage() {
     const params = useParams();
     const uuidShort = String(params.uuidShort || '');
     const { t } = useTranslation();
-    const { hasPermission } = useWebSpacePermissions(uuidShort);
-    const canUpdate = hasPermission(WebSpaceSubuserPermissions['user.update']);
-    const canCreate = hasPermission(WebSpaceSubuserPermissions['user.create']);
-    const canDelete = hasPermission(WebSpaceSubuserPermissions['user.delete']);
+    const { hasPermission, loading: permissionsLoading } = useWebSpacePermissions(uuidShort);
+    const canUpdate = !permissionsLoading && hasPermission(WebSpaceSubuserPermissions['user.update']);
+    const canCreate = !permissionsLoading && hasPermission(WebSpaceSubuserPermissions['user.create']);
+    const canDelete = !permissionsLoading && hasPermission(WebSpaceSubuserPermissions['user.delete']);
     const [loading, setLoading] = useState(true);
     const [subusers, setSubusers] = useState<SubuserRow[]>([]);
     const [email, setEmail] = useState('');
@@ -157,7 +157,7 @@ export default function WebSpaceUsersPage() {
         setEditPermissions((prev) => (prev.includes(perm) ? prev.filter((p) => p !== perm) : [...prev, perm]));
     };
 
-    if (loading) {
+    if (loading || permissionsLoading) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
                 <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />

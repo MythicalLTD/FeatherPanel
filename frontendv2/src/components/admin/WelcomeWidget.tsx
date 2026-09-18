@@ -43,9 +43,11 @@ const chipStyles = {
 };
 
 export function WelcomeWidget({ version, chips = [], updateAvailable, latestVersion }: WelcomeWidgetProps) {
-    const { user } = useSession();
+    const { user, isLoading: sessionLoading } = useSession();
     const { t } = useTranslation();
 
+    const userLoading = sessionLoading && !user;
+    const versionLoading = version === undefined;
     const userName = user ? `${user.first_name} ${user.last_name}` : 'Admin';
 
     return (
@@ -57,9 +59,15 @@ export function WelcomeWidget({ version, chips = [], updateAvailable, latestVers
                     <div className='flex flex-wrap items-center gap-2'>
                         <div className='bg-primary/10 border-primary/20 flex w-fit items-center gap-2 rounded-full border px-2.5 py-1 md:px-3'>
                             <Sparkles className='text-primary h-3 w-3 shrink-0 md:h-3.5 md:w-3.5' />
-                            <span className='text-primary/80 text-xs font-medium whitespace-nowrap'>
-                                {t('admin.welcome.running_version', { version: version || 'Unknown' })}
-                            </span>
+                            {versionLoading ? (
+                                <span className='bg-primary/20 h-3 w-28 animate-pulse rounded-md' aria-busy='true' />
+                            ) : (
+                                <span className='text-primary/80 text-xs font-medium whitespace-nowrap'>
+                                    {t('admin.welcome.running_version', {
+                                        version: version || t('common.unknown'),
+                                    })}
+                                </span>
+                            )}
                         </div>
                         {chips.map((chip) => {
                             const Icon =
@@ -88,7 +96,14 @@ export function WelcomeWidget({ version, chips = [], updateAvailable, latestVers
                     <div className='space-y-2'>
                         <h1 className='wrap-break-words text-2xl font-black tracking-tight uppercase sm:text-3xl md:text-4xl lg:text-5xl'>
                             {t('admin.welcome.welcome_back')}{' '}
-                            <span className='text-primary wrap-break-words'>{userName}</span>
+                            {userLoading ? (
+                                <span
+                                    className='bg-primary/20 inline-block h-[0.85em] w-36 animate-pulse rounded-md align-middle sm:w-44'
+                                    aria-busy='true'
+                                />
+                            ) : (
+                                <span className='text-primary wrap-break-words'>{userName}</span>
+                            )}
                         </h1>
                         <p className='text-muted-foreground max-w-2xl text-sm font-medium opacity-70'>
                             {updateAvailable && latestVersion

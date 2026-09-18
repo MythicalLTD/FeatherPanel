@@ -303,9 +303,13 @@ export default function ServerActivityPage() {
     }
 
     function formatEvent(event: string) {
+        if (event === 'server:power.autostart') {
+            return 'Automatic Start (Node Reconnect)';
+        }
         return event
             .replace(/_/g, ' ')
             .replace(/:/g, ' ')
+            .replace(/\./g, ' ')
             .split(' ')
             .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ');

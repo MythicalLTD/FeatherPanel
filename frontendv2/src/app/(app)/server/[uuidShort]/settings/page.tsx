@@ -22,6 +22,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { formatBackupLimitLabel } from '@/lib/server-utils';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
+import { Switch } from '@/components/ui/switch';
 import {
     Save,
     Server as ServerIcon,
@@ -40,6 +41,7 @@ import {
     Lock,
     Link as LinkIcon,
     OctagonX,
+    Power,
 } from 'lucide-react';
 import { copyToClipboard } from '@/lib/utils';
 import { Button } from '@/components/featherui/Button';
@@ -63,6 +65,7 @@ import type { Server } from '@/types/server';
 import { isEnabled } from '@/lib/utils';
 import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 import { filesApi } from '@/lib/files-api';
+import { PageLoading } from '@/components/featherui/PageLoading';
 
 interface SftpDetails {
     host: string;
@@ -108,6 +111,9 @@ export default function ServerSettingsPage() {
         'inherit',
     );
     const [savingBackupPolicy, setSavingBackupPolicy] = React.useState(false);
+    const [autoStart, setAutoStart] = React.useState(false);
+    const [autoStartDelay, setAutoStartDelay] = React.useState(0);
+    const [savingAutoStart, setSavingAutoStart] = React.useState(false);
 
     const [showReinstallDialog, setShowReinstallDialog] = React.useState(false);
     const [confirmReinstallText, setConfirmReinstallText] = React.useState('');
@@ -146,6 +152,8 @@ export default function ServerSettingsPage() {
                 setDescription(data.data.description || '');
                 const br = data.data.backup_retention_mode;
                 setBackupRetentionMode(br === 'fifo_rolling' || br === 'hard_limit' ? br : 'inherit');
+                setAutoStart(Boolean(data.data.auto_start));
+                setAutoStartDelay(Number(data.data.auto_start_delay) || 0);
             }
         } catch (error) {
             console.error(error);
@@ -239,11 +247,15 @@ export default function ServerSettingsPage() {
     const hasChanges = server?.name !== name || (server?.description || '') !== description;
     const canEditBackupPolicy =
         Boolean(server && !server.is_subuser) && isEnabled(settings?.server_allow_user_backup_policy_edit ?? 'true');
+    const canEditAutoStart = canRename && isEnabled(settings?.server_allow_user_auto_start ?? 'false');
     const hasBackupPolicyChanges =
         server &&
         (server.backup_retention_mode === 'fifo_rolling' || server.backup_retention_mode === 'hard_limit'
             ? server.backup_retention_mode
             : 'inherit') !== backupRetentionMode;
+    const hasAutoStartChanges =
+        server &&
+        (Boolean(server.auto_start) !== autoStart || (Number(server.auto_start_delay) || 0) !== autoStartDelay);
 
     const handleSaveBackupPolicy = async () => {
         if (!canEditBackupPolicy || !server) return;
@@ -266,6 +278,29 @@ export default function ServerSettingsPage() {
             setSavingBackupPolicy(false);
         }
     };
+
+    const handleSaveAutoStart = async () => {
+        if (!canEditAutoStart || !server) return;
+        setSavingAutoStart(true);
+        try {
+            const { data } = await axios.put(`/api/user/servers/${uuidShort}`, {
+                auto_start: autoStart,
+                auto_start_delay: Math.max(0, Math.min(3600, autoStartDelay)),
+            });
+            if (data.success) {
+                toast.success(t('serverSettings.autoStartSaveSuccess'));
+                await fetchData();
+            }
+        } catch (error) {
+            console.error(error);
+            const msg = axios.isAxiosError(error)
+                ? (error.response?.data as { message?: string } | undefined)?.message
+                : undefined;
+            toast.error(msg || t('serverSettings.autoStartSaveError'));
+        } finally {
+            setSavingAutoStart(false);
+        }
+    };
     const resolvedSftpHost = server?.node?.sftp_subdomain || server?.sftp?.host || '';
     const resolvedSftpPort = server?.sftp?.port;
     const resolvedSftpUsername = server?.sftp?.username || '';
@@ -274,7 +309,9 @@ export default function ServerSettingsPage() {
             ? `sftp://${resolvedSftpUsername}@${resolvedSftpHost}:${resolvedSftpPort}`
             : server?.sftp?.url || '';
 
-    if (permissionsLoading || settingsLoading) return null;
+    if (permissionsLoading || settingsLoading) {
+        return <PageLoading />;
+    }
 
     if (loading && !server) {
         return (
@@ -450,6 +487,62 @@ export default function ServerSettingsPage() {
                                     )}
                                     {t('serverSettings.backupPolicySave')}
                                 </Button>
+                            </div>
+                        </PageCard>
+                    )}
+
+                    {canEditAutoStart && (
+                        <PageCard
+                            title={t('serverSettings.autoStartTitle')}
+                            description={t('serverSettings.autoStartDescription')}
+                            icon={Power}
+                        >
+                            <div className='space-y-6'>
+                                <div className='bg-muted/20 border-border/50 flex items-center justify-between rounded-xl border p-4'>
+                                    <div className='space-y-0.5 pr-4'>
+                                        <Label>{t('serverSettings.autoStartLabel')}</Label>
+                                    </div>
+                                    <Switch
+                                        checked={autoStart}
+                                        onCheckedChange={setAutoStart}
+                                        disabled={savingAutoStart}
+                                    />
+                                </div>
+                                <div className='space-y-2'>
+                                    <Label className='text-muted-foreground ml-1 text-xs font-bold tracking-wider uppercase'>
+                                        {t('serverSettings.autoStartDelayLabel')}
+                                    </Label>
+                                    <Input
+                                        type='number'
+                                        min={0}
+                                        max={3600}
+                                        value={autoStartDelay}
+                                        disabled={!autoStart || savingAutoStart}
+                                        onChange={(e) =>
+                                            setAutoStartDelay(
+                                                Math.max(0, Math.min(3600, parseInt(e.target.value) || 0)),
+                                            )
+                                        }
+                                        className='h-12'
+                                    />
+                                    <p className='text-muted-foreground ml-1 text-xs'>
+                                        {t('serverSettings.autoStartDelayHelp')}
+                                    </p>
+                                </div>
+                                <div className='flex gap-3'>
+                                    <Button
+                                        onClick={handleSaveAutoStart}
+                                        disabled={savingAutoStart || !hasAutoStartChanges}
+                                        size='sm'
+                                    >
+                                        {savingAutoStart ? (
+                                            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                        ) : (
+                                            <Save className='mr-2 h-4 w-4' />
+                                        )}
+                                        {t('serverSettings.autoStartSave')}
+                                    </Button>
+                                </div>
                             </div>
                         </PageCard>
                     )}

@@ -35,6 +35,7 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { safeBack } from '@/lib/safe-back';
 import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
+import { PageLoading } from '@/components/featherui/PageLoading';
 
 export default function ServerProxyPage() {
     const { uuidShort } = useParams();
@@ -109,7 +110,9 @@ export default function ServerProxyPage() {
         setIsDeleteOpen(true);
     };
 
-    if (permissionsLoading) return null;
+    if (permissionsLoading) {
+        return <PageLoading />;
+    }
 
     if (!canRead) {
         return (

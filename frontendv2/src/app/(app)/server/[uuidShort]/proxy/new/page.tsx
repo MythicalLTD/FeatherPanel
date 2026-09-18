@@ -47,6 +47,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { FormSection } from '@/components/featherui/FormSection';
 import { safeBack } from '@/lib/safe-back';
+import { PageLoading } from '@/components/featherui/PageLoading';
 
 export default function CreateProxyPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -164,7 +165,9 @@ export default function CreateProxyPage() {
         }
     };
 
-    if (permissionsLoading || settingsLoading || loading) return null;
+    if (permissionsLoading || settingsLoading || loading) {
+        return <PageLoading />;
+    }
 
     if (!canManage) {
         return (

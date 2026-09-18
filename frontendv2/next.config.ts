@@ -117,8 +117,8 @@ const nextConfig: NextConfig = {
                 destination: `${mcpOrigin}/mcp`,
             },
             {
-                source: '/mcp/',
-                destination: `${mcpOrigin}/mcp`,
+                source: '/mcp/:path*',
+                destination: `${mcpOrigin}/mcp/:path*`,
             },
             {
                 source: '/.well-known/oauth-protected-resource',

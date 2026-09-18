@@ -36,6 +36,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import type { Database, Task, TaskUpdateRequest } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { BackupTaskFields } from '@/components/server/backup/BackupTaskFields';
+import { PageLoading } from '@/components/featherui/PageLoading';
 import {
     buildBackupPayload,
     emptyBackupFields,
@@ -177,7 +178,9 @@ export default function EditTaskPage() {
         }
     };
 
-    if (permissionsLoading || settingsLoading || loading) return null;
+    if (permissionsLoading || settingsLoading || loading) {
+        return <PageLoading />;
+    }
 
     if (!canUpdate) {
         return (

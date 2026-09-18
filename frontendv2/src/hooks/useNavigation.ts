@@ -70,9 +70,13 @@ export function useNavigation() {
     const webspaceUuid = isWebspace ? pathname.split('/')[2] : null;
 
     // Call hook at top level - valid usage
-    const { hasPermission: hasServerPermission, server } = useServerPermissions(serverUuid || '');
-    const { hasPermission: hasVdsPermission } = useVdsPermissions();
-    const { hasPermission: hasWebSpacePermission } = useWebSpacePermissions(webspaceUuid || '');
+    const { hasPermission: hasServerPermission, server, loading: serverPermissionsLoading } = useServerPermissions(
+        serverUuid || '',
+    );
+    const { hasPermission: hasVdsPermission, loading: vdsPermissionsLoading } = useVdsPermissions();
+    const { hasPermission: hasWebSpacePermission, loading: webSpacePermissionsLoading } = useWebSpacePermissions(
+        webspaceUuid || '',
+    );
 
     // Get server's spell_id for filtering plugin sidebar items
     const serverSpellId = server?.spell_id || null;
@@ -376,8 +380,12 @@ export function useNavigation() {
         hasWebSpacePermission,
     ]);
 
-    // Session is enough to show a useful sidebar; plugins may append once when ready.
-    const navReady = isSessionChecked && !isLoading;
+    // Session is enough for dashboard/admin; entity routes also wait on server/vds/webspace permissions.
+    const entityLoading =
+        (isServer && serverPermissionsLoading) ||
+        (isVds && vdsPermissionsLoading) ||
+        (isWebspace && webSpacePermissionsLoading);
+    const navReady = isSessionChecked && !isLoading && !entityLoading;
 
-    return { navigationItems, navReady };
+    return { navigationItems, navReady, entityLoading: Boolean(isServer || isVds || isWebspace) && entityLoading };
 }

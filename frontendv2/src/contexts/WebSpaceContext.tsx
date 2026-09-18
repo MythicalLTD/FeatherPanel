@@ -45,7 +45,8 @@ export function WebSpaceProvider({ children, uuidShort, initialWebSpace }: WebSp
     const [webspace, setWebspace] = useState<WebSpace | null>(initialWebSpace || null);
     const [loading, setLoading] = useState(!initialWebSpace);
     const [error, setError] = useState<Error | null>(null);
-    const { user: sessionUser, hasPermission: hasGlobalPermission } = useSession();
+    const { user: sessionUser, hasPermission: hasGlobalPermission, isLoading: sessionLoading, isSessionChecked } =
+        useSession();
 
     const fetchWebSpace = useCallback(async () => {
         if (!uuidShort) return;
@@ -136,7 +137,8 @@ export function WebSpaceProvider({ children, uuidShort, initialWebSpace }: WebSp
         <WebSpaceContext.Provider
             value={{
                 webspace,
-                loading,
+                // Permission checks need sessionUser; keep consumers spinning until session is ready.
+                loading: loading || sessionLoading || !isSessionChecked,
                 error,
                 refreshWebSpace: fetchWebSpace,
                 hasPermission,

@@ -198,15 +198,21 @@ export function WebSpaceSwitcher({ fallbackTitle }: WebSpaceSwitcherProps) {
                     </span>
                     {currentWebSpace && (
                         <span className='text-muted-foreground hidden items-center gap-1 text-[11px] sm:flex'>
-                            <span
-                                className={cn(
-                                    'h-1.5 w-1.5 shrink-0 rounded-full',
-                                    getWebSpaceStatusDotColor(displayWebSpaceStatus(currentWebSpace)),
-                                )}
-                            />
-                            {t(`servers.status.${displayWebSpaceStatus(currentWebSpace)}`, {
-                                defaultValue: displayWebSpaceStatus(currentWebSpace),
-                            })}
+                            {displayWebSpaceStatus(currentWebSpace) === 'unknown' ? (
+                                <span className='bg-muted/40 h-2.5 w-16 animate-pulse rounded-md' aria-busy='true' />
+                            ) : (
+                                <>
+                                    <span
+                                        className={cn(
+                                            'h-1.5 w-1.5 shrink-0 rounded-full',
+                                            getWebSpaceStatusDotColor(displayWebSpaceStatus(currentWebSpace)),
+                                        )}
+                                    />
+                                    {t(`servers.status.${displayWebSpaceStatus(currentWebSpace)}`, {
+                                        defaultValue: displayWebSpaceStatus(currentWebSpace),
+                                    })}
+                                </>
+                            )}
                         </span>
                     )}
                 </span>
@@ -361,13 +367,24 @@ export function WebSpaceSwitcher({ fallbackTitle }: WebSpaceSwitcherProps) {
                                                             )}
                                                         </span>
                                                         <span className='text-muted-foreground flex items-center gap-1.5 text-[11px]'>
-                                                            <span
-                                                                className={cn(
-                                                                    'h-1.5 w-1.5 shrink-0 rounded-full',
-                                                                    getWebSpaceStatusDotColor(status),
-                                                                )}
-                                                            />
-                                                            {t(`servers.status.${status}`, { defaultValue: status })}
+                                                            {status === 'unknown' ? (
+                                                                <span
+                                                                    className='bg-muted/40 h-2.5 w-14 animate-pulse rounded-md'
+                                                                    aria-busy='true'
+                                                                />
+                                                            ) : (
+                                                                <>
+                                                                    <span
+                                                                        className={cn(
+                                                                            'h-1.5 w-1.5 shrink-0 rounded-full',
+                                                                            getWebSpaceStatusDotColor(status),
+                                                                        )}
+                                                                    />
+                                                                    {t(`servers.status.${status}`, {
+                                                                        defaultValue: status,
+                                                                    })}
+                                                                </>
+                                                            )}
                                                         </span>
                                                     </span>
                                                     {isCurrent && (

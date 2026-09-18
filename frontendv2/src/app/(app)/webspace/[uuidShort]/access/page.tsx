@@ -47,7 +47,7 @@ export default function WebSpaceAccessPage() {
     const params = useParams();
     const uuidShort = String(params.uuidShort || '');
     const { t } = useTranslation();
-    const { user } = useSession();
+    const { user, isLoading: sessionLoading } = useSession();
     const { hasPermission, loading: permissionsLoading } = useWebSpacePermissions(uuidShort);
     const canAccess = hasPermission(WebSpaceSubuserPermissions['file.sftp']);
 
@@ -121,7 +121,7 @@ export default function WebSpaceAccessPage() {
         }
     };
 
-    if (permissionsLoading || loading) {
+    if (permissionsLoading || loading || (sessionLoading && !user)) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
                 <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
@@ -144,9 +144,9 @@ export default function WebSpaceAccessPage() {
 
     if (!space) return null;
 
-    const username = user?.username || 'username';
+    const username = user?.username;
     const short = space.uuidShort || uuidShort;
-    const sftpUser = `${username}.${short}`;
+    const sftpUser = username ? `${username}.${short}` : null;
 
     return (
         <WebSpacePageWidgets pageId='webspace-access'>
@@ -207,15 +207,26 @@ export default function WebSpaceAccessPage() {
                                 {t('webSpaces.settings.username')}
                             </Label>
                             <div className='bg-secondary/50 border-border/10 flex items-center gap-2 rounded-xl border p-1 pr-1 pl-4'>
-                                <code className='text-foreground/80 flex-1 truncate font-mono text-xs'>{sftpUser}</code>
-                                <Button
-                                    variant='ghost'
-                                    size='sm'
-                                    className='text-muted-foreground h-8 w-8 rounded-lg p-0'
-                                    onClick={() => void copyToClipboard(sftpUser)}
-                                >
-                                    <Copy className='h-3.5 w-3.5' />
-                                </Button>
+                                {sftpUser ? (
+                                    <>
+                                        <code className='text-foreground/80 flex-1 truncate font-mono text-xs'>
+                                            {sftpUser}
+                                        </code>
+                                        <Button
+                                            variant='ghost'
+                                            size='sm'
+                                            className='text-muted-foreground h-8 w-8 rounded-lg p-0'
+                                            onClick={() => void copyToClipboard(sftpUser)}
+                                        >
+                                            <Copy className='h-3.5 w-3.5' />
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <span
+                                        className='bg-muted/40 my-1.5 h-3.5 w-40 animate-pulse rounded-md'
+                                        aria-busy='true'
+                                    />
+                                )}
                             </div>
                         </div>
                         <p className='text-muted-foreground text-xs'>{t('webSpaces.settings.fileAccessHelp')}</p>

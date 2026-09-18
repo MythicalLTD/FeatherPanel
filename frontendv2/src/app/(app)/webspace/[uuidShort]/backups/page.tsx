@@ -60,11 +60,11 @@ export default function WebSpaceBackupsPage() {
     const params = useParams();
     const uuidShort = String(params.uuidShort || '');
     const { t } = useTranslation();
-    const { hasPermission } = useWebSpacePermissions(uuidShort);
-    const canCreate = hasPermission(WebSpaceSubuserPermissions['backup.create']);
-    const canDelete = hasPermission(WebSpaceSubuserPermissions['backup.delete']);
-    const canRestore = hasPermission(WebSpaceSubuserPermissions['backup.restore']);
-    const canDownload = hasPermission(WebSpaceSubuserPermissions['backup.download']);
+    const { hasPermission, loading: permissionsLoading } = useWebSpacePermissions(uuidShort);
+    const canCreate = !permissionsLoading && hasPermission(WebSpaceSubuserPermissions['backup.create']);
+    const canDelete = !permissionsLoading && hasPermission(WebSpaceSubuserPermissions['backup.delete']);
+    const canRestore = !permissionsLoading && hasPermission(WebSpaceSubuserPermissions['backup.restore']);
+    const canDownload = !permissionsLoading && hasPermission(WebSpaceSubuserPermissions['backup.download']);
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState<string | null>(null);
     const [backups, setBackups] = useState<BackupRow[]>([]);
@@ -297,7 +297,7 @@ export default function WebSpaceBackupsPage() {
                         {t('webSpaces.backups.jobInProgress')}
                     </p>
                 )}
-                {loading ? (
+                {loading || permissionsLoading ? (
                     <div className='flex flex-col items-center justify-center py-24'>
                         <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
                         <p className='text-muted-foreground mt-4 font-medium'>{t('common.loading')}</p>

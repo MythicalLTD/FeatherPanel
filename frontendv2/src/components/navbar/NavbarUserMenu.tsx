@@ -29,6 +29,7 @@ import type { UserInfo } from '@/contexts/SessionContext';
 type NavbarUserMenuProps = {
     variant: 'classic' | 'modern';
     user: UserInfo | null;
+    userLoading?: boolean;
     router: AppRouterInstance;
     userNavigation: Array<{ name: string; href: string; icon: typeof CircleUser }>;
     t: (key: string, params?: Record<string, string>) => string;
@@ -128,6 +129,7 @@ function MenuLinkRow({
 export function NavbarUserMenu({
     variant,
     user,
+    userLoading = false,
     router,
     userNavigation,
     t,
@@ -141,6 +143,25 @@ export function NavbarUserMenu({
 }: NavbarUserMenuProps) {
     const isModern = variant === 'modern';
     const roleColor = user?.role?.color?.trim() || null;
+
+    if (userLoading) {
+        return (
+            <div
+                className={cn(
+                    'flex items-center gap-2 px-1.5 py-1 sm:px-2',
+                    isModern ? 'border-border/35 bg-muted/10 rounded-xl border' : 'rounded-xl',
+                )}
+                aria-busy='true'
+                aria-label={t('common.loading')}
+            >
+                <span className='bg-muted/50 block h-8 w-8 shrink-0 animate-pulse rounded-full' />
+                <span className='hidden min-w-0 flex-col items-start gap-1.5 sm:flex'>
+                    <span className='bg-muted/50 h-3.5 w-20 animate-pulse rounded-md' />
+                    <span className='bg-muted/30 h-2.5 w-14 animate-pulse rounded-md' />
+                </span>
+            </div>
+        );
+    }
 
     return (
         <Menu as='div' className='relative shrink-0'>

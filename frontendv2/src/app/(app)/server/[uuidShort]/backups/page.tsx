@@ -56,6 +56,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { PageLoading } from '@/components/featherui/PageLoading';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -382,13 +383,8 @@ export default function ServerBackupsPage() {
         backupCountTotal >= server.backup_limit;
     const showHeaderCreateAction = canCreate && (activeTab === 'databases' || backups.length > 0);
 
-    if (activeTab === 'files' && loading && backups.length === 0) {
-        return (
-            <div className='flex flex-col items-center justify-center py-24'>
-                <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
-                <p className='text-muted-foreground mt-4 animate-pulse font-medium'>{t('common.loading')}</p>
-            </div>
-        );
+    if (permissionsLoading || (activeTab === 'files' && loading && backups.length === 0)) {
+        return <PageLoading />;
     }
 
     return (

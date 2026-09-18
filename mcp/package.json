@@ -1,6 +1,6 @@
 {
 	"name": "@featherpanel/mcp",
-	"version": "1.2.0",
+	"version": "1.2.1",
 	"description": "FeatherPanel MCP server — manage game servers from Claude, Cursor, and other MCP clients",
 	"type": "module",
 	"main": "dist/index.js",

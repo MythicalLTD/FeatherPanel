@@ -42,14 +42,21 @@ const sessions: Record<string, SessionEntry> = {};
 
 const app = createMcpExpressApp({ host: MCP_HOST });
 
-app.get("/health", (_req, res) => {
+const healthHandler = (
+  _req: import("express").Request,
+  res: import("express").Response,
+) => {
   res.json({
     ok: true,
     service: "featherpanel-mcp",
     panel_url: FEATHERPANEL_URL,
     auth: ["oauth2", "bearer_api_key"],
   });
-});
+};
+
+// Container probes use /health; panel/Caddy expose the same JSON at /mcp/health.
+app.get("/health", healthHandler);
+app.get("/mcp/health", healthHandler);
 
 mountOAuthRoutes(app);
 
@@ -111,6 +118,44 @@ async function validateApiKey(apiKey: string): Promise<void> {
   await client.get("/api/user/session");
 }
 
+async function beginMcpSession(
+  req: import("express").Request,
+  res: import("express").Response,
+  apiKey: string,
+): Promise<void> {
+  try {
+    await validateApiKey(apiKey);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Invalid API key";
+    sendUnauthorized(
+      res,
+      `Unauthorized: ${message}`,
+      mcpResourceUrlFromRequest(req),
+    );
+    return;
+  }
+
+  const transport = new StreamableHTTPServerTransport({
+    sessionIdGenerator: () => randomUUID(),
+    onsessioninitialized: (newSessionId) => {
+      setSessionApiKey(newSessionId, apiKey);
+      sessions[newSessionId] = { transport };
+    },
+  });
+
+  transport.onclose = () => {
+    const sid = transport.sessionId;
+    if (sid && sessions[sid]) {
+      clearSessionApiKey(sid);
+      delete sessions[sid];
+    }
+  };
+
+  const server = createFeatherPanelMcpServer();
+  await server.connect(transport);
+  await transport.handleRequest(req, res, req.body);
+}
+
 const mcpPostHandler = async (
   req: import("express").Request,
   res: import("express").Response,
@@ -128,7 +173,10 @@ const mcpPostHandler = async (
         setSessionApiKey(sessionId, apiKey);
       }
       transport = sessions[sessionId].transport;
-    } else if (!sessionId && isInitializeRequest(req.body)) {
+    } else if (isInitializeRequest(req.body)) {
+      // Allow initialize with no session OR a stale session id (tsx watch / pnpm
+      // dev restarts wipe in-memory sessions; Claude often retries initialize
+      // still carrying the old mcp-session-id — rejecting that left tools empty).
       const apiKey = await resolveApiKeyFromRequest(req);
       if (!apiKey) {
         sendUnauthorized(
@@ -139,46 +187,21 @@ const mcpPostHandler = async (
         return;
       }
 
-      try {
-        await validateApiKey(apiKey);
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Invalid API key";
-        sendUnauthorized(
-          res,
-          `Unauthorized: ${message}`,
-          mcpResourceUrlFromRequest(req),
-        );
-        return;
-      }
-
-      transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => randomUUID(),
-        onsessioninitialized: (newSessionId) => {
-          setSessionApiKey(newSessionId, apiKey);
-          sessions[newSessionId] = { transport };
-        },
-      });
-
-      transport.onclose = () => {
-        const sid = transport.sessionId;
-        if (sid && sessions[sid]) {
-          clearSessionApiKey(sid);
-          delete sessions[sid];
-        }
-      };
-
-      const server = createFeatherPanelMcpServer();
-      await server.connect(transport);
-      await transport.handleRequest(req, res, req.body);
+      await beginMcpSession(req, res, apiKey);
       return;
     } else if (sessionId && !sessions[sessionId]) {
-      // Stale Claude session after MCP restart — ask client to re-initialize
-      sendUnauthorized(
-        res,
-        "MCP session expired (server restarted). Disconnect and Connect the connector again in Claude.",
-        mcpResourceUrlFromRequest(req),
-      );
+      // Stale session after MCP restart (pnpm/tsx wipe in-memory map).
+      // Use HTTP 404 per Streamable HTTP — NOT 401. Claude treats 401 as
+      // "auth broken / no tools"; 404 triggers re-initialize and tools/list.
+      res.status(404).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32001,
+          message:
+            "MCP session not found (server restarted). Client must re-initialize; then tools/list will succeed.",
+        },
+        id: (req.body as { id?: unknown })?.id ?? null,
+      });
       return;
     } else {
       res.status(400).json({

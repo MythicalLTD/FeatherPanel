@@ -208,17 +208,11 @@ class ApiClientController
         }
 
         $page = (int) $request->query->get('page', 1);
-        $limit = (int) $request->query->get('limit', 10);
+        $limit = (int) $request->query->get('limit', 150);
         $search = $request->query->get('search', '');
 
         if ($page < 1) {
             $page = 1;
-        }
-        if ($limit < 1) {
-            $limit = 10;
-        }
-        if ($limit > 100) {
-            $limit = 100;
         }
 
         // Get user's API clients with pagination and search

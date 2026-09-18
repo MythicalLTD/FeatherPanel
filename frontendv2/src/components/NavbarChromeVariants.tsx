@@ -37,6 +37,7 @@ export type NavbarChromeProps = {
     showAdminAreaButton: boolean;
     adminAreaHref: string;
     user: UserInfo | null;
+    userLoading?: boolean;
     router: AppRouterInstance;
     userNavigation: Array<{ name: string; href: string; icon: typeof CircleUser }>;
     t: (key: string, params?: Record<string, string>) => string;

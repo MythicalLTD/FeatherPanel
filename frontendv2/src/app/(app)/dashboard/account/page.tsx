@@ -36,7 +36,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 export default function AccountPage() {
     const { t } = useTranslation();
-    const { user } = useSession();
+    const { user, isLoading } = useSession();
     const dateOpts = useDateFormatOptions();
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -80,34 +80,54 @@ export default function AccountPage() {
         );
     };
 
+    const showProfileSkeleton = isLoading && !user;
+
     return (
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('dashboard-account', 'top-of-page')} />
 
             <div className='border-border/60 bg-card/70 rounded-2xl border p-6 backdrop-blur-xl sm:p-8'>
-                <div className='flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6'>
-                    {user?.avatar ? (
-                        <NextImage
-                            src={user.avatar}
-                            alt={user.username || 'User avatar'}
-                            width={96}
-                            height={96}
-                            unoptimized
-                            className='border-primary/20 h-20 w-20 rounded-full border-2 object-cover sm:h-24 sm:w-24'
-                        />
-                    ) : (
-                        <div className='from-primary/20 to-primary/10 border-primary/20 flex h-20 w-20 items-center justify-center rounded-full border-2 bg-linear-to-br sm:h-24 sm:w-24'>
-                            <span className='text-primary text-2xl font-semibold'>{getUserInitials()}</span>
+                {showProfileSkeleton ? (
+                    <div className='flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6'>
+                        <div className='bg-muted/50 border-border/60 mx-auto h-20 w-20 animate-pulse rounded-full border-2 sm:mx-0 sm:h-24 sm:w-24' />
+                        <div className='flex w-full flex-col items-center space-y-2 sm:items-start'>
+                            <div className='bg-muted/50 h-7 w-40 animate-pulse rounded-md sm:h-8 sm:w-48' />
+                            <div className='bg-muted/40 h-4 w-52 animate-pulse rounded-md sm:h-5 sm:w-64' />
+                            <div className='bg-muted/30 h-3.5 w-36 animate-pulse rounded-md sm:h-4 sm:w-44' />
                         </div>
-                    )}
-                    <div className='space-y-2 text-center sm:text-left'>
-                        <h2 className='text-foreground text-xl font-bold sm:text-2xl'>{user?.username}</h2>
-                        <p className='text-muted-foreground text-sm sm:text-base'>{user?.email}</p>
-                        <p className='text-muted-foreground text-xs sm:text-sm'>
-                            {t('account.memberSince')} {formatDate(user?.first_seen)}
-                        </p>
                     </div>
-                </div>
+                ) : (
+                    <div className='flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6'>
+                        {user?.avatar ? (
+                            <NextImage
+                                src={user.avatar}
+                                alt={user.username || 'User avatar'}
+                                width={96}
+                                height={96}
+                                unoptimized
+                                className='border-primary/20 h-20 w-20 rounded-full border-2 object-cover sm:h-24 sm:w-24'
+                            />
+                        ) : (
+                            <div className='from-primary/20 to-primary/10 border-primary/20 flex h-20 w-20 items-center justify-center rounded-full border-2 bg-linear-to-br sm:h-24 sm:w-24'>
+                                <span className='text-primary text-2xl font-semibold'>{getUserInitials()}</span>
+                            </div>
+                        )}
+                        <div className='space-y-2 text-center sm:text-left'>
+                            <h2 className='text-foreground text-xl font-bold sm:text-2xl'>{user?.username}</h2>
+                            <p className='text-muted-foreground text-sm sm:text-base'>{user?.email}</p>
+                            <p className='text-muted-foreground text-xs sm:text-sm'>
+                                {t('account.memberSince')}{' '}
+                                {user?.first_seen ? (
+                                    formatDate(user.first_seen)
+                                ) : isLoading ? (
+                                    <span className='bg-muted/40 inline-block h-3.5 w-28 animate-pulse rounded-md align-middle' />
+                                ) : (
+                                    formatDate(undefined)
+                                )}
+                            </p>
+                        </div>
+                    </div>
+                )}
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-account', 'after-profile-card')} />
 
