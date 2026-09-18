@@ -6,7 +6,8 @@ WORKDIR /app
 # Pin pnpm (matches packageManager); avoid corepack "latest" tag resolution flakiness in CI
 RUN npm install -g pnpm@12.3.4
 
-COPY package.json pnpm-lock.yaml ./
+# .npmrc (dangerouslyAllowAllBuilds) + pnpm-workspace.yaml (allowBuilds) required for pnpm 12
+COPY package.json pnpm-lock.yaml .npmrc pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY tsconfig.json ./
