@@ -56,7 +56,5 @@ export function ServerWingsReachabilityProvider({ children }: { children: ReactN
         };
     }, [canConnect, connectionStatus]);
 
-    return (
-        <ServerWingsReachabilityContext.Provider value={value}>{children}</ServerWingsReachabilityContext.Provider>
-    );
+    return <ServerWingsReachabilityContext.Provider value={value}>{children}</ServerWingsReachabilityContext.Provider>;
 }

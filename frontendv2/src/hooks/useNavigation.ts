@@ -70,9 +70,11 @@ export function useNavigation() {
     const webspaceUuid = isWebspace ? pathname.split('/')[2] : null;
 
     // Call hook at top level - valid usage
-    const { hasPermission: hasServerPermission, server, loading: serverPermissionsLoading } = useServerPermissions(
-        serverUuid || '',
-    );
+    const {
+        hasPermission: hasServerPermission,
+        server,
+        loading: serverPermissionsLoading,
+    } = useServerPermissions(serverUuid || '');
     const { hasPermission: hasVdsPermission, loading: vdsPermissionsLoading } = useVdsPermissions();
     const { hasPermission: hasWebSpacePermission, loading: webSpacePermissionsLoading } = useWebSpacePermissions(
         webspaceUuid || '',

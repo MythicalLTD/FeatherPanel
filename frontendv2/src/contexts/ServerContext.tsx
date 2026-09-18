@@ -50,8 +50,12 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
     const [loading, setLoading] = useState(!initialServer);
     const [error, setError] = useState<Error | null>(null);
     const [liveStatus, setLiveStatus] = useState<string | null>(null);
-    const { user: sessionUser, hasPermission: hasGlobalPermission, isLoading: sessionLoading, isSessionChecked } =
-        useSession();
+    const {
+        user: sessionUser,
+        hasPermission: hasGlobalPermission,
+        isLoading: sessionLoading,
+        isSessionChecked,
+    } = useSession();
 
     useEffect(() => {
         setLiveStatus(null);

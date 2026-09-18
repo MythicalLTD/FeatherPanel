@@ -22,9 +22,9 @@ use App\Chat\Server;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Plugins\Events\Events\WingsEvent;
-use App\Services\Server\ServerAutoStartService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Server\ServerAutoStartService;
 
 #[OA\Schema(
     schema: 'ServersResetResponse',

@@ -524,256 +524,269 @@ function SidebarContent({
                                             aria-hidden='true'
                                         />
                                     )}
-                            {(!collapsed || mobile) && !isBottomDock && (
-                                <button
-                                    type='button'
-                                    onClick={() => toggleGroup(group)}
-                                    className={cn(
-                                        'group/header mb-2 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs font-semibold tracking-wider uppercase transition-colors',
-                                        isClassicChrome
-                                            ? 'text-muted-foreground hover:text-accent-foreground'
-                                            : 'text-muted-foreground/90 hover:bg-muted/40 hover:text-foreground',
-                                        isCompact ? 'text-[10px]' : 'text-[11px]',
+                                    {(!collapsed || mobile) && !isBottomDock && (
+                                        <button
+                                            type='button'
+                                            onClick={() => toggleGroup(group)}
+                                            className={cn(
+                                                'group/header mb-2 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs font-semibold tracking-wider uppercase transition-colors',
+                                                isClassicChrome
+                                                    ? 'text-muted-foreground hover:text-accent-foreground'
+                                                    : 'text-muted-foreground/90 hover:bg-muted/40 hover:text-foreground',
+                                                isCompact ? 'text-[10px]' : 'text-[11px]',
+                                            )}
+                                        >
+                                            <span className='truncate'>{renderGroupTitle(group)}</span>
+                                            <ChevronRight
+                                                className={cn(
+                                                    'shrink-0 transition-transform duration-200',
+                                                    isClassicChrome
+                                                        ? 'h-3 w-3'
+                                                        : 'text-muted-foreground/70 group-hover/header:text-foreground h-3.5 w-3.5',
+                                                    !isClassicChrome && 'text-muted-foreground/70',
+                                                    !isCollapsed && 'rotate-90',
+                                                )}
+                                            />
+                                        </button>
                                     )}
-                                >
-                                    <span className='truncate'>{renderGroupTitle(group)}</span>
-                                    <ChevronRight
+                                    <div
                                         className={cn(
-                                            'shrink-0 transition-transform duration-200',
-                                            isClassicChrome
-                                                ? 'h-3 w-3'
-                                                : 'text-muted-foreground/70 group-hover/header:text-foreground h-3.5 w-3.5',
-                                            !isClassicChrome && 'text-muted-foreground/70',
-                                            !isCollapsed && 'rotate-90',
+                                            isBottomDock
+                                                ? 'flex flex-row items-center gap-1'
+                                                : 'space-y-1 overflow-hidden transition-all duration-200',
+                                            !isBottomDock &&
+                                                (isCollapsed && (!collapsed || mobile)
+                                                    ? 'max-h-0 opacity-0'
+                                                    : 'max-h-500 opacity-100'),
                                         )}
-                                    />
-                                </button>
-                            )}
-                            <div
-                                className={cn(
-                                    isBottomDock
-                                        ? 'flex flex-row items-center gap-1'
-                                        : 'space-y-1 overflow-hidden transition-all duration-200',
-                                    !isBottomDock &&
-                                        (isCollapsed && (!collapsed || mobile)
-                                            ? 'max-h-0 opacity-0'
-                                            : 'max-h-500 opacity-100'),
-                                )}
-                            >
-                                {groupedItems[group].map((item) => {
-                                    const active = isActive(item.url);
-                                    const isPluginAction = !!item.pluginJs;
-                                    const hasChildren = item.children && item.children.length > 0;
-                                    const isSubmenuCollapsed = collapsedSubmenus.includes(item.id);
-                                    const isTicketsItem = item.url === '/dashboard/tickets';
-                                    const isAdminTicketsItem = item.url === '/admin/tickets';
+                                    >
+                                        {groupedItems[group].map((item) => {
+                                            const active = isActive(item.url);
+                                            const isPluginAction = !!item.pluginJs;
+                                            const hasChildren = item.children && item.children.length > 0;
+                                            const isSubmenuCollapsed = collapsedSubmenus.includes(item.id);
+                                            const isTicketsItem = item.url === '/dashboard/tickets';
+                                            const isAdminTicketsItem = item.url === '/admin/tickets';
 
-                                    if (hasChildren) {
-                                        return (
-                                            <div key={item.id} className={cn(isBottomDock && 'relative shrink-0')}>
-                                                <button
-                                                    type='button'
-                                                    onClick={() => toggleSubmenu(item.id)}
+                                            if (hasChildren) {
+                                                return (
+                                                    <div
+                                                        key={item.id}
+                                                        className={cn(isBottomDock && 'relative shrink-0')}
+                                                    >
+                                                        <button
+                                                            type='button'
+                                                            onClick={() => toggleSubmenu(item.id)}
+                                                            {...collapsedTip(item.name)}
+                                                            className={cn(
+                                                                navItemBase,
+                                                                navItemIdle,
+                                                                topLevelItemPad,
+                                                                'group relative overflow-visible',
+                                                            )}
+                                                            title={collapsed && !mobile ? undefined : item.name}
+                                                            aria-label={item.name}
+                                                        >
+                                                            <NavIcon item={item} sizeClass={topIconSize} />
+
+                                                            {(!collapsed || mobile) && (
+                                                                <span
+                                                                    className={cn(
+                                                                        'truncate',
+                                                                        isBottomDock &&
+                                                                            'w-full text-[10px] leading-tight',
+                                                                        isBottomDock
+                                                                            ? 'text-center'
+                                                                            : 'flex-1 text-left',
+                                                                    )}
+                                                                >
+                                                                    {item.name}
+                                                                </span>
+                                                            )}
+
+                                                            {(!collapsed || mobile) && (
+                                                                <ChevronDown
+                                                                    className={cn(
+                                                                        'h-4 w-4 transition-transform duration-200',
+                                                                        !isSubmenuCollapsed && 'rotate-180',
+                                                                    )}
+                                                                />
+                                                            )}
+                                                        </button>
+
+                                                        <div
+                                                            className={cn(
+                                                                isBottomDock
+                                                                    ? 'border-border/40 bg-popover absolute bottom-full left-1/2 z-50 mb-2 min-w-40 -translate-x-1/2 space-y-0.5 overflow-hidden rounded-xl border p-1 shadow-lg'
+                                                                    : isClassicChrome
+                                                                      ? 'ml-4 space-y-1 overflow-hidden transition-all duration-200'
+                                                                      : 'border-border/30 ml-3 space-y-0.5 overflow-hidden border-l pl-2 transition-all duration-200',
+                                                                !isBottomDock &&
+                                                                    (isSubmenuCollapsed || (collapsed && !mobile)
+                                                                        ? 'max-h-0 opacity-0'
+                                                                        : 'mt-1 max-h-125 opacity-100'),
+                                                                isBottomDock &&
+                                                                    (isSubmenuCollapsed
+                                                                        ? 'pointer-events-none max-h-0 opacity-0'
+                                                                        : 'opacity-100'),
+                                                            )}
+                                                        >
+                                                            {item.children?.map((child) => {
+                                                                const childActive = isActive(child.url);
+
+                                                                return (
+                                                                    <Link
+                                                                        key={child.id}
+                                                                        href={child.url}
+                                                                        prefetch={true}
+                                                                        {...collapsedTip(child.name)}
+                                                                        onClick={() => {
+                                                                            if (mobile) setMobileOpen(false);
+                                                                        }}
+                                                                        className={cn(
+                                                                            navItemBase,
+                                                                            !isClassicChrome &&
+                                                                                'rounded-lg px-3 py-2 text-[13px]',
+                                                                            childActive ? navItemActive : navItemIdle,
+                                                                            'gap-3',
+                                                                        )}
+                                                                    >
+                                                                        <NavIcon item={child} sizeClass='h-4 w-4' />
+                                                                        <span className='truncate'>{child.name}</span>
+                                                                    </Link>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+
+                                            if (isPluginAction) {
+                                                return (
+                                                    <button
+                                                        key={item.id}
+                                                        onClick={() => {
+                                                            try {
+                                                                runPluginJs(item.pluginJs!);
+                                                            } catch (e) {
+                                                                console.error('Failed to execute plugin JS', e);
+                                                            }
+                                                            if (mobile) setMobileOpen(false);
+                                                        }}
+                                                        {...collapsedTip(item.name)}
+                                                        className={cn(
+                                                            navItemBase,
+                                                            active ? navItemActive : navItemIdle,
+                                                            topLevelItemPad,
+                                                            'group relative overflow-visible',
+                                                        )}
+                                                        title={collapsed && !mobile ? undefined : item.name}
+                                                        aria-label={item.name}
+                                                    >
+                                                        <NavIcon item={item} sizeClass={topIconSize} />
+
+                                                        {(!collapsed || mobile) && (
+                                                            <span className='truncate'>{item.name}</span>
+                                                        )}
+
+                                                        {item.badge && (!collapsed || mobile) && (
+                                                            <span className={badgeClass}>{item.badge}</span>
+                                                        )}
+                                                        {isTicketsItem &&
+                                                            unreadTicketCount > 0 &&
+                                                            (!collapsed || mobile) && (
+                                                                <span className='ml-2 inline-flex items-center rounded-full border border-red-500/25 bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-600 dark:text-red-300'>
+                                                                    {unreadTicketCount}
+                                                                </span>
+                                                            )}
+                                                        {isAdminTicketsItem &&
+                                                            adminOpenTicketCount > 0 &&
+                                                            (!collapsed || mobile) && (
+                                                                <span className='ml-2 inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-300'>
+                                                                    {adminOpenTicketCount}
+                                                                </span>
+                                                            )}
+                                                    </button>
+                                                );
+                                            }
+
+                                            const targetUrl = item.pluginRedirect || item.url;
+                                            const openExternal =
+                                                Boolean(item.openInNewTab) || /^https?:\/\//i.test(targetUrl);
+                                            const itemClassName = cn(
+                                                navItemBase,
+                                                active ? navItemActive : navItemIdle,
+                                                topLevelItemPad,
+                                                'group relative overflow-visible',
+                                            );
+
+                                            if (openExternal) {
+                                                return (
+                                                    <a
+                                                        key={item.id}
+                                                        href={targetUrl}
+                                                        target='_blank'
+                                                        rel='noopener noreferrer'
+                                                        {...collapsedTip(item.name)}
+                                                        onClick={() => {
+                                                            if (mobile) setMobileOpen(false);
+                                                        }}
+                                                        className={itemClassName}
+                                                        title={collapsed && !mobile ? undefined : item.name}
+                                                        aria-label={item.name}
+                                                    >
+                                                        <NavIcon item={item} sizeClass={topIconSize} />
+                                                        {(!collapsed || mobile) && (
+                                                            <span className='truncate'>{item.name}</span>
+                                                        )}
+                                                        {item.badge && (!collapsed || mobile) && (
+                                                            <span className={badgeClass}>{item.badge}</span>
+                                                        )}
+                                                    </a>
+                                                );
+                                            }
+
+                                            return (
+                                                <Link
+                                                    key={item.id}
+                                                    href={targetUrl}
+                                                    prefetch={true}
                                                     {...collapsedTip(item.name)}
-                                                    className={cn(
-                                                        navItemBase,
-                                                        navItemIdle,
-                                                        topLevelItemPad,
-                                                        'group relative overflow-visible',
-                                                    )}
+                                                    onClick={() => {
+                                                        if (mobile) setMobileOpen(false);
+                                                    }}
+                                                    className={itemClassName}
                                                     title={collapsed && !mobile ? undefined : item.name}
                                                     aria-label={item.name}
                                                 >
                                                     <NavIcon item={item} sizeClass={topIconSize} />
 
                                                     {(!collapsed || mobile) && (
-                                                        <span
-                                                            className={cn(
-                                                                'truncate',
-                                                                isBottomDock && 'w-full text-[10px] leading-tight',
-                                                                isBottomDock ? 'text-center' : 'flex-1 text-left',
-                                                            )}
-                                                        >
-                                                            {item.name}
-                                                        </span>
+                                                        <span className='truncate'>{item.name}</span>
                                                     )}
 
-                                                    {(!collapsed || mobile) && (
-                                                        <ChevronDown
-                                                            className={cn(
-                                                                'h-4 w-4 transition-transform duration-200',
-                                                                !isSubmenuCollapsed && 'rotate-180',
-                                                            )}
-                                                        />
+                                                    {item.badge && (!collapsed || mobile) && (
+                                                        <span className={badgeClass}>{item.badge}</span>
                                                     )}
-                                                </button>
-
-                                                <div
-                                                    className={cn(
-                                                        isBottomDock
-                                                            ? 'border-border/40 bg-popover absolute bottom-full left-1/2 z-50 mb-2 min-w-40 -translate-x-1/2 space-y-0.5 overflow-hidden rounded-xl border p-1 shadow-lg'
-                                                            : isClassicChrome
-                                                              ? 'ml-4 space-y-1 overflow-hidden transition-all duration-200'
-                                                              : 'border-border/30 ml-3 space-y-0.5 overflow-hidden border-l pl-2 transition-all duration-200',
-                                                        !isBottomDock &&
-                                                            (isSubmenuCollapsed || (collapsed && !mobile)
-                                                                ? 'max-h-0 opacity-0'
-                                                                : 'mt-1 max-h-125 opacity-100'),
-                                                        isBottomDock &&
-                                                            (isSubmenuCollapsed
-                                                                ? 'pointer-events-none max-h-0 opacity-0'
-                                                                : 'opacity-100'),
-                                                    )}
-                                                >
-                                                    {item.children?.map((child) => {
-                                                        const childActive = isActive(child.url);
-
-                                                        return (
-                                                            <Link
-                                                                key={child.id}
-                                                                href={child.url}
-                                                                prefetch={true}
-                                                                {...collapsedTip(child.name)}
-                                                                onClick={() => {
-                                                                    if (mobile) setMobileOpen(false);
-                                                                }}
-                                                                className={cn(
-                                                                    navItemBase,
-                                                                    !isClassicChrome &&
-                                                                        'rounded-lg px-3 py-2 text-[13px]',
-                                                                    childActive ? navItemActive : navItemIdle,
-                                                                    'gap-3',
-                                                                )}
-                                                            >
-                                                                <NavIcon item={child} sizeClass='h-4 w-4' />
-                                                                <span className='truncate'>{child.name}</span>
-                                                            </Link>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        );
-                                    }
-
-                                    if (isPluginAction) {
-                                        return (
-                                            <button
-                                                key={item.id}
-                                                onClick={() => {
-                                                    try {
-                                                        runPluginJs(item.pluginJs!);
-                                                    } catch (e) {
-                                                        console.error('Failed to execute plugin JS', e);
-                                                    }
-                                                    if (mobile) setMobileOpen(false);
-                                                }}
-                                                {...collapsedTip(item.name)}
-                                                className={cn(
-                                                    navItemBase,
-                                                    active ? navItemActive : navItemIdle,
-                                                    topLevelItemPad,
-                                                    'group relative overflow-visible',
-                                                )}
-                                                title={collapsed && !mobile ? undefined : item.name}
-                                                aria-label={item.name}
-                                            >
-                                                <NavIcon item={item} sizeClass={topIconSize} />
-
-                                                {(!collapsed || mobile) && (
-                                                    <span className='truncate'>{item.name}</span>
-                                                )}
-
-                                                {item.badge && (!collapsed || mobile) && (
-                                                    <span className={badgeClass}>{item.badge}</span>
-                                                )}
-                                                {isTicketsItem && unreadTicketCount > 0 && (!collapsed || mobile) && (
-                                                    <span className='ml-2 inline-flex items-center rounded-full border border-red-500/25 bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-600 dark:text-red-300'>
-                                                        {unreadTicketCount}
-                                                    </span>
-                                                )}
-                                                {isAdminTicketsItem &&
-                                                    adminOpenTicketCount > 0 &&
-                                                    (!collapsed || mobile) && (
-                                                        <span className='ml-2 inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-300'>
-                                                            {adminOpenTicketCount}
-                                                        </span>
-                                                    )}
-                                            </button>
-                                        );
-                                    }
-
-                                    const targetUrl = item.pluginRedirect || item.url;
-                                    const openExternal = Boolean(item.openInNewTab) || /^https?:\/\//i.test(targetUrl);
-                                    const itemClassName = cn(
-                                        navItemBase,
-                                        active ? navItemActive : navItemIdle,
-                                        topLevelItemPad,
-                                        'group relative overflow-visible',
-                                    );
-
-                                    if (openExternal) {
-                                        return (
-                                            <a
-                                                key={item.id}
-                                                href={targetUrl}
-                                                target='_blank'
-                                                rel='noopener noreferrer'
-                                                {...collapsedTip(item.name)}
-                                                onClick={() => {
-                                                    if (mobile) setMobileOpen(false);
-                                                }}
-                                                className={itemClassName}
-                                                title={collapsed && !mobile ? undefined : item.name}
-                                                aria-label={item.name}
-                                            >
-                                                <NavIcon item={item} sizeClass={topIconSize} />
-                                                {(!collapsed || mobile) && (
-                                                    <span className='truncate'>{item.name}</span>
-                                                )}
-                                                {item.badge && (!collapsed || mobile) && (
-                                                    <span className={badgeClass}>{item.badge}</span>
-                                                )}
-                                            </a>
-                                        );
-                                    }
-
-                                    return (
-                                        <Link
-                                            key={item.id}
-                                            href={targetUrl}
-                                            prefetch={true}
-                                            {...collapsedTip(item.name)}
-                                            onClick={() => {
-                                                if (mobile) setMobileOpen(false);
-                                            }}
-                                            className={itemClassName}
-                                            title={collapsed && !mobile ? undefined : item.name}
-                                            aria-label={item.name}
-                                        >
-                                            <NavIcon item={item} sizeClass={topIconSize} />
-
-                                            {(!collapsed || mobile) && <span className='truncate'>{item.name}</span>}
-
-                                            {item.badge && (!collapsed || mobile) && (
-                                                <span className={badgeClass}>{item.badge}</span>
-                                            )}
-                                            {isTicketsItem && unreadTicketCount > 0 && (!collapsed || mobile) && (
-                                                <span className='ml-2 inline-flex items-center rounded-full border border-red-500/25 bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-600 dark:text-red-300'>
-                                                    {unreadTicketCount}
-                                                </span>
-                                            )}
-                                            {isAdminTicketsItem &&
-                                                adminOpenTicketCount > 0 &&
-                                                (!collapsed || mobile) && (
-                                                    <span className='ml-2 inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-300'>
-                                                        {adminOpenTicketCount}
-                                                    </span>
-                                                )}
-                                        </Link>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                                                    {isTicketsItem &&
+                                                        unreadTicketCount > 0 &&
+                                                        (!collapsed || mobile) && (
+                                                            <span className='ml-2 inline-flex items-center rounded-full border border-red-500/25 bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-600 dark:text-red-300'>
+                                                                {unreadTicketCount}
+                                                            </span>
+                                                        )}
+                                                    {isAdminTicketsItem &&
+                                                        adminOpenTicketCount > 0 &&
+                                                        (!collapsed || mobile) && (
+                                                            <span className='ml-2 inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-300'>
+                                                                {adminOpenTicketCount}
+                                                            </span>
+                                                        )}
+                                                </Link>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                             );
                         })}
                     </>

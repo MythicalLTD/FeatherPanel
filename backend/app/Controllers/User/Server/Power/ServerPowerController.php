@@ -26,10 +26,10 @@ use OpenApi\Attributes as OA;
 use App\Helpers\ServerGateway;
 use App\Helpers\WingsUrlHelper;
 use App\Plugins\Events\Events\ServerEvent;
-use App\Services\Server\ServerAutoStartService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Server\LifecycleHookPowerGate;
+use App\Services\Server\ServerAutoStartService;
 use App\Services\Server\LifecycleHookExecutorService;
 use App\Controllers\User\Server\CheckSubuserPermissionsTrait;
 

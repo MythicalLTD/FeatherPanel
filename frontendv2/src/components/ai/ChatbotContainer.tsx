@@ -305,9 +305,7 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
             if (!welcome) return prev;
             const nextContent = getWelcomeMessage(sessionUserName);
             if (welcome.content === nextContent) return prev;
-            return prev.map((message) =>
-                message.id === 'welcome' ? { ...message, content: nextContent } : message,
-            );
+            return prev.map((message) => (message.id === 'welcome' ? { ...message, content: nextContent } : message));
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sessionUserName, mode]);

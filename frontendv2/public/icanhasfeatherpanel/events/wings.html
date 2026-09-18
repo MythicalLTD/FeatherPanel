@@ -501,7 +501,7 @@ public static function processEvents(PluginEvents $evt): void
   <p class="muted"><strong>Callback parameters:</strong> array reset results.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> node, reset_result</p>
+  <p class="muted"><strong>Data keys:</strong> node, queued_auto_starts, reset_result</p>
 
   <h3>Emitted From</h3>
   <ul>
@@ -514,9 +514,9 @@ use App\Plugins\Events\Events\WingsEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(WingsEvent::onWingsServersResetCompleted(), function ($node, $resetResult) {
+    $evt->on(WingsEvent::onWingsServersResetCompleted(), function ($node, $queuedAutoStarts, $resetResult) {
         // Handle featherpanel:wings:servers:reset:completed
-        // Data keys: node, reset_result
+        // Data keys: node, queued_auto_starts, reset_result
     });
 }</code></pre>
 </article>

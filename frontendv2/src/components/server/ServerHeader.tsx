@@ -192,9 +192,7 @@ export default function ServerHeader({
                 <Button
                     variant='outline'
                     size='sm'
-                    disabled={
-                        actionLoading === 'start' || !connectionLive || !isOfflineStatus(serverStatus)
-                    }
+                    disabled={actionLoading === 'start' || !connectionLive || !isOfflineStatus(serverStatus)}
                     onClick={() => handleAction('start', onStart)}
                     className='flex items-center gap-2 border-emerald-600/40 bg-emerald-600 text-white hover:bg-emerald-600/90 hover:text-white disabled:border-emerald-600/20 disabled:bg-emerald-600/40 disabled:text-white/70'
                 >

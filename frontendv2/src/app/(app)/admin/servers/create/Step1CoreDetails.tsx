@@ -156,7 +156,7 @@ export function Step1CoreDetails({
                         />
                     </div>
 
-                    <div className='space-y-3 rounded-xl border border-border/50 bg-muted/20 p-4'>
+                    <div className='border-border/50 bg-muted/20 space-y-3 rounded-xl border p-4'>
                         <Label>{t('admin.servers.edit.details.auto_start_delay')}</Label>
                         <Input
                             type='number'

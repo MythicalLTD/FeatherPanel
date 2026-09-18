@@ -944,7 +944,7 @@ class ServerService
 
             // Background pulls return 202; foreground success is 200.
             return new WingsResponse(is_array($response) ? $response : [], $foreground ? 200 : 202);
-        } catch (\App\Services\Wings\Exceptions\WingsRequestException $e) {
+        } catch (WingsRequestException $e) {
             $payload = [
                 'error' => $e->getMessage(),
             ];
