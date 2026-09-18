@@ -49,6 +49,15 @@ type TrackedAxiosConfig = InternalAxiosRequestConfig & {
 const MAX_ENTRIES = 200;
 const MAX_BODY_CHARS = 120_000;
 
+/** `crypto.randomUUID` is missing in non-secure contexts (plain HTTP). */
+function createId(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+
+    return `id-${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`;
+}
+
 let entries: PanelApiHistoryEntry[] = [];
 const listeners = new Set<() => void>();
 
@@ -229,7 +238,7 @@ function recordFromAxios(
     const responseStatus = response?.status ?? error?.response?.status ?? null;
 
     pushEntry({
-        id: tracked._panelApiId ?? crypto.randomUUID(),
+        id: tracked._panelApiId ?? createId(),
         timestamp: Date.now(),
         method,
         url: path,
@@ -266,7 +275,7 @@ export function attachPanelApiHistoryInterceptor(client: AxiosInstance): void {
             tracked._panelApiStart = performance.now();
         }
         if (!tracked._panelApiId) {
-            tracked._panelApiId = crypto.randomUUID();
+            tracked._panelApiId = createId();
         }
         if (!tracked._panelApiSource) {
             tracked._panelApiSource = 'captured';
@@ -322,7 +331,7 @@ export async function sendPanelApiRequest(params: PanelApiReplayParams): Promise
         headers['Content-Type'] = 'application/json';
     }
 
-    const id = crypto.randomUUID();
+    const id = createId();
     const config: TrackedAxiosConfig = {
         method,
         url: path,
