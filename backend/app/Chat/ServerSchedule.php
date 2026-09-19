@@ -31,6 +31,22 @@ class ServerSchedule
     private static string $table = 'featherpanel_server_schedules';
 
     /**
+     * Whether a value is acceptable for the is_active / is_processing flags.
+     *
+     * Accepts real PHP booleans (is_numeric(true) === false in PHP, so a JSON
+     * `true`/`false` body value - the natural shape a JSON API client sends -
+     * was previously rejected) as well as numeric 0/1.
+     */
+    public static function isValidActiveFlag(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return true;
+        }
+
+        return is_numeric($value) && in_array((int) $value, [0, 1], true);
+    }
+
+    /**
      * Create a new server schedule.
      *
      * @param array $data Associative array of schedule fields
@@ -79,7 +95,7 @@ class ServerSchedule
                     return false;
                 }
             } elseif (in_array($field, ['is_active', 'is_processing'])) {
-                if (!is_numeric($data[$field]) || !in_array((int) $data[$field], [0, 1])) {
+                if (!self::isValidActiveFlag($data[$field])) {
                     $sanitizedData = self::sanitizeDataForLogging($data);
                     App::getInstance(true)->getLogger()->error('Invalid ' . $field . ': ' . $data[$field] . ' for schedule: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
 
@@ -103,6 +119,12 @@ class ServerSchedule
 
             return false;
         }
+
+        // Normalize accepted boolean values (JSON true/false) to 0/1 so the
+        // INSERT always binds a plain int; PDO's native bool binding for
+        // MySQL is inconsistent across drivers.
+        $data['is_active'] = (int) $data['is_active'];
+        $data['is_processing'] = (int) $data['is_processing'];
 
         // Set default values for optional fields
         $data['only_when_online'] = $data['only_when_online'] ?? 0;
@@ -336,6 +358,14 @@ class ServerSchedule
                 App::getInstance(true)->getLogger()->error('No fields to update');
 
                 return false;
+            }
+            // Normalize accepted boolean values (JSON true/false) to 0/1, matching
+            // createSchedule() - PDO's native bool binding for MySQL is
+            // inconsistent across drivers.
+            foreach (['is_active', 'is_processing'] as $boolField) {
+                if (array_key_exists($boolField, $data)) {
+                    $data[$boolField] = (int) $data[$boolField];
+                }
             }
             $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
             $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE id = :id';
