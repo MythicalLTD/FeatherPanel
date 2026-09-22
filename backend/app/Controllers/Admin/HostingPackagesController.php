@@ -22,6 +22,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\HostingPackagesEvent;
 
 class HostingPackagesController
 {
@@ -59,6 +60,8 @@ class HostingPackagesController
 
         $pkg = HostingPackage::getById($id);
 
+        self::emitPluginEvent(HostingPackagesEvent::onHostingPackageCreated(), ['package' => $pkg]);
+
         return ApiResponse::success($pkg, 'Hosting package created', 201);
     }
 
@@ -79,7 +82,13 @@ class HostingPackagesController
             return ApiResponse::error('Failed to update hosting package', 'UPDATE_FAILED', 500);
         }
 
-        return ApiResponse::success(HostingPackage::getById($id), 'Hosting package updated', 200);
+        $updated = HostingPackage::getById($id);
+        self::emitPluginEvent(HostingPackagesEvent::onHostingPackageUpdated(), [
+            'package_id' => $id,
+            'package' => $updated,
+        ]);
+
+        return ApiResponse::success($updated, 'Hosting package updated', 200);
     }
 
     #[OA\Delete(path: '/api/admin/hosting-packages/{id}', summary: 'Delete hosting package', tags: ['Admin - Hosting packages'])]
@@ -93,6 +102,11 @@ class HostingPackagesController
         if (!HostingPackage::delete($id)) {
             return ApiResponse::error('Failed to delete hosting package', 'DELETE_FAILED', 500);
         }
+
+        self::emitPluginEvent(HostingPackagesEvent::onHostingPackageDeleted(), [
+            'package_id' => $id,
+            'package' => $pkg,
+        ]);
 
         return ApiResponse::success(null, 'Hosting package deleted', 200);
     }

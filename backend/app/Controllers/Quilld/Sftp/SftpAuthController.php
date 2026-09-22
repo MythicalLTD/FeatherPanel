@@ -28,6 +28,7 @@ use App\Helpers\WebSpaceGateway;
 use App\Chat\WebSpaceSftpAccount;
 use App\Helpers\PermissionHelper;
 use App\WebSpaceSubuserPermissions;
+use App\Plugins\Events\Events\QuilldEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -95,6 +96,12 @@ class SftpAuthController
             }
 
             App::getInstance(true)->getLogger()->info('Quilld SFTP auth success for webspace ' . $spaceUuid);
+
+            self::emitPluginEvent(QuilldEvent::onQuilldSftpAuthenticated(), [
+                'webspace_uuid' => $spaceUuid,
+                'user_uuid' => $userUuid,
+                'permissions' => $permissions,
+            ]);
 
             return ApiResponse::sendManualResponse([
                 'server' => $spaceUuid,
@@ -220,5 +227,13 @@ class SftpAuthController
         }
 
         return null;
+    }
+
+    private static function emitPluginEvent(string $event, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($event, $payload);
+        }
     }
 }

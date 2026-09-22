@@ -40,25 +40,38 @@ function getControllerFiles(dir, files = []) {
     return files;
 }
 
+const APP_DIR = path.join(__dirname, '../../backend/app');
+const EMIT_SCAN_DIRS = [
+    CONTROLLERS_DIR,
+    path.join(APP_DIR, 'Helpers'),
+    path.join(APP_DIR, 'Services'),
+    path.join(APP_DIR, 'Middleware'),
+    path.join(APP_DIR, 'Chat'),
+];
+
 function parseEventEmissions() {
-    const files = getControllerFiles(CONTROLLERS_DIR);
+    const files = [];
+    EMIT_SCAN_DIRS.forEach((dir) => getControllerFiles(dir, files));
     const eventDataMap = new Map(); // Map: "Category::method" -> data keys
     
     files.forEach(filePath => {
         try {
             const content = fs.readFileSync(filePath, 'utf8');
             
-            // Match: $eventManager->emit(EventClass::method(), [array]);
-            // More flexible pattern to handle various formatting
+            // Match EventClass::onMethod() used with emit helpers / eventManager
             const emitPatterns = [
-                /eventManager\s*->\s*emit\s*\(\s*([A-Za-z0-9_\\]+)::(\w+)\(\)\s*,\s*\[(.*?)\]\s*\)/gs,
-                /\$eventManager\s*->\s*emit\s*\(\s*([A-Za-z0-9_\\]+)::(\w+)\(\)\s*,\s*\[(.*?)\]\s*\)/gs
+                /(?:eventManager|EventManager)\s*->\s*emit\s*\(\s*([A-Za-z0-9_\\]+)::(\w+)\(\)\s*,\s*\[(.*?)\]\s*\)/gs,
+                /(?:emitPluginEvent|emitVdsEvent|emitWebEvent|emitEvent|emitHookEvent|emitAuthEvent|emitWings)\s*\(\s*([A-Za-z0-9_\\]+)::(\w+)\(\)\s*,\s*\[(.*?)\]\s*\)/gs,
+                /WebSpacePluginEvents\s*::\s*emit\s*\(\s*([A-Za-z0-9_\\]+)::(\w+)\(\)\s*,/gs,
+                // Fallback: any Class::onX() reference outside event definition files counts as wired
             ];
             
             emitPatterns.forEach(pattern => {
                 let match;
                 while ((match = pattern.exec(content)) !== null) {
-                    const [, eventClass, method, dataArray] = match;
+                    const eventClass = match[1];
+                    const method = match[2];
+                    const dataArray = match[3] || '';
                     
                     // Extract category from class name
                     const categoryMatch = eventClass.match(/([A-Za-z]+)Event$/);
@@ -84,6 +97,27 @@ function parseEventEmissions() {
                     });
                 }
             });
+
+            // Also mark EventClass::onMethod() references when used as emit first arg via variable helpers
+            const refPattern = /([A-Za-z0-9_\\]+)::(on\w+)\(\s*\)/g;
+            let refMatch;
+            while ((refMatch = refPattern.exec(content)) !== null) {
+                const eventClass = refMatch[1].split('\\').pop();
+                const method = refMatch[2];
+                const categoryMatch = eventClass.match(/([A-Za-z]+)Event$/);
+                if (!categoryMatch) continue;
+                // Only count if near an emit-like call in the same file
+                if (!/emit/i.test(content)) continue;
+                const category = categoryMatch[1];
+                const key = `${category}::${method}`;
+                if (!eventDataMap.has(key)) {
+                    eventDataMap.set(key, []);
+                }
+                eventDataMap.get(key).push({
+                    keys: [],
+                    file: path.relative(path.join(__dirname, '../..'), filePath)
+                });
+            }
         } catch {
             // Skip files that can't be read
         }
@@ -157,6 +191,9 @@ function parseAllEvents() {
             if (eventData) {
                 event.actualData = eventData.keys;
                 event.sourceFiles = eventData.files;
+                event.emitted = true;
+            } else {
+                event.emitted = false;
             }
             
             allEvents.push(event);
@@ -186,12 +223,17 @@ function sanitizeCategory(category) {
         .replace(/^-+|-+$/g, '');
 }
 
-function generateMainEventsPage(categories, totalEvents) {
+function generateMainEventsPage(categories, totalEvents, emittedCount, definedOnlyCount, grouped) {
     const categoryItems = categories
         .map((category) => {
             const sanitized = sanitizeCategory(category);
+            const list = grouped[category] || [];
+            const emitted = list.filter((e) => e.emitted).length;
+            const definedOnly = list.length - emitted;
             return `<li>
     <a href="/icanhasfeatherpanel/events/${sanitized}.html">${category}</a>
+    <span class="badge" style="border-color:#166534;color:#86efac;">${emitted} emitted</span>
+    ${definedOnly > 0 ? `<span class="badge" style="border-color:#854d0e;color:#fde68a;">${definedOnly} defined only</span>` : ''}
 </li>`;
         })
         .join('\n');
@@ -237,7 +279,13 @@ function generateMainEventsPage(categories, totalEvents) {
       <div style="margin-top: 0.75rem;">
         <span class="badge">${categories.length} event categories</span>
         <span class="badge">${totalEvents} total events</span>
+        <span class="badge" style="border-color:#166534;color:#86efac;">${emittedCount} emitted</span>
+        <span class="badge" style="border-color:#854d0e;color:#fde68a;">${definedOnlyCount} defined only</span>
       </div>
+      <p class="muted" style="margin-top:0.75rem;">
+        <strong>Emitted</strong> events have at least one runtime <code>emit</code> site in the backend.
+        <strong>Defined only</strong> events exist in the catalog but are not currently fired.
+      </p>
     </header>
 
     <section>
@@ -322,8 +370,12 @@ function generateCategoryPage(category, events) {
                 '}',
             ].join('\n');
 
+            const statusBadge = event.emitted
+                ? '<span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span>'
+                : '<span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span>';
+
             return `<article class="card">
-  <h2><code>${event.name}</code></h2>
+  <h2><code>${event.name}</code> ${statusBadge}</h2>
   <p class="muted"><strong>Method:</strong> <code>${event.method}</code></p>
   <p class="muted"><strong>Callback parameters:</strong> ${event.callback}</p>
 
@@ -360,6 +412,7 @@ ${sourceFiles}
     pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
     .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
     .back-link { margin-bottom: 1.5rem; display: inline-block; }
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-left: 0.5rem; vertical-align: middle; }
   </style>
 </head>
 <body>
@@ -367,7 +420,10 @@ ${sourceFiles}
     <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
     <header>
       <h1>${category}</h1>
-      <p class="muted">${events.length} event${events.length !== 1 ? 's' : ''} in this category.</p>
+      <p class="muted">${events.length} event${events.length !== 1 ? 's' : ''} in this category.
+        ${events.filter((e) => e.emitted).length} emitted,
+        ${events.filter((e) => !e.emitted).length} defined only.
+      </p>
     </header>
 
 ${eventItems}
@@ -390,7 +446,9 @@ const { events, categories, grouped } = parseAllEvents();
 
 // Generate main events page
 const mainPagePath = path.join(EVENTS_DOCS_DIR, 'index.html');
-const mainPage = generateMainEventsPage(categories, events.length);
+const emittedCount = events.filter((e) => e.emitted).length;
+const definedOnlyCount = events.length - emittedCount;
+const mainPage = generateMainEventsPage(categories, events.length, emittedCount, definedOnlyCount, grouped);
 fs.writeFileSync(mainPagePath, mainPage);
 console.log(`✓ Main events page: ${mainPagePath}`);
 
@@ -406,4 +464,4 @@ categories.forEach(category => {
 console.log(`\n✅ Plugin events documentation generated successfully!`);
 console.log(`   - Main page: /icanhasfeatherpanel/events`);
 console.log(`   - ${categories.length} category pages`);
-console.log(`   - ${events.length} total events`);
+console.log(`   - ${events.length} total events (${emittedCount} emitted, ${definedOnlyCount} defined only)`);

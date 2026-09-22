@@ -17,6 +17,7 @@
     pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
     .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
     .back-link { margin-bottom: 1.5rem; display: inline-block; }
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-left: 0.5rem; vertical-align: middle; }
   </style>
 </head>
 <body>
@@ -24,11 +25,14 @@
     <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
     <header>
       <h1>User</h1>
-      <p class="muted">10 events in this category.</p>
+      <p class="muted">10 events in this category.
+        4 emitted,
+        6 defined only.
+      </p>
     </header>
 
 <article class="card">
-  <h2><code>featherpanel:user:api:create</code></h2>
+  <h2><code>featherpanel:user:api_client:created</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onUserApiKeyCreated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string user uuid, string api key id.</p>
 
@@ -47,14 +51,14 @@ use App\Plugins\Events\Events\UserEvent;
 public static function processEvents(PluginEvents $evt): void
 {
     $evt->on(UserEvent::onUserApiKeyCreated(), function ($uuid, $id) {
-        // Handle featherpanel:user:api:create
+        // Handle featherpanel:user:api_client:created
         // Parameters: string user uuid, string api key id.
     });
 }</code></pre>
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:user:api:delete</code></h2>
+  <h2><code>featherpanel:user:api_client:deleted</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onUserApiKeyDeleted</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string user uuid, string api key id.</p>
 
@@ -73,14 +77,14 @@ use App\Plugins\Events\Events\UserEvent;
 public static function processEvents(PluginEvents $evt): void
 {
     $evt->on(UserEvent::onUserApiKeyDeleted(), function ($uuid, $id) {
-        // Handle featherpanel:user:api:delete
+        // Handle featherpanel:user:api_client:deleted
         // Parameters: string user uuid, string api key id.
     });
 }</code></pre>
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:user:api:update</code></h2>
+  <h2><code>featherpanel:user:api_client:updated</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onUserApiKeyUpdated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string user uuid, string api key id.</p>
 
@@ -99,14 +103,14 @@ use App\Plugins\Events\Events\UserEvent;
 public static function processEvents(PluginEvents $evt): void
 {
     $evt->on(UserEvent::onUserApiKeyUpdated(), function ($uuid, $id) {
-        // Handle featherpanel:user:api:update
+        // Handle featherpanel:user:api_client:updated
         // Parameters: string user uuid, string api key id.
     });
 }</code></pre>
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:user:created</code></h2>
+  <h2><code>featherpanel:user:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onUserCreated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array user data, int user id, array created by.</p>
 
@@ -133,16 +137,16 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:user:deleted</code></h2>
+  <h2><code>featherpanel:user:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onUserDeleted</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array user data, array deleted by.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
+  <p class="muted"><strong>Data keys:</strong> deleted_by, user</p>
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Services/User/UserDeletionService.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -151,15 +155,15 @@ use App\Plugins\Events\Events\UserEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(UserEvent::onUserDeleted(), function ($data, $by) {
+    $evt->on(UserEvent::onUserDeleted(), function ($deletedBy, $user) {
         // Handle featherpanel:user:deleted
-        // Parameters: array user data, array deleted by.
+        // Data keys: deleted_by, user
     });
 }</code></pre>
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:user:ssh:create</code></h2>
+  <h2><code>featherpanel:user:ssh_key:created</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onUserSshKeyCreated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string user uuid, string ssh key id.</p>
 
@@ -178,14 +182,14 @@ use App\Plugins\Events\Events\UserEvent;
 public static function processEvents(PluginEvents $evt): void
 {
     $evt->on(UserEvent::onUserSshKeyCreated(), function ($uuid, $id) {
-        // Handle featherpanel:user:ssh:create
+        // Handle featherpanel:user:ssh_key:created
         // Parameters: string user uuid, string ssh key id.
     });
 }</code></pre>
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:user:ssh:delete</code></h2>
+  <h2><code>featherpanel:user:ssh_key:deleted</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onUserSshKeyDeleted</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string user uuid, string ssh key id.</p>
 
@@ -204,14 +208,14 @@ use App\Plugins\Events\Events\UserEvent;
 public static function processEvents(PluginEvents $evt): void
 {
     $evt->on(UserEvent::onUserSshKeyDeleted(), function ($uuid, $id) {
-        // Handle featherpanel:user:ssh:delete
+        // Handle featherpanel:user:ssh_key:deleted
         // Parameters: string user uuid, string ssh key id.
     });
 }</code></pre>
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:user:ssh:update</code></h2>
+  <h2><code>featherpanel:user:ssh_key:updated</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onUserSshKeyUpdated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string user uuid, string ssh key id.</p>
 
@@ -230,14 +234,14 @@ use App\Plugins\Events\Events\UserEvent;
 public static function processEvents(PluginEvents $evt): void
 {
     $evt->on(UserEvent::onUserSshKeyUpdated(), function ($uuid, $id) {
-        // Handle featherpanel:user:ssh:update
+        // Handle featherpanel:user:ssh_key:updated
         // Parameters: string user uuid, string ssh key id.
     });
 }</code></pre>
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:user:update</code></h2>
+  <h2><code>featherpanel:user:update</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onUserUpdate</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string user uuid.</p>
 
@@ -263,7 +267,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:user:updated</code></h2>
+  <h2><code>featherpanel:user:updated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onUserUpdated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array user data, array updated data, array updated by.</p>
 

@@ -133,46 +133,6 @@ class WebSpacesController
         ], 'OK', 200);
     }
 
-    #[OA\Post(path: '/api/user/webspaces/create', summary: 'Create a WebSpace', tags: ['User - WebSpaces'])]
-    public function create(Request $request): Response
-    {
-        $user = $request->attributes->get('user');
-        if (!$user) {
-            return ApiResponse::error('User not authenticated', 'NOT_AUTHENTICATED', 401);
-        }
-
-        $content = json_decode($request->getContent(), true);
-        if (!is_array($content)) {
-            return ApiResponse::error('Invalid JSON payload', 'INVALID_JSON', 400);
-        }
-
-        $limit = (int) ($user['webspace_limit'] ?? 0);
-        $owned = WebSpace::countByOwnerId((int) $user['id']);
-        if (WebSpaceLimits::isLimitReached($limit, $owned)) {
-            return ApiResponse::error(
-                'WebSpace limit reached for this account',
-                'WEBSPACE_LIMIT_REACHED',
-                400,
-                ['limit' => $limit, 'owned' => $owned],
-            );
-        }
-
-        $content['owner_id'] = (int) $user['id'];
-
-        $adminRequest = Request::create(
-            '/api/admin/webspaces',
-            'PUT',
-            [],
-            [],
-            [],
-            ['CONTENT_TYPE' => 'application/json'],
-            json_encode($content),
-        );
-        $adminRequest->attributes->set('user', $user);
-
-        return (new \App\Controllers\Admin\WebSpacesController())->create($adminRequest);
-    }
-
     public function utilization(Request $request, string $uuidShort): Response
     {
         $resolved = $this->resolveAccessible($request, $uuidShort);

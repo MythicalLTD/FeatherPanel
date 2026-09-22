@@ -31,6 +31,7 @@ use App\Plugins\PluginDependencies;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\PluginsSettingsEvent;
 
 #[OA\Schema(
     schema: 'PluginInfo',
@@ -320,7 +321,7 @@ class PluginsController
             global $eventManager;
 
             if (isset($eventManager) && $eventManager !== null) {
-                $eventManager->emit('PluginsSettingsEvent::onPluginSettingUpdate', [
+                $eventManager->emit(PluginsSettingsEvent::onPluginSettingUpdate(), [
                     'identifier' => $identifier,
                     'key' => $key,
                     'value' => $value,
@@ -406,7 +407,7 @@ class PluginsController
             global $eventManager;
 
             if (isset($eventManager) && $eventManager !== null) {
-                $eventManager->emit('PluginsSettingsEvent::onPluginSettingDelete', [
+                $eventManager->emit(PluginsSettingsEvent::onPluginSettingDelete(), [
                     'identifier' => $identifier,
                     'key' => $key,
                 ]);

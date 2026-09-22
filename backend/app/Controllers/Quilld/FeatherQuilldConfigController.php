@@ -20,6 +20,7 @@ namespace App\Controllers\Quilld;
 use App\Chat\WebNode;
 use App\Helpers\ApiResponse;
 use App\Helpers\AppUrlHelper;
+use App\Plugins\Events\Events\QuilldEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -43,6 +44,11 @@ class FeatherQuilldConfigController
         $panelUrl = AppUrlHelper::wingsRemoteUrl();
         $yaml = WebNode::generateFeatherQuilldRuntimeConfigYaml($webNode, $panelUrl);
 
+        self::emitPluginEvent(QuilldEvent::onQuilldConfigRetrieved(), [
+            'web_node_id' => $webNode['id'] ?? null,
+            'panel_url' => $panelUrl,
+        ]);
+
         return new Response($yaml, 200, [
             'Content-Type' => 'application/x-yaml',
             'Content-Disposition' => 'inline; filename="config.yml"',
@@ -50,5 +56,13 @@ class FeatherQuilldConfigController
             'Access-Control-Allow-Methods' => 'GET, OPTIONS',
             'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With',
         ]);
+    }
+
+    private static function emitPluginEvent(string $event, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($event, $payload);
+        }
     }
 }

@@ -17,6 +17,7 @@
     pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
     .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
     .back-link { margin-bottom: 1.5rem; display: inline-block; }
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-left: 0.5rem; vertical-align: middle; }
   </style>
 </head>
 <body>
@@ -24,20 +25,23 @@
     <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
     <header>
       <h1>RateLimiter</h1>
-      <p class="muted">4 events in this category.</p>
+      <p class="muted">4 events in this category.
+        4 emitted,
+        0 defined only.
+      </p>
     </header>
 
 <article class="card">
-  <h2><code>featherpanel:rate-limiter:bulk:update</code></h2>
+  <h2><code>featherpanel:rate-limiter:bulk:update</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onRateLimiterBulkUpdated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, array updated routes, array errors.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
+  <p class="muted"><strong>Data keys:</strong> errors, updated_routes, user_uuid</p>
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Controllers/Admin/RateLimitController.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -46,24 +50,24 @@ use App\Plugins\Events\Events\RateLimiterEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(RateLimiterEvent::onRateLimiterBulkUpdated(), function ($uuid, $routes, $errors) {
+    $evt->on(RateLimiterEvent::onRateLimiterBulkUpdated(), function ($errors, $updatedRoutes, $userUuid) {
         // Handle featherpanel:rate-limiter:bulk:update
-        // Parameters: string|null user uuid, array updated routes, array errors.
+        // Data keys: errors, updated_routes, user_uuid
     });
 }</code></pre>
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:rate-limiter:delete</code></h2>
+  <h2><code>featherpanel:rate-limiter:delete</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onRateLimiterDeleted</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string route name.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
+  <p class="muted"><strong>Data keys:</strong> route_name, user_uuid</p>
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Controllers/Admin/RateLimitController.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -72,24 +76,24 @@ use App\Plugins\Events\Events\RateLimiterEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(RateLimiterEvent::onRateLimiterDeleted(), function ($uuid, $name) {
+    $evt->on(RateLimiterEvent::onRateLimiterDeleted(), function ($routeName, $userUuid) {
         // Handle featherpanel:rate-limiter:delete
-        // Parameters: string|null user uuid, string route name.
+        // Data keys: route_name, user_uuid
     });
 }</code></pre>
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:rate-limiter:global:update</code></h2>
+  <h2><code>featherpanel:rate-limiter:global:update</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onRateLimiterGlobalUpdated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, bool enabled.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
+  <p class="muted"><strong>Data keys:</strong> enabled, user_uuid</p>
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Controllers/Admin/RateLimitController.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -98,24 +102,24 @@ use App\Plugins\Events\Events\RateLimiterEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(RateLimiterEvent::onRateLimiterGlobalUpdated(), function ($uuid, $enabled) {
+    $evt->on(RateLimiterEvent::onRateLimiterGlobalUpdated(), function ($enabled, $userUuid) {
         // Handle featherpanel:rate-limiter:global:update
-        // Parameters: string|null user uuid, bool enabled.
+        // Data keys: enabled, user_uuid
     });
 }</code></pre>
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:rate-limiter:update</code></h2>
+  <h2><code>featherpanel:rate-limiter:update</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onRateLimiterUpdated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string route name, array config.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
+  <p class="muted"><strong>Data keys:</strong> config, route_name, user_uuid</p>
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Controllers/Admin/RateLimitController.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -124,9 +128,9 @@ use App\Plugins\Events\Events\RateLimiterEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(RateLimiterEvent::onRateLimiterUpdated(), function ($uuid, $name, $config) {
+    $evt->on(RateLimiterEvent::onRateLimiterUpdated(), function ($config, $routeName, $userUuid) {
         // Handle featherpanel:rate-limiter:update
-        // Parameters: string|null user uuid, string route name, array config.
+        // Data keys: config, route_name, user_uuid
     });
 }</code></pre>
 </article>

@@ -27,6 +27,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Helpers\PermissionHelper;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\MountsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -134,6 +135,12 @@ class MountsController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        self::emitPluginEvent(MountsEvent::onMountCreated(), [
+            'mount_id' => $newId,
+            'mount' => Mount::getMountById($newId),
+            'created_by' => $request->attributes->get('user'),
+        ]);
+
         return ApiResponse::success(['mount_id' => $newId], 'Mount created successfully', 201);
     }
 
@@ -204,7 +211,14 @@ class MountsController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
-        return ApiResponse::success(['mount' => self::enrichMount(Mount::getMountById($id) ?? [])], 'Mount updated successfully', 200);
+        $mount = Mount::getMountById($id) ?? [];
+        self::emitPluginEvent(MountsEvent::onMountUpdated(), [
+            'mount_id' => $id,
+            'mount' => $mount,
+            'updated_by' => $request->attributes->get('user'),
+        ]);
+
+        return ApiResponse::success(['mount' => self::enrichMount($mount)], 'Mount updated successfully', 200);
     }
 
     #[OA\Delete(path: '/api/admin/mounts/{id}', summary: 'Delete mount', tags: ['Admin - Mounts'])]
@@ -224,6 +238,11 @@ class MountsController
             'name' => 'delete_mount',
             'context' => 'Deleted mount ID ' . $id,
             'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        self::emitPluginEvent(MountsEvent::onMountDeleted(), [
+            'mount_id' => $id,
+            'deleted_by' => $request->attributes->get('user'),
         ]);
 
         return ApiResponse::success([], 'Mount deleted successfully', 200);

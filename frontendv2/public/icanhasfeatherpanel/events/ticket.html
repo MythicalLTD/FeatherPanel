@@ -17,6 +17,7 @@
     pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
     .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
     .back-link { margin-bottom: 1.5rem; display: inline-block; }
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-left: 0.5rem; vertical-align: middle; }
   </style>
 </head>
 <body>
@@ -24,11 +25,14 @@
     <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
     <header>
       <h1>Ticket</h1>
-      <p class="muted">21 events in this category.</p>
+      <p class="muted">21 events in this category.
+        20 emitted,
+        1 defined only.
+      </p>
     </header>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:attachment:created</code></h2>
+  <h2><code>featherpanel:ticket:attachment:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketAttachmentCreated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array ticket data, array attachment data, int attachment id, string user uuid.</p>
 
@@ -54,7 +58,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:attachment:deleted</code></h2>
+  <h2><code>featherpanel:ticket:attachment:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketAttachmentDeleted</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array ticket data, int attachment id, string user uuid.</p>
 
@@ -80,7 +84,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:attachment:updated</code></h2>
+  <h2><code>featherpanel:ticket:attachment:updated</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketAttachmentUpdated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array ticket data, array attachment data, array updated data, int attachment id, string user uuid.</p>
 
@@ -106,7 +110,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:category:created</code></h2>
+  <h2><code>featherpanel:ticket:category:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketCategoryCreated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array category data, int category id, string user uuid.</p>
 
@@ -132,7 +136,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:category:deleted</code></h2>
+  <h2><code>featherpanel:ticket:category:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketCategoryDeleted</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array category data, int category id, string user uuid.</p>
 
@@ -158,7 +162,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:category:updated</code></h2>
+  <h2><code>featherpanel:ticket:category:updated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketCategoryUpdated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array category data, array updated data, int category id, string user uuid.</p>
 
@@ -184,7 +188,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:closed</code></h2>
+  <h2><code>featherpanel:ticket:closed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketClosed</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array ticket data, string user uuid.</p>
 
@@ -210,7 +214,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:created</code></h2>
+  <h2><code>featherpanel:ticket:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketCreated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array ticket data, int ticket id, string user uuid.</p>
 
@@ -238,7 +242,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:deleted</code></h2>
+  <h2><code>featherpanel:ticket:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketDeleted</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array ticket data, string user uuid.</p>
 
@@ -265,7 +269,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:message:created</code></h2>
+  <h2><code>featherpanel:ticket:message:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketMessageCreated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array ticket data, array message data, int message id, string user uuid.</p>
 
@@ -293,7 +297,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:message:deleted</code></h2>
+  <h2><code>featherpanel:ticket:message:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketMessageDeleted</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array ticket data, int message id, string user uuid.</p>
 
@@ -320,7 +324,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:message:updated</code></h2>
+  <h2><code>featherpanel:ticket:message:updated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketMessageUpdated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array ticket data, array message data, array updated data, int message id, string user uuid.</p>
 
@@ -346,7 +350,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:priority:created</code></h2>
+  <h2><code>featherpanel:ticket:priority:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketPriorityCreated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array priority data, int priority id, string user uuid.</p>
 
@@ -372,7 +376,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:priority:deleted</code></h2>
+  <h2><code>featherpanel:ticket:priority:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketPriorityDeleted</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array priority data, int priority id, string user uuid.</p>
 
@@ -398,7 +402,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:priority:updated</code></h2>
+  <h2><code>featherpanel:ticket:priority:updated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketPriorityUpdated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array priority data, array updated data, int priority id, string user uuid.</p>
 
@@ -424,7 +428,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:reopened</code></h2>
+  <h2><code>featherpanel:ticket:reopened</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketReopened</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array ticket data, string user uuid.</p>
 
@@ -450,7 +454,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:status:changed</code></h2>
+  <h2><code>featherpanel:ticket:status:changed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketStatusChanged</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array ticket data, string old status, string new status, string user uuid.</p>
 
@@ -476,7 +480,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:status:created</code></h2>
+  <h2><code>featherpanel:ticket:status:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketStatusCreated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array status data, int status id, string user uuid.</p>
 
@@ -502,7 +506,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:status:deleted</code></h2>
+  <h2><code>featherpanel:ticket:status:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketStatusDeleted</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array status data, int status id, string user uuid.</p>
 
@@ -528,7 +532,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:status:updated</code></h2>
+  <h2><code>featherpanel:ticket:status:updated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketStatusUpdated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array status data, array updated data, int status id, string user uuid.</p>
 
@@ -554,7 +558,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:ticket:updated</code></h2>
+  <h2><code>featherpanel:ticket:updated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onTicketUpdated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array ticket data, array updated data, string user uuid.</p>
 

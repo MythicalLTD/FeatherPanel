@@ -16,12 +16,10 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useMemo, useState, Fragment } from 'react';
-import Link from 'next/link';
 import axios from 'axios';
 import {
     LayoutGrid,
     List,
-    Plus,
     RefreshCw,
     TriangleAlert,
     Filter,
@@ -48,7 +46,6 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { WebSpaceCard, type DashboardWebSpace } from '@/components/webspace/WebSpaceCard';
 import { WebSpaceEmptyState } from '@/components/webspace/WebSpaceEmptyState';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/featherui/Button';
 import { getWebSpaceRouteId } from '@/lib/webspace-switch';
 import { displayWebSpaceStatus } from '@/lib/webspace-utils';
 
@@ -192,12 +189,6 @@ export default function WebSpacesDashboardPage() {
                     <h1 className='text-2xl font-bold tracking-tight sm:text-4xl'>{t('webSpaces.title')}</h1>
                     <p className='text-muted-foreground mt-2 text-sm sm:text-lg'>{t('webSpaces.description')}</p>
                 </div>
-                <Button asChild>
-                    <Link href='/dashboard/webspaces/create'>
-                        <Plus className='mr-2 h-4 w-4' />
-                        {t('webSpaces.create.cta')}
-                    </Link>
-                </Button>
             </div>
 
             <WidgetRenderer widgets={getWidgets('dashboard-webspaces', 'after-header')} />

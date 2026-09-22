@@ -17,6 +17,7 @@
     pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
     .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
     .back-link { margin-bottom: 1.5rem; display: inline-block; }
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-left: 0.5rem; vertical-align: middle; }
   </style>
 </head>
 <body>
@@ -24,11 +25,14 @@
     <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
     <header>
       <h1>Auth</h1>
-      <p class="muted">18 events in this category.</p>
+      <p class="muted">18 events in this category.
+        18 emitted,
+        0 defined only.
+      </p>
     </header>
 
 <article class="card">
-  <h2><code>featherpanel:auth:2fa:enabled</code></h2>
+  <h2><code>featherpanel:auth:2fa:enabled</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuth2FAEnabled</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
 
@@ -54,7 +58,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:auth:2fa:failed</code></h2>
+  <h2><code>featherpanel:auth:2fa:failed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuth2FAFailed</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
 
@@ -80,7 +84,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:auth:2fa:setup</code></h2>
+  <h2><code>featherpanel:auth:2fa:setup</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuth2FASetup</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
 
@@ -106,7 +110,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:auth:2fa:verified</code></h2>
+  <h2><code>featherpanel:auth:2fa:verified</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuth2FAVerified</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
 
@@ -132,16 +136,16 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:auth:account:locked</code></h2>
+  <h2><code>featherpanel:auth:account:locked</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuthAccountLocked</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
+  <p class="muted"><strong>Data keys:</strong> already_locked, attempts, identifier, lockout_seconds</p>
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Helpers/AccountLockoutHelper.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -150,24 +154,24 @@ use App\Plugins\Events\Events\AuthEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(AuthEvent::onAuthAccountLocked(), function ($info) {
+    $evt->on(AuthEvent::onAuthAccountLocked(), function ($alreadyLocked, $attempts, $identifier, $lockoutSeconds) {
         // Handle featherpanel:auth:account:locked
-        // Parameters: array user info.
+        // Data keys: already_locked, attempts, identifier, lockout_seconds
     });
 }</code></pre>
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:auth:account:unlocked</code></h2>
+  <h2><code>featherpanel:auth:account:unlocked</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuthAccountUnlocked</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
+  <p class="muted"><strong>Data keys:</strong> identifier</p>
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Helpers/AccountLockoutHelper.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -176,24 +180,24 @@ use App\Plugins\Events\Events\AuthEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(AuthEvent::onAuthAccountUnlocked(), function ($info) {
+    $evt->on(AuthEvent::onAuthAccountUnlocked(), function ($identifier) {
         // Handle featherpanel:auth:account:unlocked
-        // Parameters: array user info.
+        // Data keys: identifier
     });
 }</code></pre>
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:auth:email:changed</code></h2>
+  <h2><code>featherpanel:auth:email:changed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuthEmailChanged</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array user info, string email.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
+  <p class="muted"><strong>Data keys:</strong> ip_address, new_email, old_email, user_uuid</p>
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Controllers/User/User/SessionController.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -202,15 +206,15 @@ use App\Plugins\Events\Events\AuthEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(AuthEvent::onAuthEmailChanged(), function ($info, $email) {
+    $evt->on(AuthEvent::onAuthEmailChanged(), function ($ipAddress, $newEmail, $oldEmail, $userUuid) {
         // Handle featherpanel:auth:email:changed
-        // Parameters: array user info, string email.
+        // Data keys: ip_address, new_email, old_email, user_uuid
     });
 }</code></pre>
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:auth:email:login:code:requested</code></h2>
+  <h2><code>featherpanel:auth:email:login:code:requested</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuthEmailLoginCodeRequested</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array user info, string ip_address.</p>
 
@@ -236,7 +240,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:auth:forgot:password</code></h2>
+  <h2><code>featherpanel:auth:forgot:password</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuthForgotPassword</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array user info, string reset_url, string reset_token.</p>
 
@@ -262,7 +266,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:auth:forgot:password:failed</code></h2>
+  <h2><code>featherpanel:auth:forgot:password:failed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuthForgotPasswordFailed</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string email, string reason.</p>
 
@@ -288,7 +292,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:auth:login:failed</code></h2>
+  <h2><code>featherpanel:auth:login:failed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuthLoginFailed</code></p>
   <p class="muted"><strong>Callback parameters:</strong> positional values from the emitted payload in key insertion order (see PluginEvents::emit).
      * Possible keys across emitters: email, error, ip_address, provider, reason, user, username, username_or_email.</p>
@@ -317,7 +321,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:auth:login:success</code></h2>
+  <h2><code>featherpanel:auth:login:success</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuthLoginSuccess</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
 
@@ -345,7 +349,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:auth:logout</code></h2>
+  <h2><code>featherpanel:auth:logout</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuthLogout</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
 
@@ -354,7 +358,7 @@ public static function processEvents(PluginEvents $evt): void
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Controllers/User/Auth/AuthLogoutController.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -371,16 +375,16 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:auth:password:changed</code></h2>
+  <h2><code>featherpanel:auth:password:changed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuthPasswordChanged</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
+  <p class="muted"><strong>Data keys:</strong> ip_address, user, user_uuid</p>
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Controllers/User/User/SessionController.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -389,15 +393,15 @@ use App\Plugins\Events\Events\AuthEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(AuthEvent::onAuthPasswordChanged(), function ($info) {
+    $evt->on(AuthEvent::onAuthPasswordChanged(), function ($ipAddress, $user, $userUuid) {
         // Handle featherpanel:auth:password:changed
-        // Parameters: array user info.
+        // Data keys: ip_address, user, user_uuid
     });
 }</code></pre>
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:auth:password:reset:failed</code></h2>
+  <h2><code>featherpanel:auth:password:reset:failed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuthPasswordResetFailed</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string email, string reason.</p>
 
@@ -423,7 +427,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:auth:register:success</code></h2>
+  <h2><code>featherpanel:auth:register:success</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuthRegisterSuccess</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
 
@@ -449,7 +453,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:auth:registration:failed</code></h2>
+  <h2><code>featherpanel:auth:registration:failed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuthRegistrationFailed</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string email, string reason.</p>
 
@@ -475,7 +479,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:auth:reset:password:success</code></h2>
+  <h2><code>featherpanel:auth:reset:password:success</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuthResetPasswordSuccess</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
 

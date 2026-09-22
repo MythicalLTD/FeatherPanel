@@ -23,6 +23,8 @@ use App\Chat\WebSpace;
 use App\Helpers\ApiResponse;
 use App\Chat\WebSpaceDnsZone;
 use App\Helpers\DnsProvisioner;
+use App\Helpers\WebSpacePluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -115,6 +117,13 @@ class WebSpaceDnsController
             // best-effort when zone is linked
         }
 
+        $user = $request->attributes->get('user');
+        WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceDnsZoneLinked(), WebSpacePluginEvents::basePayload(
+            is_array($user) ? ($user['uuid'] ?? null) : null,
+            $space,
+            ['zone' => $zone, 'delegation' => $delegation],
+        ));
+
         return ApiResponse::success([
             'zone' => $zone,
             'delegation' => $delegation,
@@ -135,6 +144,13 @@ class WebSpaceDnsController
         if (!WebSpaceDnsZone::delete($zoneId)) {
             return ApiResponse::error('Failed to unlink DNS zone', 'DELETE_FAILED', 500);
         }
+
+        $user = $request->attributes->get('user');
+        WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceDnsZoneUnlinked(), WebSpacePluginEvents::basePayload(
+            is_array($user) ? ($user['uuid'] ?? null) : null,
+            $space,
+            ['zone_id' => $zoneId],
+        ));
 
         return ApiResponse::success([], 'Zone unlinked', 200);
     }
@@ -186,6 +202,13 @@ class WebSpaceDnsController
         try {
             $record = $resolved['provider']->createRecord((string) $resolved['zone']['provider_zone_id'], $body);
 
+            $user = $request->attributes->get('user');
+            WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceDnsRecordCreated(), WebSpacePluginEvents::basePayload(
+                is_array($user) ? ($user['uuid'] ?? null) : null,
+                $resolved['space'],
+                ['zone_id' => $zoneId, 'record' => $record],
+            ));
+
             return ApiResponse::success(['record' => $record], 'Record created', 201);
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to create DNS record: ' . $e->getMessage(), 'CREATE_FAILED', 502);
@@ -216,6 +239,13 @@ class WebSpaceDnsController
                 $body,
             );
 
+            $user = $request->attributes->get('user');
+            WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceDnsRecordUpdated(), WebSpacePluginEvents::basePayload(
+                is_array($user) ? ($user['uuid'] ?? null) : null,
+                $resolved['space'],
+                ['zone_id' => $zoneId, 'record_id' => $recordId, 'record' => $record],
+            ));
+
             return ApiResponse::success(['record' => $record], 'Record updated', 200);
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to update DNS record: ' . $e->getMessage(), 'UPDATE_FAILED', 502);
@@ -231,6 +261,13 @@ class WebSpaceDnsController
 
         try {
             $resolved['provider']->deleteRecord((string) $resolved['zone']['provider_zone_id'], $recordId);
+
+            $user = $request->attributes->get('user');
+            WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceDnsRecordDeleted(), WebSpacePluginEvents::basePayload(
+                is_array($user) ? ($user['uuid'] ?? null) : null,
+                $resolved['space'],
+                ['zone_id' => $zoneId, 'record_id' => $recordId],
+            ));
 
             return ApiResponse::success([], 'Record deleted', 200);
         } catch (\Throwable $e) {
@@ -289,7 +326,7 @@ class WebSpaceDnsController
             return ApiResponse::error('DNS provider is not configured', 'PROVIDER_UNAVAILABLE', 400);
         }
 
-        return ['zone' => $zone, 'provider' => $provider];
+        return ['space' => $space, 'zone' => $zone, 'provider' => $provider];
     }
 
     /**

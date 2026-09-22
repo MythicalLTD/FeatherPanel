@@ -205,6 +205,15 @@ class WingsServerStatusController
             ]
         );
 
+        $eventManager->emit(
+            WingsEvent::onWingsServerConnectionStatus(),
+            [
+                'server_uuid' => $uuid,
+                'status' => $server['status'] ?? ($data['state'] ?? 'unknown'),
+                'node_id' => $node['id'] ?? null,
+            ]
+        );
+
         return ApiResponse::success([
             'message' => 'Server status updated successfully',
             'state' => $state,

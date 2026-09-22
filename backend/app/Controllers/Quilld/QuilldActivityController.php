@@ -22,6 +22,7 @@ use App\Chat\User;
 use App\Chat\WebSpace;
 use App\Helpers\ApiResponse;
 use App\Chat\WebSpaceActivity;
+use App\Plugins\Events\Events\QuilldEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -102,6 +103,10 @@ class QuilldActivityController
         }
 
         if ($errors === []) {
+            self::emitPluginEvent(QuilldEvent::onQuilldActivityLogged(), [
+                'processed_count' => $processedCount,
+            ]);
+
             return ApiResponse::success([
                 'message' => "Successfully processed {$processedCount} activity logs",
                 'processed_count' => $processedCount,
@@ -118,5 +123,13 @@ class QuilldActivityController
                 'errors' => $errors,
             ],
         );
+    }
+
+    private static function emitPluginEvent(string $event, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($event, $payload);
+        }
     }
 }

@@ -17,6 +17,7 @@
     pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
     .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
     .back-link { margin-bottom: 1.5rem; display: inline-block; }
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-left: 0.5rem; vertical-align: middle; }
   </style>
 </head>
 <body>
@@ -24,11 +25,14 @@
     <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
     <header>
       <h1>Knowledgebase</h1>
-      <p class="muted">23 events in this category.</p>
+      <p class="muted">23 events in this category.
+        23 emitted,
+        0 defined only.
+      </p>
     </header>
 
 <article class="card">
-  <h2><code>featherpanel:admin:knowledgebase:article:created</code></h2>
+  <h2><code>featherpanel:admin:knowledgebase:article:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseArticleCreated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array article, array created_by.</p>
 
@@ -54,7 +58,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:knowledgebase:article:deleted</code></h2>
+  <h2><code>featherpanel:admin:knowledgebase:article:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseArticleDeleted</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array article, array deleted_by.</p>
 
@@ -80,7 +84,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:knowledgebase:article:retrieved</code></h2>
+  <h2><code>featherpanel:admin:knowledgebase:article:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseArticleRetrieved</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array article.</p>
 
@@ -106,7 +110,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:knowledgebase:articles:reordered</code></h2>
+  <h2><code>featherpanel:admin:knowledgebase:articles:reordered</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseArticlesReordered</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array articles, array reordered_by.</p>
 
@@ -132,7 +136,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:knowledgebase:articles:retrieved</code></h2>
+  <h2><code>featherpanel:admin:knowledgebase:articles:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseArticlesRetrieved</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array articles, array pagination, array search.</p>
 
@@ -141,7 +145,7 @@ public static function processEvents(PluginEvents $evt): void
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Controllers/Admin/KnowledgebaseController.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -158,7 +162,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:knowledgebase:article:updated</code></h2>
+  <h2><code>featherpanel:admin:knowledgebase:article:updated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseArticleUpdated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array article, array updated_by.</p>
 
@@ -184,7 +188,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:knowledgebase:attachment:deleted</code></h2>
+  <h2><code>featherpanel:admin:knowledgebase:attachment:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseAttachmentDeleted</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array article, array attachment, array deleted_by.</p>
 
@@ -210,7 +214,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:knowledgebase:attachments:retrieved</code></h2>
+  <h2><code>featherpanel:admin:knowledgebase:attachments:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseAttachmentsRetrieved</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array article, array attachments.</p>
 
@@ -236,7 +240,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:knowledgebase:attachment:uploaded</code></h2>
+  <h2><code>featherpanel:admin:knowledgebase:attachment:uploaded</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseAttachmentUploaded</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array article, array attachment, array uploaded_by.</p>
 
@@ -262,7 +266,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:knowledgebase:categories:retrieved</code></h2>
+  <h2><code>featherpanel:admin:knowledgebase:categories:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseCategoriesRetrieved</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array categories, array pagination, array search.</p>
 
@@ -271,7 +275,7 @@ public static function processEvents(PluginEvents $evt): void
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Controllers/Admin/KnowledgebaseController.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -288,7 +292,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:knowledgebase:category:created</code></h2>
+  <h2><code>featherpanel:admin:knowledgebase:category:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseCategoryCreated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array category, array created_by.</p>
 
@@ -314,7 +318,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:knowledgebase:category:deleted</code></h2>
+  <h2><code>featherpanel:admin:knowledgebase:category:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseCategoryDeleted</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array category, array deleted_by.</p>
 
@@ -340,7 +344,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:knowledgebase:category:retrieved</code></h2>
+  <h2><code>featherpanel:admin:knowledgebase:category:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseCategoryRetrieved</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array category.</p>
 
@@ -366,7 +370,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:knowledgebase:category:updated</code></h2>
+  <h2><code>featherpanel:admin:knowledgebase:category:updated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseCategoryUpdated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array category, array updated_by.</p>
 
@@ -392,7 +396,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:knowledgebase:icon:uploaded</code></h2>
+  <h2><code>featherpanel:admin:knowledgebase:icon:uploaded</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseIconUploaded</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string filename, string url, array uploaded_by.</p>
 
@@ -418,7 +422,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:knowledgebase:tag:created</code></h2>
+  <h2><code>featherpanel:admin:knowledgebase:tag:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseTagCreated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array article, array tag, array created_by.</p>
 
@@ -444,7 +448,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:knowledgebase:tag:deleted</code></h2>
+  <h2><code>featherpanel:admin:knowledgebase:tag:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseTagDeleted</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array article, array tag, array deleted_by.</p>
 
@@ -470,7 +474,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:knowledgebase:tags:retrieved</code></h2>
+  <h2><code>featherpanel:admin:knowledgebase:tags:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseTagsRetrieved</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array article, array tags.</p>
 
@@ -496,7 +500,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:user:knowledgebase:article:retrieved</code></h2>
+  <h2><code>featherpanel:user:knowledgebase:article:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onUserKnowledgebaseArticleRetrieved</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array article, array attachments, array tags, array|null user.</p>
 
@@ -522,7 +526,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:user:knowledgebase:articles:retrieved</code></h2>
+  <h2><code>featherpanel:user:knowledgebase:articles:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onUserKnowledgebaseArticlesRetrieved</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array articles, array pagination.</p>
 
@@ -531,7 +535,7 @@ public static function processEvents(PluginEvents $evt): void
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Controllers/User/KnowledgebaseController.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -548,7 +552,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:user:knowledgebase:categories:retrieved</code></h2>
+  <h2><code>featherpanel:user:knowledgebase:categories:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onUserKnowledgebaseCategoriesRetrieved</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array categories, array pagination.</p>
 
@@ -557,7 +561,7 @@ public static function processEvents(PluginEvents $evt): void
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Controllers/User/KnowledgebaseController.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -574,7 +578,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:user:knowledgebase:category:articles:retrieved</code></h2>
+  <h2><code>featherpanel:user:knowledgebase:category:articles:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onUserKnowledgebaseCategoryArticlesRetrieved</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array category, array articles, array pagination.</p>
 
@@ -583,7 +587,7 @@ public static function processEvents(PluginEvents $evt): void
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Controllers/User/KnowledgebaseController.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -600,7 +604,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:user:knowledgebase:category:retrieved</code></h2>
+  <h2><code>featherpanel:user:knowledgebase:category:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onUserKnowledgebaseCategoryRetrieved</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array category.</p>
 

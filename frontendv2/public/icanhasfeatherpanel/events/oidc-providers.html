@@ -17,6 +17,7 @@
     pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
     .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
     .back-link { margin-bottom: 1.5rem; display: inline-block; }
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-left: 0.5rem; vertical-align: middle; }
   </style>
 </head>
 <body>
@@ -24,20 +25,23 @@
     <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
     <header>
       <h1>OidcProviders</h1>
-      <p class="muted">3 events in this category.</p>
+      <p class="muted">3 events in this category.
+        3 emitted,
+        0 defined only.
+      </p>
     </header>
 
 <article class="card">
-  <h2><code>featherpanel:oidc:provider:create</code></h2>
+  <h2><code>featherpanel:oidc:provider:create</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onOidcProviderCreated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, array provider.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
+  <p class="muted"><strong>Data keys:</strong> provider, user_uuid</p>
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Controllers/Admin/OidcProvidersController.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -46,24 +50,24 @@ use App\Plugins\Events\Events\OidcProvidersEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(OidcProvidersEvent::onOidcProviderCreated(), function ($uuid, $provider) {
+    $evt->on(OidcProvidersEvent::onOidcProviderCreated(), function ($provider, $userUuid) {
         // Handle featherpanel:oidc:provider:create
-        // Parameters: string|null user uuid, array provider.
+        // Data keys: provider, user_uuid
     });
 }</code></pre>
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:oidc:provider:delete</code></h2>
+  <h2><code>featherpanel:oidc:provider:delete</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onOidcProviderDeleted</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, array provider.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
+  <p class="muted"><strong>Data keys:</strong> provider, user_uuid</p>
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Controllers/Admin/OidcProvidersController.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -72,24 +76,24 @@ use App\Plugins\Events\Events\OidcProvidersEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(OidcProvidersEvent::onOidcProviderDeleted(), function ($uuid, $provider) {
+    $evt->on(OidcProvidersEvent::onOidcProviderDeleted(), function ($provider, $userUuid) {
         // Handle featherpanel:oidc:provider:delete
-        // Parameters: string|null user uuid, array provider.
+        // Data keys: provider, user_uuid
     });
 }</code></pre>
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:oidc:provider:update</code></h2>
+  <h2><code>featherpanel:oidc:provider:update</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onOidcProviderUpdated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, array provider, array changed fields.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
+  <p class="muted"><strong>Data keys:</strong> provider, user_uuid</p>
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Controllers/Admin/OidcProvidersController.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -98,9 +102,9 @@ use App\Plugins\Events\Events\OidcProvidersEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(OidcProvidersEvent::onOidcProviderUpdated(), function ($uuid, $provider, $fields) {
+    $evt->on(OidcProvidersEvent::onOidcProviderUpdated(), function ($provider, $userUuid) {
         // Handle featherpanel:oidc:provider:update
-        // Parameters: string|null user uuid, array provider, array changed fields.
+        // Data keys: provider, user_uuid
     });
 }</code></pre>
 </article>

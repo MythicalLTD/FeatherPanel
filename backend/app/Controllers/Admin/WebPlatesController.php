@@ -22,13 +22,13 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Helpers\WebSpaceScheduleTasks;
 use App\Helpers\WebPlateCascadeService;
+use App\Plugins\Events\Events\WebPlatesEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Admin CRUD for WebPlates (web hosting templates — not Spells).
- */
-class WebPlatesController
+ */class WebPlatesController
 {
     #[OA\Get(path: '/api/admin/webplates', summary: 'List WebPlates', tags: ['Admin - WebPlates'])]
     public function index(Request $request): Response
@@ -127,6 +127,8 @@ class WebPlatesController
             $plate['default_schedules'] = WebPlate::getDefaultSchedules($plate);
         }
 
+        self::emitPluginEvent(WebPlatesEvent::onWebPlateCreated(), ['webplate' => $plate]);
+
         return ApiResponse::success(['webplate' => $plate], 'WebPlate created', 201);
     }
 
@@ -193,6 +195,11 @@ class WebPlatesController
 
         $cascade = WebPlateCascadeService::cascadeAfterPlateUpdate($previousPlate, $plate ?: []);
 
+        self::emitPluginEvent(WebPlatesEvent::onWebPlateUpdated(), [
+            'webplate_id' => $id,
+            'webplate' => $plate,
+        ]);
+
         return ApiResponse::success([
             'webplate' => $plate,
             'cascaded_count' => $cascade['cascaded'],
@@ -214,6 +221,10 @@ class WebPlatesController
                 409,
             );
         }
+
+        self::emitPluginEvent(WebPlatesEvent::onWebPlateDeleted(), [
+            'webplate_id' => $id,
+        ]);
 
         return ApiResponse::success(['id' => $id], 'WebPlate deleted', 200);
     }

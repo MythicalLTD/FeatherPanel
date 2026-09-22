@@ -529,6 +529,19 @@ class WingsServerInfoController
                 throw new \Exception('JSON validation failed after encoding');
             }
         } catch (\Exception $e) {
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(WingsEvent::onWingsServerError(), [
+                    'server_uuid' => $uuid ?? null,
+                    'error' => $e->getMessage(),
+                ]);
+                $eventManager->emit(WingsEvent::onWingsError(), [
+                    'error' => 'CONFIG_ERROR',
+                    'message' => $e->getMessage(),
+                    'server_uuid' => $uuid ?? null,
+                ]);
+            }
+
             return ApiResponse::error('Failed to generate server configuration: ' . $e->getMessage(), 'CONFIG_ERROR', 500);
         }
 

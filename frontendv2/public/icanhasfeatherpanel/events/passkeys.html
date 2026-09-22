@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Events: Passkeys</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    h3 { font-size: 1rem; margin-top: 1.25rem; }
+    .muted { color: #9ca3af; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-bottom: 1.5rem; display: inline-block; }
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-left: 0.5rem; vertical-align: middle; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
+    <header>
+      <h1>Passkeys</h1>
+      <p class="muted">5 events in this category.
+        5 emitted,
+        0 defined only.
+      </p>
+    </header>
+
+<article class="card">
+  <h2><code>featherpanel:auth:passkey:authentication:failed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
+  <p class="muted"><strong>Method:</strong> <code>onPasskeyAuthenticationFailed</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> error, message</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/Auth/PasskeyController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\PasskeysEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(PasskeysEvent::onPasskeyAuthenticationFailed(), function ($error, $message) {
+        // Handle featherpanel:auth:passkey:authentication:failed
+        // Data keys: error, message
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:auth:passkey:authentication:success</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
+  <p class="muted"><strong>Method:</strong> <code>onPasskeyAuthenticationSuccess</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array user.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> user</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/Auth/PasskeyController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\PasskeysEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(PasskeysEvent::onPasskeyAuthenticationSuccess(), function ($user) {
+        // Handle featherpanel:auth:passkey:authentication:success
+        // Data keys: user
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:auth:passkey:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
+  <p class="muted"><strong>Method:</strong> <code>onPasskeyDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array user, int passkey id.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> passkey_id, user</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/Auth/PasskeyController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\PasskeysEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(PasskeysEvent::onPasskeyDeleted(), function ($passkeyId, $user) {
+        // Handle featherpanel:auth:passkey:deleted
+        // Data keys: passkey_id, user
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:auth:passkey:registered</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
+  <p class="muted"><strong>Method:</strong> <code>onPasskeyRegistered</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array user, array passkey.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> label, passkey_id, user</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/Auth/PasskeyController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\PasskeysEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(PasskeysEvent::onPasskeyRegistered(), function ($label, $passkeyId, $user) {
+        // Handle featherpanel:auth:passkey:registered
+        // Data keys: label, passkey_id, user
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:auth:passkey:updated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
+  <p class="muted"><strong>Method:</strong> <code>onPasskeyUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array user, array passkey.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> label, passkey_id, user</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/Auth/PasskeyController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\PasskeysEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(PasskeysEvent::onPasskeyUpdated(), function ($label, $passkeyId, $user) {
+        // Handle featherpanel:auth:passkey:updated
+        // Data keys: label, passkey_id, user
+    });
+}</code></pre>
+</article>
+  </main>
+</body>
+</html>

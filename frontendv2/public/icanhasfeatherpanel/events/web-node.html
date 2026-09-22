@@ -17,6 +17,7 @@
     pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
     .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
     .back-link { margin-bottom: 1.5rem; display: inline-block; }
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-left: 0.5rem; vertical-align: middle; }
   </style>
 </head>
 <body>
@@ -24,20 +25,23 @@
     <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
     <header>
       <h1>WebNode</h1>
-      <p class="muted">4 events in this category.</p>
+      <p class="muted">4 events in this category.
+        4 emitted,
+        0 defined only.
+      </p>
     </header>
 
 <article class="card">
-  <h2><code>featherpanel:web:node:create</code></h2>
+  <h2><code>featherpanel:web:node:create</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onWebNodeCreated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int web node id, array node payload, array context.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
+  <p class="muted"><strong>Data keys:</strong> context, source, user_uuid, web_node, web_node_id</p>
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Controllers/Admin/WebNodesController.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -46,24 +50,24 @@ use App\Plugins\Events\Events\WebNodeEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(WebNodeEvent::onWebNodeCreated(), function ($uuid, $id, $payload, $context) {
+    $evt->on(WebNodeEvent::onWebNodeCreated(), function ($context, $source, $userUuid, $webNode, $webNodeId) {
         // Handle featherpanel:web:node:create
-        // Parameters: string|null user uuid, int web node id, array node payload, array context.
+        // Data keys: context, source, user_uuid, web_node, web_node_id
     });
 }</code></pre>
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:web:node:delete</code></h2>
+  <h2><code>featherpanel:web:node:delete</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onWebNodeDeleted</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int web node id, array node payload, array context.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
+  <p class="muted"><strong>Data keys:</strong> context, source, user_uuid, web_node, web_node_id</p>
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Controllers/Admin/WebNodesController.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -72,24 +76,24 @@ use App\Plugins\Events\Events\WebNodeEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(WebNodeEvent::onWebNodeDeleted(), function ($uuid, $id, $payload, $context) {
+    $evt->on(WebNodeEvent::onWebNodeDeleted(), function ($context, $source, $userUuid, $webNode, $webNodeId) {
         // Handle featherpanel:web:node:delete
-        // Parameters: string|null user uuid, int web node id, array node payload, array context.
+        // Data keys: context, source, user_uuid, web_node, web_node_id
     });
 }</code></pre>
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:web:node:key:reset</code></h2>
+  <h2><code>featherpanel:web:node:key:reset</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onWebNodeKeyReset</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int web node id, array node payload, array context.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
+  <p class="muted"><strong>Data keys:</strong> context, source, user_uuid, web_node, web_node_id</p>
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Controllers/Admin/WebNodesController.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -98,24 +102,24 @@ use App\Plugins\Events\Events\WebNodeEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(WebNodeEvent::onWebNodeKeyReset(), function ($uuid, $id, $payload, $context) {
+    $evt->on(WebNodeEvent::onWebNodeKeyReset(), function ($context, $source, $userUuid, $webNode, $webNodeId) {
         // Handle featherpanel:web:node:key:reset
-        // Parameters: string|null user uuid, int web node id, array node payload, array context.
+        // Data keys: context, source, user_uuid, web_node, web_node_id
     });
 }</code></pre>
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:web:node:update</code></h2>
+  <h2><code>featherpanel:web:node:update</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onWebNodeUpdated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int web node id, array node payload, array changed fields, array context.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
+  <p class="muted"><strong>Data keys:</strong> changed_fields, context, source, user_uuid, web_node, web_node_id</p>
 
   <h3>Emitted From</h3>
   <ul>
-<li class="muted">No known emission locations.</li>
+<li><code>backend/app/Controllers/Admin/WebNodesController.php</code></li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -124,9 +128,9 @@ use App\Plugins\Events\Events\WebNodeEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(WebNodeEvent::onWebNodeUpdated(), function ($uuid, $id, $payload, $fields, $context) {
+    $evt->on(WebNodeEvent::onWebNodeUpdated(), function ($changedFields, $context, $source, $userUuid, $webNode, $webNodeId) {
         // Handle featherpanel:web:node:update
-        // Parameters: string|null user uuid, int web node id, array node payload, array changed fields, array context.
+        // Data keys: changed_fields, context, source, user_uuid, web_node, web_node_id
     });
 }</code></pre>
 </article>

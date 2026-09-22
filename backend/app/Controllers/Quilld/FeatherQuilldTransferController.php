@@ -18,6 +18,7 @@
 namespace App\Controllers\Quilld;
 
 use App\Helpers\ApiResponse;
+use App\Plugins\Events\Events\QuilldEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\WebSpaces\WebSpaceTransferInitiator;
@@ -36,6 +37,20 @@ class FeatherQuilldTransferController
 
         (new WebSpaceTransferInitiator())->handleRemoteReport($uuid, $successful, $error);
 
+        self::emitPluginEvent(QuilldEvent::onQuilldTransferStatusReported(), [
+            'webspace_uuid' => $uuid,
+            'successful' => $successful,
+            'error' => $error,
+        ]);
+
         return ApiResponse::success(['ok' => true], 'OK', 200);
+    }
+
+    private static function emitPluginEvent(string $event, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($event, $payload);
+        }
     }
 }

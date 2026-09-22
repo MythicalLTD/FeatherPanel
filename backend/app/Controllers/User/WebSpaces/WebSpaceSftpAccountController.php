@@ -21,8 +21,10 @@ use App\Helpers\ApiResponse;
 use App\Helpers\WebSpaceGateway;
 use App\Chat\WebSpaceSftpAccount;
 use App\WebSpaceSubuserPermissions;
+use App\Helpers\WebSpacePluginEvents;
 use App\Helpers\WebSpaceActivityLogger;
 use App\Helpers\CheckWebSpacePermission;
+use App\Plugins\Events\Events\WebSpaceEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -94,6 +96,12 @@ class WebSpaceSftpAccountController
             'account_name' => $name,
         ]);
 
+        WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceSftpAccountCreated(), WebSpacePluginEvents::basePayload(
+            $resolved['user']['uuid'] ?? null,
+            $resolved['space'],
+            ['account' => $account],
+        ));
+
         return ApiResponse::success(['account' => $account], 'Created', 201);
     }
 
@@ -111,6 +119,12 @@ class WebSpaceSftpAccountController
         WebSpaceActivityLogger::log($resolved['space'], $resolved['user'], 'webspace.sftp_account.deleted', [
             'account_id' => $accountId,
         ]);
+
+        WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceSftpAccountDeleted(), WebSpacePluginEvents::basePayload(
+            $resolved['user']['uuid'] ?? null,
+            $resolved['space'],
+            ['account_id' => $accountId],
+        ));
 
         return ApiResponse::success([], 'Deleted', 200);
     }
@@ -135,6 +149,12 @@ class WebSpaceSftpAccountController
         WebSpaceActivityLogger::log($resolved['space'], $resolved['user'], 'webspace.sftp_account.password_reset', [
             'account_id' => $accountId,
         ]);
+
+        WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceSftpPasswordReset(), WebSpacePluginEvents::basePayload(
+            $resolved['user']['uuid'] ?? null,
+            $resolved['space'],
+            ['account_id' => $accountId],
+        ));
 
         return ApiResponse::success([], 'Password updated', 200);
     }
@@ -164,6 +184,12 @@ class WebSpaceSftpAccountController
             return ApiResponse::error('Account not found', 'NOT_FOUND', 404);
         }
         $account['login'] = $account['account_name'] . '.' . ($resolved['space']['uuidShort'] ?? '');
+
+        WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceSftpAccountUpdated(), WebSpacePluginEvents::basePayload(
+            $resolved['user']['uuid'] ?? null,
+            $resolved['space'],
+            ['account' => $account],
+        ));
 
         return ApiResponse::success(['account' => $account], 'Updated', 200);
     }

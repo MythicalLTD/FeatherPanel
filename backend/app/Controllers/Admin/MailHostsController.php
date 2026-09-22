@@ -21,6 +21,7 @@ use App\Chat\WebNode;
 use App\Chat\MailHost;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Plugins\Events\Events\MailHostsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -78,6 +79,8 @@ class MailHostsController
             $host['provision_api_key'] = '[REDACTED]';
         }
 
+        self::emitPluginEvent(MailHostsEvent::onMailHostCreated(), ['host' => $host]);
+
         return ApiResponse::success(['host' => $host], 'Created', 201);
     }
 
@@ -107,6 +110,11 @@ class MailHostsController
         if ($host && !empty($host['provision_api_key'])) {
             $host['provision_api_key'] = '[REDACTED]';
         }
+
+        self::emitPluginEvent(MailHostsEvent::onMailHostUpdated(), [
+            'host_id' => $id,
+            'host' => $host,
+        ]);
 
         return ApiResponse::success(['host' => $host], 'Updated', 200);
     }
@@ -147,6 +155,11 @@ class MailHostsController
         if (!MailHost::delete($id)) {
             return ApiResponse::error('Failed to delete mail host (it may still be in use)', 'DELETE_FAILED', 500);
         }
+
+        self::emitPluginEvent(MailHostsEvent::onMailHostDeleted(), [
+            'host_id' => $id,
+            'host' => $existing,
+        ]);
 
         return ApiResponse::success([], 'Deleted', 200);
     }

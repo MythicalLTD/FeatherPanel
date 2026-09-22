@@ -17,6 +17,7 @@
     pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
     .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
     .back-link { margin-bottom: 1.5rem; display: inline-block; }
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-left: 0.5rem; vertical-align: middle; }
   </style>
 </head>
 <body>
@@ -24,11 +25,14 @@
     <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
     <header>
       <h1>DatabaseSnapshots</h1>
-      <p class="muted">4 events in this category.</p>
+      <p class="muted">4 events in this category.
+        4 emitted,
+        0 defined only.
+      </p>
     </header>
 
 <article class="card">
-  <h2><code>featherpanel:database:snapshot:created</code></h2>
+  <h2><code>featherpanel:database:snapshot:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onSnapshotCreated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string filename, int size, string user uuid.</p>
 
@@ -54,7 +58,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:database:snapshot:deleted</code></h2>
+  <h2><code>featherpanel:database:snapshot:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onSnapshotDeleted</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string filename, string user uuid.</p>
 
@@ -80,7 +84,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:database:snapshot:downloaded</code></h2>
+  <h2><code>featherpanel:database:snapshot:downloaded</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onSnapshotDownloaded</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string filename, string user uuid.</p>
 
@@ -106,7 +110,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:database:snapshot:restored</code></h2>
+  <h2><code>featherpanel:database:snapshot:restored</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onSnapshotRestored</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string filename, string user uuid.</p>
 

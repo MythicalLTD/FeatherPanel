@@ -17,6 +17,7 @@
     pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
     .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
     .back-link { margin-bottom: 1.5rem; display: inline-block; }
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-left: 0.5rem; vertical-align: middle; }
   </style>
 </head>
 <body>
@@ -24,11 +25,14 @@
     <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
     <header>
       <h1>MailTemplates</h1>
-      <p class="muted">7 events in this category.</p>
+      <p class="muted">7 events in this category.
+        3 emitted,
+        4 defined only.
+      </p>
     </header>
 
 <article class="card">
-  <h2><code>featherpanel:admin:mail_templates:template:created</code></h2>
+  <h2><code>featherpanel:admin:mail_templates:template:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onMailTemplateCreated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array template data.</p>
 
@@ -54,7 +58,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:mail_templates:template:deleted</code></h2>
+  <h2><code>featherpanel:admin:mail_templates:template:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onMailTemplateDeleted</code></p>
   <p class="muted"><strong>Callback parameters:</strong> int template id, array template data.</p>
 
@@ -80,7 +84,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:mail_templates:template:not:found</code></h2>
+  <h2><code>featherpanel:admin:mail_templates:template:not:found</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onMailTemplateNotFound</code></p>
   <p class="muted"><strong>Callback parameters:</strong> int template id, string error message.</p>
 
@@ -106,7 +110,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:mail_templates:template:retrieved</code></h2>
+  <h2><code>featherpanel:admin:mail_templates:template:retrieved</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onMailTemplateRetrieved</code></p>
   <p class="muted"><strong>Callback parameters:</strong> int template id, array template data.</p>
 
@@ -132,7 +136,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:mail_templates:error</code></h2>
+  <h2><code>featherpanel:admin:mail_templates:error</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onMailTemplatesError</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string error message, array context.</p>
 
@@ -158,7 +162,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:mail_templates:retrieved</code></h2>
+  <h2><code>featherpanel:admin:mail_templates:retrieved</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onMailTemplatesRetrieved</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array templates list.</p>
 
@@ -184,7 +188,7 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
-  <h2><code>featherpanel:admin:mail_templates:template:updated</code></h2>
+  <h2><code>featherpanel:admin:mail_templates:template:updated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onMailTemplateUpdated</code></p>
   <p class="muted"><strong>Callback parameters:</strong> int template id, array old data, array new data.</p>
 

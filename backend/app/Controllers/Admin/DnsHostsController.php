@@ -22,6 +22,7 @@ use App\Chat\WebNode;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Helpers\DnsProvisioner;
+use App\Plugins\Events\Events\DnsHostsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -67,6 +68,10 @@ class DnsHostsController
 
         $host = DnsHost::getById($id);
 
+        self::emitPluginEvent(DnsHostsEvent::onDnsHostCreated(), [
+            'host' => DnsHost::sanitizeForApi($host ?? []),
+        ]);
+
         return ApiResponse::success(['host' => DnsHost::sanitizeForApi($host ?? [])], 'Created', 201);
     }
 
@@ -94,6 +99,11 @@ class DnsHostsController
 
         $host = DnsHost::getById($id);
 
+        self::emitPluginEvent(DnsHostsEvent::onDnsHostUpdated(), [
+            'host_id' => $id,
+            'host' => DnsHost::sanitizeForApi($host ?? []),
+        ]);
+
         return ApiResponse::success(['host' => DnsHost::sanitizeForApi($host ?? [])], 'Updated', 200);
     }
 
@@ -108,6 +118,11 @@ class DnsHostsController
         if (!DnsHost::delete($id)) {
             return ApiResponse::error('Failed to delete DNS host (it may still be in use)', 'DELETE_FAILED', 500);
         }
+
+        self::emitPluginEvent(DnsHostsEvent::onDnsHostDeleted(), [
+            'host_id' => $id,
+            'host' => DnsHost::sanitizeForApi($existing),
+        ]);
 
         return ApiResponse::success([], 'Deleted', 200);
     }

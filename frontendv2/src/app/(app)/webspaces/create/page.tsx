@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { redirect } from 'next/navigation';
 
+/** Client WebSpace creation is admin-only; keep legacy URL from bookmarking. */
 export default function LegacyWebSpacesCreateRedirect() {
-    redirect('/dashboard/webspaces/create');
+    redirect('/dashboard/webspaces');
 }
