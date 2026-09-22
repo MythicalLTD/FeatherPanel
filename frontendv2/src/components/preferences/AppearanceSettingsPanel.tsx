@@ -158,7 +158,7 @@ function SegmentButton({
             onClick={onClick}
             className={cn(
                 'border-border/60 bg-muted/20 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all',
-                active && 'border-primary/50 bg-primary/15 text-primary shadow-primary/10 shadow-sm',
+                active && 'border-primary bg-primary/15 text-primary',
                 !active &&
                     !disabled &&
                     'text-muted-foreground hover:border-primary/30 hover:bg-accent/40 hover:text-foreground',
@@ -190,7 +190,7 @@ function AnimatedBackgroundTile({
             onClick={onClick}
             className={cn(
                 'group relative overflow-hidden rounded-xl border text-left transition-all',
-                active ? 'border-primary ring-primary/30 ring-2' : 'border-border/50 hover:border-primary/40',
+                active ? 'border-primary' : 'border-border/50 hover:border-primary/40',
             )}
         >
             <BackgroundEffectPreview variant={variant} accentColor={accentColor} className='h-32 w-full' preview />
@@ -198,7 +198,7 @@ function AnimatedBackgroundTile({
                 <p className='truncate text-xs font-semibold text-white'>{label}</p>
             </div>
             {active && (
-                <span className='bg-primary text-primary-foreground absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full shadow-md'>
+                <span className='bg-primary text-primary-foreground absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full'>
                     <Check className='h-3 w-3' strokeWidth={3} aria-hidden />
                 </span>
             )}
@@ -227,9 +227,7 @@ function StaticPreviewTile({
             onClick={onClick}
             className={cn(
                 'group relative flex flex-col overflow-hidden rounded-2xl border text-left transition-all',
-                active
-                    ? 'border-primary shadow-primary/15 ring-primary/30 shadow-lg ring-2'
-                    : 'border-border/50 hover:border-primary/35 hover:shadow-md',
+                active ? 'border-primary' : 'border-border/50 hover:border-primary/35',
             )}
         >
             <div
@@ -244,7 +242,7 @@ function StaticPreviewTile({
                 {subtitle && <p className='text-muted-foreground truncate text-xs'>{subtitle}</p>}
             </div>
             {active && (
-                <span className='bg-primary text-primary-foreground absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full shadow-md'>
+                <span className='bg-primary text-primary-foreground absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full'>
                     <Check className='h-3.5 w-3.5' strokeWidth={3} aria-hidden />
                 </span>
             )}
@@ -270,7 +268,7 @@ function MotionOptionCard({
             className={cn(
                 'flex flex-col gap-2 rounded-2xl border p-5 text-left transition-all',
                 active
-                    ? 'border-primary/50 bg-primary/10 shadow-primary/10 shadow-md'
+                    ? 'border-primary bg-primary/10'
                     : 'border-border/50 bg-card/40 hover:border-primary/30 hover:bg-card/70',
             )}
         >
@@ -312,7 +310,7 @@ function LanguageOptionCard({
             className={cn(
                 'group relative flex items-center gap-3 rounded-2xl border p-4 text-left transition-all',
                 active
-                    ? 'border-primary/50 bg-primary/10 shadow-primary/10 ring-primary/20 shadow-md ring-2'
+                    ? 'border-primary bg-primary/10'
                     : 'border-border/50 bg-card/40 hover:border-primary/30 hover:bg-card/70',
                 disabled && 'cursor-not-allowed opacity-50',
             )}
@@ -333,7 +331,7 @@ function LanguageOptionCard({
                 </p>
             </div>
             {active && (
-                <span className='bg-primary text-primary-foreground flex h-6 w-6 shrink-0 items-center justify-center rounded-full shadow-sm'>
+                <span className='bg-primary text-primary-foreground flex h-6 w-6 shrink-0 items-center justify-center rounded-full'>
                     <Check className='h-3.5 w-3.5' strokeWidth={3} aria-hidden />
                 </span>
             )}
@@ -516,8 +514,7 @@ export default function AppearanceSettingsPanel() {
                                             onClick={() => !isAccentColorLocked && setAccentColor(presetId)}
                                             className={cn(
                                                 'ring-border/60 relative mx-auto flex h-10 w-10 items-center justify-center rounded-full ring-1 transition-transform',
-                                                accentColor === presetId &&
-                                                    'ring-primary ring-offset-background ring-2 ring-offset-2',
+                                                accentColor === presetId && 'ring-foreground/80 ring-2',
                                                 !isAccentColorLocked && 'hover:scale-110',
                                                 isAccentColorLocked && 'cursor-not-allowed opacity-50',
                                             )}
@@ -827,9 +824,8 @@ export default function AppearanceSettingsPanel() {
                                     type='button'
                                     onClick={() => setFontFamily(font.value)}
                                     className={cn(
-                                        'border-border/60 bg-card/50 hover:border-primary/40 flex flex-col rounded-2xl border p-4 text-left transition-all hover:shadow-md',
-                                        fontFamily === font.value &&
-                                            'border-primary bg-primary/10 ring-primary/20 ring-2',
+                                        'border-border/60 bg-card/50 hover:border-primary/40 flex flex-col rounded-2xl border p-4 text-left transition-all',
+                                        fontFamily === font.value && 'border-primary bg-primary/10',
                                     )}
                                 >
                                     <div className='mb-3 flex items-start justify-between gap-2'>

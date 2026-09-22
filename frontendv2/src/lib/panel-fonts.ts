@@ -45,6 +45,12 @@ import {
     Work_Sans,
 } from 'next/font/google';
 
+/**
+ * Preference fonts are self-hosted via next/font (downloaded at build time, served
+ * from this app — no runtime Google Fonts CDN). Use webpack for next/dev and
+ * next/build: Turbopack in Next 16.3 fails resolving many google font files
+ * ("queries have exactly one entry").
+ */
 const inter = localFont({
     src: [
         { path: '../fonts/Inter-400.woff2', weight: '400', style: 'normal' },

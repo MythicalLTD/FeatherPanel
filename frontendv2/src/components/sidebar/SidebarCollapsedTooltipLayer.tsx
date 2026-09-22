@@ -115,14 +115,13 @@ export function SidebarCollapsedTooltipLayer({ containerRef, enabled, side }: Si
         >
             <div
                 className={cn(
-                    'border-primary/30 bg-card text-card-foreground relative rounded-lg border px-3 py-2 text-sm font-semibold shadow-xl shadow-black/40',
-                    'ring-primary/20 ring-1',
+                    'border-border bg-card text-card-foreground relative rounded-lg border px-3 py-2 text-sm font-semibold shadow-xl shadow-black/40',
                     'max-w-[min(18rem,90vw)] truncate whitespace-nowrap',
                 )}
             >
                 <span
                     className={cn(
-                        'border-primary/30 bg-card absolute top-1/2 h-2.5 w-2.5 -translate-y-1/2 rotate-45 border',
+                        'border-border bg-card absolute top-1/2 h-2.5 w-2.5 -translate-y-1/2 rotate-45 border',
                         side === 'right' ? '-right-1.5 border-t-0 border-l-0' : '-left-1.5 border-r-0 border-b-0',
                     )}
                     aria-hidden

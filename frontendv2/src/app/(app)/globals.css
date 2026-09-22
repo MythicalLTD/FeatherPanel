@@ -554,17 +554,13 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
     transition-duration: 0.15s !important;
 }
 
-/* Accent-tinted chrome glow (uses theme primary, not white/foreground) */
+/* Chrome elevation — border only, no accent bloom */
 .fp-chrome-glow {
-    box-shadow:
-        0 0 0 1px hsl(var(--primary) / 0.14),
-        0 12px 40px -12px hsl(var(--primary) / 0.24);
+    box-shadow: 0 0 0 1px hsl(var(--border) / 0.8);
 }
 
 .fp-chrome-glow-subtle {
-    box-shadow:
-        0 0 0 1px hsl(var(--primary) / 0.1),
-        0 8px 28px -10px hsl(var(--primary) / 0.16);
+    box-shadow: 0 0 0 1px hsl(var(--border) / 0.55);
 }
 
 /* Custom scrollbar utilities */
@@ -640,11 +636,9 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
     line-height: 1.2;
     color: hsl(var(--foreground));
     background: hsl(var(--popover));
-    border: 1px solid hsl(var(--primary) / 0.28);
+    border: 1px solid hsl(var(--border));
     border-radius: 0.5rem;
-    box-shadow:
-        0 0 0 1px hsl(var(--primary) / 0.08),
-        0 10px 28px -10px hsl(var(--primary) / 0.35);
+    box-shadow: 0 8px 24px -12px hsl(0 0% 0% / 0.45);
     white-space: nowrap;
     max-width: min(18rem, 90vw);
     overflow: hidden;
@@ -662,15 +656,11 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
 }
 
 .fp-dock-item-glow-accent {
-    box-shadow:
-        0 0 0 1px hsl(var(--primary) / 0.22),
-        0 6px 20px -6px hsl(var(--primary) / 0.45);
+    box-shadow: 0 0 0 1px hsl(var(--border));
 }
 
 .fp-dock-item-glow-subtle {
-    box-shadow:
-        0 0 0 1px hsl(var(--primary) / 0.14),
-        0 4px 14px -8px hsl(var(--primary) / 0.28);
+    box-shadow: 0 0 0 1px hsl(var(--border) / 0.7);
 }
 
 .fp-sidebar-rail-tooltip {
@@ -680,11 +670,9 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
     line-height: 1.2;
     color: hsl(var(--foreground));
     background: hsl(var(--popover));
-    border: 1px solid hsl(var(--primary) / 0.28);
+    border: 1px solid hsl(var(--border));
     border-radius: 0.5rem;
-    box-shadow:
-        0 0 0 1px hsl(var(--primary) / 0.08),
-        0 10px 28px -10px hsl(var(--primary) / 0.35);
+    box-shadow: 0 8px 24px -12px hsl(0 0% 0% / 0.45);
     white-space: nowrap;
     max-width: min(18rem, 90vw);
     overflow: hidden;
