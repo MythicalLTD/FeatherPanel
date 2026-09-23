@@ -46,6 +46,7 @@ import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 type VmBackup = {
     id: number;
@@ -108,7 +109,7 @@ export default function VdsBackupsPage() {
         try {
             const { data } = await axios.get<ListBackupsResponse>(`/api/user/vm-instances/${id}/backups`);
             if (!data.success) {
-                toast.error(data.message || t('serverBackups.failedToFetch'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.failedToFetch'));
                 return;
             }
             setBackups(data.data.backups || []);
@@ -116,8 +117,7 @@ export default function VdsBackupsPage() {
             setFifoRolling(Boolean(data.data.fifo_rolling_enabled));
             setStorages(data.data.storages || []);
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'serverBackups.failedToFetch'));
         } finally {
             setLoading(false);
         }
@@ -171,15 +171,14 @@ export default function VdsBackupsPage() {
                 // Storage is enforced server-side from the VDS node default.
             });
             if (!data.success) {
-                toast.error(data.message || t('serverBackups.startFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.startFailed'));
                 return;
             }
             toast.success(t('serverBackups.startSuccess'));
             setConfirmCreateOpen(false);
             fetchBackups();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'serverBackups.startFailed'));
         } finally {
             setCreating(false);
         }
@@ -196,7 +195,7 @@ export default function VdsBackupsPage() {
                 },
             });
             if (!data.success) {
-                toast.error(data.message || t('serverBackups.deleteFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.deleteFailed'));
                 return;
             }
             toast.success(t('serverBackups.deleteSuccessShort'));
@@ -204,8 +203,7 @@ export default function VdsBackupsPage() {
             setSelectedForDelete(null);
             fetchBackups();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'serverBackups.deleteFailed'));
         } finally {
             setDeleting(false);
         }
@@ -220,7 +218,7 @@ export default function VdsBackupsPage() {
                 storage: selectedForRestore.storage,
             });
             if (!data.success) {
-                toast.error(data.message || t('serverBackups.restoreStartFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.restoreStartFailed'));
                 return;
             }
             const restoreId = data.data?.restore_id;
@@ -233,8 +231,7 @@ export default function VdsBackupsPage() {
                 pollRestoreStatus(restoreId);
             }
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'serverBackups.restoreStartFailed'));
         } finally {
             setRestoring(false);
         }
@@ -260,7 +257,13 @@ export default function VdsBackupsPage() {
                     fetchBackups();
                     return;
                 } else if (status === 'failed') {
-                    toast.error(data.data?.error || t('serverBackups.restoreFailed'));
+                    toast.error(
+                        getApiErrorMessageFromPayload(
+                            { message: data.data?.error, error_code: data.data?.error_code },
+                            t,
+                            'serverBackups.restoreFailed',
+                        ),
+                    );
                     return;
                 }
 

@@ -48,6 +48,7 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import {
     Dialog,
     DialogContent,
@@ -270,10 +271,7 @@ export default function ServerSettingsPage() {
             }
         } catch (error) {
             console.error(error);
-            const msg = axios.isAxiosError(error)
-                ? (error.response?.data as { message?: string } | undefined)?.message
-                : undefined;
-            toast.error(msg || t('serverSettings.backupPolicySaveError'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.backupPolicySaveError'));
         } finally {
             setSavingBackupPolicy(false);
         }
@@ -293,10 +291,7 @@ export default function ServerSettingsPage() {
             }
         } catch (error) {
             console.error(error);
-            const msg = axios.isAxiosError(error)
-                ? (error.response?.data as { message?: string } | undefined)?.message
-                : undefined;
-            toast.error(msg || t('serverSettings.autoStartSaveError'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.autoStartSaveError'));
         } finally {
             setSavingAutoStart(false);
         }

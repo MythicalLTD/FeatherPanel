@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import { AlertTriangle, Database, Lock, Plus, Server as ServerIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -33,6 +33,7 @@ import { Label } from '@/components/ui/label';
 import { HeadlessSelect } from '@/components/ui/headless-select';
 import type { DatabaseHost, Server } from '@/types/server';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function CreateDatabasePage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -129,15 +130,10 @@ export default function CreateDatabasePage() {
                 toast.success(t('serverDatabases.createSuccess'));
                 router.push(`/server/${uuidShort}/databases`);
             } else {
-                toast.error(data?.message || t('serverDatabases.createFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverDatabases.createFailed'));
             }
         } catch (error) {
-            const axiosError = error as AxiosError<{ message?: string; error_message?: string }>;
-            toast.error(
-                axiosError.response?.data?.message ||
-                    axiosError.response?.data?.error_message ||
-                    t('serverDatabases.createFailed'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'serverDatabases.createFailed'));
         } finally {
             setSaving(false);
         }

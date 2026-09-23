@@ -34,6 +34,7 @@ import { WebSpaceDomainsManager, type DomainRoute } from '@/components/webspace/
 import type { InfrastructureCheck } from '@/hooks/useWebSpaceInfrastructure';
 import type { User } from '@/app/(app)/admin/servers/create/types';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import {
     AppWindow,
     LayoutTemplate,
@@ -341,11 +342,12 @@ export default function CreateWebSpacePage() {
                         setCreateBlockingChecks(checks);
                     }
                 }
-                const msg = error.response?.data?.message || t('admin.webSpaces.messages.create_failed');
-                toast.error(msg, { id: toastId });
+                toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.create_failed'), {
+                    id: toastId,
+                });
                 return;
             }
-            toast.error(t('admin.webSpaces.messages.create_failed'), { id: toastId });
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.create_failed'), { id: toastId });
         } finally {
             setSaving(false);
         }

@@ -26,6 +26,7 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function MythicIssuesPage() {
     const router = useRouter();
@@ -49,9 +50,7 @@ export default function MythicIssuesPage() {
             if (axios.isAxiosError(err)) {
                 const code = err.response?.data?.error_code;
                 if (code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED' || err.response?.status === 503) {
-                    setCredentialsError(
-                        err.response?.data?.message || t('admin.feathercloud.common.credentials_error'),
-                    );
+                    setCredentialsError(getApiErrorMessage(err, t, 'admin.feathercloud.common.credentials_error'));
                 }
             }
         } finally {
@@ -92,23 +91,23 @@ export default function MythicIssuesPage() {
                 setExpected('');
                 setActual('');
             } else {
-                throw new Error(response.data?.message || t('admin.feathercloud.issues.failed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'admin.feathercloud.issues.failed'));
             }
         } catch (err) {
             if (axios.isAxiosError(err)) {
                 const code = err.response?.data?.error_code;
                 if (code === 'MEMBER_UUID_REQUIRED') {
-                    toast.error(err.response?.data?.message || t('admin.feathercloud.common.member_uuid_required'));
+                    toast.error(getApiErrorMessage(err, t, 'admin.feathercloud.common.member_uuid_required'));
                     return;
                 }
                 if (code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
-                    setCredentialsError(err.response?.data?.message || t('admin.feathercloud.common.not_linked_short'));
+                    setCredentialsError(getApiErrorMessage(err, t, 'admin.feathercloud.common.not_linked_short'));
                     return;
                 }
-                toast.error(err.response?.data?.message || t('admin.feathercloud.issues.failed'));
+                toast.error(getApiErrorMessage(err, t, 'admin.feathercloud.issues.failed'));
                 return;
             }
-            toast.error(t('admin.feathercloud.issues.failed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.feathercloud.issues.failed'));
         } finally {
             setSubmitting(false);
             setProgress(null);

@@ -47,7 +47,8 @@ import {
     Loader2,
     Trash2,
 } from 'lucide-react';
-import { StarDisplay, StarRatingInput } from '@/app/(app)/admin/feathercloud/products/_shared';
+import { StarDisplay, StarRatingInput, mythicCloudErrorMessage } from '@/app/(app)/admin/feathercloud/products/_shared';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface OnlineSpell {
     id?: string | number | null;
@@ -76,27 +77,6 @@ interface EggReview {
     createdAt?: string;
     created_at?: string;
     user?: { id?: number | string; name?: string; username?: string };
-}
-
-function mythicCloudErrorMessage(
-    err: unknown,
-    fallback: string,
-    t: (key: string, params?: Record<string, string>) => string,
-): string {
-    if (!axios.isAxiosError(err)) return fallback;
-    const code = String(err.response?.data?.error_code || '');
-    const message = err.response?.data?.message || fallback;
-    switch (code) {
-        case 'PANEL_DOWNLOADS_DISABLED':
-            return t('admin.marketplace.spells.toasts.panel_downloads_disabled');
-        case 'ACCESS_DENIED':
-            return t('admin.marketplace.spells.toasts.access_denied');
-        case 'INVALID_USER_UUID':
-        case 'MEMBER_UUID_REQUIRED':
-            return t('admin.marketplace.spells.toasts.member_uuid_required');
-        default:
-            return message;
-    }
 }
 
 interface OnlinePagination {
@@ -224,8 +204,7 @@ export default function SpellsPage() {
                 setOnlinePagination(pagination);
                 setCurrentOnlinePage(page);
             } catch (err: unknown) {
-                const e = err as { response?: { data?: { message?: string } } };
-                setOnlineError(e?.response?.data?.message || t('admin.marketplace.spells.loading_error'));
+                setOnlineError(getApiErrorMessage(err, t, 'admin.marketplace.spells.loading_error'));
             } finally {
                 if (mode === 'append') {
                     setLoadingMore(false);
@@ -407,8 +386,7 @@ export default function SpellsPage() {
             fetchInstalledSpells();
             setConfirmInstallOpen(false);
         } catch (err: unknown) {
-            const e = err as { response?: { data?: { message?: string } } };
-            toast.error(e?.response?.data?.message || t('admin.marketplace.spells.install_error'));
+            toast.error(getApiErrorMessage(err, t, 'admin.marketplace.spells.install_error'));
         } finally {
             setInstallingId(null);
         }

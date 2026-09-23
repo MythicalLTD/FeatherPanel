@@ -25,6 +25,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Captcha } from '@/components/Captcha';
 import axios from 'axios';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { isCaptchaConfigured, obtainCaptchaResponseToken } from '@/lib/captchaGate';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -79,11 +80,11 @@ export default function ResetPasswordForm() {
                 if (response.data && response.data.success) {
                     setTokenValid(true);
                 } else {
-                    setError(response.data?.message || t('common.error'));
+                    setError(getApiErrorMessageFromPayload(response.data, t, 'common.error'));
                 }
             } catch (err: unknown) {
                 const error = err as { response?: { data?: { message?: string } } };
-                setError(error.response?.data?.message || t('common.error'));
+                setError(getApiErrorMessage(error, t, 'common.error'));
             } finally {
                 setLoading(false);
             }
@@ -147,7 +148,7 @@ export default function ResetPasswordForm() {
                     router.push('/auth/login');
                 }, 1000);
             } else {
-                setError(response.data?.message || t('common.error'));
+                setError(getApiErrorMessageFromPayload(response.data, t, 'common.error'));
 
                 if (showCaptcha) {
                     setForm((prev) => ({ ...prev, turnstile_token: '' }));
@@ -156,7 +157,7 @@ export default function ResetPasswordForm() {
             }
         } catch (err: unknown) {
             const error = err as { response?: { data?: { message?: string } } };
-            setError(error.response?.data?.message || t('common.error'));
+            setError(getApiErrorMessage(error, t, 'common.error'));
 
             if (showCaptcha) {
                 setForm((prev) => ({ ...prev, turnstile_token: '' }));

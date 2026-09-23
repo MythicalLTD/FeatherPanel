@@ -16,9 +16,10 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useEffect, useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { Play, Square, RotateCw, Skull, Power, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -67,11 +68,7 @@ export function ServerPowerMenu({ uuidShort, serverName, disabled = false }: Ser
                 }),
             );
         } catch (error) {
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.servers.messages.power_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.messages.power_failed'));
         } finally {
             setActionLoading(null);
         }

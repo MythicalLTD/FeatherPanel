@@ -16,8 +16,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -201,7 +202,7 @@ export default function AdminMountsPage() {
                 },
             });
             if (!data.success) {
-                toast.error(data.message || t('admin.mounts.fetch_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.mounts.fetch_failed'));
                 return;
             }
             const rows = (data.data?.mounts || []) as AdminMount[];
@@ -286,21 +287,12 @@ export default function AdminMountsPage() {
                 spell_ids: selectedSpellIds,
             });
             if (!data.success) {
-                toast.error(data.message || t('admin.mounts.links_atomic_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.mounts.links_atomic_failed'));
                 return false;
             }
             return true;
         } catch (e) {
-            if (isAxiosError(e)) {
-                const payload = e.response?.data;
-                const msg =
-                    payload && typeof payload === 'object' && payload !== null && 'message' in payload
-                        ? String((payload as { message?: unknown }).message)
-                        : '';
-                toast.error(msg || t('admin.mounts.links_atomic_failed'));
-            } else {
-                toast.error(t('admin.mounts.links_atomic_failed'));
-            }
+            toast.error(getApiErrorMessage(e, t, 'admin.mounts.links_atomic_failed'));
             return false;
         }
     };
@@ -326,7 +318,7 @@ export default function AdminMountsPage() {
                     user_mountable: form.user_mountable,
                 });
                 if (!data.success) {
-                    toast.error(data.message || t('admin.servers.edit.update_failed'));
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'admin.servers.edit.update_failed'));
                     return;
                 }
                 const newId = data.data?.mount_id as number | undefined;
@@ -355,7 +347,7 @@ export default function AdminMountsPage() {
                 user_mountable: form.user_mountable,
             });
             if (!data.success) {
-                toast.error(data.message || t('admin.servers.edit.update_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.servers.edit.update_failed'));
                 return;
             }
             if (!(await persistLinks(editingId))) {
@@ -365,11 +357,7 @@ export default function AdminMountsPage() {
             setSheetOpen(false);
             await loadMounts();
         } catch (e) {
-            if (isAxiosError(e) && e.response?.data?.message) {
-                toast.error(String(e.response.data.message));
-            } else {
-                toast.error(t('admin.servers.edit.update_failed'));
-            }
+            toast.error(getApiErrorMessage(e, t, 'admin.servers.edit.update_failed'));
         } finally {
             setSaving(false);
         }
@@ -383,14 +371,10 @@ export default function AdminMountsPage() {
                 setConfirmDeleteId(null);
                 await loadMounts();
             } else {
-                toast.error(data.message || t('admin.servers.edit.update_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.servers.edit.update_failed'));
             }
         } catch (e) {
-            if (isAxiosError(e) && e.response?.data?.message) {
-                toast.error(String(e.response.data.message));
-            } else {
-                toast.error(t('admin.servers.edit.update_failed'));
-            }
+            toast.error(getApiErrorMessage(e, t, 'admin.servers.edit.update_failed'));
         }
     };
 

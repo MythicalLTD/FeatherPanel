@@ -17,8 +17,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -334,11 +335,7 @@ export default function EditWebNodePage() {
             toast.success(t('admin.webNodes.messages.updated'));
             void fetchInitialData();
         } catch (error) {
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.webNodes.messages.update_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.webNodes.messages.update_failed'));
         } finally {
             setSaving(false);
         }
@@ -352,11 +349,7 @@ export default function EditWebNodePage() {
             toast.success(t('admin.webNodes.daemon.reset_key_success'));
             void fetchInitialData();
         } catch (error) {
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.webNodes.daemon.reset_key_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.webNodes.daemon.reset_key_failed'));
         } finally {
             setResettingToken(false);
         }

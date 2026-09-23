@@ -47,6 +47,7 @@ import { cn, isEnabled } from '@/lib/utils';
 import { buildSpellDockerImageOptions, resolveSpellDefaultDockerImage } from '@/lib/spellDockerImages';
 import type { Variable, Server, CustomVariable } from '@/types/server';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface ServerResponse {
     success: boolean;
@@ -351,11 +352,11 @@ export default function ServerStartupPage() {
                 toast.success(t('serverStartup.saveSuccess'));
                 await fetchData();
             } else {
-                toast.error(data.message || t('serverStartup.saveError'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverStartup.saveError'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message?: string }>;
-            const msg = axiosError.response?.data?.message || t('serverStartup.saveError');
+            const msg = getApiErrorMessage(axiosError, t, 'serverStartup.saveError');
             toast.error(msg);
             console.error('Save failed:', error);
         } finally {
@@ -394,11 +395,11 @@ export default function ServerStartupPage() {
                 setCustomVariableForm({ name: '', env_variable: '', variable_value: '', is_encrypted: false });
                 await fetchData();
             } else {
-                toast.error(data.message || t('serverStartup.customEnv.addFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverStartup.customEnv.addFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message?: string }>;
-            toast.error(axiosError.response?.data?.message || t('serverStartup.customEnv.addFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'serverStartup.customEnv.addFailed'));
         } finally {
             setCustomVariableSaving(false);
         }
@@ -415,11 +416,11 @@ export default function ServerStartupPage() {
                 toast.success(t('serverStartup.customEnv.deleted'));
                 await fetchData();
             } else {
-                toast.error(data.message || t('serverStartup.customEnv.deleteFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverStartup.customEnv.deleteFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message?: string }>;
-            toast.error(axiosError.response?.data?.message || t('serverStartup.customEnv.deleteFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'serverStartup.customEnv.deleteFailed'));
         } finally {
             setCustomVariableSaving(false);
         }

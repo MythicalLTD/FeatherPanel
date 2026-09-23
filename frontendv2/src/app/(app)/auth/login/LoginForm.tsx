@@ -35,6 +35,7 @@ import { AuthLegalNotice } from '@/components/auth/AuthLegalNotice';
 import LoginQrPanel from '@/components/auth/LoginQrPanel';
 import { AuthAlert, AuthFooterPrompt, AuthHeroCard, AuthLoadingState, AuthPageHeader } from '@/components/auth/AuthUi';
 import { authFormGapClass, authPageGapClass, parseAuthFormDensity } from '@/lib/authPageConfig';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import {
     buildLoginMethodAvailability,
     buildLoginPageLayout,
@@ -192,11 +193,11 @@ export default function LoginForm() {
             if (response.success) {
                 setSuccess(response.message || t('auth.verify_email.resend_sent'));
             } else {
-                setError(response.message || t('common.error'));
+                setError(getApiErrorMessageFromPayload(response, t, 'common.error'));
             }
         } catch (err: unknown) {
             const error = err as { response?: { data?: { message?: string } } };
-            setError(error.response?.data?.message || t('common.error'));
+            setError(getApiErrorMessage(error, t, 'common.error'));
         } finally {
             setResendVerificationLoading(false);
         }
@@ -268,7 +269,7 @@ export default function LoginForm() {
                 if (response.error_code === 'EMAIL_NOT_VERIFIED') {
                     setUnverifiedIdentifier(usernameOrEmail);
                 }
-                setError(response.message || t('common.error'));
+                setError(getApiErrorMessageFromPayload(response, t, 'common.error'));
                 resetCaptcha();
             }
         } catch (err: unknown) {
@@ -296,7 +297,7 @@ export default function LoginForm() {
                 setUnverifiedIdentifier(usernameOrEmail);
             }
 
-            setError(error.response?.data?.message || t('common.error'));
+            setError(getApiErrorMessage(error, t, 'common.error'));
             resetCaptcha();
         } finally {
             setLoading(false);
@@ -348,13 +349,13 @@ export default function LoginForm() {
                         await completeLoginNavigation({ hardNavigate: true });
                     } else {
                         setIsDiscordLogin(false);
-                        setError(response.message || t('common.error'));
+                        setError(getApiErrorMessageFromPayload(response, t, 'common.error'));
                         authProcessed.current = false;
                     }
                 })
                 .catch((err: { response?: { data?: { message?: string } } }) => {
                     setIsDiscordLogin(false);
-                    setError(err.response?.data?.message || t('common.error'));
+                    setError(getApiErrorMessage(err, t, 'common.error'));
                     authProcessed.current = false;
                 })
                 .finally(() => setLoading(false));
@@ -387,13 +388,13 @@ export default function LoginForm() {
                 await completeLoginNavigation({ hardNavigate: true });
             } else {
                 setIsSsoLogin(false);
-                setError(response.message || t('common.error'));
+                setError(getApiErrorMessageFromPayload(response, t, 'common.error'));
                 authProcessed.current = false;
             }
         } catch (err: unknown) {
             setIsSsoLogin(false);
             const error = err as { response?: { data?: { message?: string } } };
-            setError(error.response?.data?.message || t('common.error'));
+            setError(getApiErrorMessage(error, t, 'common.error'));
             authProcessed.current = false;
         } finally {
             setLoading(false);
@@ -428,11 +429,11 @@ export default function LoginForm() {
                 setSuccess(t('auth.discordLinking.success'));
                 await completeLoginNavigation({ delayMs: 1500 });
             } else {
-                setError(response.message || t('common.error'));
+                setError(getApiErrorMessageFromPayload(response, t, 'common.error'));
             }
         } catch (err: unknown) {
             const error = err as { response?: { data?: { message?: string } } };
-            setError(error.response?.data?.message || t('common.error'));
+            setError(getApiErrorMessage(error, t, 'common.error'));
         } finally {
             setLoading(false);
         }
@@ -495,7 +496,7 @@ export default function LoginForm() {
                 setSuccess(t('common.success'));
                 await completeLoginNavigation({ delayMs: 1000 });
             } else {
-                setError(json.message || t('common.error'));
+                setError(getApiErrorMessageFromPayload(json, t, 'common.error'));
 
                 if (showCaptcha) {
                     setForm((prev) => ({ ...prev, turnstile_token: '' }));
@@ -504,7 +505,7 @@ export default function LoginForm() {
             }
         } catch (err: unknown) {
             const error = err as { response?: { data?: { message?: string } } };
-            setError(error.response?.data?.message || t('common.error'));
+            setError(getApiErrorMessage(error, t, 'common.error'));
 
             if (showCaptcha) {
                 setForm((prev) => ({ ...prev, turnstile_token: '' }));
@@ -555,7 +556,7 @@ export default function LoginForm() {
                 setSuccess(t('auth.emailLogin.codeSent'));
                 setEmailLoginStep('code');
             } else {
-                setError(response.message || t('common.error'));
+                setError(getApiErrorMessageFromPayload(response, t, 'common.error'));
                 if (showCaptcha) {
                     setForm((prev) => ({ ...prev, turnstile_token: '' }));
                     setTurnstileKey((prev) => prev + 1);
@@ -563,7 +564,7 @@ export default function LoginForm() {
             }
         } catch (err: unknown) {
             const error = err as { response?: { data?: { message?: string } } };
-            setError(error.response?.data?.message || t('common.error'));
+            setError(getApiErrorMessage(error, t, 'common.error'));
             if (showCaptcha) {
                 setForm((prev) => ({ ...prev, turnstile_token: '' }));
                 setTurnstileKey((prev) => prev + 1);
@@ -600,7 +601,7 @@ export default function LoginForm() {
                 setSuccess(t('auth.login.success'));
                 await completeLoginNavigation({ delayMs: 1000 });
             } else {
-                setError(response.message || t('common.error'));
+                setError(getApiErrorMessageFromPayload(response, t, 'common.error'));
             }
         } catch (err: unknown) {
             const error = err as {
@@ -623,7 +624,7 @@ export default function LoginForm() {
                 return;
             }
 
-            setError(error.response?.data?.message || t('common.error'));
+            setError(getApiErrorMessage(error, t, 'common.error'));
         } finally {
             setLoading(false);
         }
@@ -697,7 +698,7 @@ export default function LoginForm() {
                 if ((usernameOrEmailHint ?? '').trim() !== '' && opt.data?.has_passkeys === false) {
                     setError(t('auth.passkey.noneForAccount'));
                 } else {
-                    setError(opt.message || t('auth.passkey.unavailable'));
+                    setError(getApiErrorMessageFromPayload(opt, t, 'auth.passkey.unavailable'));
                 }
                 return;
             }
@@ -718,7 +719,7 @@ export default function LoginForm() {
                 setSuccess(t('common.success'));
                 await completeLoginNavigation({ delayMs: 800 });
             } else if (!silent) {
-                setError(vr.message || t('common.error'));
+                setError(getApiErrorMessageFromPayload(vr, t, 'common.error'));
             }
         } catch (err: unknown) {
             const ax = err as {
@@ -750,7 +751,7 @@ export default function LoginForm() {
             if (silent && (isUserCancelled || !ax.response)) {
                 return;
             }
-            setError(ax.response?.data?.message || t('auth.passkey.failed'));
+            setError(getApiErrorMessage(ax, t, 'auth.passkey.failed'));
         } finally {
             if (!silent) {
                 setLoading(false);

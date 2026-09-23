@@ -43,6 +43,7 @@ import {
     parseBackupFields,
     type BackupFields,
 } from '@/components/server/backup/backup-payload';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function EditTaskPage() {
     const {
@@ -168,11 +169,11 @@ export default function EditTaskPage() {
                 toast.success(t('serverTasks.updateSuccess'));
                 router.push(`/server/${uuidShort}/schedules/${scheduleId}/tasks`);
             } else {
-                toast.error(data?.message || t('serverTasks.updateFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverTasks.updateFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('serverTasks.updateFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'serverTasks.updateFailed'));
         } finally {
             setSaving(false);
         }

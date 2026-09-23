@@ -69,6 +69,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 import { BackupItem, BackupsResponse, Server } from '@/types/server';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 type BackupTab = 'files' | 'databases';
 
@@ -225,13 +226,13 @@ export default function ServerBackupsPage() {
                 toast.success(t('serverBackups.restoreSuccess'));
                 setRestoreDialogOpen(false);
             } else {
-                toast.error(data.message || t('serverBackups.restoreFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.restoreFailed'));
             }
         } catch (error) {
             if (axios.isAxiosError(error) && error.response?.data?.error === 'BACKUP_LOCKED') {
                 toast.error(t('serverBackups.restoreLockedError'));
             } else {
-                toast.error(t('serverBackups.restoreFailed'));
+                toast.error(getApiErrorMessage(error, t, 'serverBackups.restoreFailed'));
             }
         } finally {
             setRestoring(false);
@@ -249,7 +250,7 @@ export default function ServerBackupsPage() {
                     toast.success(t('serverBackups.deleteSuccess'));
                     fetchBackups();
                 } else {
-                    toast.error(data.message || t('serverBackups.deleteFailed'));
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.deleteFailed'));
                 }
             },
         });
@@ -278,7 +279,7 @@ export default function ServerBackupsPage() {
         data?: { deleted_count?: number; skipped_count?: number; failed_count?: number };
     }) => {
         if (!data.success) {
-            toast.error(data.message || t('serverBackups.bulkDeleteFailed'));
+            toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.bulkDeleteFailed'));
             return;
         }
         const deleted = data.data?.deleted_count ?? 0;
@@ -351,7 +352,7 @@ export default function ServerBackupsPage() {
                     toast.success(lock ? t('serverBackups.lockSuccess') : t('serverBackups.unlockSuccess'));
                     fetchBackups();
                 } else {
-                    toast.error(data.message || t('serverBackups.failedToPerformAction'));
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.failedToPerformAction'));
                 }
             },
         });
@@ -365,7 +366,7 @@ export default function ServerBackupsPage() {
                 triggerSignedUrlDownload(data.data.download_url);
                 toast.success(t('serverBackups.downloadSuccess'));
             } else {
-                toast.error(data.message || t('serverBackups.downloadFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.downloadFailed'));
             }
         } catch {
             toast.error(t('serverBackups.downloadFailed'));

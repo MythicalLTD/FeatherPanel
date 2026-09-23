@@ -29,6 +29,7 @@ import { Globe, Loader2, Lock, Network, RefreshCw, Server, ShieldCheck } from 'l
 import { cn } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface AssignedIp {
     id: number;
@@ -78,12 +79,11 @@ export default function VdsNetworkingPage() {
                 setDnsSearchDomain(payload.searchdomain ?? '');
             }
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setLoading(false);
         }
-    }, [id]);
+    }, [id, t]);
 
     React.useEffect(() => {
         if (!instanceLoading && instance) {
@@ -103,12 +103,11 @@ export default function VdsNetworkingPage() {
                 nameserver: dnsNameserver.trim() || undefined,
                 searchdomain: networking?.vm_type === 'lxc' ? dnsSearchDomain.trim() || undefined : undefined,
             });
-            toast.success(t('vds.networking.dns.apply_success') ?? 'DNS updated.');
+            toast.success(t('vds.networking.dns.apply_success'));
             await refreshInstance();
             await fetchNetworking();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg || (t('vds.networking.dns.apply_failed') ?? 'Failed to update DNS.'));
+            toast.error(getApiErrorMessage(err, t, 'vds.networking.dns.apply_failed'));
         } finally {
             setSaving(false);
         }

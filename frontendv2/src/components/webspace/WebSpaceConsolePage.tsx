@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -38,6 +38,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import type { QuilldStats } from '@/hooks/useQuilldWebSocket';
 import type { WebSpaceAccessUrls } from '@/lib/webspace-urls';
 import { displayWebSpaceStatus } from '@/lib/webspace-utils';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface WebSpaceDetails {
     uuid: string;
@@ -268,9 +269,7 @@ export default function WebSpaceConsolePage() {
             }
             toast.success(t('webSpaces.overview.powerOk', { action }));
         } catch (error) {
-            let msg = t('webSpaces.overview.powerFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.overview.powerFailed'));
         } finally {
             setBusy(null);
         }

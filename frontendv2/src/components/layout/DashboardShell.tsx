@@ -30,6 +30,8 @@ import GlobalSearchDialog from '@/components/global-search/GlobalSearchDialog';
 import PanelDebugConsole from '@/components/global-search/PanelDebugConsole';
 import { GlobalSearchProvider } from '@/contexts/GlobalSearchContext';
 import { PanelDebugProvider } from '@/contexts/PanelDebugContext';
+import { PluginSlot } from '@/components/plugins/PluginSlot';
+import { PluginPageOverrideGate } from '@/components/plugins/FeatherPanelHost';
 
 import { usePluginRoutes, getPluginPaths } from '@/hooks/usePluginRoutes';
 
@@ -111,76 +113,91 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             <PanelDebugProvider>
                 {/* Outside overflow shells so fixed desktop rail is in first paint (no portal pop-in). */}
                 {!hideAppChrome && (
-                    <Sidebar
-                        mobileOpen={mobileOpen}
-                        setMobileOpen={setMobileOpen}
-                        pluginFullBleed={useFullBleedLayout}
-                    />
+                    <PluginSlot id='shell.sidebar' className='contents' replaceHeight='100vh'>
+                        <Sidebar
+                            mobileOpen={mobileOpen}
+                            setMobileOpen={setMobileOpen}
+                            pluginFullBleed={useFullBleedLayout}
+                        />
+                    </PluginSlot>
                 )}
-                <BackgroundWrapper fillViewport>
-                    <GlobalSearchDialog />
-                    <PanelDebugConsole />
-                    <div
-                        className='motion-content flex min-h-0 flex-1 flex-col overflow-hidden'
-                        data-fp-dashboard-shell
-                    >
+                <PluginSlot id='shell.background' className='contents' collapseWhenHidden={false}>
+                    <BackgroundWrapper fillViewport>
+                        <GlobalSearchDialog />
+                        <PanelDebugConsole />
                         <div
-                            className={cn(
-                                'fp-chrome-motion flex min-h-0 min-w-0 flex-1 flex-col',
-                                !hideAppChrome &&
-                                    getShellContentInset({
-                                        chromeLayout,
-                                        sidebarPosition,
-                                        sidebarCollapsed,
-                                        dockDisplay,
-                                        dockSize,
-                                    }),
-                            )}
+                            className='motion-content flex min-h-0 flex-1 flex-col overflow-hidden'
+                            data-fp-dashboard-shell
                         >
-                            {!hideAppChrome &&
-                                (navbarHoverDockActive ? (
-                                    <NavbarHoverDock>
-                                        <Navbar onMenuClick={() => setMobileOpen(true)} />
-                                    </NavbarHoverDock>
-                                ) : (
-                                    <Navbar onMenuClick={() => setMobileOpen(true)} />
-                                ))}
-
-                            <main
+                            <div
                                 className={cn(
-                                    'fp-shell-main flex min-h-0 flex-1 flex-col',
-                                    useFullBleedLayout
-                                        ? 'overflow-hidden p-0'
-                                        : 'custom-scrollbar overflow-x-hidden overflow-y-auto overscroll-y-contain px-3 py-5 sm:px-6 sm:py-6 lg:px-8',
+                                    'fp-chrome-motion flex min-h-0 min-w-0 flex-1 flex-col',
+                                    !hideAppChrome &&
+                                        getShellContentInset({
+                                            chromeLayout,
+                                            sidebarPosition,
+                                            sidebarCollapsed,
+                                            dockDisplay,
+                                            dockSize,
+                                        }),
                                 )}
                             >
-                                <div
-                                    className={cn(
-                                        'flex w-full flex-col',
-                                        // Full-bleed consoles need a height-locked flex child.
-                                        // Scrollable pages must NOT use min-h-0 or overflow:hidden
-                                        // siblings (e.g. ticket banner) get crushed and clipped.
-                                        useFullBleedLayout ? 'h-full min-h-0 flex-1' : 'min-h-full flex-1',
-                                        !useFullBleedLayout &&
-                                            (isServerConsoleHome || isWebSpaceConsoleHome
-                                                ? 'mx-auto max-w-[min(100rem,calc(100vw-1.5rem))] sm:max-w-[min(100rem,calc(100vw-2rem))]'
-                                                : isTicketDetailPage
-                                                  ? 'mx-auto max-w-[min(112rem,calc(100vw-1.5rem))] sm:max-w-[min(112rem,calc(100vw-2rem))]'
-                                                  : 'mx-auto max-w-7xl'),
-                                    )}
+                                {!hideAppChrome && (
+                                    <PluginSlot id='shell.navbar' className='contents'>
+                                        {navbarHoverDockActive ? (
+                                            <NavbarHoverDock>
+                                                <Navbar onMenuClick={() => setMobileOpen(true)} />
+                                            </NavbarHoverDock>
+                                        ) : (
+                                            <Navbar onMenuClick={() => setMobileOpen(true)} />
+                                        )}
+                                    </PluginSlot>
+                                )}
+
+                                <PluginSlot
+                                    id='shell.main'
+                                    className='contents'
+                                    collapseWhenHidden={false}
+                                    replaceHeight='100%'
                                 >
-                                    {!useFullBleedLayout && <AdminOpenTicketsBanner className='mb-5 shrink-0' />}
-                                    {children}
-                                    {!useFullBleedLayout ? (
-                                        <footer className='border-border/40 mt-6 shrink-0 border-t pt-4 pb-2'>
-                                            <ConfiguredLinks variant='compact' />
-                                        </footer>
-                                    ) : null}
-                                </div>
-                            </main>
+                                    <main
+                                        className={cn(
+                                            'fp-shell-main flex min-h-0 flex-1 flex-col',
+                                            useFullBleedLayout
+                                                ? 'overflow-hidden p-0'
+                                                : 'custom-scrollbar overflow-x-hidden overflow-y-auto overscroll-y-contain px-3 py-5 sm:px-6 sm:py-6 lg:px-8',
+                                        )}
+                                    >
+                                        <div
+                                            className={cn(
+                                                'flex w-full flex-col',
+                                                useFullBleedLayout ? 'h-full min-h-0 flex-1' : 'min-h-full flex-1',
+                                                !useFullBleedLayout &&
+                                                    (isServerConsoleHome || isWebSpaceConsoleHome
+                                                        ? 'mx-auto max-w-[min(100rem,calc(100vw-1.5rem))] sm:max-w-[min(100rem,calc(100vw-2rem))]'
+                                                        : isTicketDetailPage
+                                                          ? 'mx-auto max-w-[min(112rem,calc(100vw-1.5rem))] sm:max-w-[min(112rem,calc(100vw-2rem))]'
+                                                          : 'mx-auto max-w-7xl'),
+                                            )}
+                                        >
+                                            <PluginSlot id='shell.page-header' className='contents'>
+                                                {!useFullBleedLayout && (
+                                                    <AdminOpenTicketsBanner className='mb-5 shrink-0' />
+                                                )}
+                                            </PluginSlot>
+                                            <PluginPageOverrideGate>{children}</PluginPageOverrideGate>
+                                            {!useFullBleedLayout ? (
+                                                <footer className='border-border/40 mt-6 shrink-0 border-t pt-4 pb-2'>
+                                                    <ConfiguredLinks variant='compact' />
+                                                </footer>
+                                            ) : null}
+                                        </div>
+                                    </main>
+                                </PluginSlot>
+                            </div>
                         </div>
-                    </div>
-                </BackgroundWrapper>
+                    </BackgroundWrapper>
+                </PluginSlot>
             </PanelDebugProvider>
         </GlobalSearchProvider>
     );

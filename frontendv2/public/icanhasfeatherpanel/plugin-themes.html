@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Plugin Themes &amp; UI Packs — FeatherPanel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.35rem; margin-top: 2rem; }
+    .muted { color: #9ca3af; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.875rem; }
+    pre { background: #0f172a; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    ul { padding-left: 1.25rem; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <p><a href="/icanhasfeatherpanel/">&larr; Docs home</a></p>
+    <h1>Plugin Themes &amp; UI Packs</h1>
+    <p class="muted">Extend FeatherPanel appearance and layout at runtime — no panel <code>pnpm build</code> when installing a pack.</p>
+
+    <h2>Theme packs</h2>
+    <div class="card">
+      <p>Ship <code>Frontend/theme.json</code> (+ optional <code>theme.css</code>). Users select packs in Preferences → Appearance.</p>
+      <p>API: <code>GET /api/system/plugin-themes</code>, CSS: <code>GET /api/system/plugin-theme-css?id=plugin:themeId</code></p>
+      <p>Schema: <a href="/icanhasfeatherpanel/schemas/plugin-theme.schema.json">plugin-theme.schema.json</a></p>
+      <pre>{
+  "id": "ocean",
+  "name": "Ocean",
+  "tokens": {
+    "light": { "primary": "199 89% 48%", "background": "210 40% 98%" },
+    "dark": { "primary": "199 89% 48%", "background": "222 47% 7%" }
+  },
+  "css": "theme.css"
+}</pre>
+    </div>
+
+    <h2>Overrides (surgical)</h2>
+    <div class="card">
+      <p><code>Frontend/overrides.json</code> — hide / replace / actions on named slots.</p>
+      <p>API: <code>GET /api/system/plugin-overrides</code></p>
+      <p>Schema: <a href="/icanhasfeatherpanel/schemas/plugin-overrides.schema.json">plugin-overrides.schema.json</a></p>
+      <p>Shell slots: <code>shell.sidebar</code>, <code>shell.navbar</code>, <code>shell.page-header</code>, <code>shell.main</code>, <code>shell.background</code></p>
+    </div>
+
+    <h2>UI packs (full makeover)</h2>
+    <div class="card">
+      <p><code>Frontend/ui.json</code> — shell replace, page replace, hide list, toolbar actions. One active pack at a time.</p>
+      <p>API: <code>GET /api/system/plugin-ui-packs</code></p>
+      <p>Schema: <a href="/icanhasfeatherpanel/schemas/plugin-ui-pack.schema.json">plugin-ui-pack.schema.json</a></p>
+      <pre>{
+  "id": "glass",
+  "name": "Glass Dashboard",
+  "theme": "ocean",
+  "shell": {
+    "replace": {
+      "shell.sidebar": { "component": "Components/Sidebar.html" }
+    }
+  },
+  "pages": [
+    { "match": "/dashboard", "replace": { "remote": "dist/Dashboard.js" } }
+  ],
+  "hide": [],
+  "actions": []
+}</pre>
+    </div>
+
+    <h2>Host bridge</h2>
+    <div class="card">
+      <p>Panel exposes <code>window.FeatherPanel</code> v2 — see <a href="/icanhasfeatherpanel/plugin-power.html">Power SDK</a> for events, actions, modals, search, shortcuts.</p>
+      <p>Iframe protocol (same-origin):</p>
+      <ul>
+        <li><code>featherpanel-ready</code> → host replies with <code>featherpanel-theme</code></li>
+        <li><code>featherpanel-navigate</code> <code>{ path }</code></li>
+        <li><code>featherpanel-toast</code> <code>{ message, level }</code></li>
+        <li><code>featherpanel-bus</code> — event/action bridge</li>
+      </ul>
+    </div>
+
+    <h2>React remotes</h2>
+    <div class="card">
+      <p>Point a slot <code>remote</code> at a prebundled ESM that default-exports a React component. React is provided by the host. No panel rebuild when installing the plugin.</p>
+    </div>
+
+    <h2>Dev templates</h2>
+    <p>Admin → Developer → Plugins → Create: choose <strong>Theme pack</strong> or <strong>UI pack</strong>.</p>
+  </main>
+</body>
+</html>

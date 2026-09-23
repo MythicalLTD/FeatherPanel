@@ -17,8 +17,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -105,11 +106,7 @@ export default function EditWebPlatePage() {
             router.push('/admin/webplates');
         } catch (error) {
             console.error(error);
-            let msg = t('admin.webPlates.messages.update_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.webPlates.messages.update_failed'));
         } finally {
             setSaving(false);
         }

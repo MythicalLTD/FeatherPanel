@@ -16,7 +16,6 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import axios from 'axios';
 import { Copy, Loader2, Play, RotateCcw, Search, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -26,6 +25,7 @@ import { usePanelApiHistory } from '@/hooks/usePanelApiHistory';
 import { entryToReplayDraft, formatPanelApiBody, type PanelApiHistoryEntry } from '@/lib/panel-api-history';
 import { copyToClipboard, cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const;
 
@@ -149,12 +149,7 @@ export function PanelDebugApiSection() {
                 toast.error(t('globalSearch.debug.apiInvalidJson'));
                 return;
             }
-            const message = axios.isAxiosError(error)
-                ? (error.response?.data?.message ?? error.message)
-                : error instanceof Error
-                  ? error.message
-                  : t('globalSearch.debug.apiRequestFailed');
-            toast.error(typeof message === 'string' ? message : t('globalSearch.debug.apiRequestFailed'));
+            toast.error(getApiErrorMessage(error, t, 'globalSearch.debug.apiRequestFailed'));
             if (entries[0]) {
                 setSelectedId(entries[0].id);
             }

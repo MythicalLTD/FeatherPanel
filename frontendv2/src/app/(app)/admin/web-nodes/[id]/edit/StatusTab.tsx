@@ -16,8 +16,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Progress } from '@/components/ui/progress';
@@ -133,16 +134,16 @@ export function StatusTab({ nodeId }: StatusTabProps) {
                 (utilRes.status === 'fulfilled' && utilRes.value.data?.success);
 
             if (!anyOk) {
-                let msg = t('admin.webNodes.status.fetch_failed');
                 const failed = [healthRes, systemRes, utilRes].find((r) => r.status === 'rejected');
-                if (failed && failed.status === 'rejected' && isAxiosError(failed.reason)) {
-                    msg = failed.reason.response?.data?.message || failed.reason.message || msg;
-                }
+                const msg =
+                    failed && failed.status === 'rejected'
+                        ? getApiErrorMessage(failed.reason, t, 'admin.webNodes.status.fetch_failed')
+                        : t('admin.webNodes.status.fetch_failed');
                 setError(msg);
             }
         } catch (e) {
             console.error(e);
-            setError(t('admin.webNodes.status.fetch_failed'));
+            setError(getApiErrorMessage(e, t, 'admin.webNodes.status.fetch_failed'));
         } finally {
             setLoading(false);
         }

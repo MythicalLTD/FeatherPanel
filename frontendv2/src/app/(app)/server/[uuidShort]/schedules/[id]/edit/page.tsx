@@ -37,6 +37,7 @@ import { useUserTimezone } from '@/contexts/PreferencesContext';
 import type { Schedule, ScheduleUpdateRequest } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function EditSchedulePage() {
     const { uuidShort, id } = useParams() as { uuidShort: string; id: string };
@@ -126,11 +127,11 @@ export default function EditSchedulePage() {
                 toast.success(t('serverSchedules.updateSuccess'));
                 router.push(`/server/${uuidShort}/schedules`);
             } else {
-                toast.error(data?.message || t('serverSchedules.updateFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverSchedules.updateFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            const msg = axiosError.response?.data?.message || t('serverSchedules.updateFailed');
+            const msg = getApiErrorMessage(axiosError, t, 'serverSchedules.updateFailed');
             toast.error(msg);
         } finally {
             setSaving(false);

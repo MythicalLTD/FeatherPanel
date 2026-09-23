@@ -289,7 +289,36 @@
             "reload_title": "Reload Content",
             "loading_content": "Loading content...",
             "failed_to_load": "Failed to load content",
-            "retry_loading": "Retry Loading"
+            "retry_loading": "Retry Loading",
+            "cloudflare_challenge": "Cloudflare verification is still in progress. Please wait a moment and try again."
+        },
+        "codes": {
+            "INVALID_ACCOUNT_TOKEN": "Your session is invalid or has expired. Please sign in again.",
+            "USER_BANNED": "This account has been banned.",
+            "TWO_FACTOR_REQUIRED": "Two-factor authentication is required to continue.",
+            "EMAIL_NOT_VERIFIED": "Please verify your email address before continuing.",
+            "TWO_FACTOR_AUTH_ENABLED": "Two-factor authentication is already enabled on this account.",
+            "DEVICE_ACCOUNT_LIMIT": "This device has reached the maximum number of accounts.",
+            "SLOW_DOWN": "Too many requests. Please wait a moment and try again.",
+            "QR_CHALLENGE_EXPIRED": "This QR login challenge has expired. Please try again.",
+            "QR_CHALLENGE_UNAVAILABLE": "This QR login challenge is no longer available.",
+            "QR_CHALLENGE_CLAIMED": "This QR login challenge was already approved on another device.",
+            "AUTHORIZATION_NOT_PENDING": "This authorization request is no longer pending.",
+            "SERVER_SUSPENDED": "This server is suspended.",
+            "VM_INSTANCE_SUSPENDED": "This VDS instance is suspended.",
+            "FILE_EXISTS": "A file with this name already exists.",
+            "PREMIUM_REQUIRED": "FeatherPanel Premium is required for this feature.",
+            "HOSTING_NOT_READY": "Hosting is not ready yet. Please try again shortly.",
+            "WINGS_CONNECTION_UNAVAILABLE": "Wings connection is unavailable. Please contact support.",
+            "INVALID_LOCATION_TYPE": "Invalid location type for this node.",
+            "DAEMON_TYPE_IMMUTABLE": "Daemon type cannot be changed after the node is created.",
+            "DAEMON_TYPE_MIGRATION_FORBIDDEN": "Migrating this daemon type is not allowed.",
+            "CLOUD_CREDENTIALS_NOT_CONFIGURED": "Mythic Cloud is not linked. Connect under Cloud Connections.",
+            "MEMBER_UUID_REQUIRED": "Your panel user is not mapped to a Mythic team member. Re-link Cloud Connections with a matching email.",
+            "VALIDATION_FAILED": "Please check your input and try again.",
+            "FORBIDDEN": "You do not have permission to do that.",
+            "NOT_FOUND": "The requested resource was not found.",
+            "INTERNAL_ERROR": "An unexpected error occurred. Please try again."
         },
         "global": {}
     },
@@ -1589,6 +1618,17 @@
             "lockedByAdmin": "Theme is locked by administrator",
             "modeTitle": "Color mode"
         },
+        "themePack": {
+            "title": "Theme packs",
+            "description": "Plugin theme packs override design tokens and optional CSS.",
+            "lockedByAdmin": "Theme pack is locked by administrator"
+        },
+        "uiPack": {
+            "title": "UI packs",
+            "description": "Layout takeovers that can replace shell regions and pages.",
+            "none": "None (default layout)",
+            "lockedByAdmin": "UI pack is locked by administrator"
+        },
         "background": {
             "title": "Background Settings",
             "customize": "Customize background",
@@ -1839,6 +1879,27 @@
     "admin_updates": {
         "title": "System Updates",
         "description": "Manage and apply updates for your panel, wings nodes, and plugins.",
+        "check_for_updates": "Check for updates",
+        "search_placeholder": "Search plugins or nodes…",
+        "clear_selection": "Clear",
+        "update_selected_count": "Update selected ({count})",
+        "select_updates": "Select updates",
+        "open_store": "Open store",
+        "cloud_connections": "Cloud Connections",
+        "overview": {
+            "panel": "Panel",
+            "plugins": "Plugins",
+            "wings": "Wings",
+            "update_to": "Update to {version}",
+            "up_to_date_version": "Up to date · {version}",
+            "checking": "Checking…",
+            "store_unavailable": "Store unavailable",
+            "up_to_date": "Up to date",
+            "plugin_updates_available": "{count} updates available",
+            "plugin_update_available_one": "{count} update available",
+            "nodes_need_updates": "{count} nodes need updates",
+            "node_needs_updates_one": "{count} node needs updates"
+        },
         "panel": {
             "title": "FeatherPanel",
             "current": "Current Version",
@@ -1873,7 +1934,10 @@
             "checking": "Checking...",
             "failed": "Failed to check",
             "no_nodes": "No nodes found.",
-            "no_nodes_search": "No nodes matching your search"
+            "no_nodes_search": "No nodes matching your search",
+            "filter_needs_update": "Needs update",
+            "filter_all": "All nodes",
+            "loading": "Loading nodes…"
         },
         "plugins": {
             "title": "Plugins",
@@ -1883,7 +1947,17 @@
             "update": "Update",
             "up_to_date": "All plugins are up to date",
             "no_plugins": "No plugins installed.",
-            "update_available_badge": "Update available"
+            "update_available_badge": "Update available",
+            "can_update_from_mythic": "{count} plugins can be updated from Mythic",
+            "can_update_from_mythic_one": "{count} plugin can be updated from Mythic",
+            "filter_needs_update": "Needs update",
+            "filter_all": "All installed",
+            "checking": "Checking plugin versions…",
+            "up_to_date_description": "Installed plugins match the latest Mythic releases we could resolve.",
+            "current_suffix": "current",
+            "not_in_store": "not in store",
+            "status_up_to_date": "Up to date",
+            "status_no_match": "No match"
         },
         "bulk": {
             "items_selected": "{count} items selected",
@@ -1902,7 +1976,9 @@
             "checking_updates": "Checking for updates...",
             "bulk_starting": "Starting bulk updates...",
             "bulk_started": "Bulk update process initiated!",
-            "bulk_failed": "Some updates failed to start."
+            "bulk_failed": "Some updates failed to start.",
+            "cloud_not_linked": "Mythic Cloud is not linked. Connect under Cloud Connections to check plugin updates.",
+            "store_check_failed": "Failed to check Mythic store for plugin updates"
         }
     },
     "sidebar": {
@@ -8319,7 +8395,13 @@
                 "inactive_badge": "Premium inactive",
                 "manage": "Manage Premium",
                 "get": "Get Premium",
-                "open_page": "FeatherPanel Premium"
+                "open_page": "FeatherPanel Premium",
+                "download_success": "Premium package {name} v{version} downloaded successfully",
+                "download_failed": "Failed to download premium package",
+                "fetch_summary_failed": "Failed to fetch cloud summary",
+                "fetch_credits_failed": "Failed to fetch credits",
+                "fetch_team_failed": "Failed to fetch team information",
+                "fetch_products_failed": "Failed to fetch products"
             },
             "connection_status": {
                 "card_title": "Connection",
@@ -9046,6 +9128,22 @@
                 }
             },
             "fields": {
+                "app_theme_pack_default": {
+                    "label": "Default Theme Pack",
+                    "description": "Default plugin theme pack id (default or pluginId:themeId)"
+                },
+                "app_theme_pack_lock": {
+                    "label": "Lock Theme Pack",
+                    "description": "Force the configured theme pack for all users"
+                },
+                "app_ui_pack_default": {
+                    "label": "Default UI Pack",
+                    "description": "Active UI pack id for layout takeovers (empty = none, or pluginId:packId)"
+                },
+                "app_ui_pack_lock": {
+                    "label": "Lock UI Pack",
+                    "description": "Force the configured UI pack for all users"
+                },
                 "discord_url": {
                     "label": "Discord URL",
                     "description": "Discord invite or community server URL shown in the panel footer."
@@ -9718,6 +9816,14 @@
                         "fresh": {
                             "label": "Fresh Template",
                             "description": "Clean template with basic structure and minimal examples"
+                        },
+                        "theme": {
+                            "label": "Theme pack",
+                            "description": "Selectable theme with design tokens and optional CSS"
+                        },
+                        "uiPack": {
+                            "label": "UI pack",
+                            "description": "Layout takeover with shell/page replace and slot actions"
                         }
                     },
                     "field_types": {
@@ -9805,6 +9911,23 @@
         "plugins": {
             "title": "Plugins",
             "description": "Manage installed plugins and their configurations",
+            "search_placeholder": "Search installed plugins…",
+            "loading": "Loading plugins…",
+            "stats": {
+                "installed": "Installed",
+                "updates": "Updates",
+                "issues": "Issues",
+                "store_unavailable": "Store unavailable",
+                "updates_available": "{count} available",
+                "up_to_date": "Up to date",
+                "issues_count": "{count} need attention",
+                "none": "None"
+            },
+            "filters": {
+                "all": "All",
+                "updates": "Updates",
+                "issues": "Issues"
+            },
             "actions": {
                 "refresh": "Refresh",
                 "check_updates": "Check Updates",
@@ -9820,7 +9943,9 @@
                 "update_all": "Update All ({count})",
                 "select_all": "Select All",
                 "deselect_all": "Deselect All",
-                "dismiss": "Dismiss"
+                "dismiss": "Dismiss",
+                "store": "Store",
+                "cloud_connections": "Cloud Connections"
             },
             "grid": {
                 "empty_title": "No Plugins Installed",
@@ -9834,7 +9959,11 @@
                 "visit_action": "Visit",
                 "update_checking": "Checking...",
                 "update_available": "Update Available",
-                "not_loaded": "Not Loaded"
+                "not_loaded": "Not Loaded",
+                "current": "Current",
+                "no_match": "No plugins match",
+                "no_match_hint": "Try another filter or search term.",
+                "all_up_to_date": "All plugins are up to date"
             },
             "drawers": {
                 "config": {
@@ -9944,7 +10073,10 @@
                 "config_load_failed": "Failed to load full configuration",
                 "spells_load_failed": "Failed to load spells",
                 "up_to_date": "{plugin} is up to date",
-                "update_check_failed": "Failed to check for update"
+                "update_check_failed": "Failed to check for update",
+                "cloud_not_linked": "Mythic Cloud is not linked. Connect Cloud Connections to check updates.",
+                "store_check_failed": "Failed to check Mythic store for updates",
+                "no_release": "No downloadable release found."
             }
         },
         "redirect_links": {
@@ -12504,7 +12636,18 @@
     "plugins": {
         "failedToLoadContent": "Failed to load content.",
         "loadingContent": "Loading content...",
-        "retry": "Retry"
+        "retry": "Retry",
+        "modal": {
+            "loading": "Loading modal…",
+            "noComponent": "Modal has no component."
+        },
+        "remote": {
+            "loadFailed": "Failed to load remote",
+            "failed": "Plugin remote failed: {error}"
+        },
+        "iframe": {
+            "defaultTitle": "Plugin"
+        }
     },
     "public": {
         "redirect": {}

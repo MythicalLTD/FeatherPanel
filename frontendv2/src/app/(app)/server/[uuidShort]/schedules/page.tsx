@@ -54,6 +54,7 @@ import { cn, isEnabledUnlessExplicitlyFalse } from '@/lib/utils';
 import type { Schedule, SchedulePagination } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function ServerSchedulesPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -142,11 +143,11 @@ export default function ServerSchedulesPage() {
                 setIsDeleteOpen(false);
                 fetchData(pagination.current_page);
             } else {
-                toast.error(data?.message || t('serverSchedules.deleteFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverSchedules.deleteFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            const msg = axiosError.response?.data?.message || t('serverSchedules.deleteFailed');
+            const msg = getApiErrorMessage(axiosError, t, 'serverSchedules.deleteFailed');
             toast.error(msg);
         } finally {
             setDeleting(false);
@@ -160,11 +161,11 @@ export default function ServerSchedulesPage() {
                 toast.success(t('serverSchedules.toggleSuccess'));
                 fetchData(pagination.current_page);
             } else {
-                toast.error(data?.message || t('serverSchedules.toggleFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverSchedules.toggleFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            const msg = axiosError.response?.data?.message || t('serverSchedules.toggleFailed');
+            const msg = getApiErrorMessage(axiosError, t, 'serverSchedules.toggleFailed');
             toast.error(msg);
         }
     };
@@ -177,11 +178,11 @@ export default function ServerSchedulesPage() {
                 toast.success(t('serverSchedules.runQueued'));
                 fetchData(pagination.current_page);
             } else {
-                toast.error(data?.message || t('serverSchedules.runFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverSchedules.runFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('serverSchedules.runFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'serverSchedules.runFailed'));
         } finally {
             setRunningNow(null);
         }
@@ -201,11 +202,11 @@ export default function ServerSchedulesPage() {
                 URL.revokeObjectURL(url);
                 toast.success(t('serverSchedules.exportSuccess'));
             } else {
-                toast.error(data?.message || t('serverSchedules.exportFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverSchedules.exportFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('serverSchedules.exportFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'serverSchedules.exportFailed'));
         } finally {
             setExporting(null);
         }
@@ -240,11 +241,11 @@ export default function ServerSchedulesPage() {
                 setImportJson('');
                 fetchData(1);
             } else {
-                toast.error(data?.message || t('serverSchedules.importFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverSchedules.importFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('serverSchedules.importFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'serverSchedules.importFailed'));
         } finally {
             setImporting(false);
         }

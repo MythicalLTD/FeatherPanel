@@ -187,6 +187,10 @@ class SettingsController
                 ConfigInterface::APP_ACCENT_COLOR_LOCK,
                 ConfigInterface::APP_THEME_DEFAULT,
                 ConfigInterface::APP_THEME_LOCK,
+                ConfigInterface::APP_THEME_PACK_DEFAULT,
+                ConfigInterface::APP_THEME_PACK_LOCK,
+                ConfigInterface::APP_UI_PACK_DEFAULT,
+                ConfigInterface::APP_UI_PACK_LOCK,
                 ConfigInterface::APP_BACKGROUND_TYPE_DEFAULT,
                 ConfigInterface::APP_BACKGROUND_TYPE_LOCK,
                 ConfigInterface::APP_BACKDROP_BLUR_DEFAULT,
@@ -761,6 +765,56 @@ class SettingsController
                     ->getConfig()
                     ->getSetting(ConfigInterface::APP_THEME_LOCK, 'false'),
                 'description' => 'Force the configured theme (light/dark) for all users (disables per-user theme toggle)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'app',
+            ],
+            ConfigInterface::APP_THEME_PACK_DEFAULT => [
+                'name' => ConfigInterface::APP_THEME_PACK_DEFAULT,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_THEME_PACK_DEFAULT, 'default'),
+                'description' => 'Default plugin theme pack id (default or pluginId:themeId)',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'default',
+                'validation' => 'nullable|string|max:255',
+                'category' => 'app',
+            ],
+            ConfigInterface::APP_THEME_PACK_LOCK => [
+                'name' => ConfigInterface::APP_THEME_PACK_LOCK,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_THEME_PACK_LOCK, 'false'),
+                'description' => 'Force the configured theme pack for all users',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'app',
+            ],
+            ConfigInterface::APP_UI_PACK_DEFAULT => [
+                'name' => ConfigInterface::APP_UI_PACK_DEFAULT,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_UI_PACK_DEFAULT, ''),
+                'description' => 'Active UI pack id for layout takeovers (empty = none, or pluginId:packId)',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => '',
+                'validation' => 'nullable|string|max:255',
+                'category' => 'app',
+            ],
+            ConfigInterface::APP_UI_PACK_LOCK => [
+                'name' => ConfigInterface::APP_UI_PACK_LOCK,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_UI_PACK_LOCK, 'false'),
+                'description' => 'Force the configured UI pack for all users',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',

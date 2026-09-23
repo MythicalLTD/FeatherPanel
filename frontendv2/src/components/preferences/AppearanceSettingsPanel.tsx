@@ -42,6 +42,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import type { BackgroundImageFit } from '@/contexts/ThemeContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { usePluginUi } from '@/contexts/PluginUiContext';
 import { useNavbarHoverReveal } from '@/hooks/useNavbarHoverReveal';
 import { useNavbarSticky } from '@/hooks/useNavbarSticky';
 import { useChromeLayout } from '@/hooks/useChromeLayout';
@@ -362,11 +363,15 @@ export default function AppearanceSettingsPanel() {
         setBackdropBlur,
         setBackdropDarken,
         setBackgroundImageFit,
+        themePackId,
+        themePacks,
+        setThemePackId,
     } = useTheme();
     const { navbarHoverReveal, setNavbarHoverReveal } = useNavbarHoverReveal();
     const { navbarSticky, setNavbarSticky } = useNavbarSticky();
     const { chromeLayout, setChromeLayout } = useChromeLayout();
     const sidebar = useSidebarPreferences();
+    const { packs: uiPacks, uiPackId, setUiPackId } = usePluginUi();
     const { t, availableLanguages, setLocale, locale, isLocaleLocked } = useTranslation();
     const { settings } = useSettings();
 
@@ -408,6 +413,8 @@ export default function AppearanceSettingsPanel() {
     const isBackgroundDisabled = theme === 'light' || settings?.app_background_type_lock === 'true';
     const isAccentColorLocked = settings?.app_accent_color_lock === 'true';
     const isThemeLocked = settings?.app_theme_lock === 'true';
+    const isThemePackLocked = settings?.app_theme_pack_lock === 'true';
+    const isUiPackLocked = settings?.app_ui_pack_lock === 'true';
 
     const applyCustomAccent = (hex: string) => {
         if (isAccentColorLocked) {
@@ -494,6 +501,101 @@ export default function AppearanceSettingsPanel() {
                                 </SegmentButton>
                             </SegmentGroup>
                         </FormSection>
+
+                        {(themePacks.length > 1 || uiPacks.length > 0) && (
+                            <FormSection className='space-y-4'>
+                                {themePacks.length > 1 && (
+                                    <div>
+                                        <p className='text-foreground mb-1 text-sm font-semibold'>
+                                            {t('appearance.themePack.title')}
+                                        </p>
+                                        <p className='text-muted-foreground mb-3 text-xs'>
+                                            {t('appearance.themePack.description')}
+                                        </p>
+                                        <div className='grid gap-2 sm:grid-cols-2'>
+                                            {themePacks.map((pack) => (
+                                                <button
+                                                    key={pack.id}
+                                                    type='button'
+                                                    disabled={isThemePackLocked}
+                                                    onClick={() => !isThemePackLocked && setThemePackId(pack.id)}
+                                                    className={cn(
+                                                        'rounded-xl border px-3.5 py-3 text-left transition-colors',
+                                                        themePackId === pack.id
+                                                            ? 'border-primary/40 bg-primary/10'
+                                                            : 'border-border/40 bg-card/40 hover:bg-accent/40',
+                                                        isThemePackLocked && 'cursor-not-allowed opacity-50',
+                                                    )}
+                                                >
+                                                    <p className='text-foreground text-sm font-medium'>{pack.name}</p>
+                                                    <p className='text-muted-foreground mt-0.5 text-xs'>
+                                                        {pack.pluginName}
+                                                    </p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {isThemePackLocked && (
+                                            <p className='text-muted-foreground mt-2 text-xs'>
+                                                {t('appearance.themePack.lockedByAdmin')}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                                {uiPacks.length > 0 && (
+                                    <div>
+                                        <p className='text-foreground mb-1 text-sm font-semibold'>
+                                            {t('appearance.uiPack.title')}
+                                        </p>
+                                        <p className='text-muted-foreground mb-3 text-xs'>
+                                            {t('appearance.uiPack.description')}
+                                        </p>
+                                        <div className='grid gap-2 sm:grid-cols-2'>
+                                            <button
+                                                type='button'
+                                                disabled={isUiPackLocked}
+                                                onClick={() => !isUiPackLocked && setUiPackId('none')}
+                                                className={cn(
+                                                    'rounded-xl border px-3.5 py-3 text-left transition-colors',
+                                                    uiPackId === 'none' || !uiPackId
+                                                        ? 'border-primary/40 bg-primary/10'
+                                                        : 'border-border/40 bg-card/40 hover:bg-accent/40',
+                                                    isUiPackLocked && 'cursor-not-allowed opacity-50',
+                                                )}
+                                            >
+                                                <p className='text-foreground text-sm font-medium'>
+                                                    {t('appearance.uiPack.none')}
+                                                </p>
+                                            </button>
+                                            {uiPacks.map((pack) => (
+                                                <button
+                                                    key={pack.id}
+                                                    type='button'
+                                                    disabled={isUiPackLocked}
+                                                    onClick={() => !isUiPackLocked && setUiPackId(pack.id)}
+                                                    className={cn(
+                                                        'rounded-xl border px-3.5 py-3 text-left transition-colors',
+                                                        uiPackId === pack.id
+                                                            ? 'border-primary/40 bg-primary/10'
+                                                            : 'border-border/40 bg-card/40 hover:bg-accent/40',
+                                                        isUiPackLocked && 'cursor-not-allowed opacity-50',
+                                                    )}
+                                                >
+                                                    <p className='text-foreground text-sm font-medium'>{pack.name}</p>
+                                                    <p className='text-muted-foreground mt-0.5 text-xs'>
+                                                        {pack.pluginName}
+                                                    </p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {isUiPackLocked && (
+                                            <p className='text-muted-foreground mt-2 text-xs'>
+                                                {t('appearance.uiPack.lockedByAdmin')}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                            </FormSection>
+                        )}
 
                         <FormSection>
                             <p className='text-foreground mb-4 text-sm font-semibold'>{t('appearance.accentColor')}</p>

@@ -48,6 +48,7 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface Category {
     id: number;
@@ -171,7 +172,9 @@ export default function KnowledgeBaseCategoriesPage() {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             if (data?.success) return data.data.url;
-            throw new Error(data?.message || t('admin.knowledgebase.categories.messages.upload_failed'));
+            throw new Error(
+                getApiErrorMessageFromPayload(data, t, 'admin.knowledgebase.categories.messages.upload_failed'),
+            );
         } catch {
             toast.error(t('admin.knowledgebase.categories.messages.upload_failed'));
             return null;
@@ -210,10 +213,12 @@ export default function KnowledgeBaseCategoriesPage() {
                 setIconPreview(null);
                 fetchCategories();
             } else {
-                toast.error(data?.message || t('admin.knowledgebase.categories.messages.create_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(data, t, 'admin.knowledgebase.categories.messages.create_failed'),
+                );
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.categories.messages.create_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.categories.messages.create_failed'));
         } finally {
             setFormLoading(false);
         }
@@ -245,10 +250,12 @@ export default function KnowledgeBaseCategoriesPage() {
                 setEditOpen(false);
                 fetchCategories();
             } else {
-                toast.error(data?.message || t('admin.knowledgebase.categories.messages.update_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(data, t, 'admin.knowledgebase.categories.messages.update_failed'),
+                );
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.categories.messages.update_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.categories.messages.update_failed'));
         } finally {
             setFormLoading(false);
         }
@@ -263,10 +270,12 @@ export default function KnowledgeBaseCategoriesPage() {
                 toast.success(t('admin.knowledgebase.categories.messages.deleted'));
                 fetchCategories();
             } else {
-                toast.error(data?.message || t('admin.knowledgebase.categories.messages.delete_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(data, t, 'admin.knowledgebase.categories.messages.delete_failed'),
+                );
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.categories.messages.delete_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.categories.messages.delete_failed'));
         }
     };
 

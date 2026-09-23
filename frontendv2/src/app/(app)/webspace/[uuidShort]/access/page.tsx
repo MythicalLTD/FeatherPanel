@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { Copy, FolderOpen, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSession } from '@/contexts/SessionContext';
@@ -33,6 +33,7 @@ import { WebSpaceSubuserPermissions } from '@/lib/webspace-permissions';
 import { copyToClipboard } from '@/lib/utils';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Lock } from 'lucide-react';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface WebSpaceAccessInfo {
     uuidShort?: string;
@@ -100,9 +101,7 @@ export default function WebSpaceAccessPage() {
             setSftpAccounts((data.data?.accounts as typeof sftpAccounts) || []);
             toast.success(t('webSpaces.settings.sftpAccountCreated'));
         } catch (error) {
-            let msg = t('webSpaces.settings.sftpAccountCreateFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.sftpAccountCreateFailed'));
         } finally {
             setSavingSftp(false);
         }
@@ -115,9 +114,7 @@ export default function WebSpaceAccessPage() {
             setSftpAccounts((prev) => prev.filter((a) => a.id !== id));
             toast.success(t('webSpaces.settings.sftpAccountDeleted'));
         } catch (error) {
-            let msg = t('webSpaces.settings.sftpAccountDeleteFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.sftpAccountDeleteFailed'));
         }
     };
 

@@ -38,6 +38,7 @@ import {
     ShieldCheck,
     AlertTriangle,
 } from 'lucide-react';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -414,8 +415,7 @@ export default function VmInstanceEditPage() {
             await fetchInstance();
             if (isLxc) await fetchConfig(instance as Record<string, unknown>);
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setSavingTab(null);
         }
@@ -445,8 +445,7 @@ export default function VmInstanceEditPage() {
             await fetchInstance();
             await fetchConfig();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setSavingTab(null);
         }
@@ -475,8 +474,7 @@ export default function VmInstanceEditPage() {
             toast.success(t('admin.vmInstances.update_success') ?? 'VM instance updated');
             await fetchConfig();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setSavingTab(null);
         }
@@ -498,8 +496,7 @@ export default function VmInstanceEditPage() {
             setResizeSize('');
             await fetchConfig();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setResizing(false);
         }
@@ -522,8 +519,7 @@ export default function VmInstanceEditPage() {
             setNewDiskPath('');
             await fetchConfig();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setCreatingDisk(false);
         }
@@ -542,8 +538,7 @@ export default function VmInstanceEditPage() {
             toast.success(t('admin.vmInstances.disk_removed') ?? 'Disk removed.');
             await fetchConfig();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setDeletingDisk(null);
         }
@@ -563,8 +558,7 @@ export default function VmInstanceEditPage() {
             setSuspendReason({ reason_category: '', reason_details: '' });
             await fetchInstance();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setSuspending(false);
         }
@@ -577,8 +571,7 @@ export default function VmInstanceEditPage() {
             toast.success(t('admin.vmInstances.unsuspend_success') ?? 'VM instance unsuspended');
             await fetchInstance();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setSuspending(false);
         }

@@ -27,6 +27,7 @@ import { RefreshCw, Save, RotateCcw, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface RateLimitConfig {
     _enabled?: boolean;
@@ -64,10 +65,10 @@ export default function RateLimitsPage() {
                 setRateLimits(response.data.data.routes || {});
                 setChangedRoutes(new Set());
             } else {
-                toast.error(response.data.message || t('admin.rate_limits.messages.load_failed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'admin.rate_limits.messages.load_failed'));
             }
-        } catch {
-            toast.error(t('admin.rate_limits.messages.load_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.rate_limits.messages.load_failed'));
         } finally {
             setLoading(false);
         }
@@ -96,10 +97,12 @@ export default function RateLimitsPage() {
                         : t('admin.rate_limits.messages.global_disabled'),
                 );
             } else {
-                toast.error(response.data.message || t('admin.rate_limits.messages.global_update_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(response.data, t, 'admin.rate_limits.messages.global_update_failed'),
+                );
             }
-        } catch {
-            toast.error(t('admin.rate_limits.messages.global_update_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.rate_limits.messages.global_update_failed'));
         } finally {
             setSaving(false);
         }
@@ -162,10 +165,12 @@ export default function RateLimitsPage() {
                     return newSet;
                 });
             } else {
-                toast.error(response.data.message || t('admin.rate_limits.messages.route_update_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(response.data, t, 'admin.rate_limits.messages.route_update_failed'),
+                );
             }
-        } catch {
-            toast.error(t('admin.rate_limits.messages.route_update_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.rate_limits.messages.route_update_failed'));
         } finally {
             setSaving(false);
         }
@@ -183,10 +188,10 @@ export default function RateLimitsPage() {
                 toast.success(t('admin.rate_limits.messages.reset_success', { route: routeName }));
                 fetchRateLimits();
             } else {
-                toast.error(response.data.message || t('admin.rate_limits.messages.reset_failed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'admin.rate_limits.messages.reset_failed'));
             }
-        } catch {
-            toast.error(t('admin.rate_limits.messages.reset_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.rate_limits.messages.reset_failed'));
         } finally {
             setSaving(false);
         }
@@ -226,10 +231,10 @@ export default function RateLimitsPage() {
                 );
                 setChangedRoutes(new Set());
             } else {
-                toast.error(response.data.message || t('admin.rate_limits.messages.bulk_failed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'admin.rate_limits.messages.bulk_failed'));
             }
-        } catch {
-            toast.error(t('admin.rate_limits.messages.bulk_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.rate_limits.messages.bulk_failed'));
         } finally {
             setSaving(false);
         }

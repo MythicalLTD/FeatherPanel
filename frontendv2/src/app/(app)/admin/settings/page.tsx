@@ -33,6 +33,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import {
     Settings,
     Mail,
@@ -361,10 +362,10 @@ export default function SettingsPage() {
 
                     setInitialSettings(JSON.parse(JSON.stringify(response.data.settings)));
                 } else {
-                    toast.error(response.message || t('admin.settings.messages.load_failed'));
+                    toast.error(getApiErrorMessageFromPayload(response, t, 'admin.settings.messages.load_failed'));
                 }
-            } catch {
-                toast.error(t('admin.settings.messages.load_failed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'admin.settings.messages.load_failed'));
             } finally {
                 setLoading(false);
             }
@@ -438,14 +439,14 @@ export default function SettingsPage() {
 
             const response = await adminSettingsApi.updateSettings(payload);
             if (response.success) {
-                toast.success(response.message || t('admin.settings.messages.save_success'));
+                toast.success(t('admin.settings.messages.save_success'));
 
                 setInitialSettings(JSON.parse(JSON.stringify(settings)));
             } else {
-                toast.error(response.message || t('admin.settings.messages.save_failed'));
+                toast.error(getApiErrorMessageFromPayload(response, t, 'admin.settings.messages.save_failed'));
             }
-        } catch {
-            toast.error(t('admin.settings.messages.save_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.settings.messages.save_failed'));
         } finally {
             setSaving(false);
         }
@@ -454,7 +455,7 @@ export default function SettingsPage() {
     const handleUploadLogs = async () => {
         const promise = adminSettingsApi.uploadLogs().then((data) => {
             if (!data.success || !data.data) {
-                throw new Error(data.message || t('admin.settings.logs.upload_failed'));
+                throw new Error(getApiErrorMessageFromPayload(data, t, 'admin.settings.logs.upload_failed'));
             }
             return data;
         });
@@ -476,16 +477,12 @@ export default function SettingsPage() {
         try {
             const response = await axios.post('/api/admin/settings/email/test');
             if (response.data.success) {
-                toast.success(response.data.message || t('admin.settings.email_test.success'));
+                toast.success(t('admin.settings.email_test.success'));
             } else {
-                toast.error(response.data.message || t('admin.settings.email_test.failed_short'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'admin.settings.email_test.failed_short'));
             }
         } catch (error: unknown) {
-            if (axios.isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.settings.email_test.failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.settings.email_test.failed'));
         } finally {
             setSendingTestEmail(false);
         }

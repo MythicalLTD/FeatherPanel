@@ -20,10 +20,11 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { Loader2, Package, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -100,9 +101,7 @@ export default function HostingPackagesPage() {
             setForm(emptyForm);
             await load();
         } catch (error) {
-            let msg = t('admin.hostingPackages.createFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.hostingPackages.createFailed'));
         } finally {
             setSaving(false);
         }

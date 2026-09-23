@@ -46,6 +46,7 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { FormSection } from '@/components/featherui/FormSection';
 import { safeBack } from '@/lib/safe-back';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function CreateServerImportPage() {
     const { uuidShort } = useParams();
@@ -123,7 +124,7 @@ export default function CreateServerImportPage() {
 
                 router.push(`/server/${uuidShort}/import?success=true`);
             } else {
-                toast.error(data.message || t('serverImport.importFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverImport.importFailed'));
             }
         } catch (error) {
             console.error('Import failed:', error);

@@ -18,8 +18,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -706,14 +707,10 @@ export default function CreateServerPage() {
                 toast.success(t('admin.servers.form.messages.created'));
                 router.push('/admin/servers');
             } else {
-                toast.error(data.message || t('admin.servers.form.messages.create_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.servers.form.messages.create_failed'));
             }
         } catch (error) {
-            if (isAxiosError(error)) {
-                toast.error(error.response?.data?.message || t('admin.servers.form.messages.create_failed'));
-            } else {
-                toast.error(t('account.unexpectedError'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.form.messages.create_failed'));
         } finally {
             setSubmitting(false);
         }

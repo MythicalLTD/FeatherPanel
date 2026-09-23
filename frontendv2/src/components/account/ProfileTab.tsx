@@ -30,6 +30,7 @@ import { Captcha } from '@/components/Captcha';
 import { Switch } from '@/components/ui/switch';
 import { cn, isEnabled } from '@/lib/utils';
 import { getAnalyticsCookie, setAnalyticsCookie } from '@/lib/analytics-cookie';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface FormData {
     username: string;
@@ -172,7 +173,9 @@ export default function ProfileTab() {
                     if (uploadResponse.data.success) {
                         submitData.avatar = uploadResponse.data.data.avatar_url;
                     } else {
-                        toast.error(uploadResponse.data.message || t('account.avatarUploadFailed'));
+                        toast.error(
+                            getApiErrorMessageFromPayload(uploadResponse.data, t, 'account.avatarUploadFailed'),
+                        );
                         resetTurnstile();
                         return;
                     }
@@ -208,13 +211,12 @@ export default function ProfileTab() {
                 setFormData((prev) => ({ ...prev, password: '' }));
                 setAvatarFile(null);
             } else {
-                toast.error(response.data.message || t('account.updateFailed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'account.updateFailed'));
                 resetTurnstile();
             }
         } catch (error) {
             console.error('Error updating profile:', error);
-            const axiosError = error as { response?: { data?: { message?: string } } };
-            toast.error(axiosError.response?.data?.message || t('account.unexpectedError'));
+            toast.error(getApiErrorMessage(error, t, 'account.unexpectedError'));
             resetTurnstile();
         } finally {
             setIsSubmitting(false);

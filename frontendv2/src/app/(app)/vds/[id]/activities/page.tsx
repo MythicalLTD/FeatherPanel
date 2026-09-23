@@ -22,6 +22,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { Dialog, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
     Activity,
@@ -170,7 +171,7 @@ export default function VdsActivitiesPage() {
 
                 const { data } = await axios.get(`/api/user/vm-instances/${id}/activities`, { params });
                 if (!data.success) {
-                    toast.error(data.message || 'Failed to fetch activities');
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'vds.activities.fetch_failed'));
                     return;
                 }
 
@@ -214,8 +215,8 @@ export default function VdsActivitiesPage() {
                     from: p.from || 0,
                     to: p.to || 0,
                 });
-            } catch {
-                toast.error(t('vds.activities.fetch_failed'));
+            } catch (err) {
+                toast.error(getApiErrorMessage(err, t, 'vds.activities.fetch_failed'));
             } finally {
                 setLoading(false);
             }

@@ -64,6 +64,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { Server, AllocationItem, AllocationsResponse, AvailableAllocationsResponse } from '@/types/server';
 import { copyToClipboard, cn, isEnabled } from '@/lib/utils';
+import { getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function ServerAllocationsPage() {
     const { t } = useTranslation();
@@ -171,7 +172,7 @@ export default function ServerAllocationsPage() {
                 toast.success(t('serverAllocations.autoAllocationCompleted'));
                 fetchAllocations();
             } else {
-                toast.error(data.message || t('serverAllocations.failedToAutoAllocate'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverAllocations.failedToAutoAllocate'));
             }
         } catch (error) {
             console.error('Error auto-allocating:', error);
@@ -196,7 +197,7 @@ export default function ServerAllocationsPage() {
                 setAssignDialogOpen(false);
                 setSelectedAssignId(null);
             } else {
-                toast.error(data.message || t('serverAllocations.failedToCreate'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverAllocations.failedToCreate'));
             }
         } catch (error) {
             console.error('Error assigning allocation:', error);
@@ -222,7 +223,7 @@ export default function ServerAllocationsPage() {
                     setServer({ ...server, current_allocations: Math.max(0, (server.current_allocations || 1) - 1) });
                 }
             } else {
-                toast.error(data.message || t('serverAllocations.failedToDelete'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverAllocations.failedToDelete'));
             }
         } catch (error) {
             console.error('Error deleting allocation:', error);
@@ -255,7 +256,7 @@ export default function ServerAllocationsPage() {
                 setPrimaryDialogOpen(false);
                 setSelectedAllocation(null);
             } else {
-                toast.error(data.message || t('serverAllocations.failedToSetPrimary'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverAllocations.failedToSetPrimary'));
             }
         } catch (error) {
             console.error('Error setting primary allocation:', error);

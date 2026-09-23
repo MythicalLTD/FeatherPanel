@@ -17,6 +17,7 @@ import { useState, useMemo } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import {
     Dialog,
     DialogHeader,
@@ -69,7 +70,8 @@ export function JavaVersionDialog({ isOpen, onClose, server, detectedIssue, onUp
             });
 
             if (!data.success) {
-                throw new Error(data.message || 'Failed to update Docker image');
+                toast.error(getApiErrorMessageFromPayload(data, t, 'features.javaVersion.failedToUpdate'));
+                return;
             }
 
             toast.success(t('features.javaVersion.imageUpdated'));
@@ -77,7 +79,7 @@ export function JavaVersionDialog({ isOpen, onClose, server, detectedIssue, onUp
             onClose();
         } catch (error) {
             console.error('Failed to update Docker image:', error);
-            toast.error(t('features.javaVersion.failedToUpdate'));
+            toast.error(getApiErrorMessage(error, t, 'features.javaVersion.failedToUpdate'));
         } finally {
             setUpdating(false);
         }

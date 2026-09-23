@@ -293,8 +293,8 @@ class PluginManagerController
             }
 
             // Validate template
-            if (!in_array($template, ['empty', 'starter', 'fresh'], true)) {
-                return ApiResponse::error('Invalid template. Must be one of: empty, starter, fresh', 400);
+            if (!in_array($template, ['empty', 'starter', 'fresh', 'theme', 'ui-pack'], true)) {
+                return ApiResponse::error('Invalid template. Must be one of: empty, starter, fresh, theme, ui-pack', 400);
             }
 
             if (!PluginConfig::isValidIdentifier($identifier)) {
@@ -385,6 +385,10 @@ class PluginManagerController
                 // Starter template: Only create directories that will be used by example files
                 // Don't create empty directories, let createExampleFiles create them as needed
                 $this->createExampleFiles($pluginPath, $identifier, $className);
+            } elseif ($template === 'theme') {
+                $this->createThemeTemplate($pluginPath, $identifier, $name);
+            } elseif ($template === 'ui-pack') {
+                $this->createUiPackTemplate($pluginPath, $identifier, $name);
             }
             // Empty template: no directories created, no example files, just conf.yml and main class
 
@@ -2846,6 +2850,200 @@ class AppReadyEvent
         $eventsFile = $pluginPath . '/Events/App/AppReadyEvent.php';
         $ensureDir($eventsFile);
         file_put_contents($eventsFile, $eventExample);
+    }
+
+    /**
+     * Create a theme-pack plugin (Frontend/theme.json + theme.css).
+     */
+    private function createThemeTemplate(string $pluginPath, string $identifier, string $name): void
+    {
+        $frontendDir = $pluginPath . '/Frontend';
+        if (!is_dir($frontendDir)) {
+            mkdir($frontendDir, 0755, true);
+        }
+
+        $themeJson = [
+            'id' => 'default',
+            'name' => $name,
+            'preview' => null,
+            'tokens' => [
+                'light' => [
+                    'background' => '210 40% 98%',
+                    'foreground' => '222 47% 11%',
+                    'card' => '0 0% 100%',
+                    'card-foreground' => '222 47% 11%',
+                    'primary' => '199 89% 48%',
+                    'primary-foreground' => '0 0% 100%',
+                    'muted' => '210 40% 96%',
+                    'muted-foreground' => '215 16% 47%',
+                    'border' => '214 32% 91%',
+                    'ring' => '199 89% 48%',
+                ],
+                'dark' => [
+                    'background' => '222 47% 7%',
+                    'foreground' => '210 40% 98%',
+                    'card' => '217 33% 12%',
+                    'card-foreground' => '210 40% 98%',
+                    'primary' => '199 89% 48%',
+                    'primary-foreground' => '0 0% 100%',
+                    'muted' => '217 33% 17%',
+                    'muted-foreground' => '215 20% 65%',
+                    'border' => '217 33% 17%',
+                    'ring' => '199 89% 48%',
+                ],
+            ],
+            'accents' => ['custom:#0ea5e9'],
+            'defaults' => [
+                'backgroundType' => 'aurora',
+            ],
+            'css' => 'theme.css',
+        ];
+
+        file_put_contents(
+            $frontendDir . '/theme.json',
+            json_encode($themeJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n"
+        );
+
+        file_put_contents(
+            $frontendDir . '/theme.css',
+            "/* Active only while this theme pack is selected */\n"
+            . ".fp-plugin-slot[data-fp-slot=\"shell.navbar\"] {\n"
+            . "  /* Example: subtle accent underline on the navbar slot */\n"
+            . "}\n"
+        );
+
+        file_put_contents(
+            $pluginPath . '/README.md',
+            "# {$name} Theme Pack\n\n"
+            . "Selectable FeatherPanel theme pack.\n\n"
+            . "## Files\n\n"
+            . "- `Frontend/theme.json` — light/dark design tokens\n"
+            . "- `Frontend/theme.css` — CSS applied only while this pack is active\n\n"
+            . "Users pick this pack under Preferences → Appearance → Theme packs.\n"
+            . "Admin defaults/locks: `app_theme_pack_default` / `app_theme_pack_lock`.\n"
+        );
+    }
+
+    /**
+     * Create a UI-pack plugin (Frontend/ui.json + overrides + sample components).
+     */
+    private function createUiPackTemplate(string $pluginPath, string $identifier, string $name): void
+    {
+        $frontendDir = $pluginPath . '/Frontend';
+        $componentsDir = $frontendDir . '/Components';
+        if (!is_dir($componentsDir)) {
+            mkdir($componentsDir, 0755, true);
+        }
+
+        $uiJson = [
+            'id' => 'default',
+            'name' => $name,
+            'theme' => null,
+            'shell' => [
+                'replace' => new \stdClass(),
+            ],
+            'pages' => [],
+            'hide' => [],
+            'actions' => [
+                [
+                    'slot' => 'toolbar.server-console',
+                    'label' => $name,
+                    'component' => 'Components/action-panel.html',
+                    'priority' => 10,
+                ],
+            ],
+        ];
+
+        file_put_contents(
+            $frontendDir . '/ui.json',
+            json_encode($uiJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n"
+        );
+
+        $overrides = [
+            'hide' => [],
+            'replace' => [],
+            'actions' => [],
+        ];
+        file_put_contents(
+            $frontendDir . '/overrides.json',
+            json_encode($overrides, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n"
+        );
+
+        file_put_contents(
+            $componentsDir . '/action-panel.html',
+            "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n"
+            . "  <meta charset=\"utf-8\" />\n"
+            . "  <title>{$name}</title>\n"
+            . "  <style>body{font-family:system-ui;margin:1rem;color:var(--fp-fg,#e5e7eb)}</style>\n"
+            . "</head>\n<body>\n"
+            . "  <h1>{$name}</h1>\n"
+            . "  <p>UI pack action panel. Use <code>window.parent.postMessage</code> or listen for <code>featherpanel-theme</code>.</p>\n"
+            . "  <script>window.parent.postMessage({type:'featherpanel-ready'}, window.location.origin);</script>\n"
+            . "</body>\n</html>\n"
+        );
+
+        $powerSdkJs = <<<'JS'
+(function () {
+  function boot() {
+    var FP = window.FeatherPanel;
+    if (!FP || !FP.events) {
+      setTimeout(boot, 50);
+      return;
+    }
+
+    FP.events.on('fp:host:ready', function () {
+      console.log('[UI Pack] FeatherPanel Power SDK ready', FP.version);
+    });
+
+    FP.actions.register('fp:server:power', {
+      id: 'uipack.confirm-kill',
+      priority: 100,
+      handler: async function (ctx, next) {
+        if (ctx.action === 'kill') {
+          var ok = window.confirm('Plugin intercepted kill — continue?');
+          if (!ok) {
+            ctx.cancel('user-aborted-by-plugin');
+            return;
+          }
+        }
+        await next();
+      },
+    });
+
+    FP.search.contribute({
+      id: 'uipack-demo',
+      search: function (query) {
+        if (!query || query.toLowerCase().indexOf('pack') === -1) return [];
+        return [{ id: 'uipack-home', title: 'UI Pack demo', description: 'From plugin search provider', href: '/dashboard' }];
+      },
+    });
+
+    FP.shortcuts.register({
+      id: 'uipack-toast',
+      combo: 'ctrl+shift+u',
+      description: 'UI pack toast',
+      handler: function () {
+        FP.toast.info('UI pack shortcut fired');
+      },
+    });
+  }
+  boot();
+})();
+JS;
+        file_put_contents($frontendDir . '/index.js', $powerSdkJs);
+
+        file_put_contents(
+            $pluginPath . '/README.md',
+            "# {$name} UI Pack\n\n"
+            . "FeatherPanel layout takeover pack + Power SDK examples.\n\n"
+            . "## Files\n\n"
+            . "- `Frontend/ui.json` — shell/page replace, hide, actions\n"
+            . "- `Frontend/overrides.json` — surgical hide/replace/actions\n"
+            . "- `Frontend/index.js` — Power SDK: events, actions, search, shortcuts\n"
+            . "- `Frontend/Components/` — HTML for iframe slots\n\n"
+            . "## Power SDK\n\n"
+            . "See `/icanhasfeatherpanel/plugin-power.html`\n"
+        );
     }
 
     /**

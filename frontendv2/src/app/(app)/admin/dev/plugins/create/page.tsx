@@ -19,6 +19,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -62,7 +63,7 @@ interface CreatePluginData {
     description: string;
     version: string;
     target: string;
-    template: 'empty' | 'starter' | 'fresh';
+    template: 'empty' | 'starter' | 'fresh' | 'theme' | 'ui-pack';
     author: string[];
     flags: string[];
     dependencies: DependencyItem[];
@@ -140,6 +141,16 @@ export default function CreatePluginPage() {
             value: 'fresh',
             label: t('admin.dev.plugins.create.templates.fresh.label'),
             description: t('admin.dev.plugins.create.templates.fresh.description'),
+        },
+        {
+            value: 'theme',
+            label: t('admin.dev.plugins.create.templates.theme.label'),
+            description: t('admin.dev.plugins.create.templates.theme.description'),
+        },
+        {
+            value: 'ui-pack',
+            label: t('admin.dev.plugins.create.templates.uiPack.label'),
+            description: t('admin.dev.plugins.create.templates.uiPack.description'),
         },
     ];
 
@@ -221,11 +232,13 @@ export default function CreatePluginPage() {
                 toast.success(t('admin.dev.plugins.create.messages.created'));
                 router.push('/admin/dev/plugins');
             } else {
-                toast.error(response.data.message || t('admin.dev.plugins.create.messages.create_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(response.data, t, 'admin.dev.plugins.create.messages.create_failed'),
+                );
             }
         } catch (error) {
             console.error('Failed to create plugin:', error);
-            toast.error(t('admin.dev.plugins.create.messages.create_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.dev.plugins.create.messages.create_failed'));
         } finally {
             setLoading(false);
         }
@@ -362,7 +375,8 @@ export default function CreatePluginPage() {
                                     onChange={(e) =>
                                         setForm((prev) => ({
                                             ...prev,
-                                            template: e.target.value as 'empty' | 'starter' | 'fresh',
+                                            template: e.target.value as
+                                                'empty' | 'starter' | 'fresh' | 'theme' | 'ui-pack',
                                         }))
                                     }
                                 >

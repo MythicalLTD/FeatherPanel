@@ -584,10 +584,49 @@ export function useGlobalSearchItems(open: boolean, query: string) {
         [currentContextItems, baseItems, entityItems, scopedItems],
     );
 
+    const [pluginItems, setPluginItems] = useState<GlobalSearchResult[]>([]);
+
+    useEffect(() => {
+        if (!open) {
+            setPluginItems([]);
+            return;
+        }
+        let cancelled = false;
+        const q = parsedQuery.text.trim();
+        void (async () => {
+            try {
+                const { pluginActionHooks } = await import('@/lib/plugin-sdk/action-hooks');
+                const { pluginSearchRegistry } = await import('@/lib/plugin-sdk/registries');
+                const { FP_ACTIONS } = await import('@/lib/plugin-sdk/ids');
+                const ctx = await pluginActionHooks.run(FP_ACTIONS.SEARCH_QUERY, { query: q });
+                if (ctx.cancelled || cancelled) return;
+                const finalQuery = typeof ctx.query === 'string' ? ctx.query : q;
+                const pluginResults = await pluginSearchRegistry.query(finalQuery);
+                if (cancelled) return;
+                setPluginItems(
+                    pluginResults.map((r) => ({
+                        id: `plugin:${r.id}`,
+                        title: r.title,
+                        subtitle: r.description,
+                        href: r.href || '#',
+                        category: 'plugins' as const,
+                        keywords: [r.category || 'plugin'],
+                    })),
+                );
+            } catch {
+                if (!cancelled) setPluginItems([]);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [open, parsedQuery.text]);
+
     const results = useMemo(() => {
         if (parsedQuery.mode === 'debug') return [];
 
-        const filtered = filterGlobalSearchResults(allItems, query, { parsed: parsedQuery });
+        const merged = dedupeGlobalSearchResults([...allItems, ...pluginItems]);
+        const filtered = filterGlobalSearchResults(merged, query, { parsed: parsedQuery });
         const q = parsedQuery.text.trim();
 
         if (!q && entityContext && showCurrentContext) {
@@ -598,7 +637,7 @@ export function useGlobalSearchItems(open: boolean, query: string) {
         }
 
         return filtered;
-    }, [allItems, query, parsedQuery, entityContext, showCurrentContext]);
+    }, [allItems, pluginItems, query, parsedQuery, entityContext, showCurrentContext]);
 
     return {
         results,

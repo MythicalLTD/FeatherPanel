@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { toast } from 'sonner';
 import {
     Calendar,
@@ -44,6 +44,7 @@ import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { formatDateTimeInTz } from '@/lib/dateUtils';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { isWebSpaceScheduleLocked } from '@/lib/webspace-schedules';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface WebSpaceSchedule {
     id: number;
@@ -79,11 +80,7 @@ export default function WebSpaceSchedulesPage() {
             const list = (data.data?.schedules || []) as WebSpaceSchedule[];
             setSchedules(Array.isArray(list) ? list : []);
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('serverSchedules.failedToFetch')
-                    : t('serverSchedules.failedToFetch'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'serverSchedules.failedToFetch'));
         } finally {
             setLoading(false);
         }
@@ -103,11 +100,7 @@ export default function WebSpaceSchedulesPage() {
             toast.success(t('serverSchedules.toggleSuccess'));
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('serverSchedules.toggleFailed')
-                    : t('serverSchedules.toggleFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'serverSchedules.toggleFailed'));
         } finally {
             setBusy(null);
         }
@@ -119,11 +112,7 @@ export default function WebSpaceSchedulesPage() {
             await axios.post(`/api/user/webspaces/${uuidShort}/schedules/${schedule.id}/execute`);
             toast.success(t('serverSchedules.runQueued'));
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('serverSchedules.runFailed')
-                    : t('serverSchedules.runFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'serverSchedules.runFailed'));
         } finally {
             setBusy(null);
         }
@@ -135,11 +124,7 @@ export default function WebSpaceSchedulesPage() {
             await axios.post(`/api/user/webspaces/${uuidShort}/schedules/abort`);
             toast.success(t('webSpaces.schedules.abortSuccess'));
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.schedules.abortFailed')
-                    : t('webSpaces.schedules.abortFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.schedules.abortFailed'));
         } finally {
             setBusy(null);
         }
@@ -154,11 +139,7 @@ export default function WebSpaceSchedulesPage() {
             setDeleteTarget(null);
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('serverSchedules.deleteFailed')
-                    : t('serverSchedules.deleteFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'serverSchedules.deleteFailed'));
         } finally {
             setBusy(null);
         }

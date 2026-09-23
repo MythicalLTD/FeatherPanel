@@ -19,6 +19,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -148,11 +149,11 @@ export default function PluginManagerPage() {
             if (response.data.success) {
                 setPlugins(response.data.data || []);
             } else {
-                toast.error(response.data.message || t('admin.dev.plugins.messages.fetch_failed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'admin.dev.plugins.messages.fetch_failed'));
             }
         } catch (error) {
             console.error('Failed to fetch plugins:', error);
-            toast.error(t('admin.dev.plugins.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.dev.plugins.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -224,7 +225,7 @@ export default function PluginManagerPage() {
             toast.success(t('admin.dev.plugins.messages.settings_saved'));
         } catch (error) {
             console.error('Failed to save settings:', error);
-            toast.error(t('admin.dev.plugins.messages.settings_save_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.dev.plugins.messages.settings_save_failed'));
         } finally {
             setLoading(false);
         }
@@ -308,11 +309,13 @@ export default function PluginManagerPage() {
                 closeCreateActionDialog();
                 await fetchPlugins();
             } else {
-                toast.error(response.data.message || t('admin.dev.plugins.messages.file_create_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(response.data, t, 'admin.dev.plugins.messages.file_create_failed'),
+                );
             }
         } catch (error) {
             console.error('Creation error:', error);
-            toast.error(t('admin.dev.plugins.messages.file_create_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.dev.plugins.messages.file_create_failed'));
         } finally {
             setIsCreatingAction(false);
         }
@@ -334,7 +337,7 @@ export default function PluginManagerPage() {
             toast.success(t('admin.dev.plugins.messages.exported', { name: plugin.name }));
         } catch (error) {
             console.error('Export error:', error);
-            toast.error(t('admin.dev.plugins.messages.export_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.dev.plugins.messages.export_failed'));
         }
     };
 
@@ -354,7 +357,7 @@ export default function PluginManagerPage() {
             }, 1500);
         } catch (error) {
             console.error('Uninstall error:', error);
-            toast.error(t('admin.dev.plugins.messages.uninstall_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.dev.plugins.messages.uninstall_failed'));
         } finally {
             setIsUninstalling(false);
             setConfirmUninstallOpen(false);
@@ -374,11 +377,17 @@ export default function PluginManagerPage() {
                     }),
                 );
             } else {
-                throw new Error(response.data.message || 'Failed to resync symlinks');
+                throw new Error(
+                    getApiErrorMessageFromPayload(
+                        response.data,
+                        t,
+                        'admin.dev.plugins.messages.symlinks_resync_failed',
+                    ),
+                );
             }
         } catch (error) {
             console.error('Resync symlinks error:', error);
-            toast.error(t('admin.dev.plugins.messages.symlinks_resync_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.dev.plugins.messages.symlinks_resync_failed'));
         } finally {
             setIsResyncingSymlinks(false);
             setResyncingPlugin(null);

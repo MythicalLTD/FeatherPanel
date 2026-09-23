@@ -27,6 +27,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 export default function WebSpaceWafPage() {
     const params = useParams();
@@ -82,13 +83,9 @@ export default function WebSpaceWafPage() {
             });
             toast.success(t('webSpaces.settings.saved'));
         } catch (error) {
-            let msg = t('webSpaces.settings.saveFailed');
-            if (isAxiosError(error)) {
-                if (error.response?.status === 403) {
-                    msg = t('webSpaces.settings.noPermission');
-                } else if (error.response?.data?.message) {
-                    msg = error.response.data.message;
-                }
+            let msg = getApiErrorMessage(error, t, 'webSpaces.settings.saveFailed');
+            if (isAxiosError(error) && error.response?.status === 403) {
+                msg = t('webSpaces.settings.noPermission');
             }
             toast.error(msg);
         } finally {

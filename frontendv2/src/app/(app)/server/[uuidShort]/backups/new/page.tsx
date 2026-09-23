@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import * as React from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Archive, Plus, Lock, FileX, HardDrive, Database, Check, Layers } from 'lucide-react';
 import { toast } from 'sonner';
@@ -43,6 +43,7 @@ import {
     type BackupFields,
     type BackupKind,
 } from '@/components/server/backup/backup-payload';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function CreateBackupPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -153,7 +154,7 @@ export default function CreateBackupPage() {
                     toast.success(t('serverBackups.createSuccess'));
                     router.push(`/server/${uuidShort}/backups`);
                 } else {
-                    toast.error(data?.message || t('serverBackups.createFailed'));
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.createFailed'));
                 }
                 return;
             }
@@ -198,7 +199,7 @@ export default function CreateBackupPage() {
                     }
                     router.push(`/server/${uuidShort}/backups`);
                 } else {
-                    toast.error(data?.message || t('serverBackups.fullBackupFailed'));
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.fullBackupFailed'));
                 }
                 return;
             }
@@ -225,18 +226,16 @@ export default function CreateBackupPage() {
                 }
                 router.push(`/server/${uuidShort}/backups?tab=databases`);
             } else {
-                toast.error(data?.message || t('serverBackups.databaseBackupFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.databaseBackupFailed'));
             }
         } catch (error) {
-            const axiosError = error as AxiosError<{ message?: string }>;
-            toast.error(
-                axiosError.response?.data?.message ||
-                    (kind === 'files'
-                        ? t('serverBackups.createFailed')
-                        : kind === 'full'
-                          ? t('serverBackups.fullBackupFailed')
-                          : t('serverBackups.databaseBackupFailed')),
-            );
+            const fallbackKey =
+                kind === 'files'
+                    ? 'serverBackups.createFailed'
+                    : kind === 'full'
+                      ? 'serverBackups.fullBackupFailed'
+                      : 'serverBackups.databaseBackupFailed';
+            toast.error(getApiErrorMessage(error, t, fallbackKey));
         } finally {
             setSaving(false);
         }

@@ -20,7 +20,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { toast } from 'sonner';
 import { Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -29,6 +29,7 @@ import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select-native';
 import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface DnsHostOption {
     id: number;
@@ -108,11 +109,7 @@ export function WebSpaceDnsZoneEditor({ apiBase, canRead = true, canManage = tru
                 return primary?.id ?? nextZones[0]?.id ?? null;
             });
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.dns.loadFailed')
-                    : t('webSpaces.dns.loadFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.dns.loadFailed'));
         } finally {
             setLoading(false);
         }
@@ -127,11 +124,7 @@ export function WebSpaceDnsZoneEditor({ apiBase, canRead = true, canManage = tru
             const { data } = await axios.get(`${apiBase}/dns/zones/${selectedZoneId}/records`);
             setRecords((data?.data?.records || []) as DnsRecord[]);
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.dns.recordsLoadFailed')
-                    : t('webSpaces.dns.recordsLoadFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.dns.recordsLoadFailed'));
         }
     }, [apiBase, canRead, selectedZoneId, t]);
 
@@ -160,11 +153,7 @@ export function WebSpaceDnsZoneEditor({ apiBase, canRead = true, canManage = tru
             setLinkZoneName('');
             await loadZones();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.dns.linkFailed')
-                    : t('webSpaces.dns.linkFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.dns.linkFailed'));
         } finally {
             setBusy(false);
         }
@@ -178,11 +167,7 @@ export function WebSpaceDnsZoneEditor({ apiBase, canRead = true, canManage = tru
             if (selectedZoneId === zoneId) setSelectedZoneId(null);
             await loadZones();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.dns.unlinkFailed')
-                    : t('webSpaces.dns.unlinkFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.dns.unlinkFailed'));
         }
     };
 
@@ -231,11 +216,7 @@ export function WebSpaceDnsZoneEditor({ apiBase, canRead = true, canManage = tru
             setRecordDialogOpen(false);
             await loadRecords();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.dns.recordSaveFailed')
-                    : t('webSpaces.dns.recordSaveFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.dns.recordSaveFailed'));
         } finally {
             setBusy(false);
         }
@@ -248,11 +229,7 @@ export function WebSpaceDnsZoneEditor({ apiBase, canRead = true, canManage = tru
             toast.success(t('webSpaces.dns.recordDeleted'));
             await loadRecords();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.dns.recordDeleteFailed')
-                    : t('webSpaces.dns.recordDeleteFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.dns.recordDeleteFailed'));
         }
     };
 

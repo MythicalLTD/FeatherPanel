@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -50,7 +51,7 @@ import {
     History,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -300,11 +301,7 @@ export default function AdminSubdomainsPage() {
                     : t('admin.subdomains.userSubdomainsDisabledToast'),
             );
         } catch (error: unknown) {
-            let msg = t('admin.subdomains.userSubdomainsToggleFailed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = String(error.response.data.message);
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.subdomains.userSubdomainsToggleFailed'));
         } finally {
             setTogglingUserSubdomains(false);
         }
@@ -360,11 +357,7 @@ export default function AdminSubdomainsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error: unknown) {
             console.error('Error saving domain:', error);
-            let msg = t('admin.subdomains.messages.domain_save_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.subdomains.messages.domain_save_failed'));
         } finally {
             setProcessing(false);
         }

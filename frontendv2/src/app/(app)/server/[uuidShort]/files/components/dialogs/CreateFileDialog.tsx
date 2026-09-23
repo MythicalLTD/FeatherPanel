@@ -26,9 +26,9 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
-import { getFeatherpanelApiErrorMessage } from '@/lib/api';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Textarea } from '@/components/featherui/Textarea';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface CreateFileDialogProps {
     open: boolean;
@@ -60,7 +60,7 @@ export function CreateFileDialog({ open, onOpenChange, uuid, root, onSuccess }: 
             onOpenChange(false);
         } catch (error) {
             console.error(error);
-            toast.error(getFeatherpanelApiErrorMessage(error) || t('files.dialogs.create_file.error'));
+            toast.error(getApiErrorMessage(error, t, 'files.dialogs.create_file.error'));
         } finally {
             setLoading(false);
         }

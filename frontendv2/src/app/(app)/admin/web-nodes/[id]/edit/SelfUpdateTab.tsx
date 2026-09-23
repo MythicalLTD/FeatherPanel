@@ -22,6 +22,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -124,14 +125,10 @@ export function SelfUpdateTab({ nodeId, currentVersion, onRefresh }: SelfUpdateT
                 onRefresh?.();
                 void fetchVersionStatus();
             } else {
-                toast.error(data.message || t('admin.node.view.self_update.failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.node.view.self_update.failed'));
             }
         } catch (e: unknown) {
-            let msg = t('admin.node.view.self_update.failed');
-            if (axios.isAxiosError(e)) {
-                msg = e.response?.data?.message || e.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(e, t, 'admin.node.view.self_update.failed'));
         } finally {
             setUpdating(false);
         }

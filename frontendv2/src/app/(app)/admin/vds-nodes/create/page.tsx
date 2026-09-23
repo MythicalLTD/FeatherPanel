@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -43,6 +43,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn } from '@/lib/utils';
 import { safeBack } from '@/lib/safe-back';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface Location {
     id: number;
@@ -245,11 +246,7 @@ export default function CreateVdsNodePage() {
             }
         } catch (error) {
             console.error('Error creating VDS node:', error);
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.vdsNodes.messages.create_failed') || t('admin.vdsNodes.messages.fetch_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.messages.create_failed'));
         } finally {
             setLoading(false);
         }
@@ -283,11 +280,7 @@ export default function CreateVdsNodePage() {
             setLocationModalOpen(false);
             toast.success(t('admin.locations.messages.created'));
         } catch (error: unknown) {
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.locations.messages.create_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.create_failed'));
         } finally {
             setCreatingLocation(false);
         }

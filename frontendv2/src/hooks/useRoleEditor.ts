@@ -16,13 +16,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import Permissions from '@/lib/permissions';
 import { pickDefaultRoleColor, slugifyRoleName, type Role, type RoleForm, type RolePermission } from '@/lib/role-utils';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface UseRoleEditorOptions {
     mode: 'create' | 'edit';
@@ -144,11 +145,7 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
                 await fetchPermissions(targetRoleId);
             }
         } catch (error: unknown) {
-            let errorMessage = t('admin.roles.messages.permission_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                errorMessage = error.response.data.message;
-            }
-            toast.error(errorMessage);
+            toast.error(getApiErrorMessage(error, t, 'admin.roles.messages.permission_failed'));
             throw error;
         }
     };
@@ -160,11 +157,7 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
                 await fetchPermissions(targetRoleId);
             }
         } catch (error: unknown) {
-            let errorMessage = t('admin.roles.messages.permission_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                errorMessage = error.response.data.message;
-            }
-            toast.error(errorMessage);
+            toast.error(getApiErrorMessage(error, t, 'admin.roles.messages.permission_failed'));
             throw error;
         }
     };
@@ -197,11 +190,7 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
             }
             await fetchPermissions(editorRoleId);
         } catch (error: unknown) {
-            let errorMessage = t('admin.roles.messages.permission_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                errorMessage = error.response.data.message;
-            }
-            toast.error(errorMessage);
+            toast.error(getApiErrorMessage(error, t, 'admin.roles.messages.permission_failed'));
             throw error;
         }
     };
@@ -270,11 +259,7 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
             console.error('Error saving role:', error);
             const messageKey =
                 mode === 'create' ? 'admin.roles.messages.create_failed' : 'admin.roles.messages.update_failed';
-            let errorMessage = t(messageKey);
-            if (isAxiosError(error) && error.response?.data?.message) {
-                errorMessage = error.response.data.message;
-            }
-            toast.error(errorMessage);
+            toast.error(getApiErrorMessage(error, t, messageKey));
         } finally {
             setIsSubmitting(false);
         }
@@ -290,11 +275,7 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
             router.push('/admin/roles');
         } catch (error: unknown) {
             console.error('Error deleting role:', error);
-            let errorMessage = t('admin.roles.messages.delete_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                errorMessage = error.response.data.message;
-            }
-            toast.error(errorMessage);
+            toast.error(getApiErrorMessage(error, t, 'admin.roles.messages.delete_failed'));
         } finally {
             setIsSubmitting(false);
         }

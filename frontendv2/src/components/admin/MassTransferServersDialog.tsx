@@ -16,8 +16,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -127,11 +128,7 @@ export function MassTransferServersDialog({
             setMoveAll(false);
         } catch (error) {
             console.error('Mass transfer preview failed:', error);
-            const message =
-                isAxiosError(error) && error.response?.data?.message
-                    ? String(error.response.data.message)
-                    : t('admin.node.mass_transfer.preview_failed');
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.node.mass_transfer.preview_failed'));
             setPreview(null);
         } finally {
             setLoadingPreview(false);
@@ -212,11 +209,7 @@ export function MassTransferServersDialog({
             onCompleted?.();
         } catch (error) {
             console.error('Mass transfer failed:', error);
-            const message =
-                isAxiosError(error) && error.response?.data?.message
-                    ? String(error.response.data.message)
-                    : t('admin.node.mass_transfer.failed');
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.node.mass_transfer.failed'));
         } finally {
             setSubmitting(false);
         }

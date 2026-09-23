@@ -20,8 +20,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
@@ -72,7 +73,7 @@ export function PackageManagerTab({ nodeId }: PackageManagerTabProps) {
         try {
             const { data } = await axios.get(`/api/admin/web-nodes/${nodeId}/packages`);
             if (!data?.success) {
-                throw new Error(data?.message || t('admin.webNodes.packages.fetch_failed'));
+                throw new Error(getApiErrorMessageFromPayload(data, t, 'admin.webNodes.packages.fetch_failed'));
             }
             const payload = (data.data?.packages || {}) as PackagesPayload;
             setPackageManager(payload.package_manager ?? null);
@@ -80,11 +81,7 @@ export function PackageManagerTab({ nodeId }: PackageManagerTabProps) {
             setPackages(payload.packages ?? []);
         } catch (e) {
             const msg =
-                e instanceof Error
-                    ? e.message
-                    : isAxiosError(e)
-                      ? e.response?.data?.message || e.message
-                      : t('admin.webNodes.packages.fetch_failed');
+                e instanceof Error ? e.message : getApiErrorMessage(e, t, 'admin.webNodes.packages.fetch_failed');
             setError(msg);
         } finally {
             setLoading(false);
@@ -117,10 +114,13 @@ export function PackageManagerTab({ nodeId }: PackageManagerTabProps) {
             const { data } = await axios.post(endpoint);
             if (!data?.success) {
                 throw new Error(
-                    data?.message ||
-                        (action === 'install'
-                            ? t('admin.webNodes.packages.install_failed')
-                            : t('admin.webNodes.packages.remove_failed')),
+                    getApiErrorMessageFromPayload(
+                        data,
+                        t,
+                        action === 'install'
+                            ? 'admin.webNodes.packages.install_failed'
+                            : 'admin.webNodes.packages.remove_failed',
+                    ),
                 );
             }
 
@@ -134,14 +134,11 @@ export function PackageManagerTab({ nodeId }: PackageManagerTabProps) {
             }
             await load();
         } catch (e) {
-            const msg =
-                e instanceof Error
-                    ? e.message
-                    : isAxiosError(e)
-                      ? e.response?.data?.message || e.message
-                      : action === 'install'
-                        ? t('admin.webNodes.packages.install_failed')
-                        : t('admin.webNodes.packages.remove_failed');
+            const fallback =
+                action === 'install'
+                    ? 'admin.webNodes.packages.install_failed'
+                    : 'admin.webNodes.packages.remove_failed';
+            const msg = e instanceof Error ? e.message : getApiErrorMessage(e, t, fallback);
             toast.error(msg);
             terminalRef.current?.writeln(`\u001b[31m${msg}\u001b[0m`);
         } finally {

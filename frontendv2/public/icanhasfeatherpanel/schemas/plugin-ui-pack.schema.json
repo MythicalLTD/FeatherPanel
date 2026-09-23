@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://featherpanel.com/schemas/plugin-ui-pack.json",
+  "title": "FeatherPanel Plugin UI Pack",
+  "type": "object",
+  "description": "Frontend/ui.json — layout takeover pack (shell + pages + hide + actions).",
+  "properties": {
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "theme": {
+      "type": ["string", "null"],
+      "description": "Theme pack id (plugin:id or bare id for this plugin)"
+    },
+    "shell": {
+      "type": "object",
+      "properties": {
+        "replace": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "hide": { "type": "boolean" },
+              "component": { "type": "string" },
+              "remote": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["match"],
+        "properties": {
+          "match": {
+            "type": "string",
+            "description": "Path pattern, e.g. /dashboard or /server/:uuidShort/console"
+          },
+          "hide": { "type": "boolean" },
+          "replace": {
+            "type": "object",
+            "properties": {
+              "component": { "type": "string" },
+              "remote": { "type": "string" },
+              "hide": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+    "hide": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "actions": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "packs": {
+      "type": "array",
+      "items": { "$ref": "#" }
+    }
+  }
+}

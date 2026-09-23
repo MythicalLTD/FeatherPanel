@@ -6,7 +6,7 @@ overrides:
   '@codemirror/view': 6.43.7
   '@codemirror/language': 6.12.4
 minimumReleaseAgeExclude:
-  - prettier@3.8.4 || 3.9.6 || 3.9.8
+  - prettier@3.8.4 || 3.9.6 || 3.9.8 || 3.9.9
   - react-qr-code@2.2.0
   - lucide-react@1.20.0 || 1.26.0 || 1.27.0 || 1.30.0 || 1.37.0 || 1.38.0 || 1.39.0 || 1.41.0 || 1.42.0
   - react-dom@19.2.8

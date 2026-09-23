@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Frontend Plugin Power SDK — FeatherPanel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.35rem; margin-top: 2rem; }
+    .muted { color: #9ca3af; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.875rem; }
+    pre { background: #0f172a; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    ul { padding-left: 1.25rem; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem; margin-top: 1rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; font-size: 0.875rem; }
+    th, td { border: 1px solid #1f2937; padding: 0.5rem 0.75rem; text-align: left; }
+    th { background: #0f172a; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <p><a href="/icanhasfeatherpanel/">&larr; Docs home</a> · <a href="/icanhasfeatherpanel/plugin-themes.html">Themes &amp; UI Packs</a></p>
+    <h1>Frontend Plugin Power SDK</h1>
+    <p class="muted"><code>window.FeatherPanel</code> v2 — events, cancelable actions, modals, search, shortcuts. Works at runtime with no panel <code>pnpm build</code> per plugin.</p>
+
+    <h2>Quick start (Frontend/index.js)</h2>
+    <div class="card">
+<pre>(function () {
+  function boot() {
+    var FP = window.FeatherPanel;
+    if (!FP || !FP.events) return setTimeout(boot, 50);
+
+    FP.events.on('fp:route:change', function (p) {
+      console.log('route', p);
+    });
+
+    FP.actions.register('fp:server:power', {
+      id: 'myplugin.guard-kill',
+      priority: 100,
+      handler: async function (ctx, next) {
+        if (ctx.action === 'kill' &amp;&amp; !confirm('Kill?')) {
+          ctx.cancel('aborted');
+          return;
+        }
+        await next();
+      },
+    });
+
+    FP.search.contribute({
+      id: 'myplugin',
+      search: function (q) {
+        return q ? [{ id: '1', title: 'My plugin', href: '/dashboard' }] : [];
+      },
+    });
+
+    FP.shortcuts.register({
+      id: 'myplugin-toast',
+      combo: 'ctrl+shift+m',
+      handler: function () { FP.toast.info('Hello from plugin'); },
+    });
+  }
+  boot();
+})();</pre>
+    </div>
+
+    <h2>Events</h2>
+    <div class="card">
+      <table>
+        <tr><th>ID</th><th>When</th></tr>
+        <tr><td><code>fp:host:ready</code></td><td>Host API installed</td></tr>
+        <tr><td><code>fp:route:change</code></td><td>Pathname changes</td></tr>
+        <tr><td><code>fp:page:mount</code> / <code>fp:page:unmount</code></td><td>Route settle</td></tr>
+        <tr><td><code>fp:theme:change</code></td><td>Theme / accent / pack</td></tr>
+        <tr><td><code>fp:uipack:change</code></td><td>Active UI pack</td></tr>
+        <tr><td><code>fp:session:change</code></td><td>Login / user change</td></tr>
+        <tr><td><code>fp:server:context</code></td><td>Enter/leave server routes</td></tr>
+        <tr><td><code>fp:server:power:result</code></td><td>After power attempt</td></tr>
+        <tr><td><code>fp:server:console:ready</code></td><td>Console page mounted</td></tr>
+        <tr><td><code>fp:files:saved</code></td><td>File save success</td></tr>
+      </table>
+    </div>
+
+    <h2>Cancelable actions</h2>
+    <div class="card">
+      <table>
+        <tr><th>ID</th><th>Call site</th></tr>
+        <tr><td><code>fp:server:power</code></td><td>Start/stop/restart/kill</td></tr>
+        <tr><td><code>fp:files:save</code></td><td>File editor save</td></tr>
+        <tr><td><code>fp:nav:push</code></td><td><code>FeatherPanel.navigate</code></td></tr>
+        <tr><td><code>fp:form:submit</code> / <code>data-fp-action</code></td><td>Opt-in forms &amp; clicks</td></tr>
+        <tr><td><code>fp:ui:confirm</code></td><td>Destructive confirms (e.g. kill)</td></tr>
+        <tr><td><code>fp:api:request</code></td><td><code>FeatherPanel.api.*</code></td></tr>
+        <tr><td><code>fp:search:query</code></td><td>Global search</td></tr>
+        <tr><td><code>fp:shortcut:invoke</code></td><td>Registered shortcuts</td></tr>
+      </table>
+      <p class="muted">Opt-in buttons: <code>&lt;button data-fp-action="fp:my:action" data-fp-payload='{"x":1}'&gt;</code></p>
+    </div>
+
+    <h2>Registries</h2>
+    <div class="card">
+      <ul>
+        <li><code>FeatherPanel.ui.modal.register / open / close</code></li>
+        <li><code>FeatherPanel.search.contribute</code></li>
+        <li><code>FeatherPanel.shortcuts.register</code></li>
+      </ul>
+    </div>
+
+    <h2>Iframe bus</h2>
+    <div class="card">
+      <p>Same-origin: <code>{ type: 'featherpanel-bus', op: 'emit'|'on'|'off'|'runAction', ... }</code></p>
+      <p>Replies: <code>featherpanel-bus-reply</code>, events: <code>featherpanel-bus-event</code></p>
+    </div>
+
+    <h2>Slots</h2>
+    <div class="card">
+      <p><code>shell.*</code>, <code>toolbar.server-header</code>, <code>toolbar.server-console</code>, <code>drawer.global</code>, <code>modal.global</code></p>
+      <p>Action <code>remoteUrl</code> / <code>componentUrl</code> opens the plugin modal host.</p>
+    </div>
+  </main>
+</body>
+</html>

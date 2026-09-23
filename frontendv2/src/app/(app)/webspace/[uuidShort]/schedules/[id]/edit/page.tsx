@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { toast } from 'sonner';
 import { Save } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -32,6 +32,7 @@ import { listSupportedTimezones } from '@/lib/dateUtils';
 import { safeBack } from '@/lib/safe-back';
 import { CronEditor } from '@/components/common/CronEditor';
 import { WebSpaceScheduleTasksEditor } from '@/components/webspace/WebSpaceScheduleTasksEditor';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import {
     emptyScheduleDraft,
     emptyScheduleTask,
@@ -97,11 +98,7 @@ export default function WebSpaceScheduleEditPage() {
                     tasks: tasks.length > 0 ? tasks : [emptyScheduleTask(1)],
                 });
             } catch (err) {
-                toast.error(
-                    isAxiosError(err)
-                        ? err.response?.data?.message || t('serverSchedules.loadFailed')
-                        : t('serverSchedules.loadFailed'),
-                );
+                toast.error(getApiErrorMessage(err, t, 'serverSchedules.loadFailed'));
                 router.push(`/webspace/${uuidShort}/schedules`);
             } finally {
                 setLoading(false);
@@ -145,11 +142,7 @@ export default function WebSpaceScheduleEditPage() {
             toast.success(t('serverSchedules.updateSuccess'));
             router.push(`/webspace/${uuidShort}/schedules`);
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('serverSchedules.updateFailed')
-                    : t('serverSchedules.updateFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'serverSchedules.updateFailed'));
         } finally {
             setSaving(false);
         }

@@ -17,8 +17,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -145,11 +146,7 @@ export default function RealmsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error creating realm:', error);
-            let msg = t('admin.realms.messages.create_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.realms.messages.create_failed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -170,11 +167,7 @@ export default function RealmsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error updating realm:', error);
-            let msg = t('admin.realms.messages.update_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.realms.messages.update_failed'));
         } finally {
             setIsSubmitting(false);
         }

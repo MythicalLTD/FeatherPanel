@@ -46,7 +46,7 @@ export function WidgetRenderer({
     onToggleHidden,
 }: WidgetRendererProps) {
     const { t } = useTranslation();
-    const { theme } = useTheme();
+    const { theme, themePack } = useTheme();
     const pathname = usePathname();
     const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
     const [errorStates, setErrorStates] = useState<Record<string, string | null>>({});
@@ -148,12 +148,12 @@ export function WidgetRenderer({
         visibleWidgets.forEach((widget) => {
             const iframe = document.querySelector(`iframe[data-widget-id="${widget.id}"]`) as HTMLIFrameElement;
             if (iframe?.contentWindow && iframeReadyRef.current[widget.id]) {
-                iframe.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+                iframe.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, window.location.origin);
                 injectThemeStyles(iframe);
             }
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps -- injectThemeStyles below; widgets omitted (use widgetsKey)
-    }, [theme, widgetsKey]);
+    }, [theme, themePack, widgetsKey]);
 
     // Listen for widget ready signals and send theme + inject styles
     useEffect(() => {
@@ -163,7 +163,7 @@ export function WidgetRenderer({
                 iframeReadyRef.current[widgetId] = true;
                 const iframe = document.querySelector(`iframe[data-widget-id="${widgetId}"]`) as HTMLIFrameElement;
                 if (iframe?.contentWindow) {
-                    iframe.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+                    iframe.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, window.location.origin);
                     setTimeout(() => injectThemeStyles(iframe), 100);
                 }
             }
@@ -172,7 +172,7 @@ export function WidgetRenderer({
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [theme]);
+    }, [theme, themePack]);
 
     if (!visibleWidgets || visibleWidgets.length === 0) return null;
 
@@ -202,7 +202,10 @@ export function WidgetRenderer({
 
             const style = iframeDoc.createElement('style');
             style.id = 'featherpanel-theme-override';
-            style.textContent = getPluginIframeThemeOverrideCss(theme);
+            style.textContent = getPluginIframeThemeOverrideCss(
+                theme,
+                theme === 'dark' ? themePack?.tokens.dark : themePack?.tokens.light,
+            );
             if (iframeDoc.head) {
                 iframeDoc.head.appendChild(style);
             }
@@ -232,7 +235,7 @@ export function WidgetRenderer({
                 setLoadingStates((prev) => ({ ...prev, [widgetId]: false }));
                 setErrorStates((prev) => ({
                     ...prev,
-                    [widgetId]: 'Cloudflare verification is still in progress. Please wait a moment and try again.',
+                    [widgetId]: t('errors.plugin.cloudflare_challenge'),
                 }));
                 return;
             }
@@ -247,7 +250,7 @@ export function WidgetRenderer({
         // Inject theme styles and send postMessage
         iframeReadyRef.current[widgetId] = true;
         if (iframe.contentWindow) {
-            iframe.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+            iframe.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, window.location.origin);
         }
         setTimeout(() => injectThemeStyles(iframe), 100);
     };

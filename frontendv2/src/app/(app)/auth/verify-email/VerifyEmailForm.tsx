@@ -22,6 +22,7 @@ import { CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { AuthLoadingState, AuthPage, AuthPageHeader, AuthPanel } from '@/components/auth/AuthUi';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function VerifyEmailForm() {
     const router = useRouter();
@@ -49,11 +50,11 @@ export default function VerifyEmailForm() {
                     setSuccess(true);
                     setMessage(response.data?.message || t('auth.verify_email.success'));
                 } else {
-                    setMessage(response.data?.message || t('auth.verify_email.failed'));
+                    setMessage(getApiErrorMessageFromPayload(response.data, t, 'auth.verify_email.failed'));
                 }
             } catch (error: unknown) {
                 const axiosError = error as { response?: { data?: { message?: string } } };
-                setMessage(axiosError.response?.data?.message || t('auth.verify_email.failed'));
+                setMessage(getApiErrorMessage(axiosError, t, 'auth.verify_email.failed'));
             } finally {
                 setLoading(false);
             }

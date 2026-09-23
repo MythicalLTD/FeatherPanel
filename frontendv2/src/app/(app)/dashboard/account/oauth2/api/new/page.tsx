@@ -27,6 +27,7 @@ import {
     OAuthConsentMessage,
     OAuthConsentShell,
 } from '@/components/auth/OAuthConsentCard';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 type OAuthRequestPayload = {
     request_token: string;
@@ -70,7 +71,7 @@ export default function OAuth2ApiAuthorizePage() {
                     setPayload(response.data.data as OAuthRequestPayload);
                     return;
                 }
-                setError(response.data?.message || t('account.apiKeys.oauth2.initFailedDefault'));
+                setError(getApiErrorMessageFromPayload(response.data, t, 'account.apiKeys.oauth2.initFailedDefault'));
             })
             .catch((err) => {
                 if (axios.isAxiosError(err) && err.response?.data?.error_code === 'INVALID_ACCOUNT_TOKEN') {
@@ -78,8 +79,7 @@ export default function OAuth2ApiAuthorizePage() {
                     router.push(`/auth/login?redirect=${encodeURIComponent(redirect)}`);
                     return;
                 }
-                const message = axios.isAxiosError(err) ? err.response?.data?.message : null;
-                setError(message || t('account.apiKeys.oauth2.initFailedDefault'));
+                setError(getApiErrorMessage(err, t, 'account.apiKeys.oauth2.initFailedDefault'));
             })
             .finally(() => setLoading(false));
     }, [queryString, payload, loading, error, searchParams, router, t]);
@@ -93,7 +93,9 @@ export default function OAuth2ApiAuthorizePage() {
             params: requestQueryParams,
         });
         if (!response.data?.success || !response.data?.data?.request_token) {
-            throw new Error(response.data?.message || t('account.apiKeys.oauth2.initFailedDefault'));
+            throw new Error(
+                getApiErrorMessageFromPayload(response.data, t, 'account.apiKeys.oauth2.initFailedDefault'),
+            );
         }
         const freshPayload = response.data.data as OAuthRequestPayload;
         setPayload(freshPayload);
@@ -113,7 +115,9 @@ export default function OAuth2ApiAuthorizePage() {
                 request_token: activePayload?.request_token,
             });
             if (!response.data?.success) {
-                throw new Error(response.data?.message || 'Approval failed');
+                throw new Error(
+                    getApiErrorMessageFromPayload(response.data, t, 'account.apiKeys.oauth2.approveFailed'),
+                );
             }
             if (response.data?.data?.mode === 'server') {
                 setServerModeAuthorized(true);
@@ -124,7 +128,9 @@ export default function OAuth2ApiAuthorizePage() {
                 return;
             }
             if (!response.data?.data?.redirect_url) {
-                throw new Error(response.data?.message || 'Approval failed');
+                throw new Error(
+                    getApiErrorMessageFromPayload(response.data, t, 'account.apiKeys.oauth2.approveFailed'),
+                );
             }
             redirectToTarget(String(response.data.data.redirect_url));
         } catch (err) {
@@ -152,8 +158,11 @@ export default function OAuth2ApiAuthorizePage() {
                 }
             }
 
-            const message = axios.isAxiosError(err) ? err.response?.data?.message : null;
-            toast.error(message || t('account.apiKeys.oauth2.approveFailed'));
+            toast.error(
+                err instanceof Error && !axios.isAxiosError(err)
+                    ? err.message
+                    : getApiErrorMessage(err, t, 'account.apiKeys.oauth2.approveFailed'),
+            );
             setSubmitting(false);
         }
     };
@@ -171,7 +180,7 @@ export default function OAuth2ApiAuthorizePage() {
                 request_token: activePayload?.request_token,
             });
             if (!response.data?.success) {
-                throw new Error(response.data?.message || 'Deny failed');
+                throw new Error(getApiErrorMessageFromPayload(response.data, t, 'account.apiKeys.oauth2.denyFailed'));
             }
             if (response.data?.data?.mode === 'server') {
                 toast.success(t('account.apiKeys.oauth2.serverDenied'));
@@ -179,12 +188,15 @@ export default function OAuth2ApiAuthorizePage() {
                 return;
             }
             if (!response.data?.data?.redirect_url) {
-                throw new Error(response.data?.message || 'Deny failed');
+                throw new Error(getApiErrorMessageFromPayload(response.data, t, 'account.apiKeys.oauth2.denyFailed'));
             }
             redirectToTarget(String(response.data.data.redirect_url));
         } catch (err) {
-            const message = axios.isAxiosError(err) ? err.response?.data?.message : null;
-            toast.error(message || t('account.apiKeys.oauth2.denyFailed'));
+            toast.error(
+                err instanceof Error && !axios.isAxiosError(err)
+                    ? err.message
+                    : getApiErrorMessage(err, t, 'account.apiKeys.oauth2.denyFailed'),
+            );
             setSubmitting(false);
         }
     };

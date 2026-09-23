@@ -25,6 +25,7 @@ import { Label } from '@/components/ui/label';
 import { Radar, Server, Scan, ShieldCheck, Activity, Zap, X, AlertTriangle, Terminal, Plus } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { cn } from '@/lib/utils';
 import { ServerSelectionModal } from '@/components/dashboard/ServerSelectionModal';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
@@ -171,7 +172,7 @@ const ScannerTab = () => {
             }
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
-            toast.error(err.response?.data?.message || t('admin.featherzerotrust.scanner.scanFailed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.featherzerotrust.scanner.scanFailed'));
         } finally {
             setScanning(false);
             stopProgress();

@@ -64,6 +64,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn, formatFileSize, copyToClipboard } from '@/lib/utils';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface StorageCategory {
     id: string;
@@ -150,10 +151,10 @@ export default function StorageSensePage() {
                     setDisk(data.data.disk ?? null);
                     setSelected(new Set());
                 } else {
-                    toast.error(data.message || t('admin.storage_sense.load_failed'));
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'admin.storage_sense.load_failed'));
                 }
-            } catch {
-                toast.error(t('admin.storage_sense.load_failed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'admin.storage_sense.load_failed'));
             } finally {
                 setLoading(false);
             }
@@ -241,10 +242,10 @@ export default function StorageSensePage() {
                 }
                 await fetchSummary();
             } else {
-                toast.error(data.message || t('admin.storage_sense.purge_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.storage_sense.purge_failed'));
             }
-        } catch {
-            toast.error(t('admin.storage_sense.purge_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.storage_sense.purge_failed'));
         } finally {
             setPurging(false);
             setPurgeTarget(null);
@@ -277,10 +278,10 @@ export default function StorageSensePage() {
                 }
                 await fetchSummary();
             } else {
-                toast.error(data.message || t('admin.storage_sense.purge_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.storage_sense.purge_failed'));
             }
-        } catch {
-            toast.error(t('admin.storage_sense.purge_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.storage_sense.purge_failed'));
         } finally {
             setPurging(false);
             setBatchOpen(false);

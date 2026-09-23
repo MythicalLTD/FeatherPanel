@@ -17,6 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -43,7 +44,7 @@ import {
     ChevronRight,
     Calendar,
 } from 'lucide-react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
@@ -146,11 +147,11 @@ export default function MailTemplatesPage() {
                     to: apiPag.to,
                 });
             } else {
-                toast.error(data.message || t('admin.mail_templates.messages.fetch_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.mail_templates.messages.fetch_failed'));
             }
         } catch (error) {
             console.error('Error fetching templates:', error);
-            toast.error(t('admin.mail_templates.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.mail_templates.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -169,14 +170,10 @@ export default function MailTemplatesPage() {
             if (data.success) {
                 setRefreshKey((prev) => prev + 1);
             } else {
-                toast.error(data.message || t('admin.mail_templates.messages.create_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.mail_templates.messages.create_failed'));
             }
         } catch (error: unknown) {
-            let message = t('admin.mail_templates.messages.create_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                message = error.response.data.message;
-            }
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.mail_templates.messages.create_failed'));
         } finally {
             setProcessing(false);
         }
@@ -191,14 +188,10 @@ export default function MailTemplatesPage() {
             if (data.success) {
                 setRefreshKey((prev) => prev + 1);
             } else {
-                toast.error(data.message || t('admin.mail_templates.messages.update_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.mail_templates.messages.update_failed'));
             }
         } catch (error: unknown) {
-            let message = t('admin.mail_templates.messages.update_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                message = error.response.data.message;
-            }
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.mail_templates.messages.update_failed'));
         } finally {
             setProcessing(false);
         }
@@ -212,10 +205,10 @@ export default function MailTemplatesPage() {
                 toast.success(t('admin.mail_templates.messages.deleted'));
                 setRefreshKey((prev) => prev + 1);
             } else {
-                toast.error(data.message || t('admin.mail_templates.messages.delete_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.mail_templates.messages.delete_failed'));
             }
-        } catch {
-            toast.error(t('admin.mail_templates.messages.delete_failed'));
+        } catch (error: unknown) {
+            toast.error(getApiErrorMessage(error, t, 'admin.mail_templates.messages.delete_failed'));
         }
     };
 
@@ -229,12 +222,10 @@ export default function MailTemplatesPage() {
                 setMassEmailOpen(false);
                 setMassEmailData({ subject: '', body: '' });
             } else {
-                toast.error(data.message || t('admin.mail_templates.messages.mass_email_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.mail_templates.messages.mass_email_failed'));
             }
         } catch (error: unknown) {
-            const message =
-                error instanceof Error ? error.message : t('admin.mail_templates.messages.mass_email_failed');
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.mail_templates.messages.mass_email_failed'));
         } finally {
             setProcessing(false);
         }
@@ -250,12 +241,10 @@ export default function MailTemplatesPage() {
                 setTestEmailOpen(false);
                 setTestEmailData({ email: '', subject: '', body: '' });
             } else {
-                toast.error(data.message || t('admin.mail_templates.messages.test_email_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.mail_templates.messages.test_email_failed'));
             }
         } catch (error: unknown) {
-            const message =
-                error instanceof Error ? error.message : t('admin.mail_templates.messages.test_email_failed');
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.mail_templates.messages.test_email_failed'));
         } finally {
             setProcessing(false);
         }

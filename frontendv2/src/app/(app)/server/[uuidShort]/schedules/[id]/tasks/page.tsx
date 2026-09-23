@@ -36,6 +36,7 @@ import type { Task, Schedule, SchedulePagination, Database } from '@/types/serve
 import { safeBack } from '@/lib/safe-back';
 import { formatBackupPayloadDisplay, isBackupAction } from '@/components/server/backup/backup-payload';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function ServerTasksPage() {
     const { uuidShort, id: scheduleId } = useParams() as { uuidShort: string; id: string };
@@ -164,11 +165,11 @@ export default function ServerTasksPage() {
                 setIsDeleteOpen(false);
                 fetchTasks(pagination.current_page);
             } else {
-                toast.error(data?.message || t('serverTasks.deleteFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverTasks.deleteFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('serverTasks.deleteFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'serverTasks.deleteFailed'));
         } finally {
             setDeleting(false);
         }
@@ -185,11 +186,11 @@ export default function ServerTasksPage() {
                 toast.success(t('serverTasks.moveUpSuccess'));
                 fetchTasks(pagination.current_page);
             } else {
-                toast.error(data?.message || t('serverTasks.moveUpFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverTasks.moveUpFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('serverTasks.moveUpFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'serverTasks.moveUpFailed'));
         }
     };
 
@@ -204,11 +205,11 @@ export default function ServerTasksPage() {
                 toast.success(t('serverTasks.moveDownSuccess'));
                 fetchTasks(pagination.current_page);
             } else {
-                toast.error(data?.message || t('serverTasks.moveDownFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverTasks.moveDownFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('serverTasks.moveDownFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'serverTasks.moveDownFailed'));
         }
     };
 

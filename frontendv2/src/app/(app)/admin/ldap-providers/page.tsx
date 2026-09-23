@@ -26,6 +26,7 @@ import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface LdapProvider {
@@ -69,10 +70,10 @@ export default function LdapProvidersPage() {
             if (json.success && Array.isArray(json.data?.providers)) {
                 setProviders(json.data.providers);
             } else {
-                toast.error(json.message || t('admin.ldapProviders.messages.fetch_failed'));
+                toast.error(getApiErrorMessageFromPayload(json, t, 'admin.ldapProviders.messages.fetch_failed'));
             }
-        } catch {
-            toast.error(t('admin.ldapProviders.messages.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.ldapProviders.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -133,10 +134,10 @@ export default function LdapProvidersPage() {
                 toast.success(t('admin.ldapProviders.messages.deleted'));
                 fetchProviders();
             } else {
-                toast.error(json.message || t('admin.ldapProviders.messages.delete_failed'));
+                toast.error(getApiErrorMessageFromPayload(json, t, 'admin.ldapProviders.messages.delete_failed'));
             }
-        } catch {
-            toast.error(t('admin.ldapProviders.messages.delete_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.ldapProviders.messages.delete_failed'));
         }
     };
 
@@ -150,10 +151,10 @@ export default function LdapProvidersPage() {
             if (json.success) {
                 toast.success(t('admin.ldapProviders.messages.connection_success'));
             } else {
-                toast.error(json.message || t('admin.ldapProviders.messages.connection_failed'));
+                toast.error(getApiErrorMessageFromPayload(json, t, 'admin.ldapProviders.messages.connection_failed'));
             }
-        } catch {
-            toast.error(t('admin.ldapProviders.messages.connection_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.ldapProviders.messages.connection_failed'));
         } finally {
             setTesting(false);
         }
@@ -205,10 +206,10 @@ export default function LdapProvidersPage() {
                 setBindPassword('');
                 fetchProviders();
             } else {
-                toast.error(json.message || t('admin.ldapProviders.messages.save_failed'));
+                toast.error(getApiErrorMessageFromPayload(json, t, 'admin.ldapProviders.messages.save_failed'));
             }
-        } catch {
-            toast.error(t('admin.ldapProviders.messages.save_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.ldapProviders.messages.save_failed'));
         } finally {
             setSaving(false);
         }
@@ -317,12 +318,21 @@ export default function LdapProvidersPage() {
                                                             fetchProviders();
                                                         } else {
                                                             toast.error(
-                                                                json.message ||
-                                                                    t('admin.ldapProviders.messages.toggle_failed'),
+                                                                getApiErrorMessageFromPayload(
+                                                                    json,
+                                                                    t,
+                                                                    'admin.ldapProviders.messages.toggle_failed',
+                                                                ),
                                                             );
                                                         }
-                                                    } catch {
-                                                        toast.error(t('admin.ldapProviders.messages.toggle_failed'));
+                                                    } catch (error) {
+                                                        toast.error(
+                                                            getApiErrorMessage(
+                                                                error,
+                                                                t,
+                                                                'admin.ldapProviders.messages.toggle_failed',
+                                                            ),
+                                                        );
                                                     }
                                                 }}
                                             >

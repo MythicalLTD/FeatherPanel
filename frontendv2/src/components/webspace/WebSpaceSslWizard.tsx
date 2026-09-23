@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { ArrowLeft, ArrowRight, CheckCircle2, CircleAlert, Globe, ShieldCheck, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/featherui/Button';
@@ -24,6 +24,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
 import { WebSpaceSslDnsGuide } from '@/components/webspace/WebSpaceSslDnsGuide';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface DnsGuidanceRow {
     domain: string;
@@ -120,9 +121,7 @@ export function WebSpaceSslWizard({
             toast.success(t('webSpaces.settings.dnsCheckComplete'));
             onUpdated?.();
         } catch (error) {
-            let msg = t('webSpaces.settings.dnsCheckFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.dnsCheckFailed'));
         } finally {
             setChecking(false);
         }
@@ -135,9 +134,7 @@ export function WebSpaceSslWizard({
             toast.success(t('webSpaces.settings.saved'));
             onUpdated?.();
         } catch (error) {
-            let msg = t('webSpaces.settings.saveFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.saveFailed'));
         } finally {
             setSaving(false);
         }
@@ -151,9 +148,7 @@ export function WebSpaceSslWizard({
             toast.success(t('webSpaces.settings.sslRenewed'));
             onUpdated?.();
         } catch (error) {
-            let msg = t('webSpaces.settings.sslRenewFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.sslRenewFailed'));
         } finally {
             setRenewing(false);
         }

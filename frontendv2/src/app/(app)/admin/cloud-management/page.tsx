@@ -17,6 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useFeatherCloud, type CloudSummary } from '@/hooks/useFeatherCloud';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -200,7 +201,7 @@ export default function CloudManagementPage() {
             );
             await loadStatus();
         } catch (err) {
-            toast.error(axios.isAxiosError(err) ? err.response?.data?.message || 'Sync failed' : 'Sync failed');
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setSyncing(false);
         }

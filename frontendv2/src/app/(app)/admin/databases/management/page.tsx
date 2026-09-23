@@ -17,6 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -154,7 +155,9 @@ export default function DatabaseManagementPage() {
                 }
                 await checkPhpMyAdminStatus();
             } else {
-                toast.error(response.data.message || t('admin.database_management.toasts.failed_install'));
+                toast.error(
+                    getApiErrorMessageFromPayload(response.data, t, 'admin.database_management.toasts.failed_install'),
+                );
             }
         } catch (error) {
             console.error(error);
@@ -178,7 +181,9 @@ export default function DatabaseManagementPage() {
                 toast.success(t('admin.database_management.pma.deleted_success'));
                 await checkPhpMyAdminStatus();
             } else {
-                toast.error(response.data.message || t('admin.database_management.toasts.failed_delete'));
+                toast.error(
+                    getApiErrorMessageFromPayload(response.data, t, 'admin.database_management.toasts.failed_delete'),
+                );
             }
         } catch (error) {
             console.error(error);

@@ -38,6 +38,7 @@ import { safeBack } from '@/lib/safe-back';
 import { BackupTaskFields } from '@/components/server/backup/BackupTaskFields';
 import { buildBackupPayload, emptyBackupFields, type BackupFields } from '@/components/server/backup/backup-payload';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function CreateTaskPage() {
     const { uuidShort, id: scheduleId } = useParams() as { uuidShort: string; id: string };
@@ -118,11 +119,11 @@ export default function CreateTaskPage() {
                 toast.success(t('serverTasks.createSuccess'));
                 router.push(`/server/${uuidShort}/schedules/${scheduleId}/tasks`);
             } else {
-                toast.error(data?.message || t('serverTasks.createFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverTasks.createFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('serverTasks.createFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'serverTasks.createFailed'));
         } finally {
             setSaving(false);
         }

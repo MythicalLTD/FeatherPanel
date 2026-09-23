@@ -31,6 +31,7 @@ import { isEnabled } from '@/lib/utils';
 import { isCaptchaConfigured, obtainCaptchaResponseToken } from '@/lib/captchaGate';
 import { startRegistration } from '@simplewebauthn/browser';
 import { passkeysApi } from '@/lib/api/passkeys';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { format } from 'date-fns';
 import {
     formatDateTimeInTz,
@@ -280,16 +281,12 @@ export default function SettingsTab() {
                 await fetchSession(true);
                 resetTurnstile();
             } else {
-                toast.error(response.data?.message || t('account.twoFactor.disableFailed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'account.twoFactor.disableFailed'));
                 resetTurnstile();
             }
         } catch (error) {
             console.error('Error disabling 2FA:', error);
-            if (axios.isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('account.twoFactor.disableFailed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'account.twoFactor.disableFailed'));
             resetTurnstile();
         } finally {
             setIsSubmitting(false);
@@ -368,15 +365,11 @@ export default function SettingsTab() {
                 setLdapPassword('');
                 await fetchSession(true);
             } else {
-                toast.error(response.data?.message || t('account.ldapLinkFailed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'account.ldapLinkFailed'));
             }
         } catch (error) {
             console.error('Error linking LDAP:', error);
-            if (axios.isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('account.ldapLinkFailed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'account.ldapLinkFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -431,16 +424,12 @@ export default function SettingsTab() {
                 resetTurnstile();
                 router.push(`/dashboard/tickets/${ticketUuid}`);
             } else {
-                toast.error(response.data?.message || t('account.dataRequest.failed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'account.dataRequest.failed'));
                 resetTurnstile();
             }
         } catch (error) {
             console.error('Error requesting account data:', error);
-            if (axios.isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('account.dataRequest.failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'account.dataRequest.failed'));
             resetTurnstile();
         } finally {
             setIsRequestingData(false);
@@ -500,15 +489,11 @@ export default function SettingsTab() {
                 toast.success(t('account.deleteAccount.otpSent'));
                 resetTurnstile();
             } else {
-                toast.error(response.data?.message || t('account.deleteAccount.otpFailed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'account.deleteAccount.otpFailed'));
                 resetTurnstile();
             }
         } catch (error) {
-            if (axios.isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('account.deleteAccount.otpFailed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'account.deleteAccount.otpFailed'));
             resetTurnstile();
         } finally {
             setIsSendingDeletionOtp(false);
@@ -565,15 +550,11 @@ export default function SettingsTab() {
                     resetTurnstile();
                 }
             } else {
-                toast.error(response.data?.message || t('account.deleteAccount.failed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'account.deleteAccount.failed'));
                 resetTurnstile();
             }
         } catch (error) {
-            if (axios.isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('account.deleteAccount.failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'account.deleteAccount.failed'));
             resetTurnstile();
         } finally {
             setIsDeletingAccount(false);
@@ -588,14 +569,10 @@ export default function SettingsTab() {
                 toast.success(t('account.deleteAccount.cancelSuccess'));
                 await loadDeletionStatus();
             } else {
-                toast.error(response.data?.message || t('account.deleteAccount.cancelFailed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'account.deleteAccount.cancelFailed'));
             }
         } catch (error) {
-            if (axios.isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('account.deleteAccount.cancelFailed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'account.deleteAccount.cancelFailed'));
         } finally {
             setIsCancellingDeletion(false);
         }
@@ -611,7 +588,7 @@ export default function SettingsTab() {
             setIsSubmitting(true);
             const opt = await passkeysApi.registrationOptions();
             if (!opt.success || !opt.data?.options || !opt.data?.challenge_token) {
-                toast.error(opt.message || t('auth.passkey.registerFailed'));
+                toast.error(getApiErrorMessageFromPayload(opt, t, 'auth.passkey.registerFailed'));
                 return;
             }
             const credential = await startRegistration({
@@ -632,7 +609,7 @@ export default function SettingsTab() {
                     setPasskeys(list.data.passkeys);
                 }
             } else {
-                toast.error(vr.message || t('auth.passkey.registerFailed'));
+                toast.error(getApiErrorMessageFromPayload(vr, t, 'auth.passkey.registerFailed'));
             }
         } catch {
             toast.error(t('auth.passkey.registerFailed'));
@@ -664,7 +641,7 @@ export default function SettingsTab() {
                     prev.map((p) => (p.id === idSaved ? { ...p, label: trimmed === '' ? null : trimmed } : p)),
                 );
             } else {
-                toast.error(res.message || t('auth.passkey.renameFailed'));
+                toast.error(getApiErrorMessageFromPayload(res, t, 'auth.passkey.renameFailed'));
             }
         } catch {
             toast.error(t('auth.passkey.renameFailed'));
@@ -681,7 +658,7 @@ export default function SettingsTab() {
                 toast.success(t('auth.passkey.removed'));
                 setPasskeys((prev) => prev.filter((p) => p.id !== id));
             } else {
-                toast.error(res.message || t('auth.passkey.removeFailed'));
+                toast.error(getApiErrorMessageFromPayload(res, t, 'auth.passkey.removeFailed'));
             }
         } catch {
             toast.error(t('auth.passkey.removeFailed'));

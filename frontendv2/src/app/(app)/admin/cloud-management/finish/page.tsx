@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { AlertCircle, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
@@ -110,7 +111,9 @@ export default function CloudManagementFinishPage() {
             try {
                 const response = await axios.post('/api/admin/cloud/oauth2/callback', body);
                 if (!response.data?.success) {
-                    throw new Error(response.data?.message || t('admin.cloud_management.finish.save_failed'));
+                    throw new Error(
+                        getApiErrorMessageFromPayload(response.data, t, 'admin.cloud_management.finish.save_failed'),
+                    );
                 }
                 setPhase('success');
                 if (!cloudApiKey || !cloudApiSecret) {
@@ -122,13 +125,10 @@ export default function CloudManagementFinishPage() {
                 }
                 setTimeout(() => router.push('/admin/cloud-management'), 2000);
             } catch (err) {
-                const message =
-                    axios.isAxiosError(err) && err.response?.data?.message
-                        ? err.response.data.message
-                        : t('admin.cloud_management.finish.save_failed');
+                const message = getApiErrorMessage(err, t, 'admin.cloud_management.finish.save_failed');
                 setPhase('error');
                 setError(message);
-                toast.error(t('admin.cloud_management.finish.save_failed'));
+                toast.error(message);
             }
         };
 

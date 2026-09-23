@@ -14,6 +14,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import axios from 'axios';
+import { getApiErrorMessage, getApiErrorMessageFromPayload, type TranslateFn } from '@/lib/api-errors';
 
 export interface ActionCommand {
     type: 'server_power' | 'server_command' | 'navigate';
@@ -131,30 +132,24 @@ export function parseActionCommands(text: string): ActionCommand[] {
 export async function executeServerPowerAction(
     action: 'start' | 'stop' | 'restart' | 'kill',
     serverUuid: string,
+    t: TranslateFn,
 ): Promise<{ success: boolean; message: string }> {
     try {
         const response = await axios.post(`/api/user/servers/${serverUuid}/power/${action}`);
         if (response.data.success) {
             return {
                 success: true,
-                message: `Server ${action} command sent successfully`,
+                message: t('common.success'),
             };
         }
         return {
             success: false,
-            message: response.data.message || `Failed to ${action} server`,
+            message: getApiErrorMessageFromPayload(response.data, t, 'chatbot.failedToExecuteAction'),
         };
     } catch (error) {
-        if (axios.isAxiosError(error)) {
-            const errorMessage = error.response?.data?.message || error.message || `Failed to ${action} server`;
-            return {
-                success: false,
-                message: errorMessage,
-            };
-        }
         return {
             success: false,
-            message: `Failed to ${action} server: ${String(error)}`,
+            message: getApiErrorMessage(error, t, 'chatbot.failedToExecuteAction'),
         };
     }
 }
@@ -165,6 +160,7 @@ export async function executeServerPowerAction(
 export async function executeServerCommand(
     serverUuid: string,
     command: string,
+    t: TranslateFn,
 ): Promise<{ success: boolean; message: string }> {
     try {
         const response = await axios.post(`/api/user/servers/${serverUuid}/command`, {
@@ -173,24 +169,17 @@ export async function executeServerCommand(
         if (response.data.success) {
             return {
                 success: true,
-                message: `Command sent successfully: ${command}`,
+                message: t('common.success'),
             };
         }
         return {
             success: false,
-            message: response.data.message || 'Failed to send command',
+            message: getApiErrorMessageFromPayload(response.data, t, 'chatbot.failedToSendCommand'),
         };
     } catch (error) {
-        if (axios.isAxiosError(error)) {
-            const errorMessage = error.response?.data?.message || error.message || 'Failed to send command';
-            return {
-                success: false,
-                message: errorMessage,
-            };
-        }
         return {
             success: false,
-            message: `Failed to send command: ${String(error)}`,
+            message: getApiErrorMessage(error, t, 'chatbot.failedToSendCommand'),
         };
     }
 }

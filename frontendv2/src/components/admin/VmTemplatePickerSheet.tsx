@@ -27,6 +27,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { Layers, Plus, Search as SearchIcon, Loader2, Monitor, Cpu, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export interface VmTemplateOption {
     id: number;
@@ -93,12 +94,11 @@ export function VmTemplatePickerSheet({
                 setProxmoxVms(Array.isArray(res.data.data?.vms) ? res.data.data.vms : []);
             })
             .catch((err) => {
-                const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-                setProxmoxVmsError(msg || 'Failed to load VMs from Proxmox');
+                setProxmoxVmsError(getApiErrorMessage(err, t, 'common.error'));
                 setProxmoxVms([]);
             })
             .finally(() => setLoadingProxmoxVms(false));
-    }, [open, mode, nodeId]);
+    }, [open, mode, nodeId, t]);
 
     const filtered = useMemo(
         () =>
@@ -157,15 +157,14 @@ export function VmTemplatePickerSheet({
             });
             const created = data?.data?.template as VmTemplateOption | undefined;
             if (!created?.id) {
-                toast.error(t('admin.vdsNodes.templates.create_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.vdsNodes.templates.create_failed'));
                 return;
             }
             toast.success(t('admin.vdsNodes.templates.create_success'));
             onTemplateCreated(created);
             setMode('browse');
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg || t('admin.vdsNodes.templates.create_failed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.vdsNodes.templates.create_failed'));
         } finally {
             setCreating(false);
         }

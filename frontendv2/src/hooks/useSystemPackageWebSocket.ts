@@ -21,6 +21,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
+import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface PackageWsMessage {
     event?: string;
@@ -75,6 +77,7 @@ export function useSystemPackageWebSocket({
     onCompleted,
     onFailed,
 }: UseSystemPackageWebSocketOptions) {
+    const { t } = useTranslation();
     const [isConnected, setIsConnected] = useState(false);
     const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
     const wsRef = useRef<WebSocket | null>(null);
@@ -126,7 +129,7 @@ export function useSystemPackageWebSocket({
             const { data } = await axios.get(`/api/admin/web-nodes/${nodeId}/packages/socket`);
             const socketUrl = data?.data?.connection_string || data?.data?.socket;
             if (!data?.success || !socketUrl) {
-                throw new Error(data?.message || 'Missing package WebSocket URL');
+                throw new Error(getApiErrorMessageFromPayload(data, t, 'common.error'));
             }
 
             if (generation !== generationRef.current) return false;
@@ -213,7 +216,7 @@ export function useSystemPackageWebSocket({
         } finally {
             connectingRef.current = false;
         }
-    }, [enabled, nodeId]);
+    }, [enabled, nodeId, t]);
 
     useEffect(() => {
         if (!enabled || !nodeId) {

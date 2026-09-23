@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { getFeatherpanelApiErrorMessage } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -224,7 +224,7 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
             onCompleted?.();
         } catch (error) {
             console.error('Error initiating transfer:', error);
-            const message = getFeatherpanelApiErrorMessage(error) ?? t('admin.servers.messages.transfer_failed');
+            const message = getApiErrorMessage(error, t, 'admin.servers.messages.transfer_failed');
             setTransferError(message);
             toast.error(message);
         } finally {

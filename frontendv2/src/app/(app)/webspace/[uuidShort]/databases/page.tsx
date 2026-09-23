@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { toast } from 'sonner';
 import {
     Plus,
@@ -61,6 +61,7 @@ import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
 import { useSettings } from '@/contexts/SettingsContext';
 import { appendPmaAuthParams, preparePmaAuthContext, storePmaAuthContext } from '@/lib/pma-auth-context';
 import { cn, copyToClipboard as copyUtil } from '@/lib/utils';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface DatabaseRow {
     id: number;
@@ -130,11 +131,7 @@ export default function WebSpaceDatabasesPage() {
             setPhpMyAdminInstalled(!!pmaRes?.data?.data?.installed);
             setPhpPgAdminInstalled(!!ppaRes?.data?.data?.installed);
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.databases.loadFailed')
-                    : t('webSpaces.databases.loadFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.databases.loadFailed'));
         } finally {
             setLoading(false);
         }
@@ -193,11 +190,7 @@ export default function WebSpaceDatabasesPage() {
             setConfirmDeleteDialogOpen(false);
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.databases.deleteFailed')
-                    : t('webSpaces.databases.deleteFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.databases.deleteFailed'));
         } finally {
             setDeletingId(null);
         }
@@ -217,11 +210,7 @@ export default function WebSpaceDatabasesPage() {
             URL.revokeObjectURL(href);
             toast.success(t('webSpaces.databases.dumpOk'));
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.databases.dumpFailed')
-                    : t('webSpaces.databases.dumpFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.databases.dumpFailed'));
         }
     };
 
@@ -237,11 +226,7 @@ export default function WebSpaceDatabasesPage() {
                 await axios.post(`/api/user/webspaces/${uuidShort}/databases/${id}/restore`, { sql });
                 toast.success(t('webSpaces.databases.restoreOk'));
             } catch (err) {
-                toast.error(
-                    isAxiosError(err)
-                        ? err.response?.data?.message || t('webSpaces.databases.restoreFailed')
-                        : t('webSpaces.databases.restoreFailed'),
-                );
+                toast.error(getApiErrorMessage(err, t, 'webSpaces.databases.restoreFailed'));
             }
         };
         input.click();
@@ -258,11 +243,7 @@ export default function WebSpaceDatabasesPage() {
             }
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.databases.resetFailed')
-                    : t('webSpaces.databases.resetFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.databases.resetFailed'));
         }
     };
 
@@ -274,14 +255,10 @@ export default function WebSpaceDatabasesPage() {
                 window.open(appendPmaAuthParams(data.data.url, locale), '_blank');
                 toast.success(t('serverDatabases.openingPhpMyAdmin'));
             } else {
-                toast.error(data?.message || t('serverDatabases.failedToOpenPhpMyAdmin'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverDatabases.failedToOpenPhpMyAdmin'));
             }
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('serverDatabases.failedToOpenPhpMyAdmin')
-                    : t('serverDatabases.failedToOpenPhpMyAdmin'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'serverDatabases.failedToOpenPhpMyAdmin'));
         }
     };
 
@@ -292,14 +269,10 @@ export default function WebSpaceDatabasesPage() {
                 window.open(data.data.url, '_blank', 'noopener,noreferrer');
                 toast.success(t('webSpaces.databases.openingPhpPgAdmin'));
             } else {
-                toast.error(data?.message || t('webSpaces.databases.failedToOpenPhpPgAdmin'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'webSpaces.databases.failedToOpenPhpPgAdmin'));
             }
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.databases.failedToOpenPhpPgAdmin')
-                    : t('webSpaces.databases.failedToOpenPhpPgAdmin'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.databases.failedToOpenPhpPgAdmin'));
         }
     };
 

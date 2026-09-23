@@ -53,6 +53,7 @@ import { LIFECYCLE_HOOK_TYPES } from '@/types/server';
 import { computeMovedSequence } from './form-utils';
 import { LifecycleHookCard } from './LifecycleHookCard';
 import { safeBack } from '@/lib/safe-back';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 type LifecycleHookResponse = {
     success: boolean;
@@ -213,7 +214,7 @@ export default function ServerLifecycleHooksPage() {
                 },
             }));
             const axiosError = error as AxiosError<{ message?: string }>;
-            toast.error(axiosError.response?.data?.message || t('lifecycleHooks.messages.updateHookFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'lifecycleHooks.messages.updateHookFailed'));
         } finally {
             setTogglingHookType(null);
         }
@@ -234,7 +235,7 @@ export default function ServerLifecycleHooksPage() {
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message?: string }>;
-            toast.error(axiosError.response?.data?.message || t('lifecycleHooks.messages.stepDeleteFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'lifecycleHooks.messages.stepDeleteFailed'));
         } finally {
             setDeleting(false);
         }
@@ -256,7 +257,7 @@ export default function ServerLifecycleHooksPage() {
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message?: string }>;
-            toast.error(axiosError.response?.data?.message || t('lifecycleHooks.messages.reorderFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'lifecycleHooks.messages.reorderFailed'));
         }
     };
 
@@ -355,7 +356,7 @@ export default function ServerLifecycleHooksPage() {
             toast.success(t('lifecycleHooks.messages.importSuccess'));
         } catch (error) {
             const axiosError = error as AxiosError<{ message?: string }>;
-            toast.error(axiosError.response?.data?.message || t('lifecycleHooks.messages.importFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'lifecycleHooks.messages.importFailed'));
         } finally {
             setImporting(false);
         }

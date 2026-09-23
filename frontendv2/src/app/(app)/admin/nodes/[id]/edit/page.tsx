@@ -18,8 +18,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import axios from 'axios';
-import { getFeatherpanelApiErrorCode, getFeatherpanelApiErrorMessage } from '@/lib/api';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorCode, getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -242,20 +242,20 @@ export default function EditNodePage() {
             if (data.success) {
                 setSystemInfo({ data: data.data, loading: false, error: null });
             } else {
-                setSystemInfo({ data: null, loading: false, error: data.message });
+                setSystemInfo({
+                    data: null,
+                    loading: false,
+                    error: getApiErrorMessageFromPayload(data, t, 'common.error'),
+                });
             }
         } catch (e: unknown) {
-            let error = 'Failed to fetch system info';
-            if (axios.isAxiosError(e)) {
-                error = e.response?.data?.message || e.message;
-            }
             setSystemInfo({
                 data: null,
                 loading: false,
-                error,
+                error: getApiErrorMessage(e, t, 'common.error'),
             });
         }
-    }, [nodeId]);
+    }, [nodeId, t]);
 
     const fetchUtilization = useCallback(async () => {
         setUtilization((prev) => ({ ...prev, loading: true, error: null }));
@@ -264,20 +264,20 @@ export default function EditNodePage() {
             if (data.success) {
                 setUtilization({ data: data.data, loading: false, error: null });
             } else {
-                setUtilization({ data: null, loading: false, error: data.message });
+                setUtilization({
+                    data: null,
+                    loading: false,
+                    error: getApiErrorMessageFromPayload(data, t, 'common.error'),
+                });
             }
         } catch (e: unknown) {
-            let error = 'Failed to fetch utilization';
-            if (axios.isAxiosError(e)) {
-                error = e.response?.data?.message || e.message;
-            }
             setUtilization({
                 data: null,
                 loading: false,
-                error,
+                error: getApiErrorMessage(e, t, 'common.error'),
             });
         }
-    }, [nodeId]);
+    }, [nodeId, t]);
 
     const fetchDockerUsage = useCallback(async () => {
         setDockerUsage((prev) => ({ ...prev, loading: true, error: null }));
@@ -286,20 +286,20 @@ export default function EditNodePage() {
             if (data.success) {
                 setDockerUsage({ data: data.data, loading: false, error: null });
             } else {
-                setDockerUsage({ data: null, loading: false, error: data.message });
+                setDockerUsage({
+                    data: null,
+                    loading: false,
+                    error: getApiErrorMessageFromPayload(data, t, 'common.error'),
+                });
             }
         } catch (e: unknown) {
-            let error = 'Failed to fetch docker usage';
-            if (axios.isAxiosError(e)) {
-                error = e.response?.data?.message || e.message;
-            }
             setDockerUsage({
                 data: null,
                 loading: false,
-                error,
+                error: getApiErrorMessage(e, t, 'common.error'),
             });
         }
-    }, [nodeId]);
+    }, [nodeId, t]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -500,16 +500,17 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
             fetchInitialData();
         } catch (error: unknown) {
             console.error('Error updating node:', error);
-            const apiMsg = getFeatherpanelApiErrorMessage(error);
-            const code = getFeatherpanelApiErrorCode(error);
+            const code = getApiErrorCode(error);
             if (code === 'INVALID_LOCATION_TYPE') {
-                const detail = apiMsg ?? t('admin.node.form.location_invalid_type');
-                setErrors((prev) => ({ ...prev, location_id: detail }));
+                setErrors((prev) => ({
+                    ...prev,
+                    location_id: getApiErrorMessage(error, t, 'admin.node.form.location_invalid_type'),
+                }));
             }
             if (code === 'DAEMON_TYPE_IMMUTABLE' || code === 'DAEMON_TYPE_MIGRATION_FORBIDDEN') {
-                toast.error(apiMsg ?? t('admin.node.form.daemon_type_immutable'));
+                toast.error(getApiErrorMessage(error, t, 'admin.node.form.daemon_type_immutable'));
             } else {
-                toast.error(apiMsg ?? t('admin.node.messages.update_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.node.messages.update_failed'));
             }
         } finally {
             setSaving(false);

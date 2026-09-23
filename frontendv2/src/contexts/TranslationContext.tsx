@@ -43,7 +43,7 @@ const TranslationContext = createContext<TranslationContextType | undefined>(und
 
 const DEFAULT_LOCALE = 'en';
 const PRIMARY_LOCALE = 'en';
-const CACHE_VERSION = '1.5';
+const CACHE_VERSION = '1.8';
 const LOCALE_USER_OVERRIDE_KEY = 'localeUserOverride';
 const LOCALE_MIGRATION_KEY = 'localeMigrationV1';
 

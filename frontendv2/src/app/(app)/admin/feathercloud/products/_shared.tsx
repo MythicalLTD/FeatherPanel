@@ -129,32 +129,22 @@ export function mythicCloudErrorFromPayload(
     t?: TranslateFn,
 ): string {
     const code = String(payload?.error_code || '');
-    const message = payload?.message || (typeof payload?.error === 'string' ? payload.error : null) || fallback;
-    const key = MYTHIC_ERROR_KEYS[code];
-    if (key && t) {
-        const translated = t(key);
-        if (translated !== key) return translated;
+    const rawMessage = payload?.message || (typeof payload?.error === 'string' ? payload.error : null) || null;
+
+    if (t && code) {
+        const mythicKey = MYTHIC_ERROR_KEYS[code];
+        if (mythicKey) {
+            const translated = t(mythicKey);
+            if (translated !== mythicKey) return translated;
+        }
+        const codeKey = `errors.codes.${code}`;
+        const translated = t(codeKey);
+        if (translated !== codeKey) return translated;
     }
-    switch (code) {
-        case 'PANEL_DOWNLOADS_DISABLED':
-            return 'Panel downloads are disabled for this product.';
-        case 'ACCESS_DENIED':
-            return message || 'Access denied for this Mythic marketplace action.';
-        case 'INVALID_USER_UUID':
-            return 'Missing or invalid Mythic user id. Re-link Cloud Connections.';
-        case 'USER_NOT_TEAM_MEMBER':
-            return 'This panel user is not a member of the linked Mythic team.';
-        case 'MEMBER_UUID_REQUIRED':
-            return 'Your panel user is not mapped to a Mythic team member. Re-link Cloud Connections with a matching email.';
-        case 'NO_RELEASES':
-            return 'No downloadable releases for this product.';
-        case 'PRODUCT_NOT_FOUND':
-            return 'Product not found on Mythic store.';
-        case 'REVIEW_NOT_FOUND':
-            return 'Review not found.';
-        default:
-            return message;
-    }
+
+    // Prefer the caller's localized fallback over raw English API copy.
+    if (fallback) return fallback;
+    return rawMessage || 'Error';
 }
 
 export function mythicCloudErrorMessage(err: unknown, fallback: string, t?: TranslateFn): string {

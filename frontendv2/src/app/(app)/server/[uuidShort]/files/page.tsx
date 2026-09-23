@@ -48,7 +48,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { isEnabled } from '@/lib/utils';
 import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 import { toast } from 'sonner';
-import { getFeatherpanelApiErrorMessage } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { filesApi, ARCHIVE_EXTRACT_DRAG_MIME } from '@/lib/files-api';
 import { triggerSignedUrlDownload } from '@/lib/trigger-signed-download';
 import { isBinaryLikeFileName } from '@/lib/binary-like-file-names';
@@ -1073,10 +1073,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 );
                 refresh();
             } catch (error) {
-                const message =
-                    getFeatherpanelApiErrorMessage(error) ||
-                    (error instanceof Error && error.message ? error.message : null) ||
-                    t('files.messages.upload_failed');
+                const message = getApiErrorMessage(error, t, 'files.messages.upload_failed');
                 setUploadQueue((prev) =>
                     prev.map((u) => (u.id === next.id ? { ...u, status: 'error' as const, error: message } : u)),
                 );

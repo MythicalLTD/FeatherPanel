@@ -26,6 +26,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import VdsPerformance from '@/components/vds/VdsPerformance';
 import {
     Server,
@@ -327,7 +328,13 @@ export default function VdsConsolePage() {
                         return;
                     }
                     if (s?.status === 'failed') {
-                        toast.error(s?.error ?? t('vds.console.toast.power_failed'));
+                        toast.error(
+                            getApiErrorMessageFromPayload(
+                                { message: s?.error, error_code: s?.error_code },
+                                t,
+                                'vds.console.toast.power_failed',
+                            ),
+                        );
                         setPowering(null);
                         return;
                     }
@@ -340,8 +347,7 @@ export default function VdsConsolePage() {
             };
             void poll();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'vds.console.toast.power_failed'));
             setPowering(null);
         }
     };
@@ -359,11 +365,10 @@ export default function VdsConsolePage() {
                     toast.info(t('vds.console.toast.vnc_wss', { url: payload.wss_url }));
                 }
             } else {
-                toast.error(data.message || t('vds.console.toast.vnc_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'vds.console.toast.vnc_failed'));
             }
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'vds.console.toast.vnc_failed'));
         } finally {
             setVncLoading(false);
         }

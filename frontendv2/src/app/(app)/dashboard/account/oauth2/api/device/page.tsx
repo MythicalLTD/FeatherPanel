@@ -26,6 +26,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { copyToClipboard } from '@/lib/utils';
 import { OAuthConsentCard, OAuthConsentShell } from '@/components/auth/OAuthConsentCard';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 type OAuthDevicePayload = {
     request_token: string;
@@ -92,7 +93,11 @@ export default function OAuth2DeviceAuthorizePage() {
                     params: { user_code: formatted },
                 });
                 if (!response.data?.success) {
-                    throw new Error(response.data?.message || t('account.apiKeys.oauth2.initFailedDefault'));
+                    setError(
+                        getApiErrorMessageFromPayload(response.data, t, 'account.apiKeys.oauth2.initFailedDefault'),
+                    );
+                    setPayload(null);
+                    return;
                 }
                 setPayload(response.data.data as OAuthDevicePayload);
             } catch (err) {
@@ -101,8 +106,7 @@ export default function OAuth2DeviceAuthorizePage() {
                     router.push(`/auth/login?redirect=${encodeURIComponent(redirect)}`);
                     return;
                 }
-                const message = axios.isAxiosError(err) ? err.response?.data?.message : null;
-                setError(message || t('account.apiKeys.oauth2.initFailedDefault'));
+                setError(getApiErrorMessage(err, t, 'account.apiKeys.oauth2.initFailedDefault'));
                 setPayload(null);
             } finally {
                 setClaiming(false);
@@ -132,7 +136,9 @@ export default function OAuth2DeviceAuthorizePage() {
                 request_token: payload.request_token,
             });
             if (!response.data?.success) {
-                throw new Error(response.data?.message || 'Approval failed');
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'account.apiKeys.oauth2.approveFailed'));
+                setSubmitting(false);
+                return;
             }
             const data = response.data.data;
             if (data?.mode === 'device' && data?.public_key && data?.private_key) {
@@ -144,10 +150,10 @@ export default function OAuth2DeviceAuthorizePage() {
                 });
                 return;
             }
-            throw new Error(response.data?.message || 'Approval failed');
+            toast.error(getApiErrorMessageFromPayload(response.data, t, 'account.apiKeys.oauth2.approveFailed'));
+            setSubmitting(false);
         } catch (err) {
-            const message = axios.isAxiosError(err) ? err.response?.data?.message : null;
-            toast.error(message || t('account.apiKeys.oauth2.approveFailed'));
+            toast.error(getApiErrorMessage(err, t, 'account.apiKeys.oauth2.approveFailed'));
             setSubmitting(false);
         }
     };
@@ -160,13 +166,14 @@ export default function OAuth2DeviceAuthorizePage() {
                 request_token: payload.request_token,
             });
             if (!response.data?.success) {
-                throw new Error(response.data?.message || 'Deny failed');
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'account.apiKeys.oauth2.denyFailed'));
+                setSubmitting(false);
+                return;
             }
             setDenied(true);
             toast.success(t('account.apiKeys.oauth2.deviceDenied'));
         } catch (err) {
-            const message = axios.isAxiosError(err) ? err.response?.data?.message : null;
-            toast.error(message || t('account.apiKeys.oauth2.denyFailed'));
+            toast.error(getApiErrorMessage(err, t, 'account.apiKeys.oauth2.denyFailed'));
             setSubmitting(false);
         }
     };

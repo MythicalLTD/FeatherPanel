@@ -20,7 +20,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { toast } from 'sonner';
 import { Cloud, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -30,6 +30,7 @@ import { Input } from '@/components/featherui/Input';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface DnsHostRow {
     id: number;
@@ -87,11 +88,7 @@ export default function AdminDnsHostsPage() {
             }>;
             setWebNodes(nodes.map((n) => ({ id: n.id, name: n.name })));
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('admin.dnsHosts.loadFailed')
-                    : t('admin.dnsHosts.loadFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'admin.dnsHosts.loadFailed'));
         } finally {
             setLoading(false);
         }
@@ -122,11 +119,7 @@ export default function AdminDnsHostsPage() {
             setForm(emptyForm);
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('admin.dnsHosts.createFailed')
-                    : t('admin.dnsHosts.createFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'admin.dnsHosts.createFailed'));
         } finally {
             setBusy(false);
         }
@@ -139,11 +132,7 @@ export default function AdminDnsHostsPage() {
             toast.success(t('admin.dnsHosts.deleted'));
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('admin.dnsHosts.deleteFailed')
-                    : t('admin.dnsHosts.deleteFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'admin.dnsHosts.deleteFailed'));
         }
     };
 
@@ -170,11 +159,7 @@ export default function AdminDnsHostsPage() {
             }
             toast.success(t('admin.dnsHosts.testSuccess', { count: String(zones.length) }));
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('admin.dnsHosts.testFailed')
-                    : t('admin.dnsHosts.testFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'admin.dnsHosts.testFailed'));
         } finally {
             setTestingId(null);
         }

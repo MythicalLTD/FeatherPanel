@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { cn } from '@/lib/utils';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { Input } from '@/components/featherui/Input';
@@ -135,7 +136,7 @@ const HashesTab = () => {
             }
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
-            toast.error(err.response?.data?.message || t('admin.featherzerotrust.hashes.messages.fetchFailed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.featherzerotrust.hashes.messages.fetchFailed'));
         } finally {
             setLoading(false);
         }
@@ -195,7 +196,7 @@ const HashesTab = () => {
             }
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
-            toast.error(err.response?.data?.message || t('admin.featherzerotrust.hashes.messages.addFailed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.featherzerotrust.hashes.messages.addFailed'));
         } finally {
             setAddingHash(false);
         }
@@ -244,7 +245,7 @@ const HashesTab = () => {
             }
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
-            toast.error(err.response?.data?.message || t('admin.featherzerotrust.hashes.messages.checkFailed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.featherzerotrust.hashes.messages.checkFailed'));
         } finally {
             setCheckingHashes(false);
         }
@@ -260,7 +261,7 @@ const HashesTab = () => {
             }
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
-            toast.error(err.response?.data?.message || t('admin.featherzerotrust.hashes.messages.confirmFailed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.featherzerotrust.hashes.messages.confirmFailed'));
         }
     };
 
@@ -275,7 +276,7 @@ const HashesTab = () => {
             }
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
-            toast.error(err.response?.data?.message || t('admin.featherzerotrust.hashes.messages.deleteFailed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.featherzerotrust.hashes.messages.deleteFailed'));
         }
     };
 
@@ -303,7 +304,7 @@ const HashesTab = () => {
             }
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
-            toast.error(err.response?.data?.message || t('admin.featherzerotrust.hashes.messages.bulkConfirmFailed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.featherzerotrust.hashes.messages.bulkConfirmFailed'));
         } finally {
             setBulkConfirming(false);
         }
@@ -331,7 +332,7 @@ const HashesTab = () => {
             }
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
-            toast.error(err.response?.data?.message || t('admin.featherzerotrust.hashes.messages.bulkDeleteFailed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.featherzerotrust.hashes.messages.bulkDeleteFailed'));
         } finally {
             setBulkDeleting(false);
         }
@@ -366,7 +367,7 @@ const HashesTab = () => {
             }
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
-            toast.error(err.response?.data?.message || t('admin.featherzerotrust.hashes.messages.importFailed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.featherzerotrust.hashes.messages.importFailed'));
         } finally {
             setImportingMalwareBazaar(false);
         }

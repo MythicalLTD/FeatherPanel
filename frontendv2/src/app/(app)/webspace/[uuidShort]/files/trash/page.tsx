@@ -42,6 +42,7 @@ import { RestoreTrashDialog } from '@/app/(app)/server/[uuidShort]/files/compone
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
 import axios from 'axios';
 import { ArrowLeft } from 'lucide-react';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 export default function WebSpaceTrashPage({ params }: { params: Promise<{ uuidShort: string }> }) {
     const { uuidShort } = use(params);
@@ -117,11 +118,7 @@ export default function WebSpaceTrashPage({ params }: { params: Promise<{ uuidSh
             setRestoreOpen(false);
             await refresh();
         } catch (err) {
-            const message =
-                axios.isAxiosError(err) && err.response?.data?.message
-                    ? String(err.response.data.message)
-                    : t('files.trash.messages.restore_error');
-            toast.error(message);
+            toast.error(getApiErrorMessage(err, t, 'files.trash.messages.restore_error'));
         } finally {
             setBusy(false);
         }

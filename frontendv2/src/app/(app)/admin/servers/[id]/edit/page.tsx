@@ -19,6 +19,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -548,14 +549,10 @@ export default function EditServerPage() {
                 setCustomVariableForm({ name: '', env_variable: '', variable_value: '', is_encrypted: false });
                 await fetchServerData();
             } else {
-                toast.error(data.message || t('serverStartup.customEnv.addFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverStartup.customEnv.addFailed'));
             }
         } catch (error) {
-            toast.error(
-                axios.isAxiosError(error)
-                    ? error.response?.data?.message || t('serverStartup.customEnv.addFailed')
-                    : t('serverStartup.customEnv.addFailed'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'serverStartup.customEnv.addFailed'));
         } finally {
             setCustomVariableSaving(false);
         }
@@ -573,14 +570,10 @@ export default function EditServerPage() {
                     toast.success(t('serverStartup.customEnv.deleted'));
                     await fetchServerData();
                 } else {
-                    toast.error(data.message || t('serverStartup.customEnv.deleteFailed'));
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'serverStartup.customEnv.deleteFailed'));
                 }
             } catch (error) {
-                toast.error(
-                    axios.isAxiosError(error)
-                        ? error.response?.data?.message || t('serverStartup.customEnv.deleteFailed')
-                        : t('serverStartup.customEnv.deleteFailed'),
-                );
+                toast.error(getApiErrorMessage(error, t, 'serverStartup.customEnv.deleteFailed'));
             } finally {
                 setCustomVariableSaving(false);
             }
@@ -880,18 +873,25 @@ export default function EditServerPage() {
                     }
                 } else {
                     toast.error(
-                        data.message ||
-                            (isPrimarySelection
-                                ? t('admin.servers.edit.allocations.primary_failed')
-                                : t('admin.servers.edit.allocations.assign_failed')),
+                        getApiErrorMessageFromPayload(
+                            data,
+                            t,
+                            isPrimarySelection
+                                ? 'admin.servers.edit.allocations.primary_failed'
+                                : 'admin.servers.edit.allocations.assign_failed',
+                        ),
                     );
                 }
             } catch (error) {
                 console.error('Error updating allocation:', error);
                 toast.error(
-                    allocationModalMode === 'primary'
-                        ? t('admin.servers.edit.allocations.primary_failed')
-                        : t('admin.servers.edit.allocations.assign_failed'),
+                    getApiErrorMessage(
+                        error,
+                        t,
+                        allocationModalMode === 'primary'
+                            ? 'admin.servers.edit.allocations.primary_failed'
+                            : 'admin.servers.edit.allocations.assign_failed',
+                    ),
                 );
             }
         } else {
@@ -1029,14 +1029,10 @@ export default function EditServerPage() {
                 toast.success(t('admin.servers.edit.update_success'));
                 fetchServerData();
             } else {
-                toast.error(data.message || t('admin.servers.edit.update_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.servers.edit.update_failed'));
             }
         } catch (error) {
-            if (axios.isAxiosError(error)) {
-                toast.error(error.response?.data?.message || t('admin.servers.edit.update_failed'));
-            } else {
-                toast.error(t('admin.servers.edit.update_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.edit.update_failed'));
         } finally {
             setSaving(false);
         }

@@ -19,6 +19,7 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { Button } from '@/components/featherui/Button';
 import {
     Info,
@@ -335,11 +336,11 @@ export function InfoTab({ nodeId, nodeName }: InfoTabProps) {
             setInfo(data.data as InfoData);
             setLastFetched(new Date());
         } catch (err) {
-            setError(axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err));
+            setError(getApiErrorMessage(err, t, 'admin.vdsNodes.errors.fetch_failed'));
         } finally {
             setLoading(false);
         }
-    }, [nodeId]);
+    }, [nodeId, t]);
 
     useEffect(() => {
         fetchInfo();

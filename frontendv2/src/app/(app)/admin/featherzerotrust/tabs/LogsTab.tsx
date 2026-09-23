@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { cn } from '@/lib/utils';
 
 interface CronLog {
@@ -118,7 +119,7 @@ const LogsTab = () => {
             }
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
-            toast.error(err.response?.data?.message || t('admin.featherzerotrust.logs.messages.fetchFailed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.featherzerotrust.logs.messages.fetchFailed'));
         } finally {
             setLoading(false);
         }
@@ -138,7 +139,7 @@ const LogsTab = () => {
             }
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
-            toast.error(err.response?.data?.message || t('admin.featherzerotrust.logs.messages.detailsFailed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.featherzerotrust.logs.messages.detailsFailed'));
             setDrawerOpen(false);
         } finally {
             setDetailsLoading(false);

@@ -17,9 +17,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
-import { getFeatherpanelApiErrorCode, getFeatherpanelApiErrorMessage } from '@/lib/api';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorCode, getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -250,13 +250,14 @@ export default function CreateNodePage() {
             }
         } catch (error: unknown) {
             console.error('Error creating node:', error);
-            const apiMsg = getFeatherpanelApiErrorMessage(error);
-            const code = getFeatherpanelApiErrorCode(error);
+            const code = getApiErrorCode(error);
             if (code === 'INVALID_LOCATION_TYPE') {
-                const detail = apiMsg ?? t('admin.node.form.location_invalid_type');
-                setErrors((prev) => ({ ...prev, location_id: detail }));
+                setErrors((prev) => ({
+                    ...prev,
+                    location_id: getApiErrorMessage(error, t, 'admin.node.form.location_invalid_type'),
+                }));
             }
-            toast.error(apiMsg ?? t('admin.node.messages.create_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node.messages.create_failed'));
         } finally {
             setLoading(false);
         }
@@ -290,11 +291,7 @@ export default function CreateNodePage() {
             setLocationModalOpen(false);
             toast.success(t('admin.locations.messages.created'));
         } catch (error: unknown) {
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.locations.messages.create_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.create_failed'));
         } finally {
             setCreatingLocation(false);
         }

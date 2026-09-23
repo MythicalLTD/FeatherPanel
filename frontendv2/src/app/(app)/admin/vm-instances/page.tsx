@@ -30,6 +30,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import {
     Server,
     Plus,
@@ -245,8 +246,7 @@ export default function VmInstancesPage() {
             setConfirmDeleteId(null);
             fetchInstances();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setDeleting(false);
         }

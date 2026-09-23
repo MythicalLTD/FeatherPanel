@@ -16,6 +16,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorCode, getApiErrorMessage } from '@/lib/api-errors';
 
 export interface CloudSummary {
     cloud: {
@@ -96,6 +98,7 @@ export interface ProductsData {
 }
 
 export function useFeatherCloud() {
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -112,21 +115,18 @@ export function useFeatherCloud() {
             }
             return null;
         } catch (err: unknown) {
-            const e = err as {
-                response?: { data?: { error_code?: string; message?: string } };
-            };
-            const errorCode = e?.response?.data?.error_code;
+            const errorCode = getApiErrorCode(err);
             if (errorCode === 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
                 return null;
             }
-            const message = e?.response?.data?.message || 'Failed to fetch cloud summary';
+            const message = getApiErrorMessage(err, t, 'admin.cloud_management.premium.fetch_summary_failed');
             setError(message);
             toast.error(message);
             return null;
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [t]);
 
     const fetchCredits = useCallback(async (): Promise<CreditsData | null> => {
         setLoading(true);
@@ -138,21 +138,18 @@ export function useFeatherCloud() {
             }
             return null;
         } catch (err: unknown) {
-            const e = err as {
-                response?: { data?: { error_code?: string; message?: string } };
-            };
-            const errorCode = e?.response?.data?.error_code;
+            const errorCode = getApiErrorCode(err);
             if (errorCode === 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
                 return null;
             }
-            const message = e?.response?.data?.message || 'Failed to fetch credits';
+            const message = getApiErrorMessage(err, t, 'admin.cloud_management.premium.fetch_credits_failed');
             setError(message);
             toast.error(message);
             return null;
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [t]);
 
     const fetchTeam = useCallback(async (): Promise<TeamData | null> => {
         setLoading(true);
@@ -164,80 +161,84 @@ export function useFeatherCloud() {
             }
             return null;
         } catch (err: unknown) {
-            const e = err as {
-                response?: { data?: { error_code?: string; message?: string } };
-            };
-            const errorCode = e?.response?.data?.error_code;
+            const errorCode = getApiErrorCode(err);
             if (errorCode === 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
                 return null;
             }
-            const message = e?.response?.data?.message || 'Failed to fetch team information';
+            const message = getApiErrorMessage(err, t, 'admin.cloud_management.premium.fetch_team_failed');
             setError(message);
             toast.error(message);
             return null;
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [t]);
 
-    const fetchProducts = useCallback(async (page = 1, limit = 50): Promise<ProductsData | null> => {
-        setLoading(true);
-        setError(null);
-        try {
-            const response = await axios.get<{
-                success: boolean;
-                data: ProductsData;
-            }>('/api/admin/cloud/data/products', { params: { page, limit } });
-            if (response.data.success) {
-                return response.data.data;
-            }
-            return null;
-        } catch (err: unknown) {
-            const e = err as {
-                response?: { data?: { error_code?: string; message?: string } };
-            };
-            const errorCode = e?.response?.data?.error_code;
-            if (errorCode === 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
+    const fetchProducts = useCallback(
+        async (page = 1, limit = 50): Promise<ProductsData | null> => {
+            setLoading(true);
+            setError(null);
+            try {
+                const response = await axios.get<{
+                    success: boolean;
+                    data: ProductsData;
+                }>('/api/admin/cloud/data/products', { params: { page, limit } });
+                if (response.data.success) {
+                    return response.data.data;
+                }
                 return null;
+            } catch (err: unknown) {
+                const errorCode = getApiErrorCode(err);
+                if (errorCode === 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
+                    return null;
+                }
+                const message = getApiErrorMessage(err, t, 'admin.cloud_management.premium.fetch_products_failed');
+                setError(message);
+                toast.error(message);
+                return null;
+            } finally {
+                setLoading(false);
             }
-            const message = e?.response?.data?.message || 'Failed to fetch products';
-            setError(message);
-            toast.error(message);
-            return null;
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+        },
+        [t],
+    );
 
-    const downloadPremiumPackage = useCallback(async (packageName: string, version: string): Promise<boolean> => {
-        setLoading(true);
-        setError(null);
-        try {
-            const response = await axios.get(`/api/admin/cloud/data/download/${packageName}/${version}`, {
-                responseType: 'blob',
-            });
+    const downloadPremiumPackage = useCallback(
+        async (packageName: string, version: string): Promise<boolean> => {
+            setLoading(true);
+            setError(null);
+            try {
+                const response = await axios.get(`/api/admin/cloud/data/download/${packageName}/${version}`, {
+                    responseType: 'blob',
+                });
 
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `${packageName}-${version}.fpa`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            window.URL.revokeObjectURL(url);
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `${packageName}-${version}.fpa`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(url);
 
-            toast.success(`Premium package ${packageName} v${version} downloaded successfully`);
-            return true;
-        } catch (err: unknown) {
-            const e = err as { response?: { data?: { message?: string } } };
-            const message = e?.response?.data?.message || 'Failed to download premium package';
-            setError(message);
-            toast.error(message);
-            return false;
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+                toast.success(
+                    t('admin.cloud_management.premium.download_success', {
+                        name: packageName,
+                        version,
+                    }),
+                );
+                return true;
+            } catch (err: unknown) {
+                const message = getApiErrorMessage(err, t, 'admin.cloud_management.premium.download_failed');
+                setError(message);
+                toast.error(message);
+                return false;
+            } finally {
+                setLoading(false);
+            }
+        },
+        [t],
+    );
 
     return {
         loading,

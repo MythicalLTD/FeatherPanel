@@ -38,6 +38,7 @@ import { useUserTimezone } from '@/contexts/PreferencesContext';
 import type { ScheduleCreateRequest } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function CreateSchedulePage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -93,11 +94,11 @@ export default function CreateSchedulePage() {
                 toast.success(t('serverSchedules.createSuccess'));
                 router.push(`/server/${uuidShort}/schedules`);
             } else {
-                toast.error(data?.message || t('serverSchedules.createFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverSchedules.createFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            const msg = axiosError.response?.data?.message || t('serverSchedules.createFailed');
+            const msg = getApiErrorMessage(axiosError, t, 'serverSchedules.createFailed');
             toast.error(msg);
         } finally {
             setSaving(false);

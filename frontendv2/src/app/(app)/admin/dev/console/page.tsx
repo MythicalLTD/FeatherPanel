@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -142,7 +143,7 @@ export default function ConsolePage() {
                 addTerminalLine('info', `Connected to ${response.data.data.server_name} (${response.data.data.os})`);
                 addTerminalLine('info', `PHP ${response.data.data.php_version} | User: ${response.data.data.user}`);
             } else {
-                toast.error(response.data.message || t('admin.dev.console.messages.fetch_failed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'admin.dev.console.messages.fetch_failed'));
             }
         } catch (error) {
             console.error('Failed to fetch system info:', error);
@@ -204,13 +205,19 @@ export default function ConsolePage() {
                     );
                 }
             } else {
-                addTerminalLine('error', `Error: ${response.data.message || 'Unknown error'}`);
-                toast.error(response.data.message || t('admin.dev.console.messages.execute_failed'));
+                const errMsg = getApiErrorMessageFromPayload(
+                    response.data,
+                    t,
+                    'admin.dev.console.messages.execute_failed',
+                );
+                addTerminalLine('error', `Error: ${errMsg}`);
+                toast.error(errMsg);
             }
         } catch (error) {
             console.error('Failed to execute command:', error);
-            addTerminalLine('error', `Network error: ${String(error)}`);
-            toast.error(t('admin.dev.console.messages.execute_failed'));
+            const errMsg = getApiErrorMessage(error, t, 'admin.dev.console.messages.execute_failed');
+            addTerminalLine('error', `Network error: ${errMsg}`);
+            toast.error(errMsg);
         } finally {
             setIsLoading(false);
             scrollToBottom();

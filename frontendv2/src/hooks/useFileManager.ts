@@ -22,6 +22,7 @@ import { filterFeatherTrashFiles, isHiddenServerEntry } from '@/lib/feather-tras
 import { FileObject } from '@/types/server';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorCode } from '@/lib/api-errors';
 
 function sanitizeDirectoryPath(path: string | null): string | null {
     if (!path) return null;
@@ -114,29 +115,18 @@ export function useFileManager(serverUuid: string) {
             setSelectedFiles([]);
         } catch (err) {
             console.error(err);
-            const apiError = err as {
-                response?: {
-                    data?: {
-                        message?: string;
-                        error_code?: string;
-                    };
-                };
-            };
-            const apiMessage = apiError.response?.data?.message;
-            const apiErrorCode = apiError.response?.data?.error_code;
-
-            if (apiErrorCode === 'WINGS_CONNECTION_UNAVAILABLE') {
-                setError(t('files.messages.wings_connection_unavailable'));
-                toast.error(apiMessage || t('files.messages.wings_connection_unavailable'));
-                return;
-            }
 
             if (err instanceof Error && err.message === 'Request timeout') {
                 setError(t('files.messages.request_timed_out'));
                 toast.error(t('files.messages.load_timeout_retry'));
+            } else if (getApiErrorCode(err) === 'WINGS_CONNECTION_UNAVAILABLE') {
+                const message = getApiErrorMessage(err, t, 'files.messages.wings_connection_unavailable');
+                setError(message);
+                toast.error(message);
             } else {
-                setError(apiMessage || t('files.messages.load_error'));
-                toast.error(apiMessage || t('files.messages.load_error'));
+                const message = getApiErrorMessage(err, t, 'files.messages.load_error');
+                setError(message);
+                toast.error(message);
             }
         } finally {
             setLoading(false);

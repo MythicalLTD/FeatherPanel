@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { FormEvent, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -32,6 +32,7 @@ import { useUserTimezone } from '@/contexts/PreferencesContext';
 import { safeBack } from '@/lib/safe-back';
 import { CronEditor } from '@/components/common/CronEditor';
 import { WebSpaceScheduleTasksEditor } from '@/components/webspace/WebSpaceScheduleTasksEditor';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import {
     SCHEDULE_PRESETS,
     emptyScheduleDraft,
@@ -104,11 +105,7 @@ export default function WebSpaceScheduleNewPage() {
             toast.success(t('serverSchedules.createSuccess'));
             router.push(`/webspace/${uuidShort}/schedules`);
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('serverSchedules.createFailed')
-                    : t('serverSchedules.createFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'serverSchedules.createFailed'));
         } finally {
             setSaving(false);
         }

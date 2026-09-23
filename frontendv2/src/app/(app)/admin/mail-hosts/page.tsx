@@ -21,7 +21,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { toast } from 'sonner';
 import { CheckCircle2, ChevronDown, ExternalLink, Mail, Plus, Server, Trash2, Wrench } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -34,6 +34,7 @@ import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface MailHostRow {
     id: number;
@@ -94,11 +95,7 @@ export default function AdminMailHostsPage() {
             const rawNodes = (nodesRes?.data?.data?.web_nodes || nodesRes?.data?.data?.nodes || []) as WebNodeOption[];
             setNodes(rawNodes);
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('admin.mailHosts.loadFailed')
-                    : t('admin.mailHosts.loadFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'admin.mailHosts.loadFailed'));
         } finally {
             setLoading(false);
         }
@@ -134,11 +131,7 @@ export default function AdminMailHostsPage() {
             toast.success(t('admin.mailHosts.ensureSuccess'));
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('admin.mailHosts.ensureFailed')
-                    : t('admin.mailHosts.ensureFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'admin.mailHosts.ensureFailed'));
         } finally {
             setEnsuringNodeId(null);
         }
@@ -179,11 +172,7 @@ export default function AdminMailHostsPage() {
             setShowExternal(false);
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('admin.mailHosts.createFailed')
-                    : t('admin.mailHosts.createFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'admin.mailHosts.createFailed'));
         } finally {
             setBusy(false);
         }
@@ -196,11 +185,7 @@ export default function AdminMailHostsPage() {
             toast.success(t('admin.mailHosts.deleted'));
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('admin.mailHosts.deleteFailed')
-                    : t('admin.mailHosts.deleteFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'admin.mailHosts.deleteFailed'));
         }
     };
 

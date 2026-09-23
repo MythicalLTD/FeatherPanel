@@ -36,6 +36,7 @@ import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { safeBack } from '@/lib/safe-back';
 import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 export default function ServerProxyPage() {
     const { uuidShort } = useParams();
@@ -98,7 +99,7 @@ export default function ServerProxyPage() {
             fetchData();
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || 'Failed to delete proxy');
+            toast.error(getApiErrorMessage(axiosError, t, 'common.error'));
         } finally {
             setSaving(false);
             setSelectedProxy(null);

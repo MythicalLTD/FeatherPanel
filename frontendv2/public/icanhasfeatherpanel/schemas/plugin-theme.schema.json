@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://featherpanel.com/schemas/plugin-theme.json",
+  "title": "FeatherPanel Plugin Theme Pack",
+  "type": "object",
+  "description": "Frontend/theme.json — selectable design token pack for FeatherPanel.",
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-zA-Z0-9_\\-]+$" },
+    "name": { "type": "string", "minLength": 1 },
+    "preview": { "type": ["string", "null"] },
+    "tokens": {
+      "type": "object",
+      "properties": {
+        "light": { "$ref": "#/$defs/tokenMap" },
+        "dark": { "$ref": "#/$defs/tokenMap" }
+      }
+    },
+    "accents": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "defaults": {
+      "type": "object",
+      "properties": {
+        "backgroundType": { "type": "string" },
+        "fontFamily": { "type": "string" },
+        "accentColor": { "type": "string" }
+      }
+    },
+    "css": {
+      "type": "string",
+      "description": "Path relative to Frontend/ applied only while this pack is active"
+    },
+    "themes": {
+      "type": "array",
+      "items": { "$ref": "#" },
+      "description": "Optional multi-theme file form"
+    }
+  },
+  "$defs": {
+    "tokenMap": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "propertyNames": {
+        "enum": [
+          "background",
+          "foreground",
+          "card",
+          "card-foreground",
+          "popover",
+          "popover-foreground",
+          "primary",
+          "primary-foreground",
+          "secondary",
+          "secondary-foreground",
+          "muted",
+          "muted-foreground",
+          "accent",
+          "accent-foreground",
+          "destructive",
+          "destructive-foreground",
+          "border",
+          "input",
+          "ring",
+          "radius"
+        ]
+      }
+    }
+  }
+}

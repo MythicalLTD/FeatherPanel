@@ -25,11 +25,37 @@
     <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
     <header>
       <h1>PluginUi</h1>
-      <p class="muted">4 events in this category.
-        4 emitted,
+      <p class="muted">7 events in this category.
+        7 emitted,
         0 defined only.
       </p>
     </header>
+
+<article class="card">
+  <h2><code>featherpanel:system:plugins:ui:overrides:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
+  <p class="muted"><strong>Method:</strong> <code>onOverridesRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array overrides from Frontend/overrides.json aggregations.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> actions, hide, replace</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/System/PluginOverridesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\PluginUiEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(PluginUiEvent::onOverridesRetrieved(), function ($actions, $hide, $replace) {
+        // Handle featherpanel:system:plugins:ui:overrides:retrieved
+        // Data keys: actions, hide, replace
+    });
+}</code></pre>
+</article>
 
 <article class="card">
   <h2><code>featherpanel:system:plugins:ui:public-pages:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
@@ -84,6 +110,32 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
+  <h2><code>featherpanel:system:plugins:ui:themes:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
+  <p class="muted"><strong>Method:</strong> <code>onThemesRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array themes from Frontend/theme.json aggregations.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> themes</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/System/PluginThemesController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\PluginUiEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(PluginUiEvent::onThemesRetrieved(), function ($themes) {
+        // Handle featherpanel:system:plugins:ui:themes:retrieved
+        // Data keys: themes
+    });
+}</code></pre>
+</article>
+
+<article class="card">
   <h2><code>featherpanel:system:plugins:ui:error</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
   <p class="muted"><strong>Method:</strong> <code>onUiError</code></p>
   <p class="muted"><strong>Callback parameters:</strong> string source, string message, array context metadata.</p>
@@ -107,6 +159,32 @@ public static function processEvents(PluginEvents $evt): void
     $evt->on(PluginUiEvent::onUiError(), function ($context, $message, $plugin, $source) {
         // Handle featherpanel:system:plugins:ui:error
         // Data keys: context, message, plugin, source
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:system:plugins:ui:packs:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
+  <p class="muted"><strong>Method:</strong> <code>onUiPacksRetrieved</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array UI packs from Frontend/ui.json aggregations.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> packs</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/System/PluginUiPacksController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\PluginUiEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(PluginUiEvent::onUiPacksRetrieved(), function ($packs) {
+        // Handle featherpanel:system:plugins:ui:packs:retrieved
+        // Data keys: packs
     });
 }</code></pre>
 </article>

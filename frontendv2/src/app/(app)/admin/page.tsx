@@ -26,6 +26,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { cn } from '@/lib/utils';
 import axios from 'axios';
 
@@ -108,11 +109,7 @@ export default function AdminDashboardPage() {
                 });
             }
         } catch (err: unknown) {
-            let message = t('admin.dashboard.cache_failed');
-            if (axios.isAxiosError(err)) {
-                message = err.response?.data?.message || err.message;
-            }
-            toast.error(message, { id: toastId });
+            toast.error(getApiErrorMessage(err, t, 'admin.dashboard.cache_failed'), { id: toastId });
         } finally {
             setIsClearingCache(false);
         }

@@ -54,6 +54,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select-native';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface Category {
     id: number;
@@ -319,7 +320,9 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             if (data?.success) return data.data.url;
-            throw new Error(data?.message || t('admin.knowledgebase.categories.messages.upload_failed'));
+            throw new Error(
+                getApiErrorMessageFromPayload(data, t, 'admin.knowledgebase.categories.messages.upload_failed'),
+            );
         } catch {
             toast.error(t('admin.knowledgebase.categories.messages.upload_failed'));
             return null;
@@ -357,10 +360,12 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 setCreateOpen(false);
                 fetchArticles();
             } else {
-                toast.error(data?.message || t('admin.knowledgebase.articles.messages.create_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(data, t, 'admin.knowledgebase.articles.messages.create_failed'),
+                );
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.articles.messages.create_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.articles.messages.create_failed'));
         } finally {
             setFormLoading(false);
         }
@@ -375,10 +380,12 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 toast.success(t('admin.knowledgebase.articles.messages.deleted'));
                 fetchArticles();
             } else {
-                toast.error(data?.message || t('admin.knowledgebase.articles.messages.delete_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(data, t, 'admin.knowledgebase.articles.messages.delete_failed'),
+                );
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.articles.messages.delete_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.articles.messages.delete_failed'));
         }
     };
 

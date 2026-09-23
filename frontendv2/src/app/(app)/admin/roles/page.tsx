@@ -17,8 +17,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useSession } from '@/contexts/SessionContext';
 import {
     Shield,
@@ -178,11 +179,7 @@ export default function RolesPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error: unknown) {
             console.error('Error deleting role:', error);
-            let errorMessage = t('admin.roles.messages.delete_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                errorMessage = error.response.data.message;
-            }
-            toast.error(errorMessage);
+            toast.error(getApiErrorMessage(error, t, 'admin.roles.messages.delete_failed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -218,11 +215,7 @@ export default function RolesPage() {
             router.push(`/admin/roles/${newRole.id}/edit`);
         } catch (error: unknown) {
             console.error('Error duplicating role:', error);
-            let errorMessage = t('admin.roles.messages.duplicate_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                errorMessage = error.response.data.message;
-            }
-            toast.error(errorMessage);
+            toast.error(getApiErrorMessage(error, t, 'admin.roles.messages.duplicate_failed'));
         } finally {
             setIsSubmitting(false);
         }

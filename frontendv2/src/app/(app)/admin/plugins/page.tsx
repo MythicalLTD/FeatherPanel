@@ -58,6 +58,7 @@ import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn } from '@/lib/utils';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import {
     FEATHERPANEL_CATEGORY_SLUG,
     type StoreItem,
@@ -262,21 +263,18 @@ export default function PluginsPage() {
                 if (axios.isAxiosError(err)) {
                     const code = err.response?.data?.error_code;
                     if (code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED' || err.response?.status === 503) {
-                        setStoreError(
-                            err.response?.data?.message ||
-                                'Mythic Cloud is not linked. Connect Cloud Connections to check updates.',
-                        );
+                        setStoreError(getApiErrorMessage(err, t, 'admin.plugins.messages.cloud_not_linked'));
                         setStoreUpdates({});
                         return;
                     }
                 }
-                setStoreError(mythicCloudErrorMessage(err, 'Failed to check Mythic store for updates'));
+                setStoreError(mythicCloudErrorMessage(err, t('admin.plugins.messages.store_check_failed'), t));
                 setStoreUpdates({});
             } finally {
                 setUpdateCheckLoading(false);
             }
         },
-        [plugins],
+        [plugins, t],
     );
 
     const pluginsWithUpdates = useMemo(
@@ -521,7 +519,7 @@ export default function PluginsPage() {
             setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                toast.error(error.response?.data?.message || t('admin.plugins.messages.install_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.plugins.messages.install_failed'));
             } else {
                 toast.error(t('admin.plugins.messages.install_failed'));
             }
@@ -541,7 +539,7 @@ export default function PluginsPage() {
             setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                toast.error(error.response?.data?.message || t('admin.plugins.messages.install_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.plugins.messages.install_failed'));
             } else {
                 toast.error(t('admin.plugins.messages.install_failed'));
             }
@@ -567,7 +565,7 @@ export default function PluginsPage() {
             setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                toast.error(error.response?.data?.message || t('admin.plugins.messages.uninstall_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.plugins.messages.uninstall_failed'));
             } else {
                 toast.error(t('admin.plugins.messages.uninstall_failed'));
             }
@@ -595,7 +593,7 @@ export default function PluginsPage() {
         try {
             if (update?.store_slug && update.can_download) {
                 const version = await resolveInstallVersion(update.store_slug);
-                if (!version) throw new Error('No downloadable release found.');
+                if (!version) throw new Error(t('admin.plugins.messages.no_release'));
                 await downloadAndInstall(update.store_slug, version);
             } else {
                 await axios.post('/api/admin/plugins/online/install', {
@@ -629,7 +627,7 @@ export default function PluginsPage() {
                 try {
                     if (update?.store_slug && update.can_download) {
                         const version = await resolveInstallVersion(update.store_slug);
-                        if (!version) throw new Error('No downloadable release found.');
+                        if (!version) throw new Error(t('admin.plugins.messages.no_release'));
                         await downloadAndInstall(update.store_slug, version);
                     } else {
                         await axios.post('/api/admin/plugins/online/install', {
@@ -726,7 +724,7 @@ export default function PluginsPage() {
                         </Button>
                         <Button size='sm' variant='outline' onClick={() => router.push('/admin/feathercloud/products')}>
                             <Store className='mr-2 h-4 w-4' />
-                            Store
+                            {t('admin.plugins.actions.store')}
                         </Button>
                     </div>
                 }
@@ -736,23 +734,27 @@ export default function PluginsPage() {
 
             <div className='grid gap-3 sm:grid-cols-3'>
                 <div className='bg-card/60 rounded-2xl px-4 py-3'>
-                    <p className='text-muted-foreground text-xs'>Installed</p>
+                    <p className='text-muted-foreground text-xs'>{t('admin.plugins.stats.installed')}</p>
                     <p className='mt-1 text-sm font-medium'>{plugins.length}</p>
                 </div>
                 <div className='bg-card/60 rounded-2xl px-4 py-3'>
-                    <p className='text-muted-foreground text-xs'>Updates</p>
+                    <p className='text-muted-foreground text-xs'>{t('admin.plugins.stats.updates')}</p>
                     <p className='mt-1 text-sm font-medium'>
                         {storeError
-                            ? 'Store unavailable'
+                            ? t('admin.plugins.stats.store_unavailable')
                             : pluginsWithUpdates.length > 0
-                              ? `${pluginsWithUpdates.length} available`
-                              : 'Up to date'}
+                              ? t('admin.plugins.stats.updates_available', {
+                                    count: String(pluginsWithUpdates.length),
+                                })
+                              : t('admin.plugins.stats.up_to_date')}
                     </p>
                 </div>
                 <div className='bg-card/60 rounded-2xl px-4 py-3'>
-                    <p className='text-muted-foreground text-xs'>Issues</p>
+                    <p className='text-muted-foreground text-xs'>{t('admin.plugins.stats.issues')}</p>
                     <p className='mt-1 text-sm font-medium'>
-                        {issueCount > 0 ? `${issueCount} need attention` : 'None'}
+                        {issueCount > 0
+                            ? t('admin.plugins.stats.issues_count', { count: String(issueCount) })
+                            : t('admin.plugins.stats.none')}
                     </p>
                 </div>
             </div>
@@ -761,7 +763,7 @@ export default function PluginsPage() {
                 <div className='bg-muted/40 flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3 text-sm'>
                     <p className='text-muted-foreground'>{storeError}</p>
                     <Button size='sm' variant='outline' onClick={() => router.push('/admin/cloud-management')}>
-                        Cloud Connections
+                        {t('admin.plugins.actions.cloud_connections')}
                     </Button>
                 </div>
             ) : null}
@@ -772,16 +774,16 @@ export default function PluginsPage() {
                     <Input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder='Search installed plugins…'
+                        placeholder={t('admin.plugins.search_placeholder')}
                         className='pl-9'
                     />
                 </div>
                 <div className='flex flex-wrap gap-2'>
                     {(
                         [
-                            { key: 'all' as const, label: 'All' },
-                            { key: 'updates' as const, label: 'Updates' },
-                            { key: 'issues' as const, label: 'Issues' },
+                            { key: 'all' as const, labelKey: 'admin.plugins.filters.all' },
+                            { key: 'updates' as const, labelKey: 'admin.plugins.filters.updates' },
+                            { key: 'issues' as const, labelKey: 'admin.plugins.filters.issues' },
                         ] as const
                     ).map((item) => (
                         <Button
@@ -790,7 +792,7 @@ export default function PluginsPage() {
                             variant={filter === item.key ? 'default' : 'outline'}
                             onClick={() => setFilter(item.key)}
                         >
-                            {item.label}
+                            {t(item.labelKey)}
                         </Button>
                     ))}
                     <Button
@@ -807,7 +809,7 @@ export default function PluginsPage() {
 
             {loading ? (
                 <div className='text-muted-foreground flex items-center gap-2 py-16 text-sm'>
-                    <Loader2 className='h-4 w-4 animate-spin' /> Loading plugins…
+                    <Loader2 className='h-4 w-4 animate-spin' /> {t('admin.plugins.loading')}
                 </div>
             ) : filteredPlugins.length === 0 ? (
                 <EmptyState
@@ -815,13 +817,13 @@ export default function PluginsPage() {
                         plugins.length === 0
                             ? t('admin.plugins.grid.empty_title')
                             : filter === 'updates'
-                              ? 'All plugins are up to date'
-                              : 'No plugins match'
+                              ? t('admin.plugins.grid.all_up_to_date')
+                              : t('admin.plugins.grid.no_match')
                     }
                     description={
                         plugins.length === 0
                             ? t('admin.plugins.grid.empty_description')
-                            : 'Try another filter or search term.'
+                            : t('admin.plugins.grid.no_match_hint')
                     }
                     icon={Puzzle}
                 />
@@ -866,12 +868,12 @@ export default function PluginsPage() {
                                         <div className='flex shrink-0 flex-col items-end gap-1'>
                                             {needsUpdate ? (
                                                 <span className='rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400'>
-                                                    Update
+                                                    {t('admin.plugins.actions.update')}
                                                 </span>
                                             ) : update ? (
                                                 <span className='text-muted-foreground inline-flex items-center gap-1 text-[10px]'>
                                                     <CheckCircle2 className='h-3 w-3 text-emerald-500' />
-                                                    Current
+                                                    {t('admin.plugins.grid.current')}
                                                 </span>
                                             ) : null}
                                         </div>

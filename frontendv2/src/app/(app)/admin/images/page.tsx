@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import {
     Search,
     Image as ImageIcon,
@@ -31,7 +32,7 @@ import {
     Calendar,
     Link as LinkIcon,
 } from 'lucide-react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { toast } from 'sonner';
 import { copyToClipboard } from '@/lib/utils';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -141,11 +142,11 @@ export default function ImagesPage() {
                     to: apiPag.to,
                 });
             } else {
-                toast.error(data.message || t('admin.images.messages.fetch_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.images.messages.fetch_failed'));
             }
         } catch (error) {
             console.error('Error fetching images:', error);
-            toast.error(t('admin.images.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.images.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -196,14 +197,10 @@ export default function ImagesPage() {
                 toast.success(t('admin.images.messages.upload_success'));
                 setRefreshKey((prev) => prev + 1);
             } else {
-                toast.error(data.message || t('admin.images.messages.upload_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.images.messages.upload_failed'));
             }
         } catch (error: unknown) {
-            let message = t('admin.images.messages.upload_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                message = error.response.data.message;
-            }
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.images.messages.upload_failed'));
         } finally {
             setProcessing(false);
         }
@@ -225,14 +222,10 @@ export default function ImagesPage() {
                 toast.success(t('admin.images.messages.update_success'));
                 setRefreshKey((prev) => prev + 1);
             } else {
-                toast.error(data.message || t('admin.images.messages.update_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.images.messages.update_failed'));
             }
         } catch (error: unknown) {
-            let message = t('admin.images.messages.update_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                message = error.response.data.message;
-            }
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.images.messages.update_failed'));
         } finally {
             setProcessing(false);
         }
@@ -246,10 +239,10 @@ export default function ImagesPage() {
                 toast.success(t('admin.images.messages.delete_success'));
                 setRefreshKey((prev) => prev + 1);
             } else {
-                toast.error(data.message || t('admin.images.messages.delete_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.images.messages.delete_failed'));
             }
-        } catch {
-            toast.error(t('admin.images.messages.delete_failed'));
+        } catch (error: unknown) {
+            toast.error(getApiErrorMessage(error, t, 'admin.images.messages.delete_failed'));
         }
     };
 

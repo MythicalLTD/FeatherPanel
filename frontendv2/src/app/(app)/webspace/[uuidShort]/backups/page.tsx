@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { toast } from 'sonner';
 import {
     Plus,
@@ -48,6 +48,7 @@ import { WebSpaceSubuserPermissions } from '@/lib/webspace-permissions';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
 import { formatFileSize } from '@/lib/utils';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface BackupRow {
     uuid: string;
@@ -82,11 +83,7 @@ export default function WebSpaceBackupsPage() {
             const list = (data.data?.backups || []) as BackupRow[];
             setBackups(Array.isArray(list) ? list : []);
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.backups.loadFailed')
-                    : t('webSpaces.backups.loadFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.backups.loadFailed'));
         } finally {
             setLoading(false);
         }
@@ -105,7 +102,7 @@ export default function WebSpaceBackupsPage() {
                         return;
                     }
                     if (phase === 'failed') {
-                        toast.error(data?.data?.message || t('webSpaces.backups.jobFailed'));
+                        toast.error(getApiErrorMessageFromPayload(data?.data, t, 'webSpaces.backups.jobFailed'));
                         return;
                     }
                 } catch {
@@ -134,11 +131,7 @@ export default function WebSpaceBackupsPage() {
                 await load();
             }
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.backups.failed')
-                    : t('webSpaces.backups.failed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.backups.failed'));
         } finally {
             setBusy(null);
         }
@@ -168,11 +161,7 @@ export default function WebSpaceBackupsPage() {
                 setSelectBackup(null);
             }
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.backups.restoreFailed')
-                    : t('webSpaces.backups.restoreFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.backups.restoreFailed'));
         } finally {
             setBusy(null);
         }
@@ -195,11 +184,7 @@ export default function WebSpaceBackupsPage() {
             setBrowseDir((data.data?.directory as string) || directory);
             setBrowseFiles(Array.isArray(files) ? files : []);
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.backups.browseFailed')
-                    : t('webSpaces.backups.browseFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.backups.browseFailed'));
         } finally {
             setBrowseLoading(false);
         }
@@ -218,11 +203,7 @@ export default function WebSpaceBackupsPage() {
             toast.success(t('webSpaces.backups.deleted'));
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.backups.deleteFailed')
-                    : t('webSpaces.backups.deleteFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.backups.deleteFailed'));
         } finally {
             setBusy(null);
         }
@@ -243,11 +224,7 @@ export default function WebSpaceBackupsPage() {
             toast.success(t('webSpaces.backups.imported'));
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.backups.importFailed')
-                    : t('webSpaces.backups.importFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.backups.importFailed'));
         } finally {
             setBusy(null);
             if (fileInputRef.current) fileInputRef.current.value = '';

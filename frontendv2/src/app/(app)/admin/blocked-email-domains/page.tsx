@@ -48,6 +48,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface BlockedRow {
     id: number;
@@ -73,16 +74,6 @@ type ImportResult = { inserted: number; skipped_lines: number };
 const WIDGET_PAGE = 'admin-blocked-email-domains';
 const SEARCH_DEBOUNCE_MS = 320;
 const ROWS_PER_PAGE = 50;
-
-function axiosApiMessage(err: unknown, fallback: string): string {
-    if (axios.isAxiosError(err) && err.response?.data && typeof err.response.data === 'object' && err.response.data) {
-        const msg = (err.response.data as { message?: string }).message;
-        if (typeof msg === 'string' && msg.trim()) {
-            return msg;
-        }
-    }
-    return fallback;
-}
 
 function formatAddedAt(iso: string | null): string {
     if (!iso) {
@@ -158,10 +149,12 @@ export default function BlockedEmailDomainsPage() {
                     setBlockingEnabled(res.data.data.blocking_enabled === 'true');
                     setPresetFile(res.data.data.preset_source_path || '');
                 } else {
-                    toast.error(res.data.message || t('admin.blocked_email_domains.messages.load_failed'));
+                    toast.error(
+                        getApiErrorMessageFromPayload(res.data, t, 'admin.blocked_email_domains.messages.load_failed'),
+                    );
                 }
-            } catch {
-                toast.error(t('admin.blocked_email_domains.messages.load_failed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'admin.blocked_email_domains.messages.load_failed'));
             } finally {
                 setLoading(false);
             }
@@ -230,10 +223,12 @@ export default function BlockedEmailDomainsPage() {
                         : t('admin.blocked_email_domains.messages.blocking_off'),
                 );
             } else {
-                toast.error(res.data.message || t('admin.blocked_email_domains.messages.toggle_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(res.data, t, 'admin.blocked_email_domains.messages.toggle_failed'),
+                );
             }
-        } catch {
-            toast.error(t('admin.blocked_email_domains.messages.toggle_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.blocked_email_domains.messages.toggle_failed'));
         } finally {
             setToggleSaving(false);
         }
@@ -255,10 +250,12 @@ export default function BlockedEmailDomainsPage() {
                 setPage(1);
                 await load({ page: 1, search: debouncedSearch });
             } else {
-                toast.error(res.data.message || t('admin.blocked_email_domains.messages.add_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(res.data, t, 'admin.blocked_email_domains.messages.add_failed'),
+                );
             }
         } catch (e: unknown) {
-            toast.error(axiosApiMessage(e, t('admin.blocked_email_domains.messages.add_failed')));
+            toast.error(getApiErrorMessage(e, t, 'admin.blocked_email_domains.messages.add_failed'));
         } finally {
             setAdding(false);
         }
@@ -276,10 +273,12 @@ export default function BlockedEmailDomainsPage() {
                 toast.success(t('admin.blocked_email_domains.messages.deleted'));
                 await load();
             } else {
-                toast.error(res.data.message || t('admin.blocked_email_domains.messages.delete_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(res.data, t, 'admin.blocked_email_domains.messages.delete_failed'),
+                );
             }
-        } catch {
-            toast.error(t('admin.blocked_email_domains.messages.delete_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.blocked_email_domains.messages.delete_failed'));
         }
     };
 
@@ -301,10 +300,12 @@ export default function BlockedEmailDomainsPage() {
             if (res.data.success && res.data.data) {
                 await refreshAfterImport(res.data.data, true);
             } else {
-                toast.error(res.data.message || t('admin.blocked_email_domains.messages.import_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(res.data, t, 'admin.blocked_email_domains.messages.import_failed'),
+                );
             }
         } catch (e: unknown) {
-            toast.error(axiosApiMessage(e, t('admin.blocked_email_domains.messages.import_failed')));
+            toast.error(getApiErrorMessage(e, t, 'admin.blocked_email_domains.messages.import_failed'));
         } finally {
             setImportBusy(false);
         }
@@ -325,10 +326,16 @@ export default function BlockedEmailDomainsPage() {
             if (res.data.success && res.data.data) {
                 await refreshAfterImport(res.data.data, true);
             } else {
-                toast.error(res.data.message || t('admin.blocked_email_domains.messages.import_url_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(
+                        res.data,
+                        t,
+                        'admin.blocked_email_domains.messages.import_url_failed',
+                    ),
+                );
             }
         } catch (e: unknown) {
-            toast.error(axiosApiMessage(e, t('admin.blocked_email_domains.messages.import_url_failed')));
+            toast.error(getApiErrorMessage(e, t, 'admin.blocked_email_domains.messages.import_url_failed'));
         } finally {
             setImportBusy(false);
         }
@@ -349,10 +356,16 @@ export default function BlockedEmailDomainsPage() {
             if (res.data.success && res.data.data) {
                 await refreshAfterImport(res.data.data, true);
             } else {
-                toast.error(res.data.message || t('admin.blocked_email_domains.messages.import_text_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(
+                        res.data,
+                        t,
+                        'admin.blocked_email_domains.messages.import_text_failed',
+                    ),
+                );
             }
         } catch (e: unknown) {
-            toast.error(axiosApiMessage(e, t('admin.blocked_email_domains.messages.import_text_failed')));
+            toast.error(getApiErrorMessage(e, t, 'admin.blocked_email_domains.messages.import_text_failed'));
         } finally {
             setImportBusy(false);
         }

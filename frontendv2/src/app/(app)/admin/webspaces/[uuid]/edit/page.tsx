@@ -17,8 +17,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { AppWindow, ArrowLeft, LayoutTemplate } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -209,11 +210,7 @@ export default function AdminWebSpaceEditPage() {
             toast.success(t('admin.webSpaces.messages.updated'));
             router.push(`/admin/webspaces/${uuid}`);
         } catch (error) {
-            let msg = t('admin.webSpaces.messages.update_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.update_failed'));
         } finally {
             setSaving(false);
         }
@@ -262,9 +259,7 @@ export default function AdminWebSpaceEditPage() {
             setCustomKeyFile(null);
             await loadCustomSsl();
         } catch (error) {
-            let msg = t('webSpaces.settings.customSslUploadFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.customSslUploadFailed'));
         } finally {
             setUploadingSsl(false);
         }
@@ -278,9 +273,7 @@ export default function AdminWebSpaceEditPage() {
             toast.success(t('admin.webSpaces.form.custom_ssl_removed'));
             setCustomSsl(null);
         } catch (error) {
-            let msg = t('admin.webSpaces.form.custom_ssl_remove_failed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.form.custom_ssl_remove_failed'));
         } finally {
             setRemovingSsl(false);
         }

@@ -16,8 +16,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -298,11 +299,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error creating database:', error);
-            let msg = t('admin.node_databases.messages.create_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.node_databases.messages.create_failed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -334,11 +331,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error updating database:', error);
-            let msg = t('admin.node_databases.messages.update_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.node_databases.messages.update_failed'));
         } finally {
             setIsSubmitting(false);
         }

@@ -16,8 +16,9 @@
 'use client';
 
 import { useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
@@ -64,11 +65,7 @@ export function RealmCreateForm({ onCreated, onCancel, showFooter = true }: Real
             onCreated(realm);
         } catch (error) {
             console.error('Realm create:', error);
-            let msg = t('admin.realms.messages.create_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.realms.messages.create_failed'));
         } finally {
             setSubmitting(false);
         }

@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 import { DetailsTab } from './DetailsTab';
 import { ConnectionTab } from './ConnectionTab';
@@ -272,14 +273,12 @@ export default function EditVdsNodePage() {
             } else {
                 setConnectionResult({
                     ok: false,
-                    message: data.message ?? data.error_message ?? t('admin.vdsNodes.connection.failed'),
+                    message: getApiErrorMessageFromPayload(data, t, 'admin.vdsNodes.connection.failed'),
                     payload: data.data,
                 });
             }
         } catch (error) {
-            const errMsg = isAxiosError(error)
-                ? (error.response?.data?.message ?? error.message)
-                : t('admin.vdsNodes.connection.failed');
+            const errMsg = getApiErrorMessage(error, t, 'admin.vdsNodes.connection.failed');
             const payload = isAxiosError(error) ? error.response?.data?.data : undefined;
             setConnectionResult({ ok: false, message: errMsg, payload });
         } finally {

@@ -34,6 +34,7 @@ import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
 import { WebSpaceAccessLinks } from '@/components/webspace/WebSpaceAccessLinks';
 import { WebSpaceUsageBar } from '@/components/webspace/WebSpaceUsageBar';
 import type { WebSpaceAccessUrls } from '@/lib/webspace-urls';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface WebSpace {
     uuid: string;
@@ -163,13 +164,9 @@ export default function WebSpaceSettingsPage() {
             }
             toast.success(t('webSpaces.settings.saved'));
         } catch (error) {
-            let msg = t('webSpaces.settings.saveFailed');
-            if (isAxiosError(error)) {
-                if (error.response?.status === 403) {
-                    msg = t('webSpaces.settings.noPermission');
-                } else if (error.response?.data?.message) {
-                    msg = error.response.data.message;
-                }
+            let msg = getApiErrorMessage(error, t, 'webSpaces.settings.saveFailed');
+            if (isAxiosError(error) && error.response?.status === 403) {
+                msg = t('webSpaces.settings.noPermission');
             }
             toast.error(msg);
         } finally {
@@ -183,9 +180,7 @@ export default function WebSpaceSettingsPage() {
             await axios.put(`/api/user/webspaces/${uuidShort}/php-ini`, { contents: phpIni });
             toast.success(t('webSpaces.settings.phpIniSaved'));
         } catch (error) {
-            let msg = t('webSpaces.settings.phpIniSaveFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.phpIniSaveFailed'));
         } finally {
             setSavingPhpIni(false);
         }
@@ -200,9 +195,7 @@ export default function WebSpaceSettingsPage() {
             setPhpExtSelected((data.data?.extensions as string[]) || phpExtSelected);
             toast.success(t('webSpaces.settings.phpExtensionsSaved'));
         } catch (error) {
-            let msg = t('webSpaces.settings.phpExtensionsSaveFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.phpExtensionsSaveFailed'));
         } finally {
             setSavingPhpExt(false);
         }
@@ -217,9 +210,7 @@ export default function WebSpaceSettingsPage() {
             toast.success(t('webSpaces.settings.redisSaved'));
             void load();
         } catch (error) {
-            let msg = t('webSpaces.settings.redisSaveFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.redisSaveFailed'));
         } finally {
             setSavingRedis(false);
         }
@@ -237,9 +228,7 @@ export default function WebSpaceSettingsPage() {
             }
             toast.success(t('webSpaces.overview.reinstallStarted'));
         } catch (error) {
-            let msg = t('webSpaces.overview.reinstallFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.overview.reinstallFailed'));
         } finally {
             setBusy(null);
             setShowReinstall(false);

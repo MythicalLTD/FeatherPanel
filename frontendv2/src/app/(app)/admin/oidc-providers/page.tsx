@@ -26,6 +26,7 @@ import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface OidcProvider {
@@ -68,10 +69,10 @@ export default function OidcProvidersPage() {
             if (json.success && Array.isArray(json.data?.providers)) {
                 setProviders(json.data.providers);
             } else {
-                toast.error(json.message || t('admin.oidcProviders.messages.fetch_failed'));
+                toast.error(getApiErrorMessageFromPayload(json, t, 'admin.oidcProviders.messages.fetch_failed'));
             }
-        } catch {
-            toast.error(t('admin.oidcProviders.messages.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.oidcProviders.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -124,10 +125,10 @@ export default function OidcProvidersPage() {
                 toast.success(t('admin.oidcProviders.messages.deleted'));
                 fetchProviders();
             } else {
-                toast.error(json.message || t('admin.oidcProviders.messages.delete_failed'));
+                toast.error(getApiErrorMessageFromPayload(json, t, 'admin.oidcProviders.messages.delete_failed'));
             }
-        } catch {
-            toast.error(t('admin.oidcProviders.messages.delete_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.oidcProviders.messages.delete_failed'));
         }
     };
 
@@ -169,10 +170,10 @@ export default function OidcProvidersPage() {
                 setClientSecret('');
                 fetchProviders();
             } else {
-                toast.error(json.message || t('admin.oidcProviders.messages.save_failed'));
+                toast.error(getApiErrorMessageFromPayload(json, t, 'admin.oidcProviders.messages.save_failed'));
             }
-        } catch {
-            toast.error(t('admin.oidcProviders.messages.save_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.oidcProviders.messages.save_failed'));
         } finally {
             setSaving(false);
         }
@@ -272,12 +273,21 @@ export default function OidcProvidersPage() {
                                                             fetchProviders();
                                                         } else {
                                                             toast.error(
-                                                                json.message ||
-                                                                    t('admin.oidcProviders.messages.toggle_failed'),
+                                                                getApiErrorMessageFromPayload(
+                                                                    json,
+                                                                    t,
+                                                                    'admin.oidcProviders.messages.toggle_failed',
+                                                                ),
                                                             );
                                                         }
-                                                    } catch {
-                                                        toast.error(t('admin.oidcProviders.messages.toggle_failed'));
+                                                    } catch (error) {
+                                                        toast.error(
+                                                            getApiErrorMessage(
+                                                                error,
+                                                                t,
+                                                                'admin.oidcProviders.messages.toggle_failed',
+                                                            ),
+                                                        );
                                                     }
                                                 }}
                                             >

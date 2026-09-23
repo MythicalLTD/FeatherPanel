@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import axios, { AxiosError } from 'axios';
+import axios, { isAxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -31,6 +31,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 const VM_PERMISSIONS = ['power', 'console', 'backup', 'reinstall', 'settings', 'activity.read'];
 
@@ -78,14 +79,12 @@ export default function VdsSubusersPage() {
                 setSubusers(data.data.subusers || []);
             }
         } catch (error) {
-            const axiosError = error as AxiosError<{ message: string }>;
-            // 403 means subuser trying to access redirect
-            if (axiosError.response?.status === 403) {
+            if (isAxiosError(error) && error.response?.status === 403) {
                 toast.error(t('vds.subusers.owner_only'));
                 router.push(`/vds/${id}`);
                 return;
             }
-            toast.error(t('vds.subusers.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'vds.subusers.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -133,11 +132,10 @@ export default function VdsSubusersPage() {
                 setAddPermissions(['power', 'console']);
                 fetchSubusers();
             } else {
-                toast.error(data.message || t('vds.subusers.add_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'vds.subusers.add_failed'));
             }
         } catch (error) {
-            const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('vds.subusers.add_failed'));
+            toast.error(getApiErrorMessage(error, t, 'vds.subusers.add_failed'));
         } finally {
             setAddLoading(false);
         }
@@ -153,11 +151,10 @@ export default function VdsSubusersPage() {
                 setIsDeleteOpen(false);
                 fetchSubusers();
             } else {
-                toast.error(data.message || t('vds.subusers.remove_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'vds.subusers.remove_failed'));
             }
         } catch (error) {
-            const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('vds.subusers.remove_failed'));
+            toast.error(getApiErrorMessage(error, t, 'vds.subusers.remove_failed'));
         } finally {
             setDeleting(false);
         }
@@ -188,11 +185,10 @@ export default function VdsSubusersPage() {
                 setIsPermOpen(false);
                 fetchSubusers();
             } else {
-                toast.error(data.message || t('vds.subusers.permissions_update_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'vds.subusers.permissions_update_failed'));
             }
         } catch (error) {
-            const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('vds.subusers.permissions_update_failed'));
+            toast.error(getApiErrorMessage(error, t, 'vds.subusers.permissions_update_failed'));
         } finally {
             setSavingPerms(false);
         }

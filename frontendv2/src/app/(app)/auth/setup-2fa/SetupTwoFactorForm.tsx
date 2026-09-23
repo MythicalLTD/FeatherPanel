@@ -25,6 +25,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Captcha } from '@/components/Captcha';
 import axios from 'axios';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { isCaptchaConfigured, obtainCaptchaResponseToken } from '@/lib/captchaGate';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -63,7 +64,7 @@ export default function SetupTwoFactorForm() {
                     setQrCodeUrl(response.data.data.qr_code_url);
                     setSecret(response.data.data.secret);
                 } else {
-                    setError(response.data?.message || t('common.error'));
+                    setError(getApiErrorMessageFromPayload(response.data, t, 'common.error'));
                 }
             } catch (err: unknown) {
                 const error = err as {
@@ -84,7 +85,7 @@ export default function SetupTwoFactorForm() {
                     return;
                 }
 
-                setError(error.response?.data?.message || t('common.error'));
+                setError(getApiErrorMessage(error, t, 'common.error'));
             } finally {
                 setLoading(false);
             }
@@ -141,7 +142,7 @@ export default function SetupTwoFactorForm() {
                     router.push('/dashboard');
                 }, 1500);
             } else {
-                setError(response.data?.message || t('common.error'));
+                setError(getApiErrorMessageFromPayload(response.data, t, 'common.error'));
 
                 if (showCaptcha) {
                     setTurnstileToken('');
@@ -150,7 +151,7 @@ export default function SetupTwoFactorForm() {
             }
         } catch (err: unknown) {
             const error = err as { response?: { data?: { message?: string } } };
-            setError(error.response?.data?.message || t('common.error'));
+            setError(getApiErrorMessage(error, t, 'common.error'));
 
             if (showCaptcha) {
                 setTurnstileToken('');

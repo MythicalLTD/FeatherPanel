@@ -31,6 +31,7 @@ import { toast } from 'sonner';
 
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface Category {
     id: number;
@@ -234,13 +235,11 @@ export default function CreateTicketPage() {
                 toast.success(t('tickets.ticketCreated'));
                 router.push(`/dashboard/tickets/${ticketUuid}`);
             } else {
-                throw new Error(data.message || 'Failed to create ticket');
+                toast.error(getApiErrorMessageFromPayload(data, t, 'tickets.failedToCreate'));
             }
         } catch (error: unknown) {
             console.error('Failed to create ticket', error);
-            const err = error as { response?: { data?: { message?: string } }; message?: string };
-            const msg = err?.response?.data?.message || err?.message || t('tickets.failedToCreate');
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'tickets.failedToCreate'));
         } finally {
             setCreating(false);
         }

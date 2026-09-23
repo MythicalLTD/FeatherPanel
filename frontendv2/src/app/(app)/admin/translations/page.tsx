@@ -20,6 +20,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios, { isAxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -144,7 +145,7 @@ export default function TranslationsPage() {
         try {
             const response = await fetch('/locales/en.json');
             if (!response.ok) {
-                throw new Error('Failed to fetch frontend translations');
+                throw new Error(t('admin.translations.messages.import_failed'));
             }
             const frontendTranslations = await response.json();
             const blob = new Blob([JSON.stringify(frontendTranslations)], { type: 'application/json' });
@@ -161,11 +162,7 @@ export default function TranslationsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error importing translations:', error);
-            let msg = t('admin.translations.messages.import_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.translations.messages.import_failed'));
         } finally {
             setIsImporting(false);
         }
@@ -193,11 +190,7 @@ export default function TranslationsPage() {
             }
         } catch (error) {
             console.error('Error uploading translation file:', error);
-            let msg = t('admin.translations.messages.upload_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.translations.messages.upload_failed'));
         } finally {
             setIsUploading(false);
         }
@@ -239,11 +232,7 @@ export default function TranslationsPage() {
                 setNewLangCode('');
                 return;
             }
-            let msg = t('admin.translations.messages.create_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.translations.messages.create_failed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -275,11 +264,7 @@ export default function TranslationsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error updating translation file:', error);
-            let msg = t('admin.translations.messages.update_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.translations.messages.update_failed'));
         } finally {
             setIsSubmitting(false);
         }

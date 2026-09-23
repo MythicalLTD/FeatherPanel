@@ -24,6 +24,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { CalagopusAuthorizeView } from '@/components/account/CalagopusAuthorizeView';
 import { isLoopbackCallbackUrl } from '@/lib/utils';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 function splitCsv(value: string | null): string[] {
     if (!value) return [];
@@ -116,7 +117,7 @@ export default function CalagopusApiKeyCreatePage() {
                     router.push(`/auth/login?redirect=${encodeURIComponent(redirectTarget)}`);
                     return;
                 }
-                throw new Error(response.data?.message || t('account.calagopus.createFailed'));
+                throw new Error(getApiErrorMessageFromPayload(response.data, t, 'account.calagopus.createFailed'));
             }
 
             await deliverCalagopusCallback(redirectUrl);
@@ -136,8 +137,11 @@ export default function CalagopusApiKeyCreatePage() {
                 router.push(`/auth/login?redirect=${encodeURIComponent(redirectTarget)}`);
                 return;
             }
-            const message = axios.isAxiosError(err) ? err.response?.data?.message : null;
-            toast.error(message || t('account.calagopus.createFailed'));
+            toast.error(
+                err instanceof Error && !axios.isAxiosError(err)
+                    ? err.message
+                    : getApiErrorMessage(err, t, 'account.calagopus.createFailed'),
+            );
             setSubmitting(false);
         }
     };

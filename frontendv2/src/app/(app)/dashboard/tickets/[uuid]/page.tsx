@@ -19,7 +19,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import {
     ArrowLeft,
@@ -47,6 +47,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { formatDateTimeInTz, formatTimeInTz, parseApiDate } from '@/lib/dateUtils';
 import { resolveAttachmentUrl } from '@/lib/utils';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface ApiTicket {
     id: number;
@@ -147,12 +148,11 @@ export default function TicketViewPage() {
                 });
                 setMessages(sortedMessages);
             } else {
-                setError(t('tickets.failedToLoad'));
+                setError(getApiErrorMessageFromPayload(data, t, 'tickets.failedToLoad'));
             }
         } catch (err: unknown) {
             console.error('Failed to load ticket', err);
-            const error = err as AxiosError<{ message: string }>;
-            setError(error.response?.data?.message || t('tickets.failedToLoad'));
+            setError(getApiErrorMessage(err, t, 'tickets.failedToLoad'));
         } finally {
             setLoading(false);
         }
@@ -225,8 +225,7 @@ export default function TicketViewPage() {
             fetchTicketDetails();
         } catch (err: unknown) {
             console.error('Failed to send reply', err);
-            const error = err as AxiosError<{ message: string }>;
-            toast.error(error.response?.data?.message || t('tickets.failedToSendReply'));
+            toast.error(getApiErrorMessage(err, t, 'tickets.failedToSendReply'));
         } finally {
             setReplying(false);
         }

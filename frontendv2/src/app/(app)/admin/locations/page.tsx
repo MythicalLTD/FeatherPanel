@@ -17,8 +17,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -373,11 +374,7 @@ export default function LocationsPage() {
             setRefreshKey((prev) => prev + 1);
             setConfirmDeleteId(null);
         } catch (error) {
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.locations.messages.delete_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.delete_failed'));
         } finally {
             setDeleting(false);
         }
@@ -399,11 +396,7 @@ export default function LocationsPage() {
             setCreateForm({ name: '', description: '', flag_code: '', type: 'game' });
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.locations.messages.create_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.create_failed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -424,11 +417,7 @@ export default function LocationsPage() {
             setEditOpen(false);
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.locations.messages.update_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.update_failed'));
         } finally {
             setIsSubmitting(false);
         }

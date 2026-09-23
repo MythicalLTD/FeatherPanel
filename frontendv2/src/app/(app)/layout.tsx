@@ -21,7 +21,9 @@ import { TranslationProvider } from '@/contexts/TranslationContext';
 import { SessionProvider } from '@/contexts/SessionContext';
 import { PreferencesProvider } from '@/contexts/PreferencesContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
+import { PluginUiProvider } from '@/contexts/PluginUiContext';
 import AppContent from '@/components/common/AppContent';
+import { FeatherPanelHost } from '@/components/plugins/FeatherPanelHost';
 import { Toaster } from 'sonner';
 
 import type { Metadata, Viewport } from 'next';
@@ -258,22 +260,26 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <AnalyticsScript enabled={analyticsEnabled} />
                 <SettingsProvider initialSettings={boot.settings} initialCore={boot.core}>
                     <ThemeProvider>
-                        <TranslationProvider initialLocale={boot.locale} initialTranslations={boot.translations}>
-                            <SessionProvider>
-                                <PreferencesProvider>
-                                    <SidebarPrefsBootstrap iconLibrary={boot.iconLibrary}>
-                                        <NotificationProvider>
-                                            <PluginAssets />
-                                            <ChunkLoadErrorHandler />
-                                            <SystemHealthCheck />
-                                            <PwaInstaller />
-                                            <AppContent>{children}</AppContent>
-                                            <Toaster richColors position='top-right' />
-                                        </NotificationProvider>
-                                    </SidebarPrefsBootstrap>
-                                </PreferencesProvider>
-                            </SessionProvider>
-                        </TranslationProvider>
+                        <PluginUiProvider>
+                            <TranslationProvider initialLocale={boot.locale} initialTranslations={boot.translations}>
+                                <SessionProvider>
+                                    <PreferencesProvider>
+                                        <SidebarPrefsBootstrap iconLibrary={boot.iconLibrary}>
+                                            <NotificationProvider>
+                                                <FeatherPanelHost>
+                                                    <PluginAssets />
+                                                    <ChunkLoadErrorHandler />
+                                                    <SystemHealthCheck />
+                                                    <PwaInstaller />
+                                                    <AppContent>{children}</AppContent>
+                                                    <Toaster richColors position='top-right' />
+                                                </FeatherPanelHost>
+                                            </NotificationProvider>
+                                        </SidebarPrefsBootstrap>
+                                    </PreferencesProvider>
+                                </SessionProvider>
+                            </TranslationProvider>
+                        </PluginUiProvider>
                     </ThemeProvider>
                 </SettingsProvider>
                 <div dangerouslySetInnerHTML={{ __html: '<!-- FEATHERPANEL_APP_PLACEHOLDER_END -->' }} />

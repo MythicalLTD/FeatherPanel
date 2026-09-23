@@ -35,6 +35,7 @@ import { WebSpaceSslWizard } from '@/components/webspace/WebSpaceSslWizard';
 import { useWebSpacePermissions } from '@/hooks/useWebSpacePermissions';
 import { WebSpaceSubuserPermissions } from '@/lib/webspace-permissions';
 import { detectWwwPreference, domainRoutesFromWebSpace } from '@/lib/webspace-settings-utils';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface WebSpaceDomainsData {
     domains?: string[];
@@ -148,13 +149,9 @@ export default function WebSpaceDomainsPage() {
             }
             toast.success(t('webSpaces.settings.saved'));
         } catch (error) {
-            let msg = t('webSpaces.settings.saveFailed');
-            if (isAxiosError(error)) {
-                if (error.response?.status === 403) {
-                    msg = t('webSpaces.settings.noPermission');
-                } else if (error.response?.data?.message) {
-                    msg = error.response.data.message;
-                }
+            let msg = getApiErrorMessage(error, t, 'webSpaces.settings.saveFailed');
+            if (isAxiosError(error) && error.response?.status === 403) {
+                msg = t('webSpaces.settings.noPermission');
             }
             toast.error(msg);
         } finally {
@@ -170,9 +167,7 @@ export default function WebSpaceDomainsPage() {
             if (data.data?.webspace) setSpace(data.data.webspace);
             toast.success(t('webSpaces.settings.dnsCheckComplete'));
         } catch (error) {
-            let msg = t('webSpaces.settings.dnsCheckFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.dnsCheckFailed'));
         } finally {
             setChecking(false);
         }
@@ -186,9 +181,7 @@ export default function WebSpaceDomainsPage() {
             setSslInfo((data.data?.ssl as typeof sslInfo) || null);
             toast.success(t('webSpaces.settings.sslRenewed'));
         } catch (error) {
-            let msg = t('webSpaces.settings.sslRenewFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.sslRenewFailed'));
         } finally {
             setRenewing(false);
         }
@@ -203,9 +196,7 @@ export default function WebSpaceDomainsPage() {
             }
             await checkDns();
         } catch (error) {
-            let msg = t('webSpaces.settings.dnsProvisionFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.dnsProvisionFailed'));
         } finally {
             setProvisioningDns(false);
         }
@@ -227,9 +218,7 @@ export default function WebSpaceDomainsPage() {
             setCustomKeyFile(null);
             await load();
         } catch (error) {
-            let msg = t('webSpaces.settings.customSslUploadFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.customSslUploadFailed'));
         } finally {
             setUploadingSsl(false);
         }
@@ -244,9 +233,7 @@ export default function WebSpaceDomainsPage() {
             setCustomSsl(null);
             await load();
         } catch (error) {
-            let msg = t('webSpaces.settings.customSslRemoveFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.customSslRemoveFailed'));
         } finally {
             setRemovingSsl(false);
         }

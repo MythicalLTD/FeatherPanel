@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import axios from 'axios';
 import { ArrowLeft, UserPlus, RefreshCw, Users, Shield, Info } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -105,13 +106,10 @@ export default function CreateUserPage() {
                 toast.success(t('admin.users.messages.created'));
                 router.push('/admin/users');
             } else {
-                toast.error(data?.message || t('admin.users.messages.create_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.messages.create_failed'));
             }
         } catch (error: unknown) {
-            const errorMessage =
-                (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                t('admin.users.messages.create_failed');
-            toast.error(errorMessage);
+            toast.error(getApiErrorMessage(error, t, 'admin.users.messages.create_failed'));
         } finally {
             setCreating(false);
         }

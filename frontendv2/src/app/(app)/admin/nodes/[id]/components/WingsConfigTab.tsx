@@ -19,6 +19,7 @@ import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 import React, { useEffect, useState, useCallback } from 'react';
 import { Editor } from '@monaco-editor/react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -52,18 +53,14 @@ export function WingsConfigTab({ node }: WingsConfigTabProps) {
                 setContent(config);
                 setOriginalContent(config);
             } else {
-                setError(data.message || 'Failed to load Wings configuration');
+                setError(getApiErrorMessageFromPayload(data, t, 'admin.node.view.config.load_failed_title'));
             }
         } catch (err: unknown) {
-            let msg = 'Failed to load Wings configuration';
-            if (axios.isAxiosError(err)) {
-                msg = err.response?.data?.message || err.message;
-            }
-            setError(msg);
+            setError(getApiErrorMessage(err, t, 'admin.node.view.config.load_failed_title'));
         } finally {
             setLoading(false);
         }
-    }, [node.id]);
+    }, [node.id, t]);
 
     useEffect(() => {
         fetchConfig();
@@ -84,14 +81,10 @@ export function WingsConfigTab({ node }: WingsConfigTabProps) {
                     toast.info(t('admin.node.view.config.restart_notice'));
                 }
             } else {
-                toast.error(data.message || 'Failed to save configuration');
+                toast.error(getApiErrorMessageFromPayload(data, t, 'common.error'));
             }
         } catch (err: unknown) {
-            let msg = 'Failed to save configuration';
-            if (axios.isAxiosError(err)) {
-                msg = err.response?.data?.message || err.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setSaving(false);
         }

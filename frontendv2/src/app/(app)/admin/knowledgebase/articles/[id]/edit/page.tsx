@@ -63,6 +63,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { copyToClipboard, formatFileSize } from '@/lib/utils';
 import { safeBack } from '@/lib/safe-back';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface Category {
     id: number;
@@ -254,7 +255,9 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             if (data?.success) return data.data.url;
-            throw new Error(data?.message || t('admin.knowledgebase.categories.messages.upload_failed'));
+            throw new Error(
+                getApiErrorMessageFromPayload(data, t, 'admin.knowledgebase.categories.messages.upload_failed'),
+            );
         } catch {
             toast.error(t('admin.knowledgebase.categories.messages.upload_failed'));
             return null;
@@ -289,10 +292,12 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                 toast.success(t('admin.knowledgebase.messages.updated'));
                 fetchData();
             } else {
-                toast.error(data?.message || t('admin.knowledgebase.articles.messages.update_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(data, t, 'admin.knowledgebase.articles.messages.update_failed'),
+                );
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.articles.messages.update_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.articles.messages.update_failed'));
         } finally {
             setSaveLoading(false);
         }

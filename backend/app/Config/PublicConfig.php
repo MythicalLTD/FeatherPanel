@@ -71,6 +71,10 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::APP_ACCENT_COLOR_LOCK => 'false',
             ConfigInterface::APP_THEME_DEFAULT => 'dark',
             ConfigInterface::APP_THEME_LOCK => 'false',
+            ConfigInterface::APP_THEME_PACK_DEFAULT => 'default',
+            ConfigInterface::APP_THEME_PACK_LOCK => 'false',
+            ConfigInterface::APP_UI_PACK_DEFAULT => '',
+            ConfigInterface::APP_UI_PACK_LOCK => 'false',
             // background type: aurora, gradient, solid, image, pattern
             ConfigInterface::APP_BACKGROUND_TYPE_DEFAULT => 'pattern',
             ConfigInterface::APP_BACKGROUND_TYPE_LOCK => 'false',

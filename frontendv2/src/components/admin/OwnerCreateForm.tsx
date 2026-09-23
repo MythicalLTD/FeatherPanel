@@ -18,8 +18,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
@@ -87,7 +88,7 @@ export function OwnerCreateForm({ onCreated, onCancel, showFooter = true }: Owne
         try {
             const { data } = await axios.put('/api/admin/users', form);
             if (!data?.success) {
-                toast.error(data?.message || t('admin.users.messages.create_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.messages.create_failed'));
                 return;
             }
             const uuid = data?.data?.uuid as string | undefined;
@@ -109,11 +110,7 @@ export function OwnerCreateForm({ onCreated, onCancel, showFooter = true }: Owne
                 email: String(u.email),
             });
         } catch (error: unknown) {
-            let msg = t('admin.users.messages.create_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.users.messages.create_failed'));
         } finally {
             setSubmitting(false);
         }

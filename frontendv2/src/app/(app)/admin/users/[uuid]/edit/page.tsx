@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import axios from 'axios';
 import {
     User,
@@ -346,7 +347,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 setAltSourceDevices([]);
                 await fetchUser();
             } else {
-                toast.error(data?.message || t('admin.users.edit.potential_alts.clear_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.edit.potential_alts.clear_failed'));
             }
         } catch {
             toast.error(t('admin.users.edit.potential_alts.clear_failed'));
@@ -380,7 +381,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 toast.success(t('admin.users.messages.updated'));
                 await fetchUser();
             } else {
-                toast.error(data?.message || t('admin.users.messages.update_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.messages.update_failed'));
             }
         } catch (error: unknown) {
             console.error(error);
@@ -405,14 +406,10 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                     toast.success(t('admin.users.messages.unbanned'));
                     await fetchUser();
                 } else {
-                    toast.error(data?.message || t('admin.users.messages.ban_failed'));
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.messages.ban_failed'));
                 }
             } catch (error: unknown) {
-                const message =
-                    axios.isAxiosError(error) && error.response?.data?.message
-                        ? String(error.response.data.message)
-                        : t('admin.users.messages.ban_failed');
-                toast.error(message);
+                toast.error(getApiErrorMessage(error, t, 'admin.users.messages.ban_failed'));
             } finally {
                 setBanSubmitting(false);
             }
@@ -467,14 +464,10 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 setBanDialogOpen(false);
                 await fetchUser();
             } else {
-                toast.error(data?.message || t('admin.users.messages.ban_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.messages.ban_failed'));
             }
         } catch (error: unknown) {
-            const message =
-                axios.isAxiosError(error) && error.response?.data?.message
-                    ? String(error.response.data.message)
-                    : t('admin.users.messages.ban_failed');
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.users.messages.ban_failed'));
         } finally {
             setBanSubmitting(false);
         }
@@ -491,7 +484,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 toast.success(t('admin.users.messages.2fa_disabled'));
                 await fetchUser();
             } else {
-                toast.error(data?.message || t('admin.users.messages.2fa_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.messages.2fa_failed'));
             }
         } catch {
             toast.error(t('admin.users.messages.2fa_failed'));
@@ -515,7 +508,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 toast.success(t('admin.users.messages.discord_unlinked'));
                 await fetchUser();
             } else {
-                toast.error(data?.message || t('admin.users.messages.discord_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.messages.discord_failed'));
             }
         } catch {
             toast.error(t('admin.users.messages.discord_failed'));
@@ -543,7 +536,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 );
                 toast.success(t('admin.users.messages.sso_generated'));
             } else {
-                toast.error(data?.message || t('admin.users.messages.sso_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.messages.sso_failed'));
             }
         } catch {
             toast.error(t('admin.users.messages.sso_failed'));
@@ -567,14 +560,10 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 toast.success(t('admin.users.edit.mails.resend_success'));
                 await fetchUser();
             } else {
-                toast.error(data?.message || t('admin.users.edit.mails.resend_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.edit.mails.resend_failed'));
             }
         } catch (error: unknown) {
-            const message =
-                axios.isAxiosError(error) && error.response?.data?.message
-                    ? String(error.response.data.message)
-                    : t('admin.users.edit.mails.resend_failed');
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.users.edit.mails.resend_failed'));
         } finally {
             setResendingMailId(null);
         }
@@ -605,13 +594,10 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 setSendEmailData({ subject: '', body: '' });
                 await fetchUser();
             } else {
-                toast.error(data?.message || t('admin.users.messages.email_send_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.messages.email_send_failed'));
             }
         } catch (error: unknown) {
-            const message = axios.isAxiosError(error)
-                ? (error.response?.data?.message ?? error.message)
-                : t('admin.users.messages.email_send_failed');
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.users.messages.email_send_failed'));
         } finally {
             setSendingEmail(false);
         }

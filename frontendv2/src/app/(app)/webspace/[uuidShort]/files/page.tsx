@@ -31,7 +31,6 @@ import {
     resolveWebSpaceFileCapabilities,
     type WebSpaceFileCapabilitiesMap,
 } from '@/lib/webspace-files-api';
-import { getFeatherpanelApiErrorMessage } from '@/lib/api';
 import { triggerSignedUrlDownload } from '@/lib/trigger-signed-download';
 import { isBinaryLikeFileName } from '@/lib/binary-like-file-names';
 import {
@@ -50,6 +49,7 @@ import { FileObject } from '@/types/server';
 import { FileActionToolbar } from '@/app/(app)/server/[uuidShort]/files/components/FileActionToolbar';
 import { FileBreadcrumbs } from '@/app/(app)/server/[uuidShort]/files/components/FileBreadcrumbs';
 import { FileList } from '@/app/(app)/server/[uuidShort]/files/components/FileList';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import {
     CreateFolderDialog,
     CreateFileDialog,
@@ -275,7 +275,7 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
             setFiles(sortFiles(data.contents));
             setSelectedFiles([]);
         } catch (error) {
-            toast.error(getFeatherpanelApiErrorMessage(error) || t('files.messages.load_error'));
+            toast.error(getApiErrorMessage(error, t, 'files.messages.load_error'));
         } finally {
             setLoading(false);
         }
@@ -435,12 +435,9 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                 closeArchiveBrowse();
                 void refresh();
             } catch (error) {
-                toast.error(
-                    getFeatherpanelApiErrorMessage(error) || t('files.messages.archive_members_extract_failed'),
-                    {
-                        id: toastId,
-                    },
-                );
+                toast.error(getApiErrorMessage(error, t, 'files.messages.archive_members_extract_failed'), {
+                    id: toastId,
+                });
             }
         },
         [closeArchiveBrowse, filesApi, refresh, t, uuidShort],
@@ -548,10 +545,7 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                 );
                 void refresh();
             } catch (error) {
-                const message =
-                    getFeatherpanelApiErrorMessage(error) ||
-                    (error instanceof Error && error.message ? error.message : null) ||
-                    t('files.messages.upload_failed');
+                const message = getApiErrorMessage(error, t, 'files.messages.upload_failed');
                 setUploadQueue((prev) =>
                     prev.map((u) => (u.id === next.id ? { ...u, status: 'error' as const, error: message } : u)),
                 );
@@ -716,7 +710,7 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
             toast.success(t('files.messages.extracted'), { id: toastId });
             void refresh();
         } catch (error) {
-            toast.error(getFeatherpanelApiErrorMessage(error) || t('files.messages.extract_failed'), { id: toastId });
+            toast.error(getApiErrorMessage(error, t, 'files.messages.extract_failed'), { id: toastId });
         }
     };
 
@@ -851,7 +845,7 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
             toast.success(t('files.dialogs.move_copy.move_success'));
             void refresh();
         } catch (error) {
-            toast.error(getFeatherpanelApiErrorMessage(error) || t('files.dialogs.move_copy.move_error'));
+            toast.error(getApiErrorMessage(error, t, 'files.dialogs.move_copy.move_error'));
         }
     };
 

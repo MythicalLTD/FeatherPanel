@@ -26,7 +26,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { Captcha } from '@/components/Captcha';
 import { authApi } from '@/lib/api/auth';
 import axios from 'axios';
-import { getFeatherpanelApiErrorCode } from '@/lib/api';
+import { getApiErrorCode, getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { isCaptchaConfigured, obtainCaptchaResponseToken } from '@/lib/captchaGate';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -78,7 +78,7 @@ export default function RegisterForm() {
 
     const formatRegistrationError = (err: unknown, fallbackMessage?: string): string => {
         if (axios.isAxiosError(err)) {
-            const code = getFeatherpanelApiErrorCode(err);
+            const code = getApiErrorCode(err);
             const data = err.response?.data?.data as
                 { main_account?: { username?: string }; support_url?: string | null } | undefined;
             if (code === 'DEVICE_ACCOUNT_LIMIT') {
@@ -88,7 +88,7 @@ export default function RegisterForm() {
                 }
                 return t('auth.register.device_limit_generic');
             }
-            return err.response?.data?.message || fallbackMessage || t('common.error');
+            return getApiErrorMessage(err, t, 'common.error');
         }
 
         return fallbackMessage || t('common.error');
@@ -122,11 +122,11 @@ export default function RegisterForm() {
                 }
                 router.replace('/dashboard');
             } else {
-                setError(response.message || t('common.error'));
+                setError(getApiErrorMessageFromPayload(response, t, 'common.error'));
             }
         } catch (err: unknown) {
             const error = err as { response?: { data?: { message?: string } } };
-            setError(error.response?.data?.message || t('common.error'));
+            setError(getApiErrorMessage(error, t, 'common.error'));
         } finally {
             setLoading(false);
         }
@@ -233,7 +233,7 @@ export default function RegisterForm() {
                             : t('auth.register.device_limit_generic'),
                     );
                 } else {
-                    setError(response.message || t('common.error'));
+                    setError(getApiErrorMessageFromPayload(response, t, 'common.error'));
                 }
 
                 if (showCaptcha) {

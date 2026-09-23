@@ -28,6 +28,7 @@ import { Select } from '@/components/ui/select-native';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Plus, Trash2, RefreshCw, Layers, Loader2, Monitor, Cpu, ShieldAlert } from 'lucide-react';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { TutorialVM } from './TutorialVM';
 import { TutorialLXC } from './TutorialLXC';
@@ -105,12 +106,11 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                 setProxmoxVms(Array.isArray(res.data.data?.vms) ? res.data.data.vms : []);
             })
             .catch((err) => {
-                const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-                setProxmoxVmsError(msg || 'Failed to load VMs from Proxmox');
+                setProxmoxVmsError(getApiErrorMessage(err, t, 'common.error'));
                 setProxmoxVms([]);
             })
             .finally(() => setLoadingProxmoxVms(false));
-    }, [createOpen, nodeId]);
+    }, [createOpen, nodeId, t]);
 
     const handleProxmoxVmSelect = (vmidStr: string) => {
         const vmid = vmidStr ? Number(vmidStr) : 0;
@@ -159,8 +159,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
             setCreateForm({ name: '', template_file: '', guest_type: 'qemu', description: '', lxc_root_password: '' });
             loadTemplates();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg || t('admin.vdsNodes.templates.create_failed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.vdsNodes.templates.create_failed'));
         } finally {
             setCreating(false);
         }
@@ -174,8 +173,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
             setDeleteConfirmId(null);
             loadTemplates();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg || t('admin.vdsNodes.templates.delete_failed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.vdsNodes.templates.delete_failed'));
         } finally {
             setDeletingId(null);
         }

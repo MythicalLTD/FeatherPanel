@@ -37,6 +37,7 @@ import { Input } from '@/components/featherui/Input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface LocaleContributor {
     user?: { id?: number; name?: string; profilePhotoUrl?: string | null };
@@ -170,11 +171,7 @@ export default function MythicTranslationsPage() {
             }
             setSelected(new Set());
         } catch (err) {
-            toast.error(
-                axios.isAxiosError(err)
-                    ? err.response?.data?.message || t('admin.feathercloud.translations.load_failed')
-                    : t('admin.feathercloud.translations.load_failed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'admin.feathercloud.translations.load_failed'));
             setLocales([]);
         } finally {
             setLoading(false);
@@ -231,11 +228,7 @@ export default function MythicTranslationsPage() {
             URL.revokeObjectURL(url);
             toast.success(t('admin.feathercloud.translations.download_success', { locale }));
         } catch (err) {
-            toast.error(
-                axios.isAxiosError(err)
-                    ? err.response?.data?.message || t('admin.feathercloud.translations.download_failed')
-                    : t('admin.feathercloud.translations.download_failed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'admin.feathercloud.translations.download_failed'));
         } finally {
             setBusyLocale(null);
         }
@@ -250,11 +243,7 @@ export default function MythicTranslationsPage() {
             toast.success(t('admin.feathercloud.translations.install_success', { locale }));
             await loadInstalled();
         } catch (err) {
-            toast.error(
-                axios.isAxiosError(err)
-                    ? err.response?.data?.message || t('admin.feathercloud.translations.install_failed')
-                    : t('admin.feathercloud.translations.install_failed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'admin.feathercloud.translations.install_failed'));
         } finally {
             setBusyLocale(null);
         }

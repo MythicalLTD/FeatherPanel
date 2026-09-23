@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://featherpanel.com/schemas/plugin-overrides.json",
+  "title": "FeatherPanel Plugin Overrides",
+  "type": "object",
+  "description": "Frontend/overrides.json — hide/replace/actions for named PluginSlots.",
+  "properties": {
+    "hide": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._\\-:]*$" }
+    },
+    "replace": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["slot"],
+        "properties": {
+          "slot": { "type": "string" },
+          "hide": { "type": "boolean" },
+          "component": { "type": "string", "description": "HTML under Frontend/ (iframe)" },
+          "remote": { "type": "string", "description": "ESM under Frontend/ (React remote)" }
+        }
+      }
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["slot", "label"],
+        "properties": {
+          "id": { "type": "string" },
+          "slot": { "type": "string" },
+          "label": { "type": "string" },
+          "icon": { "type": "string" },
+          "priority": { "type": "integer" },
+          "component": { "type": "string" },
+          "remote": { "type": "string" },
+          "js": { "type": "string" }
+        }
+      }
+    }
+  }
+}

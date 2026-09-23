@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { Key, Plus, Trash2, Eye, Pencil, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface SshKey {
     id: number;
@@ -60,12 +61,7 @@ export default function SshKeysTab() {
             }
         } catch (error) {
             console.error('Error fetching SSH keys:', error);
-            const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } };
-            toast.error(
-                axiosError.response?.data?.error_message ||
-                    axiosError.response?.data?.message ||
-                    t('account.sshKeys.loadError'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'account.sshKeys.loadError'));
         } finally {
             setLoading(false);
         }
@@ -96,12 +92,7 @@ export default function SshKeysTab() {
             }
         } catch (error) {
             console.error('Error adding SSH key:', error);
-            const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } };
-            toast.error(
-                axiosError.response?.data?.error_message ||
-                    axiosError.response?.data?.message ||
-                    t('account.sshKeys.addFailed'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'account.sshKeys.addFailed'));
         }
     };
 
@@ -122,12 +113,7 @@ export default function SshKeysTab() {
             }
         } catch (error) {
             console.error('Error updating SSH key:', error);
-            const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } };
-            toast.error(
-                axiosError.response?.data?.error_message ||
-                    axiosError.response?.data?.message ||
-                    t('account.sshKeys.updateFailed'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'account.sshKeys.updateFailed'));
         }
     };
 
@@ -140,12 +126,7 @@ export default function SshKeysTab() {
             }
         } catch (error) {
             console.error('Error loading SSH key:', error);
-            const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } };
-            toast.error(
-                axiosError.response?.data?.error_message ||
-                    axiosError.response?.data?.message ||
-                    t('account.sshKeys.loadSingleError'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'account.sshKeys.loadSingleError'));
         }
     };
 
@@ -183,12 +164,7 @@ export default function SshKeysTab() {
             }
         } catch (error) {
             console.error('Error deleting SSH key:', error);
-            const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } };
-            toast.error(
-                axiosError.response?.data?.error_message ||
-                    axiosError.response?.data?.message ||
-                    t('account.sshKeys.deleteFailed'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'account.sshKeys.deleteFailed'));
         }
     };
 
@@ -201,12 +177,7 @@ export default function SshKeysTab() {
             }
         } catch (error) {
             console.error('Error restoring SSH key:', error);
-            const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } };
-            toast.error(
-                axiosError.response?.data?.error_message ||
-                    axiosError.response?.data?.message ||
-                    t('account.sshKeys.loadSingleError'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'account.sshKeys.loadSingleError'));
         }
     };
 

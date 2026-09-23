@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useRef, useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { toast } from 'sonner';
 import { ImageIcon, Loader2, Trash2, Upload } from 'lucide-react';
 import { Label } from '@/components/ui/label';
@@ -24,6 +24,7 @@ import { Input } from '@/components/featherui/Input';
 import { Button } from '@/components/featherui/Button';
 import { resolveAttachmentUrl, safeImageSrc, cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 type ImageAttachmentFieldProps = {
     id?: string;
@@ -82,14 +83,10 @@ export function ImageAttachmentField({
                 onChange(String(data.data.url));
                 toast.success(t('common.image_attachment.uploaded'));
             } else {
-                toast.error(data?.message || t('common.image_attachment.upload_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'common.image_attachment.upload_failed'));
             }
         } catch (error: unknown) {
-            let message = t('common.image_attachment.upload_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                message = String(error.response.data.message);
-            }
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'common.image_attachment.upload_failed'));
         } finally {
             setUploading(false);
             if (inputRef.current) inputRef.current.value = '';

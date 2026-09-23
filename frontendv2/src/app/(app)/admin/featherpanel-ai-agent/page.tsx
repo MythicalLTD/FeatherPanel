@@ -17,6 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { adminSettingsApi, Setting } from '@/lib/admin-settings-api';
@@ -30,7 +31,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select } from '@/components/ui/select-native';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { MessageSquare, Settings as SettingsIcon, Sparkles, Zap, Save, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function FeatherAiAgentPage() {
@@ -58,11 +59,11 @@ export default function FeatherAiAgentPage() {
                     toast.error(t('admin.featherai_agent.config.load_failed'));
                 }
             } else {
-                toast.error(response.message || t('admin.featherai_agent.config.load_failed'));
+                toast.error(getApiErrorMessageFromPayload(response, t, 'admin.featherai_agent.config.load_failed'));
             }
         } catch (error) {
             console.error('Error fetching chatbot settings:', error);
-            toast.error(t('admin.featherai_agent.config.load_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.featherai_agent.config.load_failed'));
         } finally {
             setLoading(false);
         }
@@ -75,11 +76,11 @@ export default function FeatherAiAgentPage() {
             if (data && data.success) {
                 setSystemPrompt(data.data.system_prompt || '');
             } else {
-                toast.error(t('admin.featherai_agent.config.prompt_load_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.featherai_agent.config.prompt_load_failed'));
             }
         } catch (error) {
             console.error('Error fetching system prompt:', error);
-            toast.error(t('admin.featherai_agent.config.prompt_load_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.featherai_agent.config.prompt_load_failed'));
         } finally {
             setLoadingSystemPrompt(false);
         }
@@ -125,14 +126,10 @@ export default function FeatherAiAgentPage() {
                 toast.success(t('admin.featherai_agent.config.save_success'));
                 fetchChatbotSettings();
             } else {
-                toast.error(result.message || t('admin.featherai_agent.config.save_failed'));
+                toast.error(getApiErrorMessageFromPayload(result, t, 'admin.featherai_agent.config.save_failed'));
             }
         } catch (error) {
-            let message = t('admin.featherai_agent.config.save_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                message = error.response.data.message;
-            }
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.featherai_agent.config.save_failed'));
         } finally {
             setSaving(false);
         }

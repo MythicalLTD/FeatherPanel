@@ -69,6 +69,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 import { Database, DatabasesResponse, Server } from '@/types/server';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function ServerDatabasesPage() {
     const { t, locale } = useTranslation();
@@ -191,12 +192,7 @@ export default function ServerDatabasesPage() {
                 }
             } catch (error) {
                 console.error('Error fetching databases:', error);
-                const errorMessage =
-                    (error as { response?: { data?: { message?: string; error_message?: string } } })?.response?.data
-                        ?.message ||
-                    (error as { response?: { data?: { error_message?: string } } })?.response?.data?.error_message ||
-                    t('serverDatabases.failedToFetch');
-                toast.error(errorMessage);
+                toast.error(getApiErrorMessage(error, t, 'serverDatabases.failedToFetch'));
             } finally {
                 setLoading(false);
             }
@@ -231,16 +227,11 @@ export default function ServerDatabasesPage() {
                 setConfirmDeleteDialogOpen(false);
                 fetchDatabases();
             } else {
-                toast.error(data.message || t('serverDatabases.deleteFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverDatabases.deleteFailed'));
             }
         } catch (error) {
             console.error('Error deleting database:', error);
-            const errorMessage =
-                (error as { response?: { data?: { message?: string; error_message?: string } } })?.response?.data
-                    ?.message ||
-                (error as { response?: { data?: { error_message?: string } } })?.response?.data?.error_message ||
-                t('serverDatabases.deleteFailed');
-            toast.error(errorMessage);
+            toast.error(getApiErrorMessage(error, t, 'serverDatabases.deleteFailed'));
         } finally {
             setDeletingId(null);
         }
@@ -266,7 +257,7 @@ export default function ServerDatabasesPage() {
         data?: { deleted_count?: number; failed_count?: number };
     }) => {
         if (!data.success) {
-            toast.error(data.message || t('serverDatabases.bulkDeleteFailed'));
+            toast.error(getApiErrorMessageFromPayload(data, t, 'serverDatabases.bulkDeleteFailed'));
             return;
         }
         const deleted = data.data?.deleted_count ?? 0;
@@ -345,7 +336,7 @@ export default function ServerDatabasesPage() {
                 window.open(appendPmaAuthParams(data.data.url, locale), '_blank');
                 toast.success(t('serverDatabases.openingPhpMyAdmin'));
             } else {
-                toast.error(data.message || t('serverDatabases.failedToOpenPhpMyAdmin'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverDatabases.failedToOpenPhpMyAdmin'));
             }
         } catch {
             toast.error(t('serverDatabases.failedToOpenPhpMyAdmin'));
@@ -366,11 +357,11 @@ export default function ServerDatabasesPage() {
                 URL.revokeObjectURL(url);
                 toast.success(t('serverDatabases.exportSuccess', { count: String(data.data.table_count) }));
             } else {
-                toast.error(data?.message || t('serverDatabases.exportFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverDatabases.exportFailed'));
             }
         } catch (error) {
             const axiosError = error as { response?: { data?: { message?: string } } };
-            toast.error(axiosError?.response?.data?.message || t('serverDatabases.exportFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'serverDatabases.exportFailed'));
         } finally {
             setExportingId(null);
         }
@@ -414,11 +405,11 @@ export default function ServerDatabasesPage() {
                     );
                 }
             } else {
-                toast.error(data?.message || t('serverDatabases.importFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverDatabases.importFailed'));
             }
         } catch (error) {
             const axiosError = error as { response?: { data?: { message?: string } } };
-            toast.error(axiosError?.response?.data?.message || t('serverDatabases.importFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'serverDatabases.importFailed'));
         } finally {
             setImporting(false);
         }
@@ -447,11 +438,11 @@ export default function ServerDatabasesPage() {
             if (data?.success) {
                 setQueryResult(data.data);
             } else {
-                setQueryError(data?.message || t('serverDatabases.queryFailed'));
+                setQueryError(getApiErrorMessageFromPayload(data, t, 'serverDatabases.queryFailed'));
             }
         } catch (error) {
             const axiosError = error as { response?: { data?: { message?: string } } };
-            setQueryError(axiosError?.response?.data?.message || t('serverDatabases.queryFailed'));
+            setQueryError(getApiErrorMessage(axiosError, t, 'serverDatabases.queryFailed'));
         } finally {
             setRunningQuery(false);
         }

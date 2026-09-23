@@ -260,12 +260,29 @@ export const filesApi = {
     },
 
     saveFileContent: async (uuid: string, path: string, content: string): Promise<void> => {
-        await api.post(`/user/servers/${uuid}/write-file`, content, {
-            params: { path: normalizePath(path) },
+        const { pluginActionHooks } = await import('@/lib/plugin-sdk/action-hooks');
+        const { pluginEventBus } = await import('@/lib/plugin-sdk/event-bus');
+        const { FP_ACTIONS, FP_EVENTS } = await import('@/lib/plugin-sdk/ids');
+
+        const ctx = await pluginActionHooks.run(FP_ACTIONS.FILES_SAVE, {
+            uuid,
+            path: normalizePath(path),
+            content,
+        });
+        if (ctx.cancelled) {
+            throw new Error(ctx.cancelReason || 'File save cancelled by plugin');
+        }
+        const finalPath = typeof ctx.path === 'string' ? normalizePath(ctx.path) : normalizePath(path);
+        const finalContent = typeof ctx.content === 'string' ? ctx.content : content;
+
+        await api.post(`/user/servers/${uuid}/write-file`, finalContent, {
+            params: { path: finalPath },
             headers: {
                 'Content-Type': 'text/plain',
             },
         });
+
+        pluginEventBus.emit(FP_EVENTS.FILES_SAVED, { uuid, path: finalPath });
     },
 
     createFolder: async (uuid: string, root: string, name: string): Promise<void> => {

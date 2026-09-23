@@ -19,6 +19,7 @@ import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
@@ -166,11 +167,7 @@ export function ActionsTab({
             void fetchRuntime();
         } catch (error: unknown) {
             console.error('Error reconciling server runtime:', error);
-            const message =
-                axios.isAxiosError(error) && error.response?.data?.message
-                    ? String(error.response.data.message)
-                    : t('admin.servers.edit.actions.reconcile_failed');
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.edit.actions.reconcile_failed'));
         } finally {
             setReconciling(false);
         }
@@ -191,11 +188,7 @@ export function ActionsTab({
             onRefresh();
         } catch (error: unknown) {
             console.error('Error suspending server:', error);
-            const message =
-                axios.isAxiosError(error) && error.response?.data?.message
-                    ? String(error.response.data.message)
-                    : t('admin.servers.edit.actions.suspend_failed');
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.edit.actions.suspend_failed'));
         } finally {
             setSuspending(false);
         }
@@ -236,11 +229,7 @@ export function ActionsTab({
             setWarnSendEmail(true);
         } catch (error: unknown) {
             console.error('Error sending warning:', error);
-            const message =
-                axios.isAxiosError(error) && error.response?.data?.error_message
-                    ? String(error.response.data.error_message)
-                    : t('admin.servers.edit.actions.warn_failed');
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.edit.actions.warn_failed'));
         } finally {
             setWarning(false);
         }

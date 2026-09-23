@@ -23,6 +23,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
@@ -114,10 +115,7 @@ export function AllocationCreateForm({ nodeId, onCreated, onCancel, showFooter =
             onCreated(created);
         } catch (error: unknown) {
             console.error('Error creating allocation:', error);
-            const errorMessage = axios.isAxiosError(error)
-                ? error.response?.data?.message
-                : t('admin.node.allocations.messages.create_failed');
-            toast.error(errorMessage || t('admin.node.allocations.messages.create_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node.allocations.messages.create_failed'));
         } finally {
             setSubmitting(false);
         }

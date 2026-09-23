@@ -19,6 +19,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -170,12 +171,14 @@ export default function EditPluginPage() {
                             : [],
                 });
             } else {
-                toast.error(response.data.message || t('admin.dev.plugins.edit.messages.load_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(response.data, t, 'admin.dev.plugins.edit.messages.load_failed'),
+                );
                 router.push('/admin/dev/plugins');
             }
         } catch (error) {
             console.error('Failed to load plugin:', error);
-            toast.error(t('admin.dev.plugins.edit.messages.load_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.dev.plugins.edit.messages.load_failed'));
             router.push('/admin/dev/plugins');
         } finally {
             setLoadingPlugin(false);
@@ -221,11 +224,13 @@ export default function EditPluginPage() {
                 toast.success(t('admin.dev.plugins.edit.messages.updated'));
                 router.push('/admin/dev/plugins');
             } else {
-                toast.error(response.data.message || t('admin.dev.plugins.edit.messages.update_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(response.data, t, 'admin.dev.plugins.edit.messages.update_failed'),
+                );
             }
         } catch (error) {
             console.error('Failed to update plugin:', error);
-            toast.error(t('admin.dev.plugins.edit.messages.update_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.dev.plugins.edit.messages.update_failed'));
         } finally {
             setLoading(false);
         }

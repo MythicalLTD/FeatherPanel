@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import Image from 'next/image';
 import {
     Shield,
@@ -51,6 +51,7 @@ import { cn } from '@/lib/utils';
 import { RoleBadge, RoleIconAvatar } from '@/components/RoleBadge';
 import { ROLE_COLOR_PRESETS, randomRoleColor, isDefaultRole, type RoleForm } from '@/lib/role-utils';
 import { toast } from 'sonner';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface PermissionNode {
     constant: string;
@@ -137,14 +138,10 @@ export function RoleEditor({
                 onFormChange({ ...form, badge_icon: data.data.url });
                 toast.success(t('admin.roles.messages.badge_icon_uploaded'));
             } else {
-                toast.error(data?.message || t('admin.roles.messages.badge_icon_upload_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.roles.messages.badge_icon_upload_failed'));
             }
         } catch (error: unknown) {
-            let message = t('admin.roles.messages.badge_icon_upload_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                message = error.response.data.message;
-            }
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.roles.messages.badge_icon_upload_failed'));
         } finally {
             setUploadingBadgeIcon(false);
             if (badgeIconInputRef.current) {

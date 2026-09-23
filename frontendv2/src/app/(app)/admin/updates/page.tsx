@@ -7,7 +7,7 @@ Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
-    10|by the Free Software Foundation, either version 3 of the License, or
+by the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 See the LICENSE file or <https://www.gnu.org/licenses/>.
@@ -28,6 +28,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ReleaseNotesPanel } from '@/components/admin/ReleaseNotesPanel';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
 import { adminSettingsApi } from '@/lib/admin-settings-api';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { cn } from '@/lib/utils';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -184,54 +185,54 @@ export default function AdminUpdatesPage() {
         }
     }, []);
 
-    const checkPluginUpdatesFromStore = useCallback(async (pluginList: PluginRow[]) => {
-        setStoreError(null);
-        if (pluginList.length === 0) {
-            setPluginUpdates({});
-            return;
-        }
-
-        try {
-            const response = await axios.get('/api/admin/cloud/data/store', {
-                params: {
-                    page: 1,
-                    limit: 100,
-                    category: FEATHERPANEL_CATEGORY_SLUG,
-                    type: 'product',
-                },
-            });
-            const items = extractStoreItems(response.data?.data);
-            const next: Record<string, PluginUpdateInfo> = {};
-
-            for (const plugin of pluginList) {
-                const match = findStoreMatch(plugin, items);
-                if (!match?.product) continue;
-                const latest = storeLatestVersion(match.product);
-                if (!latest || !plugin.version) continue;
-                next[plugin.identifier] = {
-                    latest_version: latest,
-                    update_available: comparePluginVersions(plugin.version, latest) < 0,
-                    store_slug: productSlug(match.product) || undefined,
-                    can_download: match.can_download === true,
-                };
+    const checkPluginUpdatesFromStore = useCallback(
+        async (pluginList: PluginRow[]) => {
+            setStoreError(null);
+            if (pluginList.length === 0) {
+                setPluginUpdates({});
+                return;
             }
-            setPluginUpdates(next);
-        } catch (err) {
-            if (axios.isAxiosError(err)) {
-                const code = err.response?.data?.error_code;
-                if (code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED' || err.response?.status === 503) {
-                    setStoreError(
-                        err.response?.data?.message ||
-                            'Mythic Cloud is not linked. Connect under Cloud Connections to check plugin updates.',
-                    );
-                    setPluginUpdates({});
-                    return;
+
+            try {
+                const response = await axios.get('/api/admin/cloud/data/store', {
+                    params: {
+                        page: 1,
+                        limit: 100,
+                        category: FEATHERPANEL_CATEGORY_SLUG,
+                        type: 'product',
+                    },
+                });
+                const items = extractStoreItems(response.data?.data);
+                const next: Record<string, PluginUpdateInfo> = {};
+
+                for (const plugin of pluginList) {
+                    const match = findStoreMatch(plugin, items);
+                    if (!match?.product) continue;
+                    const latest = storeLatestVersion(match.product);
+                    if (!latest || !plugin.version) continue;
+                    next[plugin.identifier] = {
+                        latest_version: latest,
+                        update_available: comparePluginVersions(plugin.version, latest) < 0,
+                        store_slug: productSlug(match.product) || undefined,
+                        can_download: match.can_download === true,
+                    };
                 }
+                setPluginUpdates(next);
+            } catch (err) {
+                if (axios.isAxiosError(err)) {
+                    const code = err.response?.data?.error_code;
+                    if (code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED' || err.response?.status === 503) {
+                        setStoreError(getApiErrorMessage(err, t, 'admin_updates.messages.cloud_not_linked'));
+                        setPluginUpdates({});
+                        return;
+                    }
+                }
+                setStoreError(mythicCloudErrorMessage(err, t('admin_updates.messages.store_check_failed'), t));
+                setPluginUpdates({});
             }
-            setStoreError(mythicCloudErrorMessage(err, 'Failed to check Mythic store for plugin updates'));
-            setPluginUpdates({});
-        }
-    }, []);
+        },
+        [t],
+    );
 
     const checkAll = useCallback(async () => {
         setIsChecking(true);
@@ -317,12 +318,12 @@ export default function AdminUpdatesPage() {
         try {
             const response = await adminSettingsApi.triggerDockerUpdate();
             if (response.success) {
-                toast.success(response.message || t('admin_updates.messages.update_started'));
+                toast.success(t('admin_updates.messages.update_started'));
             } else {
-                toast.error(response.message || t('admin_updates.messages.update_failed'));
+                toast.error(getApiErrorMessageFromPayload(response, t, 'admin_updates.messages.update_failed'));
             }
-        } catch {
-            toast.error(t('admin_updates.messages.update_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin_updates.messages.update_failed'));
         } finally {
             setIsUpdatingPanel(false);
         }
@@ -337,7 +338,7 @@ export default function AdminUpdatesPage() {
         try {
             if (update.store_slug && update.can_download !== false) {
                 const version = await resolveInstallVersion(update.store_slug);
-                if (!version) throw new Error('No downloadable release found.');
+                if (!version) throw new Error(t('admin.marketplace.plugins.toasts.no_release'));
                 await downloadAndInstall(update.store_slug, version);
             } else {
                 await axios.post('/api/admin/plugins/online/install', {
@@ -345,7 +346,12 @@ export default function AdminUpdatesPage() {
                     queued_identifiers: [identifier],
                 });
             }
-            toast.success(`Updated ${plugin.name || identifier} to v${update.latest_version}`);
+            toast.success(
+                t('admin.marketplace.plugins.toasts.updated', {
+                    name: plugin.name || identifier,
+                    version: update.latest_version,
+                }),
+            );
             const refreshed = await fetchPlugins({ silent: true });
             await checkPluginUpdatesFromStore(refreshed);
         } catch (err) {
@@ -426,38 +432,52 @@ export default function AdminUpdatesPage() {
                         ) : (
                             <RefreshCw className='mr-2 h-4 w-4' />
                         )}
-                        Check for updates
+                        {t('admin_updates.check_for_updates')}
                     </Button>
                 }
             />
 
             <div className='grid gap-3 sm:grid-cols-3'>
                 <div className='bg-card/60 rounded-2xl px-4 py-3'>
-                    <p className='text-muted-foreground text-xs'>Panel</p>
+                    <p className='text-muted-foreground text-xs'>{t('admin_updates.overview.panel')}</p>
                     <p className='mt-1 text-sm font-medium'>
                         {panelVersion?.update_available
-                            ? `Update to ${panelVersion?.latest?.version || '—'}`
+                            ? t('admin_updates.overview.update_to', {
+                                  version: panelVersion?.latest?.version || '—',
+                              })
                             : panelVersion?.current?.version
-                              ? `Up to date · ${panelVersion.current.version}`
-                              : 'Checking…'}
+                              ? t('admin_updates.overview.up_to_date_version', {
+                                    version: panelVersion.current.version,
+                                })
+                              : t('admin_updates.overview.checking')}
                     </p>
                 </div>
                 <div className='bg-card/60 rounded-2xl px-4 py-3'>
-                    <p className='text-muted-foreground text-xs'>Plugins</p>
+                    <p className='text-muted-foreground text-xs'>{t('admin_updates.overview.plugins')}</p>
                     <p className='mt-1 text-sm font-medium'>
                         {pluginUpdateCount > 0
-                            ? `${pluginUpdateCount} update${pluginUpdateCount === 1 ? '' : 's'} available`
+                            ? t(
+                                  pluginUpdateCount === 1
+                                      ? 'admin_updates.overview.plugin_update_available_one'
+                                      : 'admin_updates.overview.plugin_updates_available',
+                                  { count: String(pluginUpdateCount) },
+                              )
                             : storeError
-                              ? 'Store unavailable'
-                              : 'Up to date'}
+                              ? t('admin_updates.overview.store_unavailable')
+                              : t('admin_updates.overview.up_to_date')}
                     </p>
                 </div>
                 <div className='bg-card/60 rounded-2xl px-4 py-3'>
-                    <p className='text-muted-foreground text-xs'>Wings</p>
+                    <p className='text-muted-foreground text-xs'>{t('admin_updates.overview.wings')}</p>
                     <p className='mt-1 text-sm font-medium'>
                         {nodeUpdateCount > 0
-                            ? `${nodeUpdateCount} node${nodeUpdateCount === 1 ? '' : 's'} need updates`
-                            : 'Up to date'}
+                            ? t(
+                                  nodeUpdateCount === 1
+                                      ? 'admin_updates.overview.node_needs_updates_one'
+                                      : 'admin_updates.overview.nodes_need_updates',
+                                  { count: String(nodeUpdateCount) },
+                              )
+                            : t('admin_updates.overview.up_to_date')}
                     </p>
                 </div>
             </div>
@@ -468,7 +488,7 @@ export default function AdminUpdatesPage() {
                     <Input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder='Search plugins or nodes…'
+                        placeholder={t('admin_updates.search_placeholder')}
                         className='pl-9'
                     />
                 </div>
@@ -482,7 +502,7 @@ export default function AdminUpdatesPage() {
                                 setSelectedPlugins(new Set());
                             }}
                         >
-                            Clear
+                            {t('admin_updates.clear_selection')}
                         </Button>
                         <Button size='sm' onClick={() => void handleBulkUpdate()} disabled={isBulkUpdating}>
                             {isBulkUpdating ? (
@@ -490,7 +510,7 @@ export default function AdminUpdatesPage() {
                             ) : (
                                 <Download className='mr-2 h-4 w-4' />
                             )}
-                            Update selected ({selectionCount})
+                            {t('admin_updates.update_selected_count', { count: String(selectionCount) })}
                         </Button>
                     </div>
                 ) : null}
@@ -612,7 +632,12 @@ export default function AdminUpdatesPage() {
                     storeError
                         ? storeError
                         : pluginUpdateCount > 0
-                          ? `${pluginUpdateCount} plugin${pluginUpdateCount === 1 ? '' : 's'} can be updated from Mythic`
+                          ? t(
+                                pluginUpdateCount === 1
+                                    ? 'admin_updates.plugins.can_update_from_mythic_one'
+                                    : 'admin_updates.plugins.can_update_from_mythic',
+                                { count: String(pluginUpdateCount) },
+                            )
                           : t('admin_updates.plugins.up_to_date')
                 }
                 icon={Package}
@@ -620,7 +645,7 @@ export default function AdminUpdatesPage() {
                     <div className='flex flex-wrap gap-2'>
                         {storeError ? (
                             <Button size='sm' variant='outline' onClick={() => router.push('/admin/cloud-management')}>
-                                Cloud Connections
+                                {t('admin_updates.cloud_connections')}
                             </Button>
                         ) : null}
                         <Button
@@ -629,10 +654,10 @@ export default function AdminUpdatesPage() {
                             onClick={() => setSelectedPlugins(new Set(selectablePluginIds))}
                             disabled={selectablePluginIds.length === 0}
                         >
-                            Select updates
+                            {t('admin_updates.select_updates')}
                         </Button>
                         <Button size='sm' variant='outline' onClick={() => router.push('/admin/feathercloud/products')}>
-                            Open store
+                            {t('admin_updates.open_store')}
                         </Button>
                     </div>
                 }
@@ -645,14 +670,16 @@ export default function AdminUpdatesPage() {
                             variant={pluginFilter === key ? 'default' : 'outline'}
                             onClick={() => setPluginFilter(key)}
                         >
-                            {key === 'updates' ? 'Needs update' : 'All installed'}
+                            {key === 'updates'
+                                ? t('admin_updates.plugins.filter_needs_update')
+                                : t('admin_updates.plugins.filter_all')}
                         </Button>
                     ))}
                 </div>
 
                 {pluginsLoading || (isChecking && Object.keys(pluginUpdates).length === 0 && !storeError) ? (
                     <div className='text-muted-foreground flex items-center gap-2 py-10 text-sm'>
-                        <Loader2 className='h-4 w-4 animate-spin' /> Checking plugin versions…
+                        <Loader2 className='h-4 w-4 animate-spin' /> {t('admin_updates.plugins.checking')}
                     </div>
                 ) : filteredPlugins.length === 0 ? (
                     <EmptyState
@@ -662,9 +689,7 @@ export default function AdminUpdatesPage() {
                                 : t('admin_updates.plugins.no_plugins')
                         }
                         description={
-                            pluginFilter === 'updates'
-                                ? 'Installed plugins match the latest Mythic releases we could resolve.'
-                                : undefined
+                            pluginFilter === 'updates' ? t('admin_updates.plugins.up_to_date_description') : undefined
                         }
                         icon={Package}
                     />
@@ -717,9 +742,9 @@ export default function AdminUpdatesPage() {
                                                 → v{update?.latest_version}
                                             </span>
                                         ) : update?.latest_version ? (
-                                            <span> · current</span>
+                                            <span> · {t('admin_updates.plugins.current_suffix')}</span>
                                         ) : (
-                                            <span> · not in store</span>
+                                            <span> · {t('admin_updates.plugins.not_in_store')}</span>
                                         )}
                                     </div>
                                     {needsUpdate ? (
@@ -733,12 +758,14 @@ export default function AdminUpdatesPage() {
                                             ) : (
                                                 <Download className='mr-2 h-3.5 w-3.5' />
                                             )}
-                                            Update
+                                            {t('admin_updates.plugins.update')}
                                         </Button>
                                     ) : (
                                         <span className='text-muted-foreground inline-flex items-center gap-1 text-xs'>
                                             <CheckCircle2 className='h-3.5 w-3.5 text-emerald-500' />
-                                            {update?.latest_version ? 'Up to date' : 'No match'}
+                                            {update?.latest_version
+                                                ? t('admin_updates.plugins.status_up_to_date')
+                                                : t('admin_updates.plugins.status_no_match')}
                                         </span>
                                     )}
                                 </div>
@@ -759,7 +786,7 @@ export default function AdminUpdatesPage() {
                         onClick={() => setSelectedNodes(new Set(selectableNodeIds))}
                         disabled={selectableNodeIds.length === 0}
                     >
-                        Select updates
+                        {t('admin_updates.select_updates')}
                     </Button>
                 }
             >
@@ -771,14 +798,16 @@ export default function AdminUpdatesPage() {
                             variant={nodeFilter === key ? 'default' : 'outline'}
                             onClick={() => setNodeFilter(key)}
                         >
-                            {key === 'updates' ? 'Needs update' : 'All nodes'}
+                            {key === 'updates'
+                                ? t('admin_updates.wings.filter_needs_update')
+                                : t('admin_updates.wings.filter_all')}
                         </Button>
                     ))}
                 </div>
 
                 {nodesLoading ? (
                     <div className='text-muted-foreground flex items-center gap-2 py-10 text-sm'>
-                        <Loader2 className='h-4 w-4 animate-spin' /> Loading nodes…
+                        <Loader2 className='h-4 w-4 animate-spin' /> {t('admin_updates.wings.loading')}
                     </div>
                 ) : filteredNodes.length === 0 ? (
                     <EmptyState

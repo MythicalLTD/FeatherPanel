@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import {
     AppWindow,
     Archive,
@@ -43,6 +43,7 @@ import {
     ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import Link from 'next/link';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -139,9 +140,7 @@ export default function AdminWebSpaceDetailPage() {
             if (data?.data?.webspace) setSpace(data.data.webspace);
             toast.success(t('admin.webSpaces.messages.power_ok', { action }));
         } catch (error) {
-            let msg = t('admin.webSpaces.messages.power_failed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.power_failed'));
         } finally {
             setBusy(null);
         }
@@ -165,9 +164,7 @@ export default function AdminWebSpaceDetailPage() {
             }
             toast.success(t('admin.webSpaces.messages.reinstall_started'));
         } catch (error) {
-            let msg = t('admin.webSpaces.messages.reinstall_failed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.reinstall_failed'));
         } finally {
             setBusy(null);
         }
@@ -180,9 +177,7 @@ export default function AdminWebSpaceDetailPage() {
             if (data?.data?.webspace) setSpace(data.data.webspace);
             toast.success(t('admin.webSpaces.messages.sync_ok'));
         } catch (error) {
-            let msg = t('admin.webSpaces.messages.sync_failed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.sync_failed'));
         } finally {
             setBusy(null);
         }
@@ -196,9 +191,7 @@ export default function AdminWebSpaceDetailPage() {
             if (data?.data?.webspace) setSpace(data.data.webspace);
             toast.success(t('admin.webSpaces.messages.recreate_runtime_ok'));
         } catch (error) {
-            let msg = t('admin.webSpaces.messages.recreate_runtime_failed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.recreate_runtime_failed'));
         } finally {
             setBusy(null);
         }
@@ -211,9 +204,7 @@ export default function AdminWebSpaceDetailPage() {
             if (data?.data?.webspace) setSpace(data.data.webspace);
             toast.success(t('admin.webSpaces.messages.dns_check_ok'));
         } catch (error) {
-            let msg = t('admin.webSpaces.messages.dns_check_failed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.dns_check_failed'));
         } finally {
             setBusy(null);
         }
@@ -226,11 +217,7 @@ export default function AdminWebSpaceDetailPage() {
             toast.success(t('admin.webSpaces.messages.backup_created'));
             await loadBackups();
         } catch (error) {
-            toast.error(
-                isAxiosError(error)
-                    ? error.response?.data?.message || t('admin.webSpaces.messages.backup_failed')
-                    : t('admin.webSpaces.messages.backup_failed'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.backup_failed'));
         } finally {
             setBusy(null);
         }
@@ -243,11 +230,7 @@ export default function AdminWebSpaceDetailPage() {
             await axios.post(`/api/admin/webspaces/${uuid}/backups/${backupUuid}/restore`);
             toast.success(t('admin.webSpaces.messages.backup_restored'));
         } catch (error) {
-            toast.error(
-                isAxiosError(error)
-                    ? error.response?.data?.message || t('admin.webSpaces.messages.restore_failed')
-                    : t('admin.webSpaces.messages.restore_failed'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.restore_failed'));
         } finally {
             setBusy(null);
         }
@@ -261,11 +244,7 @@ export default function AdminWebSpaceDetailPage() {
             toast.success(t('admin.webSpaces.messages.backup_deleted'));
             await loadBackups();
         } catch (error) {
-            toast.error(
-                isAxiosError(error)
-                    ? error.response?.data?.message || t('admin.webSpaces.messages.delete_failed')
-                    : t('admin.webSpaces.messages.delete_failed'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.delete_failed'));
         } finally {
             setBusy(null);
         }
@@ -286,11 +265,7 @@ export default function AdminWebSpaceDetailPage() {
             toast.success(t('admin.webSpaces.messages.backup_imported'));
             await loadBackups();
         } catch (error) {
-            toast.error(
-                isAxiosError(error)
-                    ? error.response?.data?.message || t('admin.webSpaces.messages.import_failed')
-                    : t('admin.webSpaces.messages.import_failed'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.import_failed'));
         } finally {
             setBusy(null);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -305,11 +280,7 @@ export default function AdminWebSpaceDetailPage() {
             toast.success(t('admin.webSpaces.messages.reconciled', { count }));
             await loadBackups();
         } catch (error) {
-            toast.error(
-                isAxiosError(error)
-                    ? error.response?.data?.message || t('admin.webSpaces.messages.reconcile_failed')
-                    : t('admin.webSpaces.messages.reconcile_failed'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.reconcile_failed'));
         } finally {
             setBusy(null);
         }
@@ -323,11 +294,7 @@ export default function AdminWebSpaceDetailPage() {
             if (data?.data?.webspace) setSpace(data.data.webspace);
             toast.success(t('admin.webSpaces.messages.suspend_ok'));
         } catch (error) {
-            toast.error(
-                isAxiosError(error)
-                    ? error.response?.data?.message || t('admin.webSpaces.messages.suspend_failed')
-                    : t('admin.webSpaces.messages.suspend_failed'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.suspend_failed'));
         } finally {
             setBusy(null);
         }
@@ -340,11 +307,7 @@ export default function AdminWebSpaceDetailPage() {
             if (data?.data?.webspace) setSpace(data.data.webspace);
             toast.success(t('admin.webSpaces.messages.unsuspend_ok'));
         } catch (error) {
-            toast.error(
-                isAxiosError(error)
-                    ? error.response?.data?.message || t('admin.webSpaces.messages.unsuspend_failed')
-                    : t('admin.webSpaces.messages.unsuspend_failed'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.unsuspend_failed'));
         } finally {
             setBusy(null);
         }

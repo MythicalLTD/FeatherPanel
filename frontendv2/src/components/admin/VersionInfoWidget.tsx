@@ -36,6 +36,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { adminSettingsApi } from '@/lib/admin-settings-api';
 import { isDockerUpdateTriggerLikelyStartedError } from '@/lib/is-docker-update-connection-loss';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { toast } from 'sonner';
 
 const UPDATE_PROGRESS_STORAGE_KEY = 'featherpanel:update_in_progress';
@@ -155,7 +156,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                 return;
             }
 
-            toast.error(response.message || t('admin.settings.docker_update.failed'));
+            toast.error(getApiErrorMessageFromPayload(response, t, 'admin.settings.docker_update.failed'));
         } catch (error: unknown) {
             if (isDockerUpdateTriggerLikelyStartedError(error)) {
                 if (typeof window !== 'undefined') {
@@ -165,7 +166,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                 setShowUpdateModal(true);
                 return;
             }
-            toast.error(t('admin.settings.docker_update.failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.settings.docker_update.failed'));
         } finally {
             setIsUpdatingDocker(false);
         }

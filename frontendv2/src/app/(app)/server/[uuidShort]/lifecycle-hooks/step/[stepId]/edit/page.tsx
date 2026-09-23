@@ -38,6 +38,7 @@ import {
 import type { LifecycleHookStep, LifecycleHookType } from '@/types/server';
 import { parseLifecycleHookType } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 type HooksApi = {
     success: boolean;
@@ -203,7 +204,7 @@ export default function EditLifecycleHookStepPage() {
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message?: string }>;
-            toast.error(axiosError.response?.data?.message || t('lifecycleHooks.messages.stepUpdateFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'lifecycleHooks.messages.stepUpdateFailed'));
         } finally {
             setSaving(false);
         }

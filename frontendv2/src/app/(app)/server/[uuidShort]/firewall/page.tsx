@@ -44,6 +44,7 @@ import type {
 import { safeBack } from '@/lib/safe-back';
 import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function ServerFirewallPage() {
     const params = useParams();
@@ -209,7 +210,7 @@ export default function ServerFirewallPage() {
                     setRules((prev) => prev.map((r) => (r.id === currentRule.id ? data.data.data : r)));
                     setIsModalOpen(false);
                 } else {
-                    toast.error(data.message || t('serverFirewall.unknownError'));
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'serverFirewall.unknownError'));
                 }
             } else {
                 const { data } = await axios.post<{ success: boolean; data: { data: FirewallRule }; message?: string }>(
@@ -221,12 +222,12 @@ export default function ServerFirewallPage() {
                     setRules((prev) => [...prev, data.data.data]);
                     setIsModalOpen(false);
                 } else {
-                    toast.error(data.message || t('serverFirewall.unknownError'));
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'serverFirewall.unknownError'));
                 }
             }
         } catch (error) {
             console.error('Failed to save rule:', error);
-            toast.error(t('serverFirewall.unknownError'));
+            toast.error(getApiErrorMessage(error, t, 'serverFirewall.unknownError'));
         } finally {
             setSaving(false);
         }
@@ -252,7 +253,7 @@ export default function ServerFirewallPage() {
                 setDeleteDialogOpen(false);
                 setRuleToDelete(null);
             } else {
-                toast.error(data?.message || t('serverFirewall.unknownError'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverFirewall.unknownError'));
             }
         } catch (error) {
             console.error('Failed to delete rule:', error);
@@ -285,7 +286,7 @@ export default function ServerFirewallPage() {
                 return;
             }
 
-            toast.error(t('serverFirewall.unknownError'));
+            toast.error(getApiErrorMessage(error, t, 'serverFirewall.unknownError'));
         } finally {
             setDeleting(false);
         }

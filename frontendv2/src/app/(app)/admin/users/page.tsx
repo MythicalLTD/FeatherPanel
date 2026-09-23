@@ -19,6 +19,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import axios from 'axios';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
@@ -341,12 +342,12 @@ export default function UsersPage() {
                         );
                     }
                 } else {
-                    toast.error(data?.message || t('admin.users.messages.fetch_failed'));
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.messages.fetch_failed'));
                     setUsers([]);
                 }
             } catch (error) {
                 if (!axios.isCancel(error)) {
-                    toast.error(t('admin.users.messages.fetch_failed'));
+                    toast.error(getApiErrorMessage(error, t, 'admin.users.messages.fetch_failed'));
                 }
             } finally {
                 if (!controller.signal.aborted) {
@@ -386,13 +387,10 @@ export default function UsersPage() {
                 toast.success(t('admin.users.messages.deleted'));
                 setRefreshKey((prev) => prev + 1);
             } else {
-                toast.error(data?.message || t('admin.users.messages.delete_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.messages.delete_failed'));
             }
         } catch (error: unknown) {
-            const errorMessage =
-                (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                t('admin.users.messages.delete_failed');
-            toast.error(errorMessage);
+            toast.error(getApiErrorMessage(error, t, 'admin.users.messages.delete_failed'));
         }
     };
 
@@ -407,13 +405,10 @@ export default function UsersPage() {
                 toast.success(t('admin.users.messages.force_verify_email_success'));
                 setRefreshKey((prev) => prev + 1);
             } else {
-                toast.error(data?.message || t('admin.users.messages.force_verify_email_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.messages.force_verify_email_failed'));
             }
         } catch (error: unknown) {
-            const errorMessage =
-                (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                t('admin.users.messages.force_verify_email_failed');
-            toast.error(errorMessage);
+            toast.error(getApiErrorMessage(error, t, 'admin.users.messages.force_verify_email_failed'));
         }
     };
 
@@ -428,10 +423,10 @@ export default function UsersPage() {
             if (data?.success) {
                 toast.success(t('admin.users.clear_all_devices_success'));
             } else {
-                toast.error(data?.message || t('admin.users.clear_all_devices_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.clear_all_devices_failed'));
             }
-        } catch {
-            toast.error(t('admin.users.clear_all_devices_failed'));
+        } catch (error: unknown) {
+            toast.error(getApiErrorMessage(error, t, 'admin.users.clear_all_devices_failed'));
         } finally {
             setClearingAllDevices(false);
         }

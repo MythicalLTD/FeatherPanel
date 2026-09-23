@@ -24,6 +24,7 @@ import { ShieldCheck, ArrowRight } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import axios from 'axios';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useEffect } from 'react';
@@ -96,11 +97,11 @@ export default function VerifyTwoFactorForm() {
                     router.replace('/dashboard');
                 }, 1200);
             } else {
-                setError(response.data?.message || t('common.error'));
+                setError(getApiErrorMessageFromPayload(response.data, t, 'common.error'));
             }
         } catch (err: unknown) {
             const error = err as { response?: { data?: { message?: string } } };
-            setError(error.response?.data?.message || t('common.error'));
+            setError(getApiErrorMessage(error, t, 'common.error'));
         } finally {
             setLoading(false);
         }

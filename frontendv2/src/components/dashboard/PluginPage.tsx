@@ -41,7 +41,7 @@ interface PluginPageProps {
 export default function PluginPage({ context, serverUuid, vdsId, webspaceUuid }: PluginPageProps) {
     const { t } = useTranslation();
     const { settings } = useSettings();
-    const { theme } = useTheme();
+    const { theme, themePack } = useTheme();
     const pathname = usePathname();
     const router = useRouter();
     const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -85,7 +85,10 @@ export default function PluginPage({ context, serverUuid, vdsId, webspaceUuid }:
 
             const style = iframeDoc.createElement('style');
             style.id = 'featherpanel-theme-override';
-            style.textContent = getPluginIframeThemeOverrideCss(theme);
+            style.textContent = getPluginIframeThemeOverrideCss(
+                theme,
+                theme === 'dark' ? themePack?.tokens.dark : themePack?.tokens.light,
+            );
             if (iframeDoc.head) {
                 iframeDoc.head.appendChild(style);
             }
@@ -97,11 +100,11 @@ export default function PluginPage({ context, serverUuid, vdsId, webspaceUuid }:
     // Send theme to iframe via postMessage when it changes and inject styles
     useEffect(() => {
         if (iframeRef.current?.contentWindow && iframeReadyRef.current) {
-            iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+            iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, window.location.origin);
             injectThemeStyles();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [theme]);
+    }, [theme, themePack]);
 
     // Also listen for plugin ready signal
     useEffect(() => {
@@ -110,14 +113,17 @@ export default function PluginPage({ context, serverUuid, vdsId, webspaceUuid }:
                 iframeReadyRef.current = true;
                 // Send current theme when plugin signals it's ready
                 if (iframeRef.current?.contentWindow) {
-                    iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+                    iframeRef.current.contentWindow.postMessage(
+                        { type: 'featherpanel-theme', theme },
+                        window.location.origin,
+                    );
                 }
             }
         };
 
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
-    }, [theme]);
+    }, [theme, themePack]);
 
     const { server } = useServerPermissions(serverUuid || '');
     const serverSpellId = server?.spell_id || null;
@@ -344,7 +350,7 @@ export default function PluginPage({ context, serverUuid, vdsId, webspaceUuid }:
                         return;
                     }
 
-                    setIframeError('Cloudflare verification is still in progress. Please wait a moment and try again.');
+                    setIframeError(t('errors.plugin.cloudflare_challenge'));
                     setIframeLoading(false);
                     return;
                 }
@@ -360,7 +366,7 @@ export default function PluginPage({ context, serverUuid, vdsId, webspaceUuid }:
 
         // Send current theme to iframe on load
         if (iframeRef.current?.contentWindow) {
-            iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+            iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, window.location.origin);
         }
 
         // Inject theme styles directly
@@ -371,7 +377,7 @@ export default function PluginPage({ context, serverUuid, vdsId, webspaceUuid }:
     };
 
     const onIframeError = () => {
-        setIframeError('Failed to load content');
+        setIframeError(t('errors.plugin.failed_to_load'));
         setIframeLoading(false);
     };
 
@@ -401,7 +407,7 @@ export default function PluginPage({ context, serverUuid, vdsId, webspaceUuid }:
     if (error) {
         const isSpellRestriction =
             error.includes('not available for this server type') || error === t('errors.plugin.spell_restriction');
-        const isPluginNotFound = error === t('errors.plugin.not_found') || error === 'Plugin page not found';
+        const isPluginNotFound = error === t('errors.plugin.not_found');
 
         if (isPluginNotFound) {
             return (

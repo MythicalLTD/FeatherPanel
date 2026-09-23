@@ -16,8 +16,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -100,7 +101,7 @@ export function DiagnosticsTab({ nodeId, onOpenQuilldTab }: DiagnosticsTabProps)
     const loadDiagnostics = useCallback(async () => {
         const { data } = await axios.get(`/api/admin/web-nodes/${nodeId}/diagnostics`);
         if (!data?.success) {
-            throw new Error(data?.message || t('admin.webNodes.diagnostics.fetch_failed'));
+            throw new Error(getApiErrorMessageFromPayload(data, t, 'admin.webNodes.diagnostics.fetch_failed'));
         }
         setDiagnostics((data.data?.diagnostics || null) as DiagnosticsPayload | null);
     }, [nodeId, t]);
@@ -108,7 +109,7 @@ export function DiagnosticsTab({ nodeId, onOpenQuilldTab }: DiagnosticsTabProps)
     const loadLogFiles = useCallback(async () => {
         const { data } = await axios.get(`/api/admin/web-nodes/${nodeId}/system-logs`);
         if (!data?.success) {
-            throw new Error(data?.message || t('admin.webNodes.diagnostics.logs_list_failed'));
+            throw new Error(getApiErrorMessageFromPayload(data, t, 'admin.webNodes.diagnostics.logs_list_failed'));
         }
         const payload = data.data?.logs as { directory?: string; files?: LogFileEntry[] } | undefined;
         const files = payload?.files || [];
@@ -154,7 +155,7 @@ export function DiagnosticsTab({ nodeId, onOpenQuilldTab }: DiagnosticsTabProps)
                 { params: { lines: logLines } },
             );
             if (!data?.success) {
-                throw new Error(data?.message || t('admin.webNodes.diagnostics.logs_fetch_failed'));
+                throw new Error(getApiErrorMessageFromPayload(data, t, 'admin.webNodes.diagnostics.logs_fetch_failed'));
             }
             const log = data.data?.log as { content?: string } | undefined;
             setLogContent(log?.content ?? '');
@@ -162,9 +163,7 @@ export function DiagnosticsTab({ nodeId, onOpenQuilldTab }: DiagnosticsTabProps)
             const msg =
                 e instanceof Error
                     ? e.message
-                    : isAxiosError(e)
-                      ? e.response?.data?.message || e.message
-                      : t('admin.webNodes.diagnostics.logs_fetch_failed');
+                    : getApiErrorMessage(e, t, 'admin.webNodes.diagnostics.logs_fetch_failed');
             setLogsError(msg);
             setLogContent(null);
         } finally {
@@ -219,11 +218,7 @@ export function DiagnosticsTab({ nodeId, onOpenQuilldTab }: DiagnosticsTabProps)
             toast.success(t('admin.webNodes.diagnostics.self_test_refreshed'));
         } catch (e) {
             const msg =
-                e instanceof Error
-                    ? e.message
-                    : isAxiosError(e)
-                      ? e.response?.data?.message || e.message
-                      : t('admin.webNodes.diagnostics.fetch_failed');
+                e instanceof Error ? e.message : getApiErrorMessage(e, t, 'admin.webNodes.diagnostics.fetch_failed');
             toast.error(msg);
         }
     };

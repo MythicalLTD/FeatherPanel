@@ -31,6 +31,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { VmTemplatePickerSheet } from '@/components/admin/VmTemplatePickerSheet';
 import { VmIpPickerSheet } from '@/components/admin/VmIpPickerSheet';
 import { OwnerCreateForm } from '@/components/admin/OwnerCreateForm';
@@ -479,7 +480,7 @@ export default function VmInstancesCreatePage() {
             const creationId = res.data?.data?.creation_id;
 
             if (res.status === 202 && creationId) {
-                toast.loading(res.data?.message || 'Creation scheduled to queue…', { id: toastId });
+                toast.loading(t('admin.vmInstances.creating_clone'), { id: toastId });
                 setCreatingMessage(t('admin.vmInstances.creating_clone') ?? 'Cloning template…');
                 await pollCreationStatus(creationId, toastId);
                 return;
@@ -488,8 +489,7 @@ export default function VmInstancesCreatePage() {
             toast.success(t('admin.vmInstances.create_success') ?? 'VM instance created successfully', { id: toastId });
             router.push('/admin/vm-instances');
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg, { id: toastId });
+            toast.error(getApiErrorMessage(err, t, 'admin.vmInstances.errors.fetch_failed'), { id: toastId });
             setSubmitting(false);
             setCreatingMessage(null);
         }
@@ -518,8 +518,22 @@ export default function VmInstancesCreatePage() {
                 }
 
                 if (status === 'failed') {
-                    const err = res.data?.data?.error ?? 'Creation failed';
-                    toast.error(err, { id: toastId });
+                    const statusPayload = res.data?.data;
+                    toast.error(
+                        getApiErrorMessageFromPayload(
+                            {
+                                message:
+                                    typeof statusPayload?.error === 'string'
+                                        ? statusPayload.error
+                                        : statusPayload?.message,
+                                error_code:
+                                    typeof statusPayload?.error_code === 'string' ? statusPayload.error_code : null,
+                            },
+                            t,
+                            'common.error',
+                        ),
+                        { id: toastId },
+                    );
                     setSubmitting(false);
                     setCreatingMessage(null);
                     return;

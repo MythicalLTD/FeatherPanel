@@ -19,6 +19,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -194,10 +195,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
             fetchAllocations();
         } catch (error: unknown) {
             console.error('Error updating allocation:', error);
-            const errorMessage = axios.isAxiosError(error)
-                ? error.response?.data?.message
-                : t('admin.node.allocations.messages.update_failed');
-            toast.error(errorMessage || t('admin.node.allocations.messages.update_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node.allocations.messages.update_failed'));
         } finally {
             setSubmitting(false);
         }
@@ -210,10 +208,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
             fetchAllocations();
         } catch (error: unknown) {
             console.error('Error deleting allocation:', error);
-            const errorMessage = axios.isAxiosError(error)
-                ? error.response?.data?.message
-                : t('admin.node.allocations.messages.delete_failed');
-            toast.error(errorMessage || t('admin.node.allocations.messages.delete_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node.allocations.messages.delete_failed'));
         } finally {
             setDeleteConfirmId(null);
         }
@@ -227,10 +222,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
             fetchAllocations();
         } catch (error: unknown) {
             console.error('Error bulk deleting:', error);
-            const errorMessage = axios.isAxiosError(error)
-                ? error.response?.data?.message
-                : t('admin.node.allocations.messages.bulk_delete_failed');
-            toast.error(errorMessage || t('admin.node.allocations.messages.bulk_delete_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node.allocations.messages.bulk_delete_failed'));
         } finally {
             setBulkDeleteConfirm(false);
         }
@@ -245,10 +237,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
             fetchAllocations();
         } catch (error: unknown) {
             console.error('Error deleting unused:', error);
-            const errorMessage = axios.isAxiosError(error)
-                ? error.response?.data?.message
-                : t('admin.node.allocations.messages.delete_unused_failed');
-            toast.error(errorMessage || t('admin.node.allocations.messages.delete_unused_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node.allocations.messages.delete_unused_failed'));
         } finally {
             setDeleteUnusedConfirm(false);
         }
@@ -290,10 +279,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
             fetchAllocations();
         } catch (error: unknown) {
             console.error('Error updating allocation addresses:', error);
-            const errorMessage = axios.isAxiosError(error)
-                ? error.response?.data?.message
-                : t('admin.node.allocations.messages.bulk_address_failed');
-            toast.error(errorMessage || t('admin.node.allocations.messages.bulk_address_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node.allocations.messages.bulk_address_failed'));
         } finally {
             setSubmitting(false);
         }

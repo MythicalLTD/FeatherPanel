@@ -30,9 +30,9 @@ import { TrashList } from '../components/trash/TrashList';
 import { TrashActionToolbar } from '../components/trash/TrashActionToolbar';
 import { EmptyTrashDialog } from '../components/dialogs/EmptyTrashDialog';
 import { RestoreTrashDialog } from '../components/dialogs/RestoreTrashDialog';
-import axios from 'axios';
 import { ArrowLeft } from 'lucide-react';
 import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 export default function ServerTrashPage({ params }: { params: Promise<{ uuidShort: string }> }) {
     const { uuidShort } = use(params);
@@ -104,11 +104,7 @@ export default function ServerTrashPage({ params }: { params: Promise<{ uuidShor
             setRestoreOpen(false);
             await refresh();
         } catch (err) {
-            const message =
-                axios.isAxiosError(err) && err.response?.data?.message
-                    ? String(err.response.data.message)
-                    : t('files.trash.messages.restore_error');
-            toast.error(message);
+            toast.error(getApiErrorMessage(err, t, 'files.trash.messages.restore_error'));
         } finally {
             setBusy(false);
         }

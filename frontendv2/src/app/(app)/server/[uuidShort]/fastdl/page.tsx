@@ -35,6 +35,7 @@ import { isEnabled } from '@/lib/utils';
 import { copyToClipboard } from '@/lib/utils';
 import { safeBack } from '@/lib/safe-back';
 import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface FastDlConfig {
     enabled: boolean;
@@ -85,7 +86,7 @@ export default function ServerFastDlPage() {
                 setConfig(data.data);
                 setCustomDirectory(data.data.directory || 'fastdl');
             } else {
-                setError(data.error_message || t('serverFastDl.fetchError'));
+                setError(getApiErrorMessageFromPayload(data, t, 'serverFastDl.fetchError'));
             }
         } catch (err) {
             const axiosError = err as AxiosError<FastDlResponse>;
@@ -94,7 +95,7 @@ export default function ServerFastDlPage() {
                 setCustomDirectory('fastdl');
             } else {
                 console.error('Failed to fetch FastDL data:', err);
-                setError(axiosError.response?.data?.error_message || t('serverFastDl.fetchError'));
+                setError(getApiErrorMessage(axiosError, t, 'serverFastDl.fetchError'));
             }
         } finally {
             setLoading(false);
@@ -129,14 +130,14 @@ export default function ServerFastDlPage() {
                 toast.success(t('serverFastDl.enableSuccess'));
                 await loadStatus();
             } else {
-                const message = data.error_message || t('serverFastDl.enableError');
+                const message = getApiErrorMessageFromPayload(data, t, 'serverFastDl.enableError');
                 setError(message);
                 toast.error(message);
             }
         } catch (err) {
             const axiosError = err as AxiosError<FastDlResponse>;
             console.error('Failed to enable FastDL:', err);
-            const message = axiosError.response?.data?.error_message || t('serverFastDl.enableError');
+            const message = getApiErrorMessage(axiosError, t, 'serverFastDl.enableError');
             setError(message);
             toast.error(message);
         } finally {
@@ -157,14 +158,14 @@ export default function ServerFastDlPage() {
                 toast.success(t('serverFastDl.disableSuccess'));
                 await loadStatus();
             } else {
-                const message = data.error_message || t('serverFastDl.disableError');
+                const message = getApiErrorMessageFromPayload(data, t, 'serverFastDl.disableError');
                 setError(message);
                 toast.error(message);
             }
         } catch (err) {
             const axiosError = err as AxiosError<FastDlResponse>;
             console.error('Failed to disable FastDL:', err);
-            const message = axiosError.response?.data?.error_message || t('serverFastDl.disableError');
+            const message = getApiErrorMessage(axiosError, t, 'serverFastDl.disableError');
             setError(message);
             toast.error(message);
         } finally {

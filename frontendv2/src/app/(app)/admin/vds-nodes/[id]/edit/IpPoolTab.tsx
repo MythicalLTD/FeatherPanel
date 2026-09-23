@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -27,6 +27,7 @@ import { Label } from '@/components/ui/label';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { Plus, Trash2, Search, RefreshCw, Network, Star, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { TabBlankState, TabHintCard, TabTableShell, TabToolbar } from './TabPrimitives';
 
 interface VmIp {
@@ -153,11 +154,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
             setCreateErrors({});
             loadIps();
         } catch (error) {
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.vdsNodes.ips.add_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.ips.add_failed'));
         } finally {
             setCreating(false);
         }
@@ -265,11 +262,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
             setEditErrors({});
             loadIps();
         } catch (error) {
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.vdsNodes.ips.update_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.ips.update_failed'));
         } finally {
             setEditing(false);
         }
@@ -281,11 +274,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
             toast.success(t('admin.vdsNodes.ips.delete_success'));
             loadIps();
         } catch (error) {
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.vdsNodes.ips.delete_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.ips.delete_failed'));
         } finally {
             setDeleteConfirmId(null);
         }
@@ -298,11 +287,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
             toast.success(t('admin.vdsNodes.ips.primary_success'));
             loadIps();
         } catch (error) {
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.vdsNodes.ips.primary_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.ips.primary_failed'));
         } finally {
             setSetPrimaryLoading(null);
         }

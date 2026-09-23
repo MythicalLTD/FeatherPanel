@@ -24,6 +24,7 @@ import { Input } from '@/components/featherui/Input';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { authApi } from '@/lib/api/auth';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import {
     isQrChallengeGoneError,
     qrErrorMessage,
@@ -104,7 +105,9 @@ function LoginDeviceContent() {
             try {
                 const response = await authApi.qrGetByCode(formatted);
                 if (!response.success || !response.data) {
-                    throw new Error(response.message || t('account.loginDevice.lookupFailed'));
+                    setError(getApiErrorMessageFromPayload(response, t, 'account.loginDevice.lookupFailed'));
+                    setPayload(null);
+                    return;
                 }
                 setPayload(response.data as ChallengeDetails);
             } catch (err: unknown) {
@@ -117,10 +120,10 @@ function LoginDeviceContent() {
                     if (isQrChallengeGoneError(err)) {
                         setError(t('auth.qr.expiredDescription'));
                     } else {
-                        setError(err.response?.data?.message || t('account.loginDevice.lookupFailed'));
+                        setError(getApiErrorMessage(err, t, 'account.loginDevice.lookupFailed'));
                     }
                 } else {
-                    setError(err instanceof Error ? err.message : t('account.loginDevice.lookupFailed'));
+                    setError(getApiErrorMessage(err, t, 'account.loginDevice.lookupFailed'));
                 }
                 setPayload(null);
             } finally {
@@ -167,7 +170,9 @@ function LoginDeviceContent() {
                     markExpired();
                     return;
                 }
-                throw new Error(response.message || t('account.loginDevice.actionFailed'));
+                setError(getApiErrorMessageFromPayload(response, t, 'account.loginDevice.actionFailed'));
+                setSubmitting(false);
+                return;
             }
             setOutcome('approved');
         } catch (err: unknown) {
@@ -175,7 +180,7 @@ function LoginDeviceContent() {
                 markExpired();
                 return;
             }
-            setError(qrErrorMessage(err, t('account.loginDevice.actionFailed')));
+            setError(qrErrorMessage(err, t, 'account.loginDevice.actionFailed'));
             setSubmitting(false);
         }
     };
@@ -194,7 +199,9 @@ function LoginDeviceContent() {
                     markExpired();
                     return;
                 }
-                throw new Error(response.message || t('account.loginDevice.actionFailed'));
+                setError(getApiErrorMessageFromPayload(response, t, 'account.loginDevice.actionFailed'));
+                setSubmitting(false);
+                return;
             }
             setOutcome('denied');
         } catch (err: unknown) {
@@ -202,7 +209,7 @@ function LoginDeviceContent() {
                 markExpired();
                 return;
             }
-            setError(qrErrorMessage(err, t('account.loginDevice.actionFailed')));
+            setError(qrErrorMessage(err, t, 'account.loginDevice.actionFailed'));
             setSubmitting(false);
         }
     };
