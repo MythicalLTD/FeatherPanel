@@ -4,7 +4,7 @@ on: [push, pull_request]
 jobs:
   build:
     name: Frontend Build
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       contents: read
     strategy:
@@ -16,7 +16,7 @@ jobs:
         working-directory: frontendv2
     steps:
       - name: Code Checkout
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
         with:
