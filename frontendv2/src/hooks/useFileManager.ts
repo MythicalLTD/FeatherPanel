@@ -117,8 +117,9 @@ export function useFileManager(serverUuid: string) {
             console.error(err);
 
             if (err instanceof Error && err.message === 'Request timeout') {
-                setError(t('files.messages.request_timed_out'));
-                toast.error(t('files.messages.load_timeout_retry'));
+                const message = t('errors.codes.REQUEST_TIMEOUT');
+                setError(message);
+                toast.error(message);
             } else if (getApiErrorCode(err) === 'WINGS_CONNECTION_UNAVAILABLE') {
                 const message = getApiErrorMessage(err, t, 'files.messages.wings_connection_unavailable');
                 setError(message);
@@ -217,8 +218,8 @@ export function useFileManager(serverUuid: string) {
             await filesApi.deletePullFile(serverUuid, id);
             toast.success(t('files.messages.download_cancelled'));
             refreshPulls();
-        } catch {
-            toast.error(t('files.messages.cancel_download_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.messages.cancel_download_failed'));
         }
     };
 

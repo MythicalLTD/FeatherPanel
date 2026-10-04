@@ -37,6 +37,14 @@ import type { Database, TaskCreateRequest } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { BackupTaskFields } from '@/components/server/backup/BackupTaskFields';
 import { buildBackupPayload, emptyBackupFields, type BackupFields } from '@/components/server/backup/backup-payload';
+import { ContainerShellTaskFields } from '@/components/server/schedule/ContainerShellTaskFields';
+import {
+    CONTAINER_SHELL_ACTION,
+    buildContainerShellPayload,
+    emptyContainerShellFields,
+    validateContainerShellFields,
+    type ContainerShellFields,
+} from '@/components/server/schedule/container-shell-payload';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
@@ -58,16 +66,23 @@ export default function CreateTaskPage() {
         continue_on_failure: 0,
     });
     const [backup, setBackup] = React.useState<BackupFields>(emptyBackupFields());
+    const [containerShell, setContainerShell] = React.useState<ContainerShellFields>(emptyContainerShellFields());
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-tasks-new');
 
-    const actionOptions = React.useMemo(
-        () => [
+    // Container Shell runs arbitrary commands in the container: it needs the admin switch and console access.
+    const containerShellAvailable =
+        settings?.server_lifecycle_hooks_container_shell_enabled === 'true' && hasPermission('control.console');
+    const actionOptions = React.useMemo(() => {
+        const options = [
             { id: 'power', name: t('serverTasks.actionPower') },
             { id: 'backup', name: t('serverTasks.actionBackup') },
             { id: 'command', name: t('serverTasks.actionCommand') },
-        ],
-        [t],
-    );
+        ];
+        if (containerShellAvailable) {
+            options.push({ id: CONTAINER_SHELL_ACTION, name: t('serverTasks.actionContainerShell') });
+        }
+        return options;
+    }, [t, containerShellAvailable]);
 
     React.useEffect(() => {
         fetchWidgets();
@@ -108,6 +123,20 @@ export default function CreateTaskPage() {
                 return;
             }
             payload = built;
+        }
+        if (form.action === CONTAINER_SHELL_ACTION) {
+            const validation = validateContainerShellFields(containerShell);
+            if (validation !== 'ok') {
+                toast.error(
+                    validation === 'command_required'
+                        ? t('serverTasks.containerShellErrorCommandRequired')
+                        : validation === 'command_too_long'
+                          ? t('serverTasks.containerShellErrorCommandTooLong')
+                          : t('serverTasks.containerShellErrorTimeout'),
+                );
+                return;
+            }
+            payload = buildContainerShellPayload(containerShell);
         }
         setSaving(true);
         try {
@@ -256,6 +285,12 @@ export default function CreateTaskPage() {
                             fields={backup}
                             setFields={setBackup}
                             databases={databases}
+                            disabled={saving}
+                        />
+                    ) : form.action === CONTAINER_SHELL_ACTION ? (
+                        <ContainerShellTaskFields
+                            fields={containerShell}
+                            setFields={setContainerShell}
                             disabled={saving}
                         />
                     ) : (

@@ -120,6 +120,7 @@ const HashesTab = () => {
             }
         } catch (error: unknown) {
             console.error('Failed to fetch hash statistics', error);
+            toast.error(getApiErrorMessage(error, t, 'common.error'));
         }
     };
 

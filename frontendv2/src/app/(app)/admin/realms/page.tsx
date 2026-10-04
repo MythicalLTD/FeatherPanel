@@ -125,7 +125,7 @@ export default function RealmsPage() {
                 });
             } catch (error) {
                 console.error('Error fetching realms:', error);
-                toast.error(t('admin.realms.messages.fetch_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.realms.messages.fetch_failed'));
             } finally {
                 setLoading(false);
             }
@@ -181,7 +181,7 @@ export default function RealmsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error deleting realm:', error);
-            toast.error(t('admin.realms.messages.delete_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.realms.messages.delete_failed'));
         }
     };
 

@@ -78,7 +78,7 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
                 setRolePermissions(data.data.permissions || []);
             } catch (error) {
                 console.error('Error fetching permissions:', error);
-                toast.error(t('admin.roles.messages.permission_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.roles.messages.permission_failed'));
             } finally {
                 setLoadingPermissions(false);
             }
@@ -105,7 +105,7 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
                 await fetchPermissions(roleId);
             } catch (error) {
                 console.error('Error loading role:', error);
-                toast.error(t('admin.roles.messages.fetch_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.roles.messages.fetch_failed'));
                 router.push('/admin/roles');
             } finally {
                 setLoading(false);

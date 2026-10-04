@@ -124,7 +124,7 @@ export default function WebPlatesPage() {
             });
         } catch (error) {
             console.error(error);
-            toast.error(t('admin.webPlates.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.webPlates.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }

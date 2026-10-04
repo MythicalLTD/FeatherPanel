@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useState, useEffect } from 'react';
 import {
     Dialog,
@@ -61,8 +62,8 @@ export function PermissionsDialog({ open, onOpenChange, uuid, root, files, onSuc
             toast.success(t('files.dialogs.permissions.success'), { id: toastId });
             onSuccess();
             onOpenChange(false);
-        } catch {
-            toast.error(t('files.dialogs.permissions.error'), { id: toastId });
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.dialogs.permissions.error'), { id: toastId });
         } finally {
             setLoading(false);
         }

@@ -136,7 +136,7 @@ export default function CreateTicketPage() {
                 setPriorities(prios);
             } catch (error: unknown) {
                 console.error('Failed to fetch form data', error);
-                toast.error(t('tickets.failedToLoadCategories'));
+                toast.error(getApiErrorMessage(error, t, 'tickets.failedToLoadCategories'));
             } finally {
                 setIsLoading(false);
             }
@@ -228,6 +228,7 @@ export default function CreateTicketPage() {
                             });
                         } catch (err: unknown) {
                             console.error('Failed to upload attachment', err);
+                            toast.error(getApiErrorMessage(err, t, 'tickets.uploadError'));
                         }
                     }
                 }

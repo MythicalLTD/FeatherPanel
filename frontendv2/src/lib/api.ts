@@ -194,9 +194,18 @@ export function getFeatherpanelApiErrorMessage(error: unknown): string | null {
     if (!d || typeof d !== 'object') {
         return null;
     }
-    const body = d as FeatherpanelApiErrorBody;
+    const body = d as FeatherpanelApiErrorBody & {
+        errors?: Array<{ detail?: string | null; code?: string | null } | null> | null;
+    };
     const msg = body.message ?? body.error_message;
-    return typeof msg === 'string' && msg.trim() !== '' ? msg : null;
+    if (typeof msg === 'string' && msg.trim() !== '') {
+        return msg.trim();
+    }
+    const detail = body.errors?.[0]?.detail;
+    if (typeof detail === 'string' && detail.trim() !== '') {
+        return detail.trim();
+    }
+    return null;
 }
 
 export function getFeatherpanelApiErrorCode(error: unknown): string | null {

@@ -14,6 +14,17 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import axios from 'axios';
+import { getFeatherpanelApiErrorMessage } from '@/lib/api';
+
+function apiFailureMessage(error: unknown, fallback: string): string {
+    return getFeatherpanelApiErrorMessage(error) || (error instanceof Error ? error.message : '') || fallback;
+}
+
+function payloadFailureMessage(payload: unknown, fallback: string): string {
+    const record = payload && typeof payload === 'object' ? (payload as { message?: unknown; error_message?: unknown }) : null;
+    const msg = record?.message ?? record?.error_message;
+    return typeof msg === 'string' && msg.trim() !== '' ? msg.trim() : fallback;
+}
 
 export interface ChatMessage {
     role: 'user' | 'assistant';
@@ -204,11 +215,10 @@ export async function sendChatMessage(
             };
         }
 
-        throw new Error(response.data.error_message || 'Failed to get response from AI');
+        throw new Error(payloadFailureMessage(response.data, 'Failed to get response from AI'));
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            const errorMessage = error.response?.data?.error_message || error.message || 'Failed to send message';
-            throw new Error(errorMessage);
+            throw new Error(apiFailureMessage(error, 'Failed to send message'));
         }
         throw error;
     }
@@ -251,11 +261,10 @@ export async function getConversationMessages(conversationId: number): Promise<{
             return response.data.data;
         }
 
-        throw new Error('Failed to get conversation messages');
+        throw new Error(payloadFailureMessage(response.data, 'Failed to get conversation messages'));
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            const errorMessage = error.response?.data?.error_message || error.message || 'Failed to get messages';
-            throw new Error(errorMessage);
+            throw new Error(apiFailureMessage(error, 'Failed to get messages'));
         }
         throw error;
     }
@@ -269,9 +278,7 @@ export async function deleteConversation(conversationId: number): Promise<void> 
         await axios.delete(`/api/user/chatbot/conversations/${conversationId}`);
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            const errorMessage =
-                error.response?.data?.error_message || error.message || 'Failed to delete conversation';
-            throw new Error(errorMessage);
+            throw new Error(apiFailureMessage(error, 'Failed to delete conversation'));
         }
         throw error;
     }
@@ -322,11 +329,10 @@ export async function sendVdsChatMessage(
             };
         }
 
-        throw new Error(response.data.error_message || 'Failed to get response from VDS AI');
+        throw new Error(payloadFailureMessage(response.data, 'Failed to get response from VDS AI'));
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            const errorMessage = error.response?.data?.error_message || error.message || 'Failed to send message';
-            throw new Error(errorMessage);
+            throw new Error(apiFailureMessage(error, 'Failed to send message'));
         }
         throw error;
     }
@@ -369,11 +375,10 @@ export async function getVdsConversationMessages(conversationId: number): Promis
             return response.data.data;
         }
 
-        throw new Error('Failed to get VDS conversation messages');
+        throw new Error(payloadFailureMessage(response.data, 'Failed to get VDS conversation messages'));
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            const errorMessage = error.response?.data?.error_message || error.message || 'Failed to get messages';
-            throw new Error(errorMessage);
+            throw new Error(apiFailureMessage(error, 'Failed to get messages'));
         }
         throw error;
     }
@@ -387,9 +392,7 @@ export async function deleteVdsConversation(conversationId: number): Promise<voi
         await axios.delete(`/api/user/vds-chatbot/conversations/${conversationId}`);
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            const errorMessage =
-                error.response?.data?.error_message || error.message || 'Failed to delete VDS conversation';
-            throw new Error(errorMessage);
+            throw new Error(apiFailureMessage(error, 'Failed to delete VDS conversation'));
         }
         throw error;
     }

@@ -123,8 +123,8 @@ export default function FeatherPanelPremiumPage() {
                 } else {
                     toast.error(t('admin.featherpanel_premium.load_failed'));
                 }
-            } catch {
-                toast.error(t('admin.featherpanel_premium.load_failed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'admin.featherpanel_premium.load_failed'));
             } finally {
                 setLoading(false);
                 setRefreshing(false);
@@ -160,7 +160,7 @@ export default function FeatherPanelPremiumPage() {
         } catch (err: unknown) {
             const e = err as { response?: { data?: { message?: string; error_code?: string } } };
             if (e?.response?.data?.error_code === 'PREMIUM_REQUIRED') {
-                toast.error(t('admin.featherpanel_premium.premium_required'));
+                toast.error(getApiErrorMessage(err, t, 'admin.featherpanel_premium.premium_required'));
                 void load(true);
             } else {
                 toast.error(getApiErrorMessage(e, t, 'admin.featherpanel_premium.save_failed'));

@@ -159,6 +159,7 @@ export default function SpellsPage() {
             setInstalledSpellIds(spells.map((s: { name: string }) => s.name));
         } catch (error) {
             console.error('Failed to fetch installed spells:', error);
+            toast.error(getApiErrorMessage(error, t, 'admin.marketplace.spells.toasts.fetch_failed'));
         }
     }, []);
 

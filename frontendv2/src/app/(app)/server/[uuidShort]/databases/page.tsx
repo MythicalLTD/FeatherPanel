@@ -338,8 +338,8 @@ export default function ServerDatabasesPage() {
             } else {
                 toast.error(getApiErrorMessageFromPayload(data, t, 'serverDatabases.failedToOpenPhpMyAdmin'));
             }
-        } catch {
-            toast.error(t('serverDatabases.failedToOpenPhpMyAdmin'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'serverDatabases.failedToOpenPhpMyAdmin'));
         }
     };
 
@@ -858,8 +858,8 @@ export default function ServerDatabasesPage() {
                                 try {
                                     await bulkAction.action();
                                     setBulkConfirmOpen(false);
-                                } catch {
-                                    toast.error(t('serverDatabases.bulkDeleteFailed'));
+                                } catch (error) {
+                                    toast.error(getApiErrorMessage(error, t, 'serverDatabases.bulkDeleteFailed'));
                                 } finally {
                                     setActionLoading(false);
                                 }

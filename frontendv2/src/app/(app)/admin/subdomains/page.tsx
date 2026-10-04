@@ -250,7 +250,7 @@ export default function AdminSubdomainsPage() {
             });
         } catch (error) {
             console.error('Error fetching domains:', error);
-            toast.error(t('admin.subdomains.messages.fetch_domains_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.subdomains.messages.fetch_domains_failed'));
         } finally {
             setLoading(false);
         }
@@ -277,7 +277,7 @@ export default function AdminSubdomainsPage() {
             setSpells(spellsData || []);
         } catch (error) {
             console.error('Error fetching initial data:', error);
-            toast.error(t('admin.subdomains.messages.load_settings_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.subdomains.messages.load_settings_failed'));
         }
     }, [t]);
 
@@ -327,7 +327,7 @@ export default function AdminSubdomainsPage() {
             fetchInitialData();
         } catch (error) {
             console.error('Error saving settings:', error);
-            toast.error(t('admin.subdomains.messages.save_settings_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.subdomains.messages.save_settings_failed'));
         } finally {
             setSavingSettings(false);
         }
@@ -376,7 +376,7 @@ export default function AdminSubdomainsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error deleting domain:', error);
-            toast.error(t('admin.subdomains.messages.domain_delete_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.subdomains.messages.domain_delete_failed'));
         }
     };
 
@@ -415,7 +415,7 @@ export default function AdminSubdomainsPage() {
             setManageOpen(true);
         } catch (error) {
             console.error('Error fetching domain details:', error);
-            toast.error(t('admin.subdomains.messages.domain_details_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.subdomains.messages.domain_details_failed'));
         }
     };
 
@@ -431,7 +431,7 @@ export default function AdminSubdomainsPage() {
             setDomainEntries(entries || []);
         } catch (error) {
             console.error('Error fetching subdomain list:', error);
-            toast.error(t('admin.subdomains.messages.subdomain_list_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.subdomains.messages.subdomain_list_failed'));
         }
     };
 

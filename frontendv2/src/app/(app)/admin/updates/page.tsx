@@ -126,8 +126,8 @@ export default function AdminUpdatesPage() {
         try {
             const response = await axios.get('/api/admin/nodes?limit=100');
             setNodes(response.data?.data?.nodes || []);
-        } catch {
-            toast.error(t('admin_updates.wings.failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin_updates.wings.failed'));
             setNodes([]);
         } finally {
             setNodesLoading(false);
@@ -410,8 +410,8 @@ export default function AdminUpdatesPage() {
                 checkPluginUpdatesFromStore(refreshed),
                 refreshDashboard(),
             ]);
-        } catch {
-            toast.error(t('admin_updates.messages.bulk_failed'), { id: toastId });
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin_updates.messages.bulk_failed'), { id: toastId });
         } finally {
             setIsBulkUpdating(false);
         }

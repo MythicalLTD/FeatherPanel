@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -95,7 +95,7 @@ export default function DatabaseManagementPage() {
             }
         } catch (error) {
             console.error(error);
-            toast.error(t('admin.database_management.toasts.failed_status'));
+            toast.error(getApiErrorMessage(error, t, 'admin.database_management.toasts.failed_status'));
         } finally {
             setLoading(false);
         }
@@ -112,10 +112,11 @@ export default function DatabaseManagementPage() {
             }
         } catch (error) {
             console.error(error);
+            toast.error(getApiErrorMessage(error, t, 'admin.database_management.toasts.failed_status'));
         } finally {
             setPmaStatusLoading(false);
         }
-    }, []);
+    }, [t]);
 
     const runMigrations = async () => {
         setMigRunning(true);
@@ -133,7 +134,7 @@ export default function DatabaseManagementPage() {
             }
         } catch (error) {
             setMigOutput(`Error: ${error}`);
-            toast.error(t('admin.database_management.migrations.failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.database_management.migrations.failed'));
         } finally {
             setMigRunning(false);
         }
@@ -161,7 +162,7 @@ export default function DatabaseManagementPage() {
             }
         } catch (error) {
             console.error(error);
-            toast.error(t('admin.database_management.toasts.failed_install'));
+            toast.error(getApiErrorMessage(error, t, 'admin.database_management.toasts.failed_install'));
         } finally {
             setPmaInstalling(false);
         }
@@ -187,7 +188,7 @@ export default function DatabaseManagementPage() {
             }
         } catch (error) {
             console.error(error);
-            toast.error(t('admin.database_management.toasts.failed_delete'));
+            toast.error(getApiErrorMessage(error, t, 'admin.database_management.toasts.failed_delete'));
         } finally {
             setPmaDeleting(false);
         }

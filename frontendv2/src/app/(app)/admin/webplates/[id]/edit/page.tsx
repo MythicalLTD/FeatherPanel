@@ -77,7 +77,7 @@ export default function EditWebPlatePage() {
                 setForm(webPlateToForm(plate));
             } catch (error) {
                 console.error(error);
-                toast.error(t('admin.webPlates.messages.load_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.webPlates.messages.load_failed'));
                 router.push('/admin/webplates');
             } finally {
                 setLoading(false);

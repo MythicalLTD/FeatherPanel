@@ -165,8 +165,8 @@ export default function SettingsTab() {
                 if (res.success && Array.isArray(res.data?.passkeys)) {
                     setPasskeys(res.data.passkeys);
                 }
-            } catch {
-                toast.error(t('auth.passkey.loadFailed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'auth.passkey.loadFailed'));
             } finally {
                 setPasskeysLoading(false);
             }
@@ -311,7 +311,7 @@ export default function SettingsTab() {
             }
         } catch (error) {
             console.error('Error unlinking Discord:', error);
-            toast.error(t('account.discordUnlinkFailed'));
+            toast.error(getApiErrorMessage(error, t, 'account.discordUnlinkFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -341,7 +341,7 @@ export default function SettingsTab() {
             }
         } catch (error) {
             console.error('Error unlinking OIDC:', error);
-            toast.error(t('account.oidcUnlinkFailed'));
+            toast.error(getApiErrorMessage(error, t, 'account.oidcUnlinkFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -387,7 +387,7 @@ export default function SettingsTab() {
             }
         } catch (error) {
             console.error('Error unlinking LDAP:', error);
-            toast.error(t('account.ldapUnlinkFailed'));
+            toast.error(getApiErrorMessage(error, t, 'account.ldapUnlinkFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -611,8 +611,8 @@ export default function SettingsTab() {
             } else {
                 toast.error(getApiErrorMessageFromPayload(vr, t, 'auth.passkey.registerFailed'));
             }
-        } catch {
-            toast.error(t('auth.passkey.registerFailed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'auth.passkey.registerFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -643,8 +643,8 @@ export default function SettingsTab() {
             } else {
                 toast.error(getApiErrorMessageFromPayload(res, t, 'auth.passkey.renameFailed'));
             }
-        } catch {
-            toast.error(t('auth.passkey.renameFailed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'auth.passkey.renameFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -660,8 +660,8 @@ export default function SettingsTab() {
             } else {
                 toast.error(getApiErrorMessageFromPayload(res, t, 'auth.passkey.removeFailed'));
             }
-        } catch {
-            toast.error(t('auth.passkey.removeFailed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'auth.passkey.removeFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -674,7 +674,7 @@ export default function SettingsTab() {
             router.push('/auth/login');
         } catch (error) {
             console.error('Error during logout:', error);
-            toast.error(t('account.logoutFailed'));
+            toast.error(getApiErrorMessage(error, t, 'account.logoutFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -720,8 +720,8 @@ export default function SettingsTab() {
             } else {
                 toast.error(t('account.timezone.saveFailed'));
             }
-        } catch {
-            toast.error(t('account.timezone.saveFailed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'account.timezone.saveFailed'));
         } finally {
             setSavingTimezone(false);
         }

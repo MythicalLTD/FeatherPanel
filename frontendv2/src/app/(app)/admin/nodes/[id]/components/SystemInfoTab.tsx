@@ -13,6 +13,8 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -54,6 +56,7 @@ export function SystemInfoTab({ nodeId, loading, data, error, onRefresh }: Syste
             }
         } catch (e) {
             console.error('Failed to fetch version status', e);
+            toast.error(getApiErrorMessage(e, t, 'common.error'));
         } finally {
             setVersionLoading(false);
         }

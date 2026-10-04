@@ -146,7 +146,7 @@ export function PanelDebugApiSection() {
             }
         } catch (error) {
             if (error instanceof SyntaxError) {
-                toast.error(t('globalSearch.debug.apiInvalidJson'));
+                toast.error(getApiErrorMessage(error, t, 'globalSearch.debug.apiInvalidJson'));
                 return;
             }
             toast.error(getApiErrorMessage(error, t, 'globalSearch.debug.apiRequestFailed'));

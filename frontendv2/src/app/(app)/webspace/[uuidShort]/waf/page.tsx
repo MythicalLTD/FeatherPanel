@@ -57,7 +57,7 @@ export default function WebSpaceWafPage() {
             });
         } catch (error) {
             console.error(error);
-            toast.error(t('webSpaces.settings.loadFailed'));
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.loadFailed'));
         } finally {
             setLoading(false);
         }

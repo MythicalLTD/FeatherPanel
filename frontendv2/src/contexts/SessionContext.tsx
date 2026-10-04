@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { createContext, useContext, useEffect, useLayoutEffect, useState, ReactNode, useCallback, useRef } from 'react';
 import type { AxiosError } from 'axios';
 import { useRouter } from 'next/navigation';
-import api from '@/lib/api';
+import api, { getFeatherpanelApiErrorMessage } from '@/lib/api';
 import PermissionsClass from '@/lib/permissions';
 import { getCachedPluginPublicPages } from '@/hooks/usePluginPublicPages';
 import { isCloudflareChallengeAxios, isCloudflareChallengeResponseData } from '@/lib/cloudflare-challenge';
@@ -313,11 +313,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             try {
                 await api.delete('/user/auth/logout');
             } catch (error) {
-                console.error('Error calling logout endpoint:', error);
+                console.error('Error calling logout endpoint:', getFeatherpanelApiErrorMessage(error) || error);
             }
             clearSession();
         } catch (error) {
-            console.error('Error during logout:', error);
+            console.error('Error during logout:', getFeatherpanelApiErrorMessage(error) || error);
         } finally {
             router.push('/auth/logout');
         }

@@ -146,7 +146,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
             }
         } catch (error) {
             console.error('Error fetching allocations:', error);
-            toast.error(t('admin.node.allocations.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node.allocations.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }

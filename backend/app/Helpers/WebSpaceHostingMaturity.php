@@ -101,7 +101,7 @@ class WebSpaceHostingMaturity
             self::item('custom_ssl_upload', 'ready'),
             self::item('dns_hosting', 'ready'),
             self::item('builtin_mail', $mailServerReady ? 'ready' : 'needs_mailserver'),
-            self::item('webmail', Roundcube::isInstalled() ? 'partial' : 'needs_setup'),
+            self::item('webmail', self::assessWebmailStatus()),
             self::item('cpu_memory_limits', 'ready'),
             self::item('wordpress_manager', 'ready'),
             self::item('analytics', 'ready'),
@@ -366,6 +366,33 @@ class WebSpaceHostingMaturity
     /**
      * @return array{id: string, status: string}
      */
+    /**
+     * ready: panel Roundcube installed, or any mail host has webmail_url + SSO secret.
+     * partial: node webmail_url set but SSO secret missing.
+     * needs_setup: neither path available.
+     */
+    public static function assessWebmailStatus(): string
+    {
+        if (Roundcube::isInstalled()) {
+            return 'ready';
+        }
+
+        $hasUrlWithoutSecret = false;
+        foreach (MailHost::listAll() as $host) {
+            $url = trim((string) ($host['webmail_url'] ?? ''));
+            if ($url === '') {
+                continue;
+            }
+            $secret = trim((string) ($host['webmail_sso_secret'] ?? ''));
+            if ($secret !== '') {
+                return 'ready';
+            }
+            $hasUrlWithoutSecret = true;
+        }
+
+        return $hasUrlWithoutSecret ? 'partial' : 'needs_setup';
+    }
+
     private static function item(string $id, string $status): array
     {
         return ['id' => $id, 'status' => $status];

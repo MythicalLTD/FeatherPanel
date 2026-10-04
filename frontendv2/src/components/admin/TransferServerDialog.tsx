@@ -132,8 +132,8 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
             });
             const list = (data?.data?.nodes || []) as ApiNode[];
             setNodes(list.filter((n) => n.id !== server.node_id));
-        } catch {
-            toast.error(t('admin.servers.transfer.fetch_nodes_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.transfer.fetch_nodes_failed'));
         } finally {
             setLoadingNodes(false);
         }
@@ -165,8 +165,8 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                 },
             });
             setAllocations(data.data.allocations || []);
-        } catch {
-            toast.error(t('admin.servers.transfer.fetch_allocations_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.transfer.fetch_allocations_failed'));
         } finally {
             setLoadingAllocations(false);
         }

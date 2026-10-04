@@ -249,7 +249,7 @@ export default function VmInstanceEditPage() {
                     }
                 }
             })
-            .catch(() => toast.error(t('admin.vmInstances.errors.fetch_failed')))
+            .catch((error) => toast.error(getApiErrorMessage(error, t, 'admin.vmInstances.errors.fetch_failed')))
             .finally(() => setLoading(false));
     }, [id, router, t]);
 
@@ -351,8 +351,8 @@ export default function VmInstanceEditPage() {
             if (data.data?.pagination) {
                 setOwnerPagination((prev) => ({ ...prev, ...data.data.pagination }));
             }
-        } catch {
-            toast.error(t('admin.vmInstances.errors.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.vmInstances.errors.fetch_failed'));
         }
     }, [ownerSearch, ownerPagination.current_page, ownerPagination.per_page, t]);
 

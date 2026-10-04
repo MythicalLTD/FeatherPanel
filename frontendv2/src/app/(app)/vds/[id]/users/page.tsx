@@ -80,7 +80,7 @@ export default function VdsSubusersPage() {
             }
         } catch (error) {
             if (isAxiosError(error) && error.response?.status === 403) {
-                toast.error(t('vds.subusers.owner_only'));
+                toast.error(getApiErrorMessage(error, t, 'vds.subusers.owner_only'));
                 router.push(`/vds/${id}`);
                 return;
             }

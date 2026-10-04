@@ -573,7 +573,9 @@ export const webspaceFilesApi = {
             );
             const uploadUrl = signed.data.data?.upload_url;
             if (!uploadUrl) {
-                throw new Error('Failed to get upload URL');
+                const payloadMessage =
+                    (typeof signed.data.message === 'string' && signed.data.message.trim()) || '';
+                throw new Error(payloadMessage || 'Failed to get upload URL');
             }
             const formData = new FormData();
             formData.append('files', file);

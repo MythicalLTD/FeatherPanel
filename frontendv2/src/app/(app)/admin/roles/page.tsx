@@ -153,7 +153,7 @@ export default function RolesPage() {
             } catch (error) {
                 if (!axios.isCancel(error)) {
                     console.error('Error fetching roles:', error);
-                    toast.error(t('admin.roles.messages.fetch_failed'));
+                    toast.error(getApiErrorMessage(error, t, 'admin.roles.messages.fetch_failed'));
                 }
             } finally {
                 if (!controller.signal.aborted) {

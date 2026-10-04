@@ -141,7 +141,7 @@ export default function SshKeysTab() {
             }
         } catch (error) {
             console.error('Error loading SSH key:', error);
-            toast.error(t('account.sshKeys.loadSingleError'));
+            toast.error(getApiErrorMessage(error, t, 'account.sshKeys.loadSingleError'));
         }
     };
 

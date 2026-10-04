@@ -147,7 +147,7 @@ export default function ConsolePage() {
             }
         } catch (error) {
             console.error('Failed to fetch system info:', error);
-            toast.error(t('admin.dev.console.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.dev.console.messages.fetch_failed'));
         }
     }, [isDeveloperModeEnabled, addTerminalLine, t]);
 

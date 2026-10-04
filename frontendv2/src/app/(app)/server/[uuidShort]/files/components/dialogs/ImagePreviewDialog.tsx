@@ -13,6 +13,7 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/featherui/Button';
@@ -69,7 +70,7 @@ export function ImagePreviewDialog({
                 setBlobUrl(url);
             } catch (err) {
                 console.error('Failed to fetch image:', err);
-                setError(t('files.dialogs.preview.error'));
+                setError(getApiErrorMessage(err, t, 'files.dialogs.preview.error'));
             } finally {
                 setLoading(false);
             }

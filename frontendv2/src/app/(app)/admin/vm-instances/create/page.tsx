@@ -201,7 +201,7 @@ export default function VmInstancesCreatePage() {
         axios
             .get('/api/admin/vm-nodes', { params: { limit: 100 } })
             .then((res) => setNodes(res.data.data?.vm_nodes ?? []))
-            .catch(() => toast.error(t('admin.vmInstances.errors.fetch_failed')))
+            .catch((error) => toast.error(getApiErrorMessage(error, t, 'admin.vmInstances.errors.fetch_failed')))
             .finally(() => setLoadingPlans(false));
     }, [t]);
 
@@ -257,8 +257,8 @@ export default function VmInstancesCreatePage() {
                 const sortedNodes = [...clusterNodes].sort((a, b) => (a.node || '').localeCompare(b.node || ''));
                 setPveNodes(sortedNodes);
                 setPveNode((prev) => (sortedNodes.some((n) => n.node === prev) ? prev : (sortedNodes[0]?.node ?? '')));
-            } catch {
-                toast.error(t('admin.vmInstances.errors.fetch_failed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'admin.vmInstances.errors.fetch_failed'));
             } finally {
                 setLoadingMeta(false);
             }
@@ -320,8 +320,8 @@ export default function VmInstancesCreatePage() {
             if (data.data?.pagination) {
                 setOwnerPagination((prev) => ({ ...prev, ...data.data.pagination }));
             }
-        } catch {
-            toast.error(t('admin.vmInstances.errors.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.vmInstances.errors.fetch_failed'));
         }
     }, [ownerSearch, ownerPagination.current_page, ownerPagination.per_page, t]);
 

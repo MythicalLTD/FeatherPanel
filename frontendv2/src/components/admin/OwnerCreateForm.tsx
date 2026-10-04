@@ -70,8 +70,8 @@ export function OwnerCreateForm({ onCreated, onCancel, showFooter = true }: Owne
                     })),
                 );
             }
-        } catch {
-            toast.error(t('admin.users.messages.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.users.messages.fetch_failed'));
         }
     }, [t]);
 

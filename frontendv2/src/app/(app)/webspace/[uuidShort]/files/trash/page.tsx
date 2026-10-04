@@ -76,8 +76,8 @@ export default function WebSpaceTrashPage({ params }: { params: Promise<{ uuidSh
             setEntries(data.entries ?? []);
             setTotalSize(data.total_size ?? 0);
             setSelected([]);
-        } catch {
-            toast.error(t('files.trash.messages.load_error'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.trash.messages.load_error'));
         } finally {
             setLoading(false);
         }
@@ -131,8 +131,8 @@ export default function WebSpaceTrashPage({ params }: { params: Promise<{ uuidSh
             await webspaceFilesApi.deleteTrashEntries(uuidShort, selected);
             toast.success(t('files.trash.messages.deleted'));
             await refresh();
-        } catch {
-            toast.error(t('files.trash.messages.delete_error'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.trash.messages.delete_error'));
         } finally {
             setBusy(false);
         }
@@ -145,8 +145,8 @@ export default function WebSpaceTrashPage({ params }: { params: Promise<{ uuidSh
             toast.success(t('files.trash.messages.emptied'));
             setEmptyOpen(false);
             await refresh();
-        } catch {
-            toast.error(t('files.trash.messages.empty_error'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.trash.messages.empty_error'));
         } finally {
             setBusy(false);
         }

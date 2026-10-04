@@ -76,8 +76,8 @@ export default function CreateWebSpaceDatabasePage() {
                 const payload = databasesRes.data?.data;
                 const list = (payload?.data ?? payload ?? []) as unknown[];
                 setDatabaseCount(Array.isArray(list) ? list.length : 0);
-            } catch {
-                toast.error(t('webSpaces.databases.loadFailed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'webSpaces.databases.loadFailed'));
             } finally {
                 setLoading(false);
             }

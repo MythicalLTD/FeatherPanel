@@ -163,8 +163,8 @@ export default function EditWebNodePage() {
                     per_page: data.data.pagination.per_page ?? perPage,
                 }));
             }
-        } catch {
-            toast.error(t('admin.webNodes.messages.fetch_locations_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.webNodes.messages.fetch_locations_failed'));
         }
     }, [locationPagination.current_page, locationPagination.per_page, debouncedLocationSearch, t]);
 
@@ -194,6 +194,7 @@ export default function EditWebNodePage() {
                     }
                 } catch (error) {
                     console.error('Error fetching location:', error);
+                    toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.fetch_failed'));
                 }
             }
 
@@ -255,7 +256,7 @@ export default function EditWebNodePage() {
             });
         } catch (error) {
             console.error('Error loading web node:', error);
-            toast.error(t('admin.webNodes.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.webNodes.messages.fetch_failed'));
             router.push('/admin/web-nodes');
         } finally {
             setLoading(false);

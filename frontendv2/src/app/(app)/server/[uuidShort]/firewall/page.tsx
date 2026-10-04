@@ -95,8 +95,9 @@ export default function ServerFirewallPage() {
             }
         } catch (error) {
             console.error('Failed to fetch allocations:', error);
+            toast.error(getApiErrorMessage(error, t, 'serverAllocations.failedToFetch'));
         }
-    }, [uuidShort]);
+    }, [uuidShort, t]);
 
     const fetchRules = React.useCallback(async () => {
         if (!uuidShort || !firewallEnabled) return;
@@ -109,7 +110,7 @@ export default function ServerFirewallPage() {
             }
         } catch (error) {
             console.error('Failed to fetch firewall rules:', error);
-            toast.error(t('serverFirewall.fetchError'));
+            toast.error(getApiErrorMessage(error, t, 'serverFirewall.fetchError'));
         } finally {
             setLoading(false);
         }

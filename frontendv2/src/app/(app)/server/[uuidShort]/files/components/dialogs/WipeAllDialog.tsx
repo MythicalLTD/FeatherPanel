@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useState } from 'react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { toast } from 'sonner';
@@ -42,8 +43,8 @@ export function WipeAllDialog({ open, onOpenChange, uuid, onSuccess }: WipeAllDi
             toast.success(t('files.dialogs.wipe.success'), { id: toastId });
             onSuccess();
             onOpenChange(false);
-        } catch {
-            toast.error(t('files.dialogs.wipe.error'), { id: toastId });
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.dialogs.wipe.error'), { id: toastId });
         } finally {
             setLoading(false);
         }

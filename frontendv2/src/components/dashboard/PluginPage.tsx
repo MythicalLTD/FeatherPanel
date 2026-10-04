@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -284,7 +285,7 @@ export default function PluginPage({ context, serverUuid, vdsId, webspaceUuid }:
                 }
             } catch (err) {
                 console.error('Error processing plugin data:', err);
-                setError(t('errors.plugin.load_failed'));
+                setError(getApiErrorMessage(err, t, 'errors.plugin.load_failed'));
             } finally {
                 setLoading(false);
             }

@@ -12,7 +12,7 @@ by the Free Software Foundation, either version 3 of the License, or
 
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 
-API errors: prefer stable error_code → en.json over raw English message.
+API errors: prefer stable error_code → en.json, then raw API message, then caller fallback.
 New user-facing ApiResponse::error() calls should include a stable error_code;
 UI should resolve copy with getApiErrorMessage.
 */
@@ -47,13 +47,17 @@ function resolveFromParts(
         }
     }
 
+    const trimmedRaw = typeof rawMessage === 'string' ? rawMessage.trim() : '';
+    // Prefer a concrete API message over any caller fallback (including page-specific ones).
+    // Callers often pass a generic key like "failed to load"; that must not hide real errors
+    // when the error_code is not yet mapped in locales.
+    if (trimmedRaw !== '') {
+        return trimmedRaw;
+    }
+
     const fallback = t(fallbackKey, params);
     if (fallback !== fallbackKey) {
         return fallback;
-    }
-
-    if (typeof rawMessage === 'string' && rawMessage.trim() !== '') {
-        return rawMessage;
     }
 
     return t('common.error');
@@ -77,7 +81,7 @@ export function getApiErrorMessageFromPayload(
 /**
  * Resolve a user-facing API error string from an axios/unknown error.
  *
- * Order: errors.codes.{CODE} → caller fallback key → raw backend message → common.error
+ * Order: errors.codes.{CODE} → raw backend message → caller fallback → common.error
  */
 export function getApiErrorMessage(
     error: unknown,

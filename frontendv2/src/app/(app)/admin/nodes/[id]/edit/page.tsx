@@ -200,6 +200,7 @@ export default function EditNodePage() {
                     }
                 } catch (error) {
                     console.error('Error fetching location:', error);
+                    toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.fetch_failed'));
                 }
             }
 
@@ -229,7 +230,7 @@ export default function EditNodePage() {
             });
         } catch (error) {
             console.error('Error fetching node data:', error);
-            toast.error(t('admin.node.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -350,6 +351,7 @@ export default function EditNodePage() {
                     }
                 } catch (error) {
                     console.error('Error fetching current location:', error);
+                    toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.fetch_failed'));
                 }
             };
             fetchCurrentLocation();
@@ -421,7 +423,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
             fetchInitialData();
         } catch (error) {
             console.error('Error resetting key:', error);
-            toast.error(t('admin.node.wings.reset_key_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node.wings.reset_key_failed'));
         } finally {
             setResetting(false);
         }

@@ -88,10 +88,11 @@ const ScannerTab = () => {
             }
         } catch (error) {
             console.error('Failed to fetch servers', error);
+            toast.error(getApiErrorMessage(error, t, 'common.error'));
         } finally {
             setLoadingServers(false);
         }
-    }, []);
+    }, [t]);
 
     const startFakeProgress = () => {
         setScanProgress({

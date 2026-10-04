@@ -90,7 +90,7 @@ export default function CreateDatabasePage() {
                 }
             } catch (error) {
                 console.error('Failed to load create database context:', error);
-                toast.error(t('serverDatabases.failedToFetch'));
+                toast.error(getApiErrorMessage(error, t, 'serverDatabases.failedToFetch'));
             } finally {
                 setLoading(false);
             }

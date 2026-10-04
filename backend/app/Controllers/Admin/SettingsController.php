@@ -2310,7 +2310,7 @@ class SettingsController
                         ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED,
                         'false',
                     ),
-                'description' => 'Allow the Container Shell lifecycle step (docker exec /bin/sh -c inside the server container). This is a security-sensitive capability: users with schedule.update can run arbitrary shell commands in running containers when lifecycle hooks fire. Default off. Requires Lifecycle Hooks Enabled. Existing Container Shell steps will not execute while this is disabled.',
+                'description' => 'Allow Container Shell lifecycle hook steps and Container Shell schedule tasks (docker exec /bin/sh -c inside the server container). This is a security-sensitive capability: users with schedule.update (and control.console for schedule tasks) can run arbitrary shell commands in running containers when hooks fire or schedules run. Default off. Lifecycle hook steps additionally require Lifecycle Hooks Enabled; schedule tasks additionally require Schedules to be allowed. Existing Container Shell steps and tasks will not execute while this is disabled.',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',

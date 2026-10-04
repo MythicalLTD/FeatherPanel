@@ -612,7 +612,10 @@ export interface TaskUpdateRequest extends TaskCreateRequest {
     sequence_id?: number;
 }
 
-export const LIFECYCLE_HOOK_TYPES = ['pre_start', 'pre_stop', 'post_start', 'server_crash'] as const;
+export const LIFECYCLE_HOOK_TYPES = ['pre_start', 'pre_stop', 'post_start', 'post_stop', 'server_crash'] as const;
+
+/** Hook types that fire after the container has stopped: container steps cannot run there. */
+export const LIFECYCLE_HOOK_TYPES_WITHOUT_CONTAINER: readonly LifecycleHookType[] = ['post_stop'];
 export type LifecycleHookType = (typeof LIFECYCLE_HOOK_TYPES)[number];
 
 export function isLifecycleHookType(value: string): value is LifecycleHookType {
@@ -622,7 +625,8 @@ export function isLifecycleHookType(value: string): value is LifecycleHookType {
 export function parseLifecycleHookType(value: string | null | undefined): LifecycleHookType {
     return value && isLifecycleHookType(value) ? value : 'pre_start';
 }
-export type LifecycleTaskType = 'discord_webhook' | 'container_command' | 'container_shell' | 'http_request' | 'sleep';
+export type LifecycleTaskType =
+    'discord_webhook' | 'container_command' | 'container_shell' | 'backup' | 'http_request' | 'sleep';
 
 export interface LifecycleHookStep {
     id: number;

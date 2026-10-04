@@ -314,7 +314,7 @@ export default function CreateServerPage() {
                 }
             } catch (error) {
                 console.error('Error fetching spell details:', error);
-                toast.error(t('admin.servers.form.messages.spell_details_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.servers.form.messages.spell_details_failed'));
             }
         };
 

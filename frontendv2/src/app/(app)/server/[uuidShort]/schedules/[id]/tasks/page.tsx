@@ -35,6 +35,11 @@ import { useSettings } from '@/contexts/SettingsContext';
 import type { Task, Schedule, SchedulePagination, Database } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { formatBackupPayloadDisplay, isBackupAction } from '@/components/server/backup/backup-payload';
+import {
+    CONTAINER_SHELL_ACTION,
+    formatContainerShellDisplay,
+    isContainerShellAction,
+} from '@/components/server/schedule/container-shell-payload';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
@@ -83,6 +88,7 @@ export default function ServerTasksPage() {
             }
         } catch (error) {
             console.error('Failed to fetch schedule:', error);
+            toast.error(getApiErrorMessage(error, t, 'serverSchedules.loadFailed'));
         }
     }, [uuidShort, scheduleId]);
 
@@ -120,7 +126,7 @@ export default function ServerTasksPage() {
                 }
             } catch (error) {
                 console.error('Failed to fetch tasks:', error);
-                toast.error(t('serverTasks.failedToFetch'));
+                toast.error(getApiErrorMessage(error, t, 'serverTasks.failedToFetch'));
             } finally {
                 setLoading(false);
             }
@@ -222,6 +228,8 @@ export default function ServerTasksPage() {
                 return t('serverTasks.actionBackup');
             case 'command':
                 return t('serverTasks.actionCommand');
+            case CONTAINER_SHELL_ACTION:
+                return t('serverTasks.actionContainerShell');
             default:
                 return action;
         }
@@ -237,6 +245,9 @@ export default function ServerTasksPage() {
                 specific: t('serverTasks.databaseScopeSpecific'),
                 noPayload: t('serverTasks.noPayload'),
             });
+        }
+        if (isContainerShellAction(task.action)) {
+            return formatContainerShellDisplay(task.payload || '');
         }
         return task.payload || t('serverTasks.noPayload');
     };

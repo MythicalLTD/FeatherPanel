@@ -65,6 +65,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
             }
         } catch (e) {
             console.error('Failed to fetch version status', e);
+            toast.error(getApiErrorMessage(e, t, 'common.error'));
         } finally {
             setLoading(false);
         }

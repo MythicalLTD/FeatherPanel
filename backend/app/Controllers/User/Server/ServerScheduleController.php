@@ -31,6 +31,7 @@ use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Plugins\Events\Events\ServerScheduleEvent;
+use App\Services\Server\ScheduleContainerShellService;
 
 #[OA\Schema(
     schema: 'ServerSchedule',
@@ -1216,7 +1217,7 @@ class ServerScheduleController
             return ApiResponse::error('Tasks must be an array', 'INVALID_TASKS', 400);
         }
 
-        $validActions = ['power', 'start', 'stop', 'restart', 'kill', 'backup', 'command', 'install', 'update', 'database_backup'];
+        $validActions = ['power', 'start', 'stop', 'restart', 'kill', 'backup', 'command', 'install', 'update', 'database_backup', 'container_shell'];
         foreach ($tasks as $index => $task) {
             if (!isset($task['action']) || !in_array($task['action'], $validActions, true)) {
                 return ApiResponse::error("Task at index {$index} has an invalid or missing action", 'INVALID_TASK_ACTION', 400);
@@ -1226,6 +1227,16 @@ class ServerScheduleController
             }
             if (!isset($task['sequence_id']) || !is_numeric($task['sequence_id'])) {
                 return ApiResponse::error("Task at index {$index} has an invalid sequence_id", 'INVALID_TASK_SEQUENCE', 400);
+            }
+            if ($task['action'] === 'container_shell') {
+                $consoleCheck = $this->checkPermission($request, $server, SubuserPermissions::CONTROL_CONSOLE);
+                if ($consoleCheck !== null) {
+                    return $consoleCheck;
+                }
+                $shellError = (new ScheduleContainerShellService())->validateTaskInput(is_string($task['payload']) ? $task['payload'] : '');
+                if ($shellError !== null) {
+                    return ApiResponse::error("Task at index {$index}: " . $shellError, 'INVALID_PAYLOAD', 400);
+                }
             }
         }
 

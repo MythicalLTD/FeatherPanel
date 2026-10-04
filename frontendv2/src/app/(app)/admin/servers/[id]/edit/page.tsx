@@ -398,13 +398,21 @@ export default function EditServerPage() {
                     } else {
                         setAssignableMounts([]);
                         mountIds = [];
-                        toast.error(t('admin.servers.edit.mounts.assignable_load_failed'));
+                        toast.error(
+                            getApiErrorMessageFromPayload(
+                                assignRes.data,
+                                t,
+                                'admin.servers.edit.mounts.assignable_load_failed',
+                            ),
+                        );
                     }
                 } catch (assignErr) {
                     console.error('Error loading assignable mounts:', assignErr);
                     setAssignableMounts([]);
                     mountIds = [];
-                    toast.error(t('admin.servers.edit.mounts.assignable_load_failed'));
+                    toast.error(
+                        getApiErrorMessage(assignErr, t, 'admin.servers.edit.mounts.assignable_load_failed'),
+                    );
                 }
                 spellBaselineForMounts.current = server.spell_id ?? null;
 
@@ -468,7 +476,7 @@ export default function EditServerPage() {
             }
         } catch (error) {
             console.error('Error fetching server:', error);
-            toast.error(t('admin.servers.edit.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.edit.fetch_failed'));
             router.push('/admin/servers');
         } finally {
             setLoading(false);
@@ -495,14 +503,16 @@ export default function EditServerPage() {
                 setAssignableMounts([]);
                 setForm((prev) => ({ ...prev, mount_ids: [] }));
                 spellBaselineForMounts.current = spellForRequest;
-                toast.error(t('admin.servers.edit.mounts.assignable_load_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(data, t, 'admin.servers.edit.mounts.assignable_load_failed'),
+                );
             }
         } catch (e) {
             console.error('Error refreshing assignable mounts:', e);
             setAssignableMounts([]);
             setForm((prev) => ({ ...prev, mount_ids: [] }));
             spellBaselineForMounts.current = spellForRequest;
-            toast.error(t('admin.servers.edit.mounts.assignable_load_failed'));
+            toast.error(getApiErrorMessage(e, t, 'admin.servers.edit.mounts.assignable_load_failed'));
         } finally {
             setAssignableLoading(false);
         }

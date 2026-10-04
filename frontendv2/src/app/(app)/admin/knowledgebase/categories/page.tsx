@@ -140,8 +140,8 @@ export default function KnowledgeBaseCategoriesPage() {
             } else {
                 toast.error(t('admin.knowledgebase.categories.messages.fetch_failed'));
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.categories.messages.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.categories.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -175,8 +175,8 @@ export default function KnowledgeBaseCategoriesPage() {
             throw new Error(
                 getApiErrorMessageFromPayload(data, t, 'admin.knowledgebase.categories.messages.upload_failed'),
             );
-        } catch {
-            toast.error(t('admin.knowledgebase.categories.messages.upload_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.categories.messages.upload_failed'));
             return null;
         }
     };

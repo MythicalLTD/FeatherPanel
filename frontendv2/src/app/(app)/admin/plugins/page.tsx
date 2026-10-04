@@ -216,7 +216,7 @@ export default function PluginsPage() {
                 return pluginsArray;
             } catch (error) {
                 console.error(error);
-                toast.error(t('admin.plugins.messages.load_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.plugins.messages.load_failed'));
                 return [] as Plugin[];
             } finally {
                 if (!opts?.silent) setLoading(false);
@@ -428,7 +428,7 @@ export default function PluginsPage() {
             setSpellsTotalPages(data.pagination?.total_pages || 1);
         } catch (error) {
             console.error('Error fetching spells:', error);
-            toast.error(t('admin.plugins.messages.spells_load_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.plugins.messages.spells_load_failed'));
         } finally {
             setSpellsLoading(false);
         }
@@ -474,7 +474,7 @@ export default function PluginsPage() {
             await loadPluginConfig(selectedPlugin);
         } catch (error) {
             console.error(error);
-            toast.error(t('admin.plugins.messages.spell_restrictions_save_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.plugins.messages.spell_restrictions_save_failed'));
         } finally {
             setSavingSpellRestrictions(false);
         }
@@ -492,7 +492,7 @@ export default function PluginsPage() {
             await loadPluginConfig(selectedPlugin);
         } catch (error) {
             console.error(error);
-            toast.error(t('admin.plugins.messages.save_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.plugins.messages.save_failed'));
         } finally {
             setSavingSetting(false);
         }

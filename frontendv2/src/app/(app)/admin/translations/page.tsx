@@ -117,7 +117,7 @@ export default function TranslationsPage() {
                 setTranslationFiles(files);
             } catch (error) {
                 console.error('Error fetching translation files:', error);
-                toast.error(t('admin.translations.messages.fetch_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.translations.messages.fetch_failed'));
             } finally {
                 setLoading(false);
             }
@@ -136,7 +136,7 @@ export default function TranslationsPage() {
             setEditOpen(true);
         } catch (error) {
             console.error('Error loading translation content:', error);
-            toast.error(t('admin.translations.messages.fetch_content_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.translations.messages.fetch_content_failed'));
         }
     };
 
@@ -244,7 +244,7 @@ export default function TranslationsPage() {
         try {
             JSON.parse(editingContent);
         } catch {
-            toast.error(t('admin.translations.messages.invalid_json'));
+            toast.error(t('errors.codes.INVALID_JSON'));
             return;
         }
 
@@ -278,7 +278,7 @@ export default function TranslationsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error deleting translation file:', error);
-            toast.error(t('admin.translations.messages.delete_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.translations.messages.delete_failed'));
         }
     };
 
@@ -297,7 +297,7 @@ export default function TranslationsPage() {
             window.URL.revokeObjectURL(url);
         } catch (error) {
             console.error('Error downloading translation file:', error);
-            toast.error(t('admin.translations.messages.download_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.translations.messages.download_failed'));
         }
     };
 

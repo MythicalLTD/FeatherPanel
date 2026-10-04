@@ -229,6 +229,24 @@ class FeatherQuilldClient
     }
 
     /**
+     * Configure node Roundcube public hostname + retrieve SSO secret.
+     *
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function configureWebmail(array $webNode, string $hostname, int $timeout = 60): array
+    {
+        return self::request(
+            $webNode,
+            'POST',
+            '/api/mail/webmail/configure',
+            ['hostname' => $hostname],
+            $timeout,
+        );
+    }
+
+    /**
      * @param array<string, mixed> $webNode
      *
      * @return array{ok: bool, status: int, body: mixed, error: ?string}

@@ -68,8 +68,8 @@ export default function HostingPackagesPage() {
         try {
             const { data } = await axios.get('/api/admin/hosting-packages');
             setPackages((data?.data?.packages as HostingPackage[]) || []);
-        } catch {
-            toast.error(t('admin.hostingPackages.loadFailed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.hostingPackages.loadFailed'));
         } finally {
             setLoading(false);
         }
@@ -112,8 +112,8 @@ export default function HostingPackagesPage() {
             await axios.delete(`/api/admin/hosting-packages/${id}`);
             toast.success(t('admin.hostingPackages.deleted'));
             await load();
-        } catch {
-            toast.error(t('admin.hostingPackages.deleteFailed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.hostingPackages.deleteFailed'));
         }
     };
 

@@ -598,11 +598,35 @@ class WebSpaceMailboxController
             return ApiResponse::error('Mail host not found', 'MAIL_HOST_NOT_FOUND', 404);
         }
 
+        $creds = [
+            'user' => WebSpaceMailbox::emailAddress($record),
+            'pass' => (string) $record['password'],
+            'host' => (string) ($mailHost['imap_host'] ?? $mailHost['hostname']),
+            'port' => (int) ($mailHost['imap_port'] ?? 993),
+            'enc' => (string) ($mailHost['imap_encryption'] ?? 'ssl'),
+        ];
+
         $nodeWebmailUrl = trim((string) ($mailHost['webmail_url'] ?? ''));
+        $nodeSsoSecret = trim((string) ($mailHost['webmail_sso_secret'] ?? ''));
         if ($nodeWebmailUrl !== '') {
+            if ($nodeSsoSecret === '') {
+                return ApiResponse::error(
+                    'Node webmail is configured but SSO secret is missing; reinstall/configure the webmail package',
+                    'WEBMAIL_SSO_NOT_CONFIGURED',
+                    503
+                );
+            }
+
+            try {
+                $token = \App\Helpers\WebmailSso::mintToken($nodeSsoSecret, $creds);
+                $url = \App\Helpers\WebmailSso::buildLoginUrl($nodeWebmailUrl, $token);
+            } catch (\Throwable $e) {
+                return ApiResponse::error('Failed to mint webmail SSO token: ' . $e->getMessage(), 'WEBMAIL_SSO_FAILED', 500);
+            }
+
             return ApiResponse::success([
-                'url' => $nodeWebmailUrl,
-                'mode' => 'external',
+                'url' => $url,
+                'mode' => 'node_sso',
             ], 'OK', 200);
         }
 
@@ -623,13 +647,13 @@ class WebSpaceMailboxController
                 . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
         }
 
-        $url = rtrim($appUrl, '/') . '/webmail/token.php?' . http_build_query([
-            'user' => WebSpaceMailbox::emailAddress($record),
-            'pass' => (string) $record['password'],
-            'host' => (string) ($mailHost['imap_host'] ?? $mailHost['hostname']),
-            'port' => (int) ($mailHost['imap_port'] ?? 993),
-            'enc' => (string) ($mailHost['imap_encryption'] ?? 'ssl'),
-        ]);
+        try {
+            $secret = \App\Helpers\WebmailSso::panelSecretForTokenPhp();
+            $token = \App\Helpers\WebmailSso::mintToken($secret, $creds);
+            $url = \App\Helpers\WebmailSso::buildLoginUrl(rtrim($appUrl, '/') . '/webmail', $token);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Failed to mint webmail SSO token: ' . $e->getMessage(), 'WEBMAIL_SSO_FAILED', 500);
+        }
 
         return ApiResponse::success(['url' => $url, 'mode' => 'panel_roundcube'], 'OK', 200);
     }

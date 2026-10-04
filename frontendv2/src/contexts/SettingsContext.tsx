@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import type { AppSettings, CoreInfo } from '@/types/settings';
 import { settingsApi } from '@/lib/settings-api';
+import { getFeatherpanelApiErrorMessage } from '@/lib/api';
 
 interface SettingsContextType {
     settings: AppSettings | null;
@@ -77,7 +78,10 @@ export function SettingsProvider({ children, initialSettings = null, initialCore
                 throw new Error('Failed to load settings');
             }
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to load settings';
+            const errorMessage =
+                getFeatherpanelApiErrorMessage(err) ||
+                (err instanceof Error ? err.message : null) ||
+                'Failed to load settings';
             setError(errorMessage);
             console.error('Settings fetch error:', err);
         } finally {

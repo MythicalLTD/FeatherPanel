@@ -308,8 +308,8 @@ export default function LocationsPage() {
                     );
                     setCountryCodes(Object.fromEntries(sorted) as Record<string, string>);
                 }
-            } catch {
-                toast.error(t('admin.locations.messages.country_codes_failed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.country_codes_failed'));
             }
         };
         fetchCountryCodes();
@@ -338,8 +338,8 @@ export default function LocationsPage() {
                     hasNext: p.has_next,
                     hasPrev: p.has_prev,
                 });
-            } catch {
-                toast.error(t('admin.locations.messages.fetch_failed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.fetch_failed'));
             } finally {
                 setLoading(false);
             }
@@ -359,8 +359,8 @@ export default function LocationsPage() {
                 type: (loc.type as LocationType) || 'game',
             });
             setEditOpen(true);
-        } catch {
-            toast.error(t('admin.locations.messages.fetch_details_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.fetch_details_failed'));
         }
     };
 

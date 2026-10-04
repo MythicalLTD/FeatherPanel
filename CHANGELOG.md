@@ -12,6 +12,10 @@
 - WebSpaces now appear in the dashboard Resources list (with a WebSpaces filter) and use the left sidebar for navigation like servers and VDS. by @nayskutzu
 - The user WebSpaces list now matches the servers/VMs list UI (search, sort, grid/list). Self-service “Order WebSpace” was removed; admins provision WebSpaces. by @nayskutzu
 - Server **lifecycle hooks**: Discord webhook steps resolve container environment placeholders (e.g. `{{env.SERVER_PORT}}`, `{{env.YOUR_VAR}}`) in content, username, and embeds when the webhook is sent. by @nayskutzu
+- Server **lifecycle hooks**: new `post_stop` hook (runs after the server has stopped; webhook / HTTP / sleep steps only) and Container Shell steps now capture and log truncated stdout/stderr. by @nayskutzu
+- Server **lifecycle hooks** can now run a **Backup** step (server files, database dumps or full backup) just like schedule backup tasks, sharing the same limit/FIFO handling. Available on every hook type. by @nayskutzu
+- Schedules can now run a **Container Shell** task: a Linux command executed inside the server's Docker container (`docker exec … sh -c`) with a 1–120s timeout, captured stdout/stderr in the activity log, behind the existing admin Container Shell switch and the `control.console` permission. by @nayskutzu
+- Webmail links now use short-lived signed SSO tokens with encrypted mailbox credentials for both web-node Roundcube and the panel's Roundcube instance; plaintext credentials are no longer placed in URLs. by @nayskutzu
 - Servers can be chosen to be hidden from the public status page. by @nayskutzu
 - WebHosting was now added to the panel. by @nayskutzu
 - Database backups was added to the panel. by @nayskutzu

@@ -118,7 +118,7 @@ export default function AdminWebSpaceEditPage() {
                 setPlates(rows);
             } catch (error) {
                 console.error(error);
-                toast.error(t('admin.webSpaces.messages.plates_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.plates_failed'));
             }
         },
         [t],
@@ -171,7 +171,7 @@ export default function AdminWebSpaceEditPage() {
             await loadCustomSsl();
         } catch (error) {
             console.error(error);
-            toast.error(t('admin.webSpaces.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.fetch_failed'));
             router.push('/admin/webspaces');
         } finally {
             setLoading(false);

@@ -106,7 +106,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
             }
         } catch (error) {
             console.error('Error loading VM node IPs:', error);
-            toast.error(t('admin.vdsNodes.ips.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.ips.fetch_failed'));
         } finally {
             setLoading(false);
         }

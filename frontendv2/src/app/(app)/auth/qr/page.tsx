@@ -22,7 +22,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { authApi } from '@/lib/api/auth';
 import { AuthLoadingState } from '@/components/auth/AuthUi';
-import { getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import {
     isQrChallengeGoneError,
     qrErrorMessage,
@@ -95,7 +95,7 @@ function QrApproveContent() {
                     }
                     setError(qrErrorMessage(err, t, 'auth.qr.error'));
                 } else {
-                    setError(t('auth.qr.error'));
+                    setError(getApiErrorMessage(err, t, 'auth.qr.error'));
                 }
                 if (!opts?.quiet) setPayload(null);
             } finally {

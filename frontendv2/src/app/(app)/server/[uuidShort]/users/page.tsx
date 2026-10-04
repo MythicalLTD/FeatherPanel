@@ -111,7 +111,7 @@ export default function ServerSubusersPage() {
                 }
             } catch (error) {
                 console.error('Failed to fetch subusers:', error);
-                toast.error(t('serverSubusers.failedToFetch'));
+                toast.error(getApiErrorMessage(error, t, 'serverSubusers.failedToFetch'));
             } finally {
                 setLoading(false);
             }
@@ -194,7 +194,7 @@ export default function ServerSubusersPage() {
             }
         } catch (error) {
             console.error('Failed to fetch available permissions:', error);
-            toast.error(t('serverSubusers.failedToFetch'));
+            toast.error(getApiErrorMessage(error, t, 'serverSubusers.failedToFetch'));
         } finally {
             setPermissionsLoadingData(false);
         }

@@ -49,7 +49,8 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import type { LifecycleHook, LifecycleHookStep, LifecycleHookType, LifecycleTaskType } from '@/types/server';
-import { LIFECYCLE_HOOK_TYPES } from '@/types/server';
+import { formatBackupPayloadDisplay } from '@/components/server/backup/backup-payload';
+import { LIFECYCLE_HOOK_TYPES, LIFECYCLE_HOOK_TYPES_WITHOUT_CONTAINER } from '@/types/server';
 import { computeMovedSequence } from './form-utils';
 import { LifecycleHookCard } from './LifecycleHookCard';
 import { safeBack } from '@/lib/safe-back';
@@ -83,6 +84,7 @@ const EMPTY_HOOKS: Record<LifecycleHookType, LifecycleHook> = {
     pre_start: { id: null, server_id: 0, hook_type: 'pre_start', is_active: 0, steps: [] },
     pre_stop: { id: null, server_id: 0, hook_type: 'pre_stop', is_active: 0, steps: [] },
     post_start: { id: null, server_id: 0, hook_type: 'post_start', is_active: 0, steps: [] },
+    post_stop: { id: null, server_id: 0, hook_type: 'post_stop', is_active: 0, steps: [] },
     server_crash: { id: null, server_id: 0, hook_type: 'server_crash', is_active: 0, steps: [] },
 };
 
@@ -90,6 +92,7 @@ const HOOK_ICONS: Record<LifecycleHookType, typeof Power> = {
     pre_start: Play,
     pre_stop: Square,
     post_start: Power,
+    post_stop: Square,
     server_crash: AlertTriangle,
 };
 
@@ -122,6 +125,7 @@ export default function ServerLifecycleHooksPage() {
             pre_start: t('lifecycleHooks.hookTypes.preStart'),
             pre_stop: t('lifecycleHooks.hookTypes.preStop'),
             post_start: t('lifecycleHooks.hookTypes.postStart'),
+            post_stop: t('lifecycleHooks.hookTypes.postStop'),
             server_crash: t('lifecycleHooks.hookTypes.serverCrash'),
         }),
         [t],
@@ -131,6 +135,7 @@ export default function ServerLifecycleHooksPage() {
             pre_start: t('lifecycleHooks.hookSummaries.preStart'),
             pre_stop: t('lifecycleHooks.hookSummaries.preStop'),
             post_start: t('lifecycleHooks.hookSummaries.postStart'),
+            post_stop: t('lifecycleHooks.hookSummaries.postStop'),
             server_crash: t('lifecycleHooks.hookSummaries.serverCrash'),
         }),
         [t],
@@ -139,6 +144,7 @@ export default function ServerLifecycleHooksPage() {
         () => ({
             container_command: t('lifecycleHooks.taskTypes.containerCommand'),
             container_shell: t('lifecycleHooks.taskTypes.containerShell'),
+            backup: t('lifecycleHooks.taskTypes.backup'),
             discord_webhook: t('lifecycleHooks.taskTypes.discordWebhook'),
             http_request: t('lifecycleHooks.taskTypes.httpRequest'),
             sleep: t('lifecycleHooks.taskTypes.sleep'),
@@ -162,7 +168,7 @@ export default function ServerLifecycleHooksPage() {
             }
         } catch (error) {
             console.error(error);
-            toast.error(t('lifecycleHooks.messages.fetchFailed'));
+            toast.error(getApiErrorMessage(error, t, 'lifecycleHooks.messages.fetchFailed'));
         } finally {
             setLoading(false);
             setHasLoaded(true);
@@ -320,6 +326,7 @@ export default function ServerLifecycleHooksPage() {
             const validTaskTypes: LifecycleTaskType[] = [
                 'container_command',
                 'discord_webhook',
+                'backup',
                 'http_request',
                 'sleep',
             ];
@@ -344,6 +351,12 @@ export default function ServerLifecycleHooksPage() {
                 );
                 for (const step of sortedImportedSteps) {
                     if (!step || !validTaskTypes.includes(step.task_type as LifecycleTaskType)) continue;
+                    if (
+                        LIFECYCLE_HOOK_TYPES_WITHOUT_CONTAINER.includes(hookType) &&
+                        (step.task_type === 'container_command' || step.task_type === 'container_shell')
+                    ) {
+                        continue;
+                    }
                     await axios.post(`/api/user/servers/${uuidShort}/lifecycle-hooks/${hookType}/steps`, {
                         task_type: step.task_type,
                         continue_on_failure: step.continue_on_failure ? 1 : 0,
@@ -440,6 +453,21 @@ export default function ServerLifecycleHooksPage() {
                             </p>
                         )}
                     </div>
+                );
+            }
+
+            if (step.task_type === 'backup') {
+                return (
+                    <p className='text-muted-foreground text-xs break-all'>
+                        {formatBackupPayloadDisplay('backup', step.payload, [], {
+                            files: t('serverTasks.backupTypeFiles'),
+                            databases: t('serverTasks.backupTypeDatabases'),
+                            full: t('serverTasks.backupTypeFull'),
+                            all: t('serverTasks.databaseScopeAll'),
+                            specific: t('serverTasks.databaseScopeSpecific'),
+                            noPayload: t('lifecycleHooks.payloadUnavailable'),
+                        })}
+                    </p>
                 );
             }
 

@@ -153,7 +153,7 @@ export default function OAuth2ApiAuthorizePage() {
                             return;
                         }
                     }
-                } catch {
+                } catch (err) {
                     // Fall through
                 }
             }

@@ -153,8 +153,8 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
             if (catRes.data?.success) setCategories(catRes.data.data.categories);
             if (attRes.data?.success) setAttachments(attRes.data.data.attachments);
             if (tagRes.data?.success) setTags(tagRes.data.data.tags);
-        } catch {
-            toast.error(t('admin.knowledgebase.articles.messages.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.articles.messages.fetch_failed'));
         }
     }, [id, t]);
 
@@ -218,8 +218,8 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
             } else {
                 toast.error(t('admin.knowledgebase.order.messages.save_failed'));
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.order.messages.save_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.order.messages.save_failed'));
         } finally {
             setReorderLoading(false);
         }
@@ -258,8 +258,8 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
             throw new Error(
                 getApiErrorMessageFromPayload(data, t, 'admin.knowledgebase.categories.messages.upload_failed'),
             );
-        } catch {
-            toast.error(t('admin.knowledgebase.categories.messages.upload_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.categories.messages.upload_failed'));
             return null;
         }
     };
@@ -323,8 +323,8 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
             } else {
                 toast.error(t('admin.knowledgebase.edit.attachments.messages.upload_failed'));
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.edit.attachments.messages.upload_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.edit.attachments.messages.upload_failed'));
         } finally {
             setUploadLoading(false);
         }
@@ -338,8 +338,8 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                 setAttachments(attachments.filter((a) => a.id !== attId));
                 toast.success(t('admin.knowledgebase.edit.attachments.messages.deleted'));
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.edit.attachments.messages.delete_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.edit.attachments.messages.delete_failed'));
         }
     };
 
@@ -381,8 +381,8 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
             } else if (errorCount > 0) {
                 toast.error(t('admin.knowledgebase.edit.tags.messages.add_failed'));
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.edit.tags.messages.add_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.edit.tags.messages.add_failed'));
         }
     };
 
@@ -393,8 +393,8 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                 setTags(tags.filter((t) => t.id !== tagId));
                 toast.success(t('admin.knowledgebase.edit.tags.messages.deleted'));
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.edit.tags.messages.delete_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.edit.tags.messages.delete_failed'));
         }
     };
 

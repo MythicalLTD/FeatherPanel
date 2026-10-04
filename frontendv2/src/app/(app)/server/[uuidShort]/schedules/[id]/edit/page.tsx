@@ -94,7 +94,7 @@ export default function EditSchedulePage() {
                 }
             } catch (error) {
                 console.error('Failed to fetch schedule:', error);
-                toast.error(t('serverSchedules.loadFailed'));
+                toast.error(getApiErrorMessage(error, t, 'serverSchedules.loadFailed'));
                 router.push(`/server/${uuidShort}/schedules`);
             } finally {
                 setLoading(false);

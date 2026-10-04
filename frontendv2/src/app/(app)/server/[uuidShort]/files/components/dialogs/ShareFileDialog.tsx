@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useEffect, useRef, useState } from 'react';
 import {
     Dialog,
@@ -159,8 +160,8 @@ export function ShareFileDialog({ open, onOpenChange, uuid, filePath, fileName }
 
             toast.error(t('files.dialogs.share.error'), { id: toastId });
             setLoading(false);
-        } catch {
-            toast.error(t('files.dialogs.share.error'), { id: toastId });
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.dialogs.share.error'), { id: toastId });
             setLoading(false);
         }
     };

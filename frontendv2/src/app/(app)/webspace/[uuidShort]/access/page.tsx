@@ -72,7 +72,7 @@ export default function WebSpaceAccessPage() {
             setSftpAccounts((sftpRes?.data?.data?.accounts as typeof sftpAccounts) || []);
         } catch (error) {
             console.error(error);
-            toast.error(t('webSpaces.settings.loadFailed'));
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.loadFailed'));
         } finally {
             setLoading(false);
         }

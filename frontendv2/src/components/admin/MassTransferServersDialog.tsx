@@ -109,8 +109,8 @@ export function MassTransferServersDialog({
             });
             const list = (data?.data?.nodes || []) as ApiNode[];
             setNodes(list.filter((n) => n.id !== sourceNodeId));
-        } catch {
-            toast.error(t('admin.node.mass_transfer.fetch_nodes_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.node.mass_transfer.fetch_nodes_failed'));
         } finally {
             setLoadingNodes(false);
         }

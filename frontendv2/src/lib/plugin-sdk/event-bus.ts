@@ -56,7 +56,10 @@ export class PluginEventBus {
             try {
                 entry.handler(payload);
             } catch (err) {
-                console.error(`[FeatherPanel] event handler error for ${event}`, err);
+                console.error(
+                    `[FeatherPanel] event handler error for ${event}`,
+                    err instanceof Error ? err.message : err,
+                );
             }
             if (entry.once) {
                 set.delete(entry);

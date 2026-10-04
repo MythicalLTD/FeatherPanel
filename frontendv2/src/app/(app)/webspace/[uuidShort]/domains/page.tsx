@@ -119,7 +119,7 @@ export default function WebSpaceDomainsPage() {
             setCustomSsl((customSslRes?.data?.data as typeof customSsl) ?? null);
         } catch (error) {
             console.error(error);
-            toast.error(t('webSpaces.settings.loadFailed'));
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.loadFailed'));
         } finally {
             setLoading(false);
         }

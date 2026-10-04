@@ -221,7 +221,7 @@ export default function VmInstancesPage() {
             });
         } catch (error) {
             console.error('Error fetching VM instances:', error);
-            toast.error(t('admin.vmInstances.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.vmInstances.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -284,6 +284,7 @@ export default function VmInstancesPage() {
             setNodesList(data.data?.vm_nodes || []);
         } catch (error) {
             console.error('Error fetching nodes:', error);
+            toast.error(getApiErrorMessage(error, t, 'admin.vmInstances.errors.fetch_failed'));
         } finally {
             setLoadingNodes(false);
         }
@@ -300,7 +301,7 @@ export default function VmInstancesPage() {
             }
         } catch (error) {
             console.error('Error fetching VM instance details:', error);
-            toast.error(t('admin.vmInstances.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.vmInstances.messages.fetch_failed'));
         }
     };
 

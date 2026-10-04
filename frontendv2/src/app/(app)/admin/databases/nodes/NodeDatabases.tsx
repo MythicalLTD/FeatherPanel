@@ -198,7 +198,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             setNode(data.data.node);
         } catch (error) {
             console.error('Error fetching node:', error);
-            toast.error(t('admin.node_databases.messages.fetch_node_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node_databases.messages.fetch_node_failed'));
         }
     }, [nodeId, t]);
 
@@ -240,7 +240,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             }));
         } catch (error) {
             console.error('Error fetching databases:', error);
-            toast.error(t('admin.node_databases.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node_databases.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -345,7 +345,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error deleting database:', error);
-            toast.error(t('admin.node_databases.messages.delete_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node_databases.messages.delete_failed'));
         }
     };
 
@@ -362,7 +362,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                 }
             } catch (error) {
                 console.error('Error checking health:', error);
-                toast.error(t('admin.node_databases.messages.health_unhealthy'));
+                toast.error(getApiErrorMessage(error, t, 'admin.node_databases.messages.health_unhealthy'));
                 setDatabases((prev) => prev.map((d) => (d.id === db.id ? { ...d, healthy: false } : d)));
             }
         },

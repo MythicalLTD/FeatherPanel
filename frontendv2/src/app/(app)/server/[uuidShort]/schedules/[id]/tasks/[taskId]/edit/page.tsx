@@ -36,6 +36,14 @@ import { useSettings } from '@/contexts/SettingsContext';
 import type { Database, Task, TaskUpdateRequest } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { BackupTaskFields } from '@/components/server/backup/BackupTaskFields';
+import { ContainerShellTaskFields } from '@/components/server/schedule/ContainerShellTaskFields';
+import {
+    CONTAINER_SHELL_ACTION,
+    buildContainerShellPayload,
+    emptyContainerShellFields,
+    validateContainerShellFields,
+    type ContainerShellFields,
+} from '@/components/server/schedule/container-shell-payload';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import {
     buildBackupPayload,
@@ -43,6 +51,7 @@ import {
     parseBackupFields,
     type BackupFields,
 } from '@/components/server/backup/backup-payload';
+import { parseContainerShellFields } from '@/components/server/schedule/container-shell-payload';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function EditTaskPage() {
@@ -74,16 +83,23 @@ export default function EditTaskPage() {
         sequence_id: 1,
     });
     const [backup, setBackup] = React.useState<BackupFields>(emptyBackupFields());
+    const [containerShell, setContainerShell] = React.useState<ContainerShellFields>(emptyContainerShellFields());
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-tasks-edit');
 
-    const actionOptions = React.useMemo(
-        () => [
+    // Container Shell runs arbitrary commands in the container: it needs the admin switch and console access.
+    const containerShellAvailable =
+        settings?.server_lifecycle_hooks_container_shell_enabled === 'true' && hasPermission('control.console');
+    const actionOptions = React.useMemo(() => {
+        const options = [
             { id: 'power', name: t('serverTasks.actionPower') },
             { id: 'backup', name: t('serverTasks.actionBackup') },
             { id: 'command', name: t('serverTasks.actionCommand') },
-        ],
-        [t],
-    );
+        ];
+        if (containerShellAvailable || form.action === CONTAINER_SHELL_ACTION) {
+            options.push({ id: CONTAINER_SHELL_ACTION, name: t('serverTasks.actionContainerShell') });
+        }
+        return options;
+    }, [t, containerShellAvailable, form.action]);
 
     React.useEffect(() => {
         fetchWidgets();
@@ -131,13 +147,14 @@ export default function EditTaskPage() {
                     sequence_id: task.sequence_id,
                 });
                 setBackup(parseBackupFields(task.action, task.payload || ''));
+                setContainerShell(parseContainerShellFields(task.payload || ''));
                 setTaskCount(tasksRes.data?.data?.data?.length || 1);
                 if (databasesRes.data?.success && databasesRes.data?.data) {
                     setDatabases(databasesRes.data.data.data || []);
                 }
             } catch (error) {
                 console.error('Failed to load task:', error);
-                toast.error(t('serverTasks.failedToFetch'));
+                toast.error(getApiErrorMessage(error, t, 'serverTasks.failedToFetch'));
                 router.push(`/server/${uuidShort}/schedules/${scheduleId}/tasks`);
             } finally {
                 setLoading(false);
@@ -157,6 +174,20 @@ export default function EditTaskPage() {
                 return;
             }
             payload = built;
+        }
+        if (action === CONTAINER_SHELL_ACTION) {
+            const validation = validateContainerShellFields(containerShell);
+            if (validation !== 'ok') {
+                toast.error(
+                    validation === 'command_required'
+                        ? t('serverTasks.containerShellErrorCommandRequired')
+                        : validation === 'command_too_long'
+                          ? t('serverTasks.containerShellErrorCommandTooLong')
+                          : t('serverTasks.containerShellErrorTimeout'),
+                );
+                return;
+            }
+            payload = buildContainerShellPayload(containerShell);
         }
         setSaving(true);
         try {
@@ -317,6 +348,12 @@ export default function EditTaskPage() {
                             fields={backup}
                             setFields={setBackup}
                             databases={databases}
+                            disabled={saving}
+                        />
+                    ) : form.action === CONTAINER_SHELL_ACTION ? (
+                        <ContainerShellTaskFields
+                            fields={containerShell}
+                            setFields={setContainerShell}
                             disabled={saving}
                         />
                     ) : (

@@ -17,6 +17,7 @@
 
 namespace App\Controllers\Admin;
 
+use App\App;
 use App\Chat\WebNode;
 use App\Chat\Activity;
 use App\Chat\Location;
@@ -935,9 +936,24 @@ class WebNodesController
             if ($mailHostId) {
                 $fqdn = trim((string) ($webNode['fqdn'] ?? ''));
                 if ($fqdn !== '') {
-                    $scheme = strtolower(trim((string) ($webNode['scheme'] ?? 'https')));
-                    $base = ($scheme === 'https' ? 'https' : 'http') . '://' . $fqdn;
-                    MailHost::update($mailHostId, ['webmail_url' => $base . ':8080']);
+                    $hostname = 'webmail.' . strtolower($fqdn);
+                    $configure = FeatherQuilldClient::configureWebmail($webNode, $hostname);
+                    $cfgBody = is_array($configure['body'] ?? null) ? $configure['body'] : [];
+                    $url = is_string($cfgBody['url'] ?? null) && $cfgBody['url'] !== ''
+                        ? (string) $cfgBody['url']
+                        : 'https://' . $hostname;
+                    $update = ['webmail_url' => $url];
+                    $ssoSecret = trim((string) ($cfgBody['sso_secret'] ?? ''));
+                    if ($ssoSecret !== '') {
+                        $update['webmail_sso_secret'] = $ssoSecret;
+                    }
+                    MailHost::update($mailHostId, $update);
+                    if (!$configure['ok']) {
+                        App::getInstance(true)->getLogger()->warning(
+                            'Webmail package installed but configure failed for node '
+                            . $id . ': ' . ($configure['error'] ?? 'unknown')
+                        );
+                    }
                 }
             }
         }

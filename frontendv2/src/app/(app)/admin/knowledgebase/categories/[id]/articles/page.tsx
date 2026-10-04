@@ -146,8 +146,8 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
             if (data?.success) {
                 setCategory(data.data.category);
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.categories.messages.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.categories.messages.fetch_failed'));
             router.push('/admin/knowledgebase/categories');
         }
     }, [id, router, t]);
@@ -178,8 +178,8 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
             } else {
                 toast.error(t('admin.knowledgebase.articles.messages.fetch_failed'));
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.articles.messages.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.articles.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -224,8 +224,8 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
             });
             setArticles(sorted);
             return true;
-        } catch {
-            toast.error(t('admin.knowledgebase.articles.messages.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.articles.messages.fetch_failed'));
             return false;
         }
     }, [id, t]);
@@ -274,8 +274,8 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
             } else {
                 toast.error(t('admin.knowledgebase.order.messages.save_failed'));
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.order.messages.save_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.order.messages.save_failed'));
         } finally {
             setReorderLoading(false);
         }
@@ -323,8 +323,8 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
             throw new Error(
                 getApiErrorMessageFromPayload(data, t, 'admin.knowledgebase.categories.messages.upload_failed'),
             );
-        } catch {
-            toast.error(t('admin.knowledgebase.categories.messages.upload_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.categories.messages.upload_failed'));
             return null;
         }
     };

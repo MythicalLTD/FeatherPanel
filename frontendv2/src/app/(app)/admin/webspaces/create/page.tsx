@@ -181,7 +181,7 @@ export default function CreateWebSpacePage() {
             setHostingPackages((packagesRes.data.data.packages || []) as HostingPackageOption[]);
         } catch (error) {
             console.error(error);
-            toast.error(t('admin.webSpaces.messages.nodes_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.nodes_failed'));
         } finally {
             setLoadingOptions(false);
         }

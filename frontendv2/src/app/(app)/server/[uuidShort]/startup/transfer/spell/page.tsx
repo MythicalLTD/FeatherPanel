@@ -207,7 +207,7 @@ export default function ServerTransferSpellPage() {
                 }
             } catch (error) {
                 console.error('Failed to fetch spells:', error);
-                toast.error(t('serverStartup.failedToFetchSpells'));
+                toast.error(getApiErrorMessage(error, t, 'serverStartup.failedToFetchSpells'));
             } finally {
                 setLoadingSpells(false);
             }
@@ -232,7 +232,7 @@ export default function ServerTransferSpellPage() {
                 }
             } catch (error) {
                 console.error('Failed to fetch realms:', error);
-                toast.error(t('serverStartup.failedToFetchRealms'));
+                toast.error(getApiErrorMessage(error, t, 'serverStartup.failedToFetchRealms'));
             } finally {
                 setLoadingRealms(false);
             }
@@ -266,7 +266,7 @@ export default function ServerTransferSpellPage() {
             }
         } catch (error) {
             console.error('Failed to fetch transfer data:', error);
-            toast.error(t('serverStartup.failedToFetchServer'));
+            toast.error(getApiErrorMessage(error, t, 'serverStartup.failedToFetchServer'));
         } finally {
             setLoading(false);
         }
@@ -332,7 +332,7 @@ export default function ServerTransferSpellPage() {
             }
         } catch (error) {
             console.error('Failed to fetch spell details:', error);
-            toast.error(t('serverStartup.failedToFetchSpell'));
+            toast.error(getApiErrorMessage(error, t, 'serverStartup.failedToFetchSpell'));
         } finally {
             setLoadingSpells(false);
         }

@@ -88,8 +88,9 @@ export default function CreateSpellPage() {
                 const { data } = await axios.get('/api/admin/realms');
                 setRealms(data.data.realms || []);
             } catch (error) {
-                console.error('Error fetching realms:', error);
-            }
+            console.error('Error fetching realms:', error);
+            toast.error(getApiErrorMessage(error, t, 'admin.realms.messages.fetch_failed'));
+        }
         };
         fetchRealms();
     }, []);

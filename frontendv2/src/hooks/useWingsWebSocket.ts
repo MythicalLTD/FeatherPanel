@@ -17,6 +17,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getFeatherpanelApiErrorMessage } from '@/lib/api';
 
 interface WingsMessage {
     event: string;
@@ -405,7 +406,11 @@ export function useWingsWebSocket({
                 }
 
                 if (!response.data.success) {
-                    throw new Error(response.data.error_message || 'Failed to get JWT token');
+                    throw new Error(
+                        response.data.message ||
+                            response.data.error_message ||
+                            'Failed to get JWT token',
+                    );
                 }
 
                 const { token, connection_string } = response.data.data;

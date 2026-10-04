@@ -19,6 +19,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, CheckCircle2, XCircle, OctagonX } from 'lucide-react';
@@ -65,8 +66,8 @@ export function WebSpaceInstallConsole({
             await axios.post(`/api/admin/webspaces/${uuid}/install/abort`);
             setStatus('installation_failed');
             toast.success(t('admin.webSpaces.install.abortSuccess'));
-        } catch {
-            toast.error(t('admin.webSpaces.install.abortFailed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.install.abortFailed'));
         }
     };
 

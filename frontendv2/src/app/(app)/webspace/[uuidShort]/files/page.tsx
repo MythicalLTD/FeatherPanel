@@ -350,8 +350,8 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                 await filesApi.deletePullFile(uuidShort, id);
                 toast.success(t('files.messages.download_cancelled'));
                 void refreshPulls();
-            } catch {
-                toast.error(t('files.messages.cancel_download_failed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'files.messages.cancel_download_failed'));
             }
         },
         [filesApi, refreshPulls, t, uuidShort],
@@ -382,9 +382,9 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                     include_oversized: includeOversized,
                 });
                 if (!cancelled) setSearchResults(results);
-            } catch {
+            } catch (error) {
                 if (!cancelled) {
-                    toast.error(t('files.search.search_failed'));
+                    toast.error(getApiErrorMessage(error, t, 'files.search.search_failed'));
                     setSearchResults([]);
                 }
             } finally {
@@ -451,8 +451,8 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
             setEmptyTrashOpen(false);
             await refreshTrashStats();
             void refresh();
-        } catch {
-            toast.error(t('files.trash.messages.empty_error'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.trash.messages.empty_error'));
         } finally {
             setEmptyTrashBusy(false);
         }
@@ -684,8 +684,8 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
             const downloadUrl = await filesApi.getDownloadUrl(uuidShort, path);
             triggerSignedUrlDownload(downloadUrl);
             setActionFile(null);
-        } catch {
-            toast.error(t('files.messages.failed_download'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.messages.failed_download'));
         }
     };
 
@@ -698,8 +698,8 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
             triggerSignedUrlDownload(downloadUrl);
             toast.success(t('files.messages.download_directory_started'), { id: toastId });
             setActionFile(null);
-        } catch {
-            toast.error(t('files.messages.failed_download_directory'), { id: toastId });
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.messages.failed_download_directory'), { id: toastId });
         }
     };
 

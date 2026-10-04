@@ -104,7 +104,9 @@ export function PwaInstaller() {
         if (isStandaloneDisplay()) return;
 
         if ('serviceWorker' in navigator) {
-            void navigator.serviceWorker.register(SW_PATH).catch(() => undefined);
+            void navigator.serviceWorker.register(SW_PATH).catch((error) => {
+                console.warn('SW register failed', error);
+            });
         }
 
         const onBeforeInstall = (event: Event) => {

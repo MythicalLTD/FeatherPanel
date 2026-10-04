@@ -139,8 +139,8 @@ export default function EditVdsNodePage() {
                 params: { type: 'vps', limit: 100 },
             });
             setLocations((data.data?.locations ?? []) as Location[]);
-        } catch {
-            toast.error(t('admin.vdsNodes.errors.fetch_locations_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.errors.fetch_locations_failed'));
         }
     }, [t]);
 
@@ -210,8 +210,8 @@ export default function EditVdsNodePage() {
                         }
                     } catch {}
                 }
-            } catch {
-                toast.error(t('admin.vdsNodes.errors.fetch_failed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.errors.fetch_failed'));
                 router.push('/admin/vds-nodes');
             } finally {
                 setLoadingNode(false);
@@ -247,7 +247,7 @@ export default function EditVdsNodePage() {
                     if (err.field) fieldErrors[err.field] = err.detail;
                 }
                 setErrors(fieldErrors);
-                toast.error(t('admin.vdsNodes.errors.validation_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.errors.validation_failed'));
             } else {
                 toast.error(t('admin.vdsNodes.errors.save_failed'));
             }

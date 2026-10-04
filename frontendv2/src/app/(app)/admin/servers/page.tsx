@@ -236,7 +236,7 @@ export default function ServersPage() {
             });
         } catch (error) {
             console.error('Error fetching servers:', error);
-            toast.error(t('admin.servers.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -356,7 +356,7 @@ export default function ServersPage() {
             }
         } catch (error) {
             console.error('Error fetching server details:', error);
-            toast.error(t('admin.servers.messages.fetch_details_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.messages.fetch_details_failed'));
         }
     };
 
@@ -368,7 +368,7 @@ export default function ServersPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error cancelling transfer:', error);
-            toast.error(t('admin.servers.messages.transfer_cancel_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.messages.transfer_cancel_failed'));
         } finally {
             setCancellingTransferId(null);
         }

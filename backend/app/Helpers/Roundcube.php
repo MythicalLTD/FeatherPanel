@@ -171,6 +171,9 @@ PHP;
                 @copy($src, $target . '/' . $file);
             }
         }
+
+        // Keep signed-token verifier secret next to public/webmail/token.php.
+        WebmailSso::panelSecretForTokenPhp();
     }
 
     private static function copyTree(string $src, string $dst): void

@@ -285,7 +285,7 @@ export default function LoginForm() {
                 if (challenge) {
                     try {
                         sessionStorage.setItem('fp_2fa_challenge', challenge);
-                    } catch {
+                    } catch (error) {
                         /* ignore */
                     }
                 }
@@ -412,7 +412,7 @@ export default function LoginForm() {
         }
 
         if (!discordLinkToken) {
-            setError(t('common.error'));
+            setError(t('auth.discordLinking.missing_token'));
             return;
         }
 
@@ -616,7 +616,7 @@ export default function LoginForm() {
                 if (challenge) {
                     try {
                         sessionStorage.setItem('fp_2fa_challenge', challenge);
-                    } catch {
+                    } catch (error) {
                         /* ignore */
                     }
                 }
@@ -735,7 +735,7 @@ export default function LoginForm() {
                 if (challenge) {
                     try {
                         sessionStorage.setItem('fp_2fa_challenge', challenge);
-                    } catch {
+                    } catch (ax) {
                         /* ignore */
                     }
                 }

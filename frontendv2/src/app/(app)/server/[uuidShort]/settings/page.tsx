@@ -158,7 +158,7 @@ export default function ServerSettingsPage() {
             }
         } catch (error) {
             console.error(error);
-            toast.error(t('serverSettings.errorTitle'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.errorTitle'));
         } finally {
             setLoading(false);
         }
@@ -187,7 +187,7 @@ export default function ServerSettingsPage() {
             }
         } catch (error) {
             console.error(error);
-            toast.error(t('serverSettings.saveError'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.saveError'));
         } finally {
             setSaving(false);
         }
@@ -206,7 +206,7 @@ export default function ServerSettingsPage() {
             }
         } catch (error) {
             console.error(error);
-            toast.error(t('serverSettings.reinstallError'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.reinstallError'));
         } finally {
             setReinstalling(false);
         }
@@ -226,7 +226,7 @@ export default function ServerSettingsPage() {
             await fetchData();
         } catch (error) {
             console.error(error);
-            toast.error(t('serverSettings.abortInstallError'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.abortInstallError'));
         } finally {
             setAbortingInstall(false);
         }
@@ -240,7 +240,7 @@ export default function ServerSettingsPage() {
             router.push('/dashboard');
         } catch (error) {
             console.error(error);
-            toast.error(t('serverSettings.deleteError'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.deleteError'));
             setDeleting(false);
         }
     };

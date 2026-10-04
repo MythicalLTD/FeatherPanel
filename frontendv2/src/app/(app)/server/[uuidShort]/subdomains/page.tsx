@@ -72,7 +72,7 @@ export default function ServerSubdomainsPage() {
             }
         } catch (error) {
             console.error('Failed to fetch subdomains:', error);
-            toast.error(t('serverSubdomains.loadFailed'));
+            toast.error(getApiErrorMessage(error, t, 'serverSubdomains.loadFailed'));
         } finally {
             setLoading(false);
         }

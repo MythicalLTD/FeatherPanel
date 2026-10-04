@@ -52,14 +52,15 @@ export function ModulesTab({ node }: ModulesTabProps) {
             if (data.success) {
                 setModules(data.data?.data || data.data || []);
             } else {
-                console.error(getApiErrorMessageFromPayload(data, t, 'common.error'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.node.view.modules.fetch_failed'));
             }
         } catch (err: unknown) {
             console.error('Failed to fetch modules', err);
+            toast.error(getApiErrorMessage(err, t, 'admin.node.view.modules.fetch_failed'));
         } finally {
             setLoading(false);
         }
-    }, [node.id]);
+    }, [node.id, t]);
 
     useEffect(() => {
         fetchModules();
@@ -119,7 +120,7 @@ export function ModulesTab({ node }: ModulesTabProps) {
             try {
                 parsedConfig = JSON.parse(configData);
             } catch {
-                toast.error(t('admin.node.view.modules.invalid_json_config'));
+                toast.error(t('errors.codes.INVALID_JSON'));
                 setSavingConfig(false);
                 return;
             }

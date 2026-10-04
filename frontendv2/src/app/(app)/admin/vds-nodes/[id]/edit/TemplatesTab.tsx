@@ -85,8 +85,8 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
         try {
             const { data } = await axios.get(`/api/admin/vm-nodes/${nodeId}/templates`);
             setTemplates(Array.isArray(data.data?.templates) ? data.data.templates : []);
-        } catch {
-            toast.error(t('admin.vdsNodes.ips.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.ips.fetch_failed'));
         } finally {
             setLoading(false);
         }

@@ -25,7 +25,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { authApi } from '@/lib/api/auth';
 import { cn } from '@/lib/utils';
-import { getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 type QrStatus = 'idle' | 'pending' | 'scanned' | 'approved' | 'denied' | 'expired' | 'error';
 
@@ -126,9 +126,9 @@ export default function LoginQrPanel({ className, compact = false }: { className
             };
             setChallenge(next);
             setStatus('pending');
-        } catch {
+        } catch (error) {
             setStatus('error');
-            setError(t('auth.qr.error'));
+            setError(getApiErrorMessage(error, t, 'auth.qr.error'));
         }
     }, [clearPoll, t]);
 
@@ -226,10 +226,10 @@ export default function LoginQrPanel({ className, compact = false }: { className
                             setStatus('error');
                             setError(getApiErrorMessageFromPayload(exchange, t, 'auth.qr.error'));
                         }
-                    } catch {
+                    } catch (error) {
                         exchangingRef.current = false;
                         setStatus('error');
-                        setError(t('auth.qr.error'));
+                        setError(getApiErrorMessage(error, t, 'auth.qr.error'));
                     }
                     return;
                 }

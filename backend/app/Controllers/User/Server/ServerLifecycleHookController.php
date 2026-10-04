@@ -27,13 +27,15 @@ use App\Chat\ServerLifecycleHookStep;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Database\ServerDatabaseDumpService;
+use App\Services\Server\LifecycleHookExecutorService;
 
 class ServerLifecycleHookController
 {
     use CheckSubuserPermissionsTrait;
 
-    private const ALLOWED_HOOK_TYPES = ['pre_start', 'pre_stop', 'post_start', 'server_crash'];
-    private const ALLOWED_TASK_TYPES = ['discord_webhook', 'container_command', 'container_shell', 'http_request', 'sleep'];
+    private const ALLOWED_HOOK_TYPES = ['pre_start', 'pre_stop', 'post_start', 'post_stop', 'server_crash'];
+    private const ALLOWED_TASK_TYPES = ['discord_webhook', 'container_command', 'container_shell', 'backup', 'http_request', 'sleep'];
     private const ALLOWED_HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
     private const SLEEP_MIN_SECONDS = 1;
     private const SLEEP_MAX_SECONDS = 300;
@@ -171,6 +173,19 @@ class ServerLifecycleHookController
             return $shellGate;
         }
 
+        $backupGate = $this->requireBackupPermissionForTask($request, $server, $taskType);
+        if ($backupGate !== null) {
+            return $backupGate;
+        }
+
+        if (!LifecycleHookExecutorService::isTaskTypeAllowedForHookType($taskType, $hookType)) {
+            return ApiResponse::error(
+                'Container steps are not available for the ' . $hookType . ' hook because the server container is not running at that point.',
+                'TASK_TYPE_NOT_ALLOWED_FOR_HOOK',
+                400
+            );
+        }
+
         $payload = $body['payload'] ?? null;
         if (!is_array($payload)) {
             return ApiResponse::error('Payload must be an object', 'INVALID_PAYLOAD', 400);
@@ -255,6 +270,19 @@ class ServerLifecycleHookController
         $shellGate = $this->requireContainerShellEnabledForTask($taskType);
         if ($shellGate !== null) {
             return $shellGate;
+        }
+
+        $backupGate = $this->requireBackupPermissionForTask($request, $server, $taskType);
+        if ($backupGate !== null) {
+            return $backupGate;
+        }
+
+        if (!LifecycleHookExecutorService::isTaskTypeAllowedForHookType($taskType, $hookType)) {
+            return ApiResponse::error(
+                'Container steps are not available for the ' . $hookType . ' hook because the server container is not running at that point.',
+                'TASK_TYPE_NOT_ALLOWED_FOR_HOOK',
+                400
+            );
         }
 
         $existingPayload = json_decode((string) $step['payload'], true);
@@ -429,12 +457,26 @@ class ServerLifecycleHookController
         return null;
     }
 
+    /**
+     * Backup steps create backups, so on top of schedule.update the user needs backup.create
+     * (schedules themselves only check schedule.update).
+     */
+    private function requireBackupPermissionForTask(Request $request, array $server, string $taskType): ?Response
+    {
+        if ($taskType !== 'backup') {
+            return null;
+        }
+
+        return $this->checkPermission($request, $server, SubuserPermissions::BACKUP_CREATE);
+    }
+
     private function validateTaskPayload(string $taskType, array $payload): ?string
     {
         return match ($taskType) {
             'discord_webhook' => $this->validateDiscordWebhookPayload($payload),
             'container_command' => $this->validateContainerCommandPayload($payload),
             'container_shell' => $this->validateContainerShellPayload($payload),
+            'backup' => $this->validateBackupPayload($payload),
             'http_request' => $this->validateHttpRequestPayload($payload),
             'sleep' => $this->validateSleepPayload($payload),
             default => 'Unsupported task type',
@@ -764,6 +806,31 @@ class ServerLifecycleHookController
             if ($timeout < self::CONTAINER_SHELL_MIN_TIMEOUT || $timeout > self::CONTAINER_SHELL_MAX_TIMEOUT) {
                 return 'Container shell timeout must be between ' . self::CONTAINER_SHELL_MIN_TIMEOUT . ' and ' . self::CONTAINER_SHELL_MAX_TIMEOUT . ' seconds';
             }
+        }
+
+        return null;
+    }
+
+    private function validateBackupPayload(array $payload): ?string
+    {
+        foreach (array_keys($payload) as $key) {
+            if (!in_array($key, ['type', 'ignored_files', 'databases', 'directory', 'include_metadata', 'include_encrypted', 'include_activities'], true)) {
+                return 'Unsupported field in backup payload';
+            }
+        }
+
+        if (isset($payload['type']) && !is_string($payload['type'])) {
+            return 'Backup type must be "files", "database", or "full"';
+        }
+
+        if (isset($payload['ignored_files']) && (!is_string($payload['ignored_files']) || strlen($payload['ignored_files']) > 4096)) {
+            return 'Backup ignored_files must be a string of at most 4096 characters';
+        }
+
+        try {
+            ServerDatabaseDumpService::parseBackupPayload(json_encode($payload) ?: '[]');
+        } catch (\InvalidArgumentException $e) {
+            return $e->getMessage();
         }
 
         return null;

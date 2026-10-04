@@ -15,6 +15,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
@@ -48,6 +50,7 @@ export function DashboardRecentMails() {
             }
         } catch (e) {
             console.error('Failed to fetch mails for dashboard', e);
+            toast.error(getApiErrorMessage(e, t, 'common.error'));
         } finally {
             setLoading(false);
         }

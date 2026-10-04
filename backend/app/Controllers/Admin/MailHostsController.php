@@ -32,9 +32,7 @@ class MailHostsController
     {
         $hosts = MailHost::listAll();
         foreach ($hosts as &$host) {
-            if (!empty($host['provision_api_key'])) {
-                $host['provision_api_key'] = '[REDACTED]';
-            }
+            self::redactSecrets($host);
         }
         unset($host);
 
@@ -49,9 +47,7 @@ class MailHostsController
             return ApiResponse::error('Mail host not found', 'NOT_FOUND', 404);
         }
 
-        if (!empty($host['provision_api_key'])) {
-            $host['provision_api_key'] = '[REDACTED]';
-        }
+        self::redactSecrets($host);
 
         return ApiResponse::success(['host' => $host], 'OK', 200);
     }
@@ -215,5 +211,18 @@ class MailHostsController
         }
 
         return null;
+    }
+
+    /**
+     * @param array<string, mixed> $host
+     */
+    private static function redactSecrets(array &$host): void
+    {
+        if (!empty($host['provision_api_key'])) {
+            $host['provision_api_key'] = '[REDACTED]';
+        }
+        if (!empty($host['webmail_sso_secret'])) {
+            $host['webmail_sso_secret'] = '[REDACTED]';
+        }
     }
 }

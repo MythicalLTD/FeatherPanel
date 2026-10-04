@@ -123,7 +123,7 @@ export default function WebSpaceConsolePage() {
             }
         } catch (error) {
             console.error(error);
-            toast.error(t('webSpaces.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }

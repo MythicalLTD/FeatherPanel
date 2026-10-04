@@ -19,7 +19,7 @@ import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
@@ -140,7 +140,7 @@ export function ActionsTab({
         } catch (error) {
             console.error('Error fetching Wings runtime:', error);
             setRuntime(null);
-            toast.error(t('admin.servers.edit.actions.runtime_unknown'));
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.edit.actions.runtime_unknown'));
         } finally {
             setRuntimeLoading(false);
         }
@@ -202,7 +202,7 @@ export function ActionsTab({
             onRefresh();
         } catch (error) {
             console.error('Error unsuspending server:', error);
-            toast.error(t('admin.servers.edit.actions.unsuspend_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.edit.actions.unsuspend_failed'));
         } finally {
             setSuspending(false);
         }
@@ -250,7 +250,7 @@ export function ActionsTab({
             router.push('/admin/servers');
         } catch (error) {
             console.error('Error deleting server:', error);
-            toast.error(t('admin.servers.edit.actions.delete_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.edit.actions.delete_failed'));
             setDeleting(false);
         }
     };
@@ -265,7 +265,7 @@ export function ActionsTab({
             setNodes(next.filter((n) => String(n.id) !== String(currentNodeId ?? '')));
         } catch (error) {
             console.error('Error fetching nodes:', error);
-            toast.error(t('admin.servers.transfer.fetch_nodes_failed', { defaultValue: 'Failed to fetch nodes.' }));
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.transfer.fetch_nodes_failed'));
         } finally {
             setLoadingNodes(false);
         }
@@ -285,9 +285,7 @@ export function ActionsTab({
             setAllocations((data?.data?.allocations || []) as ApiAllocation[]);
         } catch (error) {
             console.error('Error fetching allocations:', error);
-            toast.error(
-                t('admin.servers.transfer.fetch_allocations_failed', { defaultValue: 'Failed to fetch allocations.' }),
-            );
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.transfer.fetch_allocations_failed'));
         } finally {
             setLoadingAllocations(false);
         }
@@ -314,7 +312,7 @@ export function ActionsTab({
             onRefresh();
         } catch (error) {
             console.error('Error transferring server:', error);
-            toast.error(t('admin.servers.messages.transfer_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.messages.transfer_failed'));
         } finally {
             setTransferring(false);
         }

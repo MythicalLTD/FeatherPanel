@@ -64,7 +64,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { Server, AllocationItem, AllocationsResponse, AvailableAllocationsResponse } from '@/types/server';
 import { copyToClipboard, cn, isEnabled } from '@/lib/utils';
-import { getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function ServerAllocationsPage() {
     const { t } = useTranslation();
@@ -119,7 +119,7 @@ export default function ServerAllocationsPage() {
             }
         } catch (error) {
             console.error('Error fetching allocations:', error);
-            toast.error(t('serverAllocations.failedToFetch'));
+            toast.error(getApiErrorMessage(error, t, 'serverAllocations.failedToFetch'));
         } finally {
             setLoading(false);
         }
@@ -176,7 +176,7 @@ export default function ServerAllocationsPage() {
             }
         } catch (error) {
             console.error('Error auto-allocating:', error);
-            toast.error(t('serverAllocations.failedToAutoAllocate'));
+            toast.error(getApiErrorMessage(error, t, 'serverAllocations.failedToAutoAllocate'));
         } finally {
             setIsAutoAllocating(false);
         }
@@ -201,7 +201,7 @@ export default function ServerAllocationsPage() {
             }
         } catch (error) {
             console.error('Error assigning allocation:', error);
-            toast.error(t('serverAllocations.failedToCreate'));
+            toast.error(getApiErrorMessage(error, t, 'serverAllocations.failedToCreate'));
         } finally {
             setIsAssigning(false);
         }
@@ -227,7 +227,7 @@ export default function ServerAllocationsPage() {
             }
         } catch (error) {
             console.error('Error deleting allocation:', error);
-            toast.error(t('serverAllocations.failedToDelete'));
+            toast.error(getApiErrorMessage(error, t, 'serverAllocations.failedToDelete'));
         } finally {
             setIsDeleting(false);
         }
@@ -260,7 +260,7 @@ export default function ServerAllocationsPage() {
             }
         } catch (error) {
             console.error('Error setting primary allocation:', error);
-            toast.error(t('serverAllocations.failedToSetPrimary'));
+            toast.error(getApiErrorMessage(error, t, 'serverAllocations.failedToSetPrimary'));
         } finally {
             setIsSettingPrimary(false);
         }

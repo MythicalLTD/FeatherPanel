@@ -191,6 +191,19 @@ class WingsServerStatusController
             }
         }
 
+        if (
+            in_array($state, ['offline', 'stopped'], true)
+            && in_array($oldState, ['running', 'starting', 'stopping'], true)
+        ) {
+            try {
+                (new LifecycleHookExecutorService())->executeForServerStopped($server, $node);
+            } catch (\Throwable $e) {
+                App::getInstance(true)->getLogger()->error(
+                    'Post-stop lifecycle hook failed for server ' . $uuid . ': ' . $e->getMessage()
+                );
+            }
+        }
+
         // Emit event
         global $eventManager;
         $eventManager->emit(

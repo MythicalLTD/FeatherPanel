@@ -47,6 +47,7 @@ class MailHost
         'dkim_selector',
         'dkim_record',
         'webmail_url',
+        'webmail_sso_secret',
     ];
 
     /**
@@ -67,6 +68,9 @@ class MailHost
 
         if (!empty($data['provision_api_key'])) {
             $data['provision_api_key'] = App::getInstance(true)->encryptValue((string) $data['provision_api_key']);
+        }
+        if (!empty($data['webmail_sso_secret'])) {
+            $data['webmail_sso_secret'] = App::getInstance(true)->encryptValue((string) $data['webmail_sso_secret']);
         }
 
         $filtered = array_intersect_key($data, array_flip(array_merge(self::$allowedFields, ['created_at', 'updated_at'])));
@@ -146,6 +150,14 @@ class MailHost
                 unset($data['provision_api_key']);
             } else {
                 $data['provision_api_key'] = App::getInstance(true)->encryptValue($key);
+            }
+        }
+        if (array_key_exists('webmail_sso_secret', $data)) {
+            $sso = trim((string) ($data['webmail_sso_secret'] ?? ''));
+            if ($sso === '') {
+                unset($data['webmail_sso_secret']);
+            } else {
+                $data['webmail_sso_secret'] = App::getInstance(true)->encryptValue($sso);
             }
         }
 
@@ -286,6 +298,14 @@ class MailHost
             }
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Failed to decrypt mail host API key: ' . $e->getMessage());
+        }
+
+        try {
+            if (isset($row['webmail_sso_secret']) && is_string($row['webmail_sso_secret']) && $row['webmail_sso_secret'] !== '') {
+                $row['webmail_sso_secret'] = App::getInstance(true)->decryptValue($row['webmail_sso_secret']);
+            }
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Failed to decrypt mail host webmail SSO secret: ' . $e->getMessage());
         }
 
         return $row;

@@ -165,7 +165,7 @@ export default function EditSpellPage() {
                 }
             } catch (error) {
                 console.error('Error fetching spell:', error);
-                toast.error(t('admin.spells.messages.fetch_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.fetch_failed'));
                 router.push('/admin/spells');
             } finally {
                 setLoading(false);
@@ -181,8 +181,9 @@ export default function EditSpellPage() {
                 const { data } = await axios.get(`/api/admin/spells/${spellId}/variables`);
                 setVariables(data.data.variables || []);
             } catch (error) {
-                console.error('Error fetching variables:', error);
-            }
+            console.error('Error fetching variables:', error);
+            toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.fetch_failed'));
+        }
         };
 
         if (!loading) {
@@ -339,7 +340,7 @@ export default function EditSpellPage() {
             setConfirmDeleteVariable(null);
         } catch (error) {
             console.error('Error deleting variable:', error);
-            toast.error(t('admin.spells.messages.variable_delete_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.variable_delete_failed'));
         } finally {
             setDeletingVariable(false);
         }

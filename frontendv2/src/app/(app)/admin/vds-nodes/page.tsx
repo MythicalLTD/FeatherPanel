@@ -146,6 +146,7 @@ export default function VdsNodesPage() {
                 setLocations((data.data.locations || []) as Location[]);
             } catch (error) {
                 console.error('Error fetching locations:', error);
+                toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.fetch_failed'));
             }
         };
         fetchLocations();
@@ -176,7 +177,7 @@ export default function VdsNodesPage() {
                 await Promise.all(nodesToCheck.map((node) => testConnection(node.id)));
             } catch (error) {
                 console.error('Error testing all VM node connections:', error);
-                toast.error(t('admin.vdsNodes.messages.connection_check_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.messages.connection_check_failed'));
             } finally {
                 setIsCheckingConnections(false);
             }
@@ -216,7 +217,7 @@ export default function VdsNodesPage() {
             }
         } catch (error) {
             console.error('Error fetching VM nodes:', error);
-            toast.error(t('admin.vdsNodes.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }

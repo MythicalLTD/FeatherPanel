@@ -142,6 +142,7 @@ export default function WebNodesPage() {
                 setLocations((data.data.locations || []) as Location[]);
             } catch (error) {
                 console.error('Error fetching locations:', error);
+                toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.fetch_failed'));
             }
         };
         fetchLocations();
@@ -201,7 +202,7 @@ export default function WebNodesPage() {
             }
         } catch (error) {
             console.error('Error fetching web nodes:', error);
-            toast.error(t('admin.webNodes.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.webNodes.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }

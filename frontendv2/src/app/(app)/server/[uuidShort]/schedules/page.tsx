@@ -112,7 +112,7 @@ export default function ServerSchedulesPage() {
                 }
             } catch (error) {
                 console.error('Failed to fetch schedules:', error);
-                toast.error(t('serverSchedules.failedToFetch'));
+                toast.error(getApiErrorMessage(error, t, 'serverSchedules.failedToFetch'));
             } finally {
                 setLoading(false);
             }
@@ -229,7 +229,7 @@ export default function ServerSchedulesPage() {
         try {
             parsed = JSON.parse(importJson);
         } catch {
-            toast.error(t('serverSchedules.importInvalidJson'));
+            toast.error(t('errors.codes.INVALID_JSON'));
             return;
         }
         setImporting(true);

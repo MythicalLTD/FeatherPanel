@@ -199,7 +199,7 @@ export default function SpellsPage() {
                 });
             } catch (error) {
                 console.error('Error fetching spells:', error);
-                toast.error(t('admin.spells.messages.fetch_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.fetch_failed'));
             } finally {
                 setLoading(false);
             }
@@ -217,7 +217,7 @@ export default function SpellsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error deleting spell:', error);
-            toast.error(t('admin.spells.messages.delete_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.delete_failed'));
         }
     };
 
@@ -237,7 +237,7 @@ export default function SpellsPage() {
             URL.revokeObjectURL(url);
         } catch (error) {
             console.error('Error exporting spell:', error);
-            toast.error(t('admin.spells.messages.export_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.export_failed'));
         }
     };
 
@@ -331,8 +331,8 @@ export default function SpellsPage() {
             );
             setSpells(sorted);
             return true;
-        } catch {
-            toast.error(t('admin.spells.messages.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.fetch_failed'));
             return false;
         }
     }, [realmIdParam, t]);
@@ -371,8 +371,8 @@ export default function SpellsPage() {
             setIsReorderMode(false);
             patchFilters({ page: 1 });
             setRefreshKey((prev) => prev + 1);
-        } catch {
-            toast.error(t('admin.spells.order.messages.save_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.spells.order.messages.save_failed'));
         } finally {
             setReorderLoading(false);
         }

@@ -94,7 +94,7 @@ export default function CreateProxyPage() {
             }
         } catch (error) {
             console.error('Failed to fetch data:', error);
-            toast.error(t('common.error'));
+            toast.error(getApiErrorMessage(error, t, 'common.error'));
         } finally {
             setLoading(false);
         }

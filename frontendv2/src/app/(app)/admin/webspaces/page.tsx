@@ -199,7 +199,7 @@ export default function WebSpacesPage() {
             });
         } catch (error) {
             console.error('Error fetching WebSpaces:', error);
-            toast.error(t('admin.webSpaces.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -290,6 +290,7 @@ export default function WebSpacesPage() {
             setNodesList((data.data?.web_nodes || []) as WebNode[]);
         } catch (error) {
             console.error('Error fetching web nodes:', error);
+            toast.error(getApiErrorMessage(error, t, 'admin.webNodes.messages.fetch_failed'));
         } finally {
             setLoadingNodes(false);
         }

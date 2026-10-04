@@ -101,7 +101,7 @@ export default function AdminWebSpaceDetailPage() {
             setSpace((data.data?.webspace || data.data) as WebSpace);
         } catch (error) {
             console.error(error);
-            toast.error(t('admin.webSpaces.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.messages.fetch_failed'));
             router.push('/admin/webspaces');
         } finally {
             setLoading(false);

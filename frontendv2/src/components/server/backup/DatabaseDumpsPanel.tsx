@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { getApiErrorMessage } from '@/lib/api-errors';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     Calendar,
@@ -156,8 +157,8 @@ export function DatabaseDumpsPanel({ uuidShort, directory = DEFAULT_DB_DIRECTORY
             const url = await filesApi.getDownloadUrl(uuidShort, joinServerPath(directory, file.name));
             triggerSignedUrlDownload(url);
             toast.success(t('serverBackups.downloadSuccess'));
-        } catch {
-            toast.error(t('serverBackups.downloadFailed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'serverBackups.downloadFailed'));
         }
     };
 
@@ -194,8 +195,8 @@ export function DatabaseDumpsPanel({ uuidShort, directory = DEFAULT_DB_DIRECTORY
             await filesApi.deleteFiles(uuidShort, directory, names, true);
             toast.success(t('serverBackups.dumpsDeleteSuccess', { count: String(names.length) }));
             await fetchDumps();
-        } catch {
-            toast.error(t('serverBackups.dumpsDeleteFailed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'serverBackups.dumpsDeleteFailed'));
         } finally {
             setActionLoading(false);
         }
@@ -479,8 +480,8 @@ export function DatabaseDumpsPanel({ uuidShort, directory = DEFAULT_DB_DIRECTORY
                                 try {
                                     await confirmAction.action();
                                     setConfirmOpen(false);
-                                } catch {
-                                    toast.error(t('serverBackups.failedToPerformAction'));
+                                } catch (error) {
+                                    toast.error(getApiErrorMessage(error, t, 'serverBackups.failedToPerformAction'));
                                 }
                             }}
                         >

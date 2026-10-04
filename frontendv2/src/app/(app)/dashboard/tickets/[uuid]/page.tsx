@@ -246,7 +246,7 @@ export default function TicketViewPage() {
             fetchTicketDetails();
         } catch (err) {
             console.error('Failed to delete message', err);
-            toast.error(t('tickets.failedToDeleteMessage'));
+            toast.error(getApiErrorMessage(err, t, 'tickets.failedToDeleteMessage'));
         }
     };
 

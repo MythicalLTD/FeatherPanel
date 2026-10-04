@@ -179,7 +179,7 @@ export default function ServerBackupsPage() {
                 }
             } catch (error) {
                 console.error('Error fetching backups:', error);
-                toast.error(t('serverBackups.failedToFetch'));
+                toast.error(getApiErrorMessage(error, t, 'serverBackups.failedToFetch'));
             } finally {
                 setLoading(false);
             }
@@ -229,11 +229,7 @@ export default function ServerBackupsPage() {
                 toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.restoreFailed'));
             }
         } catch (error) {
-            if (axios.isAxiosError(error) && error.response?.data?.error === 'BACKUP_LOCKED') {
-                toast.error(t('serverBackups.restoreLockedError'));
-            } else {
-                toast.error(getApiErrorMessage(error, t, 'serverBackups.restoreFailed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'serverBackups.restoreFailed'));
         } finally {
             setRestoring(false);
         }
@@ -314,8 +310,8 @@ export default function ServerBackupsPage() {
                         data: { uuids: selectedUuids },
                     });
                     handleBulkDeleteResult(data);
-                } catch {
-                    toast.error(t('serverBackups.bulkDeleteFailed'));
+                } catch (error) {
+                    toast.error(getApiErrorMessage(error, t, 'serverBackups.bulkDeleteFailed'));
                 }
             },
         });
@@ -333,8 +329,8 @@ export default function ServerBackupsPage() {
                         data: { all: true },
                     });
                     handleBulkDeleteResult(data);
-                } catch {
-                    toast.error(t('serverBackups.bulkDeleteFailed'));
+                } catch (error) {
+                    toast.error(getApiErrorMessage(error, t, 'serverBackups.bulkDeleteFailed'));
                 }
             },
         });
@@ -368,8 +364,8 @@ export default function ServerBackupsPage() {
             } else {
                 toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.downloadFailed'));
             }
-        } catch {
-            toast.error(t('serverBackups.downloadFailed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'serverBackups.downloadFailed'));
         }
     };
 

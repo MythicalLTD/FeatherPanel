@@ -19,6 +19,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { getFeatherpanelApiErrorMessage } from '@/lib/api';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -218,7 +219,7 @@ export default function AdminMountsPage() {
             }
         } catch (e) {
             console.error(e);
-            toast.error(t('admin.mounts.fetch_failed'));
+            toast.error(getApiErrorMessage(e, t, 'admin.mounts.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -236,7 +237,7 @@ export default function AdminMountsPage() {
             setSpells(s);
         } catch (e) {
             console.error(e);
-            toast.error(t('admin.mounts.fetch_failed'));
+            toast.error(getApiErrorMessage(e, t, 'admin.mounts.fetch_failed'));
         } finally {
             setLinksLoading(false);
         }
@@ -327,7 +328,13 @@ export default function AdminMountsPage() {
                     return;
                 }
                 if (!(await persistLinks(newId))) {
-                    await axios.delete(`/api/admin/mounts/${newId}`).catch(() => {});
+                    await axios.delete(`/api/admin/mounts/${newId}`).catch((error) => {
+                        console.error(
+                            'Failed to roll back mount after link save failure:',
+                            getFeatherpanelApiErrorMessage(error) || error,
+                        );
+                        toast.error(getApiErrorMessage(error, t, 'admin.mounts.rollback_failed'));
+                    });
                     await loadMounts();
                     return;
                 }

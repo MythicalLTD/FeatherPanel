@@ -153,6 +153,7 @@ export default function NodesPage() {
                 setLocations(data.data.locations || []);
             } catch (error) {
                 console.error('Error fetching locations:', error);
+                toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.fetch_failed'));
             }
         };
         fetchLocations();
@@ -212,7 +213,7 @@ export default function NodesPage() {
                 }
             } catch (error) {
                 console.error('Error checking all nodes health:', error);
-                toast.error(t('admin.node.messages.health_check_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.node.messages.health_check_failed'));
             } finally {
                 setIsCheckingHealth(false);
             }
@@ -251,7 +252,7 @@ export default function NodesPage() {
             }
         } catch (error) {
             console.error('Error fetching nodes:', error);
-            toast.error(t('admin.node.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }

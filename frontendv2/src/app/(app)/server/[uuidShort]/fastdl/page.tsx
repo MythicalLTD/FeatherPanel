@@ -181,8 +181,8 @@ export default function ServerFastDlPage() {
             setCopied(true);
             toast.success(t('serverFastDl.commandCopied'));
             setTimeout(() => setCopied(false), 2000);
-        } catch {
-            toast.error(t('serverFastDl.copyError'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'serverFastDl.copyError'));
         }
     };
 

@@ -313,8 +313,8 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 setAltSourceIps([]);
                 setAltSourceDevices([]);
             }
-        } catch {
-            toast.error(t('admin.users.edit.error'));
+        } catch (e) {
+            toast.error(getApiErrorMessage(e, t, 'admin.users.edit.error'));
             setUser(null);
         } finally {
             setLoading(false);
@@ -349,8 +349,8 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             } else {
                 toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.edit.potential_alts.clear_failed'));
             }
-        } catch {
-            toast.error(t('admin.users.edit.potential_alts.clear_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.users.edit.potential_alts.clear_failed'));
         } finally {
             setClearingDevices(false);
         }
@@ -385,7 +385,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             }
         } catch (error: unknown) {
             console.error(error);
-            toast.error(t('admin.users.messages.update_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.users.messages.update_failed'));
         } finally {
             setSubmitting(false);
         }
@@ -486,8 +486,8 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             } else {
                 toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.messages.2fa_failed'));
             }
-        } catch {
-            toast.error(t('admin.users.messages.2fa_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.users.messages.2fa_failed'));
         }
     };
 
@@ -510,8 +510,8 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             } else {
                 toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.messages.discord_failed'));
             }
-        } catch {
-            toast.error(t('admin.users.messages.discord_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.users.messages.discord_failed'));
         }
     };
 
@@ -538,8 +538,8 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             } else {
                 toast.error(getApiErrorMessageFromPayload(data, t, 'admin.users.messages.sso_failed'));
             }
-        } catch {
-            toast.error(t('admin.users.messages.sso_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.users.messages.sso_failed'));
         } finally {
             setSsoGenerating(false);
         }

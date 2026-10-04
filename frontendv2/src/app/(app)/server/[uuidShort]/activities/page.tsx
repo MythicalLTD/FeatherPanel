@@ -71,7 +71,7 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
-import { getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 type ActivityMetadata = {
     message?: string;
@@ -262,7 +262,7 @@ export default function ServerActivityPage() {
                 });
             } catch (error) {
                 console.error(error);
-                toast.error(t('serverActivities.failedToFetch'));
+                toast.error(getApiErrorMessage(error, t, 'serverActivities.failedToFetch'));
             } finally {
                 setLoading(false);
             }

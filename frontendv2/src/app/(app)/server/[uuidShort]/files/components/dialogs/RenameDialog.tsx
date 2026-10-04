@@ -14,11 +14,13 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface RenameDialogProps {
     open: boolean;
@@ -52,6 +54,7 @@ export function RenameDialog({ open, onOpenChange, uuid, root, fileName, onSucce
             onOpenChange(false);
         } catch (error) {
             console.error(error);
+            toast.error(getApiErrorMessage(error, t, 'files.dialogs.rename.error'));
         } finally {
             setLoading(false);
         }

@@ -144,8 +144,8 @@ export default function CloudManagementPage() {
                 setSummary(null);
                 setCredits(null);
             }
-        } catch {
-            toast.error(t('admin.cloud_management.messages.credentials_load_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.cloud_management.messages.credentials_load_failed'));
             setLinked(false);
         } finally {
             setLoading(false);
@@ -167,8 +167,8 @@ export default function CloudManagementPage() {
                 return;
             }
             window.location.href = oauth2Url;
-        } catch {
-            toast.error(t('admin.cloud_management.messages.oauth_link_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.cloud_management.messages.oauth_link_failed'));
             setLinking(false);
         }
     };
@@ -184,8 +184,8 @@ export default function CloudManagementPage() {
             setSummary(null);
             setCredits(null);
             await loadStatus();
-        } catch {
-            toast.error(t('admin.cloud_management.messages.disconnect_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.cloud_management.messages.disconnect_failed'));
         } finally {
             setDisconnecting(false);
         }

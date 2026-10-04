@@ -158,9 +158,9 @@ export default function CreateNodePage() {
                     a[1].localeCompare(b[1]),
                 );
                 setCountryCodes(Object.fromEntries(sorted));
-            } catch {
+            } catch (error) {
                 if (!cancelled) {
-                    toast.error(t('admin.locations.messages.country_codes_failed'));
+                    toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.country_codes_failed'));
                 }
             }
         };

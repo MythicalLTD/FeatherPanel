@@ -83,7 +83,7 @@ export default function CreateUserPage() {
             }
         } catch (error) {
             console.error('Failed to fetch roles:', error);
-            toast.error(t('admin.users.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.users.messages.fetch_failed'));
         }
     }, [t]);
 
