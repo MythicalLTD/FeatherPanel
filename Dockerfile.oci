@@ -137,7 +137,7 @@ opcache.revalidate_freq = 2\n\
 opcache.fast_shutdown = 1' > /usr/local/etc/php/conf.d/custom.ini
 
 # Create backend directories
-RUN mkdir -p /var/www/html/storage/{logs,cache,uploads,temp,config,backups,addons} \
+RUN mkdir -p /var/www/html/storage/{logs,cache,uploads,temp,config,backups,addons,data} \
     /var/www/html/public/{attachments,translations,addons,components} \
     /var/log/cron /var/www/html/storage/cron
 

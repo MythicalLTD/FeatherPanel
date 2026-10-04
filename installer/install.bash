@@ -583,6 +583,8 @@ refresh_compose_from_upstream
 
 PMA_BACKUP="${PANEL_ROOT}/.pma-update-backup"
 rm -rf "$PMA_BACKUP"
+DATA_BACKUP="${PANEL_ROOT}/.storage-data-update-backup"
+rm -rf "$DATA_BACKUP"
 if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx featherpanel_backend; then
 	if docker exec featherpanel_backend test -f /var/www/html/public/pma/index.php 2>/dev/null; then
 		log "featherpanel-docker-updater: backing up phpMyAdmin before container recreate"
@@ -593,6 +595,16 @@ if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx featherpanel_backend; 
 		else
 			log "featherpanel-docker-updater: warning: phpMyAdmin backup failed (continuing)"
 			rm -rf "$PMA_BACKUP"
+		fi
+	fi
+	if docker exec featherpanel_backend test -d /var/www/html/storage/data 2>/dev/null; then
+		log "featherpanel-docker-updater: backing up addon data before container recreate"
+		mkdir -p "$DATA_BACKUP"
+		if docker cp featherpanel_backend:/var/www/html/storage/data/. "$DATA_BACKUP/" >>"$LOG_FILE" 2>&1; then
+			log "featherpanel-docker-updater: addon data backup ready at ${DATA_BACKUP}"
+		else
+			log "featherpanel-docker-updater: warning: addon data backup failed (continuing)"
+			rm -rf "$DATA_BACKUP"
 		fi
 	fi
 fi
@@ -606,7 +618,28 @@ log "featherpanel-docker-updater: docker compose up (--pull always)"
 if ! docker compose -f "$COMPOSE_FILE" up -d --pull always --remove-orphans >>"$LOG_FILE" 2>&1; then
 	log "featherpanel-docker-updater: ERROR docker compose up failed (see ${LOG_FILE})"
 	rm -rf "$PMA_BACKUP"
+	rm -rf "$DATA_BACKUP"
 	exit 1
+fi
+
+if [ -d "$DATA_BACKUP" ]; then
+	log "featherpanel-docker-updater: restoring addon data into persisted volume"
+	restored_data=0
+	for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+		if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx featherpanel_backend; then
+			if docker exec featherpanel_backend mkdir -p /var/www/html/storage/data >>"$LOG_FILE" 2>&1 \
+				&& docker cp "$DATA_BACKUP/." featherpanel_backend:/var/www/html/storage/data/ >>"$LOG_FILE" 2>&1; then
+				log "featherpanel-docker-updater: addon data restored successfully"
+				restored_data=1
+				break
+			fi
+		fi
+		sleep 2
+	done
+	if [ "$restored_data" -ne 1 ]; then
+		log "featherpanel-docker-updater: warning: could not restore addon data backup"
+	fi
+	rm -rf "$DATA_BACKUP"
 fi
 
 if [ -d "$PMA_BACKUP" ] && [ -f "$PMA_BACKUP/index.php" ]; then
@@ -4465,7 +4498,7 @@ create_backup() {
 	# Fallback: Try known volume names if still nothing found
 	if [ ${#ACTUAL_VOLUMES[@]} -eq 0 ]; then
 		log_warn "Could not detect volumes from containers, trying known volume names..."
-		ACTUAL_VOLUMES=("featherpanel_mariadb_data" "featherpanel_redis_data" "featherpanel_featherpanel_attachments" "featherpanel_featherpanel_config" "featherpanel_featherpanel_snapshots")
+		ACTUAL_VOLUMES=("featherpanel_mariadb_data" "featherpanel_redis_data" "featherpanel_featherpanel_attachments" "featherpanel_featherpanel_config" "featherpanel_featherpanel_snapshots" "featherpanel_featherpanel_data")
 	fi
 
 	# Backup each volume that actually exists

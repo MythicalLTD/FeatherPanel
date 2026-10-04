@@ -90,6 +90,7 @@ services:
       - demo_logs:/var/www/html/storage/logs
       - demo_translations:/var/www/html/public/translations
       - demo_addons:/var/www/html/storage/addons
+      - demo_data:/var/www/html/storage/data
     networks:
       - featherpanel_demo_network
 
@@ -171,6 +172,7 @@ services:
     volumes:
       - demo_config:/app/config:ro
       - demo_logs:/var/www/html/storage/logs
+      - demo_data:/var/www/html/storage/data
     depends_on:
       mysql:
         condition: service_healthy
@@ -270,6 +272,8 @@ volumes:
   demo_translations:
     driver: local
   demo_addons:
+    driver: local
+  demo_data:
     driver: local
   demo_mcp_oauth_data:
     driver: local

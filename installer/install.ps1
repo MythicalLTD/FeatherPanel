@@ -438,7 +438,8 @@ function Get-FeatherPanelVolumes {
             "featherpanel_redis_data",
             "featherpanel_featherpanel_attachments",
             "featherpanel_featherpanel_config",
-            "featherpanel_featherpanel_snapshots"
+            "featherpanel_featherpanel_snapshots",
+            "featherpanel_featherpanel_data"
         )
     }
     
@@ -2092,5 +2093,4 @@ while ($true) {
         }
     }
 }
-
 

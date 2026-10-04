@@ -74,6 +74,7 @@ handle_local_changes_before_update() {
         -e 'backend/public/addons' \
         -e 'backend/public/components' \
         -e 'backend/storage/addons' \
+        -e 'backend/storage/data' \
         -e 'backend/storage/config'
     restore_runtime_dirs
 }
@@ -158,6 +159,7 @@ update_repo() {
             -e 'backend/public/addons' \
             -e 'backend/public/components' \
             -e 'backend/storage/addons' \
+            -e 'backend/storage/data' \
             -e 'backend/storage/config'
     fi
     restore_runtime_dirs

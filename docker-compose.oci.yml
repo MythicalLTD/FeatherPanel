@@ -13,6 +13,7 @@
 # - Config (.env): /data/config (symlinked to /var/www/html/storage/config)
 # - Logs: /data/logs (symlinked to /var/www/html/storage/logs)
 # - Backups: /data/backups (symlinked to /var/www/html/storage/backups)
+# - Addon data/uploads: /data/storage-data (symlinked to /var/www/html/storage/data)
 #
 # The container regenerates addon symlinks on every start, so addons persist.
 
