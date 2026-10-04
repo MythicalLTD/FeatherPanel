@@ -25,7 +25,7 @@ export interface NavigationItem {
     /** Iconify id (`tabler:home`), image URL, emoji, or lucide name — highest priority when set. */
     panelIcon?: string;
     isActive: boolean;
-    category: 'main' | 'admin' | 'server';
+    category: 'main' | 'admin' | 'server' | 'vds' | 'webspace';
     permission?: string;
     isPlugin?: boolean;
     pluginJs?: string;

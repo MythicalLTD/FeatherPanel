@@ -21,7 +21,13 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useDeveloperMode } from '@/hooks/useDeveloperMode';
 import { usePluginRoutes } from '@/hooks/usePluginRoutes';
-import { getAdminNavigationItems, getMainNavigationItems, getServerNavigationItems } from '@/config/navigation';
+import {
+    getAdminNavigationItems,
+    getMainNavigationItems,
+    getServerNavigationItems,
+    getVdsNavigationItems,
+    getWebSpaceNavigationItems,
+} from '@/config/navigation';
 import {
     flattenNavCatalog,
     type SidebarCustomLink,
@@ -43,7 +49,7 @@ type Props = {
     onConfigChange: (value: SidebarNavigationConfig) => void;
 };
 
-const SCOPES: SidebarScope[] = ['admin', 'main', 'server'];
+const SCOPES: SidebarScope[] = ['admin', 'main', 'server', 'vds', 'webspace'];
 
 function pluginCatalogRows(
     plugins: Record<string, PluginSidebarItem> | undefined,
@@ -79,12 +85,24 @@ export function PremiumSidebarEditor({ config, onConfigChange }: Props) {
             builtIn = flattenNavCatalog(getAdminNavigationItems(t, settings, isDeveloperModeEnabled ?? false));
         } else if (scope === 'server') {
             builtIn = flattenNavCatalog(getServerNavigationItems(t, 'preview', settings));
+        } else if (scope === 'vds') {
+            builtIn = flattenNavCatalog(getVdsNavigationItems(t, 'preview'));
+        } else if (scope === 'webspace') {
+            builtIn = flattenNavCatalog(getWebSpaceNavigationItems(t, 'preview'));
         } else {
             builtIn = flattenNavCatalog(getMainNavigationItems(t, settings, hasPermission));
         }
 
         const pluginBucket =
-            scope === 'admin' ? pluginRoutes?.admin : scope === 'server' ? pluginRoutes?.server : pluginRoutes?.client;
+            scope === 'admin'
+                ? pluginRoutes?.admin
+                : scope === 'server'
+                  ? pluginRoutes?.server
+                  : scope === 'vds'
+                    ? pluginRoutes?.vds
+                    : scope === 'webspace'
+                      ? pluginRoutes?.webspace
+                      : pluginRoutes?.client;
 
         const plugins = pluginCatalogRows(pluginBucket);
         const seen = new Set(builtIn.map((row) => row.id));

@@ -30,7 +30,7 @@ use App\Services\FeatherCloud\FeatherCloudException;
 
 class FeatherPanelPremiumController
 {
-    private const SIDEBAR_SCOPES = ['admin', 'main', 'server'];
+    private const SIDEBAR_SCOPES = ['admin', 'main', 'server', 'vds', 'webspace'];
 
     #[OA\Get(
         path: '/api/admin/featherpanel-premium',

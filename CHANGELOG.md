@@ -31,6 +31,7 @@
 
 ### Improved
 
+- Premium sidebar customization now applies consistently to VDS and WebSpace navigation, including plugin entries, ordering, visibility, and custom links.
 - Admin WebPlates list/create/edit now match Spells/Realms UI (filter chrome, ResourceCards, ghost actions, dual pagination, help cards). by @nayskutzu
 - Removed mistaken `user.webspaces.*` role permission nodes; panel roles stay `admin.*` only, and user WebSpace access uses subuser permissions (`settings.update`, etc.). by @nayskutzu
 - Admin WebSpaces list/create now match Servers/VDS (filter chrome, ghost actions, owner picker, owner on cards). by @nayskutzu

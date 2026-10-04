@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import type { NavigationItem } from '@/types/navigation';
 
-export type SidebarScope = 'admin' | 'main' | 'server';
+export type SidebarScope = 'admin' | 'main' | 'server' | 'vds' | 'webspace';
 
 export type SidebarCustomLink = {
     id: string;

@@ -9521,7 +9521,9 @@
                 "scopes": {
                     "admin": "Admin",
                     "main": "Dashboard",
-                    "server": "Server"
+                    "server": "Server",
+                    "vds": "VDS",
+                    "webspace": "Webspace"
                 },
                 "reset_scope": "Reset this sidebar",
                 "items": "Navigation items",
