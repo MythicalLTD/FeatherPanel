@@ -260,7 +260,7 @@ export default function VmInstancesPage() {
         setDeleting(true);
         try {
             await axios.delete(`/api/admin/vm-instances/${confirmDeleteId}/hard`);
-            toast.success(t('admin.vmInstances.messages.hard_delete_success'));
+            toast.success(t('admin.vmInstances.hard_delete_success'));
             setConfirmDeleteId(null);
             setIsHardDelete(false);
             fetchInstances();
@@ -665,10 +665,18 @@ export default function VmInstancesPage() {
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>
-                            {t(isHardDelete ? 'admin.vmInstances.messages.hard_delete_title' : 'admin.vmInstances.delete_confirm_title')}
+                            {t(
+                                isHardDelete
+                                    ? 'admin.vmInstances.hard_delete_title'
+                                    : 'admin.vmInstances.delete_confirm_title',
+                            )}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            {t(isHardDelete ? 'admin.vmInstances.messages.hard_delete_desc' : 'admin.vmInstances.delete_confirm_desc')}
+                            {t(
+                                isHardDelete
+                                    ? 'admin.vmInstances.hard_delete_desc'
+                                    : 'admin.vmInstances.delete_confirm_desc',
+                            )}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -680,7 +688,7 @@ export default function VmInstancesPage() {
                                 onClick={() => setIsHardDelete(true)}
                                 disabled={deleting}
                             >
-                                {t('admin.vmInstances.messages.hard_delete')}
+                                {t('admin.vmInstances.hard_delete')}
                             </Button>
                         )}
                         <AlertDialogAction
@@ -694,7 +702,7 @@ export default function VmInstancesPage() {
                                     {t('common.deleting')}
                                 </>
                             ) : (
-                                t(isHardDelete ? 'admin.vmInstances.messages.hard_delete_confirm' : 'common.delete')
+                                t(isHardDelete ? 'admin.vmInstances.hard_delete_confirm' : 'common.delete')
                             )}
                         </AlertDialogAction>
                     </AlertDialogFooter>
