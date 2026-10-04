@@ -949,8 +949,10 @@ class CloudPluginsController
             }
 
             return $installResult;
-        } catch (\Exception $e) {
-            return ApiResponse::error('Failed to install addon: ' . $e->getMessage(), 500);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Failed to install addon: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to install addon: ' . $e->getMessage(), 'ADDON_INSTALL_FAILED', 500);
         }
     }
 
@@ -1015,6 +1017,8 @@ class CloudPluginsController
             $isUpdate = file_exists($pluginDir);
             $oldVersion = null;
             $storageBackup = null;
+            $stagingDir = APP_ADDONS_DIR . '/.install-' . $identifier . '-' . bin2hex(random_bytes(8));
+            $oldPluginDir = null;
 
             // If updating, backup settings and get old version
             if ($isUpdate) {
@@ -1040,22 +1044,60 @@ class CloudPluginsController
                     }
                 }
 
-                // Remove old plugin directory
-                @exec('rm -rf ' . escapeshellarg($pluginDir));
             }
 
-            if (!@mkdir($pluginDir, 0755, true)) {
+            // Build the new addon separately and verify the copy before touching
+            // a working installation. A partial marketplace download must not
+            // turn an update into an uninstall.
+            if (!@mkdir($stagingDir, 0755, true)) {
                 if ($storageBackup !== null) {
                     @exec('rm -rf ' . escapeshellarg($storageBackup));
                 }
                 @exec('rm -rf ' . escapeshellarg($tempDir));
 
-                return ApiResponse::error('Failed to create addon directory', 'ADDON_DIR_FAILED', 500);
+                return ApiResponse::error('Failed to create addon staging directory', 'ADDON_DIR_FAILED', 500);
             }
 
-            $copyCmd = sprintf('cp -r %s/* %s', escapeshellarg($tempDir), escapeshellarg($pluginDir));
-            exec($copyCmd);
+            $copyCmd = sprintf('cp -a %s/. %s/', escapeshellarg($tempDir), escapeshellarg($stagingDir));
+            exec($copyCmd, $copyOutput, $copyCode);
             @exec('rm -rf ' . escapeshellarg($tempDir));
+
+            if ($copyCode !== 0 || !is_file($stagingDir . '/conf.yml')) {
+                @exec('rm -rf ' . escapeshellarg($stagingDir));
+                if ($storageBackup !== null) {
+                    @exec('rm -rf ' . escapeshellarg($storageBackup));
+                }
+
+                return ApiResponse::error(
+                    'Downloaded addon package could not be copied completely',
+                    'ADDON_COPY_FAILED',
+                    422
+                );
+            }
+
+            if ($isUpdate) {
+                $oldPluginDir = APP_ADDONS_DIR . '/.previous-' . $identifier . '-' . bin2hex(random_bytes(8));
+                if (!@rename($pluginDir, $oldPluginDir)) {
+                    @exec('rm -rf ' . escapeshellarg($stagingDir));
+                    if ($storageBackup !== null) {
+                        @exec('rm -rf ' . escapeshellarg($storageBackup));
+                    }
+
+                    return ApiResponse::error('Failed to stage the existing addon for update', 'ADDON_STAGE_FAILED', 500);
+                }
+            }
+
+            if (!@rename($stagingDir, $pluginDir)) {
+                if ($oldPluginDir !== null) {
+                    @rename($oldPluginDir, $pluginDir);
+                }
+                @exec('rm -rf ' . escapeshellarg($stagingDir));
+                if ($storageBackup !== null) {
+                    @exec('rm -rf ' . escapeshellarg($storageBackup));
+                }
+
+                return ApiResponse::error('Failed to activate addon package', 'ADDON_ACTIVATE_FAILED', 500);
+            }
 
             if ($storageBackup !== null && is_dir($storageBackup)) {
                 $restoreTarget = $pluginDir . '/Storage';
@@ -1111,6 +1153,11 @@ class CloudPluginsController
             // Run migrations
             $migrationResult = $this->runAddonMigrations($identifier, $pluginDir);
             if ($migrationResult['failed'] > 0) {
+                if ($oldPluginDir !== null) {
+                    @exec('rm -rf ' . escapeshellarg($pluginDir));
+                    @rename($oldPluginDir, $pluginDir);
+                }
+
                 return ApiResponse::error('Addon migrations failed', 'ADDON_MIGRATION_FAILED', 422, [
                     'output' => implode("\n", $migrationResult['lines'] ?? []),
                 ]);
@@ -1234,6 +1281,10 @@ class CloudPluginsController
                 App::getInstance(true)->getLogger()->warning('Failed to track plugin installation: ' . $e->getMessage());
             }
 
+            if ($oldPluginDir !== null) {
+                @exec('rm -rf ' . escapeshellarg($oldPluginDir));
+            }
+
             if ($isUpdate) {
                 App::getInstance(true)->getLogger()->info("Addon updated successfully: {$identifier} ({$oldVersion} -> {$newVersion})");
 
@@ -1252,11 +1303,15 @@ class CloudPluginsController
                 'is_update' => false,
                 'version' => $newVersion,
             ], 'Addon installed successfully', 201);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Failed to finalize addon install: ' . $e->getMessage());
+            if (isset($oldPluginDir) && $oldPluginDir !== null && is_dir($oldPluginDir)) {
+                @exec('rm -rf ' . escapeshellarg($pluginDir));
+                @rename($oldPluginDir, $pluginDir);
+            }
             @exec('rm -rf ' . escapeshellarg($tempDir));
 
-            return ApiResponse::error('Failed to finalize addon install: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to finalize addon install: ' . $e->getMessage(), 'ADDON_FINALIZE_FAILED', 500);
         }
     }
 
