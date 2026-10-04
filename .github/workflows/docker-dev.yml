@@ -59,7 +59,9 @@ jobs:
             ${{ runner.os }}-composer-${{ matrix.cache-key }}-
 
       - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: backend/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -111,7 +113,9 @@ jobs:
           echo "sha=$SHORT_SHA" >> $GITHUB_OUTPUT
 
       - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: backend/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -184,7 +188,9 @@ jobs:
             ${{ runner.os }}-pnpm-v2-${{ matrix.cache-key }}-
 
       - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: frontendv2/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -236,7 +242,9 @@ jobs:
           echo "sha=$SHORT_SHA" >> $GITHUB_OUTPUT
 
       - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: frontendv2/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -301,7 +309,9 @@ jobs:
           echo "full=dev-$BRANCH_NAME-$SHORT_SHA" >> $GITHUB_OUTPUT
 
       - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: runner/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -354,7 +364,9 @@ jobs:
           echo "sha=$SHORT_SHA" >> $GITHUB_OUTPUT
 
       - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: runner/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -391,15 +403,15 @@ jobs:
       matrix:
         include:
           - platform: linux/amd64
-            runner: ubuntu-latest
+            runner: blacksmith-2vcpu-ubuntu-2404
             cache-key: amd64
           - platform: linux/arm64
-            runner: ubuntu-24.04-arm
+            runner: blacksmith-2vcpu-ubuntu-2404-arm
             cache-key: arm64
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
         with:
           ref: ${{ github.event.inputs.branch || github.ref }}
 
@@ -418,7 +430,9 @@ jobs:
           echo "full=dev-$BRANCH_NAME-$SHORT_SHA" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: mcp/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -434,24 +448,18 @@ jobs:
           echo "tag=$PLATFORM_TAG" >> $GITHUB_OUTPUT
 
       - name: Build & Push MCP
-        uses: docker/build-push-action@v5
+        uses: useblacksmith/build-push-action@v2
         with:
           context: ./mcp
           file: ./mcp/Dockerfile
           platforms: ${{ matrix.platform }}
           push: true
-          cache-from: |
-            type=registry,ref=ghcr.io/mythicalltd/featherpanel-mcp:buildcache-${{ matrix.cache-key }}
-            type=gha,scope=mcp-${{ matrix.cache-key }}
-          cache-to: |
-            type=registry,ref=ghcr.io/mythicalltd/featherpanel-mcp:buildcache-${{ matrix.cache-key }},mode=max
-            type=gha,mode=max,scope=mcp-${{ matrix.cache-key }}
           tags: |
             ghcr.io/mythicalltd/featherpanel-mcp:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-${{ steps.platform-tag.outputs.tag }}
 
   manifest-mcp:
     name: Create Multi-Arch Manifest - MCP
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     needs: build-mcp
     permissions:
       contents: read
@@ -459,7 +467,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
         with:
           ref: ${{ github.event.inputs.branch || github.ref }}
 
@@ -476,7 +484,9 @@ jobs:
           echo "sha=$SHORT_SHA" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: mcp/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
