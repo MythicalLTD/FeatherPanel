@@ -449,4 +449,20 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_NODES_DELETE,
         ['DELETE']
     );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-instances-hard-delete',
+        '/api/admin/vm-instances/{id}/hard',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new VmInstancesController())->hardDelete($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_DELETE,
+        ['DELETE']
+    );
 };

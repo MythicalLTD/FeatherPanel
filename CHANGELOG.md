@@ -31,6 +31,9 @@
 
 ### Improved
 
+- Premium sidebar customization now honors saved ordering across navigation groups, including plugin entries.
+- VDS console status polling no longer overlaps or remains blocked on a stalled request.
+- Administrators can hard-delete VDS records without contacting Proxmox.
 - Premium sidebar customization now applies consistently to VDS and WebSpace navigation, including plugin entries, ordering, visibility, and custom links.
 - Admin WebPlates list/create/edit now match Spells/Realms UI (filter chrome, ResourceCards, ghost actions, dual pagination, help cards). by @nayskutzu
 - Removed mistaken `user.webspaces.*` role permission nodes; panel roles stay `admin.*` only, and user WebSpace access uses subuser permissions (`settings.update`, etc.). by @nayskutzu

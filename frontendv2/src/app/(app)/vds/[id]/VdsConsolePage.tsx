@@ -219,6 +219,7 @@ export default function VdsConsolePage() {
     const [vncLoading, setVncLoading] = useState(false);
     const [showAccessPassword, setShowAccessPassword] = useState(false);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const statusInFlightRef = useRef(false);
 
     const [cpuData, setCpuData] = useState<{ timestamp: number; value: number }[]>([]);
     const [memoryData, setMemoryData] = useState<{ timestamp: number; value: number }[]>([]);
@@ -228,10 +229,11 @@ export default function VdsConsolePage() {
     const maxDataPoints = 60;
 
     const fetchStatus = useCallback(async () => {
-        if (!id) return;
+        if (!id || statusInFlightRef.current) return;
+        statusInFlightRef.current = true;
         setStatusLoading(true);
         try {
-            const { data } = await axios.get(`/api/user/vm-instances/${id}/status`);
+            const { data } = await axios.get(`/api/user/vm-instances/${id}/status`, { timeout: 8000 });
             if (data.success) {
                 const status = data.data.status as VmStatus;
                 setVmStatus(status);
@@ -273,6 +275,7 @@ export default function VdsConsolePage() {
         } catch {
             // silent
         } finally {
+            statusInFlightRef.current = false;
             setStatusLoading(false);
         }
     }, [id]);

@@ -36,6 +36,7 @@ export interface NavigationItem {
     description?: string;
     group?: string;
     priority?: number;
+    sidebarOrderIndex?: number;
     badge?: string;
     children?: NavigationItem[]; // Optional submenu items
     /** Premium custom / external link */

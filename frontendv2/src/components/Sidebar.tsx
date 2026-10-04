@@ -332,6 +332,20 @@ function SidebarContent({
     ];
 
     const sortedGroups = Object.keys(groupedItems).sort((a, b) => {
+        const customIndex = (group: string) => {
+            const indexes = groupedItems[group]
+                .map((item) => item.sidebarOrderIndex)
+                .filter((index): index is number => typeof index === 'number');
+            return indexes.length > 0 ? Math.min(...indexes) : null;
+        };
+        const customA = customIndex(a);
+        const customB = customIndex(b);
+        if (customA !== null || customB !== null) {
+            if (customA === null) return 1;
+            if (customB === null) return -1;
+            if (customA !== customB) return customA - customB;
+        }
+
         const indexA = groupOrder.indexOf(a.toLowerCase());
         const indexB = groupOrder.indexOf(b.toLowerCase());
 

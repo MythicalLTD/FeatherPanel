@@ -125,7 +125,7 @@ export function applySidebarCustomization(
             if (ai !== bi) return ai - bi;
             return (a.priority ?? 0) - (b.priority ?? 0);
         });
-        next = next.map((item, index) => ({ ...item, priority: index }));
+        next = next.map((item, index) => ({ ...item, priority: index, sidebarOrderIndex: index }));
     }
 
     return next;

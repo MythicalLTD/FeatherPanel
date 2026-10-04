@@ -2852,6 +2852,55 @@ class VmInstancesController
         return ApiResponse::success(['task_id' => $taskId], 'VM deletion task added to queue', 202);
     }
 
+    #[OA\Delete(
+        path: '/api/admin/vm-instances/{id}/hard',
+        summary: 'Hard delete VM instance',
+        description: 'Remove the VM instance and panel records without contacting Proxmox. The VM and its files remain on the Proxmox host.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'VM instance hard deleted successfully'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+        ]
+    )]
+    public function hardDelete(Request $request, int $id): Response
+    {
+        $admin = $request->attributes->get('user');
+        $instance = VmInstance::getById($id);
+        if (!$instance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+
+        VmTask::deleteByInstanceId($id);
+        VmInstanceUtil::deleteInstanceBackups($instance, null);
+        if (!VmInstance::delete($id)) {
+            return ApiResponse::error('Failed to hard delete VM instance from database', 'FAILED_TO_HARD_DELETE_VM', 500);
+        }
+
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'vm_instance_hard_delete',
+            'context' => 'Hard deleted VM instance ' . ($instance['hostname'] ?? $id) . ' (database only, Proxmox not contacted)',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+        App::getInstance(true)->getLogger()->warning(
+            'VM instance hard deleted (database only): ' . ($instance['hostname'] ?? $id) .
+            ' (ID: ' . $id . ', VMID: ' . ($instance['vmid'] ?? 'unknown') . ') by user ' .
+            ($admin['username'] ?? 'unknown') . '. Proxmox was NOT contacted.'
+        );
+
+        self::emitVdsEvent(VdsEvent::onVdsDeleted(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => (int) ($instance['vmid'] ?? 0),
+            'context' => ['source' => 'admin', 'reason' => 'hard_delete', 'hard_delete' => true],
+        ]);
+
+        return ApiResponse::success([], 'VM instance hard deleted successfully (database only - Proxmox was not contacted)', 200);
+    }
+
     public function taskStatus(Request $request, string $taskId): Response
     {
         $taskId = trim($taskId);
