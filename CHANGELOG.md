@@ -28,6 +28,7 @@
 - Brand new sidebar design that really is floating alongside a new Dockbar design. That can be customized with a lot of different styles. with LTR and RTL support. by @nayskutzu
 - Support for custom color schemes was added. So now users can chose their own colors for the panel. by @nayskutzu
 - Support for more icons engines were added. So now you can chose from lucide, tabler, react-icons, and more. by @nayskutzu
+- New way to hide plugins widgets, pages and so much more by @nayskutzu
 
 ### Improved
 
@@ -52,6 +53,7 @@
 - The crash page was improved with a better design and a better message. by @nayskutzu
 - Widget rendering system was improved to more fit the responsive design. by @nayskutzu
 - The api key encryption system was improved to use the new encryption system. by @nayskutzu & @Crackhead-gsk
+- Rewrote how the plugins settings ui works added releams and moved to a full ui rather than a modal! by @nayskutzu
 
 ### Fixed
 

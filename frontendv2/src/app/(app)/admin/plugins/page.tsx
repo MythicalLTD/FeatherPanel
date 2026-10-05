@@ -53,6 +53,7 @@ import {
     Download,
     CheckCircle2,
     Loader2,
+    EyeOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -121,6 +122,22 @@ interface PluginStoreUpdate {
     update_available: boolean;
 }
 
+interface PluginVisibilityEntry {
+    scope: 'sidebar' | 'widget' | 'public-page' | 'ui-pack' | 'ui-page' | 'ui-action';
+    id: string;
+    label: string;
+    settingKey: string;
+    hidden: boolean;
+    meta?: Record<string, string>;
+}
+
+interface PluginVisibilityPayload {
+    sidebar: PluginVisibilityEntry[];
+    widgets: PluginVisibilityEntry[];
+    publicPages: PluginVisibilityEntry[];
+    uiPacks: PluginVisibilityEntry[];
+}
+
 function compactId(value: string): string {
     return value
         .trim()
@@ -139,6 +156,24 @@ function findStoreMatch(plugin: Plugin, items: StoreItem[]): StoreItem | null {
     return null;
 }
 
+function updateVisibilityEntry(
+    payload: PluginVisibilityPayload | null,
+    settingKey: string,
+    hidden: boolean,
+): PluginVisibilityPayload | null {
+    if (!payload) return payload;
+
+    const update = (entries: PluginVisibilityEntry[]) =>
+        entries.map((entry) => (entry.settingKey === settingKey ? { ...entry, hidden } : entry));
+
+    return {
+        sidebar: update(payload.sidebar),
+        widgets: update(payload.widgets),
+        publicPages: update(payload.publicPages),
+        uiPacks: update(payload.uiPacks),
+    };
+}
+
 export default function PluginsPage() {
     const { t } = useTranslation();
     const router = useRouter();
@@ -155,6 +190,9 @@ export default function PluginsPage() {
     const [configError, setConfigError] = useState<string | null>(null);
     const [pluginConfig, setPluginConfig] = useState<PluginConfig | null>(null);
     const [savingSetting, setSavingSetting] = useState(false);
+    const [visibilityLoading, setVisibilityLoading] = useState(false);
+    const [visibilityConfig, setVisibilityConfig] = useState<PluginVisibilityPayload | null>(null);
+    const [savingVisibilityKey, setSavingVisibilityKey] = useState<string | null>(null);
 
     const [selectedSpellIds, setSelectedSpellIds] = useState<Set<number>>(new Set());
     const [selectedSpellsDetails, setSelectedSpellsDetails] = useState<
@@ -382,13 +420,28 @@ export default function PluginsPage() {
         }
     };
 
+    const loadPluginVisibility = async (plugin: Plugin) => {
+        setVisibilityLoading(true);
+        try {
+            const response = await axios.get(`/api/admin/plugins/${plugin.identifier}/visibility`);
+            setVisibilityConfig(response.data.data.visibility || null);
+        } catch (error) {
+            console.error(error);
+            setVisibilityConfig(null);
+            toast.error(getApiErrorMessage(error, t, 'admin.plugins.messages.visibility_load_failed'));
+        } finally {
+            setVisibilityLoading(false);
+        }
+    };
+
     const openPluginConfig = async (plugin: Plugin) => {
         setSelectedPlugin(plugin);
 
         setSpellSearchQuery('');
         setSpellPage(1);
+        setVisibilityConfig(null);
         setConfigDrawerOpen(true);
-        await loadPluginConfig(plugin);
+        await Promise.all([loadPluginConfig(plugin), loadPluginVisibility(plugin)]);
 
         setTimeout(() => {
             fetchSpells();
@@ -495,6 +548,29 @@ export default function PluginsPage() {
             toast.error(getApiErrorMessage(error, t, 'admin.plugins.messages.save_failed'));
         } finally {
             setSavingSetting(false);
+        }
+    };
+
+    const toggleVisibility = async (entry: PluginVisibilityEntry, hidden: boolean) => {
+        if (!selectedPlugin) return;
+
+        setSavingVisibilityKey(entry.settingKey);
+        setVisibilityConfig((prev) => updateVisibilityEntry(prev, entry.settingKey, hidden));
+
+        try {
+            await axios.post(`/api/admin/plugins/${selectedPlugin.identifier}/settings/set`, {
+                key: entry.settingKey,
+                value: hidden ? 'true' : 'false',
+            });
+            invalidatePluginRoutesCache();
+            await fetchWidgets(undefined, true);
+            toast.success(t('admin.plugins.messages.visibility_saved'));
+        } catch (error) {
+            console.error(error);
+            setVisibilityConfig((prev) => updateVisibilityEntry(prev, entry.settingKey, entry.hidden));
+            toast.error(getApiErrorMessage(error, t, 'admin.plugins.messages.visibility_save_failed'));
+        } finally {
+            setSavingVisibilityKey(null);
         }
     };
 
@@ -671,6 +747,38 @@ export default function PluginsPage() {
     const configFields = useMemo(() => pluginConfig?.configSchema || [], [pluginConfig]);
     const hasConfigSchema = configFields.length > 0;
     const pendingUpdate = pendingUpdatePlugin ? storeUpdates[pendingUpdatePlugin.identifier] : null;
+    const visibilityGroups = useMemo(
+        () =>
+            visibilityConfig
+                ? [
+                      {
+                          key: 'sidebar',
+                          title: t('admin.plugins.drawers.config.visibility.groups.sidebar'),
+                          entries: visibilityConfig.sidebar,
+                      },
+                      {
+                          key: 'widgets',
+                          title: t('admin.plugins.drawers.config.visibility.groups.widgets'),
+                          entries: visibilityConfig.widgets,
+                      },
+                      {
+                          key: 'publicPages',
+                          title: t('admin.plugins.drawers.config.visibility.groups.public_pages'),
+                          entries: visibilityConfig.publicPages,
+                      },
+                      {
+                          key: 'uiPacks',
+                          title: t('admin.plugins.drawers.config.visibility.groups.ui_packs'),
+                          entries: visibilityConfig.uiPacks,
+                      },
+                  ]
+                : [],
+        [t, visibilityConfig],
+    );
+    const visibilityEntryCount = useMemo(
+        () => visibilityGroups.reduce((total, group) => total + group.entries.length, 0),
+        [visibilityGroups],
+    );
 
     return (
         <div className='space-y-6'>
@@ -944,7 +1052,9 @@ export default function PluginsPage() {
                                         size='sm'
                                         variant='outline'
                                         className='flex-1'
-                                        onClick={() => void openPluginConfig(plugin)}
+                                        onClick={() =>
+                                            router.push(`/admin/plugins/${encodeURIComponent(plugin.identifier)}`)
+                                        }
                                     >
                                         <Settings className='mr-1.5 h-3.5 w-3.5' />
                                         {t('admin.plugins.actions.configure')}
@@ -1107,6 +1217,110 @@ export default function PluginsPage() {
                                         <p className='text-muted-foreground/70 mt-1 text-xs'>
                                             {t('admin.plugins.drawers.config.no_schema_desc')}
                                         </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className='border-border bg-muted/30 space-y-5 rounded-lg border p-6'>
+                                <div className='flex items-start justify-between gap-4'>
+                                    <div className='space-y-1.5'>
+                                        <h3 className='text-foreground text-base font-semibold'>
+                                            {t('admin.plugins.drawers.config.visibility.title')}
+                                        </h3>
+                                        <p className='text-muted-foreground text-sm leading-relaxed'>
+                                            {t('admin.plugins.drawers.config.visibility.description')}
+                                        </p>
+                                    </div>
+                                    <Badge variant='outline' className='bg-background/60 shrink-0'>
+                                        {visibilityEntryCount}
+                                    </Badge>
+                                </div>
+
+                                {visibilityLoading ? (
+                                    <div className='text-muted-foreground flex items-center justify-center rounded-md border border-dashed py-8 text-sm'>
+                                        <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
+                                        {t('admin.plugins.drawers.config.visibility.loading')}
+                                    </div>
+                                ) : visibilityEntryCount === 0 ? (
+                                    <div className='text-muted-foreground rounded-md border border-dashed py-8 text-center text-sm'>
+                                        <EyeOff className='mx-auto mb-2 h-8 w-8 opacity-30' />
+                                        {t('admin.plugins.drawers.config.visibility.empty')}
+                                    </div>
+                                ) : (
+                                    <div className='space-y-4'>
+                                        {visibilityGroups
+                                            .filter((group) => group.entries.length > 0)
+                                            .map((group) => (
+                                                <div key={group.key} className='space-y-2'>
+                                                    <div className='flex items-center justify-between'>
+                                                        <h4 className='text-sm font-medium'>{group.title}</h4>
+                                                        <span className='text-muted-foreground text-xs'>
+                                                            {group.entries.length}
+                                                        </span>
+                                                    </div>
+                                                    <div className='border-border bg-background/50 divide-border overflow-hidden rounded-md border divide-y'>
+                                                        {group.entries.map((entry) => (
+                                                            <label
+                                                                key={entry.settingKey}
+                                                                className='hover:bg-muted/40 flex cursor-pointer items-start gap-3 p-3 transition-colors'
+                                                            >
+                                                                <input
+                                                                    type='checkbox'
+                                                                    checked={entry.hidden}
+                                                                    disabled={savingVisibilityKey === entry.settingKey}
+                                                                    onChange={(event) =>
+                                                                        void toggleVisibility(
+                                                                            entry,
+                                                                            event.currentTarget.checked,
+                                                                        )
+                                                                    }
+                                                                    className='border-border checked:bg-primary checked:border-primary focus:ring-primary/30 bg-background mt-0.5 h-4 w-4 cursor-pointer appearance-none rounded border-2 transition-all checked:before:flex checked:before:items-center checked:before:justify-center checked:before:text-xs checked:before:text-white checked:before:content-["✓"] focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50'
+                                                                />
+                                                                <div className='min-w-0 flex-1'>
+                                                                    <div className='flex min-w-0 items-center gap-2'>
+                                                                        <span className='truncate text-sm font-medium'>
+                                                                            {entry.label}
+                                                                        </span>
+                                                                        {entry.hidden ? (
+                                                                            <Badge
+                                                                                variant='secondary'
+                                                                                className='text-[10px]'
+                                                                            >
+                                                                                {t(
+                                                                                    'admin.plugins.drawers.config.visibility.hidden_badge',
+                                                                                )}
+                                                                            </Badge>
+                                                                        ) : null}
+                                                                    </div>
+                                                                    <div className='text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs'>
+                                                                        {entry.meta?.section ? (
+                                                                            <span>{entry.meta.section}</span>
+                                                                        ) : null}
+                                                                        {entry.meta?.page ? (
+                                                                            <span>{entry.meta.page}</span>
+                                                                        ) : null}
+                                                                        {entry.meta?.location ? (
+                                                                            <span>{entry.meta.location}</span>
+                                                                        ) : null}
+                                                                        {entry.meta?.path ? (
+                                                                            <span>{entry.meta.path}</span>
+                                                                        ) : null}
+                                                                        {entry.meta?.match ? (
+                                                                            <span>{entry.meta.match}</span>
+                                                                        ) : null}
+                                                                        {entry.meta?.slot ? (
+                                                                            <span>{entry.meta.slot}</span>
+                                                                        ) : null}
+                                                                    </div>
+                                                                </div>
+                                                                {savingVisibilityKey === entry.settingKey ? (
+                                                                    <RefreshCw className='text-muted-foreground mt-0.5 h-4 w-4 animate-spin' />
+                                                                ) : null}
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
                                     </div>
                                 )}
                             </div>

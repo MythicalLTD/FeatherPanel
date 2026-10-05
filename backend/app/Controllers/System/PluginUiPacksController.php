@@ -20,6 +20,7 @@ namespace App\Controllers\System;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Plugins\PluginFrontendScanner;
+use App\Plugins\PluginFrontendVisibility;
 use App\Plugins\Events\Events\PluginUiEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -86,6 +87,11 @@ class PluginUiPacksController
     private function normalizePack(string $plugin, array $item): ?array
     {
         $packId = preg_replace('/[^a-zA-Z0-9_\-]/', '', (string) ($item['id'] ?? 'default')) ?: 'default';
+
+        if (!PluginFrontendVisibility::isVisible($plugin, $item, 'ui-pack', $packId)) {
+            return null;
+        }
+
         $name = trim((string) ($item['name'] ?? $packId));
         if ($name === '') {
             $name = $packId;
@@ -119,6 +125,9 @@ class PluginUiPacksController
                     continue;
                 }
                 $match = trim((string) ($page['match'] ?? ''));
+                if (!PluginFrontendVisibility::isVisible($plugin, $page, 'ui-page', $packId . ':' . $match)) {
+                    continue;
+                }
                 if ($match === '' || !$this->isSafeRouteMatch($match)) {
                     continue;
                 }
@@ -150,6 +159,10 @@ class PluginUiPacksController
         if (isset($item['actions']) && is_array($item['actions'])) {
             foreach ($item['actions'] as $action) {
                 if (!is_array($action)) {
+                    continue;
+                }
+                $actionId = (string) ($action['id'] ?? ($action['slot'] ?? '') . ':' . ($action['label'] ?? ''));
+                if (!PluginFrontendVisibility::isVisible($plugin, $action, 'ui-action', $packId . ':' . $actionId)) {
                     continue;
                 }
                 $slot = trim((string) ($action['slot'] ?? ''));

@@ -286,6 +286,11 @@ function generateWidgetDetailPage(slug, data) {
   "id": "my-plugin-widget",
   "component": "my-widget.html",
   "enabled": true,
+  "hidden": {
+    "type": "plugin_setting",
+    "key": "hide-my-plugin-widget",
+    "equals": "true"
+  },
   "priority": 100,
   "page": "${slug}",
   "location": "${exampleIp}",
@@ -344,6 +349,7 @@ ${filesList}
       <h3>Widget Configuration</h3>
       <p class="muted">To inject a widget into this page, create a <code>widgets.json</code> file in your plugin's <code>Frontend/</code> directory:</p>
       <pre><code>${exampleConfig}</code></pre>
+      <p class="muted"><code>enabled</code> and <code>hidden</code> may be booleans or a plugin setting rule like <code>{ "type": "plugin_setting", "key": "hide-my-widget", "equals": "true" }</code>, so admins can hide widgets without editing component code.</p>
 
       ${injectionPoints.length > 0 ? `<h3>Available Injection Points</h3>
       <p class="muted">This page supports the following injection points. Use the <code>location</code> property in your widget configuration:</p>

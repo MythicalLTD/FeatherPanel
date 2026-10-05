@@ -11131,6 +11131,33 @@
                 "no_match_hint": "Try another filter or search term.",
                 "all_up_to_date": "All plugins are up to date"
             },
+            "detail": {
+                "back": "Back to Plugins",
+                "not_found": "Plugin not found",
+                "status": "Status",
+                "loaded": "Loaded",
+                "hidden": "hidden",
+                "identifier": "Identifier",
+                "target": "Target panel version",
+                "dependencies": "Dependencies",
+                "flags": "Flags",
+                "attention": "This plugin needs attention before it can run cleanly.",
+                "settings_description": "Manage the plugin's required and optional configuration values.",
+                "tabs": {
+                    "overview": "Overview",
+                    "settings": "Settings",
+                    "visibility": "Visibility",
+                    "spells": "Spells",
+                    "actions": "Actions"
+                },
+                "actions": {
+                    "export": "Export",
+                    "resync_assets": "Resync Assets"
+                },
+                "spells": {
+                    "no_realm": "No Realm"
+                }
+            },
             "drawers": {
                 "config": {
                     "title": "Plugin Configuration",
@@ -11140,6 +11167,19 @@
                     "required": "Required",
                     "no_schema": "This plugin doesn't have a configuration schema defined",
                     "no_schema_desc": "The plugin developer needs to add a config section to conf.yml",
+                    "visibility": {
+                        "title": "Frontend Visibility",
+                        "description": "Hide plugin sidebar items, routes, pages, widgets, and UI-pack entries without editing plugin files.",
+                        "loading": "Loading visibility controls...",
+                        "empty": "No frontend items found for this plugin.",
+                        "hidden_badge": "Hidden",
+                        "groups": {
+                            "sidebar": "Sidebar & Routes",
+                            "widgets": "Widgets",
+                            "public_pages": "Public Pages",
+                            "ui_packs": "UI Packs"
+                        }
+                    },
                     "spell_restrictions": {
                         "title": "Server Sidebar Spell Restrictions",
                         "description": "Allow-list only: select the server types (spells) where this plugin should appear in the sidebar. Leave empty to show on all server types. To hide the plugin from specific eggs, select every spell except those do not select only the eggs you want to block.",
@@ -11207,7 +11247,7 @@
             "help": {
                 "install": {
                     "title": "Install & Upload",
-                    "description": "Upload .fpa files via the GUI or install via a direct URL. Use the actions below to configure, export, or uninstall plugins."
+                    "description": "Upload .fpa files via the GUI or install via a direct URL. Use the actions below to configure, manage, or uninstall plugins."
                 },
                 "config": {
                     "title": "Configuration",
@@ -11236,13 +11276,18 @@
                 "reinstall_failed": "Failed to reinstall plugins",
                 "spell_restrictions_saved": "Spell restrictions saved successfully",
                 "spell_restrictions_save_failed": "Failed to save spell restrictions",
+                "visibility_saved": "Visibility updated",
+                "visibility_save_failed": "Failed to update visibility",
+                "visibility_load_failed": "Failed to load visibility controls",
                 "config_load_failed": "Failed to load full configuration",
                 "spells_load_failed": "Failed to load spells",
                 "up_to_date": "{plugin} is up to date",
                 "update_check_failed": "Failed to check for update",
                 "cloud_not_linked": "Mythic Cloud is not linked. Connect Cloud Connections to check updates.",
                 "store_check_failed": "Failed to check Mythic store for updates",
-                "no_release": "No downloadable release found."
+                "no_release": "No downloadable release found.",
+                "assets_resynced": "Plugin assets resynced",
+                "assets_resync_failed": "Failed to resync plugin assets"
             }
         },
         "redirect_links": {

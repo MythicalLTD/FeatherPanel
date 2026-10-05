@@ -63,6 +63,7 @@ export interface PluginSidebarItem {
     plugin: string;
     pluginName?: string;
     permission?: string;
+    hidden?: boolean;
     showBadge?: boolean;
     group?: string;
     priority?: number; // Lower numbers render first within the same sidebar group

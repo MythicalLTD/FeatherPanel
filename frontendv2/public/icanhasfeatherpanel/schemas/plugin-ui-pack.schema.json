@@ -7,6 +7,8 @@
   "properties": {
     "id": { "type": "string" },
     "name": { "type": "string" },
+    "enabled": { "$ref": "#/$defs/visibilityRule" },
+    "hidden": { "$ref": "#/$defs/visibilityRule" },
     "theme": {
       "type": ["string", "null"],
       "description": "Theme pack id (plugin:id or bare id for this plugin)"
@@ -37,6 +39,8 @@
             "type": "string",
             "description": "Path pattern, e.g. /dashboard or /server/:uuidShort/console"
           },
+          "enabled": { "$ref": "#/$defs/visibilityRule" },
+          "hidden": { "$ref": "#/$defs/visibilityRule" },
           "hide": { "type": "boolean" },
           "replace": {
             "type": "object",
@@ -55,11 +59,33 @@
     },
     "actions": {
       "type": "array",
-      "items": { "type": "object" }
+      "items": {
+        "type": "object",
+        "properties": {
+          "enabled": { "$ref": "#/$defs/visibilityRule" },
+          "hidden": { "$ref": "#/$defs/visibilityRule" }
+        }
+      }
     },
     "packs": {
       "type": "array",
       "items": { "$ref": "#" }
+    }
+  },
+  "$defs": {
+    "visibilityRule": {
+      "oneOf": [
+        { "type": "boolean" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "enum": ["always", "never", "plugin_setting"] },
+            "key": { "type": "string" },
+            "equals": { "type": "string" }
+          },
+          "required": ["type"]
+        }
+      ]
     }
   }
 }
