@@ -122,38 +122,11 @@ class PluginsController
                     continue;
                 }
 
-                // Compute unmet dependencies
-                $unmet = [];
-                try {
-                    $unmet = PluginDependencies::getUnmetDependencies($info);
-                } catch (\Throwable $t) {
-                    $unmet = [];
-                }
-
-                // Compute missing required configs
-                $missingConfigs = [];
-                try {
-                    $required = $info['plugin']['requiredConfigs'] ?? [];
-                    if (is_array($required) && !empty($required)) {
-                        $settings = PluginSettings::getSettings($identifier);
-                        $configuredKeys = array_column($settings, 'key');
-                        foreach ($required as $reqKey) {
-                            if (!in_array($reqKey, $configuredKeys, true)) {
-                                $missingConfigs[] = $reqKey;
-                            }
-                        }
-                    }
-                } catch (\Throwable $t) {
-                    $missingConfigs = [];
-                }
-
                 // Get enhanced config schema if available
                 $configSchema = PluginConfig::getPluginRequiredAdminConfig($identifier);
 
                 // Augment plugin info for frontend consumption
-                $info['plugin']['loaded'] = in_array($identifier, $loaded, true);
-                $info['plugin']['unmetDependencies'] = $unmet;
-                $info['plugin']['missingConfigs'] = $missingConfigs;
+                $info = $this->addRuntimeStatus($identifier, $info, $loaded);
                 $info['configSchema'] = $configSchema;
                 if (isset($info['plugin']['icon']) && is_string($info['plugin']['icon'])) {
                     $rewritten = PanelAssetUrl::rewriteCloudStorageIcon($info['plugin']['icon']);
@@ -215,6 +188,9 @@ class PluginsController
                 ]);
             }
 
+            global $pluginManager;
+            $info = $this->addRuntimeStatus($identifier, $info, $pluginManager->getLoadedMemoryPlugins());
+
             $settings = PluginSettings::getSettings($identifier);
             $settingsList = [];
             foreach ($settings as $setting) {
@@ -244,6 +220,42 @@ class PluginsController
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to fetch plugin config: ' . $e->getMessage(), 500);
         }
+    }
+
+    private function addRuntimeStatus(string $identifier, array $info, array $loaded): array
+    {
+        $unmetDependencies = [];
+        try {
+            $unmetDependencies = PluginDependencies::getUnmetDependencies($info);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->warning(
+                'Failed to check dependencies for plugin ' . $identifier . ': ' . $e->getMessage()
+            );
+        }
+
+        $missingConfigs = [];
+        try {
+            $required = $info['plugin']['requiredConfigs'] ?? [];
+            if (is_array($required) && $required !== []) {
+                $settings = PluginSettings::getSettings($identifier);
+                $configuredKeys = array_column($settings, 'key');
+                foreach ($required as $requiredKey) {
+                    if (!in_array($requiredKey, $configuredKeys, true)) {
+                        $missingConfigs[] = $requiredKey;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->warning(
+                'Failed to check required configuration for plugin ' . $identifier . ': ' . $e->getMessage()
+            );
+        }
+
+        $info['plugin']['loaded'] = in_array($identifier, $loaded, true);
+        $info['plugin']['unmetDependencies'] = $unmetDependencies;
+        $info['plugin']['missingConfigs'] = $missingConfigs;
+
+        return $info;
     }
 
     #[OA\Get(
