@@ -22,7 +22,7 @@ export interface NavigationItem {
     url: string;
     icon: LucideIcon | string; // LucideIcon for built-in, string (emoji/url) for plugins
     lucideIcon?: string; // Lucide icon name for dynamic loading (e.g., "camera", "search") - if provided, will be used instead of icon
-    /** Iconify id (`tabler:home`), image URL, emoji, or lucide name — highest priority when set. */
+    /** Iconify id (`tabler:home`), image URL, emoji, or lucide name - highest priority when set. */
     panelIcon?: string;
     isActive: boolean;
     category: 'main' | 'admin' | 'server' | 'vds' | 'webspace';
@@ -53,7 +53,7 @@ export interface PluginSidebarItem {
     name: string;
     icon: string;
     lucideIcon?: string; // Lucide icon name (e.g., "camera", "search") - if provided, will be used instead of icon emoji
-    /** Iconify id or bare name — overrides lucideIcon when set. */
+    /** Iconify id or bare name - overrides lucideIcon when set. */
     panelIcon?: string;
     js?: string;
     redirect?: string;

@@ -19,10 +19,13 @@ namespace App\Controllers\Admin;
 
 use App\App;
 use App\Chat\Activity;
+use App\Chat\Database;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Telemetry\UmamiTelemetry;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Telemetry\UmamiTelemetryState;
 use App\Plugins\Events\Events\SettingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -247,6 +250,12 @@ class SettingsController
                 ConfigInterface::LOGIN_HIDDEN_METHODS,
             ],
         ],
+        'telemetry' => [
+            'name' => 'Telemetry',
+            'description' => 'Enable or disable installation reports, browser analytics, heatmaps, and session recordings to FeatherPanel.',
+            'icon' => 'activity',
+            'settings' => [ConfigInterface::TELEMETRY],
+        ],
         'security' => [
             'name' => 'Security',
             'description' => 'Security and authentication settings',
@@ -285,7 +294,6 @@ class SettingsController
                 ConfigInterface::ABUSEIPDB_MIN_CONFIDENCE_SCORE,
                 ConfigInterface::ABUSEIPDB_MAX_AGE_DAYS,
                 ConfigInterface::ABUSEIPDB_REGISTER_ACTION,
-                ConfigInterface::TELEMETRY,
                 ConfigInterface::REQUIRE_TWO_FA_ADMINS,
                 ConfigInterface::AVATAR_PROVIDER,
                 ConfigInterface::AVATAR_CUSTOM_URL,
@@ -580,13 +588,13 @@ class SettingsController
                 'value' => $this->app
                     ->getConfig()
                     ->getSetting(ConfigInterface::TELEMETRY, 'true'),
-                'description' => 'Should the application send telemetry data to the telemetry service?',
+                'description' => 'Send daily aggregate counts to Umami: resource totals, backup outcomes, scheduling, databases, shared access, API keys, SSH keys, mounts, tickets, mailboxes, and feature usage over the last 30 days. No installation identifiers or individual activity records are sent. Browser tracking, recordings, and external error reporting remain disabled. The collector receives the server connection IP. Disable to stop reports.',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'true',
-                'validation' => 'required|string|max:255',
+                'validation' => 'required|string|in:true,false',
                 'options' => ['true', 'false'],
-                'category' => 'security',
+                'category' => 'telemetry',
             ],
             ConfigInterface::APP_LOGO_DARK => [
                 'name' => ConfigInterface::APP_LOGO_DARK,
@@ -3395,6 +3403,24 @@ class SettingsController
         ];
     }
 
+    public function telemetryStatus(Request $request): Response
+    {
+        $options = UmamiTelemetry::configuration($this->app->getConfig());
+        try {
+            $state = (new UmamiTelemetryState(Database::getPdoConnection()))->status();
+            $ready = true;
+        } catch (\Throwable) {
+            $state = ['last_attempt' => null, 'last_success' => null, 'last_result' => null, 'next_attempt' => null];
+            $ready = false;
+        }
+
+        return ApiResponse::success([
+            ...$state,
+            'enabled' => $options['enabled'], 'configured' => $options['configured'],
+            'environment_disabled' => $options['environment_disabled'], 'storage_ready' => $ready,
+        ]);
+    }
+
     #[OA\Get(
         path: '/api/admin/settings',
         summary: 'Get all settings',
@@ -3743,6 +3769,13 @@ class SettingsController
             return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
         }
 
+        // The collector destination is fixed; reject legacy overrides before saving anything.
+        foreach (['umami_endpoint', 'umami_website_id'] as $key) {
+            if (array_key_exists($key, $data)) {
+                return ApiResponse::error('The telemetry destination cannot be changed', 'INVALID_SETTING', 400);
+            }
+        }
+
         $app = App::getInstance(true);
         $updatedSettings = [];
 
@@ -3773,6 +3806,10 @@ class SettingsController
                 $settingConfig,
                 $value,
             );
+
+            if ($setting === ConfigInterface::TELEMETRY && !in_array($stringValue, ['true', 'false'], true)) {
+                return ApiResponse::error('Telemetry must be enabled or disabled', 'INVALID_SETTING_VALUE', 400);
+            }
 
             // Basic validation (use normalized string so 0 / "false" are handled correctly)
             if ($settingConfig['required'] && $stringValue === '') {

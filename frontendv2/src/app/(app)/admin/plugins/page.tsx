@@ -184,13 +184,13 @@ export default function PluginsPage() {
     const [filter, setFilter] = useState<'all' | 'updates' | 'issues'>('all');
 
     const [configDrawerOpen, setConfigDrawerOpen] = useState(false);
-    const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
+    const [selectedPlugin] = useState<Plugin | null>(null);
 
     const [configLoading, setConfigLoading] = useState(false);
     const [configError, setConfigError] = useState<string | null>(null);
     const [pluginConfig, setPluginConfig] = useState<PluginConfig | null>(null);
     const [savingSetting, setSavingSetting] = useState(false);
-    const [visibilityLoading, setVisibilityLoading] = useState(false);
+    const [visibilityLoading] = useState(false);
     const [visibilityConfig, setVisibilityConfig] = useState<PluginVisibilityPayload | null>(null);
     const [savingVisibilityKey, setSavingVisibilityKey] = useState<string | null>(null);
 
@@ -418,34 +418,6 @@ export default function PluginsPage() {
         } finally {
             setConfigLoading(false);
         }
-    };
-
-    const loadPluginVisibility = async (plugin: Plugin) => {
-        setVisibilityLoading(true);
-        try {
-            const response = await axios.get(`/api/admin/plugins/${plugin.identifier}/visibility`);
-            setVisibilityConfig(response.data.data.visibility || null);
-        } catch (error) {
-            console.error(error);
-            setVisibilityConfig(null);
-            toast.error(getApiErrorMessage(error, t, 'admin.plugins.messages.visibility_load_failed'));
-        } finally {
-            setVisibilityLoading(false);
-        }
-    };
-
-    const openPluginConfig = async (plugin: Plugin) => {
-        setSelectedPlugin(plugin);
-
-        setSpellSearchQuery('');
-        setSpellPage(1);
-        setVisibilityConfig(null);
-        setConfigDrawerOpen(true);
-        await Promise.all([loadPluginConfig(plugin), loadPluginVisibility(plugin)]);
-
-        setTimeout(() => {
-            fetchSpells();
-        }, 100);
     };
 
     const fetchSelectedSpellsDetails = async (spellIds: number[]) => {
@@ -1258,7 +1230,7 @@ export default function PluginsPage() {
                                                             {group.entries.length}
                                                         </span>
                                                     </div>
-                                                    <div className='border-border bg-background/50 divide-border overflow-hidden rounded-md border divide-y'>
+                                                    <div className='border-border bg-background/50 divide-border divide-y overflow-hidden rounded-md border'>
                                                         {group.entries.map((entry) => (
                                                             <label
                                                                 key={entry.settingKey}

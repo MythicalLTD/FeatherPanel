@@ -25,6 +25,7 @@ import {
     TransitionChild,
 } from '@headlessui/react';
 import { cn } from '@/lib/utils';
+import { reportPanelInteraction } from '@/lib/panel-analytics';
 
 interface DialogProps {
     open: boolean;
@@ -32,11 +33,16 @@ interface DialogProps {
     onOpenChange?: (open: boolean) => void;
     children: React.ReactNode;
     className?: string;
-    /** Full viewport sheet — for settings-style panels. */
+    /** Full viewport sheet - for settings-style panels. */
     fullscreen?: boolean;
 }
 
 export function Dialog({ open, onClose, onOpenChange, children, className, fullscreen = false }: DialogProps) {
+    const wasOpen = React.useRef(false);
+    React.useEffect(() => {
+        if (open !== wasOpen.current) reportPanelInteraction(open ? 'panel.dialog.open' : 'panel.dialog.close');
+        wasOpen.current = open;
+    }, [open]);
     const handleClose = () => {
         onClose?.();
         onOpenChange?.(false);

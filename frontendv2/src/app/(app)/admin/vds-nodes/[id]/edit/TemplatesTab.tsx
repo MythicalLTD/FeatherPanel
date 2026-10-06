@@ -234,7 +234,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                     <tr key={tpl.id} className='hover:bg-muted/20 transition-colors'>
                                         <td className='p-3 font-medium'>{tpl.name}</td>
                                         <td className='text-muted-foreground p-3 font-mono'>
-                                            {tpl.template_file ?? '—'}
+                                            {tpl.template_file ?? '-'}
                                         </td>
                                         <td className='text-muted-foreground p-3'>
                                             {tpl.guest_type === 'qemu' ? 'QEMU/KVM' : 'LXC'}

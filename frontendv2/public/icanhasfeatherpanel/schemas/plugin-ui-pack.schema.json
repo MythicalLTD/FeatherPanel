@@ -3,7 +3,7 @@
   "$id": "https://featherpanel.com/schemas/plugin-ui-pack.json",
   "title": "FeatherPanel Plugin UI Pack",
   "type": "object",
-  "description": "Frontend/ui.json — layout takeover pack (shell + pages + hide + actions).",
+  "description": "Frontend/ui.json: layout takeover pack (shell + pages + hide + actions).",
   "properties": {
     "id": { "type": "string" },
     "name": { "type": "string" },

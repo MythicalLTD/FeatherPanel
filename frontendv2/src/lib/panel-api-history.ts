@@ -352,7 +352,7 @@ export async function sendPanelApiRequest(params: PanelApiReplayParams): Promise
 
     const entry = entries.find((item) => item.id === id);
     if (!entry) {
-        throw new Error('Request was not recorded — ensure the URL starts with /api/');
+        throw new Error('Request was not recorded - ensure the URL starts with /api/');
     }
     return entry;
 }

@@ -13,11 +13,12 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+import { reportPanelInteraction } from '@/lib/panel-analytics';
+
 import { useEffect, useRef, useState, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { getFeatherpanelApiErrorMessage } from '@/lib/api';
 
 interface WingsMessage {
     event: string;
@@ -285,6 +286,7 @@ export function useWingsWebSocket({
     const sendCommand = useCallback(
         (command: string) => {
             if (wsRef.current?.readyState === WebSocket.OPEN) {
+                reportPanelInteraction('panel.console.command', 'sent');
                 console.log(`[Wings WS] Sending command: ${command}`);
                 wsRef.current.send(
                     JSON.stringify({
@@ -293,6 +295,7 @@ export function useWingsWebSocket({
                     }),
                 );
             } else {
+                reportPanelInteraction('panel.console.command', 'blocked');
                 console.error('[Wings WS] Cannot send command: WebSocket is not open', {
                     readyState: wsRef.current?.readyState,
                     status: connectionStatus,
@@ -322,7 +325,7 @@ export function useWingsWebSocket({
     );
 
     /**
-     * Do not re-auth on the same socket — close and reconnect with a fresh JWT
+     * Do not re-auth on the same socket - close and reconnect with a fresh JWT
      * (matches useServersWebSocket / CHANGELOG guidance).
      */
     const refreshToken = useCallback(async () => {
@@ -406,11 +409,7 @@ export function useWingsWebSocket({
                 }
 
                 if (!response.data.success) {
-                    throw new Error(
-                        response.data.message ||
-                            response.data.error_message ||
-                            'Failed to get JWT token',
-                    );
+                    throw new Error(response.data.message || response.data.error_message || 'Failed to get JWT token');
                 }
 
                 const { token, connection_string } = response.data.data;
@@ -462,12 +461,14 @@ export function useWingsWebSocket({
                             console.log('[Wings WS] Authenticated successfully');
                             reconnectAttemptsRef.current = 0;
                             setIsConnected(true);
+                            reportPanelInteraction('panel.console.connection', 'connected');
                             setConnectionStatus('connected');
                             return;
                         }
 
                         // Handle auth error
                         if (data.event === 'auth_error' || data.event === 'auth error') {
+                            reportPanelInteraction('panel.console.connection', 'auth-failed');
                             console.error('[Wings WS] Authentication failed');
                             setConnectionStatus('error');
                             intentionalCloseRef.current = false;
@@ -475,7 +476,7 @@ export function useWingsWebSocket({
                             return;
                         }
 
-                        // Handle token expiring — full reconnect with new JWT (not in-place re-auth)
+                        // Handle token expiring - full reconnect with new JWT (not in-place re-auth)
                         if (data.event === 'token expiring') {
                             console.log('[Wings WS] Token expiring, refreshing via reconnect...');
                             if (onTokenExpiringRef.current) {
@@ -494,7 +495,7 @@ export function useWingsWebSocket({
                             return;
                         }
 
-                        // JWT errors are fatal — close and reconnect (do not leave a half-alive session)
+                        // JWT errors are fatal - close and reconnect (do not leave a half-alive session)
                         if (data.event === 'jwt error') {
                             const raw = (data.args?.[0] as string) || 'WebSocket authentication error.';
                             console.error('[Wings WS] JWT error:', raw);
@@ -677,7 +678,7 @@ export function useWingsWebSocket({
                                     });
                                 }
                             } else if (data.event === 'operation progress') {
-                                // No stable operation id — fire an untracked toast so it
+                                // No stable operation id - fire an untracked toast so it
                                 // cannot collide with or be bulk-dismissed by other ops.
                                 toast.loading(tRef.current('files.messages.file_operation_progress'), {
                                     duration: 15000,
@@ -740,6 +741,7 @@ export function useWingsWebSocket({
                         return;
                     }
 
+                    reportPanelInteraction('panel.console.connection', 'disconnected');
                     setConnectionStatus('disconnected');
                     scheduleReconnect(establishConnection);
                 };
@@ -797,6 +799,7 @@ export function useWingsWebSocket({
     ]);
 
     const reconnect = useCallback(() => {
+        reportPanelInteraction('panel.console.connection', 'reconnect');
         reconnectAttemptsRef.current = 0;
         connectionBlockedRef.current = false;
         closeSocketIntentionally();

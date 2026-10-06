@@ -53,11 +53,17 @@
   "id": "my-plugin-widget",
   "component": "my-widget.html",
   "enabled": true,
+  "hidden": {
+    "type": "plugin_setting",
+    "key": "hide-my-plugin-widget",
+    "equals": "true"
+  },
   "priority": 100,
   "page": "vds-console",
   "location": "top-of-page",
   "size": "full"
 }</code></pre>
+      <p class="muted"><code>enabled</code> and <code>hidden</code> may be booleans or a plugin setting rule like <code>{ "type": "plugin_setting", "key": "hide-my-widget", "equals": "true" }</code>, so admins can hide widgets without editing component code.</p>
 
       
 

@@ -132,7 +132,7 @@ export function SystemHealthWidget({ stats, selftest, latency, loading }: System
                                     </p>
                                 </div>
                             </div>
-                            <span className='text-sm font-black tabular-nums'>{loading ? '—' : `${memoryPct}%`}</span>
+                            <span className='text-sm font-black tabular-nums'>{loading ? '-' : `${memoryPct}%`}</span>
                         </div>
                         <Progress
                             value={loading ? 0 : memoryPct}
@@ -160,7 +160,7 @@ export function SystemHealthWidget({ stats, selftest, latency, loading }: System
                                     </p>
                                 </div>
                             </div>
-                            <span className='text-sm font-black tabular-nums'>{loading ? '—' : `${cpuPct}%`}</span>
+                            <span className='text-sm font-black tabular-nums'>{loading ? '-' : `${cpuPct}%`}</span>
                         </div>
                         <Progress
                             value={loading ? 0 : cpuPct}

@@ -214,7 +214,7 @@ export const APP_FONT_OPTIONS: {
     },
 ];
 
-/** Inline boot script in layout.tsx — keep in sync with APP_FONT_STACKS. */
+/** Inline boot script in layout.tsx - keep in sync with APP_FONT_STACKS. */
 export const APP_FONT_BOOT_STACKS_JSON = JSON.stringify(APP_FONT_STACKS);
 
 export function fontsByCategory(category: AppFontCategory) {

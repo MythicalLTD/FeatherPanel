@@ -13,6 +13,8 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+import { reportPanelInteraction } from '@/lib/panel-analytics';
+
 import { useCallback, useEffect, useState } from 'react';
 
 export type FileEditorEngine = 'monaco' | 'codemirror';
@@ -56,19 +58,21 @@ export function useFileEditorEngine() {
     }, [hasUserPreference, isMobile]);
 
     const setEngine = useCallback((next: FileEditorEngine) => {
+        reportPanelInteraction('panel.editor.change', next);
         setEngineState(next);
         setHasUserPreference(true);
         localStorage.setItem(STORAGE_KEY, next);
     }, []);
 
     const toggleEngine = useCallback(() => {
+        reportPanelInteraction('panel.editor.change', engine === 'monaco' ? 'codemirror' : 'monaco');
         setEngineState((current) => {
             const next = current === 'monaco' ? 'codemirror' : 'monaco';
             setHasUserPreference(true);
             localStorage.setItem(STORAGE_KEY, next);
             return next;
         });
-    }, []);
+    }, [engine]);
 
     return { engine, isMobile, setEngine, toggleEngine };
 }

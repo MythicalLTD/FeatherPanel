@@ -1231,6 +1231,20 @@ class WebSpacesController
         return (new \App\Controllers\Admin\WebSpacesController())->listBackups($request, (string) $resolved['space']['uuid']);
     }
 
+    public function reconcileBackups(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveAccessible($request, $uuidShort);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+        $denied = CheckWebSpacePermission::require($request, $resolved['space'], WebSpaceSubuserPermissions::BACKUP_DELETE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        return (new \App\Controllers\Admin\WebSpacesController())->reconcileBackups($request, (string) $resolved['space']['uuid']);
+    }
+
     public function createBackup(Request $request, string $uuidShort): Response
     {
         $resolved = $this->resolveAccessible($request, $uuidShort);
@@ -1451,6 +1465,9 @@ class WebSpacesController
         $checksum = $fields['checksum'];
 
         $existing = \App\Chat\WebSpaceBackup::getByUuid($backupUuid);
+        if ($existing && (int) $existing['webspace_id'] !== (int) $space['id']) {
+            return;
+        }
         if ($existing) {
             \App\Chat\WebSpaceBackup::markCompleted($backupUuid, $bytes, $checksum);
 

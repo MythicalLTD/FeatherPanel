@@ -567,7 +567,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         const [showSettings, setShowSettings] = useState(false);
         const [showQuickRules, setShowQuickRules] = useState(false);
         const [showHistory, setShowHistory] = useState(false);
-        // Sheet portals to body, so CSS sm:hidden cannot hide it — gate open state instead.
+        // Sheet portals to body, so CSS sm:hidden cannot hide it - gate open state instead.
         const [isNarrowViewport, setIsNarrowViewport] = useState(false);
 
         autoScrollRef.current = autoScroll;

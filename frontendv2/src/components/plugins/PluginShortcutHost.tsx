@@ -22,7 +22,7 @@ import { FP_ACTIONS } from '@/lib/plugin-sdk/ids';
 
 /**
  * Global shortcut router for plugin-registered combos.
- * Runs alongside panel Ctrl+D (search) — plugins should avoid that combo.
+ * Runs alongside panel Ctrl+D (search) - plugins should avoid that combo.
  */
 export function PluginShortcutHost() {
     useEffect(() => {

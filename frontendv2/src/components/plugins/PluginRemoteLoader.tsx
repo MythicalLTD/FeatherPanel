@@ -33,7 +33,7 @@ function loadRemoteComponent(url: string): Promise<ComponentType<Record<string, 
     if (existing) return existing;
 
     const promise = (async () => {
-        // Runtime ESM import — panel stays prebuilt; plugin ships its own bundle.
+        // Runtime ESM import - panel stays prebuilt; plugin ships its own bundle.
         const mod = (await import(/* webpackIgnore: true */ url)) as RemoteModule;
         const Comp = mod.default ?? mod.PluginSlot;
         if (!Comp) {
@@ -144,7 +144,7 @@ export function PluginIframeHost({
                         window.location.origin,
                     );
                 } catch {
-                    // cross-origin — ignore
+                    // cross-origin - ignore
                 }
             }}
         />

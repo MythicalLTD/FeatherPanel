@@ -21,10 +21,10 @@
   "git.enableNestedRepositories": false,
 
   // ── FeatherPanel theme: deep violet base + soft purple glow ──
-  "workbench.colorTheme": "Default Dark Modern",
+  "workbench.colorTheme": "Dark Modern",
   "workbench.iconTheme": "material-icon-theme",
   "workbench.productIconTheme": "material-product-icons",
-  "workbench.preferredDarkColorTheme": "Default Dark Modern",
+  "workbench.preferredDarkColorTheme": "Dark Modern",
 
   // Editor feel
   "editor.fontFamily": "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace",

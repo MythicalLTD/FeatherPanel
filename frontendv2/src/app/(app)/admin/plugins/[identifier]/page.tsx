@@ -149,7 +149,9 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
     const [resyncingAssets, setResyncingAssets] = useState(false);
 
     const loadSelectedSpellsDetails = useCallback(async (spellIds: number[]) => {
-        const spellResponses = await Promise.all(spellIds.map((id) => axios.get(`/api/admin/spells/${id}`).catch(() => null)));
+        const spellResponses = await Promise.all(
+            spellIds.map((id) => axios.get(`/api/admin/spells/${id}`).catch(() => null)),
+        );
         setSelectedSpellsDetails(
             spellResponses
                 .filter((response) => response?.data?.success && response.data.data?.spell)
@@ -230,21 +232,34 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
     const plugin = config?.plugin || config?.config;
     const author = normalizeAuthor(plugin?.author);
     const hasIssues = Boolean(
-        plugin && ((plugin.unmetDependencies?.length || 0) > 0 || (plugin.missingConfigs?.length || 0) > 0 || !plugin.loaded),
+        plugin &&
+        ((plugin.unmetDependencies?.length || 0) > 0 || (plugin.missingConfigs?.length || 0) > 0 || !plugin.loaded),
     );
 
     const visibilityGroups = useMemo(
         () =>
             visibility
                 ? [
-                      { key: 'sidebar', title: t('admin.plugins.drawers.config.visibility.groups.sidebar'), entries: visibility.sidebar },
-                      { key: 'widgets', title: t('admin.plugins.drawers.config.visibility.groups.widgets'), entries: visibility.widgets },
+                      {
+                          key: 'sidebar',
+                          title: t('admin.plugins.drawers.config.visibility.groups.sidebar'),
+                          entries: visibility.sidebar,
+                      },
+                      {
+                          key: 'widgets',
+                          title: t('admin.plugins.drawers.config.visibility.groups.widgets'),
+                          entries: visibility.widgets,
+                      },
                       {
                           key: 'publicPages',
                           title: t('admin.plugins.drawers.config.visibility.groups.public_pages'),
                           entries: visibility.publicPages,
                       },
-                      { key: 'uiPacks', title: t('admin.plugins.drawers.config.visibility.groups.ui_packs'), entries: visibility.uiPacks },
+                      {
+                          key: 'uiPacks',
+                          title: t('admin.plugins.drawers.config.visibility.groups.ui_packs'),
+                          entries: visibility.uiPacks,
+                      },
                   ]
                 : [],
         [t, visibility],
@@ -407,17 +422,25 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                 </div>
                 <div className={cn('rounded-lg border px-4 py-3', surfaceClass)}>
                     <p className='text-muted-foreground text-xs'>{t('admin.plugins.grid.author')}</p>
-                    <p className='mt-1 truncate text-sm font-medium'>{author || t('admin.plugins.grid.author_unknown')}</p>
+                    <p className='mt-1 truncate text-sm font-medium'>
+                        {author || t('admin.plugins.grid.author_unknown')}
+                    </p>
                 </div>
                 <div className={cn('rounded-lg border px-4 py-3', surfaceClass)}>
                     <p className='text-muted-foreground text-xs'>{t('admin.plugins.detail.status')}</p>
                     <p className='mt-1 inline-flex items-center gap-1.5 text-sm font-medium'>
-                        {plugin.loaded ? <CheckCircle2 className='h-4 w-4 text-emerald-500' /> : <X className='h-4 w-4 text-amber-500' />}
+                        {plugin.loaded ? (
+                            <CheckCircle2 className='h-4 w-4 text-emerald-500' />
+                        ) : (
+                            <X className='h-4 w-4 text-amber-500' />
+                        )}
                         {plugin.loaded ? t('admin.plugins.detail.loaded') : t('admin.plugins.grid.not_loaded')}
                     </p>
                 </div>
                 <div className={cn('rounded-lg border px-4 py-3', surfaceClass)}>
-                    <p className='text-muted-foreground text-xs'>{t('admin.plugins.drawers.config.visibility.title')}</p>
+                    <p className='text-muted-foreground text-xs'>
+                        {t('admin.plugins.drawers.config.visibility.title')}
+                    </p>
                     <p className='mt-1 text-sm font-medium'>
                         {hiddenEntryCount}/{visibilityEntryCount} {t('admin.plugins.detail.hidden')}
                     </p>
@@ -442,12 +465,16 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                         <div className='grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]'>
                             <div className='space-y-4'>
                                 <div>
-                                    <p className='text-muted-foreground text-xs'>{t('admin.plugins.detail.identifier')}</p>
+                                    <p className='text-muted-foreground text-xs'>
+                                        {t('admin.plugins.detail.identifier')}
+                                    </p>
                                     <p className='mt-1 font-mono text-sm break-all'>{decodedIdentifier}</p>
                                 </div>
                                 {plugin.target ? (
                                     <div>
-                                        <p className='text-muted-foreground text-xs'>{t('admin.plugins.detail.target')}</p>
+                                        <p className='text-muted-foreground text-xs'>
+                                            {t('admin.plugins.detail.target')}
+                                        </p>
                                         <p className='mt-1 text-sm'>{plugin.target}</p>
                                     </div>
                                 ) : null}
@@ -461,8 +488,16 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                                 ) : null}
                             </div>
                             <div className='space-y-3'>
-                                <InfoList title={t('admin.plugins.detail.dependencies')} items={plugin.dependencies || []} empty='-' />
-                                <InfoList title={t('admin.plugins.detail.flags')} items={plugin.flags || []} empty='-' />
+                                <InfoList
+                                    title={t('admin.plugins.detail.dependencies')}
+                                    items={plugin.dependencies || []}
+                                    empty='-'
+                                />
+                                <InfoList
+                                    title={t('admin.plugins.detail.flags')}
+                                    items={plugin.flags || []}
+                                    empty='-'
+                                />
                             </div>
                         </div>
                         {hasIssues ? (
@@ -472,10 +507,14 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                                 </p>
                                 <div className='mt-3 flex flex-wrap gap-2'>
                                     {plugin.unmetDependencies?.map((dep) => (
-                                        <Badge key={dep} variant='outline'>{t('admin.plugins.grid.missing_badge', { dep })}</Badge>
+                                        <Badge key={dep} variant='outline'>
+                                            {t('admin.plugins.grid.missing_badge', { dep })}
+                                        </Badge>
                                     ))}
                                     {plugin.missingConfigs?.map((cfg) => (
-                                        <Badge key={String(cfg)} variant='outline'>{t('admin.plugins.grid.config_badge', { cfg: String(cfg) })}</Badge>
+                                        <Badge key={String(cfg)} variant='outline'>
+                                            {t('admin.plugins.grid.config_badge', { cfg: String(cfg) })}
+                                        </Badge>
                                     ))}
                                 </div>
                             </div>
@@ -492,7 +531,11 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                         action={
                             configFields.length > 0 ? (
                                 <Button size='sm' onClick={saveAllSettings} disabled={savingSettings}>
-                                    {savingSettings ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : <Save className='mr-2 h-4 w-4' />}
+                                    {savingSettings ? (
+                                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                    ) : (
+                                        <Save className='mr-2 h-4 w-4' />
+                                    )}
                                     {t('admin.plugins.actions.save_settings')}
                                 </Button>
                             ) : null
@@ -508,10 +551,19 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                                     <div key={field.name} className='space-y-2'>
                                         <div className='flex items-center justify-between gap-3'>
                                             <label className='text-sm font-medium'>{field.display_name}</label>
-                                            {field.required ? <Badge variant='secondary'>{t('admin.plugins.drawers.config.required')}</Badge> : null}
+                                            {field.required ? (
+                                                <Badge variant='secondary'>
+                                                    {t('admin.plugins.drawers.config.required')}
+                                                </Badge>
+                                            ) : null}
                                         </div>
                                         {field.type === 'boolean' ? (
-                                            <label className={cn('flex items-center gap-3 rounded-lg border p-3', mutedPanelClass)}>
+                                            <label
+                                                className={cn(
+                                                    'flex items-center gap-3 rounded-lg border p-3',
+                                                    mutedPanelClass,
+                                                )}
+                                            >
                                                 <input
                                                     type='checkbox'
                                                     checked={config.settings[field.name] === 'true'}
@@ -522,7 +574,9 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                                                                       ...prev,
                                                                       settings: {
                                                                           ...prev.settings,
-                                                                          [field.name]: event.currentTarget.checked ? 'true' : 'false',
+                                                                          [field.name]: event.currentTarget.checked
+                                                                              ? 'true'
+                                                                              : 'false',
                                                                       },
                                                                   }
                                                                 : prev,
@@ -530,11 +584,19 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                                                     }
                                                     className='h-4 w-4'
                                                 />
-                                                <span className='text-sm'>{field.description || field.display_name}</span>
+                                                <span className='text-sm'>
+                                                    {field.description || field.display_name}
+                                                </span>
                                             </label>
                                         ) : (
                                             <Input
-                                                type={field.type === 'password' ? 'password' : field.type === 'number' ? 'number' : 'text'}
+                                                type={
+                                                    field.type === 'password'
+                                                        ? 'password'
+                                                        : field.type === 'number'
+                                                          ? 'number'
+                                                          : 'text'
+                                                }
                                                 value={config.settings[field.name] || ''}
                                                 placeholder={field.default}
                                                 onChange={(event) =>
@@ -542,7 +604,10 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                                                         prev
                                                             ? {
                                                                   ...prev,
-                                                                  settings: { ...prev.settings, [field.name]: event.target.value },
+                                                                  settings: {
+                                                                      ...prev.settings,
+                                                                      [field.name]: event.target.value,
+                                                                  },
                                                               }
                                                             : prev,
                                                     )
@@ -580,7 +645,12 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                                                 <h3 className='text-sm font-medium'>{group.title}</h3>
                                                 <Badge variant='outline'>{group.entries.length}</Badge>
                                             </div>
-                                            <div className={cn('divide-border/40 overflow-hidden rounded-lg border divide-y', softPanelClass)}>
+                                            <div
+                                                className={cn(
+                                                    'divide-border/40 divide-y overflow-hidden rounded-lg border',
+                                                    softPanelClass,
+                                                )}
+                                            >
                                                 {group.entries.map((entry) => (
                                                     <VisibilityRow
                                                         key={entry.settingKey}
@@ -608,7 +678,11 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                         className='border-border/40 bg-card/45 rounded-lg p-6 shadow-sm ring-1 ring-white/5'
                         action={
                             <Button size='sm' onClick={saveSpellRestrictions} disabled={savingSpellRestrictions}>
-                                {savingSpellRestrictions ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : <Save className='mr-2 h-4 w-4' />}
+                                {savingSpellRestrictions ? (
+                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                ) : (
+                                    <Save className='mr-2 h-4 w-4' />
+                                )}
                                 {t('admin.plugins.drawers.config.spell_restrictions.save')}
                             </Button>
                         }
@@ -616,8 +690,14 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                         {selectedSpellsDetails.length > 0 ? (
                             <div className='mb-5 flex flex-wrap gap-2'>
                                 {selectedSpellsDetails.map((spell) => (
-                                    <Badge key={spell.id} variant='secondary' className='bg-primary/10 text-primary border-primary/20 gap-1.5'>
-                                        <span className='text-primary/70'>{spell.realm_name || t('admin.plugins.detail.spells.no_realm')}</span>
+                                    <Badge
+                                        key={spell.id}
+                                        variant='secondary'
+                                        className='bg-primary/10 text-primary border-primary/20 gap-1.5'
+                                    >
+                                        <span className='text-primary/70'>
+                                            {spell.realm_name || t('admin.plugins.detail.spells.no_realm')}
+                                        </span>
                                         <span>{spell.name}</span>
                                         <button onClick={() => toggleSpell(spell)}>
                                             <X className='h-3 w-3' />
@@ -635,7 +715,12 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                                 className='pl-9'
                             />
                         </div>
-                        <div className={cn('divide-border/40 overflow-hidden rounded-lg border divide-y', softPanelClass)}>
+                        <div
+                            className={cn(
+                                'divide-border/40 divide-y overflow-hidden rounded-lg border',
+                                softPanelClass,
+                            )}
+                        >
                             {spellsLoading ? (
                                 <div className='text-muted-foreground flex items-center justify-center gap-2 py-10 text-sm'>
                                     <Loader2 className='h-4 w-4 animate-spin' />
@@ -649,10 +734,13 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                                 spellsByRealm.map(([realm, realmSpells]) => (
                                     <div key={realm} className='bg-background/20'>
                                         <div className='border-border/30 bg-muted/20 flex items-center justify-between border-b px-3 py-2'>
-                                            <span className='text-muted-foreground text-xs font-medium uppercase tracking-wide'>
+                                            <span className='text-muted-foreground text-xs font-medium tracking-wide uppercase'>
                                                 {realm}
                                             </span>
-                                            <Badge variant='outline' className='border-border/40 bg-background/40 text-[10px]'>
+                                            <Badge
+                                                variant='outline'
+                                                className='border-border/40 bg-background/40 text-[10px]'
+                                            >
                                                 {realmSpells.length}
                                             </Badge>
                                         </div>
@@ -670,7 +758,9 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                                                         )}
                                                     >
                                                         <span className='min-w-0'>
-                                                            <span className='block text-sm font-medium'>{spell.name}</span>
+                                                            <span className='block text-sm font-medium'>
+                                                                {spell.name}
+                                                            </span>
                                                             {spell.description ? (
                                                                 <span className='text-muted-foreground mt-1 line-clamp-2 block text-xs'>
                                                                     {spell.description}

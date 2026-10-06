@@ -29,7 +29,7 @@ interface PlasmaProps {
     maxDpr?: number;
     /** Target frame rate for the animation loop. Default 30. */
     targetFps?: number;
-    /** Raymarch step count — lower is cheaper, less detailed. Default 60. */
+    /** Raymarch step count - lower is cheaper, less detailed. Default 60. */
     iterations?: number;
     lightMode?: boolean;
 }

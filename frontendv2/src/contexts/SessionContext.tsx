@@ -140,6 +140,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const router = useRouter();
     // Ignore out-of-order session responses (e.g. guest probe finishing after login refresh).
     const fetchGenerationRef = useRef(0);
+    const pendingSessionRef = useRef<{ promise: Promise<boolean>; force: boolean; generation: number } | null>(null);
+    const sessionStateRef = useRef<{ user: UserInfo | null; checked: boolean }>({ user: null, checked: false });
+    const startupCheckedRef = useRef(false);
+
+    useLayoutEffect(() => {
+        sessionStateRef.current = { user, checked: isSessionChecked };
+    }, [user, isSessionChecked]);
 
     useLayoutEffect(() => {
         const cached = readCachedSession();
@@ -162,151 +169,171 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         [pluginPublicPaths],
     );
 
+    const clearSession = useCallback(() => {
+        fetchGenerationRef.current++;
+        pendingSessionRef.current = null;
+        sessionStateRef.current = { user: null, checked: false };
+        setUser(null);
+        writeCachedSession(null);
+        setIsSessionChecked(false);
+        setPermissions([]);
+        setAdminTicketStats(null);
+    }, []);
+
     const fetchSession = useCallback(
-        async (force = false): Promise<boolean> => {
+        async (force = false, startup = false): Promise<boolean> => {
             if (typeof window !== 'undefined' && isPublicNoAuthRoute(window.location.pathname)) {
                 setIsSessionChecked(true);
                 setIsLoading(false);
                 return false;
             }
 
-            if (!force && isSessionChecked && user) {
-                return true;
+            if (!force && sessionStateRef.current.checked) {
+                return Boolean(sessionStateRef.current.user);
             }
 
+            const existing = pendingSessionRef.current;
+            // An explicit refresh may supersede a guest probe started before login.
+            if (existing && (!force || existing.force)) return existing.promise;
             const generation = ++fetchGenerationRef.current;
+            const request = (async (): Promise<boolean> => {
+                try {
+                    const res = await api.get('/user/session');
 
-            try {
-                const res = await api.get('/user/session');
-
-                if (generation !== fetchGenerationRef.current) {
-                    return false;
-                }
-
-                // Cloudflare Under Attack / Precursor can return HTML instead of JSON.
-                // Do not wipe the session or treat the user as a guest.
-                if (isCloudflareChallengeAxios(res) || isCloudflareChallengeResponseData(res.data)) {
-                    console.warn('Session fetch blocked by Cloudflare challenge; preserving local session state');
-                    setIsSessionChecked(true);
-                    setIsLoading(false);
-                    return false;
-                }
-
-                if (
-                    res.data &&
-                    res.data.success === true &&
-                    res.data.error === false &&
-                    res.data.data &&
-                    res.data.data.user_info &&
-                    typeof res.data.data.user_info === 'object'
-                ) {
-                    setUser(res.data.data.user_info as UserInfo);
-                    setPermissions((res.data.data.permissions as PermissionsList) || []);
-                    writeCachedSession(
-                        res.data.data.user_info as UserInfo,
-                        (res.data.data.permissions as PermissionsList) || [],
-                    );
-                    setAdminTicketStats((res.data.data.admin_ticket_stats as AdminTicketStats | undefined) ?? null);
-                    setIsSessionChecked(true);
-                    setIsLoading(false);
-                    return true;
-                } else {
-                    console.error('Invalid session response:', res.data);
-                    clearSession();
-                    if (
-                        typeof window !== 'undefined' &&
-                        !window.location.pathname.startsWith('/auth') &&
-                        !isPublicNoAuthRoute(window.location.pathname)
-                    ) {
-                        const redirect = `${window.location.pathname}${window.location.search}`;
-                        router.push(`/auth/login?redirect=${encodeURIComponent(redirect)}`);
-                    }
-                    setIsSessionChecked(true);
-                    setIsLoading(false);
-                    return false;
-                }
-            } catch (error) {
-                if (generation !== fetchGenerationRef.current) {
-                    return false;
-                }
-
-                if (isCloudflareChallengeAxios(error)) {
-                    console.warn('Session fetch blocked by Cloudflare challenge; retrying once after clearance');
-                    try {
-                        await new Promise((resolve) => setTimeout(resolve, 1500));
-                        const retry = await api.get('/user/session');
-                        if (generation !== fetchGenerationRef.current) {
-                            return false;
-                        }
-                        if (
-                            !isCloudflareChallengeAxios(retry) &&
-                            !isCloudflareChallengeResponseData(retry.data) &&
-                            retry.data?.success === true &&
-                            retry.data?.data?.user_info &&
-                            typeof retry.data.data.user_info === 'object'
-                        ) {
-                            setUser(retry.data.data.user_info as UserInfo);
-                            setPermissions((retry.data.data.permissions as PermissionsList) || []);
-                            writeCachedSession(
-                                retry.data.data.user_info as UserInfo,
-                                (retry.data.data.permissions as PermissionsList) || [],
-                            );
-                            setAdminTicketStats(
-                                (retry.data.data.admin_ticket_stats as AdminTicketStats | undefined) ?? null,
-                            );
-                            setIsSessionChecked(true);
-                            setIsLoading(false);
-                            return true;
-                        }
-                    } catch {
-                        // Fall through keep existing session if any.
-                    }
                     if (generation !== fetchGenerationRef.current) {
                         return false;
                     }
+
+                    // Cloudflare Under Attack / Precursor can return HTML instead of JSON.
+                    // Do not wipe the session or treat the user as a guest.
+                    if (isCloudflareChallengeAxios(res) || isCloudflareChallengeResponseData(res.data)) {
+                        console.warn('Session fetch blocked by Cloudflare challenge; preserving local session state');
+                        setIsSessionChecked(true);
+                        setIsLoading(false);
+                        return false;
+                    }
+
+                    if (
+                        res.data &&
+                        res.data.success === true &&
+                        res.data.error === false &&
+                        res.data.data &&
+                        res.data.data.user_info &&
+                        typeof res.data.data.user_info === 'object'
+                    ) {
+                        sessionStateRef.current = { user: res.data.data.user_info as UserInfo, checked: true };
+                        setUser(res.data.data.user_info as UserInfo);
+                        setPermissions((res.data.data.permissions as PermissionsList) || []);
+                        writeCachedSession(
+                            res.data.data.user_info as UserInfo,
+                            (res.data.data.permissions as PermissionsList) || [],
+                        );
+                        setAdminTicketStats((res.data.data.admin_ticket_stats as AdminTicketStats | undefined) ?? null);
+                        setIsSessionChecked(true);
+                        setIsLoading(false);
+                        return true;
+                    } else {
+                        console.error('Invalid session response:', res.data);
+                        clearSession();
+                        if (
+                            typeof window !== 'undefined' &&
+                            !window.location.pathname.startsWith('/auth') &&
+                            !isPublicNoAuthRoute(window.location.pathname)
+                        ) {
+                            const redirect = `${window.location.pathname}${window.location.search}`;
+                            router.push(`/auth/login?redirect=${encodeURIComponent(redirect)}`);
+                        }
+                        setIsSessionChecked(true);
+                        setIsLoading(false);
+                        return false;
+                    }
+                } catch (error) {
+                    if (generation !== fetchGenerationRef.current) {
+                        return false;
+                    }
+
+                    if (isCloudflareChallengeAxios(error)) {
+                        console.warn('Session fetch blocked by Cloudflare challenge; retrying once after clearance');
+                        try {
+                            await new Promise((resolve) => setTimeout(resolve, 1500));
+                            if (generation !== fetchGenerationRef.current) return false;
+                            const retry = await api.get('/user/session');
+                            if (generation !== fetchGenerationRef.current) {
+                                return false;
+                            }
+                            if (
+                                !isCloudflareChallengeAxios(retry) &&
+                                !isCloudflareChallengeResponseData(retry.data) &&
+                                retry.data?.success === true &&
+                                retry.data?.data?.user_info &&
+                                typeof retry.data.data.user_info === 'object'
+                            ) {
+                                sessionStateRef.current = {
+                                    user: retry.data.data.user_info as UserInfo,
+                                    checked: true,
+                                };
+                                setUser(retry.data.data.user_info as UserInfo);
+                                setPermissions((retry.data.data.permissions as PermissionsList) || []);
+                                writeCachedSession(
+                                    retry.data.data.user_info as UserInfo,
+                                    (retry.data.data.permissions as PermissionsList) || [],
+                                );
+                                setAdminTicketStats(
+                                    (retry.data.data.admin_ticket_stats as AdminTicketStats | undefined) ?? null,
+                                );
+                                setIsSessionChecked(true);
+                                setIsLoading(false);
+                                return true;
+                            }
+                        } catch {
+                            // Fall through keep existing session if any.
+                        }
+                        if (generation !== fetchGenerationRef.current) {
+                            return false;
+                        }
+                        setIsSessionChecked(true);
+                        setIsLoading(false);
+                        return false;
+                    }
+
+                    const axiosError = error as AxiosError<{ error_code?: string; error_message?: string }>;
+                    const errorCode = axiosError?.response?.data?.error_code;
+                    const onAuthPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/auth');
+                    if (
+                        errorCode === 'INVALID_ACCOUNT_TOKEN' ||
+                        errorCode === 'USER_BANNED' ||
+                        axiosError?.response?.status === 401
+                    ) {
+                        // On auth pages a failed probe is expected for guests. Clearing here can
+                        // race with a just-completed login refresh and wipe the hydrated user.
+                        if (!onAuthPage) {
+                            clearSession();
+                            if (!isPublicNoAuthRoute(window.location.pathname)) {
+                                const redirect = `${window.location.pathname}${window.location.search}`;
+                                router.push(`/auth/login?redirect=${encodeURIComponent(redirect)}`);
+                            }
+                        }
+                    }
                     setIsSessionChecked(true);
                     setIsLoading(false);
                     return false;
                 }
-
-                const axiosError = error as AxiosError<{ error_code?: string; error_message?: string }>;
-                const errorCode = axiosError?.response?.data?.error_code;
-                const onAuthPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/auth');
-                if (
-                    errorCode === 'INVALID_ACCOUNT_TOKEN' ||
-                    errorCode === 'USER_BANNED' ||
-                    axiosError?.response?.status === 401
-                ) {
-                    // On auth pages a failed probe is expected for guests. Clearing here can
-                    // race with a just-completed login refresh and wipe the hydrated user.
-                    if (!onAuthPage) {
-                        clearSession();
-                        if (!isPublicNoAuthRoute(window.location.pathname)) {
-                            const redirect = `${window.location.pathname}${window.location.search}`;
-                            router.push(`/auth/login?redirect=${encodeURIComponent(redirect)}`);
-                        }
-                    }
-                }
-                setIsSessionChecked(true);
-                setIsLoading(false);
-                return false;
+            })();
+            pendingSessionRef.current = { promise: request, force: force && !startup, generation };
+            try {
+                return await request;
+            } finally {
+                if (pendingSessionRef.current?.generation === generation) pendingSessionRef.current = null;
             }
         },
-        [isSessionChecked, user, router, isPublicNoAuthRoute],
+        [router, isPublicNoAuthRoute, clearSession],
     );
 
-    const refreshSession = async (): Promise<boolean> => {
+    const refreshSession = useCallback(async (): Promise<boolean> => {
+        sessionStateRef.current.checked = false;
         setIsSessionChecked(false);
         return await fetchSession(true);
-    };
-
-    const clearSession = () => {
-        setUser(null);
-        writeCachedSession(null);
-        setIsSessionChecked(false);
-        setPermissions([]);
-        setAdminTicketStats(null);
-    };
+    }, [fetchSession]);
 
     const logout = async () => {
         try {
@@ -363,7 +390,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        fetchSession(true);
+        if (startupCheckedRef.current) return;
+        startupCheckedRef.current = true;
+        void fetchSession(true, true);
     }, [fetchSession, isPublicNoAuthRoute, pluginPathsLoaded]);
 
     return (

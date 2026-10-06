@@ -100,7 +100,7 @@ export default function VdsNodesPage() {
         VDS_NODES_LIST_FILTERS_DEFAULTS,
     );
     const { searchQuery, page, pageSize } = filters;
-    // Location filter must come from the URL only — sticky localStorage locationId
+    // Location filter must come from the URL only - sticky localStorage locationId
     // hid nodes with no clear-filter UI (same bug as /admin/nodes).
     const locationIdFilter = urlLocationId;
 
@@ -150,7 +150,7 @@ export default function VdsNodesPage() {
             }
         };
         fetchLocations();
-    }, []);
+    }, [t]);
 
     const testConnection = useCallback(
         async (vmNodeId: number) => {

@@ -729,7 +729,7 @@ export default function ServerActivityPage() {
                                             <span>
                                                 {selectedItem.timestamp
                                                     ? formatDateTimeInTz(selectedItem.timestamp, dateOpts)
-                                                    : '—'}
+                                                    : '-'}
                                             </span>
                                         </dd>
                                     </div>

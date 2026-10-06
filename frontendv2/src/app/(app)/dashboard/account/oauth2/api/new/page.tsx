@@ -153,7 +153,7 @@ export default function OAuth2ApiAuthorizePage() {
                             return;
                         }
                     }
-                } catch (err) {
+                } catch {
                     // Fall through
                 }
             }
@@ -231,8 +231,8 @@ export default function OAuth2ApiAuthorizePage() {
                     title={t('account.apiKeys.oauth2.noRequestTitle')}
                     body={t('account.apiKeys.oauth2.noRequestDescription')}
                 >
-                    <p className='mb-4 border border-[#333] bg-[#141414] px-3 py-2 text-[12px] text-[#a0a0a0]'>
-                        <strong className='text-[#e8e8e8]'>{t('account.apiKeys.oauth2.noRequestWarningTitle')}</strong>
+                    <p className='border-border/60 bg-background/40 text-muted-foreground mb-4 rounded-xl border px-3.5 py-3 text-sm leading-relaxed'>
+                        <strong className='text-foreground'>{t('account.apiKeys.oauth2.noRequestWarningTitle')}</strong>
                         <br />
                         {t('account.apiKeys.oauth2.noRequestWarningBody')}
                     </p>
@@ -291,7 +291,7 @@ export default function OAuth2ApiAuthorizePage() {
                         text: (
                             <>
                                 {t('account.apiKeys.oauth2.callbackUrl')}:{' '}
-                                <span className='break-all text-[#c8c8c8]'>{payload.request.callbackurl}</span>
+                                <span className='text-foreground break-all'>{payload.request.callbackurl}</span>
                             </>
                         ),
                     },

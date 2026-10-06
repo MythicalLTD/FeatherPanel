@@ -77,22 +77,25 @@ const ScannerTab = () => {
 
     const progressTimer = useRef<NodeJS.Timeout | null>(null);
 
-    const fetchServers = useCallback(async (query = '') => {
-        setLoadingServers(true);
-        try {
-            const { data } = await axios.get('/api/admin/servers', {
-                params: { search: query, page: 1, limit: 100 },
-            });
-            if (data.success && data.data) {
-                setAllServers(data.data.servers || data.data);
+    const fetchServers = useCallback(
+        async (query = '') => {
+            setLoadingServers(true);
+            try {
+                const { data } = await axios.get('/api/admin/servers', {
+                    params: { search: query, page: 1, limit: 100 },
+                });
+                if (data.success && data.data) {
+                    setAllServers(data.data.servers || data.data);
+                }
+            } catch (error) {
+                console.error('Failed to fetch servers', error);
+                toast.error(getApiErrorMessage(error, t, 'common.error'));
+            } finally {
+                setLoadingServers(false);
             }
-        } catch (error) {
-            console.error('Failed to fetch servers', error);
-            toast.error(getApiErrorMessage(error, t, 'common.error'));
-        } finally {
-            setLoadingServers(false);
-        }
-    }, [t]);
+        },
+        [t],
+    );
 
     const startFakeProgress = () => {
         setScanProgress({

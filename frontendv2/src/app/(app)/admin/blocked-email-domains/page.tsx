@@ -77,7 +77,7 @@ const ROWS_PER_PAGE = 50;
 
 function formatAddedAt(iso: string | null): string {
     if (!iso) {
-        return '—';
+        return '-';
     }
     try {
         return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
@@ -465,7 +465,7 @@ export default function BlockedEmailDomainsPage() {
                                 {t('admin.blocked_email_domains.import_preset_body')}
                             </p>
                             <p className='text-muted-foreground border-border/60 bg-muted/20 rounded-lg border px-3 py-2 font-mono text-xs'>
-                                {presetFile || '—'}
+                                {presetFile || '-'}
                             </p>
                         </TabsContent>
                         <TabsContent value='url' className='mt-4 space-y-3'>

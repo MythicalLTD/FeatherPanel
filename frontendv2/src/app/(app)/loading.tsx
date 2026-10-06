@@ -13,7 +13,7 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-/** Keep Suspense boundary; show nothing — TopLoadingBar covers navigation feedback. */
+/** Keep Suspense boundary; show nothing - TopLoadingBar covers navigation feedback. */
 export default function Loading() {
     return null;
 }

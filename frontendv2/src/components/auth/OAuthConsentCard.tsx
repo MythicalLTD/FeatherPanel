@@ -6,8 +6,8 @@ Copyright (C) 2025 FeatherPanel Contributors
 Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
 
 This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published
-by the Free Software Foundation, either version 3 of the License, or
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 See the LICENSE file or <https://www.gnu.org/licenses/>.
@@ -17,40 +17,72 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import Image from 'next/image';
 import type { ReactNode } from 'react';
+import { Check, CircleX, LockKeyhole } from 'lucide-react';
+import { useSettings } from '@/contexts/SettingsContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
 
-/** Flat dark consent chrome — no glow, no motion, no light theme. */
 export function OAuthConsentShell({ children, className }: { children: ReactNode; className?: string }) {
+    const { settings } = useSettings();
+    const { theme } = useTheme();
+    const appName = settings?.app_name || 'FeatherPanel';
+    const logo =
+        theme === 'dark'
+            ? settings?.app_logo_dark || settings?.app_logo_white || '/assets/logo.png'
+            : settings?.app_logo_white || settings?.app_logo_dark || '/assets/logo.png';
+
     return (
-        <div
-            className={cn('flex min-h-dvh items-start justify-center px-4 py-10 sm:items-center', className)}
-            style={{
-                background: '#111111',
-                color: '#e8e8e8',
-                fontFamily: 'ui-sans-serif, system-ui, Segoe UI, Tahoma, sans-serif',
-            }}
+        <main
+            className={cn(
+                'bg-background text-foreground relative isolate flex min-h-dvh items-center justify-center overflow-hidden px-4 py-10 sm:px-6',
+                className,
+            )}
         >
-            <div className='w-full max-w-[440px]'>
-                <div
-                    className='border border-[#333] px-3 py-2 text-[13px] font-semibold tracking-wide'
-                    style={{ background: '#1a1a1a', color: '#f0f0f0' }}
-                >
-                    AI Connector
-                </div>
+            <div
+                aria-hidden='true'
+                className='pointer-events-none absolute inset-0'
+                style={{
+                    background:
+                        'radial-gradient(ellipse at 50% 0%, hsl(var(--primary) / 0.18), transparent 58%), radial-gradient(ellipse at 100% 100%, hsl(var(--primary) / 0.08), transparent 48%)',
+                }}
+            />
+            <div className='relative z-10 w-full max-w-xl'>
+                <header className='mb-6 flex items-center justify-between gap-4 px-1'>
+                    <div className='flex min-w-0 items-center gap-3'>
+                        <div className='border-border/60 bg-card/90 relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border shadow-sm'>
+                            <Image
+                                src={logo}
+                                alt={appName}
+                                width={40}
+                                height={40}
+                                className='object-contain p-1'
+                                unoptimized
+                                priority
+                            />
+                        </div>
+                        <span className='truncate text-sm font-semibold tracking-tight'>{appName}</span>
+                    </div>
+                    <span className='border-border/60 bg-card/60 text-muted-foreground inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium'>
+                        <LockKeyhole className='text-primary h-3.5 w-3.5' aria-hidden='true' />
+                        OAuth 2.0
+                    </span>
+                </header>
                 {children}
             </div>
-        </div>
+        </main>
     );
 }
 
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
     return (
-        <div
-            className={cn('border border-t-0 border-[#333] px-4 py-4 text-[13px] leading-relaxed', className)}
-            style={{ background: '#1a1a1a' }}
+        <section
+            className={cn(
+                'border-border/60 bg-card/90 rounded-2xl border p-5 shadow-2xl shadow-black/10 backdrop-blur-xl sm:p-7',
+                className,
+            )}
         >
             {children}
-        </div>
+        </section>
     );
 }
 
@@ -70,12 +102,12 @@ export function OAuthConsentButton({
             type='button'
             onClick={onClick}
             disabled={disabled}
-            className='cursor-pointer border px-3.5 py-1.5 text-[13px] font-medium disabled:cursor-not-allowed disabled:opacity-50'
-            style={
+            className={cn(
+                'focus-visible:ring-ring focus-visible:ring-offset-background inline-flex min-h-10 cursor-pointer items-center justify-center rounded-lg border px-4 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
                 primary
-                    ? { background: '#e8e8e8', color: '#111', borderColor: '#e8e8e8' }
-                    : { background: '#1a1a1a', color: '#e8e8e8', borderColor: '#555' }
-            }
+                    ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90'
+                    : 'border-border/70 bg-background/50 text-foreground hover:bg-accent hover:text-accent-foreground',
+            )}
         >
             {children}
         </button>
@@ -113,36 +145,49 @@ export function OAuthConsentCard({
 }) {
     return (
         <Panel>
-            <div className='mb-4 flex items-start gap-3'>
-                {appLogo ? (
-                    <Image
-                        src={appLogo}
-                        alt={appName}
-                        width={36}
-                        height={36}
-                        className='border border-[#444] object-contain'
-                        unoptimized
-                    />
-                ) : null}
-                <div>
-                    <h1 className='text-[15px] font-semibold text-[#f5f5f5]'>{appName}</h1>
-                    <p className='mt-1 text-[#a0a0a0]'>{subtitle}</p>
-                    {signedInAs ? (
-                        <p className='mt-1 text-[#a0a0a0]'>
-                            Signed in as <span className='text-[#e8e8e8]'>{signedInAs}</span>
-                        </p>
-                    ) : null}
+            <div className='flex items-start gap-4'>
+                <div className='border-border/60 bg-muted/40 flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border'>
+                    {appLogo ? (
+                        <Image
+                            src={appLogo}
+                            alt={appName}
+                            width={56}
+                            height={56}
+                            className='object-contain'
+                            unoptimized
+                        />
+                    ) : (
+                        <LockKeyhole className='text-primary h-6 w-6' aria-hidden='true' />
+                    )}
+                </div>
+                <div className='min-w-0 flex-1 pt-0.5'>
+                    <h1 className='text-xl leading-tight font-semibold tracking-tight'>{appName}</h1>
+                    <p className='text-muted-foreground mt-1.5 text-sm leading-relaxed'>{subtitle}</p>
                 </div>
             </div>
 
+            {signedInAs ? (
+                <div className='border-border/60 bg-background/40 text-muted-foreground mt-5 rounded-xl border px-3.5 py-3 text-sm'>
+                    Signed in as <span className='text-foreground font-medium'>{signedInAs}</span>
+                </div>
+            ) : null}
+
             {permissions.length > 0 ? (
-                <div className='mb-4 border border-[#333] px-3 py-2.5'>
-                    <p className='mb-2 text-[11px] font-semibold tracking-wide text-[#888] uppercase'>This app can</p>
-                    <ul className='space-y-1.5 text-[#d0d0d0]'>
+                <div className='border-border/60 bg-background/35 mt-5 rounded-xl border p-4'>
+                    <p className='text-muted-foreground mb-3 text-xs font-semibold tracking-wide uppercase'>
+                        This app can
+                    </p>
+                    <ul className='space-y-3'>
                         {permissions.map((item) => (
-                            <li key={item.label} className={item.allowed === false ? 'text-[#e07070]' : undefined}>
-                                {item.allowed === false ? 'Denied — ' : '• '}
-                                {item.label}
+                            <li key={item.label} className='flex items-start gap-2.5 text-sm leading-relaxed'>
+                                {item.allowed === false ? (
+                                    <CircleX className='text-destructive mt-0.5 h-4 w-4 shrink-0' aria-hidden='true' />
+                                ) : (
+                                    <Check className='text-primary mt-0.5 h-4 w-4 shrink-0' aria-hidden='true' />
+                                )}
+                                <span className={item.allowed === false ? 'text-destructive' : 'text-foreground'}>
+                                    {item.label}
+                                </span>
                             </li>
                         ))}
                     </ul>
@@ -150,23 +195,37 @@ export function OAuthConsentCard({
             ) : null}
 
             {meta && meta.length > 0 ? (
-                <dl className='mb-4 space-y-2 text-[12px] text-[#888]'>
+                <dl className='border-border/60 mt-5 space-y-3 border-t pt-4'>
                     {meta.map((row, idx) => (
-                        <div key={idx}>{row.text}</div>
+                        <div
+                            key={idx}
+                            className='text-muted-foreground flex items-start gap-2.5 text-xs leading-relaxed'
+                        >
+                            {row.icon ? (
+                                <span className='text-primary mt-0.5 shrink-0' aria-hidden='true'>
+                                    {row.icon}
+                                </span>
+                            ) : null}
+                            <div className='min-w-0'>{row.text}</div>
+                        </div>
                     ))}
                 </dl>
             ) : null}
 
-            {error ? <p className='mb-3 font-medium text-[#e07070]'>{error}</p> : null}
+            {error ? (
+                <p role='alert' className='text-destructive mt-4 text-sm font-medium'>
+                    {error}
+                </p>
+            ) : null}
 
             {footer}
 
-            <div className='mt-1 flex flex-wrap items-center gap-2'>
-                <OAuthConsentButton primary onClick={onAuthorize} disabled={submitting}>
-                    {authorizeLabel}
-                </OAuthConsentButton>
+            <div className='border-border/60 mt-6 flex flex-col-reverse gap-2 border-t pt-5 sm:flex-row sm:justify-end'>
                 <OAuthConsentButton onClick={onCancel} disabled={submitting}>
                     {cancelLabel}
+                </OAuthConsentButton>
+                <OAuthConsentButton primary onClick={onAuthorize} disabled={submitting}>
+                    {authorizeLabel}
                 </OAuthConsentButton>
             </div>
         </Panel>
@@ -186,11 +245,11 @@ export function OAuthConsentMessage({
 }) {
     return (
         <Panel>
-            <h1 className={cn('mb-2 text-[15px] font-semibold', error ? 'text-[#e07070]' : 'text-[#f5f5f5]')}>
+            <h1 className={cn('text-xl font-semibold tracking-tight', error ? 'text-destructive' : 'text-foreground')}>
                 {title}
             </h1>
-            {body ? <p className='mb-4 text-[#a0a0a0]'>{body}</p> : null}
-            {children}
+            {body ? <p className='text-muted-foreground mt-2 text-sm leading-relaxed'>{body}</p> : null}
+            {children ? <div className='mt-5'>{children}</div> : null}
         </Panel>
     );
 }

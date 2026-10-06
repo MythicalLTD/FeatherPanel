@@ -54,6 +54,8 @@
 - Widget rendering system was improved to more fit the responsive design. by @nayskutzu
 - The api key encryption system was improved to use the new encryption system. by @nayskutzu & @Crackhead-gsk
 - Rewrote how the plugins settings ui works added releams and moved to a full ui rather than a modal! by @nayskutzu
+- The entire telemetry system was reworked to enhance privacy, ensure GDPR compliance, and provide secure error reporting to Mythical. by @nayskutzu
+- Enhanced handling of Pterodactyl egg file formats with expanded support for additional egg features. by @nayskutzu
 
 ### Fixed
 
@@ -67,6 +69,7 @@
 - Fixed: Schedule creation no longer fails with a 500 error when `is_active` is submitted as a boolean; boolean values are handled correctly.
 - Fixes related to server transfers with bunch of allocations were fixed by @nayskutzu
 - The navbar server state was stuck to the last server state instead of updating when the server state changes. by @nayskutzu
+- Backups and similar tasks that remain pending for over 3 hours can now be canceled and marked as failed, preventing stuck or hanging jobs. by @nayskutzu
 
 ## v1.3.7.10 STABLE
 

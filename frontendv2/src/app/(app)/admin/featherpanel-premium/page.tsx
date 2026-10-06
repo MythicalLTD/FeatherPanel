@@ -247,7 +247,7 @@ export default function FeatherPanelPremiumPage() {
                                     {premium?.using_cache && (
                                         <p className='text-sm text-amber-600 dark:text-amber-400'>
                                             {t('admin.featherpanel_premium.status.using_cache', {
-                                                expires: premium.expires_at || '—',
+                                                expires: premium.expires_at || '-',
                                             })}
                                         </p>
                                     )}

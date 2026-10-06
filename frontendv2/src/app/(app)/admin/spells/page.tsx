@@ -140,6 +140,7 @@ export default function SpellsPage() {
     const [importDialogOpen, setImportDialogOpen] = useState(false);
     const [importRealmId, setImportRealmId] = useState('');
     const [importing, setImporting] = useState(false);
+    const pendingImportFile = useRef<File | null>(null);
     const [isReorderMode, setIsReorderMode] = useState(false);
     const [reorderLoading, setReorderLoading] = useState(false);
     const [hasOrderChanges, setHasOrderChanges] = useState(false);
@@ -255,7 +256,7 @@ export default function SpellsPage() {
 
         setImportDialogOpen(true);
 
-        (window as unknown as { __importFile?: File }).__importFile = file;
+        pendingImportFile.current = file;
     };
 
     const performImport = async (file: File, realmId: string) => {
@@ -277,7 +278,7 @@ export default function SpellsPage() {
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
-            delete (window as unknown as { __importFile?: File }).__importFile;
+            pendingImportFile.current = null;
         } catch (error) {
             console.error('Error importing spell:', error);
             toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.import_failed'));
@@ -292,7 +293,7 @@ export default function SpellsPage() {
             return;
         }
 
-        const file = (window as unknown as { __importFile?: File }).__importFile;
+        const file = pendingImportFile.current;
         if (!file) {
             toast.error(t('admin.spells.messages.no_file_selected'));
             setImportDialogOpen(false);
@@ -669,7 +670,17 @@ export default function SpellsPage() {
                 </div>
             )}
 
-            <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+            <Dialog
+                open={importDialogOpen}
+                onOpenChange={(open) => {
+                    if (importing) return;
+                    setImportDialogOpen(open);
+                    if (!open) {
+                        pendingImportFile.current = null;
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                    }
+                }}
+            >
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{t('admin.spells.import')}</DialogTitle>

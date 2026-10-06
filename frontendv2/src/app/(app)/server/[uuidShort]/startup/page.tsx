@@ -16,6 +16,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import * as React from 'react';
+import { validateEggVariable } from '@/lib/eggVariableRules';
+import { EggVariableInput } from '@/components/server/EggVariableInput';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -98,98 +100,9 @@ export default function ServerStartupPage() {
         is_encrypted: false,
     });
 
-    const parseRules = React.useCallback((rules: string) => {
-        if (!rules) return [];
-        const parts = rules.split('|');
-        const parsed: Array<{ type: string; value?: number | string }> = [];
-        for (const part of parts) {
-            if (['required', 'nullable', 'string', 'numeric', 'integer', 'int'].includes(part)) {
-                parsed.push({ type: part });
-                continue;
-            }
-            const maxMatch = part.match(/^max:(\d+)$/);
-            if (maxMatch) {
-                parsed.push({ type: 'max', value: Number(maxMatch[1]) });
-                continue;
-            }
-            const minMatch = part.match(/^min:(\d+)$/);
-            if (minMatch) {
-                parsed.push({ type: 'min', value: Number(minMatch[1]) });
-                continue;
-            }
-            const regexMatch = part.match(/^regex:\/(.*)\/$/);
-            if (regexMatch) {
-                parsed.push({ type: 'regex', value: regexMatch[1] });
-                continue;
-            }
-        }
-        return parsed;
-    }, []);
-
-    const normalizeRegexPattern = React.useCallback((pattern: string) => {
-        try {
-            return pattern.replace(/\\\\/g, '\\');
-        } catch {
-            return pattern;
-        }
-    }, []);
-
     const validateVariableAgainstRules = React.useCallback(
-        (value: string, rules: string): string | '' => {
-            const parsed = parseRules(rules || '');
-            const hasNullable = parsed.some((r) => r.type === 'nullable');
-            const isRequired = parsed.some((r) => r.type === 'required');
-            const isNumeric = parsed.some((r) => r.type === 'numeric' || r.type === 'integer' || r.type === 'int');
-
-            const val = value ?? '';
-            const trimmedForEmptyCheck = val.trim();
-
-            if (!isRequired && hasNullable && trimmedForEmptyCheck === '') return '';
-            if (isRequired && trimmedForEmptyCheck === '') return t('serverStartup.fieldRequired');
-            if (!isRequired && trimmedForEmptyCheck === '') return '';
-
-            if (isNumeric && !/^\d+$/.test(trimmedForEmptyCheck)) return t('serverStartup.fieldMustBeNumeric');
-
-            for (const rule of parsed) {
-                if (rule.type === 'min' && typeof rule.value === 'number') {
-                    if (isNumeric) {
-                        const numValue = Number(trimmedForEmptyCheck);
-                        if (isNaN(numValue) || numValue < rule.value) {
-                            return t('serverStartup.minimumValue', { value: String(rule.value) });
-                        }
-                    } else {
-                        if (trimmedForEmptyCheck.length < rule.value) {
-                            return t('serverStartup.minimumCharacters', { value: String(rule.value) });
-                        }
-                    }
-                }
-                if (rule.type === 'max' && typeof rule.value === 'number') {
-                    if (isNumeric) {
-                        const numValue = Number(trimmedForEmptyCheck);
-                        if (isNaN(numValue) || numValue > rule.value) {
-                            return t('serverStartup.maximumValue', { value: String(rule.value) });
-                        }
-                    } else {
-                        if (trimmedForEmptyCheck.length > rule.value) {
-                            return t('serverStartup.maximumCharacters', { value: String(rule.value) });
-                        }
-                    }
-                }
-                if (rule.type === 'regex' && typeof rule.value === 'string') {
-                    try {
-                        const pattern = normalizeRegexPattern(rule.value);
-                        const re = new RegExp(pattern);
-                        if (!re.test(trimmedForEmptyCheck)) {
-                            return t('serverStartup.valueDoesNotMatchFormat');
-                        }
-                    } catch (err) {
-                        console.error('Invalid regex pattern:', rule.value, err);
-                    }
-                }
-            }
-            return '';
-        },
-        [parseRules, normalizeRegexPattern, t],
+        (value: string, rules: string): string => validateEggVariable(value, rules, t),
+        [t],
     );
 
     const validateOneVariable = React.useCallback(
@@ -428,7 +341,7 @@ export default function ServerStartupPage() {
 
     const selectedDockerImageLabel = availableDockerImages.find((img) => img.value === form.image)?.name || form.image;
 
-    const viewableVariables = variables.filter((v) => isEnabled(v.user_viewable) || canUpdateStartup);
+    const viewableVariables = variables.filter((v) => isEnabled(v.user_viewable));
     const variableCount = viewableVariables.length + customVariables.length;
     const hasChanges = () => {
         if (!server) return false;
@@ -595,7 +508,8 @@ export default function ServerStartupPage() {
                                         </div>
 
                                         <div className='relative'>
-                                            <Input
+                                            <EggVariableInput
+                                                fieldType={v.field_type}
                                                 value={variableValues[v.variable_id] ?? ''}
                                                 onChange={(e) => {
                                                     const val = e.target.value;

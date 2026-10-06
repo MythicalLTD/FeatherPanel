@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { reportPanelInteraction } from '@/lib/panel-analytics';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { filesApi } from '@/lib/files-api';
@@ -140,7 +141,7 @@ export function useFileManager(serverUuid: string) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [serverUuid, currentDirectory, debouncedSearch]);
 
-    // Filtering logic — name search is server-side; only apply local ignore rules here
+    // Filtering logic - name search is server-side; only apply local ignore rules here
     const filteredFiles = useMemo(() => {
         let result = filterFeatherTrashFiles(files);
 
@@ -167,14 +168,20 @@ export function useFileManager(serverUuid: string) {
         }
         setSearchQuery('');
         setDebouncedSearch('');
+        reportPanelInteraction('panel.file.browse', 'files');
         router.push(`?${params.toString()}`);
     };
 
     const toggleSelect = (name: string) => {
+        reportPanelInteraction('panel.file.select', 'single');
         setSelectedFiles((prev) => (prev.includes(name) ? prev.filter((f) => f !== name) : [...prev, name]));
     };
 
     const selectAll = () => {
+        reportPanelInteraction(
+            'panel.file.select',
+            selectedFiles.length === filteredFiles.length ? 'clear-selection' : 'select-all',
+        );
         if (selectedFiles.length === filteredFiles.length) {
             setSelectedFiles([]);
         } else {

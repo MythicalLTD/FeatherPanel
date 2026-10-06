@@ -132,7 +132,7 @@ export function WebSpaceCard({
                                 {t('webSpaces.webNode')}
                             </div>
                             <div className='max-w-[10rem] truncate text-xs font-medium sm:max-w-[14rem] sm:text-sm'>
-                                {webspace.web_node_name || '—'}
+                                {webspace.web_node_name || '-'}
                             </div>
                         </div>
                         <div className='min-w-0'>
@@ -140,7 +140,7 @@ export function WebSpaceCard({
                                 {t('webSpaces.webPlate')}
                             </div>
                             <div className='max-w-[10rem] truncate text-xs font-medium sm:max-w-[14rem] sm:text-sm'>
-                                {webspace.webplate_name || '—'}
+                                {webspace.webplate_name || '-'}
                             </div>
                         </div>
                     </Link>
@@ -191,11 +191,11 @@ export function WebSpaceCard({
                 <Link href={webspaceUrl} className='grid cursor-pointer grid-cols-1 gap-3 pt-2 min-[400px]:grid-cols-2'>
                     <div className='min-w-0 text-sm'>
                         <div className='text-muted-foreground mb-1 text-xs'>{t('webSpaces.webNode')}</div>
-                        <div className='truncate font-medium'>{webspace.web_node_name || '—'}</div>
+                        <div className='truncate font-medium'>{webspace.web_node_name || '-'}</div>
                     </div>
                     <div className='min-w-0 text-sm'>
                         <div className='text-muted-foreground mb-1 text-xs'>{t('webSpaces.webPlate')}</div>
-                        <div className='truncate font-medium'>{webspace.webplate_name || '—'}</div>
+                        <div className='truncate font-medium'>{webspace.webplate_name || '-'}</div>
                     </div>
                 </Link>
 

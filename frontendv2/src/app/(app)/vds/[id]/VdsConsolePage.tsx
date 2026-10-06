@@ -76,7 +76,7 @@ function formatMemory(bytes: number): string {
 }
 
 function formatUptime(seconds: number): string {
-    if (!seconds) return '—';
+    if (!seconds) return '-';
     const d = Math.floor(seconds / 86400);
     const h = Math.floor((seconds % 86400) / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -558,19 +558,19 @@ export default function VdsConsolePage() {
                 <StatCard
                     icon={Zap}
                     label={t('vds.console.performance.cpu')}
-                    value={cpuPercent != null ? `${cpuPercent}%` : '—'}
+                    value={cpuPercent != null ? `${cpuPercent}%` : '-'}
                     sub={`${instance.plan_cpus ?? instance.cpus ?? '?'} × ${instance.plan_cores ?? instance.cores ?? 1} vCPU`}
                 />
                 <StatCard
                     icon={Database}
                     label={t('vds.console.performance.memory')}
-                    value={memUsed != null ? formatMemory(memUsed) : '—'}
+                    value={memUsed != null ? formatMemory(memUsed) : '-'}
                     sub={memMax != null ? `/ ${formatMemory(memMax)}` : `${instance.plan_memory ?? '?'} MB plan`}
                 />
                 <StatCard
                     icon={HardDrive}
                     label={t('vds.console.performance.disk')}
-                    value={diskUsed != null ? formatMemory(diskUsed) : '—'}
+                    value={diskUsed != null ? formatMemory(diskUsed) : '-'}
                     sub={
                         diskMax != null
                             ? `/ ${formatMemory(diskMax)}`
@@ -580,17 +580,17 @@ export default function VdsConsolePage() {
                 <StatCard
                     icon={Globe}
                     label={t('vds.console.performance.network_rx')}
-                    value={vmStatus?.netin != null ? formatNetwork(vmStatus.netin) : '—'}
+                    value={vmStatus?.netin != null ? formatNetwork(vmStatus.netin) : '-'}
                 />
                 <StatCard
                     icon={Globe}
                     label={t('vds.console.performance.network_tx')}
-                    value={vmStatus?.netout != null ? formatNetwork(vmStatus.netout) : '—'}
+                    value={vmStatus?.netout != null ? formatNetwork(vmStatus.netout) : '-'}
                 />
                 <StatCard
                     icon={ActivityIcon}
                     label={t('vds.console.performance.uptime')}
-                    value={uptime != null ? formatUptime(uptime) : '—'}
+                    value={uptime != null ? formatUptime(uptime) : '-'}
                 />
             </div>
 
@@ -606,16 +606,16 @@ export default function VdsConsolePage() {
                     </CardHeader>
                     <CardContent className='space-y-3'>
                         {[
-                            { label: t('vds.console.details.hostname'), value: instance.hostname ?? '—' },
+                            { label: t('vds.console.details.hostname'), value: instance.hostname ?? '-' },
                             { label: t('vds.console.details.vmid'), value: String(instance.vmid) },
                             { label: t('vds.console.details.type'), value: instance.vm_type?.toUpperCase() ?? 'QEMU' },
                             { label: t('vds.console.details.status'), value: liveStatus },
-                            { label: t('vds.console.details.ip'), value: ip ?? '—' },
+                            { label: t('vds.console.details.ip'), value: ip ?? '-' },
                             {
                                 label: t('vds.console.details.node'),
-                                value: instance.node_name ?? instance.pve_node ?? '—',
+                                value: instance.node_name ?? instance.pve_node ?? '-',
                             },
-                            { label: t('vds.console.details.plan'), value: instance.plan_name ?? '—' },
+                            { label: t('vds.console.details.plan'), value: instance.plan_name ?? '-' },
                             {
                                 label: t('vds.console.details.role'),
                                 value: instance.is_owner

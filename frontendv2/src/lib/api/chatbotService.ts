@@ -21,7 +21,8 @@ function apiFailureMessage(error: unknown, fallback: string): string {
 }
 
 function payloadFailureMessage(payload: unknown, fallback: string): string {
-    const record = payload && typeof payload === 'object' ? (payload as { message?: unknown; error_message?: unknown }) : null;
+    const record =
+        payload && typeof payload === 'object' ? (payload as { message?: unknown; error_message?: unknown }) : null;
     const msg = record?.message ?? record?.error_message;
     return typeof msg === 'string' && msg.trim() !== '' ? msg.trim() : fallback;
 }

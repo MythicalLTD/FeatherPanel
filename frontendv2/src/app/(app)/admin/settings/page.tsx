@@ -152,7 +152,11 @@ function SettingFieldRow({
         translatedLabel !== labelKey ? translatedLabel : formatSettingName(currentSetting.name, settingKey);
     const description = translatedDescription !== descriptionKey ? translatedDescription : currentSetting.description;
 
-    if (currentSetting.type === 'toggle' || (currentSetting.type as string) === 'boolean') {
+    if (
+        settingKey === 'telemetry' ||
+        currentSetting.type === 'toggle' ||
+        (currentSetting.type as string) === 'boolean'
+    ) {
         return (
             <div className='border-border/50 bg-card/30 hover:bg-card/50 flex flex-row items-center justify-between gap-4 rounded-2xl border p-4 transition-colors'>
                 <div className='min-w-0 space-y-0.5 pr-2'>
@@ -166,7 +170,9 @@ function SettingFieldRow({
                     checked={
                         currentSetting.value === true || currentSetting.value === 'true' || currentSetting.value === 1
                     }
-                    onCheckedChange={(checked: boolean) => onSettingChange(settingKey, checked)}
+                    onCheckedChange={(checked: boolean) =>
+                        onSettingChange(settingKey, settingKey === 'telemetry' ? String(checked) : checked)
+                    }
                     className='shrink-0'
                 />
             </div>
@@ -442,6 +448,7 @@ export default function SettingsPage() {
                 toast.success(t('admin.settings.messages.save_success'));
 
                 setInitialSettings(JSON.parse(JSON.stringify(settings)));
+                if ('telemetry' in payload) window.location.reload();
             } else {
                 toast.error(getApiErrorMessageFromPayload(response, t, 'admin.settings.messages.save_failed'));
             }

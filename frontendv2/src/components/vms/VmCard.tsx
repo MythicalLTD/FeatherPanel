@@ -160,12 +160,12 @@ export function VmCard({ vm, layout }: VmCardProps) {
                     </div>
                     <div className='bg-background/60 flex flex-col items-center rounded-lg px-2 py-2.5'>
                         <MemoryStick className='text-primary mb-1 h-4 w-4' />
-                        <span className='text-foreground text-sm font-bold'>{memoryGb ?? '—'}</span>
+                        <span className='text-foreground text-sm font-bold'>{memoryGb ?? '-'}</span>
                         <span className='text-muted-foreground text-[10px] tracking-wide uppercase'>GB RAM</span>
                     </div>
                     <div className='bg-background/60 flex flex-col items-center rounded-lg px-2 py-2.5'>
                         <HardDrive className='text-primary mb-1 h-4 w-4' />
-                        <span className='text-foreground text-sm font-bold'>{vm.disk_gb ?? '—'}</span>
+                        <span className='text-foreground text-sm font-bold'>{vm.disk_gb ?? '-'}</span>
                         <span className='text-muted-foreground text-[10px] tracking-wide uppercase'>GB Disk</span>
                     </div>
                 </div>

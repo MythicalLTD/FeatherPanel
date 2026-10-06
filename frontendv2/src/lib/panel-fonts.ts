@@ -313,7 +313,7 @@ const playfair = localFont({
     fallback: ['Georgia', 'Cambria', 'Times New Roman', 'serif'],
 });
 
-/** CSS class string for `<html>` — attaches all panel font variables. */
+/** CSS class string for `<html>` - attaches all panel font variables. */
 export const panelFontClassName = [
     inter.variable,
     nunito.variable,

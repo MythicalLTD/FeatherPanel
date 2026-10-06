@@ -410,9 +410,7 @@ export default function EditServerPage() {
                     console.error('Error loading assignable mounts:', assignErr);
                     setAssignableMounts([]);
                     mountIds = [];
-                    toast.error(
-                        getApiErrorMessage(assignErr, t, 'admin.servers.edit.mounts.assignable_load_failed'),
-                    );
+                    toast.error(getApiErrorMessage(assignErr, t, 'admin.servers.edit.mounts.assignable_load_failed'));
                 }
                 spellBaselineForMounts.current = server.spell_id ?? null;
 
@@ -503,9 +501,7 @@ export default function EditServerPage() {
                 setAssignableMounts([]);
                 setForm((prev) => ({ ...prev, mount_ids: [] }));
                 spellBaselineForMounts.current = spellForRequest;
-                toast.error(
-                    getApiErrorMessageFromPayload(data, t, 'admin.servers.edit.mounts.assignable_load_failed'),
-                );
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.servers.edit.mounts.assignable_load_failed'));
             }
         } catch (e) {
             console.error('Error refreshing assignable mounts:', e);

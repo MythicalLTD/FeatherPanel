@@ -27,9 +27,7 @@ import { Textarea } from '@/components/featherui/Textarea';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Captcha } from '@/components/Captcha';
-import { Switch } from '@/components/ui/switch';
 import { cn, isEnabled } from '@/lib/utils';
-import { getAnalyticsCookie, setAnalyticsCookie } from '@/lib/analytics-cookie';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface FormData {
@@ -63,7 +61,6 @@ export default function ProfileTab() {
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
     const [turnstileToken, setTurnstileToken] = useState('');
     const [turnstileKey, setTurnstileKey] = useState(0);
-    const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
 
     const allowAvatarChange = settings?.user_allow_avatar_change ?? true;
     const allowUsernameChange = settings?.user_allow_username_change ?? true;
@@ -85,10 +82,6 @@ export default function ProfileTab() {
             setLoading(false);
         }
     }, [user]);
-
-    useEffect(() => {
-        setAnalyticsEnabled(getAnalyticsCookie());
-    }, []);
 
     const resetForm = () => {
         if (user) {
@@ -123,12 +116,6 @@ export default function ProfileTab() {
             };
             reader.readAsDataURL(file);
         }
-    };
-
-    const handleAnalyticsChange = (enabled: boolean) => {
-        setAnalyticsCookie(enabled);
-        setAnalyticsEnabled(enabled);
-        window.location.reload();
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -368,14 +355,6 @@ export default function ProfileTab() {
                         <div>
                             <Label className='text-foreground text-sm font-medium'>{t('account.analytics')}</Label>
                             <p className='text-muted-foreground mt-0.5 text-xs'>{t('account.analyticsDescription')}</p>
-                        </div>
-                        <div className='flex items-center justify-between gap-4'>
-                            <span className='text-foreground text-sm'>{t('account.analyticsEnabled')}</span>
-                            <Switch
-                                checked={analyticsEnabled}
-                                onCheckedChange={handleAnalyticsChange}
-                                aria-label={t('account.analyticsEnabled')}
-                            />
                         </div>
                     </div>
                 </Fieldset>

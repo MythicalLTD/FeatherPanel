@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { reportPanelInteraction } from '@/lib/panel-analytics';
 import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react';
 import { isCloudflareChallengeText } from '@/lib/cloudflare-challenge';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -316,6 +317,7 @@ export function TranslationProvider({ children, initialLocale, initialTranslatio
         if (isLocaleLocked) return;
 
         const normalized = normalizeLocaleCode(newLocale) || DEFAULT_LOCALE;
+        if (normalized !== locale) reportPanelInteraction('panel.preference.change', 'language');
         setLoading(true);
         setLocaleState(normalized);
         localStorage.setItem('locale', normalized);

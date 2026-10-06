@@ -157,7 +157,7 @@ export default function NodesPage() {
             }
         };
         fetchLocations();
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         if (!locationIdFilter) {

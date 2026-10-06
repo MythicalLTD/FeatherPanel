@@ -18,6 +18,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useEffect, useState } from 'react';
 
 import Link from 'next/link';
+import { reportPanelInteraction } from '@/lib/panel-analytics';
+import { captureClientException } from '@/lib/client-error-reporting';
 import { Button } from '@/components/featherui/Button';
 import { useTheme } from '@/contexts/ThemeContext';
 import { backgroundFitToCssSize } from '@/lib/backgroundImageFit';
@@ -49,6 +51,10 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
     const { backgroundType, backgroundImage, backdropBlur, backdropDarken, backgroundImageFit } = useTheme();
     const [version, setVersion] = useState<string>('');
     const staleVersion = isStaleVersionError(error);
+
+    useEffect(() => {
+        captureClientException(error, 'global-boundary');
+    }, [error]);
 
     useEffect(() => {
         try {
@@ -152,7 +158,13 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
 
                                 <div className='flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:justify-center'>
                                     <Button
-                                        onClick={staleVersion ? hardRefresh : reset}
+                                        onClick={() => {
+                                            reportPanelInteraction(
+                                                'panel.error.retry',
+                                                staleVersion ? 'refresh' : 'retry',
+                                            );
+                                            (staleVersion ? hardRefresh : reset)();
+                                        }}
                                         variant='outline'
                                         className='group w-full sm:w-auto'
                                     >

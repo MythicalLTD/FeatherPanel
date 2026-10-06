@@ -22,7 +22,7 @@ type HandlerEntry = {
 
 /**
  * Tiny pub/sub used by window.FeatherPanel.events.
- * Singleton — shared across remotes and injected plugin JS.
+ * Singleton - shared across remotes and injected plugin JS.
  */
 export class PluginEventBus {
     private listeners = new Map<string, Set<HandlerEntry>>();

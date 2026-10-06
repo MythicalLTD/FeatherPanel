@@ -356,7 +356,7 @@ export default function EditNodePage() {
             };
             fetchCurrentLocation();
         }
-    }, [form.location_id, selectedLocationName, locations.length]);
+    }, [form.location_id, selectedLocationName, locations.length, t]);
 
     useEffect(() => {
         fetchInitialData();
@@ -494,7 +494,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                 public_ip_v6: trimmedIPv6 === '' ? null : trimmedIPv6,
                 sftp_subdomain: trimmedSftpSubdomain === '' ? null : trimmedSftpSubdomain,
             };
-            // Daemon type is immutable after create — never send changes on edit.
+            // Daemon type is immutable after create - never send changes on edit.
             delete (submitData as { daemon_type?: string }).daemon_type;
 
             await axios.patch(`/api/admin/nodes/${nodeId}`, submitData);

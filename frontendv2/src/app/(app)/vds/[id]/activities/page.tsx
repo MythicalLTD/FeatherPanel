@@ -459,7 +459,7 @@ export default function VdsActivitiesPage() {
                                             <span className='text-sm font-semibold'>
                                                 {activity.timestamp
                                                     ? formatRelativeTime(activity.timestamp, dateOpts)
-                                                    : '—'}
+                                                    : '-'}
                                             </span>
                                         </div>
                                         {activity.ip && (
@@ -588,10 +588,10 @@ export default function VdsActivitiesPage() {
                                         </span>
                                     </div>
                                     <DialogDescription className='text-xl font-medium opacity-70'>
-                                        VDS Activity —{' '}
+                                        VDS Activity -{' '}
                                         {selectedItem.timestamp
                                             ? formatDateTimeInTz(selectedItem.timestamp, dateOpts)
-                                            : '—'}
+                                            : '-'}
                                     </DialogDescription>
                                 </div>
                             </div>
@@ -621,7 +621,7 @@ export default function VdsActivitiesPage() {
                                         <span className='text-lg font-bold'>
                                             {selectedItem.timestamp
                                                 ? formatDateTimeInTz(selectedItem.timestamp, dateOpts)
-                                                : '—'}
+                                                : '-'}
                                         </span>
                                     </div>
                                     {selectedItem.ip && (

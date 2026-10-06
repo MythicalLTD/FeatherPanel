@@ -721,7 +721,7 @@ export default function VmInstancesCreatePage() {
                                                                 {selectedTemplate.name}
                                                             </div>
                                                             <div className='text-muted-foreground truncate font-mono text-xs'>
-                                                                VMID {selectedTemplate.template_file ?? '—'} ·{' '}
+                                                                VMID {selectedTemplate.template_file ?? '-'} ·{' '}
                                                                 {selectedTemplate.guest_type === 'lxc'
                                                                     ? 'LXC'
                                                                     : 'QEMU/KVM'}

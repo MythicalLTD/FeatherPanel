@@ -40,7 +40,6 @@ import { TrashActionToolbar } from '@/app/(app)/server/[uuidShort]/files/compone
 import { EmptyTrashDialog } from '@/app/(app)/server/[uuidShort]/files/components/dialogs/EmptyTrashDialog';
 import { RestoreTrashDialog } from '@/app/(app)/server/[uuidShort]/files/components/dialogs/RestoreTrashDialog';
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
-import axios from 'axios';
 import { ArrowLeft } from 'lucide-react';
 import { getApiErrorMessage } from '@/lib/api-errors';
 

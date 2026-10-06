@@ -2,7 +2,7 @@
 @plugin '@tailwindcss/typography';
 
 /* Class-based dark mode (matches ThemeContext / html.dark). Without this, Tailwind v4
-   keys `dark:` off prefers-color-scheme — so OS light + panel dark = white text on light panels. */
+   keys `dark:` off prefers-color-scheme - so OS light + panel dark = white text on light panels. */
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
@@ -554,7 +554,7 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
     transition-duration: 0.15s !important;
 }
 
-/* Chrome elevation — border only, no accent bloom */
+/* Chrome elevation - border only, no accent bloom */
 .fp-chrome-glow {
     box-shadow: 0 0 0 1px hsl(var(--border) / 0.8);
 }

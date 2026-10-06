@@ -985,7 +985,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
 
             {/*
               Render fixed desktop chrome in-tree (not a post-hydrate body portal).
-              Parent must not use overflow:hidden or the rail gets clipped — DashboardShell
+              Parent must not use overflow:hidden or the rail gets clipped - DashboardShell
               mounts this outside BackgroundWrapper's overflow shell.
             */}
             <div className={getDesktopSidebarShellClass(sidebarPosition, chromeLayout)}>

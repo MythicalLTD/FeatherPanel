@@ -10,3 +10,4 @@
 .env-copy
 config/ratelimit.json
 mcversionmanager/
+/telemetry/

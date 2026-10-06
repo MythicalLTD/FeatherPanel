@@ -72,7 +72,7 @@ function BodyBlock({ label, value, onCopy }: { label: string; value: string; onC
                 </Button>
             </div>
             <pre className='custom-scrollbar text-foreground max-h-56 overflow-auto p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap'>
-                {value || '—'}
+                {value || '-'}
             </pre>
         </div>
     );
@@ -140,7 +140,7 @@ export function PanelDebugApiSection() {
             });
             setSelectedId(entry.id);
             if (entry.ok) {
-                toast.success(t('globalSearch.debug.apiRequestSent', { status: String(entry.responseStatus ?? '—') }));
+                toast.success(t('globalSearch.debug.apiRequestSent', { status: String(entry.responseStatus ?? '-') }));
             } else {
                 toast.error(entry.error ?? t('globalSearch.debug.apiRequestFailed'));
             }
@@ -250,7 +250,7 @@ export function PanelDebugApiSection() {
                                                     statusTone(entry.responseStatus, entry.ok),
                                                 )}
                                             >
-                                                {entry.responseStatus ?? '—'}
+                                                {entry.responseStatus ?? '-'}
                                             </span>
                                             <span className='text-muted-foreground ml-auto text-[10px] tabular-nums'>
                                                 {entry.durationMs} ms
@@ -366,7 +366,7 @@ export function PanelDebugApiSection() {
                                         statusTone(selected.responseStatus, selected.ok),
                                     )}
                                 >
-                                    {selected.responseStatus ?? '—'}
+                                    {selected.responseStatus ?? '-'}
                                 </span>
                                 <span className='text-muted-foreground text-xs tabular-nums'>
                                     {selected.durationMs} ms

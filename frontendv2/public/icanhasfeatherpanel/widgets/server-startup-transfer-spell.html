@@ -55,11 +55,17 @@
   "id": "my-plugin-widget",
   "component": "my-widget.html",
   "enabled": true,
+  "hidden": {
+    "type": "plugin_setting",
+    "key": "hide-my-plugin-widget",
+    "equals": "true"
+  },
   "priority": 100,
   "page": "server-startup-transfer-spell",
   "location": "after-header",
   "size": "full"
 }</code></pre>
+      <p class="muted"><code>enabled</code> and <code>hidden</code> may be booleans or a plugin setting rule like <code>{ "type": "plugin_setting", "key": "hide-my-widget", "equals": "true" }</code>, so admins can hide widgets without editing component code.</p>
 
       <h3>Available Injection Points</h3>
       <p class="muted">This page supports the following injection points. Use the <code>location</code> property in your widget configuration:</p>

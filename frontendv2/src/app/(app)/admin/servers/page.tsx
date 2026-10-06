@@ -415,7 +415,7 @@ export default function ServersPage() {
     };
 
     const formatBackupLimit = (limit: number | undefined) => {
-        if (limit === undefined || limit === null) return '—';
+        if (limit === undefined || limit === null) return '-';
         if (limit === 0) return t('admin.servers.form.disabled');
         return String(limit);
     };

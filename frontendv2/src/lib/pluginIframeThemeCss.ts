@@ -18,7 +18,7 @@
  *
  * Transparent iframe canvases only work when the iframe's used color-scheme
  * matches the embedding document. A mismatch forces an opaque UA Canvas
- * (white for light, near-black for dark) — see CSS Color Adjustment §3.1.
+ * (white for light, near-black for dark) - see CSS Color Adjustment §3.1.
  * The panel sets `html.style.colorScheme` from ThemeContext; we must mirror
  * that on the iframe document (and the <iframe> element) or dark mode shows
  * a white slab behind plugin widgets.
@@ -58,7 +58,7 @@ export function getPluginIframeThemeOverrideCss(
             : '';
 
     // Do NOT strip `body > *` backgrounds. Borderless HTML widgets (e.g. Discord
-    // Plus link banner) put their card chrome on a direct body child — wiping it
+    // Plus link banner) put their card chrome on a direct body child - wiping it
     // leaves muted text on the panel backdrop with unreadable contrast.
     // Framework shells are cleared via the #__next / #app / #__nuxt / #root
     // selectors below instead.

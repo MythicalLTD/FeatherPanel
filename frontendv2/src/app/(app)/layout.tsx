@@ -27,8 +27,8 @@ import { FeatherPanelHost } from '@/components/plugins/FeatherPanelHost';
 import { Toaster } from 'sonner';
 
 import type { Metadata, Viewport } from 'next';
+import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { ANALYTICS_COOKIE_NAME } from '@/lib/analytics-cookie';
 import { getServerBootData, ICON_LIBRARY_COOKIE_NAME, LOCALE_COOKIE_NAME } from '@/lib/server-boot';
 import { SidebarPrefsBootstrap } from '@/hooks/useSidebarPreferences';
 
@@ -145,8 +145,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
     const cookieStore = await cookies();
-    const analyticsCookie = cookieStore.get(ANALYTICS_COOKIE_NAME)?.value;
-    const analyticsEnabled = analyticsCookie !== '0';
     const boot = await getServerBootData(
         cookieStore.get(LOCALE_COOKIE_NAME)?.value,
         cookieStore.get(ICON_LIBRARY_COOKIE_NAME)?.value,
@@ -257,11 +255,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </head>
             <body className='bg-background text-foreground'>
                 <div dangerouslySetInnerHTML={{ __html: '<!-- FEATHERPANEL_APP_PLACEHOLDER_START -->' }} />
-                <AnalyticsScript enabled={analyticsEnabled} />
                 <SettingsProvider initialSettings={boot.settings} initialCore={boot.core}>
                     <ThemeProvider>
                         <PluginUiProvider>
                             <TranslationProvider initialLocale={boot.locale} initialTranslations={boot.translations}>
+                                <Suspense fallback={null}>
+                                    <AnalyticsScript />
+                                </Suspense>
                                 <SessionProvider>
                                     <PreferencesProvider>
                                         <SidebarPrefsBootstrap iconLibrary={boot.iconLibrary}>

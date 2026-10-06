@@ -328,7 +328,7 @@ export function VmTemplatePickerSheet({
                             <div>
                                 <div className='font-semibold'>{tpl.name}</div>
                                 <div className='text-muted-foreground font-mono text-xs'>
-                                    VMID {tpl.template_file ?? '—'} · {tpl.guest_type === 'lxc' ? 'LXC' : 'QEMU/KVM'}
+                                    VMID {tpl.template_file ?? '-'} · {tpl.guest_type === 'lxc' ? 'LXC' : 'QEMU/KVM'}
                                 </div>
                             </div>
                         </div>

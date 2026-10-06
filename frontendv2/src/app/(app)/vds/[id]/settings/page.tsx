@@ -467,7 +467,7 @@ export default function VdsSettingsPage() {
                 </CardHeader>
                 <CardContent className='grid grid-cols-2 gap-4 md:grid-cols-4'>
                     {[
-                        { label: t('vds.settings.instance_info.hostname'), value: instance.hostname ?? '—' },
+                        { label: t('vds.settings.instance_info.hostname'), value: instance.hostname ?? '-' },
                         { label: t('vds.settings.instance_info.vmid'), value: String(instance.vmid) },
                         {
                             label: t('vds.settings.instance_info.type'),
@@ -475,7 +475,7 @@ export default function VdsSettingsPage() {
                         },
                         {
                             label: t('vds.settings.instance_info.node'),
-                            value: instance.node_name ?? instance.pve_node ?? '—',
+                            value: instance.node_name ?? instance.pve_node ?? '-',
                         },
                     ].map(({ label, value }) => (
                         <div key={label} className='flex flex-col gap-1'>

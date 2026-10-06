@@ -99,7 +99,7 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                 setSourceDaemonType((node.daemon_type as DaemonType) ?? null);
                 setSourceCapabilities((node.capabilities as DaemonCapabilitiesMap) ?? null);
             } catch {
-                // Ignore — backups option stays hidden when caps are unknown.
+                // Ignore - backups option stays hidden when caps are unknown.
             }
         })();
         return () => {
@@ -285,7 +285,7 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                                     {loadingPreview ? (
                                         <Loader2 className='inline h-3.5 w-3.5 animate-spin' />
                                     ) : (
-                                        (freeOnDestination ?? '—')
+                                        (freeOnDestination ?? '-')
                                     )}
                                 </span>
                             </p>

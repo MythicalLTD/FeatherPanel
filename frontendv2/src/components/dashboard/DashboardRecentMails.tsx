@@ -54,7 +54,7 @@ export function DashboardRecentMails() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         fetchMails();

@@ -147,11 +147,11 @@ export default function ServerBackupsPage() {
     }, [searchQuery]);
 
     const fetchBackups = useCallback(
-        async (targetPage = page) => {
+        async (targetPage = page, quiet = false) => {
             if (!uuidShort) return;
 
             try {
-                setLoading(true);
+                if (!quiet) setLoading(true);
                 const [backupsRes, serverRes] = await Promise.all([
                     axios.get<BackupsResponse>(`/api/user/servers/${uuidShort}/backups`, {
                         params: {
@@ -159,12 +159,14 @@ export default function ServerBackupsPage() {
                             search: debouncedSearch || undefined,
                         },
                     }),
-                    axios.get<{ success: boolean; data: Server }>(`/api/user/servers/${uuidShort}`),
+                    quiet
+                        ? Promise.resolve(null)
+                        : axios.get<{ success: boolean; data: Server }>(`/api/user/servers/${uuidShort}`),
                 ]);
 
                 if (backupsRes.data.success) {
                     setBackups(backupsRes.data.data.data);
-                    setSelectedUuids([]);
+                    if (!quiet) setSelectedUuids([]);
                     const p = backupsRes.data.data.pagination;
                     setPagination({
                         current_page: p.current_page,
@@ -174,14 +176,14 @@ export default function ServerBackupsPage() {
                     });
                 }
 
-                if (serverRes.data.success) {
+                if (serverRes?.data.success) {
                     setServer(serverRes.data.data);
                 }
             } catch (error) {
                 console.error('Error fetching backups:', error);
                 toast.error(getApiErrorMessage(error, t, 'serverBackups.failedToFetch'));
             } finally {
-                setLoading(false);
+                if (!quiet) setLoading(false);
             }
         },
         [uuidShort, debouncedSearch, page, t],
@@ -200,14 +202,14 @@ export default function ServerBackupsPage() {
     }, [canRead, permissionsLoading, fetchBackups, uuidShort, router, t]);
 
     useEffect(() => {
-        const hasCreating = backups.some((b) => !b.completed_at && !b.is_successful);
+        const hasCreating = backups.some((b) => !b.completed_at && !b.is_successful && !b.is_stale);
         if (hasCreating) {
             const interval = setInterval(() => {
-                fetchBackups();
-            }, 3000);
+                if (document.visibilityState !== 'hidden') void fetchBackups(page, true);
+            }, 10000);
             return () => clearInterval(interval);
         }
-    }, [backups, fetchBackups]);
+    }, [backups, fetchBackups, page]);
 
     const handleRestoreBackup = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -233,6 +235,30 @@ export default function ServerBackupsPage() {
         } finally {
             setRestoring(false);
         }
+    };
+
+    const handleRecoverBackup = (backup: BackupItem) => {
+        setConfirmAction({
+            title: t('serverBackups.recoverTitle'),
+            description: t('serverBackups.recoverDescription'),
+            variant: 'destructive',
+            action: async () => {
+                try {
+                    const { data } = await axios.post(`/api/user/servers/${uuidShort}/backups/${backup.uuid}/recover`, {
+                        confirm_interrupted: true,
+                    });
+                    if (data.success) {
+                        toast.success(t('serverBackups.recoverSuccess'));
+                        await fetchBackups();
+                    } else {
+                        toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.recoverFailed'));
+                    }
+                } catch (error) {
+                    toast.error(getApiErrorMessage(error, t, 'serverBackups.recoverFailed'));
+                }
+            },
+        });
+        setConfirmDialogOpen(true);
     };
 
     const handleDeleteBackup = (backup: BackupItem) => {
@@ -658,14 +684,20 @@ export default function ServerBackupsPage() {
                                                     className={cn(
                                                         'rounded-full px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase',
                                                         !backup.completed_at && !backup.is_successful
-                                                            ? 'animate-pulse bg-blue-500 text-white'
+                                                            ? backup.is_stale
+                                                                ? 'bg-amber-500 text-white'
+                                                                : 'animate-pulse bg-blue-500 text-white'
                                                             : backup.is_successful
                                                               ? 'bg-emerald-500 text-white'
                                                               : 'bg-red-500 text-white',
                                                     )}
                                                 >
                                                     {!backup.completed_at && !backup.is_successful
-                                                        ? t('serverBackups.statusCreating')
+                                                        ? t(
+                                                              backup.is_stale
+                                                                  ? 'serverBackups.statusStale'
+                                                                  : 'serverBackups.statusCreating',
+                                                          )
                                                         : backup.is_successful
                                                           ? t('serverBackups.statusSuccessful')
                                                           : t('serverBackups.statusFailed')}
@@ -742,6 +774,17 @@ export default function ServerBackupsPage() {
                                                                     </span>
                                                                 </DropdownMenuItem>
                                                             )}
+                                                        {canDelete && backup.is_stale && (
+                                                            <DropdownMenuItem
+                                                                onClick={() => handleRecoverBackup(backup)}
+                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3 text-amber-500'
+                                                            >
+                                                                <AlertTriangle className='h-4 w-4' />
+                                                                <span className='font-bold'>
+                                                                    {t('serverBackups.recoverAction')}
+                                                                </span>
+                                                            </DropdownMenuItem>
+                                                        )}
                                                         {canDelete && (
                                                             <DropdownMenuItem
                                                                 disabled={backup.is_locked === 1}

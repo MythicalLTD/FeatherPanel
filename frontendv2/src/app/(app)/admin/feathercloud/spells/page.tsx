@@ -161,7 +161,7 @@ export default function SpellsPage() {
             console.error('Failed to fetch installed spells:', error);
             toast.error(getApiErrorMessage(error, t, 'admin.marketplace.spells.toasts.fetch_failed'));
         }
-    }, []);
+    }, [t]);
 
     const fetchOnlineSpells = useCallback(
         async (page: number, mode: 'replace' | 'append' = 'replace') => {
@@ -434,7 +434,7 @@ export default function SpellsPage() {
                 </div>
                 <div className='bg-card/60 rounded-2xl px-4 py-3'>
                     <p className='text-muted-foreground text-xs'>Catalog</p>
-                    <p className='mt-1 text-sm font-medium'>{onlinePagination?.total_records ?? '—'}</p>
+                    <p className='mt-1 text-sm font-medium'>{onlinePagination?.total_records ?? '-'}</p>
                 </div>
                 <div className='bg-card/60 rounded-2xl px-4 py-3'>
                     <p className='text-muted-foreground text-xs'>Installed matches</p>
@@ -971,7 +971,7 @@ export default function SpellsPage() {
                                     <p className='text-sm font-medium'>
                                         {Number(reviewsMeta?.averageRating || 0) > 0
                                             ? Number(reviewsMeta?.averageRating).toFixed(1)
-                                            : '—'}{' '}
+                                            : '-'}{' '}
                                         <span className='text-muted-foreground font-normal'>
                                             · {reviewsMeta?.reviewCount ?? 0} review
                                             {(reviewsMeta?.reviewCount ?? 0) === 1 ? '' : 's'}

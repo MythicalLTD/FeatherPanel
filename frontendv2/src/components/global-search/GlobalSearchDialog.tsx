@@ -17,6 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { reportPanelInteraction } from '@/lib/panel-analytics';
 import { ArrowRight, Bug, Loader2, Search, Sparkles, Terminal } from 'lucide-react';
 import { DynamicIcon } from 'lucide-react/dynamic';
 import { Dialog } from '@/components/ui/dialog';
@@ -120,6 +121,19 @@ export default function GlobalSearchDialog() {
     const { openDebugConsole } = usePanelDebug();
     const { t } = useTranslation();
     const [query, setQuery] = useState('');
+    const searched = useRef(false);
+    useEffect(() => {
+        if (open) reportPanelInteraction('panel.search.open', 'search');
+        else searched.current = false;
+    }, [open]);
+    useEffect(() => {
+        if (!open || !query.trim() || searched.current) return;
+        const timer = window.setTimeout(() => {
+            searched.current = true;
+            reportPanelInteraction('panel.search.used', 'search');
+        }, 500);
+        return () => window.clearTimeout(timer);
+    }, [open, query]);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
@@ -149,6 +163,7 @@ export default function GlobalSearchDialog() {
     }, [selectedIndex]);
 
     const navigateTo = (href: string) => {
+        reportPanelInteraction('panel.search.select', 'search');
         setOpen(false);
         router.push(href);
     };

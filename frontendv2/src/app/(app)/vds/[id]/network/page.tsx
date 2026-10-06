@@ -212,13 +212,13 @@ export default function VdsNetworkingPage() {
                                             <div className='text-muted-foreground/60 text-[10px] font-black tracking-widest uppercase'>
                                                 {t('vds.networking.assigned_ips.cidr') ?? 'CIDR'}
                                             </div>
-                                            <div className='mt-1 font-mono'>{ip.cidr ?? '—'}</div>
+                                            <div className='mt-1 font-mono'>{ip.cidr ?? '-'}</div>
                                         </div>
                                         <div className='border-border/20 bg-background/30 rounded-xl border px-3 py-2'>
                                             <div className='text-muted-foreground/60 text-[10px] font-black tracking-widest uppercase'>
                                                 {t('vds.networking.assigned_ips.gateway') ?? 'Gateway'}
                                             </div>
-                                            <div className='mt-1 font-mono'>{ip.gateway || '—'}</div>
+                                            <div className='mt-1 font-mono'>{ip.gateway || '-'}</div>
                                         </div>
                                         <div className='border-border/20 bg-background/30 rounded-xl border px-3 py-2'>
                                             <div className='text-muted-foreground/60 text-[10px] font-black tracking-widest uppercase'>
@@ -281,7 +281,7 @@ export default function VdsNetworkingPage() {
                             <div className='text-muted-foreground/60 text-[10px] font-black tracking-widest uppercase'>
                                 {t('vds.networking.primary_ip_label') ?? 'Primary IP'}
                             </div>
-                            <div className='font-mono text-sm'>{networking?.primary_ip ?? '—'}</div>
+                            <div className='font-mono text-sm'>{networking?.primary_ip ?? '-'}</div>
                         </div>
 
                         {canSettings ? (

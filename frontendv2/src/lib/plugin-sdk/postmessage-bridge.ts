@@ -110,7 +110,7 @@ export function installPostMessageBusBridge(): () => void {
                 break;
             }
             case 'registerAction': {
-                // Iframes cannot ship functions over postMessage — they request runAction
+                // Iframes cannot ship functions over postMessage - they request runAction
                 // or listen for events. Acknowledge and document limitation.
                 reply({
                     ok: false,

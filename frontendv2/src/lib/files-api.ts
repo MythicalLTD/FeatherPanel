@@ -18,7 +18,7 @@ import axios from 'axios';
 import { filterFeatherTrashFiles } from '@/lib/feather-trash';
 import { FileObject, FilesResponse } from '@/types/server';
 
-/** Bare client for signed Wings URLs — no panel cookies / X-FP-UI-* headers (CORS). */
+/** Bare client for signed Wings URLs - no panel cookies / X-FP-UI-* headers (CORS). */
 const wingsUploadClient = axios.create({
     withCredentials: false,
 });
@@ -557,8 +557,7 @@ export const filesApi = {
         );
         const uploadUrl = signed.data.data?.upload_url;
         if (!uploadUrl) {
-            const payloadMessage =
-                (typeof signed.data.message === 'string' && signed.data.message.trim()) || '';
+            const payloadMessage = (typeof signed.data.message === 'string' && signed.data.message.trim()) || '';
             throw new Error(payloadMessage || 'Failed to get upload URL');
         }
 
@@ -623,7 +622,7 @@ export const filesApi = {
             const { contents, limited } = await filesApi.getFiles(uuid, directory);
             const found = contents.some((f) => f.name === name && (f.isFile ?? !f.directory));
             if (found) return true;
-            // Listing may be capped — unknown rather than definite miss
+            // Listing may be capped - unknown rather than definite miss
             if (limited) return null;
             return false;
         } catch {

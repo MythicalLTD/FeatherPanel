@@ -33,7 +33,7 @@ interface SystemInfoTabProps {
     onRefresh: () => void;
 }
 
-function displayValue(value: string | number | null | undefined, fallback = '—'): string {
+function displayValue(value: string | number | null | undefined, fallback = '-'): string {
     if (value === null || value === undefined || value === '') {
         return fallback;
     }

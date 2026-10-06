@@ -562,7 +562,7 @@ export default function StorageSensePage() {
                                                 </div>
                                             </td>
                                             <td className='p-3 text-right align-middle tabular-nums'>
-                                                {row.available ? row.row_count.toLocaleString() : '—'}
+                                                {row.available ? row.row_count.toLocaleString() : '-'}
                                             </td>
                                             <td className='p-3 text-right align-middle font-medium tabular-nums'>
                                                 {!row.available
@@ -582,7 +582,7 @@ export default function StorageSensePage() {
                                                         ) : null}
                                                     </div>
                                                 ) : (
-                                                    '—'
+                                                    '-'
                                                 )}
                                             </td>
                                             <td className='hidden p-3 align-middle lg:table-cell'>
@@ -601,7 +601,7 @@ export default function StorageSensePage() {
                                                         </span>
                                                     </div>
                                                 ) : (
-                                                    <span className='text-muted-foreground'>—</span>
+                                                    <span className='text-muted-foreground'>-</span>
                                                 )}
                                             </td>
                                             <td className='p-3 text-right align-middle'>

@@ -3,7 +3,7 @@
   "$id": "https://featherpanel.com/schemas/plugin-overrides.json",
   "title": "FeatherPanel Plugin Overrides",
   "type": "object",
-  "description": "Frontend/overrides.json — hide/replace/actions for named PluginSlots.",
+  "description": "Frontend/overrides.json: hide/replace/actions for named PluginSlots.",
   "properties": {
     "hide": {
       "type": "array",

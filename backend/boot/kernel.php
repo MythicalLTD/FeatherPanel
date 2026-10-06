@@ -33,13 +33,19 @@ try {
     if (file_exists(APP_DIR . 'storage/packages')) {
         require APP_DIR . 'storage/packages/autoload.php';
     } else {
-        throw new Exception('Packages not installed looked at this path: ' . APP_DIR . 'storage/packages');
+        throw new Exception(
+            'Packages not installed looked at this path: ' .
+                APP_DIR .
+                'storage/packages',
+        );
     }
 } catch (Exception $e) {
     echo $e->getMessage();
     echo "\n";
     exit;
 }
+
+App\Telemetry\SentryTelemetry::boot();
 
 if (!defined('IS_CLI')) {
     ini_set('expose_php', 'off');
@@ -49,11 +55,25 @@ if (!defined('IS_CLI')) {
 
 if (!is_writable(__DIR__)) {
     $error = 'Please make sure the root directory is writable.';
-    exit(json_encode(['error' => $error, 'code' => 500, 'message' => 'Please make sure the root directory is writable.', 'success' => false]));
+    exit(
+        json_encode([
+            'error' => $error,
+            'code' => 500,
+            'message' => 'Please make sure the root directory is writable.',
+            'success' => false,
+        ])
+    );
 }
 
 if (!is_writable(__DIR__ . '/../storage')) {
-    exit(json_encode(['error' => 'Please make sure the storage directory is writable.', 'code' => 500, 'message' => 'Please make sure the storage directory is writable.', 'success' => false]));
+    exit(
+        json_encode([
+            'error' => 'Please make sure the storage directory is writable.',
+            'code' => 500,
+            'message' => 'Please make sure the storage directory is writable.',
+            'success' => false,
+        ])
+    );
 }
 
 if (file_exists(APP_DIR . 'storage/config/.env')) {

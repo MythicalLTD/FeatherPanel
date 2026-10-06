@@ -282,6 +282,36 @@ class WebSpaceHostingMaturity
     }
 
     /**
+     * @return array{id: string, status: string}
+     */
+    /**
+     * ready: panel Roundcube installed, or any mail host has webmail_url + SSO secret.
+     * partial: node webmail_url set but SSO secret missing.
+     * needs_setup: neither path available.
+     */
+    public static function assessWebmailStatus(): string
+    {
+        if (Roundcube::isInstalled()) {
+            return 'ready';
+        }
+
+        $hasUrlWithoutSecret = false;
+        foreach (MailHost::listAll() as $host) {
+            $url = trim((string) ($host['webmail_url'] ?? ''));
+            if ($url === '') {
+                continue;
+            }
+            $secret = trim((string) ($host['webmail_sso_secret'] ?? ''));
+            if ($secret !== '') {
+                return 'ready';
+            }
+            $hasUrlWithoutSecret = true;
+        }
+
+        return $hasUrlWithoutSecret ? 'partial' : 'needs_setup';
+    }
+
+    /**
      * @return ?array<string, mixed>
      */
     private static function resolveSampleNode(?int $preferredWebNodeId): ?array
@@ -361,36 +391,6 @@ class WebSpaceHostingMaturity
         }
 
         return null;
-    }
-
-    /**
-     * @return array{id: string, status: string}
-     */
-    /**
-     * ready: panel Roundcube installed, or any mail host has webmail_url + SSO secret.
-     * partial: node webmail_url set but SSO secret missing.
-     * needs_setup: neither path available.
-     */
-    public static function assessWebmailStatus(): string
-    {
-        if (Roundcube::isInstalled()) {
-            return 'ready';
-        }
-
-        $hasUrlWithoutSecret = false;
-        foreach (MailHost::listAll() as $host) {
-            $url = trim((string) ($host['webmail_url'] ?? ''));
-            if ($url === '') {
-                continue;
-            }
-            $secret = trim((string) ($host['webmail_sso_secret'] ?? ''));
-            if ($secret !== '') {
-                return 'ready';
-            }
-            $hasUrlWithoutSecret = true;
-        }
-
-        return $hasUrlWithoutSecret ? 'partial' : 'needs_setup';
     }
 
     private static function item(string $id, string $status): array

@@ -747,6 +747,14 @@ class Proxmox
         return ['ok' => true, 'status' => $status, 'exitstatus' => $exitstatus, 'error' => null];
     }
 
+    /** @return array{ok: bool, lines: array} */
+    public function getTaskLog(string $node, string $upid): array
+    {
+        $result = $this->apiGet(sprintf('/api2/json/nodes/%s/tasks/%s/log?limit=10000', $node, urlencode($upid)));
+
+        return ['ok' => (bool) $result['ok'], 'lines' => is_array($result['data'] ?? null) ? $result['data'] : []];
+    }
+
     /**
      * Wait for a Proxmox task to complete (status stopped, exitstatus OK).
      *

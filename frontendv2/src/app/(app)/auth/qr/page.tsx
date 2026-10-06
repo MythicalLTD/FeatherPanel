@@ -122,7 +122,7 @@ function QrApproveContent() {
         void loadChallenge();
     }, [challengeId, isLoading, isSessionChecked, loadChallenge, router, t, user]);
 
-    // Keep phone UI in sync — desktop may refresh a new QR while this page is open.
+    // Keep phone UI in sync - desktop may refresh a new QR while this page is open.
     useEffect(() => {
         if (!challengeId || !payload || outcome) return;
         const id = window.setInterval(() => {

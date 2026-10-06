@@ -1342,7 +1342,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                     >
                                                         {alt.last_seen
                                                             ? formatRelativeTime(alt.last_seen, dateOpts)
-                                                            : '—'}
+                                                            : '-'}
                                                     </span>
                                                 </td>
                                                 <td className='p-4 text-right'>
@@ -1432,9 +1432,9 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                             : vm.status || t('vds.console.status.unknown')}
                                                     </Badge>
                                                 </td>
-                                                <td className='p-4 font-mono text-xs'>{vm.ip_address || '—'}</td>
+                                                <td className='p-4 font-mono text-xs'>{vm.ip_address || '-'}</td>
                                                 <td className='text-muted-foreground p-4'>
-                                                    {vm.node_name || vm.pve_node || '—'}
+                                                    {vm.node_name || vm.pve_node || '-'}
                                                 </td>
                                                 <td className='p-4 text-right'>
                                                     <div className='flex justify-end gap-2'>
@@ -1554,7 +1554,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                     <DialogHeader>
                         <DialogTitle>{mailPreview?.subject}</DialogTitle>
                         <DialogDescription>
-                            {mailPreview?.created_at ? formatDateTimeInTz(mailPreview.created_at, dateOpts) : '—'} |{' '}
+                            {mailPreview?.created_at ? formatDateTimeInTz(mailPreview.created_at, dateOpts) : '-'} |{' '}
                             {mailPreview?.status}
                         </DialogDescription>
                     </DialogHeader>

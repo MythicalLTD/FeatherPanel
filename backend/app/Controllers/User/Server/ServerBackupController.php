@@ -21,6 +21,7 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\Backup;
 use App\Chat\Server;
+use App\Chat\Database;
 use App\Helpers\TimeHelper;
 use App\SubuserPermissions;
 use App\Chat\ServerActivity;
@@ -34,6 +35,7 @@ use App\Plugins\Events\Events\ServerEvent;
 use App\Services\Backup\BackupFifoEviction;
 use Symfony\Component\HttpFoundation\Request;
 use App\Services\Backup\BackupAdapterResolver;
+use App\Services\Backup\StalledBackupRecovery;
 use Symfony\Component\HttpFoundation\Response;
 use App\Plugins\Events\Events\ServerBackupEvent;
 use App\Services\Backup\ServerFullBackupService;
@@ -50,6 +52,7 @@ use App\Services\Database\ServerDatabaseDumpService;
         new OA\Property(property: 'ignored_files', type: 'string', description: 'JSON string of ignored files'),
         new OA\Property(property: 'disk', type: 'string', description: 'Storage disk type'),
         new OA\Property(property: 'is_successful', type: 'integer', description: 'Whether backup was successful (0 or 1)'),
+        new OA\Property(property: 'is_stale', type: 'boolean', description: 'Incomplete backup older than 24 hours; eligible for manual interruption recovery'),
         new OA\Property(property: 'is_locked', type: 'integer', description: 'Whether backup is locked (0 or 1)'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Backup creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Backup update timestamp'),
@@ -105,6 +108,55 @@ use App\Services\Database\ServerDatabaseDumpService;
 class ServerBackupController
 {
     use CheckSubuserPermissionsTrait;
+
+    /** Mark old pending metadata as interrupted without touching node files. */
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/backups/{backupUuid}/recover',
+        summary: 'Mark a stalled server backup as interrupted',
+        description: 'Requires backup.delete permission and confirm_interrupted=true. Only pending backups at least 24 hours old are eligible. Does not cancel the node job or remove archive files.',
+        tags: ['User - Server Backups'],
+        responses: [new OA\Response(response: 200, description: 'Backup marked failed and unlocked'), new OA\Response(response: 403, description: 'Permission denied'), new OA\Response(response: 409, description: 'Not stale or concurrently completed')]
+    )]
+    public function recoverBackup(Request $request, string $serverUuid, string $backupUuid): Response
+    {
+        $server = Server::getServerByUuid($serverUuid);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::BACKUP_DELETE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+        $backup = Backup::getBackupByUuid($backupUuid);
+        if (!$backup || (int) $backup['server_id'] !== (int) $server['id']) {
+            return ApiResponse::error('Backup not found', 'BACKUP_NOT_FOUND', 404);
+        }
+        $body = json_decode($request->getContent(), true);
+        if (!is_array($body) || ($body['confirm_interrupted'] ?? null) !== true) {
+            return ApiResponse::error('Confirm that the backup job is no longer running', 'BACKUP_RECOVERY_CONFIRMATION_REQUIRED', 400);
+        }
+        if (!StalledBackupRecovery::isStale($backup)) {
+            return ApiResponse::error('Only incomplete backups older than 24 hours can be recovered', 'BACKUP_NOT_STALE', 409);
+        }
+        try {
+            $recovery = new StalledBackupRecovery(Database::getPdoConnection());
+            if (!$recovery->recover((int) $backup['id'], (int) $server['id'])) {
+                return ApiResponse::error('Backup status changed; refresh the backup list', 'BACKUP_STATUS_CHANGED', 409);
+            }
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to recover stalled backup: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to recover backup status', 'BACKUP_RECOVERY_FAILED', 500);
+        }
+        $this->logActivity($server, ['id' => $server['node_id']], 'backup_recovered', [
+            'backup_uuid' => $backupUuid,
+            'backup_name' => $backup['name'],
+            'previous_created_at' => $backup['created_at'],
+            'reason' => 'manually_marked_interrupted',
+        ], $request->attributes->get('user'));
+
+        return ApiResponse::success(['backup_uuid' => $backupUuid], 'Backup marked as interrupted');
+    }
 
     /**
      * Get all backups for a server.
@@ -188,6 +240,10 @@ class ServerBackupController
         $total = count($backups);
         $offset = ($page - 1) * $perPage;
         $paginatedBackups = array_slice($backups, $offset, $perPage);
+        foreach ($paginatedBackups as &$backup) {
+            $backup['is_stale'] = StalledBackupRecovery::isStale($backup);
+        }
+        unset($backup);
         $paginatedBackups = TimeHelper::normaliseRows($paginatedBackups, ['completed_at', 'deleted_at']);
 
         $retention = BackupFifoEviction::retentionMetaForServer($server);
@@ -275,6 +331,8 @@ class ServerBackupController
         if ($backup['server_id'] != $server['id']) {
             return ApiResponse::error('Backup not found', 'BACKUP_NOT_FOUND', 404);
         }
+
+        $backup['is_stale'] = StalledBackupRecovery::isStale($backup);
 
         return ApiResponse::success(TimeHelper::normaliseRow($backup, ['completed_at', 'deleted_at']));
     }
@@ -1078,9 +1136,9 @@ class ServerBackupController
             );
 
             // Delete backup on Wings
-            $response = $wings->getServer()->deleteBackup($serverUuid, $backupUuid);
+            $response = $wings->getServer()->deleteBackup($serverUuid, $backupUuid, $this->pbsSnapshotForBackup($backup));
 
-            if (!$response->isSuccessful()) {
+            if (!$response->isSuccessful() && $response->getStatusCode() !== 404) {
                 $error = $response->getError();
                 if ($response->getStatusCode() === 400) {
                     return ApiResponse::error('Invalid server configuration: ' . $error, 'INVALID_SERVER_CONFIG', 400);
@@ -1282,8 +1340,8 @@ class ServerBackupController
         foreach ($backupsToDelete as $backup) {
             $backupUuid = $backup['uuid'];
             try {
-                $response = $wings->getServer()->deleteBackup($serverUuid, $backupUuid);
-                if (!$response->isSuccessful()) {
+                $response = $wings->getServer()->deleteBackup($serverUuid, $backupUuid, $this->pbsSnapshotForBackup($backup));
+                if (!$response->isSuccessful() && $response->getStatusCode() !== 404) {
                     $failed[] = [
                         'uuid' => $backupUuid,
                         'error' => $response->getError() ?: 'Wings delete failed',
@@ -1715,6 +1773,20 @@ class ServerBackupController
 
             return ApiResponse::error('Failed to create full backup: ' . $e->getMessage(), 'FULL_BACKUP_FAILED', 500);
         }
+    }
+
+    /**
+     * PBS backups store their snapshot path in checksum; passing it lets Wings
+     * delete the exact snapshot even when PBS notes cannot be read back.
+     *
+     * @param array<string, mixed> $backup
+     */
+    private function pbsSnapshotForBackup(array $backup): ?string
+    {
+        $disk = strtolower(trim((string) ($backup['disk'] ?? '')));
+        $snapshot = trim((string) ($backup['checksum'] ?? ''));
+
+        return $disk === 'pbs' && $snapshot !== '' ? $snapshot : null;
     }
 
     /**

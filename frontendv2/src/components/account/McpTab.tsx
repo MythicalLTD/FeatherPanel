@@ -54,7 +54,7 @@ function ConfigBlock({
     );
 }
 
-export default function McpTab(_props: McpTabProps) {
+export default function McpTab({}: McpTabProps) {
     const { t } = useTranslation();
     const { settings } = useSettings();
     const router = useRouter();

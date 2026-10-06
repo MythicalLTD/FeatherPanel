@@ -1086,10 +1086,15 @@ class ServerService
     /**
      * Delete backup.
      */
-    public function deleteBackup(string $serverUuid, string $backupId): WingsResponse
+    public function deleteBackup(string $serverUuid, string $backupId, ?string $snapshot = null): WingsResponse
     {
         try {
-            $response = $this->connection->delete("/api/servers/{$serverUuid}/backup/{$backupId}");
+            $path = "/api/servers/{$serverUuid}/backup/{$backupId}";
+            $snapshot = is_string($snapshot) ? trim($snapshot) : '';
+            if ($snapshot !== '') {
+                $path .= '?' . http_build_query(['snapshot' => $snapshot]);
+            }
+            $response = $this->connection->delete($path);
 
             return new WingsResponse($response, 204);
         } catch (WingsAuthenticationException | WingsRequestException $e) {

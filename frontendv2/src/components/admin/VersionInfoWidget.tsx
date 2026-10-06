@@ -329,7 +329,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                                             [version?.project?.min_supported_php, version?.project?.max_supported_php]
                                                 .filter(Boolean)
                                                 .join('–') ||
-                                            '—'}
+                                            '-'}
                                     </span>
                                 </p>
                             </div>

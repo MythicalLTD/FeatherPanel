@@ -766,6 +766,9 @@ class ServerUserController
         // Include all spell fields required by the frontend, especially "features"
         // which are used for console feature detection (EULA, java_version, pid_limit, etc.)
         $spellData = Spell::getSpellById($server['spell_id']);
+        if ($spellData) {
+            $spellData = Spell::resolveConfiguration($spellData);
+        }
         $server['spell'] = $spellData ? [
             'id' => $spellData['id'] ?? null,
             'name' => $spellData['name'] ?? null,
@@ -830,7 +833,7 @@ class ServerUserController
             }
         }
 
-        $server['variables'] = $mergedVariables;
+        $server['variables'] = SpellVariable::filterUserViewable($mergedVariables);
         $server['custom_variables'] = ServerCustomVariable::getCustomVariablesByServerId((int) $server['id']);
 
         // Start flatten specific fields if they are valid JSON, else leave as is (do not json_decode, just keep string if not)
@@ -1392,6 +1395,17 @@ class ServerUserController
         }
 
         // Handle spell change: delete old variables and create new ones with user-provided values
+        if ($variablesPayload !== null) {
+            $targetSpellId = (int) ($updateData['spell_id'] ?? $server['spell_id']);
+            $error = \App\Services\Spells\VariableValidator::validatePayload(
+                $variablesPayload,
+                SpellVariable::getVariablesBySpellId($targetSpellId)
+            );
+            if ($error !== null) {
+                return ApiResponse::error($error['message'], $error['code'], $error['status']);
+            }
+        }
+
         if ($spellChanged) {
             // Delete all old server variables
             $deleted = ServerVariable::deleteServerVariablesByServerId((int) $server['id']);
@@ -1425,7 +1439,7 @@ class ServerUserController
                     $sv = $spellVarMap[$varId];
 
                     // Same editability gate as non-spell variable updates
-                    if ((int) $sv['user_editable'] !== 1) {
+                    if ((int) $sv['user_editable'] !== 1 || (int) $sv['user_viewable'] !== 1) {
                         return ApiResponse::error('Variable is not editable: ' . $sv['env_variable'], 'VARIABLE_NOT_EDITABLE', 403);
                     }
 
@@ -1514,7 +1528,7 @@ class ServerUserController
                 if ((int) $sv['spell_id'] !== $activeSpellId) {
                     return ApiResponse::error('Variable does not belong to this server spell: ' . $sv['env_variable'], 'INVALID_VARIABLE_SCOPE', 422);
                 }
-                if ((int) $sv['user_editable'] !== 1) {
+                if ((int) $sv['user_editable'] !== 1 || (int) $sv['user_viewable'] !== 1) {
                     return ApiResponse::error('Variable is not editable: ' . $sv['env_variable'], 'VARIABLE_NOT_EDITABLE', 403);
                 }
 
@@ -2502,123 +2516,11 @@ class ServerUserController
     }
 
     /**
-     * Validate a variable value against a rules string (e.g., "required|string|max:20", "required|regex:/^foo$/").
-     * Returns an error message string if invalid, or null if valid.
-     */
-    private function validateVariableValue(string $value, string $rules, string $fieldType = ''): ?string
-    {
-        $rules = trim($rules);
-        if ($rules === '') {
-            return null;
-        }
-        $parts = explode('|', $rules);
-        $required = in_array('required', $parts, true);
-        $nullable = in_array('nullable', $parts, true);
-        $isNumeric = in_array('numeric', $parts, true) || in_array('integer', $parts, true) || in_array('int', $parts, true);
-        // string rule is informational for our basic validator
-
-        if ($value === '') {
-            if ($required) {
-                return 'This field is required';
-            }
-            if ($nullable) {
-                return null;
-            }
-
-            // Not required and not nullable but empty -> treat as valid to avoid breaking existing behavior
-            return null;
-        }
-
-        // Numeric check
-        if ($isNumeric) {
-            if (!preg_match('/^\d+$/', $value)) {
-                return 'Must be numeric';
-            }
-        }
-
-        foreach ($parts as $part) {
-            if (preg_match('/^max:(\d+)$/', $part, $m)) {
-                $limit = (int) $m[1];
-                if ($isNumeric) {
-                    if ((int) $value > $limit) {
-                        return 'Must be less than or equal to ' . $limit;
-                    }
-                } else {
-                    if (strlen($value) > $limit) {
-                        return 'Must be at most ' . $limit . ' characters';
-                    }
-                }
-                continue;
-            }
-            if (preg_match('/^min:(\d+)$/', $part, $m)) {
-                $limit = (int) $m[1];
-                if ($isNumeric) {
-                    if ((int) $value < $limit) {
-                        return 'Must be at least ' . $limit;
-                    }
-                } else {
-                    if (strlen($value) < $limit) {
-                        return 'Must be at least ' . $limit . ' characters';
-                    }
-                }
-                continue;
-            }
-            if (str_starts_with($part, 'regex:')) {
-                $pattern = substr($part, strlen('regex:'));
-
-                if (empty($pattern)) {
-                    return 'Invalid regex rule: pattern is empty';
-                }
-
-                // Normalize the pattern: add delimiters if missing
-                // Check if pattern already has delimiters (common delimiters: /, #, ~, `)
-                $hasDelimiters = false;
-                $firstChar = $pattern[0];
-                if (in_array($firstChar, ['/', '#', '~', '`'], true)) {
-                    // Check if there's a matching closing delimiter
-                    $lastDelimiterPos = strrpos($pattern, $firstChar);
-                    if ($lastDelimiterPos !== false && $lastDelimiterPos > 0) {
-                        // Check if there are flags after the closing delimiter
-                        $afterDelimiter = substr($pattern, $lastDelimiterPos + 1);
-                        if (empty($afterDelimiter) || preg_match('/^[gimsuxADSUX]*$/', $afterDelimiter)) {
-                            $hasDelimiters = true;
-                        }
-                    }
-                }
-
-                $normalizedPattern = $hasDelimiters ? $pattern : '/' . $pattern . '/';
-
-                // Validate the regex pattern is syntactically correct
-                $lastError = null;
-                set_error_handler(function ($errno, $errstr) use (&$lastError) {
-                    $lastError = $errstr;
-
-                    return true;
-                }, E_WARNING);
-
-                $isValid = @preg_match($normalizedPattern, '') !== false;
-                restore_error_handler();
-
-                if (!$isValid) {
-                    $errorMsg = $lastError ?? 'malformed pattern';
-                    // Clean up the error message
-                    $errorMsg = preg_replace('/.*: /', '', $errorMsg);
-
-                    return 'Invalid regex rule: ' . $errorMsg;
-                }
-
-                // Test the value against the pattern
-                if (preg_match($normalizedPattern, $value) !== 1) {
-                    return 'Value does not match required format';
-                }
-                continue;
-            }
-        }
-
-        return null;
-    }
-
-    /**
+     * private function validateVariableValue(string $value, string $rules, string $fieldType = ''): ?string
+     * {
+     * return \App\Services\Spells\VariableValidator::validate($value, $rules);
+     * }.
+     * /**
      * Get user permissions for a specific server.
      * Returns full permissions for server owners, or subuser permissions for subusers.
      *

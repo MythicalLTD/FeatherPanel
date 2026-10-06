@@ -188,7 +188,7 @@ export function DiagnosticsTab({ nodeId, onOpenQuilldTab }: DiagnosticsTabProps)
     const reportText = useMemo(() => {
         const lines: string[] = [];
         lines.push('FeatherQuilld diagnostics report');
-        lines.push(`Version: ${diagnostics?.version || '—'}`);
+        lines.push(`Version: ${diagnostics?.version || '-'}`);
         lines.push(`Panel reachable: ${diagnostics?.panel_reachable ? 'yes' : 'no'}`);
         if (diagnostics?.last_panel_error) {
             lines.push(`Panel error: ${diagnostics.last_panel_error}`);
@@ -310,15 +310,15 @@ export function DiagnosticsTab({ nodeId, onOpenQuilldTab }: DiagnosticsTabProps)
                 {diagnostics?.host && (
                     <div className='text-muted-foreground mt-4 grid grid-cols-1 gap-2 border-t pt-4 text-sm sm:grid-cols-2'>
                         <div>
-                            {t('admin.webNodes.status.os')}: {diagnostics.host.os || '—'}
+                            {t('admin.webNodes.status.os')}: {diagnostics.host.os || '-'}
                         </div>
                         <div>
-                            {t('admin.webNodes.status.arch')}: {diagnostics.host.architecture || '—'}
+                            {t('admin.webNodes.status.arch')}: {diagnostics.host.architecture || '-'}
                         </div>
                         <div>
-                            {t('admin.webNodes.status.kernel')}: {diagnostics.host.kernel_version || '—'}
+                            {t('admin.webNodes.status.kernel')}: {diagnostics.host.kernel_version || '-'}
                         </div>
-                        <div>CPU: {diagnostics.host.cpu_model || diagnostics.host.cpu_count || '—'}</div>
+                        <div>CPU: {diagnostics.host.cpu_model || diagnostics.host.cpu_count || '-'}</div>
                     </div>
                 )}
             </PageCard>

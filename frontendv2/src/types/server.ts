@@ -335,6 +335,7 @@ export interface BackupFilters {
 }
 
 export interface BackupItem {
+    is_stale?: boolean;
     id: number;
     server_id: number;
     uuid: string;

@@ -443,7 +443,7 @@ export default function AdminUpdatesPage() {
                     <p className='mt-1 text-sm font-medium'>
                         {panelVersion?.update_available
                             ? t('admin_updates.overview.update_to', {
-                                  version: panelVersion?.latest?.version || '—',
+                                  version: panelVersion?.latest?.version || '-',
                               })
                             : panelVersion?.current?.version
                               ? t('admin_updates.overview.up_to_date_version', {
@@ -541,7 +541,7 @@ export default function AdminUpdatesPage() {
                     <div className='flex flex-wrap items-end gap-8'>
                         <div>
                             <p className='text-muted-foreground text-xs'>{t('admin_updates.panel.current')}</p>
-                            <p className='mt-1 text-lg font-medium'>{panelVersion?.current?.version || '—'}</p>
+                            <p className='mt-1 text-lg font-medium'>{panelVersion?.current?.version || '-'}</p>
                             {panelVersion?.current?.release_name ? (
                                 <p className='text-muted-foreground mt-0.5 text-xs'>
                                     {panelVersion.current.release_name}
@@ -556,7 +556,7 @@ export default function AdminUpdatesPage() {
                                     panelVersion?.update_available && 'text-amber-600 dark:text-amber-400',
                                 )}
                             >
-                                {panelVersion?.latest?.version || panelVersion?.current?.version || '—'}
+                                {panelVersion?.latest?.version || panelVersion?.current?.version || '-'}
                             </p>
                             {panelVersion?.latest?.release_name ? (
                                 <p className='text-muted-foreground mt-0.5 text-xs'>
@@ -577,7 +577,7 @@ export default function AdminUpdatesPage() {
                                     [panelVersion?.project?.min_supported_php, panelVersion?.project?.max_supported_php]
                                         .filter(Boolean)
                                         .join('–') ||
-                                    '—'}
+                                    '-'}
                             </p>
                             {panelVersion?.runtime_php ? (
                                 <p className='text-muted-foreground mt-0.5 text-xs'>
@@ -857,7 +857,7 @@ export default function AdminUpdatesPage() {
                                                     version.error
                                                 ) : (
                                                     <>
-                                                        v{version?.current_version || '—'}
+                                                        v{version?.current_version || '-'}
                                                         {needsUpdate ? (
                                                             <span className='text-amber-600 dark:text-amber-400'>
                                                                 {' '}

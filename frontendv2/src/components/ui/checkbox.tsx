@@ -20,7 +20,7 @@ import { Checkbox as HeadlessCheckbox } from '@headlessui/react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface CheckboxProps {
+interface CheckboxProps extends React.AriaAttributes {
     id?: string;
     checked: boolean;
     onCheckedChange: (checked: boolean) => void;
@@ -28,9 +28,10 @@ interface CheckboxProps {
     disabled?: boolean;
 }
 
-export function Checkbox({ id, checked, onCheckedChange, className, disabled }: CheckboxProps) {
+export function Checkbox({ id, checked, onCheckedChange, className, disabled, ...ariaProps }: CheckboxProps) {
     return (
         <HeadlessCheckbox
+            {...ariaProps}
             id={id}
             checked={checked}
             onChange={onCheckedChange}

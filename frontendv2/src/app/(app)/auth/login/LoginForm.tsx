@@ -64,7 +64,7 @@ export default function LoginForm() {
     const { fetchSession } = useSession();
     const { getWidgets, fetchWidgets } = usePluginWidgets('auth-login');
     const loginFormsRootRef = useRef<HTMLDivElement | null>(null);
-    /** QR is desktop-only — mounting it on phones starts useless challenges and wrecks the layout. */
+    /** QR is desktop-only - mounting it on phones starts useless challenges and wrecks the layout. */
     const [isDesktopLayout, setIsDesktopLayout] = useState(false);
 
     const formDensity = parseAuthFormDensity(settings?.auth_form_density);
@@ -285,7 +285,7 @@ export default function LoginForm() {
                 if (challenge) {
                     try {
                         sessionStorage.setItem('fp_2fa_challenge', challenge);
-                    } catch (error) {
+                    } catch {
                         /* ignore */
                     }
                 }
@@ -616,7 +616,7 @@ export default function LoginForm() {
                 if (challenge) {
                     try {
                         sessionStorage.setItem('fp_2fa_challenge', challenge);
-                    } catch (error) {
+                    } catch {
                         /* ignore */
                     }
                 }
@@ -735,7 +735,7 @@ export default function LoginForm() {
                 if (challenge) {
                     try {
                         sessionStorage.setItem('fp_2fa_challenge', challenge);
-                    } catch (ax) {
+                    } catch {
                         /* ignore */
                     }
                 }

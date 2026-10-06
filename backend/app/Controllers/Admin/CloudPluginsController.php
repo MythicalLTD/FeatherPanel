@@ -1043,7 +1043,6 @@ class CloudPluginsController
                         $storageBackup = null;
                     }
                 }
-
             }
 
             // Build the new addon separately and verify the copy before touching

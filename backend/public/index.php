@@ -36,14 +36,15 @@ define('SYSTEM_KERNEL_NAME', php_uname('s'));
 define('TELEMETRY', true);
 define('APP_VERSION', 'v1.4.0');
 define('APP_UPSTREAM', 'stable');
-define('REQUEST_ID', uniqid());
+define('REQUEST_ID', bin2hex(random_bytes(16)));
+header('X-Request-ID: ' . REQUEST_ID);
 
 if (APP_DEBUG) {
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
     ini_set('display_startup_errors', 1);
 } else {
-    error_reporting(0);
+    error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
     ini_set('display_errors', 0);
     ini_set('display_startup_errors', 0);
 }
@@ -58,13 +59,15 @@ if (APP_DEBUG) {
  * Require the kernel.
  */
 require_once APP_DIR . '/boot/kernel.php';
-
 /**
  * Start the APP. with kernel!
  */
 try {
     new App(false);
-} catch (Exception $e) {
-    echo $e->getMessage();
+} catch (Throwable $e) {
+    $eventId = \App\Telemetry\SentryTelemetry::captureException($e);
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'message' => 'Internal server error', 'request_id' => REQUEST_ID, 'event_id' => $eventId]);
     exit;
 }

@@ -550,6 +550,18 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAuthRoute(
         $routes,
+        'user-webspaces-backups-reconcile',
+        '/api/user/webspaces/{uuidShort}/backups/reconcile',
+        function (Request $request, array $args) {
+            return (new WebSpacesController())->reconcileBackups($request, (string) ($args['uuidShort'] ?? ''));
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
         'user-webspaces-backup-create',
         '/api/user/webspaces/{uuidShort}/backup',
         function (Request $request, array $args) {

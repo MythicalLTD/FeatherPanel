@@ -254,5 +254,4 @@ class PluginPublicPagesController
 
         return false;
     }
-
 }

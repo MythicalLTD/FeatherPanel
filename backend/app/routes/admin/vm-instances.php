@@ -297,6 +297,17 @@ return function (RouteCollection $routes): void {
         ['GET']
     );
 
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-vm-instances-backup-recover',
+        '/api/admin/vm-instances/{id}/backups/{backupId}/recover',
+        function (Request $request, array $args) {
+            return (new VmInstancesController())->recoverBackup($request, (int) ($args['id'] ?? 0), (int) ($args['backupId'] ?? 0));
+        },
+        Permissions::ADMIN_NODES_EDIT,
+        ['POST']
+    );
+
     // Create backup (async)
     App::getInstance(true)->registerAdminRoute(
         $routes,

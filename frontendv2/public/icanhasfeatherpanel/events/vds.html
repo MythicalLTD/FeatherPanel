@@ -172,7 +172,7 @@ public static function processEvents(PluginEvents $evt): void
   <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, array context.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> context, queued, reason, source, task_id, user_uuid, vds_id, vmid</p>
+  <p class="muted"><strong>Data keys:</strong> context, hard_delete, queued, reason, source, task_id, user_uuid, vds_id, vmid</p>
 
   <h3>Emitted From</h3>
   <ul>
@@ -185,9 +185,9 @@ use App\Plugins\Events\Events\VdsEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(VdsEvent::onVdsDeleted(), function ($context, $queued, $reason, $source, $taskId, $userUuid, $vdsId, $vmid) {
+    $evt->on(VdsEvent::onVdsDeleted(), function ($context, $hardDelete, $queued, $reason, $source, $taskId, $userUuid, $vdsId, $vmid) {
         // Handle featherpanel:vds:deleted
-        // Data keys: context, queued, reason, source, task_id, user_uuid, vds_id, vmid
+        // Data keys: context, hard_delete, queued, reason, source, task_id, user_uuid, vds_id, vmid
     });
 }</code></pre>
 </article>

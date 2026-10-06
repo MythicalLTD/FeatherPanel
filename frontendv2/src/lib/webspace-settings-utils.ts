@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import type { DomainRoute } from '@/components/webspace/WebSpaceDomainsManager';
 
 export function formatWebSpaceBytes(n?: number | null): string {
-    if (n == null) return '—';
+    if (n == null) return '-';
     if (n < 1024) return `${n} B`;
     if (n < 1024 ** 2) return `${(n / 1024).toFixed(1)} KB`;
     if (n < 1024 ** 3) return `${(n / 1024 ** 2).toFixed(1)} MB`;

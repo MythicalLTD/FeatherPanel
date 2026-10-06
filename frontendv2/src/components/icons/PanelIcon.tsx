@@ -62,7 +62,7 @@ function initialSpec(specs: PanelIconSpec[]): PanelIconSpec | null {
     if (!preferred) return { type: 'lucide', name: 'circle-help' };
     if (isSyncSpec(preferred)) return preferred;
     if (preferred.type === 'iconify' && iconLoaded(preferred.icon)) return preferred;
-    // Keep a reserved empty slot until the preferred set is ready — never flash a different library.
+    // Keep a reserved empty slot until the preferred set is ready - never flash a different library.
     return null;
 }
 

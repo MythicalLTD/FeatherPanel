@@ -90,7 +90,7 @@ export default function ServerTasksPage() {
             console.error('Failed to fetch schedule:', error);
             toast.error(getApiErrorMessage(error, t, 'serverSchedules.loadFailed'));
         }
-    }, [uuidShort, scheduleId]);
+    }, [uuidShort, scheduleId, t]);
 
     const fetchDatabases = React.useCallback(async () => {
         if (!uuidShort) return;

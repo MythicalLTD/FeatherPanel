@@ -51,6 +51,7 @@ import { formatFileSize } from '@/lib/utils';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface BackupRow {
+    status?: string;
     uuid: string;
     bytes?: number;
     created_at?: string;
@@ -117,6 +118,19 @@ export default function WebSpaceBackupsPage() {
     useEffect(() => {
         void load();
     }, [load]);
+
+    const reconcileBackups = async () => {
+        setBusy('reconcile');
+        try {
+            await axios.post(`/api/user/webspaces/${uuidShort}/backups/reconcile`);
+            await load();
+            toast.success(t('serverBackups.recheckSuccess'));
+        } catch (err) {
+            toast.error(getApiErrorMessage(err, t, 'serverBackups.recheckFailed'));
+        } finally {
+            setBusy(null);
+        }
+    };
 
     const createBackup = async () => {
         setBusy('create');
@@ -249,6 +263,16 @@ export default function WebSpaceBackupsPage() {
                                     if (file) void importBackup(file);
                                 }}
                             />
+                            {canDelete && (
+                                <Button
+                                    variant='glass'
+                                    disabled={busy !== null}
+                                    onClick={() => void reconcileBackups()}
+                                >
+                                    <RotateCcw className='mr-2 h-4 w-4' />
+                                    {t('serverBackups.recheckAction')}
+                                </Button>
+                            )}
                             {canCreate && backups.length > 0 && (
                                 <Button
                                     variant='glass'
@@ -318,6 +342,16 @@ export default function WebSpaceBackupsPage() {
                                 titleClassName='font-mono text-base'
                                 description={
                                     <>
+                                        {b.status === 'failed' && (
+                                            <span className='text-destructive text-sm'>
+                                                {t('serverBackups.failed')}
+                                            </span>
+                                        )}
+                                        {['pending', 'running', 'creating'].includes(b.status ?? '') && (
+                                            <span className='text-muted-foreground text-sm'>
+                                                {t('serverBackups.inProgress')}
+                                            </span>
+                                        )}
                                         <div className='text-muted-foreground flex items-center gap-2'>
                                             <HardDrive className='h-4 w-4 opacity-50' />
                                             <span className='text-sm font-semibold'>
@@ -341,26 +375,32 @@ export default function WebSpaceBackupsPage() {
                                             align='end'
                                             className='bg-card/90 border-border/40 w-56 rounded-2xl p-2 backdrop-blur-xl'
                                         >
-                                            {canDownload && (
-                                                <DropdownMenuItem
-                                                    onClick={() => download(b.uuid)}
-                                                    disabled={busy === b.uuid}
-                                                    className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                >
-                                                    <Download className='h-4 w-4 text-emerald-500' />
-                                                    <span className='font-bold'>{t('webSpaces.backups.download')}</span>
-                                                </DropdownMenuItem>
-                                            )}
-                                            {canRestore && (
-                                                <DropdownMenuItem
-                                                    onClick={() => void restore(b.uuid)}
-                                                    disabled={busy === b.uuid}
-                                                    className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                >
-                                                    <RotateCcw className='h-4 w-4 text-sky-500' />
-                                                    <span className='font-bold'>{t('webSpaces.backups.restore')}</span>
-                                                </DropdownMenuItem>
-                                            )}
+                                            {canDownload &&
+                                                (!b.status || ['completed', 'successful'].includes(b.status)) && (
+                                                    <DropdownMenuItem
+                                                        onClick={() => download(b.uuid)}
+                                                        disabled={busy === b.uuid}
+                                                        className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                    >
+                                                        <Download className='h-4 w-4 text-emerald-500' />
+                                                        <span className='font-bold'>
+                                                            {t('webSpaces.backups.download')}
+                                                        </span>
+                                                    </DropdownMenuItem>
+                                                )}
+                                            {canRestore &&
+                                                (!b.status || ['completed', 'successful'].includes(b.status)) && (
+                                                    <DropdownMenuItem
+                                                        onClick={() => void restore(b.uuid)}
+                                                        disabled={busy === b.uuid}
+                                                        className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                    >
+                                                        <RotateCcw className='h-4 w-4 text-sky-500' />
+                                                        <span className='font-bold'>
+                                                            {t('webSpaces.backups.restore')}
+                                                        </span>
+                                                    </DropdownMenuItem>
+                                                )}
                                             {canRestore && (
                                                 <DropdownMenuItem
                                                     onClick={() => void openSelective(b.uuid)}

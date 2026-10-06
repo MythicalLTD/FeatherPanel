@@ -64,7 +64,7 @@ function formatListEntrySize(file: FileObject): string {
     if (file.directory_size !== undefined && file.directory_size !== null) {
         return formatFileSize(file.directory_size);
     }
-    return '—';
+    return '-';
 }
 
 function formatListEntrySizeMobile(file: FileObject, folderLabel: string): string {

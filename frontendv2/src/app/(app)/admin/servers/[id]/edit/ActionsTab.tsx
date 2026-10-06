@@ -345,7 +345,7 @@ export function ActionsTab({
                             <div className='text-muted-foreground flex flex-wrap items-center gap-2 text-sm'>
                                 <span>{t('admin.servers.edit.actions.runtime_state')}:</span>
                                 <code className='bg-muted rounded px-1.5 py-0.5 text-xs'>
-                                    {wingsState || serverStatus || '—'}
+                                    {wingsState || serverStatus || '-'}
                                 </code>
                             </div>
                             {runtime?.message ? (

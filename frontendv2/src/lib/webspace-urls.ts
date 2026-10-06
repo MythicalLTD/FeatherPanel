@@ -26,7 +26,7 @@ export interface WebSpaceAccessUrls {
     public: WebSpacePublicUrl[];
     /** Direct HTTP URL on the web node (node IP + backend port). */
     internal_url: string | null;
-    /** Loopback URL on the node — only when a routable host differs from localhost. */
+    /** Loopback URL on the node - only when a routable host differs from localhost. */
     loopback_url: string | null;
     node_fqdn: string | null;
     node_ip?: string | null;

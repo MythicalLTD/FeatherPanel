@@ -146,7 +146,7 @@ export default function WebNodesPage() {
             }
         };
         fetchLocations();
-    }, []);
+    }, [t]);
 
     const checkNodeHealth = useCallback(async (nodeId: number) => {
         setNodeHealth((prev) => ({ ...prev, [nodeId]: 'checking' }));

@@ -252,7 +252,7 @@ export default function AdminMailHostsPage() {
                                     </div>
                                     <div>
                                         <dt className='text-muted-foreground'>{t('admin.mailHosts.labels.webmail')}</dt>
-                                        <dd className='truncate font-mono'>{row.webmail_url || '—'}</dd>
+                                        <dd className='truncate font-mono'>{row.webmail_url || '-'}</dd>
                                     </div>
                                 </dl>
                                 {row.web_node_id && (

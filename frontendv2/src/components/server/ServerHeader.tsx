@@ -293,7 +293,7 @@ export default function ServerHeader({
         </ConfirmDialog>
     );
 
-    // Style: strip — compact image bar above controls
+    // Style: strip - compact image bar above controls
     if (resolvedBanner && style === 'strip') {
         return (
             <div className='border-border/50 bg-card/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
@@ -314,7 +314,7 @@ export default function ServerHeader({
         );
     }
 
-    // Style: hero — image fills header; frosted control panel on top
+    // Style: hero - image fills header; frosted control panel on top
     if (resolvedBanner && style === 'hero') {
         return (
             <div className='border-border/50 relative overflow-hidden rounded-xl border'>
@@ -334,7 +334,7 @@ export default function ServerHeader({
         );
     }
 
-    // Style: cover — side art (default when enabled) — or plain header when off / no image
+    // Style: cover - side art (default when enabled) - or plain header when off / no image
     return (
         <div className='border-border/50 bg-card/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
             <div className={cn('p-4 sm:p-5', resolvedBanner && style === 'cover' && 'sm:p-4')}>

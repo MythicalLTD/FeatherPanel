@@ -424,7 +424,7 @@ export default function ServerSettingsPage() {
                                     <div className='border-border/10 bg-muted/40 flex h-12 items-center rounded-xl border px-4 text-sm font-medium'>
                                         {server?.backup_limit != null
                                             ? formatBackupLimitLabel(server.backup_limit, t('common.disabled'))
-                                            : '—'}
+                                            : '-'}
                                     </div>
                                     <p className='text-muted-foreground ml-1 text-xs break-words'>
                                         {t('serverSettings.backupLimitReadOnlyHelp')}

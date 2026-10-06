@@ -3,7 +3,7 @@
   "$id": "https://featherpanel.com/schemas/plugin-theme.json",
   "title": "FeatherPanel Plugin Theme Pack",
   "type": "object",
-  "description": "Frontend/theme.json — selectable design token pack for FeatherPanel.",
+  "description": "Frontend/theme.json: selectable design token pack for FeatherPanel.",
   "properties": {
     "id": { "type": "string", "pattern": "^[a-zA-Z0-9_\\-]+$" },
     "name": { "type": "string", "minLength": 1 },

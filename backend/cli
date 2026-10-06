@@ -59,6 +59,7 @@ try {
 
 	$args = array_slice($argv, 1); // Exclude the command name and the first argument
 	new App($argv[1] ?? '', $args);
-} catch (Exception $e) {
+} catch (\Throwable $e) {
+	\App\Telemetry\SentryTelemetry::captureException($e);
 	echo $e->getMessage();
 }

@@ -14,7 +14,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 export type ActionContext = Record<string, unknown> & {
-    /** Set by cancel() — when true, the host must abort the action. */
+    /** Set by cancel() - when true, the host must abort the action. */
     cancelled?: boolean;
     cancelReason?: string;
     cancel: (reason?: string) => void;

@@ -51,7 +51,7 @@ function TrashRow({
     const dateOpts = useDateFormatOptions();
     const { modifiedRelative, modifiedTitle } = useMemo(() => {
         if (!parseApiDate(entry.deleted_at)) {
-            return { modifiedRelative: '—', modifiedTitle: undefined as string | undefined };
+            return { modifiedRelative: '-', modifiedTitle: undefined as string | undefined };
         }
         return {
             modifiedRelative: formatRelativeTime(entry.deleted_at, dateOpts),

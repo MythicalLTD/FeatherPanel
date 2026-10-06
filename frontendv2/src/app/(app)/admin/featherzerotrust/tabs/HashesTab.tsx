@@ -112,7 +112,7 @@ const HashesTab = () => {
     const [bulkConfirming, setBulkConfirming] = useState(false);
     const [importingMalwareBazaar, setImportingMalwareBazaar] = useState(false);
 
-    const fetchStats = async () => {
+    const fetchStats = useCallback(async () => {
         try {
             const { data } = await axios.get('/api/admin/featherzerotrust/hashes/stats');
             if (data.success && data.data) {
@@ -122,7 +122,7 @@ const HashesTab = () => {
             console.error('Failed to fetch hash statistics', error);
             toast.error(getApiErrorMessage(error, t, 'common.error'));
         }
-    };
+    }, [t]);
 
     const fetchHashes = useCallback(async () => {
         setLoading(true);
@@ -146,7 +146,7 @@ const HashesTab = () => {
     useEffect(() => {
         fetchStats();
         void fetchHashes();
-    }, [fetchHashes]);
+    }, [fetchHashes, fetchStats]);
 
     const filteredHashes = useMemo(() => {
         if (!searchQuery) return hashes;

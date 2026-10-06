@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Plugin Themes &amp; UI Packs — FeatherPanel</title>
+  <title>Plugin Themes &amp; UI Packs: FeatherPanel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
@@ -22,7 +22,7 @@
   <main class="container">
     <p><a href="/icanhasfeatherpanel/">&larr; Docs home</a></p>
     <h1>Plugin Themes &amp; UI Packs</h1>
-    <p class="muted">Extend FeatherPanel appearance and layout at runtime — no panel <code>pnpm build</code> when installing a pack.</p>
+    <p class="muted">Extend FeatherPanel appearance and layout at runtime: no panel <code>pnpm build</code> when installing a pack.</p>
 
     <h2>Theme packs</h2>
     <div class="card">
@@ -42,7 +42,7 @@
 
     <h2>Overrides (surgical)</h2>
     <div class="card">
-      <p><code>Frontend/overrides.json</code> — hide / replace / actions on named slots.</p>
+      <p><code>Frontend/overrides.json</code>: hide / replace / actions on named slots.</p>
       <p>API: <code>GET /api/system/plugin-overrides</code></p>
       <p>Schema: <a href="/icanhasfeatherpanel/schemas/plugin-overrides.schema.json">plugin-overrides.schema.json</a></p>
       <p>Shell slots: <code>shell.sidebar</code>, <code>shell.navbar</code>, <code>shell.page-header</code>, <code>shell.main</code>, <code>shell.background</code></p>
@@ -50,7 +50,7 @@
 
     <h2>UI packs (full makeover)</h2>
     <div class="card">
-      <p><code>Frontend/ui.json</code> — shell replace, page replace, hide list, toolbar actions. One active pack at a time.</p>
+      <p><code>Frontend/ui.json</code>: shell replace, page replace, hide list, toolbar actions. One active pack at a time.</p>
       <p>API: <code>GET /api/system/plugin-ui-packs</code></p>
       <p>Schema: <a href="/icanhasfeatherpanel/schemas/plugin-ui-pack.schema.json">plugin-ui-pack.schema.json</a></p>
       <pre>{
@@ -72,13 +72,13 @@
 
     <h2>Host bridge</h2>
     <div class="card">
-      <p>Panel exposes <code>window.FeatherPanel</code> v2 — see <a href="/icanhasfeatherpanel/plugin-power.html">Power SDK</a> for events, actions, modals, search, shortcuts.</p>
+      <p>Panel exposes <code>window.FeatherPanel</code> v2: see <a href="/icanhasfeatherpanel/plugin-power.html">Power SDK</a> for events, actions, modals, search, shortcuts.</p>
       <p>Iframe protocol (same-origin):</p>
       <ul>
         <li><code>featherpanel-ready</code> → host replies with <code>featherpanel-theme</code></li>
         <li><code>featherpanel-navigate</code> <code>{ path }</code></li>
         <li><code>featherpanel-toast</code> <code>{ message, level }</code></li>
-        <li><code>featherpanel-bus</code> — event/action bridge</li>
+        <li><code>featherpanel-bus</code>: event/action bridge</li>
       </ul>
     </div>
 

@@ -113,7 +113,7 @@ export function DatabaseDumpsPanel({ uuidShort, directory = DEFAULT_DB_DIRECTORY
             setDumps(sqlFiles);
             setSelected([]);
         } catch {
-            // Missing directory or empty folder is fine — show empty state
+            // Missing directory or empty folder is fine - show empty state
             setDumps([]);
             setSelected([]);
         } finally {
