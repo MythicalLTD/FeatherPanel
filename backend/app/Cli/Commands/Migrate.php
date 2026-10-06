@@ -23,6 +23,7 @@ use App\Chat\Database;
 use App\App as MainApp;
 use App\Helpers\XChaCha20;
 use App\Cli\CommandBuilder;
+use App\Plugins\ObsoleteAddons;
 use App\Config\ConfigInterface;
 
 class Migrate extends App implements CommandBuilder
@@ -304,6 +305,10 @@ class Migrate extends App implements CommandBuilder
                     return false;
                 }
 
+                if (ObsoleteAddons::isObsolete($entry)) {
+                    return false;
+                }
+
                 return is_dir($addonsRoot . $entry);
             });
 
@@ -414,15 +419,8 @@ class Migrate extends App implements CommandBuilder
 
     private static function cleanupObsoleteAddonDirectories(App $cliApp): void
     {
-        $obsoleteAddons = [
-            'yetanotherbadupdate',
-            'whitelabel',
-            'navlayout',
-            'notsofeatherai',
-        ];
-
         $addonsRoot = __DIR__ . '/../../../storage/addons/';
-        foreach ($obsoleteAddons as $addon) {
+        foreach (ObsoleteAddons::identifiers() as $addon) {
             $path = $addonsRoot . $addon;
             if (!is_dir($path)) {
                 continue;
@@ -444,8 +442,30 @@ class Migrate extends App implements CommandBuilder
         }
     }
 
+    /**
+     * Recursively delete a directory, unlinking symlinks instead of following them.
+     *
+     * pnpm/npm trees under obsolete addons use directory symlinks; is_dir() follows
+     * those links, so rmdir() later fails with "Not a directory".
+     */
     private static function deleteDirectoryRecursive(string $path): void
     {
+        if (is_link($path)) {
+            if (!unlink($path)) {
+                throw new \RuntimeException('Unable to delete symlink: ' . $path);
+            }
+
+            return;
+        }
+
+        if (!is_dir($path)) {
+            if (file_exists($path) && !unlink($path)) {
+                throw new \RuntimeException('Unable to delete file: ' . $path);
+            }
+
+            return;
+        }
+
         $entries = scandir($path);
         if ($entries === false) {
             throw new \RuntimeException('Unable to read directory: ' . $path);
@@ -457,14 +477,17 @@ class Migrate extends App implements CommandBuilder
             }
 
             $child = $path . '/' . $entry;
-            if (is_dir($child)) {
-                self::deleteDirectoryRecursive($child);
+
+            // Symlinks (including dir links from package managers) must be unlinked,
+            // never descended into or passed to rmdir().
+            if (is_link($child) || !is_dir($child)) {
+                if (!unlink($child)) {
+                    throw new \RuntimeException('Unable to delete file: ' . $child);
+                }
                 continue;
             }
 
-            if (!unlink($child)) {
-                throw new \RuntimeException('Unable to delete file: ' . $child);
-            }
+            self::deleteDirectoryRecursive($child);
         }
 
         if (!rmdir($path)) {

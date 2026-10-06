@@ -67,6 +67,9 @@
 		<testsuite name="Backup Recovery">
 			<directory>tests/Backup</directory>
 		</testsuite>
+		<testsuite name="Cli">
+			<directory>tests/Cli</directory>
+		</testsuite>
 	</testsuites>
 
 	<!-- Source Files for Coverage -->

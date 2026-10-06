@@ -59,6 +59,8 @@
 
 ### Fixed
 
+- Migrate no longer fails when removing obsolete addons whose trees contain pnpm directory symlinks (`rmdir(): Not a directory`). by @nayskutzu
+- Obsolete addons (`navlayout`, `whitelabel`, etc.) are skipped at route/plugin load so a half-deleted leftover tree no longer 500s on `/api/user/navlayout/active`. by @nayskutzu
 - Security: stop auth account enumeration on forgot-password and login (generic responses + timing-safe unknown-user path); Redis-backed per-account escalating login delay and tighter 2FA lockout; expire password reset tokens after 1 hour. by @Crackhead-gsk
 - Security: block admin privilege escalation via UsersController::update() (role/2FA/session fields require ADMIN_ROOT) and stop leaking daemon tokens from node list/detail responses; harden Node::searchNodes() sort allowlist. by @Crackhead-gsk
 - WebSpace schedule create/update no longer deadlocks MySQL (transaction used a second PDO connection) or hangs the UI waiting on daemon sync. by @nayskutzu

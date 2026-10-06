@@ -1,0 +1,49 @@
+Event
+
+01a112ecd4eb73a2a0bee02476a66435
+
+October 6, 2026, 10:34:33 PM GMT+2raw JSON· copy for AI
+
+212.87.213.0
+static/assets/images/logos/48x48/php.png
+
+php
+
+Version: 8.5.11
+static/assets/images/os-logos/LIN.png
+
+Linux
+
+Version: 6.12.111+deb13-amd64
+Tags
+
+    os.name Linux
+    release featherpanel@v1.4.0
+    upstream stable
+    component cli
+    request_id 6ac55b5936ced
+    environment production
+    server_name debian 
+
+Message
+
+ErrorException: Warning: rmdir(/var/www/featherpanel/backend/app/Cli/Commands/../../../storage/addons/navlayout/Fro…
+
+Exception
+ErrorException
+
+Warning: rmdir(/var/www/featherpanel/backend/app/Cli/Commands/../../../storage/addons/navlayout/Frontend/App/node_modules/.pnpm/@babel+parser@7.29.8/node_modules/@babel/types): Not a directory
+/backend/app/Cli/Commands/Migrate.php in App\Cli\Commands\Migrate::deleteDirectoryRecursive at line 470
+
+            if (!unlink($child)) {
+                throw new \RuntimeException('Unable to delete file: ' . $child);
+            }
+        }
+
+        if (!rmdir($path)) {
+            throw new \RuntimeException('Unable to delete directory: ' . $path);
+        }
+    }
+}
+
+/backend/app/Cli/Commands/Migrate.php in App\Cli\Commands\Migrate::deleteDirectoryRecursive at line 461 

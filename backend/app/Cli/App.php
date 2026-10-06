@@ -17,6 +17,7 @@
 
 namespace App\Cli;
 
+use App\Plugins\ObsoleteAddons;
 use App\Cli\Commands\Help;
 
 class App extends Utils\MinecraftColorCodeSupport
@@ -136,6 +137,10 @@ class App extends Utils\MinecraftColorCodeSupport
         foreach ($plugins as $plugin) {
             $pluginPath = $pluginDirectory . '/' . $plugin;
             if (!is_dir($pluginPath)) {
+                continue;
+            }
+
+            if (ObsoleteAddons::isObsolete($plugin)) {
                 continue;
             }
 

@@ -32,6 +32,7 @@ use App\Middleware\AdminMiddleware;
 use App\Middleware\WingsMiddleware;
 use App\Middleware\ServerMiddleware;
 use Symfony\Component\Routing\Route;
+use App\Plugins\ObsoleteAddons;
 use App\Plugins\Events\Events\AppEvent;
 use App\Middleware\FeatherQuilldMiddleware;
 use Symfony\Component\HttpFoundation\Request;
@@ -239,6 +240,9 @@ class App
             foreach ($pluginDirs as $pluginDir) {
                 if ($pluginDir->isDir() && !$pluginDir->isDot()) {
                     $currentAddonId = $pluginDir->getBasename();
+                    if (ObsoleteAddons::isObsolete($currentAddonId)) {
+                        continue;
+                    }
                     $pluginRoutesDir = $pluginDir->getPathname() . '/Routes';
                     if (is_dir($pluginRoutesDir)) {
                         $pluginIterator = new \RecursiveIteratorIterator(
