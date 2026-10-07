@@ -16,7 +16,7 @@ log() {
 
 wait_for_panel() {
 	local attempt=0
-	local max_attempts=90
+	local max_attempts=120
 
 	while [ "$attempt" -lt "$max_attempts" ]; do
 		if [ -f "${APP_ROOT}/storage/config/.env" ] && php "$CLI" help >/dev/null 2>&1; then
@@ -74,6 +74,11 @@ restore_golden_snapshot() {
 	php "$CLI" saas setsetting app_demo_yes true >/dev/null 2>&1 || true
 	/bin/bash /demo/wings-reset.sh
 	DEMO_WINGS_CONFIG_PATH=/etc/featherpanel/config.yml php /demo/write-wings-config.php
+	DEMO_QUILL_CONFIG_PATH=/etc/featherquilld/config.yml php /demo/write-quilld-config.php || true
+	/bin/bash /demo/restart-wings.sh || true
+	/bin/bash /demo/restart-quilld.sh || true
+	sleep 8
+	/bin/bash /demo/start-demo-servers.sh || log "WARNING: demo server start failed (continuing)."
 	flush_redis
 	clear_attachments
 	log "Demo reset complete. Next reset in ${INTERVAL}s."

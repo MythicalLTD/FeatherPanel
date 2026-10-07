@@ -105,12 +105,37 @@ function generateHomePage(widgetCount) {
         {
             href: `${DOCS_BASE}/plugins/`,
             title: 'Plugins',
-            body: 'Build addons: conf.yml, backend, frontend, themes, cron, and more.',
+            body: 'Build addons: conf.yml, themes, UI packs, Power SDK, widgets, cron, and more.',
+        },
+        {
+            href: `${DOCS_BASE}/auth/`,
+            title: 'Auth',
+            body: 'OIDC SSO, passkeys, and API-key OAuth2 (callback vs device).',
+        },
+        {
+            href: `${DOCS_BASE}/pages/`,
+            title: 'Pages',
+            body: 'Every frontend route/slug for UI navigation guidance.',
         },
         {
             href: `${DOCS_BASE}/widgets/`,
             title: 'Widgets',
             body: `Page slugs and injection points (${widgetCount}).`,
+        },
+        {
+            href: `${DOCS_BASE}/cli/`,
+            title: 'CLI',
+            body: 'All fuse/featherpanel commands and production usage.',
+        },
+        {
+            href: `${DOCS_BASE}/settings/`,
+            title: 'Settings',
+            body: 'Admin settings keys, types, options, categories.',
+        },
+        {
+            href: `${DOCS_BASE}/installer/`,
+            title: 'Installer',
+            body: 'install.bash flags, menus, and how to guide users.',
         },
         {
             href: `${DOCS_BASE}/events/`,
@@ -125,7 +150,7 @@ function generateHomePage(widgetCount) {
         {
             href: `${DOCS_BASE}/api/`,
             title: 'API',
-            body: 'OpenAPI reference and openapi.json.',
+            body: 'OpenAPI, oauth2.md, and the OAuth2 playground.',
         },
         {
             href: `${DOCS_BASE}/rag/`,
@@ -149,7 +174,9 @@ function generateHomePage(widgetCount) {
         formats: [
             { href: `${DOCS_BASE}/llms.txt`, label: 'llms.txt' },
             { href: `${DOCS_BASE}/catalog.json`, label: 'catalog.json' },
-            { href: `${DOCS_BASE}/plugins/`, label: 'Plugin guides' },
+            { href: `${DOCS_BASE}/plugins/themes.md`, label: 'themes.md' },
+            { href: `${DOCS_BASE}/api/oauth2.md`, label: 'oauth2.md' },
+            { href: `${DOCS_BASE}/auth/`, label: 'Auth' },
         ],
     })}
 
@@ -191,7 +218,8 @@ function generateWidgetsListPage(widgets) {
 
     const body = `${hero({
         title: 'Widget Injection Points',
-        subtitle: 'Every page slug that accepts plugin widgets, with injection locations. Also published as Markdown and JSON.',
+        subtitle:
+            'Every page slug that accepts plugin widgets, with injection locations. Also published as Markdown and JSON.',
         badges: [`${widgets.length} slugs`, `${totalIps} injection points`],
         formats: [
             { href: `${DOCS_BASE}/widgets/index.md`, label: 'index.md' },
@@ -236,18 +264,21 @@ function generateWidgetDetailPage(widget) {
             : '<li class="fp-muted">No static injection points found (may be dynamic).</li>';
 
     const files = widget.files
-        .map((f) => `<li><code>${escapeHtml(path.basename(f))}</code> <span class="fp-muted">(${escapeHtml(f)})</span></li>`)
+        .map(
+            (f) =>
+                `<li><code>${escapeHtml(path.basename(f))}</code> <span class="fp-muted">(${escapeHtml(f)})</span></li>`,
+        )
         .join('\n');
 
     const body = `<a class="fp-back" href="${DOCS_BASE}/widgets/">&larr; All widgets</a>
 ${hero({
-        title: `<code>${escapeHtml(widget.slug)}</code>`,
-        subtitle: 'Widget slug and injection point details',
-        formats: [
-            { href: `${DOCS_BASE}/widgets/${widget.file_slug}.md`, label: 'Markdown' },
-            { href: `${DOCS_BASE}/widgets/${widget.file_slug}.json`, label: 'JSON' },
-        ],
-    })}
+    title: `<code>${escapeHtml(widget.slug)}</code>`,
+    subtitle: 'Widget slug and injection point details',
+    formats: [
+        { href: `${DOCS_BASE}/widgets/${widget.file_slug}.md`, label: 'Markdown' },
+        { href: `${DOCS_BASE}/widgets/${widget.file_slug}.json`, label: 'JSON' },
+    ],
+})}
 <section class="fp-section fp-card">
   <h2>Injection points</h2>
   <ul>${ips}</ul>

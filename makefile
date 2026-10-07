@@ -65,8 +65,8 @@ help:
 frontend:
 	@echo -e "\n${BOLD}${BLUE}Frontend Build${NC} ${ROCKET}"
 	@echo -e "${CYAN}=================${NC}"
-	@echo -e "${GREEN}${INFO} Building frontend for production...${NC}"
-	@cd $(FRONTENDV2_DIR) && $(PNPM) build
+	@echo -e "${GREEN}${INFO} Building frontend + icanhas docs for production...${NC}"
+	@cd $(FRONTENDV2_DIR) && $(PNPM) build:with-docs
 	@echo -e "${GREEN}${CHECK} Frontend build complete!${NC}\n"
 
 # Backend tasks
@@ -127,13 +127,12 @@ release:
 	
 	@echo -e "${PURPLE}${INFO} Updating dependencies...${NC}"
 	@cd $(FRONTENDV2_DIR) && npx --yes npm-check-updates -u
-	@cd $(FRONTENDV2_DIR) && pnpm export:docs
 	@cd $(FRONTENDV2_DIR) && $(PNPM) install
 	@cd $(BACKEND_DIR) && $(COMPOSER) update
 	@echo -e "${GREEN}${CHECK} Dependencies updated${NC}\n"
 	
-	@echo -e "${PURPLE}${INFO} Building applications...${NC}"
-	@cd $(FRONTENDV2_DIR) && $(PNPM) build
+	@echo -e "${PURPLE}${INFO} Building applications (with generated developer docs)…${NC}"
+	@cd $(FRONTENDV2_DIR) && $(PNPM) build:with-docs
 	@cd $(MCP_DIR) && $(PNPM) install && $(PNPM) run build
 	@cd $(BACKEND_DIR) && $(COMPOSER) dump-autoload
 	@cd $(BACKEND_DIR) && $(COMPOSER) install --optimize-autoloader

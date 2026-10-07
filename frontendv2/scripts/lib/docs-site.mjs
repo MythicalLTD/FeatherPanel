@@ -21,7 +21,12 @@ export const DOCS_BASE = '/icanhasfeatherpanel';
 const NAV = [
     { id: 'home', label: 'Home', href: `${DOCS_BASE}/` },
     { id: 'plugins', label: 'Plugins', href: `${DOCS_BASE}/plugins/` },
+    { id: 'auth', label: 'Auth', href: `${DOCS_BASE}/auth/` },
+    { id: 'pages', label: 'Pages', href: `${DOCS_BASE}/pages/` },
     { id: 'widgets', label: 'Widgets', href: `${DOCS_BASE}/widgets/` },
+    { id: 'cli', label: 'CLI', href: `${DOCS_BASE}/cli/` },
+    { id: 'settings', label: 'Settings', href: `${DOCS_BASE}/settings/` },
+    { id: 'installer', label: 'Installer', href: `${DOCS_BASE}/installer/` },
     { id: 'events', label: 'Events', href: `${DOCS_BASE}/events/` },
     { id: 'permissions', label: 'Permissions', href: `${DOCS_BASE}/permissions/` },
     { id: 'api', label: 'API', href: `${DOCS_BASE}/api/` },
@@ -70,16 +75,8 @@ function navHtml(active) {
  * @param {string} options.body
  * @param {boolean} [options.includeSearchScript]
  */
-export function renderDocsPage({
-    title,
-    description = '',
-    active = 'home',
-    body,
-    includeSearchScript = false,
-}) {
-    const descTag = description
-        ? `\n  <meta name="description" content="${escapeHtml(description)}" />`
-        : '';
+export function renderDocsPage({ title, description = '', active = 'home', body, includeSearchScript = false }) {
+    const descTag = description ? `\n  <meta name="description" content="${escapeHtml(description)}" />` : '';
 
     return `<!doctype html>
 <html lang="en">

@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 /**
  * Single entrypoint: build the full public/icanhasfeatherpanel tree.
  *
- * 1. Wipe + seed hand-authored sources from docsrc/
+ * 1. Wipe + seed hand-authored sources from icanhas/
  * 2. Generate widgets, pages, permissions, events, API, CLI, settings, installer
  * 3. Generate plugins index HTML + llms.txt from Markdown
  * 4. Attach openapi.json when available
@@ -43,10 +43,9 @@ const __dirname = path.dirname(__filename);
 
 const FRONTEND_DIR = path.join(__dirname, '..');
 const REPO_ROOT = path.join(FRONTEND_DIR, '..');
-const SOURCE_DIR = path.join(FRONTEND_DIR, 'docsrc/icanhasfeatherpanel');
+const SOURCE_DIR = path.join(FRONTEND_DIR, 'icanhas');
 const PUBLIC_DIR = path.join(FRONTEND_DIR, 'public/icanhasfeatherpanel');
-const OPENAPI_SOURCE =
-    process.env.OPENAPI_JSON || path.join(REPO_ROOT, 'backend/openapi.json');
+const OPENAPI_SOURCE = process.env.OPENAPI_JSON || path.join(REPO_ROOT, 'backend/openapi.json');
 
 const GENERATORS = [
     { id: 'widgets', script: 'export-widget-docs.js', required: true },
@@ -80,10 +79,16 @@ function seedPublicTree() {
     if (fs.existsSync(PUBLIC_DIR)) {
         fs.rmSync(PUBLIC_DIR, { recursive: true, force: true });
     }
-    // Skip regenerable HTML/indexes under plugins/ and root
+    // Skip regenerable HTML/indexes under plugins/, auth/, and root
     copyRecursive(SOURCE_DIR, PUBLIC_DIR, { skipNames: SKIP_SEED_NAMES });
     // Also strip regenerable files if nested copies slipped through
-    for (const rel of ['plugins/index.html', 'plugins/view.html', 'plugins/llms.txt']) {
+    for (const rel of [
+        'plugins/index.html',
+        'plugins/view.html',
+        'plugins/llms.txt',
+        'auth/index.html',
+        'auth/llms.txt',
+    ]) {
         const p = path.join(PUBLIC_DIR, rel);
         if (fs.existsSync(p)) fs.unlinkSync(p);
     }
@@ -111,21 +116,42 @@ function firstMarkdownHeading(md) {
     return m ? m[1].trim() : null;
 }
 
-function buildPluginsSection() {
-    const pluginsDir = path.join(PUBLIC_DIR, 'plugins');
-    ensureDir(pluginsDir);
+function markdownBlurb(content) {
+    return (
+        content
+            .split('\n')
+            .map((l) => l.trim())
+            .find(
+                (l) =>
+                    l &&
+                    !l.startsWith('#') &&
+                    !l.startsWith('>') &&
+                    !l.startsWith('|') &&
+                    !l.startsWith('-') &&
+                    !l.startsWith('```'),
+            ) || ''
+    );
+}
+
+function buildMarkdownSection({
+    dirName,
+    title,
+    subtitle,
+    description,
+    active,
+    order = [],
+    startIds = new Set(),
+    indexType,
+    formats = [],
+    extraSectionsHtml = '',
+}) {
+    const sectionDir = path.join(PUBLIC_DIR, dirName);
+    ensureDir(sectionDir);
 
     const mdFiles = fs
-        .readdirSync(pluginsDir)
+        .readdirSync(sectionDir)
         .filter((f) => f.endsWith('.md'))
         .sort((a, b) => {
-            const order = [
-                'ai-guide.md',
-                'getting-started.md',
-                'examples.md',
-                'recipes.md',
-                'README.md',
-            ];
             const ai = order.indexOf(a);
             const bi = order.indexOf(b);
             if (ai !== -1 || bi !== -1) return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
@@ -133,86 +159,149 @@ function buildPluginsSection() {
         });
 
     const docs = mdFiles.map((file) => {
-        const content = fs.readFileSync(path.join(pluginsDir, file), 'utf8');
-        const title = firstMarkdownHeading(content) || file.replace(/\.md$/, '');
-        const blurb =
-            content
-                .split('\n')
-                .map((l) => l.trim())
-                .find((l) => l && !l.startsWith('#') && !l.startsWith('>') && !l.startsWith('|') && !l.startsWith('-') && !l.startsWith('```')) ||
-            '';
+        const content = fs.readFileSync(path.join(sectionDir, file), 'utf8');
+        const heading = firstMarkdownHeading(content) || file.replace(/\.md$/, '');
         return {
             file,
             id: file.replace(/\.md$/, ''),
-            title: title.replace(/^#+\s*/, ''),
-            blurb: blurb.slice(0, 140),
-            path: `${DOCS_BASE}/plugins/${file}`,
+            title: heading.replace(/^#+\s*/, ''),
+            blurb: markdownBlurb(content).slice(0, 140),
+            path: `${DOCS_BASE}/${dirName}/${file}`,
         };
     });
 
-    const startIds = new Set(['ai-guide', 'getting-started', 'examples', 'recipes']);
     const start = docs.filter((d) => startIds.has(d.id));
     const reference = docs.filter((d) => !startIds.has(d.id) && d.id !== 'README');
 
-    const card = (d) => `<a class="fp-card-link" href="${DOCS_BASE}/view.html?doc=plugins/${escapeHtml(d.file)}">
+    const card = (d) => `<a class="fp-card-link" href="${DOCS_BASE}/view.html?doc=${dirName}/${escapeHtml(d.file)}">
   <div class="fp-card">
     <h2>${escapeHtml(d.title)}</h2>
     <p>${escapeHtml(d.blurb || d.file)}</p>
-    <div class="fp-formats"><a href="${DOCS_BASE}/plugins/${escapeHtml(d.file)}">Markdown</a></div>
+    <div class="fp-formats"><a href="${DOCS_BASE}/${dirName}/${escapeHtml(d.file)}">Markdown</a></div>
   </div>
 </a>`;
 
-    const body = `${hero({
-        title: 'Plugins',
-        subtitle: 'How to build FeatherPanel addons. Prefer the raw Markdown files for RAG.',
-        badges: [`${docs.length} guides`],
-        formats: [
-            { href: `${DOCS_BASE}/plugins/ai-guide.md`, label: 'ai-guide.md' },
-            { href: `${DOCS_BASE}/plugins/llms.txt`, label: 'llms.txt' },
-            { href: `${DOCS_BASE}/plugins/index.json`, label: 'index.json' },
-        ],
-    })}
-<section class="fp-section">
+    const startSection =
+        start.length > 0
+            ? `<section class="fp-section">
   <h2>Start</h2>
   <div class="fp-grid">${start.map(card).join('\n')}</div>
-</section>
+</section>`
+            : '';
+
+    const body = `${hero({
+        title,
+        subtitle,
+        badges: [`${docs.length} guides`],
+        formats,
+    })}
+${startSection}
 <section class="fp-section">
-  <h2>Reference</h2>
-  <div class="fp-grid">${reference.map(card).join('\n')}</div>
-</section>`;
+  <h2>${start.length ? 'Reference' : 'Guides'}</h2>
+  <div class="fp-grid">${(start.length ? reference : docs.filter((d) => d.id !== 'README')).map(card).join('\n')}</div>
+</section>
+${extraSectionsHtml}`;
 
     writeText(
-        path.join(pluginsDir, 'index.html'),
+        path.join(sectionDir, 'index.html'),
         renderDocsPage({
-            title: 'Plugins',
-            description: 'FeatherPanel plugin developer docs for humans and LLMs.',
-            active: 'plugins',
+            title,
+            description,
+            active,
             body,
         }),
     );
 
-    writeJson(path.join(pluginsDir, 'index.json'), {
-        type: 'featherpanel.plugins.index',
+    writeJson(path.join(sectionDir, 'index.json'), {
+        type: indexType,
         total: docs.length,
         documents: docs,
     });
 
     const llms = [
-        '# FeatherPanel Plugin Docs',
+        `# FeatherPanel ${title}`,
         '',
         '> Prefer Markdown for RAG.',
         '',
         ...docs.map((d) => `- [${d.title}](${d.path})`),
         '',
     ].join('\n');
-    writeMarkdown(path.join(pluginsDir, 'llms.txt'), llms);
+    writeMarkdown(path.join(sectionDir, 'llms.txt'), llms);
 
-    console.log(`✅ Plugins index built (${docs.length} Markdown guides → HTML + JSON + llms.txt)`);
+    console.log(`✅ ${title} index built (${docs.length} Markdown guides → HTML + JSON + llms.txt)`);
+}
+
+function buildPluginsSection() {
+    buildMarkdownSection({
+        dirName: 'plugins',
+        title: 'Plugins',
+        subtitle: 'How to build FeatherPanel addons. Raw .md files are the best source for indexing.',
+        description: 'FeatherPanel plugin developer docs for humans and LLMs.',
+        active: 'plugins',
+        order: [
+            'ai-guide.md',
+            'getting-started.md',
+            'examples.md',
+            'recipes.md',
+            'README.md',
+            'themes.md',
+            'ui-packs.md',
+            'power-sdk.md',
+        ],
+        startIds: new Set(['ai-guide', 'getting-started', 'examples', 'recipes']),
+        indexType: 'featherpanel.plugins.index',
+        formats: [
+            { href: `${DOCS_BASE}/plugins/ai-guide.md`, label: 'ai-guide.md' },
+            { href: `${DOCS_BASE}/plugins/themes.md`, label: 'themes.md' },
+            { href: `${DOCS_BASE}/plugins/power-sdk.md`, label: 'power-sdk.md' },
+            { href: `${DOCS_BASE}/plugins/llms.txt`, label: 'llms.txt' },
+            { href: `${DOCS_BASE}/plugins/index.json`, label: 'index.json' },
+        ],
+        extraSectionsHtml: `<section class="fp-section">
+  <h2>Appearance portals</h2>
+  <div class="fp-grid">
+    <a class="fp-card-link" href="${DOCS_BASE}/plugin-themes.html"><div class="fp-card"><h2>Themes &amp; UI packs</h2><p>Human HTML overview — how to make theme.json / ui.json packs.</p></div></a>
+    <a class="fp-card-link" href="${DOCS_BASE}/plugin-power.html"><div class="fp-card"><h2>Power SDK</h2><p>window.FeatherPanel events, actions, modals, search, shortcuts.</p></div></a>
+  </div>
+</section>`,
+    });
+}
+
+function buildAuthSection() {
+    if (!fs.existsSync(path.join(PUBLIC_DIR, 'auth'))) {
+        console.warn('⚠️  No auth/ docs seeded — skipping auth index');
+        return;
+    }
+    buildMarkdownSection({
+        dirName: 'auth',
+        title: 'Auth & identity',
+        subtitle: 'OIDC login, passkeys, and API-key OAuth2 (callback vs device).',
+        description: 'FeatherPanel authentication and API consent docs for operators and LLMs.',
+        active: 'auth',
+        order: ['README.md', 'oidc-sso.md', 'passkeys.md'],
+        startIds: new Set(['oidc-sso', 'passkeys']),
+        indexType: 'featherpanel.auth.index',
+        formats: [
+            { href: `${DOCS_BASE}/auth/README.md`, label: 'README.md' },
+            { href: `${DOCS_BASE}/api/oauth2.md`, label: 'oauth2.md' },
+            { href: `${DOCS_BASE}/api/oauth2-playground.html`, label: 'OAuth2 playground' },
+            { href: `${DOCS_BASE}/auth/llms.txt`, label: 'llms.txt' },
+        ],
+        extraSectionsHtml: `<section class="fp-section">
+  <h2>API key consent (not login)</h2>
+  <div class="fp-grid">
+    <a class="fp-card-link" href="${DOCS_BASE}/view.html?doc=api/oauth2.md"><div class="fp-card"><h2>OAuth2 guide</h2><p>Callback mode=user|server and device flow for fp_ API keys.</p></div></a>
+    <a class="fp-card-link" href="${DOCS_BASE}/api/oauth2-playground.html"><div class="fp-card"><h2>Playground</h2><p>Build callback URLs and try the device poll flow against a live panel.</p></div></a>
+  </div>
+</section>`,
+    });
 }
 
 function attachOpenApi() {
     if (!fs.existsSync(OPENAPI_SOURCE)) {
-        console.warn(`⚠️  openapi.json not found at ${OPENAPI_SOURCE} — API Redoc will lack the spec until Pages/CI generates it.`);
+        console.warn(
+            `⚠️  openapi.json not found at ${OPENAPI_SOURCE} — API Redoc will lack the spec until Pages/CI generates it.`,
+        );
         return false;
     }
     ensureDir(path.join(PUBLIC_DIR, 'api'));
@@ -242,6 +331,12 @@ function assertOutputs() {
         'installer/all.json',
         'plugins/index.html',
         'plugins/ai-guide.md',
+        'plugins/themes.md',
+        'plugins/power-sdk.md',
+        'auth/index.html',
+        'auth/oidc-sso.md',
+        'auth/passkeys.md',
+        'api/oauth2.md',
         'catalog.json',
         'llms.txt',
         'rag/index.json',
@@ -261,12 +356,13 @@ function main() {
     }
 
     buildPluginsSection();
+    buildAuthSection();
     attachOpenApi();
     runCatalog();
     assertOutputs();
 
     console.log('\n✅ Full docs build complete → public/icanhasfeatherpanel/');
-    console.log('   Includes: plugins, pages, widgets, CLI, settings, installer, events, permissions, API, RAG');
+    console.log('   Includes: plugins, auth, pages, widgets, CLI, settings, installer, events, permissions, API, RAG');
 }
 
 main();

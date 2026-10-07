@@ -132,7 +132,6 @@ jobs:
             ghcr.io/mythicalltd/featherpanel-backend:${{ steps.version.outputs.tag }}-linux-amd64 \
             ghcr.io/mythicalltd/featherpanel-backend:${{ steps.version.outputs.tag }}-linux-arm64
 
-
   build-frontendv2:
     name: Build & Push Frontend v2 (Release) - ${{ matrix.platform }}
     runs-on: ${{ matrix.runner }}
@@ -192,6 +191,42 @@ jobs:
         run: |
           PLATFORM_TAG=$(echo "${{ matrix.platform }}" | sed 's/\//-/g')
           echo "tag=$PLATFORM_TAG" >> $GITHUB_OUTPUT
+
+      - name: Setup PHP (OpenAPI for in-panel docs)
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          tools: composer:v2
+          coverage: none
+
+      - name: Generate OpenAPI specification
+        working-directory: backend
+        run: |
+          composer install --no-interaction --no-progress --prefer-dist
+          COMPOSER_ALLOW_SUPERUSER=1 composer openapi
+          test -s openapi.json
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontendv2/pnpm-lock.yaml
+
+      - name: Generate developer docs (not committed; baked into image)
+        working-directory: frontendv2
+        env:
+          OPENAPI_JSON: ../backend/openapi.json
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm export:docs
+          test -f public/icanhasfeatherpanel/api/openapi.json
+          test -f public/icanhasfeatherpanel/api/oauth2.md
 
       - name: Build & Push Frontend v2
         uses: useblacksmith/build-push-action@v2

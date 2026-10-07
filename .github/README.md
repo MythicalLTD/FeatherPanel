@@ -162,7 +162,7 @@ Examples for crawlers: `…/pages/all.json`, `…/cli/all.json`, `…/cli/usage.
 
 <br />
 
-Hand-authored sources live in `frontendv2/docsrc/icanhasfeatherpanel/`. The whole `frontendv2/public/icanhasfeatherpanel/` tree is **generated and gitignored** — built at ship time (GitHub Pages, Docker image builds, `make` release) or locally when you need it.
+Hand-authored inputs live in `frontendv2/icanhas/` (plugin Markdown, auth guides, assets, schemas). One command — `pnpm export:docs` — builds the **entire** `public/icanhasfeatherpanel/` tree (widgets, pages, permissions, events, API + OpenAPI, CLI, settings, installer, plugins/auth indexes, RAG). That output is gitignored and produced at ship time for **both** GitHub Pages (`pnpm build:public-docs`) and Docker/panel images (host `export:docs` then `frontendv2` image build, or `pnpm build:with-docs` / `make frontend`).
 
 ```bash
 # 1. Generate OpenAPI from PHP controller annotations

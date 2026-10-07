@@ -43,5 +43,5 @@ package-lock.json
 !nginx.conf
 
 # Generated developer docs — built by `pnpm export:docs` / `pnpm build:public-docs`.
-# Hand-authored sources live in docsrc/icanhasfeatherpanel/ (committed).
+# Hand-authored sources live in icanhas/ (committed). Served at /icanhasfeatherpanel/.
 /public/icanhasfeatherpanel/

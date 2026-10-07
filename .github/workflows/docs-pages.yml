@@ -14,7 +14,7 @@ on:
       - "backend/composer.lock"
       - "frontendv2/scripts/**"
       - "frontendv2/src/**"
-      - "frontendv2/docsrc/icanhasfeatherpanel/**"
+      - "frontendv2/icanhas/**"
       - "installer/**"
       - "permission_nodes.fpperm"
       - ".github/workflows/docs-pages.yml"

@@ -8,7 +8,8 @@ dockerfiles/mariadb/data
 installer.log
 devlogs.log
 mysql/
-docs/
+# Root docs folder only (not frontendv2/docs or similar)
+/docs/
 nginx.conf
 backend/public/addons/*
 backend/public/components/*

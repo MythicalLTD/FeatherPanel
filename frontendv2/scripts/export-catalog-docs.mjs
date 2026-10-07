@@ -56,7 +56,22 @@ function walk(dir, files = []) {
 
 function sectionFor(rel) {
     const top = rel.split('/')[0];
-    if (['plugins', 'widgets', 'events', 'permissions', 'api', 'schemas', 'rag', 'assets'].includes(top)) {
+    if (
+        [
+            'plugins',
+            'pages',
+            'widgets',
+            'cli',
+            'settings',
+            'installer',
+            'events',
+            'permissions',
+            'api',
+            'schemas',
+            'rag',
+            'assets',
+        ].includes(top)
+    ) {
         return top;
     }
     return 'root';
@@ -118,6 +133,19 @@ function buildCatalog() {
             llms_txt: `${DOCS_BASE}/llms.txt`,
             catalog_json: `${DOCS_BASE}/catalog.json`,
             plugins_ai_guide: `${DOCS_BASE}/plugins/ai-guide.md`,
+            plugins_themes_md: `${DOCS_BASE}/plugins/themes.md`,
+            plugins_power_sdk_md: `${DOCS_BASE}/plugins/power-sdk.md`,
+            auth_index: `${DOCS_BASE}/auth/`,
+            auth_oidc_md: `${DOCS_BASE}/auth/oidc-sso.md`,
+            auth_passkeys_md: `${DOCS_BASE}/auth/passkeys.md`,
+            oauth2_md: `${DOCS_BASE}/api/oauth2.md`,
+            pages_all_json: `${DOCS_BASE}/pages/all.json`,
+            cli_usage_md: `${DOCS_BASE}/cli/usage.md`,
+            cli_all_json: `${DOCS_BASE}/cli/all.json`,
+            settings_guide_md: `${DOCS_BASE}/settings/guide.md`,
+            settings_all_json: `${DOCS_BASE}/settings/all.json`,
+            installer_guide_md: `${DOCS_BASE}/installer/guide.md`,
+            installer_all_json: `${DOCS_BASE}/installer/all.json`,
             permissions_all_json: `${DOCS_BASE}/permissions/all.json`,
             events_all_json: `${DOCS_BASE}/events/all.json`,
             widgets_index_json: `${DOCS_BASE}/widgets/index.json`,
@@ -130,7 +158,7 @@ function buildLlmsTxt(catalog) {
     const lines = [
         '# FeatherPanel Developer Docs',
         '',
-        '> Machine-readable documentation for FeatherPanel plugins, widgets, events, permissions, and HTTP API.',
+        '> Machine-readable documentation for FeatherPanel plugins, frontend pages, widgets, CLI, admin settings, installer, events, permissions, and HTTP API.',
         '> Prefer .md / .json over HTML when indexing for RAG.',
         '',
         `Base: https://mythicalltd.github.io/FeatherPanel${DOCS_BASE}/`,
@@ -140,6 +168,21 @@ function buildLlmsTxt(catalog) {
         '',
         `- [Plugin AI guide](${DOCS_BASE}/plugins/ai-guide.md)`,
         `- [Plugins index](${DOCS_BASE}/plugins/README.md)`,
+        `- [How to make themes](${DOCS_BASE}/plugins/themes.md)`,
+        `- [UI packs](${DOCS_BASE}/plugins/ui-packs.md)`,
+        `- [Power SDK](${DOCS_BASE}/plugins/power-sdk.md)`,
+        `- [Auth index](${DOCS_BASE}/auth/README.md)`,
+        `- [OIDC / SSO login](${DOCS_BASE}/auth/oidc-sso.md)`,
+        `- [Passkeys](${DOCS_BASE}/auth/passkeys.md)`,
+        `- [OAuth2 API consent (callback + device)](${DOCS_BASE}/api/oauth2.md)`,
+        `- [Frontend pages (all JSON)](${DOCS_BASE}/pages/all.json)`,
+        `- [Frontend pages (Markdown)](${DOCS_BASE}/pages/index.md)`,
+        `- [CLI usage (prod)](${DOCS_BASE}/cli/usage.md)`,
+        `- [CLI commands (all JSON)](${DOCS_BASE}/cli/all.json)`,
+        `- [Admin settings guide](${DOCS_BASE}/settings/guide.md)`,
+        `- [Admin settings (all JSON)](${DOCS_BASE}/settings/all.json)`,
+        `- [Installer guide](${DOCS_BASE}/installer/guide.md)`,
+        `- [Installer (all JSON)](${DOCS_BASE}/installer/all.json)`,
         `- [Permissions (all JSON)](${DOCS_BASE}/permissions/all.json)`,
         `- [Permissions (Markdown index)](${DOCS_BASE}/permissions/index.md)`,
         `- [Events (all JSON)](${DOCS_BASE}/events/all.json)`,
@@ -271,7 +314,12 @@ function writeGlobalMarkdownViewer() {
       <div class="fp-nav-links">
         <a href="${DOCS_BASE}/">Home</a>
         <a href="${DOCS_BASE}/plugins/">Plugins</a>
+        <a href="${DOCS_BASE}/auth/">Auth</a>
+        <a href="${DOCS_BASE}/pages/">Pages</a>
         <a href="${DOCS_BASE}/widgets/">Widgets</a>
+        <a href="${DOCS_BASE}/cli/">CLI</a>
+        <a href="${DOCS_BASE}/settings/">Settings</a>
+        <a href="${DOCS_BASE}/installer/">Installer</a>
         <a href="${DOCS_BASE}/events/">Events</a>
         <a href="${DOCS_BASE}/permissions/">Permissions</a>
         <a href="${DOCS_BASE}/api/">API</a>
@@ -307,7 +355,7 @@ function writeGlobalMarkdownViewer() {
           var html = marked.parse(md);
           html = html.replace(/href="(\\.\\/)?([a-zA-Z0-9._\\/-]+\\.md)"/g, function (_, _dot, target) {
             var baseDir = doc.split('/').slice(0, -1).join('/');
-            var resolved = target.startsWith('plugins/') || target.startsWith('widgets/') || target.startsWith('events/') || target.startsWith('permissions/') || target.startsWith('api/') || target.startsWith('rag/')
+            var resolved = /^(plugins|pages|widgets|cli|settings|installer|events|permissions|api|rag)\\//.test(target)
               ? target
               : (baseDir ? baseDir + '/' : '') + target.replace(/^\\.\\//, '');
             resolved = resolved.replace(/\\/\\.\\//g, '/');
