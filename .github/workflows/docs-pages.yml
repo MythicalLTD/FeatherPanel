@@ -6,15 +6,18 @@ on:
       - develop
       - main
     paths:
-      - 'backend/app/Controllers/**'
-      - 'backend/app/Plugins/**'
-      - 'backend/composer.json'
-      - 'backend/composer.lock'
-      - 'frontendv2/scripts/**'
-      - 'frontendv2/src/**'
-      - 'frontendv2/public/icanhasfeatherpanel/**'
-      - 'permission_nodes.fpperm'
-      - '.github/workflows/docs-pages.yml'
+      - "backend/app/Controllers/**"
+      - "backend/app/Cli/**"
+      - "backend/app/Config/**"
+      - "backend/app/Plugins/**"
+      - "backend/composer.json"
+      - "backend/composer.lock"
+      - "frontendv2/scripts/**"
+      - "frontendv2/src/**"
+      - "frontendv2/docsrc/icanhasfeatherpanel/**"
+      - "installer/**"
+      - "permission_nodes.fpperm"
+      - ".github/workflows/docs-pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -37,7 +40,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.5'
+          php-version: "8.5"
           tools: composer:v2
           coverage: none
 

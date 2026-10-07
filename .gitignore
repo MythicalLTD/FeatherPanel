@@ -2,7 +2,6 @@ dockerfiles/mariadb/data
 .installed
 ./package.json
 ./yarn.lock
-./count-results/
 /frontend/.vite
 *.fpa
 *.backup.*
@@ -50,3 +49,5 @@ wings/
 .pnpm-store
 docs-site/
 backend/openapi.json
+Untitled
+.featherpanel.conf

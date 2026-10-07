@@ -140,7 +140,7 @@ release:
 	@echo -e "${GREEN}${CHECK} Build complete${NC}\n"
 
 	@echo -e "${PURPLE}${INFO} Updating README file with code stats...${NC}"
-	@node count.js --update-readme
+	@node .github/tools/count.js --update-readme
 	@echo -e "${GREEN}${CHECK} README updated with code statistics${NC}\n"
 	
 
