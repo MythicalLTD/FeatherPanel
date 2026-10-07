@@ -23,8 +23,8 @@ use App\Chat\Database;
 use App\App as MainApp;
 use App\Helpers\XChaCha20;
 use App\Cli\CommandBuilder;
-use App\Plugins\ObsoleteAddons;
 use App\Config\ConfigInterface;
+use App\Plugins\ObsoleteAddons;
 
 class Migrate extends App implements CommandBuilder
 {

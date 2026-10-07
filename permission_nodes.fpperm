@@ -15,6 +15,11 @@ ADMIN_USERS_CREATE=admin.users.create | Admin Users | Create new users
 ADMIN_USERS_EDIT=admin.users.edit | Admin Users | Edit existing users
 ADMIN_USERS_DELETE=admin.users.delete | Admin Users | Delete users
 
+# Banned IPs Permissions
+ADMIN_BLOCKED_IPS_VIEW=admin.blocked_ips.view | Admin Banned IPs | View banned panel IPs
+ADMIN_BLOCKED_IPS_CREATE=admin.blocked_ips.create | Admin Banned IPs | Ban IPs from panel registration
+ADMIN_BLOCKED_IPS_DELETE=admin.blocked_ips.delete | Admin Banned IPs | Remove panel IP bans
+
 # Locations Permissions
 ADMIN_LOCATIONS_VIEW=admin.locations.view | Admin Locations | View locations
 ADMIN_LOCATIONS_CREATE=admin.locations.create | Admin Locations | Create new locations
@@ -104,7 +109,6 @@ ADMIN_PLUGINS_UNINSTALL=admin.plugins.uninstall | Admin Plugins | Uninstall plug
 ADMIN_PLUGINS_MANAGE=admin.plugins.manage | Admin Plugins | Manage plugins
 
 # Database Management
-ADMIN_DATABASES_VIEW=admin.databases.view | Admin Databases | View databases
 ADMIN_DATABASES_MANAGE=admin.databases.manage | Admin Databases | Manage database
 
 # Statistics 
@@ -134,6 +138,13 @@ ADMIN_BACKUPS_CREATE=admin.backups.create | Admin Database Snapshots | Create da
 ADMIN_BACKUPS_DELETE=admin.backups.delete | Admin Database Snapshots | Delete database snapshots
 ADMIN_BACKUPS_RESTORE=admin.backups.restore | Admin Database Snapshots | Restore database from snapshot
 ADMIN_BACKUPS_DOWNLOAD=admin.backups.download | Admin Database Snapshots | Download database snapshots
+
+# Backup Schedules Permissions
+ADMIN_BACKUP_SCHEDULES_VIEW=admin.backup_schedules.view | Admin Backup Schedules | View server backup schedules
+ADMIN_BACKUP_SCHEDULES_CREATE=admin.backup_schedules.create | Admin Backup Schedules | Create server backup schedules
+ADMIN_BACKUP_SCHEDULES_EDIT=admin.backup_schedules.edit | Admin Backup Schedules | Edit server backup schedules
+ADMIN_BACKUP_SCHEDULES_DELETE=admin.backup_schedules.delete | Admin Backup Schedules | Delete server backup schedules
+ADMIN_BACKUP_SCHEDULES_RUN=admin.backup_schedules.run | Admin Backup Schedules | Manually run server backup schedules
 
 # Knowledgebase Permissions
 ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW=admin.knowledgebase.categories.view | Admin Knowledgebase Categories | View knowledgebase categories
@@ -191,3 +202,7 @@ ADMIN_WEBSPACES_VIEW=admin.webspaces.view | Admin WebSpaces | View webspaces
 ADMIN_WEBSPACES_CREATE=admin.webspaces.create | Admin WebSpaces | Create new webspaces
 ADMIN_WEBSPACES_EDIT=admin.webspaces.edit | Admin WebSpaces | Edit existing webspaces
 ADMIN_WEBSPACES_DELETE=admin.webspaces.delete | Admin WebSpaces | Delete webspaces
+
+ADMIN_WINGS_BACKUPS_VIEW=admin.wings_backups.view | Admin Wings Backups | View Wings backups
+ADMIN_WINGS_BACKUPS_MANAGE=admin.wings_backups.manage | Admin Wings Backups | Manage Wings backup settings
+ADMIN_WINGS_BACKUPS_RUN=admin.wings_backups.run | Admin Wings Backups | Run or trigger Wings backups

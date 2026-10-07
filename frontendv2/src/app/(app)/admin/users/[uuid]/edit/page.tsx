@@ -224,6 +224,11 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
         report_to_abuseipdb: false,
         abuseipdb_categories: [],
     });
+    const [ipBanDialogOpen, setIpBanDialogOpen] = useState(false);
+    const [ipBanTarget, setIpBanTarget] = useState('');
+    const [ipBanDuration, setIpBanDuration] = useState('');
+    const [ipBanReason, setIpBanReason] = useState('');
+    const [ipBanSubmitting, setIpBanSubmitting] = useState(false);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-users-edit');
 
@@ -470,6 +475,31 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             toast.error(getApiErrorMessage(error, t, 'admin.users.messages.ban_failed'));
         } finally {
             setBanSubmitting(false);
+        }
+    };
+
+    const confirmIpBan = async () => {
+        const ip = ipBanTarget.trim();
+        if (!ip) {
+            return;
+        }
+        setIpBanSubmitting(true);
+        try {
+            const { data } = await axios.put('/api/admin/blocked-ips', {
+                ip,
+                duration: ipBanDuration.trim() || 'permanent',
+                reason: ipBanReason.trim() || undefined,
+            });
+            if (data?.success) {
+                toast.success(t('admin.blocked_ips.messages.added'));
+                setIpBanDialogOpen(false);
+            } else {
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.blocked_ips.messages.add_failed'));
+            }
+        } catch (error: unknown) {
+            toast.error(getApiErrorMessage(error, t, 'admin.blocked_ips.messages.add_failed'));
+        } finally {
+            setIpBanSubmitting(false);
         }
     };
 
@@ -863,19 +893,55 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 </span>
                             </div>
                             {user.last_ip && (
-                                <div className='flex justify-between'>
+                                <div className='flex items-center justify-between gap-2'>
                                     <span className='text-muted-foreground'>
                                         {t('admin.users.edit.account_info.last_ip')}
                                     </span>
-                                    <span className='font-mono'>{user.last_ip}</span>
+                                    <div className='flex items-center gap-2'>
+                                        <span className='font-mono'>{user.last_ip}</span>
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            size='sm'
+                                            className='h-7 px-2 text-xs'
+                                            onClick={() => {
+                                                setIpBanTarget(user.last_ip || '');
+                                                setIpBanDuration('');
+                                                setIpBanReason('');
+                                                setIpBanDialogOpen(true);
+                                            }}
+                                        >
+                                            <Ban className='mr-1 h-3 w-3' />
+                                            {t('admin.blocked_ips.quick_ban')}
+                                        </Button>
+                                    </div>
                                 </div>
                             )}
                             {user.first_ip && (
-                                <div className='flex justify-between'>
+                                <div className='flex items-center justify-between gap-2'>
                                     <span className='text-muted-foreground'>
                                         {t('admin.users.edit.account_info.first_ip')}
                                     </span>
-                                    <span className='font-mono'>{user.first_ip}</span>
+                                    <div className='flex items-center gap-2'>
+                                        <span className='font-mono'>{user.first_ip}</span>
+                                        {user.first_ip !== user.last_ip ? (
+                                            <Button
+                                                type='button'
+                                                variant='outline'
+                                                size='sm'
+                                                className='h-7 px-2 text-xs'
+                                                onClick={() => {
+                                                    setIpBanTarget(user.first_ip || '');
+                                                    setIpBanDuration('');
+                                                    setIpBanReason('');
+                                                    setIpBanDialogOpen(true);
+                                                }}
+                                            >
+                                                <Ban className='mr-1 h-3 w-3' />
+                                                {t('admin.blocked_ips.quick_ban')}
+                                            </Button>
+                                        ) : null}
+                                    </div>
                                 </div>
                             )}
                             {user.discord_oauth2_username && (
@@ -1676,6 +1742,58 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             }
                         >
                             {banSubmitting ? t('common.loading') : t('admin.users.edit.ban_user')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={ipBanDialogOpen} onOpenChange={setIpBanDialogOpen}>
+                <AlertDialogContent className='max-w-lg'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className='flex items-center gap-2'>
+                            <Ban className='h-5 w-5 text-red-500' />
+                            {t('admin.blocked_ips.quick_ban_title')}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('admin.blocked_ips.quick_ban_description', { ip: ipBanTarget })}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className='space-y-4 py-2'>
+                        <div className='space-y-2'>
+                            <Label htmlFor='ip-ban-duration'>{t('admin.blocked_ips.duration_label')}</Label>
+                            <Input
+                                id='ip-ban-duration'
+                                autoComplete='off'
+                                disabled={ipBanSubmitting}
+                                placeholder={t('admin.blocked_ips.duration_placeholder')}
+                                value={ipBanDuration}
+                                onChange={(e) => setIpBanDuration(e.target.value)}
+                            />
+                            <p className='text-muted-foreground text-xs'>{t('admin.blocked_ips.duration_help')}</p>
+                        </div>
+                        <div className='space-y-2'>
+                            <Label htmlFor='ip-ban-reason'>{t('admin.blocked_ips.reason_label')}</Label>
+                            <Textarea
+                                id='ip-ban-reason'
+                                rows={2}
+                                disabled={ipBanSubmitting}
+                                placeholder={t('admin.blocked_ips.reason_placeholder')}
+                                value={ipBanReason}
+                                onChange={(e) => setIpBanReason(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={ipBanSubmitting}>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                void confirmIpBan();
+                            }}
+                            className='bg-red-600 hover:bg-red-700'
+                            disabled={ipBanSubmitting || !ipBanTarget.trim()}
+                        >
+                            {ipBanSubmitting ? t('common.loading') : t('admin.blocked_ips.quick_ban_submit')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

@@ -44,6 +44,14 @@ class Permissions {
     /** Delete users */
     public static ADMIN_USERS_DELETE = 'admin.users.delete';
 
+    // Admin Banned IPs Permissions
+    /** View banned panel IPs */
+    public static ADMIN_BLOCKED_IPS_VIEW = 'admin.blocked_ips.view';
+    /** Ban IPs from panel registration */
+    public static ADMIN_BLOCKED_IPS_CREATE = 'admin.blocked_ips.create';
+    /** Remove panel IP bans */
+    public static ADMIN_BLOCKED_IPS_DELETE = 'admin.blocked_ips.delete';
+
     // Admin Locations Permissions
     /** View locations */
     public static ADMIN_LOCATIONS_VIEW = 'admin.locations.view';
@@ -242,6 +250,18 @@ class Permissions {
     /** Download database snapshots */
     public static ADMIN_BACKUPS_DOWNLOAD = 'admin.backups.download';
 
+    // Admin Backup Schedules Permissions
+    /** View server backup schedules */
+    public static ADMIN_BACKUP_SCHEDULES_VIEW = 'admin.backup_schedules.view';
+    /** Create server backup schedules */
+    public static ADMIN_BACKUP_SCHEDULES_CREATE = 'admin.backup_schedules.create';
+    /** Edit server backup schedules */
+    public static ADMIN_BACKUP_SCHEDULES_EDIT = 'admin.backup_schedules.edit';
+    /** Delete server backup schedules */
+    public static ADMIN_BACKUP_SCHEDULES_DELETE = 'admin.backup_schedules.delete';
+    /** Manually run server backup schedules */
+    public static ADMIN_BACKUP_SCHEDULES_RUN = 'admin.backup_schedules.run';
+
     // Admin Knowledgebase Categories Permissions
     /** View knowledgebase categories */
     public static ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW = 'admin.knowledgebase.categories.view';
@@ -348,6 +368,14 @@ class Permissions {
     /** Delete webspaces */
     public static ADMIN_WEBSPACES_DELETE = 'admin.webspaces.delete';
 
+    // Admin Wings Backups Permissions
+    /** View Wings backups */
+    public static ADMIN_WINGS_BACKUPS_VIEW = 'admin.wings_backups.view';
+    /** Manage Wings backup settings */
+    public static ADMIN_WINGS_BACKUPS_MANAGE = 'admin.wings_backups.manage';
+    /** Run or trigger Wings backups */
+    public static ADMIN_WINGS_BACKUPS_RUN = 'admin.wings_backups.run';
+
     /**
      * Returns all permission nodes with metadata.
      */
@@ -388,6 +416,24 @@ class Permissions {
                 value: Permissions.ADMIN_USERS_DELETE,
                 category: 'Admin Users',
                 description: 'Delete users',
+            },
+            {
+                constant: 'ADMIN_BLOCKED_IPS_VIEW',
+                value: Permissions.ADMIN_BLOCKED_IPS_VIEW,
+                category: 'Admin Banned IPs',
+                description: 'View banned panel IPs',
+            },
+            {
+                constant: 'ADMIN_BLOCKED_IPS_CREATE',
+                value: Permissions.ADMIN_BLOCKED_IPS_CREATE,
+                category: 'Admin Banned IPs',
+                description: 'Ban IPs from panel registration',
+            },
+            {
+                constant: 'ADMIN_BLOCKED_IPS_DELETE',
+                value: Permissions.ADMIN_BLOCKED_IPS_DELETE,
+                category: 'Admin Banned IPs',
+                description: 'Remove panel IP bans',
             },
             {
                 constant: 'ADMIN_LOCATIONS_VIEW',
@@ -864,6 +910,36 @@ class Permissions {
                 description: 'Download database snapshots',
             },
             {
+                constant: 'ADMIN_BACKUP_SCHEDULES_VIEW',
+                value: Permissions.ADMIN_BACKUP_SCHEDULES_VIEW,
+                category: 'Admin Backup Schedules',
+                description: 'View server backup schedules',
+            },
+            {
+                constant: 'ADMIN_BACKUP_SCHEDULES_CREATE',
+                value: Permissions.ADMIN_BACKUP_SCHEDULES_CREATE,
+                category: 'Admin Backup Schedules',
+                description: 'Create server backup schedules',
+            },
+            {
+                constant: 'ADMIN_BACKUP_SCHEDULES_EDIT',
+                value: Permissions.ADMIN_BACKUP_SCHEDULES_EDIT,
+                category: 'Admin Backup Schedules',
+                description: 'Edit server backup schedules',
+            },
+            {
+                constant: 'ADMIN_BACKUP_SCHEDULES_DELETE',
+                value: Permissions.ADMIN_BACKUP_SCHEDULES_DELETE,
+                category: 'Admin Backup Schedules',
+                description: 'Delete server backup schedules',
+            },
+            {
+                constant: 'ADMIN_BACKUP_SCHEDULES_RUN',
+                value: Permissions.ADMIN_BACKUP_SCHEDULES_RUN,
+                category: 'Admin Backup Schedules',
+                description: 'Manually run server backup schedules',
+            },
+            {
                 constant: 'ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW',
                 value: Permissions.ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW,
                 category: 'Admin Knowledgebase Categories',
@@ -1108,6 +1184,24 @@ class Permissions {
                 value: Permissions.ADMIN_WEBSPACES_DELETE,
                 category: 'Admin WebSpaces',
                 description: 'Delete webspaces',
+            },
+            {
+                constant: 'ADMIN_WINGS_BACKUPS_VIEW',
+                value: Permissions.ADMIN_WINGS_BACKUPS_VIEW,
+                category: 'Admin Wings Backups',
+                description: 'View Wings backups',
+            },
+            {
+                constant: 'ADMIN_WINGS_BACKUPS_MANAGE',
+                value: Permissions.ADMIN_WINGS_BACKUPS_MANAGE,
+                category: 'Admin Wings Backups',
+                description: 'Manage Wings backup settings',
+            },
+            {
+                constant: 'ADMIN_WINGS_BACKUPS_RUN',
+                value: Permissions.ADMIN_WINGS_BACKUPS_RUN,
+                category: 'Admin Wings Backups',
+                description: 'Run or trigger Wings backups',
             },
         ];
     }

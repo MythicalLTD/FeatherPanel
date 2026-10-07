@@ -298,7 +298,7 @@ Group=root
 WorkingDirectory=${FRONTEND_DIR}
 Environment=NODE_ENV=production
 Environment=PORT=3000
-ExecStart=/bin/bash -lc 'export NVM_DIR=/root/.nvm && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && pnpm start'
+ExecStart=/bin/bash -lc 'export NVM_DIR=/root/.nvm && [ -s "\$NVM_DIR/nvm.sh" ] && . "\$NVM_DIR/nvm.sh" && pnpm start'
 Restart=always
 RestartSec=5
 KillSignal=SIGINT

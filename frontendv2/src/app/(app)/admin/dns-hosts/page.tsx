@@ -1,9 +1,5 @@
 /*
 This file is part of FeatherPanel.
- */
-
-/*
-This file is part of FeatherPanel.
 
 Copyright (C) 2025 MythicalSystems Studios
 Copyright (C) 2025 FeatherPanel Contributors
@@ -25,9 +21,12 @@ import { toast } from 'sonner';
 import { Cloud, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
+import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
+import { EmptyState } from '@/components/featherui/EmptyState';
 import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
 import { getApiErrorMessage } from '@/lib/api-errors';
@@ -76,6 +75,7 @@ export default function AdminDnsHostsPage() {
     >({});
 
     const load = useCallback(async () => {
+        setLoading(true);
         try {
             const [hostsRes, nodesRes] = await Promise.all([
                 axios.get('/api/admin/dns-hosts'),
@@ -170,101 +170,172 @@ export default function AdminDnsHostsPage() {
         return webNodes.find((n) => n.id === id)?.name || `#${id}`;
     };
 
-    if (loading) return <TableSkeleton count={3} />;
-
     return (
         <div className='space-y-6'>
-            <PageHeader title={t('admin.dnsHosts.title')} description={t('admin.dnsHosts.description')} icon={Cloud} />
-
-            <div className='border-border grid gap-3 rounded-xl border p-4 md:grid-cols-2'>
-                <div className='space-y-2'>
-                    <Label>{t('admin.dnsHosts.form.name')}</Label>
-                    <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                </div>
-                <div className='space-y-2'>
-                    <Label>{t('admin.dnsHosts.form.webNode')}</Label>
-                    <Select
-                        value={form.web_node_id}
-                        onChange={(e) => setForm({ ...form, web_node_id: e.target.value })}
-                    >
-                        <option value=''>{t('admin.dnsHosts.form.selectWebNode')}</option>
-                        {webNodes.map((node) => (
-                            <option key={node.id} value={String(node.id)}>
-                                {node.name}
-                            </option>
-                        ))}
-                    </Select>
-                </div>
-                <p className='text-muted-foreground text-xs md:col-span-2'>{t('admin.dnsHosts.form.nodeHint')}</p>
-                <div className='md:col-span-2'>
-                    <Button loading={busy} onClick={() => void createHost()}>
-                        <Plus className='mr-1 h-4 w-4' />
-                        {t('admin.dnsHosts.create')}
+            <PageHeader
+                title={t('admin.dnsHosts.title')}
+                description={t('admin.dnsHosts.description')}
+                icon={Cloud}
+                actions={
+                    <Button type='button' variant='outline' disabled={loading} onClick={() => void load()}>
+                        <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                        {t('common.refresh')}
                     </Button>
-                </div>
-            </div>
+                }
+            />
 
-            <div className='border-border divide-border divide-y overflow-hidden rounded-xl border'>
-                {rows.length === 0 && <p className='text-muted-foreground p-4 text-sm'>{t('admin.dnsHosts.empty')}</p>}
-                {rows.map((row) => (
-                    <div key={row.id} className='space-y-2 px-4 py-3'>
-                        <div className='flex flex-wrap items-center justify-between gap-3'>
-                            <div>
-                                <p className='text-sm font-medium'>{row.name}</p>
-                                <p className='text-muted-foreground text-xs'>
-                                    {t('admin.dnsHosts.rowNodeDetails', {
-                                        webNode: webNodeName(row.web_node_id),
-                                    })}
-                                </p>
-                            </div>
-                            <div className='flex gap-2'>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    loading={testingId === row.id}
-                                    onClick={() => void testHost(row.id)}
-                                >
-                                    <RefreshCw className='mr-1 h-4 w-4' />
-                                    {t('admin.dnsHosts.test')}
-                                </Button>
-                                <Button variant='ghost' size='sm' onClick={() => void removeHost(row.id)}>
-                                    <Trash2 className='h-4 w-4' />
-                                </Button>
-                            </div>
-                        </div>
-                        {testZones[row.id] && (
-                            <div className='text-muted-foreground text-xs'>
-                                {t('admin.dnsHosts.discoveredZones', { count: String(testZones[row.id].length) })}
-                                <span className='ml-1'>{testZones[row.id].map((z) => z.name).join(', ')}</span>
-                            </div>
-                        )}
-                        {testDelegation[row.id] && (
-                            <div className='bg-muted/30 space-y-1 rounded-md p-2 text-xs'>
-                                <p className='font-medium'>{t('admin.dnsHosts.delegationTitle')}</p>
-                                <p>
-                                    {t('admin.dnsHosts.delegationNameservers', {
-                                        nameservers: testDelegation[row.id].nameservers.join(', '),
-                                    })}
-                                </p>
-                                {testDelegation[row.id].glue_ip && (
-                                    <p>
-                                        {t('admin.dnsHosts.delegationGlue', {
-                                            glue: `ns1.example.com → ${testDelegation[row.id].glue_ip}`,
-                                        })}
-                                    </p>
-                                )}
-                                {testDelegation[row.id].registrar_note && (
-                                    <p className='text-muted-foreground'>
-                                        {t('admin.dnsHosts.delegationNote', {
-                                            note: testDelegation[row.id].registrar_note ?? '',
-                                        })}
-                                    </p>
-                                )}
-                            </div>
-                        )}
+            <PageCard
+                title={t('admin.dnsHosts.createSection')}
+                description={t('admin.dnsHosts.createSectionHint')}
+                icon={Plus}
+            >
+                <div className='grid gap-4 md:grid-cols-2'>
+                    <div className='space-y-2'>
+                        <Label htmlFor='dns-host-name'>{t('admin.dnsHosts.form.name')}</Label>
+                        <Input
+                            id='dns-host-name'
+                            value={form.name}
+                            onChange={(e) => setForm({ ...form, name: e.target.value })}
+                            placeholder={t('admin.dnsHosts.form.namePlaceholder')}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    void createHost();
+                                }
+                            }}
+                        />
                     </div>
-                ))}
-            </div>
+                    <div className='space-y-2'>
+                        <Label htmlFor='dns-host-node'>{t('admin.dnsHosts.form.webNode')}</Label>
+                        <Select
+                            id='dns-host-node'
+                            value={form.web_node_id}
+                            onChange={(e) => setForm({ ...form, web_node_id: e.target.value })}
+                        >
+                            <option value=''>{t('admin.dnsHosts.form.selectWebNode')}</option>
+                            {webNodes.map((node) => (
+                                <option key={node.id} value={String(node.id)}>
+                                    {node.name}
+                                </option>
+                            ))}
+                        </Select>
+                    </div>
+                    <p className='text-muted-foreground text-xs md:col-span-2'>{t('admin.dnsHosts.form.nodeHint')}</p>
+                    <div className='md:col-span-2'>
+                        <Button loading={busy} onClick={() => void createHost()}>
+                            <Plus className='mr-2 h-4 w-4' />
+                            {t('admin.dnsHosts.create')}
+                        </Button>
+                    </div>
+                </div>
+            </PageCard>
+
+            {loading ? (
+                <TableSkeleton count={3} />
+            ) : rows.length === 0 ? (
+                <EmptyState
+                    icon={Cloud}
+                    title={t('admin.dnsHosts.empty')}
+                    description={t('admin.dnsHosts.emptyHint')}
+                />
+            ) : (
+                <div className='space-y-3'>
+                    <p className='text-muted-foreground text-sm'>
+                        {t('admin.dnsHosts.listSummary', { total: String(rows.length) })}
+                    </p>
+                    {rows.map((row) => {
+                        const badges: ResourceBadge[] = [
+                            {
+                                label: t('admin.dnsHosts.providerNode'),
+                                className: 'border-primary/25 bg-primary/10 text-primary',
+                            },
+                        ];
+                        const zones = testZones[row.id];
+                        const delegation = testDelegation[row.id];
+
+                        return (
+                            <ResourceCard
+                                key={row.id}
+                                icon={Cloud}
+                                title={row.name}
+                                subtitle={t('admin.dnsHosts.rowNodeDetails', {
+                                    webNode: webNodeName(row.web_node_id),
+                                })}
+                                badges={badges}
+                                layout='stacked'
+                                description={
+                                    zones || delegation ? (
+                                        <div className='bg-muted/30 space-y-2 rounded-xl p-3 text-xs'>
+                                            {zones ? (
+                                                <p className='text-muted-foreground'>
+                                                    {t('admin.dnsHosts.discoveredZones', {
+                                                        count: String(zones.length),
+                                                    })}{' '}
+                                                    <span className='text-foreground'>
+                                                        {zones.map((z) => z.name).join(', ') ||
+                                                            t('admin.dnsHosts.noZones')}
+                                                    </span>
+                                                </p>
+                                            ) : null}
+                                            {delegation ? (
+                                                <div className='space-y-1'>
+                                                    <p className='text-foreground font-medium'>
+                                                        {t('admin.dnsHosts.delegationTitle')}
+                                                    </p>
+                                                    <p>
+                                                        {t('admin.dnsHosts.delegationNameservers', {
+                                                            nameservers: delegation.nameservers.join(', '),
+                                                        })}
+                                                    </p>
+                                                    {delegation.glue_ip ? (
+                                                        <p>
+                                                            {t('admin.dnsHosts.delegationGlue', {
+                                                                glue: t('admin.dnsHosts.delegationGlueExample', {
+                                                                    ip: delegation.glue_ip,
+                                                                }),
+                                                            })}
+                                                        </p>
+                                                    ) : null}
+                                                    {delegation.registrar_note ? (
+                                                        <p className='text-muted-foreground'>
+                                                            {t('admin.dnsHosts.delegationNote', {
+                                                                note: delegation.registrar_note,
+                                                            })}
+                                                        </p>
+                                                    ) : null}
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    ) : undefined
+                                }
+                                actions={
+                                    <div className='flex flex-wrap gap-2'>
+                                        <Button
+                                            variant='outline'
+                                            size='sm'
+                                            loading={testingId === row.id}
+                                            onClick={() => void testHost(row.id)}
+                                        >
+                                            <RefreshCw className='mr-1.5 h-4 w-4' />
+                                            {t('admin.dnsHosts.test')}
+                                        </Button>
+                                        <Button
+                                            type='button'
+                                            variant='ghost'
+                                            size='sm'
+                                            className='text-destructive hover:bg-destructive/10 hover:text-destructive'
+                                            title={t('common.delete')}
+                                            onClick={() => void removeHost(row.id)}
+                                        >
+                                            <Trash2 className='h-4 w-4' />
+                                        </Button>
+                                    </div>
+                                }
+                            />
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 }

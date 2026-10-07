@@ -1188,12 +1188,12 @@ class SettingsController
                 'value' => $this->app
                     ->getConfig()
                     ->getSetting(ConfigInterface::SMTP_ENCRYPTION, 'tls'),
-                'description' => 'The SMTP encryption of the application',
+                'description' => 'SMTP encryption: starttls/tls for port 587 (e.g. Brevo), ssl for port 465 SMTPS, none for plain SMTP',
                 'type' => 'select',
                 'required' => true,
-                'placeholder' => 'tls',
-                'validation' => 'required|string|max:255',
-                'options' => ['tls', 'ssl'],
+                'placeholder' => 'starttls',
+                'validation' => 'required|string|in:starttls,tls,ssl,none',
+                'options' => ['starttls', 'tls', 'ssl', 'none'],
                 'category' => 'email',
             ],
             ConfigInterface::CAPTCHA_PROVIDER => [

@@ -336,12 +336,12 @@ export function TranslationProvider({ children, initialLocale, initialTranslatio
                 if (value && typeof value === 'object' && k in value) {
                     value = (value as Record<string, unknown>)[k];
                 } else {
-                    return key;
+                    return params?.defaultValue || key;
                 }
             }
 
             if (typeof value !== 'string') {
-                return key;
+                return params?.defaultValue || key;
             }
 
             if (params) {

@@ -17,8 +17,8 @@
 
 namespace App\Cli;
 
-use App\Plugins\ObsoleteAddons;
 use App\Cli\Commands\Help;
+use App\Plugins\ObsoleteAddons;
 
 class App extends Utils\MinecraftColorCodeSupport
 {

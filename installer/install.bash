@@ -134,6 +134,11 @@ done
 LOG_DIR=/var/www/featherpanel
 LOG_FILE=$LOG_DIR/install.log
 BACKUP_DIR="/var/www/featherpanel/backups"
+WINGS_BACKUP_DIR="/var/lib/featherpanel/wings_backup"
+WINGS_MIGRATION_DIR="/var/lib/featherpanel/wings_migrations"
+WINGS_CONFIG_FILE="/etc/featherpanel/config.yml"
+WINGS_VOLUMES_DEFAULT="/var/lib/featherpanel/volumes"
+WINGS_BACKUPS_DEFAULT="/var/lib/featherpanel/backups"
 CONFIG_FILE="/var/www/featherpanel/.featherpanel.conf"
 COMPOSE_FILE_PATH="$LOG_DIR/docker-compose.yml"
 
@@ -2208,6 +2213,40 @@ show_wings_menu() {
 	echo -e "     ${BLUE}→ Download latest Wings binary${NC}"
 	echo -e "     ${BLUE}→ Restart Wings service with new version${NC}"
 	echo ""
+	echo -e "  ${CYAN}${BOLD}[4]${NC} ${BOLD}Backup Manager${NC}"
+	echo -e "     ${BLUE}→ Create, list, restore, and manage Wings backups${NC}"
+	echo -e "     ${BLUE}→ Archive volumes under /var/lib/featherpanel/wings_backup${NC}"
+	echo -e "     ${BLUE}→ Export/Import for migrating Wings to another server${NC}"
+	echo ""
+	draw_hr
+}
+
+show_wings_backup_menu() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	print_centered "Wings Backup Manager" "$CYAN"
+	draw_hr
+	echo ""
+	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Create Backup${NC}"
+	echo -e "     ${BLUE}→ Zip server volumes into ${BOLD}$WINGS_BACKUP_DIR${NC}"
+	echo -e "     ${BLUE}→ Optional full mode also includes backups + config.yml${NC}"
+	echo ""
+	echo -e "  ${BLUE}${BOLD}[2]${NC} ${BOLD}List Backups${NC}"
+	echo -e "     ${BLUE}→ View local Wings backup archives${NC}"
+	echo ""
+	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Restore Backup${NC}"
+	echo -e "     ${YELLOW}⚠️  WARNING: This replaces volumes (and optionally config)${NC}"
+	echo ""
+	echo -e "  ${RED}${BOLD}[4]${NC} ${BOLD}Delete Backup${NC}"
+	echo -e "     ${YELLOW}⚠️  WARNING: Permanently deletes a backup file${NC}"
+	echo ""
+	echo -e "  ${CYAN}${BOLD}[5]${NC} ${BOLD}Export for Migration${NC}"
+	echo -e "     ${BLUE}→ Full package to move Wings from VM A to VM B${NC}"
+	echo ""
+	echo -e "  ${GREEN}${BOLD}[6]${NC} ${BOLD}Import Migration${NC}"
+	echo -e "     ${YELLOW}⚠️  WARNING: Replaces current Wings data${NC}"
+	echo ""
 	draw_hr
 }
 
@@ -2902,6 +2941,8 @@ install_wings() {
 	mkdir -p /var/lib/featherpanel/volumes
 	mkdir -p /var/lib/featherpanel/archives
 	mkdir -p /var/lib/featherpanel/backups
+	mkdir -p /var/lib/featherpanel/wings_backup
+	mkdir -p /var/lib/featherpanel/wings_migrations
 	mkdir -p /var/log/featherpanel
 	mkdir -p /tmp/featherpanel
 	mkdir -p /var/run/featherwings
@@ -3031,6 +3072,435 @@ update_wings() {
 	systemctl start featherwings
 
 	log_success "FeatherWings daemon updated successfully."
+}
+
+wings_is_installed() {
+	[ -x /usr/local/bin/featherwings ] || command -v featherwings >/dev/null 2>&1
+}
+
+wings_resolve_volumes_dir() {
+	local data_dir=""
+	if [ -f "$WINGS_CONFIG_FILE" ]; then
+		data_dir=$(grep -E '^\s*data:' "$WINGS_CONFIG_FILE" 2>/dev/null | head -1 | sed -E 's/.*data:[[:space:]]*"?([^"#]+)"?.*/\1/' | tr -d '[:space:]')
+	fi
+	if [ -n "$data_dir" ] && [ -d "$data_dir" ]; then
+		echo "$data_dir"
+	else
+		echo "$WINGS_VOLUMES_DEFAULT"
+	fi
+}
+
+wings_resolve_backups_dir() {
+	local backup_dir=""
+	if [ -f "$WINGS_CONFIG_FILE" ]; then
+		backup_dir=$(grep -E '^\s*backup_directory:' "$WINGS_CONFIG_FILE" 2>/dev/null | head -1 | sed -E 's/.*backup_directory:[[:space:]]*"?([^"#]+)"?.*/\1/' | tr -d '[:space:]')
+	fi
+	if [ -n "$backup_dir" ]; then
+		echo "$backup_dir"
+	else
+		echo "$WINGS_BACKUPS_DEFAULT"
+	fi
+}
+
+wings_cli_supports_node_backup() {
+	command -v featherwings >/dev/null 2>&1 && featherwings node-backup --help >/dev/null 2>&1
+}
+
+wings_stop_service() {
+	if systemctl is-active --quiet featherwings 2>/dev/null || systemctl is-active --quiet wings 2>/dev/null; then
+		log_info "Stopping FeatherWings service for consistent backup..."
+		systemctl stop featherwings 2>/dev/null || systemctl stop wings 2>/dev/null || true
+		return 0
+	fi
+	return 1
+}
+
+wings_start_service() {
+	systemctl start featherwings 2>/dev/null || systemctl start wings 2>/dev/null || true
+}
+
+create_wings_backup() {
+	log_step "Creating FeatherWings backup..."
+
+	if ! wings_is_installed && [ ! -d "$(wings_resolve_volumes_dir)" ]; then
+		log_error "FeatherWings does not appear to be installed and no volumes directory was found."
+		return 1
+	fi
+
+	local mode="volumes"
+	local mode_choice=""
+	prompt "${BOLD}Backup mode${NC} ${BLUE}(1=volumes [default], 2=full, 3=user_backups_only)${NC}: " mode_choice
+	case "$mode_choice" in
+	2) mode="full" ;;
+	3) mode="user_backups_only" ;;
+	*) mode="volumes" ;;
+	esac
+
+	local stopped=0
+	local stop_choice="y"
+	prompt "${BOLD}Stop featherwings for consistency?${NC} ${BLUE}(Y/n)${NC}: " stop_choice
+	if [[ ! "$stop_choice" =~ ^[nN]$ ]]; then
+		if wings_stop_service; then
+			stopped=1
+		fi
+	fi
+
+	mkdir -p "$WINGS_BACKUP_DIR"
+
+	if wings_cli_supports_node_backup; then
+		log_info "Using featherwings node-backup CLI..."
+		if featherwings node-backup create --mode "$mode"; then
+			log_success "Wings backup created via CLI in $WINGS_BACKUP_DIR"
+			[ "$stopped" -eq 1 ] && wings_start_service
+			return 0
+		fi
+		log_warn "CLI backup failed; falling back to tar archive..."
+	fi
+
+	local volumes_dir backups_dir
+	volumes_dir=$(wings_resolve_volumes_dir)
+	backups_dir=$(wings_resolve_backups_dir)
+	local ts name path temp
+	ts=$(date +%Y%m%d_%H%M%S)
+	name="featherwings_backup_${ts}.tar.gz"
+	path="${WINGS_BACKUP_DIR}/${name}"
+	temp=$(mktemp -d)
+	# shellcheck disable=SC2064
+	trap "rm -rf '$temp'" RETURN
+
+	mkdir -p "$temp"
+	{
+		echo "FeatherWings Node Backup"
+		echo "Mode: $mode"
+		echo "Created: $(date -Iseconds)"
+		echo "Hostname: $(hostname)"
+		echo "Volumes: $volumes_dir"
+		echo "Backups: $backups_dir"
+		echo "Config: $WINGS_CONFIG_FILE"
+	} >"$temp/backup_info.txt"
+
+	case "$mode" in
+	volumes)
+		if [ ! -d "$volumes_dir" ]; then
+			log_error "Volumes directory not found: $volumes_dir"
+			[ "$stopped" -eq 1 ] && wings_start_service
+			return 1
+		fi
+		mkdir -p "$temp/volumes"
+		log_info "Archiving volumes from $volumes_dir ..."
+		cp -a "$volumes_dir"/. "$temp/volumes/" 2>>"$LOG_FILE" || {
+			log_error "Failed to copy volumes"
+			[ "$stopped" -eq 1 ] && wings_start_service
+			return 1
+		}
+		;;
+	user_backups_only)
+		mkdir -p "$temp/backups"
+		if [ -d "$backups_dir" ]; then
+			cp -a "$backups_dir"/. "$temp/backups/" 2>>"$LOG_FILE" || true
+		fi
+		;;
+	full)
+		mkdir -p "$temp/volumes" "$temp/backups" "$temp/config"
+		if [ -d "$volumes_dir" ]; then
+			cp -a "$volumes_dir"/. "$temp/volumes/" 2>>"$LOG_FILE" || true
+		fi
+		if [ -d "$backups_dir" ]; then
+			cp -a "$backups_dir"/. "$temp/backups/" 2>>"$LOG_FILE" || true
+		fi
+		if [ -f "$WINGS_CONFIG_FILE" ]; then
+			cp -a "$WINGS_CONFIG_FILE" "$temp/config/config.yml" 2>>"$LOG_FILE" || true
+		fi
+		;;
+	esac
+
+	log_info "Compressing backup to $path ..."
+	if tar -czf "$path" -C "$temp" . 2>>"$LOG_FILE"; then
+		chmod 600 "$path"
+		local size
+		size=$(du -h "$path" | cut -f1)
+		log_success "Wings backup created: $name ($size)"
+		echo -e "  ${BLUE}• Location:${NC} $path"
+		[ "$stopped" -eq 1 ] && wings_start_service
+		return 0
+	fi
+
+	log_error "Failed to create Wings backup archive"
+	[ "$stopped" -eq 1 ] && wings_start_service
+	return 1
+}
+
+list_wings_backups() {
+	log_step "Listing FeatherWings backups..."
+	mkdir -p "$WINGS_BACKUP_DIR"
+	local files=()
+	mapfile -t files < <(find "$WINGS_BACKUP_DIR" \( -name 'featherwings_backup_*.tar.gz' -o -name '*.tar.gz' \) -type f 2>/dev/null | sort -r)
+	if [ ${#files[@]} -eq 0 ]; then
+		log_warn "No Wings backups found in $WINGS_BACKUP_DIR"
+		return 0
+	fi
+	local i=1
+	for f in "${files[@]}"; do
+		local size
+		size=$(du -h "$f" | cut -f1)
+		echo -e "  ${CYAN}${BOLD}[$i]${NC} $(basename "$f")  ${BLUE}$size${NC}  ${YELLOW}$(date -r "$f" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || true)${NC}"
+		i=$((i + 1))
+	done
+	if wings_cli_supports_node_backup; then
+		echo ""
+		log_info "CLI metadata listing:"
+		featherwings node-backup list 2>/dev/null || true
+	fi
+}
+
+restore_wings_backup() {
+	log_step "Restoring FeatherWings backup..."
+	mkdir -p "$WINGS_BACKUP_DIR"
+	local files=()
+	mapfile -t files < <(find "$WINGS_BACKUP_DIR" \( -name 'featherwings_backup_*.tar.gz' -o -name '*.tar.gz' \) -type f 2>/dev/null | sort -r)
+	if [ ${#files[@]} -eq 0 ]; then
+		log_error "No Wings backups found in $WINGS_BACKUP_DIR"
+		return 1
+	fi
+	list_wings_backups
+	local idx=""
+	prompt "${BOLD}Select backup number to restore${NC}: " idx
+	if ! [[ "$idx" =~ ^[0-9]+$ ]] || [ "$idx" -lt 1 ] || [ "$idx" -gt ${#files[@]} ]; then
+		log_error "Invalid selection"
+		return 1
+	fi
+	local archive="${files[$((idx - 1))]}"
+	local confirm=""
+	prompt "${BOLD}${RED}This will overwrite Wings data. Type 'yes' to continue${NC}: " confirm
+	if [ "$confirm" != "yes" ]; then
+		log_info "Restore cancelled."
+		return 0
+	fi
+
+	wings_stop_service || true
+	local volumes_dir backups_dir
+	volumes_dir=$(wings_resolve_volumes_dir)
+	backups_dir=$(wings_resolve_backups_dir)
+	mkdir -p "$volumes_dir" "$backups_dir"
+
+	if wings_cli_supports_node_backup; then
+		if featherwings node-backup import --file "$archive"; then
+			log_success "Restore completed via CLI"
+			wings_start_service
+			return 0
+		fi
+		log_warn "CLI import failed; trying tar extract..."
+	fi
+
+	local temp
+	temp=$(mktemp -d)
+	# shellcheck disable=SC2064
+	trap "rm -rf '$temp'" RETURN
+	tar -xzf "$archive" -C "$temp" 2>>"$LOG_FILE" || {
+		log_error "Failed to extract archive"
+		wings_start_service
+		return 1
+	}
+	if [ -d "$temp/volumes" ]; then
+		rm -rf "${volumes_dir:?}/"*
+		cp -a "$temp/volumes"/. "$volumes_dir/" 2>>"$LOG_FILE" || true
+	fi
+	if [ -d "$temp/backups" ]; then
+		mkdir -p "$backups_dir"
+		cp -a "$temp/backups"/. "$backups_dir/" 2>>"$LOG_FILE" || true
+	fi
+	if [ -f "$temp/config/config.yml" ]; then
+		mkdir -p "$(dirname "$WINGS_CONFIG_FILE")"
+		cp -a "$temp/config/config.yml" "$WINGS_CONFIG_FILE"
+	fi
+	wings_start_service
+	log_success "Wings backup restored from $(basename "$archive")"
+	log_info "Verify the node FQDN/IP in FeatherPanel if this host changed."
+}
+
+delete_wings_backup() {
+	log_step "Deleting FeatherWings backup..."
+	mkdir -p "$WINGS_BACKUP_DIR"
+	local files=()
+	mapfile -t files < <(find "$WINGS_BACKUP_DIR" \( -name 'featherwings_backup_*.tar.gz' -o -name '*.tar.gz' \) -type f 2>/dev/null | sort -r)
+	if [ ${#files[@]} -eq 0 ]; then
+		log_error "No Wings backups found"
+		return 1
+	fi
+	list_wings_backups
+	local idx=""
+	prompt "${BOLD}Select backup number to delete${NC}: " idx
+	if ! [[ "$idx" =~ ^[0-9]+$ ]] || [ "$idx" -lt 1 ] || [ "$idx" -gt ${#files[@]} ]; then
+		log_error "Invalid selection"
+		return 1
+	fi
+	local archive="${files[$((idx - 1))]}"
+	local confirm=""
+	prompt "${BOLD}${RED}Delete $(basename "$archive")? Type 'yes'${NC}: " confirm
+	if [ "$confirm" != "yes" ]; then
+		log_info "Delete cancelled."
+		return 0
+	fi
+	rm -f "$archive" "${archive%.tar.gz}.meta.json" 2>/dev/null || true
+	# Also remove UUID-named meta next to CLI archives
+	local base
+	base=$(basename "$archive" .tar.gz)
+	rm -f "${WINGS_BACKUP_DIR}/${base}.meta.json" 2>/dev/null || true
+	log_success "Deleted $(basename "$archive")"
+}
+
+export_wings_migration() {
+	log_step "Exporting FeatherWings migration package..."
+	mkdir -p "$WINGS_MIGRATION_DIR" "$WINGS_BACKUP_DIR"
+
+	local stopped=0
+	if wings_stop_service; then
+		stopped=1
+	fi
+
+	if wings_cli_supports_node_backup; then
+		if featherwings node-backup export --out "$WINGS_MIGRATION_DIR"; then
+			log_success "Migration package exported to $WINGS_MIGRATION_DIR"
+			[ "$stopped" -eq 1 ] && wings_start_service
+			return 0
+		fi
+		log_warn "CLI export failed; using tar fallback..."
+	fi
+
+	local volumes_dir backups_dir ts name path temp
+	volumes_dir=$(wings_resolve_volumes_dir)
+	backups_dir=$(wings_resolve_backups_dir)
+	ts=$(date +%Y%m%d_%H%M%S)
+	name="featherwings_migration_${ts}.tar.gz"
+	path="${WINGS_MIGRATION_DIR}/${name}"
+	temp=$(mktemp -d)
+	# shellcheck disable=SC2064
+	trap "rm -rf '$temp'" RETURN
+
+	mkdir -p "$temp/volumes" "$temp/backups" "$temp/config"
+	[ -d "$volumes_dir" ] && cp -a "$volumes_dir"/. "$temp/volumes/" 2>>"$LOG_FILE" || true
+	[ -d "$backups_dir" ] && cp -a "$backups_dir"/. "$temp/backups/" 2>>"$LOG_FILE" || true
+	[ -f "$WINGS_CONFIG_FILE" ] && cp -a "$WINGS_CONFIG_FILE" "$temp/config/config.yml" 2>>"$LOG_FILE" || true
+
+	cat >"$temp/migration_info.txt" <<EOF
+FeatherWings Migration Package
+Migration Name: $name
+Created: $(date -Iseconds)
+Source Host: $(hostname)
+EOF
+
+	cat >"$temp/README_MIGRATION.txt" <<'EOF'
+FeatherWings Node Migration
+===========================
+
+1. Copy this archive to the destination host (scp, rsync, or SFTP).
+2. Install FeatherWings on the destination (installer: Wings > Install).
+3. Place the archive under /var/lib/featherpanel/wings_migrations/
+4. Run the installer: Wings > Backup Manager > Import Migration
+   or: featherwings node-backup import --file /path/to/archive.tar.gz
+5. Start featherwings and update the node FQDN/IP in FeatherPanel if it changed.
+EOF
+
+	if tar -czf "$path" -C "$temp" . 2>>"$LOG_FILE"; then
+		chmod 600 "$path"
+		local size
+		size=$(du -h "$path" | cut -f1)
+		log_success "Migration package created: $name ($size)"
+		echo -e "  ${BLUE}• Location:${NC} $path"
+		echo -e "  ${CYAN}scp${NC} ${YELLOW}user@$(hostname):$path${NC} ${CYAN}./${NC}"
+		[ "$stopped" -eq 1 ] && wings_start_service
+		return 0
+	fi
+	log_error "Failed to create migration package"
+	[ "$stopped" -eq 1 ] && wings_start_service
+	return 1
+}
+
+import_wings_migration() {
+	log_step "Importing FeatherWings migration package..."
+	mkdir -p "$WINGS_MIGRATION_DIR"
+	local files=()
+	mapfile -t files < <(find "$WINGS_MIGRATION_DIR" /root /home -maxdepth 2 -name 'featherwings_migration_*.tar.gz' -type f 2>/dev/null | sort -r)
+	local custom=""
+	if [ ${#files[@]} -eq 0 ]; then
+		prompt "${BOLD}No packages found. Enter full path to migration archive${NC}: " custom
+		if [ -z "$custom" ] || [ ! -f "$custom" ]; then
+			log_error "Migration archive not found"
+			return 1
+		fi
+		files=("$custom")
+	else
+		local i=1
+		for f in "${files[@]}"; do
+			echo -e "  ${CYAN}${BOLD}[$i]${NC} $f"
+			i=$((i + 1))
+		done
+		local idx=""
+		prompt "${BOLD}Select package number (or 0 to enter path)${NC}: " idx
+		if [ "$idx" = "0" ]; then
+			prompt "${BOLD}Full path${NC}: " custom
+			files=("$custom")
+		elif ! [[ "$idx" =~ ^[0-9]+$ ]] || [ "$idx" -lt 1 ] || [ "$idx" -gt ${#files[@]} ]; then
+			log_error "Invalid selection"
+			return 1
+		else
+			files=("${files[$((idx - 1))]}")
+		fi
+	fi
+
+	local archive="${files[0]}"
+	if [ ! -f "$archive" ]; then
+		log_error "Archive not found: $archive"
+		return 1
+	fi
+
+	local confirm=""
+	prompt "${BOLD}${RED}This replaces Wings data on this host. Type 'yes'${NC}: " confirm
+	if [ "$confirm" != "yes" ]; then
+		log_info "Import cancelled."
+		return 0
+	fi
+
+	if ! wings_is_installed; then
+		log_warn "FeatherWings binary not found. Install Wings first for a complete migration."
+	fi
+
+	wings_stop_service || true
+	if wings_cli_supports_node_backup; then
+		if featherwings node-backup import --file "$archive"; then
+			log_success "Migration imported via CLI"
+			wings_start_service
+			log_info "Update the node FQDN/IP in FeatherPanel if this host changed."
+			return 0
+		fi
+	fi
+
+	local volumes_dir backups_dir temp
+	volumes_dir=$(wings_resolve_volumes_dir)
+	backups_dir=$(wings_resolve_backups_dir)
+	temp=$(mktemp -d)
+	# shellcheck disable=SC2064
+	trap "rm -rf '$temp'" RETURN
+	tar -xzf "$archive" -C "$temp" 2>>"$LOG_FILE" || {
+		log_error "Failed to extract migration archive"
+		wings_start_service
+		return 1
+	}
+	mkdir -p "$volumes_dir" "$backups_dir"
+	if [ -d "$temp/volumes" ]; then
+		rm -rf "${volumes_dir:?}/"*
+		cp -a "$temp/volumes"/. "$volumes_dir/"
+	fi
+	if [ -d "$temp/backups" ]; then
+		cp -a "$temp/backups"/. "$backups_dir/"
+	fi
+	if [ -f "$temp/config/config.yml" ]; then
+		mkdir -p "$(dirname "$WINGS_CONFIG_FILE")"
+		cp -a "$temp/config/config.yml" "$WINGS_CONFIG_FILE"
+	fi
+	wings_start_service
+	log_success "Migration imported from $(basename "$archive")"
+	log_info "Update the node FQDN/IP in FeatherPanel if this host changed."
 }
 
 show_featherquilld_menu() {
@@ -6194,14 +6664,14 @@ if [ -f /etc/os-release ]; then
 		fi
 	elif [ "$COMPONENT_TYPE" = "2" ]; then
 		# Wings operations
-		while [[ ! "$INST_TYPE" =~ ^[1-3]$ ]]; do
+		while [[ ! "$INST_TYPE" =~ ^[1-4]$ ]]; do
 			show_wings_menu
 			echo ""
-			prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3)${NC}: " INST_TYPE
-			if [[ ! "$INST_TYPE" =~ ^[1-3]$ ]]; then
+			prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3/4)${NC}: " INST_TYPE
+			if [[ ! "$INST_TYPE" =~ ^[1-4]$ ]]; then
 				echo ""
 				echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
-				echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), or ${BOLD}3${NC} (Update)${NC}"
+				echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), ${BOLD}3${NC} (Update), or ${BOLD}4${NC} (Backup Manager)${NC}"
 				echo ""
 				sleep 2
 			fi
@@ -7692,9 +8162,67 @@ if [ -f /etc/os-release ]; then
 		log_success "Wings updated successfully."
 		exit 0
 	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "4" ]; then
-		log_info "SSL for game nodes is handled by the FeatherWings setup wizard."
-		log_info "Run: featherwings configure"
-		exit 0
+		# Wings Backup Manager
+		WINGS_BACKUP_ACTION=""
+		while [[ ! "$WINGS_BACKUP_ACTION" =~ ^[1-6]$ ]]; do
+			show_wings_backup_menu
+			echo ""
+			prompt "${BOLD}${CYAN}Select Wings backup operation${NC} ${BLUE}(1/2/3/4/5/6)${NC}: " WINGS_BACKUP_ACTION
+			if [[ ! "$WINGS_BACKUP_ACTION" =~ ^[1-6]$ ]]; then
+				echo ""
+				echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
+				echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Create), ${BOLD}2${NC} (List), ${BOLD}3${NC} (Restore), ${BOLD}4${NC} (Delete), ${BOLD}5${NC} (Export), or ${BOLD}6${NC} (Import)${NC}"
+				echo ""
+				sleep 2
+			fi
+		done
+
+		case $WINGS_BACKUP_ACTION in
+		1)
+			if create_wings_backup; then
+				log_success "Wings backup operation completed. See log at $LOG_FILE"
+			else
+				log_error "Wings backup operation failed. See log at $LOG_FILE"
+				exit 1
+			fi
+			;;
+		2)
+			list_wings_backups
+			log_info "Wings backup listing completed. See log at $LOG_FILE"
+			;;
+		3)
+			if restore_wings_backup; then
+				log_success "Wings backup restore completed. See log at $LOG_FILE"
+			else
+				log_error "Wings backup restore failed. See log at $LOG_FILE"
+				exit 1
+			fi
+			;;
+		4)
+			if delete_wings_backup; then
+				log_success "Wings backup deletion completed. See log at $LOG_FILE"
+			else
+				log_error "Wings backup deletion failed. See log at $LOG_FILE"
+				exit 1
+			fi
+			;;
+		5)
+			if export_wings_migration; then
+				log_success "Wings migration export completed. See log at $LOG_FILE"
+			else
+				log_error "Wings migration export failed. See log at $LOG_FILE"
+				exit 1
+			fi
+			;;
+		6)
+			if import_wings_migration; then
+				log_success "Wings migration import completed. See log at $LOG_FILE"
+			else
+				log_error "Wings migration import failed. See log at $LOG_FILE"
+				exit 1
+			fi
+			;;
+		esac
 	elif [ "$COMPONENT_TYPE" = "3" ] && [ "$INST_TYPE" = "1" ]; then
 		# CLI Install
 		if [ -f /usr/local/bin/feathercli ]; then

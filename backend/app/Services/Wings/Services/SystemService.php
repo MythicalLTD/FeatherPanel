@@ -883,6 +883,61 @@ class SystemService
         return $this->connection->getRaw($endpoint, ['Accept' => 'text/plain']);
     }
 
+    /**
+     * Start an asynchronous whole-node backup on Wings.
+     *
+     * @return array<string, mixed>
+     */
+    public function createNodeBackup(string $mode = 'full', bool $migration = false, bool $quiesce = true): array
+    {
+        return $this->connection->post('/api/system/node-backup', [
+            'mode' => $mode,
+            'migration' => $migration,
+            'quiesce' => $quiesce,
+        ], [], 1, 60);
+    }
+
+    /**
+     * @return array{data?: list<array<string, mixed>>, active?: string}
+     */
+    public function listNodeBackups(): array
+    {
+        return $this->connection->get('/api/system/node-backups');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getNodeBackup(string $uuid): array
+    {
+        return $this->connection->get('/api/system/node-backups/' . rawurlencode($uuid));
+    }
+
+    public function downloadNodeBackupToFile(string $uuid, string $destinationPath): void
+    {
+        $this->connection->downloadToFile(
+            '/api/system/node-backups/' . rawurlencode($uuid) . '/download',
+            $destinationPath,
+            [],
+            7200
+        );
+    }
+
+    public function deleteNodeBackup(string $uuid): void
+    {
+        $this->connection->delete('/api/system/node-backups/' . rawurlencode($uuid));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function restoreNodeBackup(string $uuid): array
+    {
+        return $this->connection->post('/api/system/node-backup/restore', [
+            'uuid' => $uuid,
+        ], [], 1, 7200);
+    }
+
     private function fetchSystemUtilization(int $maxRetries): array
     {
         try {

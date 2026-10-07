@@ -4,7 +4,10 @@
 
 ### Added
 
+- Admin **backup schedules** for game servers: target specific servers, all servers on a node, or the whole panel; cron timing with timezone; run history; manual run; failure notifications. Reuses per-server backup limits/FIFO and each node’s default Wings backup adapter. by @nayskutzu
+- SMTP settings now include a dedicated **STARTTLS** encryption option (plus **None**), so providers like Brevo on port 587 can be configured correctly; the async mail runner maps `starttls`/`tls` to STARTTLS and `ssl` to SMTPS. by @nayskutzu
 - FeatherPanel **MCP OAuth 2.1** (DCR + PKCE + refresh) so Claude.ai custom connectors can **Connect** with panel sign-in / API-key consent; static Bearer / `x-api-key` headers still work. by @nayskutzu
+- Added so that the server status column from the database is a source of truth for the server status. by @nayskutzu
 - Widgets are now a part of the customization system. by @nayskutzu
 - Added full support for progressive web apps (PWA). by @nayskutzu
 - QR Code login was added to the panel for easy access to the panel. by @nayskutzu
@@ -29,6 +32,8 @@
 - Support for custom color schemes was added. So now users can chose their own colors for the panel. by @nayskutzu
 - Support for more icons engines were added. So now you can chose from lucide, tabler, react-icons, and more. by @nayskutzu
 - New way to hide plugins widgets, pages and so much more by @nayskutzu
+- Introduced the ability to block specific IP addresses from accessing panel services. by @nayskutzu
+- Added Wings backups to the panel. by @nayskutzu
 
 ### Improved
 
@@ -56,6 +61,7 @@
 - Rewrote how the plugins settings ui works added releams and moved to a full ui rather than a modal! by @nayskutzu
 - The entire telemetry system was reworked to enhance privacy, ensure GDPR compliance, and provide secure error reporting to Mythical. by @nayskutzu
 - Enhanced handling of Pterodactyl egg file formats with expanded support for additional egg features. by @nayskutzu
+- Redesigned the VDS console to look better on more devices. by @nayskutzu
 
 ### Fixed
 

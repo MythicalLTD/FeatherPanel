@@ -52,6 +52,8 @@ minimumReleaseAgeExclude:
   - '@hcaptcha/react-hcaptcha@2.1.0 || 2.2.0'
   - '@react-three/drei@10.7.8'
   - prettier-plugin-tailwindcss-canonical-classes@0.1.6
+  - '@codemirror/legacy-modes@6.5.5'
+  - '@codemirror/streamparser@6.0.0'
 onlyBuiltDependencies:
   - '@scarf/scarf'
   - '@tree-sitter-grammars/tree-sitter-yaml'

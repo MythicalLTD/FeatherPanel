@@ -475,4 +475,15 @@ class MountsController
 
         return $ids;
     }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private static function emitPluginEvent(string $event, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($event, $payload);
+        }
+    }
 }

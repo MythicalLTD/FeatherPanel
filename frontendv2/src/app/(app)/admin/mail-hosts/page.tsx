@@ -1,9 +1,5 @@
 /*
 This file is part of FeatherPanel.
- */
-
-/*
-This file is part of FeatherPanel.
 
 Copyright (C) 2025 MythicalSystems Studios
 Copyright (C) 2025 FeatherPanel Contributors
@@ -23,17 +19,18 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { CheckCircle2, ChevronDown, ExternalLink, Mail, Plus, Server, Trash2, Wrench } from 'lucide-react';
+import { CheckCircle2, ExternalLink, Mail, Plus, RefreshCw, Server, Trash2, Wrench } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
+import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
+import { EmptyState } from '@/components/featherui/EmptyState';
 import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface MailHostRow {
@@ -69,10 +66,29 @@ const externalEmptyForm = {
     webmail_url: '',
 };
 
-function provisionBadgeVariant(mode: string): 'default' | 'secondary' | 'outline' {
-    if (mode === 'node') return 'default';
-    if (mode === 'webhook') return 'secondary';
-    return 'outline';
+function isNodeMode(mode: string): boolean {
+    return mode?.toLowerCase() === 'node';
+}
+
+function provisionBadge(mode: string, t: (key: string) => string): ResourceBadge {
+    const key = `admin.mailHosts.provisionMode.${mode}`;
+    const label = t(key);
+    if (isNodeMode(mode)) {
+        return {
+            label: label === key ? t('admin.mailHosts.provisionMode.node') : label,
+            className: 'border-primary/25 bg-primary/10 text-primary',
+        };
+    }
+    if (mode === 'webhook') {
+        return {
+            label: label === key ? mode : label,
+            className: 'border-border bg-muted/40 text-muted-foreground',
+        };
+    }
+    return {
+        label: label === key ? mode : label,
+        className: 'border-border bg-muted/40 text-muted-foreground',
+    };
 }
 
 export default function AdminMailHostsPage() {
@@ -86,6 +102,7 @@ export default function AdminMailHostsPage() {
     const [ensuringNodeId, setEnsuringNodeId] = useState<number | null>(null);
 
     const load = useCallback(async () => {
+        setLoading(true);
         try {
             const [hostsRes, nodesRes] = await Promise.all([
                 axios.get('/api/admin/mail-hosts'),
@@ -108,15 +125,15 @@ export default function AdminMailHostsPage() {
     const nodeMailHostIds = useMemo(() => {
         const map = new Map<number, MailHostRow>();
         for (const row of rows) {
-            if (row.provision_mode === 'node' && row.web_node_id) {
+            if (isNodeMode(row.provision_mode) && row.web_node_id) {
                 map.set(row.web_node_id, row);
             }
         }
         return map;
     }, [rows]);
 
-    const builtinHosts = useMemo(() => rows.filter((r) => r.provision_mode === 'node'), [rows]);
-    const externalHosts = useMemo(() => rows.filter((r) => r.provision_mode !== 'node'), [rows]);
+    const builtinHosts = useMemo(() => rows.filter((r) => isNodeMode(r.provision_mode)), [rows]);
+    const externalHosts = useMemo(() => rows.filter((r) => !isNodeMode(r.provision_mode)), [rows]);
     const nodesWithoutMail = useMemo(() => nodes.filter((n) => !nodeMailHostIds.has(n.id)), [nodes, nodeMailHostIds]);
 
     const webNodeName = (id?: number | null) => {
@@ -189,266 +206,345 @@ export default function AdminMailHostsPage() {
         }
     };
 
-    if (loading) return <TableSkeleton count={3} />;
+    const isEmpty = !loading && rows.length === 0 && nodesWithoutMail.length === 0;
 
     return (
         <div className='space-y-6'>
-            <PageHeader title={t('admin.mailHosts.title')} description={t('admin.mailHosts.description')} icon={Mail} />
+            <PageHeader
+                title={t('admin.mailHosts.title')}
+                description={t('admin.mailHosts.description')}
+                icon={Mail}
+                actions={
+                    <Button type='button' variant='outline' disabled={loading} onClick={() => void load()}>
+                        <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                        {t('common.refresh')}
+                    </Button>
+                }
+            />
 
-            <div className='border-primary/20 bg-primary/5 flex gap-3 rounded-xl border p-4'>
-                <CheckCircle2 className='text-primary mt-0.5 h-5 w-5 shrink-0' />
-                <div className='space-y-1 text-sm'>
-                    <p className='font-medium'>{t('admin.mailHosts.autoTitle')}</p>
-                    <p className='text-muted-foreground leading-relaxed'>{t('admin.mailHosts.autoHint')}</p>
-                </div>
-            </div>
+            {loading ? (
+                <TableSkeleton count={3} />
+            ) : (
+                <>
+                    <Alert className='border-primary/20 bg-primary/5'>
+                        <CheckCircle2 className='text-primary h-4 w-4' />
+                        <AlertTitle>{t('admin.mailHosts.autoTitle')}</AlertTitle>
+                        <AlertDescription>{t('admin.mailHosts.autoHint')}</AlertDescription>
+                    </Alert>
 
-            {builtinHosts.length > 0 && (
-                <section className='space-y-3'>
-                    <h2 className='text-sm font-semibold'>{t('admin.mailHosts.builtinSection')}</h2>
-                    <div className='grid gap-3 lg:grid-cols-2'>
-                        {builtinHosts.map((row) => (
-                            <div
-                                key={row.id}
-                                className='border-border/60 bg-card/40 flex flex-col gap-3 rounded-xl border p-4 shadow-sm'
-                            >
-                                <div className='flex items-start justify-between gap-3'>
-                                    <div className='min-w-0 space-y-1'>
-                                        <div className='flex flex-wrap items-center gap-2'>
-                                            <p className='font-semibold'>{row.name}</p>
-                                            <Badge variant={provisionBadgeVariant(row.provision_mode)}>
-                                                {t('admin.mailHosts.provisionMode.node')}
-                                            </Badge>
-                                        </div>
-                                        <p className='text-muted-foreground text-xs'>
-                                            {t('admin.mailHosts.rowNode', { node: webNodeName(row.web_node_id) })}
-                                        </p>
-                                    </div>
-                                    <Button
-                                        variant='ghost'
-                                        size='sm'
-                                        onClick={() => void removeHost(row.id)}
-                                        aria-label={t('common.delete')}
-                                    >
-                                        <Trash2 className='h-4 w-4' />
-                                    </Button>
-                                </div>
-                                <dl className='grid gap-2 text-xs sm:grid-cols-2'>
-                                    <div>
-                                        <dt className='text-muted-foreground'>{t('admin.mailHosts.labels.mx')}</dt>
-                                        <dd className='font-mono'>{row.mx_host || row.hostname}</dd>
-                                    </div>
-                                    <div>
-                                        <dt className='text-muted-foreground'>{t('admin.mailHosts.labels.imap')}</dt>
-                                        <dd className='font-mono'>
-                                            {row.imap_host}:{row.imap_port}
-                                        </dd>
-                                    </div>
-                                    <div>
-                                        <dt className='text-muted-foreground'>{t('admin.mailHosts.labels.smtp')}</dt>
-                                        <dd className='font-mono'>
-                                            {row.smtp_host}:{row.smtp_port}
-                                        </dd>
-                                    </div>
-                                    <div>
-                                        <dt className='text-muted-foreground'>{t('admin.mailHosts.labels.webmail')}</dt>
-                                        <dd className='truncate font-mono'>{row.webmail_url || '-'}</dd>
-                                    </div>
-                                </dl>
-                                {row.web_node_id && (
-                                    <Button variant='outline' size='sm' className='w-fit' asChild>
-                                        <Link href={`/admin/web-nodes/${row.web_node_id}/edit?tab=packages`}>
-                                            <Wrench className='mr-1.5 h-4 w-4' />
-                                            {t('admin.mailHosts.openPackages')}
-                                        </Link>
-                                    </Button>
-                                )}
+                    {nodesWithoutMail.length > 0 && (
+                        <PageCard
+                            title={t('admin.mailHosts.setupSection')}
+                            description={t('admin.mailHosts.setupHint')}
+                            icon={Server}
+                        >
+                            <div className='space-y-3'>
+                                {nodesWithoutMail.map((node) => (
+                                    <ResourceCard
+                                        key={node.id}
+                                        icon={Server}
+                                        title={node.name}
+                                        subtitle={node.fqdn || t('admin.mailHosts.noFqdn')}
+                                        layout='stacked'
+                                        actions={
+                                            <div className='flex flex-wrap gap-2'>
+                                                <Button variant='outline' size='sm' asChild>
+                                                    <Link href={`/admin/web-nodes/${node.id}/edit?tab=packages`}>
+                                                        <ExternalLink className='mr-1.5 h-4 w-4' />
+                                                        {t('admin.mailHosts.installMailserver')}
+                                                    </Link>
+                                                </Button>
+                                                {node.fqdn ? (
+                                                    <Button
+                                                        size='sm'
+                                                        loading={ensuringNodeId === node.id}
+                                                        onClick={() => void ensureNodeMail(node.id)}
+                                                    >
+                                                        {t('admin.mailHosts.registerHost')}
+                                                    </Button>
+                                                ) : null}
+                                            </div>
+                                        }
+                                    />
+                                ))}
                             </div>
-                        ))}
-                    </div>
-                </section>
-            )}
+                        </PageCard>
+                    )}
 
-            {nodesWithoutMail.length > 0 && (
-                <PageCard
-                    title={t('admin.mailHosts.setupSection')}
-                    description={t('admin.mailHosts.setupHint')}
-                    icon={Server}
-                >
-                    <ul className='divide-border divide-y rounded-xl border'>
-                        {nodesWithoutMail.map((node) => (
-                            <li
-                                key={node.id}
-                                className='flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between'
-                            >
-                                <div>
-                                    <p className='text-sm font-medium'>{node.name}</p>
-                                    <p className='text-muted-foreground text-xs'>
-                                        {node.fqdn || t('admin.mailHosts.noFqdn')}
-                                    </p>
-                                </div>
-                                <div className='flex flex-wrap gap-2'>
-                                    <Button variant='outline' size='sm' asChild>
-                                        <Link href={`/admin/web-nodes/${node.id}/edit?tab=packages`}>
-                                            <ExternalLink className='mr-1.5 h-4 w-4' />
-                                            {t('admin.mailHosts.installMailserver')}
-                                        </Link>
-                                    </Button>
-                                    {node.fqdn && (
-                                        <Button
-                                            variant='secondary'
-                                            size='sm'
-                                            loading={ensuringNodeId === node.id}
-                                            onClick={() => void ensureNodeMail(node.id)}
-                                        >
-                                            {t('admin.mailHosts.registerHost')}
-                                        </Button>
-                                    )}
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                </PageCard>
-            )}
-
-            {rows.length === 0 && nodesWithoutMail.length === 0 && (
-                <p className='text-muted-foreground text-sm'>{t('admin.mailHosts.empty')}</p>
-            )}
-
-            {externalHosts.length > 0 && (
-                <section className='space-y-3'>
-                    <h2 className='text-sm font-semibold'>{t('admin.mailHosts.externalSection')}</h2>
-                    <div className='border-border divide-border divide-y overflow-hidden rounded-xl border'>
-                        {externalHosts.map((row) => (
-                            <div key={row.id} className='flex flex-wrap items-center justify-between gap-3 px-4 py-3'>
-                                <div>
-                                    <div className='flex flex-wrap items-center gap-2'>
-                                        <p className='text-sm font-medium'>{row.name}</p>
-                                        <Badge variant={provisionBadgeVariant(row.provision_mode)}>
-                                            {t(`admin.mailHosts.provisionMode.${row.provision_mode}`)}
-                                        </Badge>
-                                    </div>
-                                    <p className='text-muted-foreground text-xs'>
-                                        {row.hostname} · IMAP {row.imap_host}:{row.imap_port}
-                                    </p>
-                                </div>
-                                <Button variant='ghost' size='sm' onClick={() => void removeHost(row.id)}>
-                                    <Trash2 className='h-4 w-4' />
-                                </Button>
+                    {builtinHosts.length > 0 && (
+                        <PageCard
+                            title={t('admin.mailHosts.builtinSection')}
+                            description={t('admin.mailHosts.builtinHint')}
+                            icon={Mail}
+                        >
+                            <div className='space-y-3'>
+                                {builtinHosts.map((row) => (
+                                    <ResourceCard
+                                        key={row.id}
+                                        icon={Mail}
+                                        title={row.name}
+                                        subtitle={t('admin.mailHosts.rowNode', {
+                                            node: webNodeName(row.web_node_id),
+                                        })}
+                                        badges={[provisionBadge(row.provision_mode, t)]}
+                                        layout='stacked'
+                                        description={
+                                            <dl className='text-muted-foreground grid gap-2 text-xs sm:grid-cols-2'>
+                                                <div>
+                                                    <dt className='font-medium'>{t('admin.mailHosts.labels.mx')}</dt>
+                                                    <dd className='text-foreground font-mono'>
+                                                        {row.mx_host || row.hostname}
+                                                    </dd>
+                                                </div>
+                                                <div>
+                                                    <dt className='font-medium'>{t('admin.mailHosts.labels.imap')}</dt>
+                                                    <dd className='text-foreground font-mono'>
+                                                        {row.imap_host}:{row.imap_port}
+                                                    </dd>
+                                                </div>
+                                                <div>
+                                                    <dt className='font-medium'>{t('admin.mailHosts.labels.smtp')}</dt>
+                                                    <dd className='text-foreground font-mono'>
+                                                        {row.smtp_host}:{row.smtp_port}
+                                                    </dd>
+                                                </div>
+                                                <div>
+                                                    <dt className='font-medium'>
+                                                        {t('admin.mailHosts.labels.webmail')}
+                                                    </dt>
+                                                    <dd className='text-foreground truncate font-mono'>
+                                                        {row.webmail_url || t('admin.mailHosts.notSet')}
+                                                    </dd>
+                                                </div>
+                                            </dl>
+                                        }
+                                        actions={
+                                            <div className='flex flex-wrap gap-2'>
+                                                {row.web_node_id ? (
+                                                    <Button variant='outline' size='sm' asChild>
+                                                        <Link
+                                                            href={`/admin/web-nodes/${row.web_node_id}/edit?tab=packages`}
+                                                        >
+                                                            <Wrench className='mr-1.5 h-4 w-4' />
+                                                            {t('admin.mailHosts.openPackages')}
+                                                        </Link>
+                                                    </Button>
+                                                ) : null}
+                                                <Button
+                                                    type='button'
+                                                    variant='ghost'
+                                                    size='sm'
+                                                    className='text-destructive hover:bg-destructive/10 hover:text-destructive'
+                                                    title={t('common.delete')}
+                                                    onClick={() => void removeHost(row.id)}
+                                                >
+                                                    <Trash2 className='h-4 w-4' />
+                                                </Button>
+                                            </div>
+                                        }
+                                    />
+                                ))}
                             </div>
-                        ))}
-                    </div>
-                </section>
-            )}
+                        </PageCard>
+                    )}
 
-            <div className='border-border overflow-hidden rounded-xl border'>
-                <button
-                    type='button'
-                    className='hover:bg-muted/30 flex w-full items-center justify-between gap-3 px-4 py-3 text-left'
-                    onClick={() => setShowExternal((v) => !v)}
-                >
-                    <span className='flex items-center gap-2 text-sm font-medium'>
-                        <Plus className='h-4 w-4' />
-                        {t('admin.mailHosts.addExternal')}
-                    </span>
-                    <ChevronDown className={cn('h-4 w-4 transition-transform', showExternal && 'rotate-180')} />
-                </button>
-                {showExternal && (
-                    <div className='border-border grid gap-3 border-t p-4 md:grid-cols-2'>
-                        <p className='text-muted-foreground text-xs md:col-span-2'>
-                            {t('admin.mailHosts.externalHint')}
-                        </p>
-                        <div className='space-y-2'>
-                            <Label>{t('admin.mailHosts.form.name')}</Label>
-                            <Input
-                                value={externalForm.name}
-                                onChange={(e) => setExternalForm({ ...externalForm, name: e.target.value })}
-                            />
-                        </div>
-                        <div className='space-y-2'>
-                            <Label>{t('admin.mailHosts.form.provisionMode')}</Label>
-                            <Select
-                                value={externalForm.provision_mode}
-                                onChange={(e) =>
-                                    setExternalForm({
-                                        ...externalForm,
-                                        provision_mode: e.target.value as 'inventory' | 'webhook',
-                                    })
-                                }
+                    {externalHosts.length > 0 && (
+                        <PageCard
+                            title={t('admin.mailHosts.externalSection')}
+                            description={t('admin.mailHosts.externalHint')}
+                            icon={Mail}
+                        >
+                            <div className='space-y-3'>
+                                {externalHosts.map((row) => (
+                                    <ResourceCard
+                                        key={row.id}
+                                        icon={Mail}
+                                        title={row.name}
+                                        subtitle={t('admin.mailHosts.externalRowDetails', {
+                                            hostname: row.hostname,
+                                            imapHost: row.imap_host,
+                                            imapPort: String(row.imap_port),
+                                        })}
+                                        badges={[provisionBadge(row.provision_mode, t)]}
+                                        actions={
+                                            <Button
+                                                type='button'
+                                                variant='ghost'
+                                                size='sm'
+                                                className='text-destructive hover:bg-destructive/10 hover:text-destructive'
+                                                title={t('common.delete')}
+                                                onClick={() => void removeHost(row.id)}
+                                            >
+                                                <Trash2 className='h-4 w-4' />
+                                            </Button>
+                                        }
+                                    />
+                                ))}
+                            </div>
+                        </PageCard>
+                    )}
+
+                    {isEmpty ? (
+                        <EmptyState
+                            icon={Mail}
+                            title={t('admin.mailHosts.empty')}
+                            description={t('admin.mailHosts.emptyHint')}
+                        />
+                    ) : null}
+
+                    <PageCard
+                        title={t('admin.mailHosts.addExternal')}
+                        description={t('admin.mailHosts.externalHint')}
+                        icon={Plus}
+                        action={
+                            <Button
+                                type='button'
+                                variant={showExternal ? 'outline' : 'default'}
+                                size='sm'
+                                onClick={() => setShowExternal((v) => !v)}
                             >
-                                <option value='inventory'>{t('admin.mailHosts.provisionMode.inventory')}</option>
-                                <option value='webhook'>{t('admin.mailHosts.provisionMode.webhook')}</option>
-                            </Select>
-                        </div>
-                        {externalForm.provision_mode === 'webhook' ? (
-                            <>
-                                <div className='space-y-2 md:col-span-2'>
-                                    <Label>{t('admin.mailHosts.form.provisionUrl')}</Label>
-                                    <Input
-                                        value={externalForm.provision_url}
-                                        onChange={(e) =>
-                                            setExternalForm({ ...externalForm, provision_url: e.target.value })
-                                        }
-                                    />
-                                </div>
-                                <div className='space-y-2 md:col-span-2'>
-                                    <Label>{t('admin.mailHosts.form.apiKey')}</Label>
-                                    <Input
-                                        type='password'
-                                        value={externalForm.provision_api_key}
-                                        onChange={(e) =>
-                                            setExternalForm({ ...externalForm, provision_api_key: e.target.value })
-                                        }
-                                    />
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <div className='space-y-2'>
-                                    <Label>{t('admin.mailHosts.form.hostname')}</Label>
-                                    <Input
-                                        value={externalForm.hostname}
-                                        onChange={(e) => setExternalForm({ ...externalForm, hostname: e.target.value })}
-                                    />
-                                </div>
-                                <div className='space-y-2'>
-                                    <Label>{t('admin.mailHosts.form.webmailUrl')}</Label>
-                                    <Input
-                                        value={externalForm.webmail_url}
-                                        onChange={(e) =>
-                                            setExternalForm({ ...externalForm, webmail_url: e.target.value })
-                                        }
-                                        placeholder='https://webmail.example.com'
-                                    />
-                                </div>
-                                <div className='space-y-2'>
-                                    <Label>{t('admin.mailHosts.form.imapHost')}</Label>
-                                    <Input
-                                        value={externalForm.imap_host}
-                                        onChange={(e) =>
-                                            setExternalForm({ ...externalForm, imap_host: e.target.value })
-                                        }
-                                    />
-                                </div>
-                                <div className='space-y-2'>
-                                    <Label>{t('admin.mailHosts.form.smtpHost')}</Label>
-                                    <Input
-                                        value={externalForm.smtp_host}
-                                        onChange={(e) =>
-                                            setExternalForm({ ...externalForm, smtp_host: e.target.value })
-                                        }
-                                    />
-                                </div>
-                            </>
-                        )}
-                        <div className='md:col-span-2'>
-                            <Button loading={busy} onClick={() => void createExternalHost()}>
-                                {t('admin.mailHosts.create')}
+                                <Plus className='mr-1.5 h-4 w-4' />
+                                {showExternal ? t('common.cancel') : t('admin.mailHosts.addExternal')}
                             </Button>
-                        </div>
-                    </div>
-                )}
-            </div>
+                        }
+                    >
+                        {showExternal ? (
+                            <div className='grid gap-4 md:grid-cols-2'>
+                                <div className='space-y-2'>
+                                    <Label htmlFor='mail-ext-name'>{t('admin.mailHosts.form.name')}</Label>
+                                    <Input
+                                        id='mail-ext-name'
+                                        value={externalForm.name}
+                                        onChange={(e) => setExternalForm({ ...externalForm, name: e.target.value })}
+                                        placeholder={t('admin.mailHosts.form.namePlaceholder')}
+                                    />
+                                </div>
+                                <div className='space-y-2'>
+                                    <Label htmlFor='mail-ext-mode'>{t('admin.mailHosts.form.provisionMode')}</Label>
+                                    <Select
+                                        id='mail-ext-mode'
+                                        value={externalForm.provision_mode}
+                                        onChange={(e) =>
+                                            setExternalForm({
+                                                ...externalForm,
+                                                provision_mode: e.target.value as 'inventory' | 'webhook',
+                                            })
+                                        }
+                                    >
+                                        <option value='inventory'>
+                                            {t('admin.mailHosts.provisionMode.inventory')}
+                                        </option>
+                                        <option value='webhook'>{t('admin.mailHosts.provisionMode.webhook')}</option>
+                                    </Select>
+                                </div>
+                                {externalForm.provision_mode === 'webhook' ? (
+                                    <>
+                                        <div className='space-y-2 md:col-span-2'>
+                                            <Label htmlFor='mail-ext-url'>
+                                                {t('admin.mailHosts.form.provisionUrl')}
+                                            </Label>
+                                            <Input
+                                                id='mail-ext-url'
+                                                value={externalForm.provision_url}
+                                                onChange={(e) =>
+                                                    setExternalForm({
+                                                        ...externalForm,
+                                                        provision_url: e.target.value,
+                                                    })
+                                                }
+                                                placeholder={t('admin.mailHosts.form.provisionUrlPlaceholder')}
+                                            />
+                                        </div>
+                                        <div className='space-y-2 md:col-span-2'>
+                                            <Label htmlFor='mail-ext-key'>{t('admin.mailHosts.form.apiKey')}</Label>
+                                            <Input
+                                                id='mail-ext-key'
+                                                type='password'
+                                                value={externalForm.provision_api_key}
+                                                onChange={(e) =>
+                                                    setExternalForm({
+                                                        ...externalForm,
+                                                        provision_api_key: e.target.value,
+                                                    })
+                                                }
+                                                placeholder={t('admin.mailHosts.form.apiKeyPlaceholder')}
+                                            />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className='space-y-2'>
+                                            <Label htmlFor='mail-ext-hostname'>
+                                                {t('admin.mailHosts.form.hostname')}
+                                            </Label>
+                                            <Input
+                                                id='mail-ext-hostname'
+                                                value={externalForm.hostname}
+                                                onChange={(e) =>
+                                                    setExternalForm({ ...externalForm, hostname: e.target.value })
+                                                }
+                                                placeholder={t('admin.mailHosts.form.hostnamePlaceholder')}
+                                            />
+                                        </div>
+                                        <div className='space-y-2'>
+                                            <Label htmlFor='mail-ext-webmail'>
+                                                {t('admin.mailHosts.form.webmailUrl')}
+                                            </Label>
+                                            <Input
+                                                id='mail-ext-webmail'
+                                                value={externalForm.webmail_url}
+                                                onChange={(e) =>
+                                                    setExternalForm({
+                                                        ...externalForm,
+                                                        webmail_url: e.target.value,
+                                                    })
+                                                }
+                                                placeholder={t('admin.mailHosts.form.webmailUrlPlaceholder')}
+                                            />
+                                        </div>
+                                        <div className='space-y-2'>
+                                            <Label htmlFor='mail-ext-imap'>{t('admin.mailHosts.form.imapHost')}</Label>
+                                            <Input
+                                                id='mail-ext-imap'
+                                                value={externalForm.imap_host}
+                                                onChange={(e) =>
+                                                    setExternalForm({
+                                                        ...externalForm,
+                                                        imap_host: e.target.value,
+                                                    })
+                                                }
+                                                placeholder={t('admin.mailHosts.form.imapHostPlaceholder')}
+                                            />
+                                        </div>
+                                        <div className='space-y-2'>
+                                            <Label htmlFor='mail-ext-smtp'>{t('admin.mailHosts.form.smtpHost')}</Label>
+                                            <Input
+                                                id='mail-ext-smtp'
+                                                value={externalForm.smtp_host}
+                                                onChange={(e) =>
+                                                    setExternalForm({
+                                                        ...externalForm,
+                                                        smtp_host: e.target.value,
+                                                    })
+                                                }
+                                                placeholder={t('admin.mailHosts.form.smtpHostPlaceholder')}
+                                            />
+                                        </div>
+                                    </>
+                                )}
+                                <div className='md:col-span-2'>
+                                    <Button loading={busy} onClick={() => void createExternalHost()}>
+                                        <Plus className='mr-2 h-4 w-4' />
+                                        {t('admin.mailHosts.create')}
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <p className='text-muted-foreground text-sm'>{t('admin.mailHosts.addExternalCollapsed')}</p>
+                        )}
+                    </PageCard>
+                </>
+            )}
         </div>
     );
 }
