@@ -1,19 +1,15 @@
 :root {
-  --bg0: #070b14;
-  --bg1: #0c1220;
-  --bg2: #121a2b;
-  --line: rgba(148, 163, 184, 0.16);
-  --text: #e8eef9;
-  --muted: #94a3b8;
-  --accent: #7dd3fc;
-  --accent-2: #34d399;
-  --warn: #fbbf24;
-  --danger: #f87171;
-  --card: rgba(15, 23, 42, 0.72);
-  --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
-  --radius: 1rem;
-  --font: "Segoe UI", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --bg: #0b0f14;
+  --surface: #12171e;
+  --line: #243041;
+  --text: #e7ecf3;
+  --muted: #9aa8b8;
+  --accent: #6cb6ff;
+  --ok: #7dcea0;
+  --warn: #e0b45a;
+  --radius: 8px;
+  --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 *,
@@ -22,20 +18,13 @@
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 body.fp-docs {
   margin: 0;
   min-height: 100vh;
   font-family: var(--font);
   color: var(--text);
-  background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(56, 189, 248, 0.16), transparent 55%),
-    radial-gradient(900px 500px at 90% 0%, rgba(52, 211, 153, 0.1), transparent 50%),
-    linear-gradient(180deg, var(--bg0), var(--bg1) 40%, var(--bg0));
-  line-height: 1.6;
+  background: var(--bg);
+  line-height: 1.55;
 }
 
 a {
@@ -48,36 +37,28 @@ a:hover {
 }
 
 .fp-shell {
-  max-width: 1100px;
+  max-width: 920px;
   margin: 0 auto;
-  padding: 1.25rem 1.25rem 3rem;
+  padding: 1.25rem 1rem 3rem;
 }
 
 .fp-nav {
-  position: sticky;
-  top: 0.75rem;
-  z-index: 40;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
+  gap: 0.75rem 1rem;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1.75rem;
-  border: 1px solid var(--line);
-  border-radius: calc(var(--radius) + 0.15rem);
-  background: rgba(8, 12, 22, 0.82);
-  backdrop-filter: blur(14px);
-  box-shadow: var(--shadow);
+  padding-bottom: 0.85rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line);
 }
 
 .fp-brand {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.5rem;
   color: var(--text);
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-weight: 650;
   text-decoration: none;
 }
 
@@ -86,112 +67,104 @@ a:hover {
 }
 
 .fp-brand-mark {
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 0.55rem;
-  background: linear-gradient(135deg, #38bdf8, #34d399);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 2px;
+  background: var(--accent);
 }
 
 .fp-nav-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: 0.15rem 0.85rem;
 }
 
 .fp-nav-links a {
   color: var(--muted);
-  font-size: 0.9rem;
-  padding: 0.4rem 0.7rem;
-  border-radius: 999px;
-  border: 1px solid transparent;
+  font-size: 0.92rem;
   text-decoration: none;
 }
 
 .fp-nav-links a:hover {
   color: var(--text);
-  background: rgba(148, 163, 184, 0.08);
   text-decoration: none;
 }
 
 .fp-nav-links a.active {
   color: var(--text);
-  border-color: rgba(125, 211, 252, 0.35);
-  background: rgba(125, 211, 252, 0.1);
+  text-decoration: underline;
+  text-underline-offset: 0.28em;
 }
 
 .fp-hero {
-  margin-bottom: 1.75rem;
+  margin-bottom: 1.5rem;
 }
 
 .fp-hero h1 {
-  margin: 0 0 0.5rem;
-  font-size: clamp(1.9rem, 3vw, 2.6rem);
-  letter-spacing: -0.03em;
-  line-height: 1.15;
+  margin: 0 0 0.4rem;
+  font-size: 1.75rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 .fp-hero p {
   margin: 0;
-  max-width: 60ch;
+  max-width: 58ch;
   color: var(--muted);
-  font-size: 1.05rem;
 }
 
 .fp-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
-  margin-top: 1rem;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
 }
 
 .fp-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.28rem 0.65rem;
-  border-radius: 999px;
+  display: inline-block;
   font-size: 0.75rem;
   color: var(--muted);
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid var(--line);
 }
 
 .fp-badge.ok {
-  color: #86efac;
-  border-color: rgba(22, 101, 52, 0.7);
-  background: rgba(5, 46, 22, 0.55);
+  color: var(--ok);
 }
 
 .fp-badge.warn {
-  color: #fde68a;
-  border-color: rgba(133, 77, 14, 0.7);
-  background: rgba(66, 32, 6, 0.55);
+  color: var(--warn);
+}
+
+.fp-badge + .fp-badge::before {
+  content: "·";
+  margin-right: 0.4rem;
+  color: var(--line);
 }
 
 .fp-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
 }
 
 .fp-card {
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--card);
-  padding: 1.2rem 1.3rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  background: var(--surface);
+  padding: 1rem 1.05rem;
 }
 
 .fp-card h2,
 .fp-card h3 {
-  margin: 0 0 0.4rem;
-  letter-spacing: -0.02em;
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 650;
 }
 
 .fp-card p {
   margin: 0;
   color: var(--muted);
+  font-size: 0.95rem;
 }
 
 a.fp-card-link {
@@ -203,85 +176,75 @@ a.fp-card-link {
 
 a.fp-card-link .fp-card {
   height: 100%;
-  transition: border-color 0.15s ease, transform 0.15s ease, background 0.15s ease;
 }
 
 a.fp-card-link:hover .fp-card {
-  border-color: rgba(125, 211, 252, 0.45);
-  background: rgba(15, 23, 42, 0.92);
-  transform: translateY(-2px);
+  border-color: #3a4d66;
   text-decoration: none;
 }
 
+a.fp-card-link:hover h2 {
+  color: var(--accent);
+}
+
 .fp-section {
-  margin-top: 1.75rem;
+  margin-top: 1.5rem;
 }
 
 .fp-section > h2 {
-  margin: 0 0 0.75rem;
-  font-size: 1.35rem;
-  letter-spacing: -0.02em;
+  margin: 0 0 0.65rem;
+  font-size: 1.15rem;
+  font-weight: 650;
 }
 
 .fp-formats {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 1rem 0 0;
+  gap: 0.65rem 1rem;
+  margin: 0.75rem 0 0;
+  font-size: 0.9rem;
 }
 
 .fp-formats a {
-  font-size: 0.8rem;
-  padding: 0.35rem 0.7rem;
-  border-radius: 0.55rem;
-  border: 1px solid var(--line);
-  background: rgba(2, 6, 23, 0.55);
   color: var(--accent);
-  text-decoration: none;
-}
-
-.fp-formats a:hover {
-  border-color: rgba(125, 211, 252, 0.45);
-  background: rgba(125, 211, 252, 0.08);
 }
 
 .fp-search {
   width: 100%;
-  margin: 1rem 0 0.25rem;
-  padding: 0.8rem 1rem;
-  border-radius: 0.75rem;
+  margin: 0.75rem 0 0.25rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: var(--radius);
   border: 1px solid var(--line);
-  background: rgba(2, 6, 23, 0.55);
+  background: var(--surface);
   color: var(--text);
   font: inherit;
 }
 
 .fp-search:focus {
-  outline: none;
-  border-color: rgba(125, 211, 252, 0.55);
-  box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.12);
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .fp-list {
   list-style: none;
   padding: 0;
-  margin: 1rem 0 0;
+  margin: 0.75rem 0 0;
   display: grid;
-  gap: 0.85rem;
+  gap: 0.65rem;
 }
 
 .fp-list > li,
 .fp-item {
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--card);
-  padding: 1rem 1.15rem;
+  background: var(--surface);
+  padding: 0.85rem 1rem;
 }
 
 .fp-item h2,
 .fp-list h2 {
-  margin: 0 0 0.35rem;
-  font-size: 1.1rem;
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
 }
 
 .fp-muted,
@@ -296,19 +259,19 @@ pre {
 }
 
 code {
-  background: rgba(2, 6, 23, 0.7);
+  background: #0a0e13;
   border: 1px solid var(--line);
-  border-radius: 0.35rem;
-  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  padding: 0.05rem 0.3rem;
 }
 
 pre {
-  margin: 0.75rem 0 0;
-  padding: 1rem;
+  margin: 0.65rem 0 0;
+  padding: 0.85rem;
   overflow-x: auto;
-  border-radius: 0.75rem;
+  border-radius: var(--radius);
   border: 1px solid var(--line);
-  background: rgba(2, 6, 23, 0.75);
+  background: #0a0e13;
 }
 
 pre code {
@@ -320,33 +283,33 @@ pre code {
 table.fp-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 0.85rem;
+  margin-top: 0.65rem;
   font-size: 0.9rem;
 }
 
 table.fp-table th,
 table.fp-table td {
   border: 1px solid var(--line);
-  padding: 0.55rem 0.7rem;
+  padding: 0.45rem 0.6rem;
   text-align: left;
   vertical-align: top;
 }
 
 table.fp-table th {
-  background: rgba(2, 6, 23, 0.65);
+  background: var(--surface);
   color: var(--muted);
   font-weight: 600;
 }
 
 .fp-back {
   display: inline-block;
-  margin-bottom: 1rem;
+  margin-bottom: 0.85rem;
   color: var(--muted);
 }
 
 .fp-footer {
-  margin-top: 2.5rem;
-  padding-top: 1rem;
+  margin-top: 2rem;
+  padding-top: 0.85rem;
   border-top: 1px solid var(--line);
   color: var(--muted);
   font-size: 0.85rem;
@@ -357,24 +320,24 @@ table.fp-table th {
 }
 
 .fp-prose h2 {
-  margin-top: 2rem;
-  padding-bottom: 0.35rem;
+  margin-top: 1.6rem;
+  padding-bottom: 0.25rem;
   border-bottom: 1px solid var(--line);
 }
 
 .fp-prose h3 {
-  margin-top: 1.4rem;
+  margin-top: 1.2rem;
 }
 
 .fp-prose ul,
 .fp-prose ol {
-  padding-left: 1.25rem;
+  padding-left: 1.2rem;
 }
 
 .fp-prose blockquote {
-  margin: 1rem 0;
-  padding-left: 1rem;
-  border-left: 3px solid rgba(125, 211, 252, 0.45);
+  margin: 0.85rem 0;
+  padding-left: 0.85rem;
+  border-left: 2px solid var(--line);
   color: var(--muted);
 }
 
@@ -384,10 +347,10 @@ table.fp-table th {
 
 @media (max-width: 720px) {
   .fp-shell {
-    padding: 1rem 0.9rem 2.5rem;
+    padding: 1rem 0.85rem 2.25rem;
   }
 
-  .fp-nav {
-    top: 0.4rem;
+  .fp-hero h1 {
+    font-size: 1.45rem;
   }
 }

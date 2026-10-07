@@ -1,10 +1,10 @@
-# Plugin Recipes (Copy-Paste)
+# Recipes (Copy-Paste)
 
-Replace `helloplugin` / `HelloPlugin` with your identifier and class name. Keep them consistent.
+Replace `helloplugin` / `HelloPlugin` consistently. Prefer studying [examples.md](./examples.md) for production shapes.
 
 ---
 
-## Recipe 1 — Minimal plugin (backend only)
+## Recipe 1 — Minimal plugin
 
 ### `conf.yml`
 
@@ -13,12 +13,10 @@ plugin:
   name: HelloPlugin
   identifier: helloplugin
   description: "Hello world FeatherPanel plugin."
-  flags:
-    - hasEvents
+  flags: [hasEvents]
   version: 1.0.0
   target: v3
-  author:
-    - Example Author
+  author: [Example Author]
   icon: "https://cdn.mythical.systems/featherpanel/logo.png"
   requiredConfigs: []
   dependencies:
@@ -30,7 +28,6 @@ plugin:
 
 ```php
 <?php
-
 namespace App\Addons\helloplugin;
 
 use App\Plugins\AppPlugin;
@@ -38,17 +35,9 @@ use App\Plugins\PluginEvents;
 
 class HelloPlugin implements AppPlugin
 {
-    public static function processEvents(PluginEvents $event): void
-    {
-    }
-
-    public static function pluginInstall(): void
-    {
-    }
-
-    public static function pluginUninstall(): void
-    {
-    }
+    public static function processEvents(PluginEvents $event): void {}
+    public static function pluginInstall(): void {}
+    public static function pluginUninstall(): void {}
 }
 ```
 
@@ -56,84 +45,19 @@ class HelloPlugin implements AppPlugin
 
 ## Recipe 2 — Authenticated JSON API
 
-### `Routes/helloplugin.php`
-
-```php
-<?php
-
-use App\App;
-use App\Addons\helloplugin\Controllers\User\HelloController;
-use Symfony\Component\Routing\RouteCollection;
-
-return function (RouteCollection $routes): void {
-    App::getInstance(true)->registerAuthRoute(
-        $routes,
-        'user-helloplugin-ping',
-        '/api/user/helloplugin/ping',
-        function ($request) {
-            return (new HelloController())->ping($request);
-        },
-        ['GET']
-    );
-};
-```
-
-### `Controllers/User/HelloController.php`
-
-```php
-<?php
-
-namespace App\Addons\helloplugin\Controllers\User;
-
-use App\Helpers\ApiResponse;
-use App\Plugins\PluginSettings;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-
-class HelloController
-{
-    public function ping(Request $request): Response
-    {
-        $user = $request->get('user');
-
-        return ApiResponse::success([
-            'message' => 'pong',
-            'user' => $user['username'] ?? null,
-            'greeting' => PluginSettings::getSetting('helloplugin', 'greeting') ?? 'Hello',
-        ]);
-    }
-}
-```
-
-Wire settings in `pluginInstall` + `config:` in `conf.yml` as needed.
+`Routes/helloplugin.php` + `Controllers/User/HelloController.php` — see previous docs / discordplus & featherimages for `registerAuthRoute` + `ApiResponse::success`.
 
 ---
 
-## Recipe 3 — Admin setting + install defaults
+## Recipe 3 — Admin setting defaults
 
-### Add to `conf.yml`
-
-```yaml
-config:
-  - name: greeting
-    display_name: "Greeting"
-    type: text
-    description: "Text returned by the ping endpoint."
-    required: false
-    validation: {}
-    default: "Hello from HelloPlugin"
-```
-
-### Install hook
+Add `config:` entries (see [conf-yml.md](./conf-yml.md)). In `pluginInstall`:
 
 ```php
 use App\Plugins\PluginSettings;
 
-public static function pluginInstall(): void
-{
-    if (PluginSettings::getSetting('helloplugin', 'greeting') === null) {
-        PluginSettings::setSetting('helloplugin', 'greeting', 'Hello from HelloPlugin');
-    }
+if (PluginSettings::getSetting('helloplugin', 'greeting') === null) {
+    PluginSettings::setSetting('helloplugin', 'greeting', 'Hello from HelloPlugin');
 }
 ```
 
@@ -141,177 +65,107 @@ public static function pluginInstall(): void
 
 ## Recipe 4 — Dashboard widget
 
-### `Frontend/widgets.json`
-
-```json
-[
-  {
-    "id": "helloplugin-dashboard",
-    "component": "helloplugin/widget.html",
-    "enabled": true,
-    "priority": 40,
-    "page": "dashboard",
-    "location": "after-header",
-    "pluginName": "HelloPlugin",
-    "title": "Hello Plugin",
-    "description": "Sample widget",
-    "size": "full",
-    "card": {
-      "enabled": true,
-      "padding": "sm",
-      "header": { "show": true }
-    },
-    "iframe": {
-      "minHeight": "120px",
-      "title": "Hello Plugin",
-      "ariaLabel": "Hello Plugin widget"
-    }
-  }
-]
-```
-
-### `Frontend/Components/widget.html`
-
-```html
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <style>
-      body {
-        margin: 0;
-        font-family: system-ui, sans-serif;
-        background: transparent;
-        color: inherit;
-        padding: 0.75rem 1rem;
-      }
-      code { font-size: 0.85em; }
-    </style>
-  </head>
-  <body>
-    <p>Hello from <strong>HelloPlugin</strong>.</p>
-    <p><code id="out">Loading…</code></p>
-    <script>
-      (async function () {
-        try {
-          const res = await fetch('/api/user/helloplugin/ping', {
-            credentials: 'include',
-            headers: { Accept: 'application/json' },
-          });
-          const json = await res.json();
-          document.getElementById('out').textContent = JSON.stringify(json);
-        } catch (e) {
-          document.getElementById('out').textContent = String(e);
-        }
-      })();
-    </script>
-  </body>
-</html>
-```
-
-Ensure Components are symlinked (`/components/helloplugin/widget.html`). Re-install or recreate the symlink if missing.
+`Frontend/widgets.json` + `Frontend/Components/widget.html` — pattern from discordplus (raw banner) or card widgets. Full sample in earlier recipes; page slugs from [../widgets/](../widgets/).
 
 ---
 
 ## Recipe 5 — Admin sidebar page
 
-### `Frontend/sidebar.json`
+`Frontend/sidebar.json` admin section → `component: "/helloplugin/admin.html"` (discordplus-style).
 
-```json
+---
+
+## Recipe 6 — Migration + Chat model
+
+SQL in `Migrations/` + class in `Chat/` using `Database::getPdoConnection()` — copy idioms from featherimages ([database.md](./database.md)).
+
+---
+
+## Recipe 7 — Addon Cron (billinglinks-style)
+
+`Cron/HelloPurgeCron.php`:
+
+```php
+<?php
+namespace App\Addons\helloplugin\Cron;
+
+use App\Cron\Cron;
+use App\Cron\TimeTask;
+use App\Chat\TimedTask;
+
+class HelloPurgeCron implements TimeTask
 {
-  "client": {},
-  "admin": {
-    "/hello": {
-      "name": "Hello Plugin",
-      "lucideIcon": "sparkles",
-      "showBadge": false,
-      "redirect": "/hello",
-      "component": "/helloplugin/admin.html",
-      "description": "Hello Plugin admin page",
-      "category": "admin",
-      "group": "Plugins"
+    public function run(): void
+    {
+        $cron = new Cron('helloplugin-purge', '1D');
+        $cron->runIfDue(function () {
+            TimedTask::markRun('helloplugin-purge', true, 'ok');
+        });
     }
-  },
-  "server": {}
 }
 ```
 
-### `Frontend/Components/admin.html`
+---
 
-```html
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Hello Plugin</title>
-    <style>
-      body {
-        margin: 0;
-        padding: 1.5rem;
-        font-family: system-ui, sans-serif;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Hello Plugin</h1>
-    <p>Admin UI loaded from <code>/components/helloplugin/admin.html</code>.</p>
-  </body>
-</html>
-```
+## Recipe 8 — CLI command
+
+`Commands/HelloWorld.php` implementing `CommandBuilder` → `php fuse helloworld` ([cron-and-commands.md](./cron-and-commands.md)).
 
 ---
 
-## Recipe 6 — Migration
+## Recipe 9 — Server-scoped route (minecraftutils-style)
 
-### `Migrations/2026-04-08-12.00-helloplugin-logs.sql`
-
-```sql
-CREATE TABLE IF NOT EXISTS `featherpanel_helloplugin_logs` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `message` TEXT NOT NULL,
-  `level` VARCHAR(20) DEFAULT 'info',
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+```php
+App::getInstance(true)->registerServerRoute(
+    $routes,
+    'helloplugin-server-tool',
+    '/api/user/servers/{uuidShort}/addons/helloplugin/tool',
+    function ($request, $uuidShort) {
+        return (new \App\Addons\helloplugin\Controllers\Servers\ToolController())->index($request, $uuidShort);
+    },
+    ['GET']
+);
 ```
 
-Run via install or:
-
-```bash
-php fuse migrate
-```
+Pair with `sidebar.json` → `server` section + `group`.
 
 ---
 
-## Recipe 7 — Power SDK listener
+## Recipe 10 — Public page (billingplans-style)
 
-### `Frontend/index.js` (or script tag in a component)
+`Frontend/public.json`:
 
-```js
-(function () {
-  function boot() {
-    var FP = window.FeatherPanel;
-    if (!FP || !FP.events) return setTimeout(boot, 50);
-
-    FP.events.on('fp:host:ready', function () {
-      FP.toast.info('HelloPlugin ready');
-    });
-
-    FP.events.on('fp:route:change', function (payload) {
-      console.log('[helloplugin] route', payload);
-    });
-  }
-  boot();
-})();
+```json
+{
+  "pages": [
+    {
+      "path": "/hello/public",
+      "name": "Hello Public",
+      "component": "/helloplugin/public.html",
+      "nav": { "label": "Hello", "order": 50 },
+      "enabled": true
+    }
+  ]
+}
 ```
 
-How `index.js` is loaded depends on your UI pack / panel version — prefer embedding the boot snippet in a widget/page component if unsure.
+Avoid reserved prefixes — [public-pages.md](./public-pages.md).
 
 ---
 
-## Recipe 8 — Depends on another plugin
+## Recipe 11 — Theme pack
+
+Use Dev template `theme`, or add `Frontend/theme.json` + `theme.css` from [themes.md](./themes.md).
+
+---
+
+## Recipe 12 — UI pack
+
+Use Dev template `ui-pack` for `ui.json`, `overrides.json`, sample `Components/action-panel.html`, and Power SDK `index.js` — [ui-packs.md](./ui-packs.md).
+
+---
+
+## Recipe 13 — Depends on another plugin
 
 ```yaml
 dependencies:
@@ -320,16 +174,24 @@ dependencies:
   - plugin=billingcore
 ```
 
-Fail closed if the dependency API is missing; check for classes under `App\Addons\billingcore\…` before calling them.
+Guard calls to `App\Addons\billingcore\…` if missing.
+
+---
+
+## Recipe 14 — Middleware gate (discordplus-style)
+
+1. `middleware/RequireSomethingMiddleware.php` implementing `MiddlewareInterface`
+2. Attach from `processEvents` → `AppEvent::onRouterReady`
+3. Default settings **off**; admin bypass required
+
+Details: [middleware-and-hooks.md](./middleware-and-hooks.md).
 
 ---
 
 ## After creating files
 
-1. Confirm folder name === identifier
-2. Reload PHP / panel
-3. Open Admin → Plugins and configure
-4. Hit `/api/user/helloplugin/ping` while logged in
-5. Visit dashboard for the widget; `/admin/hello` (or panel’s plugin path) for sidebar UI
-
-For deeper API shapes, see OpenAPI docs. For page slugs, see widgets docs. For PHP hooks, see events docs.
+1. Folder === identifier  
+2. Reload PHP / panel  
+3. Configure in Admin → Plugins  
+4. Confirm `/api/system/plugin-sidebar` / `plugin-widgets` include your manifests  
+5. Check `backend/storage/logs/` on failure  

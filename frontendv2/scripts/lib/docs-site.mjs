@@ -104,8 +104,7 @@ export function renderDocsPage({
 ${body}
 
     <footer class="fp-footer">
-      Machine-readable sources (.md / .json) are published next to these pages for RAG and AI agents.
-      See <a href="${DOCS_BASE}/rag/">RAG index</a> or <a href="${DOCS_BASE}/llms.txt">llms.txt</a>.
+      <a href="${DOCS_BASE}/rag/">RAG</a> · <a href="${DOCS_BASE}/llms.txt">llms.txt</a> · <a href="${DOCS_BASE}/catalog.json">catalog.json</a>
     </footer>
   </div>
   ${includeSearchScript ? `<script src="${DOCS_BASE}/assets/docs.js"></script>` : ''}

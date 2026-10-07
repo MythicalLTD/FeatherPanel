@@ -105,38 +105,32 @@ function generateHomePage(widgetCount) {
         {
             href: `${DOCS_BASE}/plugins/`,
             title: 'Plugins',
-            body: 'Full addon authoring guides in Markdown — conf.yml, backend, frontend, SDK, packaging, AI recipes.',
-            badge: 'Markdown · llms.txt',
+            body: 'Build addons: conf.yml, backend, frontend, themes, cron, and more.',
         },
         {
             href: `${DOCS_BASE}/widgets/`,
             title: 'Widgets',
-            body: 'Page slugs and injection points for plugin UI.',
-            badge: `${widgetCount} slugs`,
+            body: `Page slugs and injection points (${widgetCount}).`,
         },
         {
             href: `${DOCS_BASE}/events/`,
             title: 'Events',
             body: 'PHP plugin hooks and payload keys.',
-            badge: 'HTML · MD · JSON',
         },
         {
             href: `${DOCS_BASE}/permissions/`,
             title: 'Permissions',
-            body: 'Every permission node from permission_nodes.fpperm.',
-            badge: 'HTML · MD · JSON',
+            body: 'All permission nodes.',
         },
         {
             href: `${DOCS_BASE}/api/`,
             title: 'API',
-            body: 'OpenAPI reference (Redoc) plus raw openapi.json for tools.',
-            badge: 'OpenAPI JSON',
+            body: 'OpenAPI reference and openapi.json.',
         },
         {
             href: `${DOCS_BASE}/rag/`,
-            title: 'RAG / AI index',
-            body: 'Catalog of every .md and .json document published on this site.',
-            badge: 'catalog.json',
+            title: 'RAG',
+            body: 'Index of every .md and .json file.',
         },
     ]
         .map(
@@ -144,37 +138,23 @@ function generateHomePage(widgetCount) {
   <div class="fp-card">
     <h2>${escapeHtml(card.title)}</h2>
     <p>${escapeHtml(card.body)}</p>
-    <div class="fp-meta" style="margin-top:0.85rem"><span class="fp-badge">${escapeHtml(card.badge)}</span></div>
   </div>
 </a>`,
         )
         .join('\n');
 
     const body = `${hero({
-        title: 'FeatherPanel Developer Docs',
-        subtitle:
-            'Browse the human UI, or fetch Markdown and JSON from the same GitHub Pages site for RAG and coding agents.',
-        badges: ['GitHub Pages', 'Markdown + JSON', 'OpenAPI'],
+        title: 'FeatherPanel Docs',
+        subtitle: 'Developer reference. Also available as Markdown and JSON for RAG.',
         formats: [
             { href: `${DOCS_BASE}/llms.txt`, label: 'llms.txt' },
             { href: `${DOCS_BASE}/catalog.json`, label: 'catalog.json' },
-            { href: `${DOCS_BASE}/rag/`, label: 'RAG index' },
-            { href: `${DOCS_BASE}/plugins/ai-guide.md`, label: 'Plugin AI guide' },
+            { href: `${DOCS_BASE}/plugins/`, label: 'Plugin guides' },
         ],
     })}
 
 <section class="fp-grid">
 ${cards}
-</section>
-
-<section class="fp-section fp-card">
-  <h2>Quick start</h2>
-  <p class="fp-muted">Building a plugin? Start with the <a href="${DOCS_BASE}/plugins/">plugin docs</a> (especially <a href="${DOCS_BASE}/view.html?doc=plugins/ai-guide.md">ai-guide.md</a>), then use widgets/events/permissions/API as references.</p>
-  <ol class="fp-muted">
-    <li>Create <code>backend/storage/addons/{identifier}/</code> with <code>conf.yml</code> + <code>AppPlugin</code> entry class</li>
-    <li>Add <code>Routes/</code>, <code>Frontend/widgets.json</code>, or sidebar pages as needed</li>
-    <li>Pull machine-readable dumps from <a href="${DOCS_BASE}/rag/">/rag/</a> into your RAG index</li>
-  </ol>
 </section>`;
 
     return renderDocsPage({

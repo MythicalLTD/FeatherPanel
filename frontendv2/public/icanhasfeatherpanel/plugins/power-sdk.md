@@ -3,128 +3,106 @@
 Source: `frontendv2/src/lib/plugin-sdk/`  
 HTML overview: [`../plugin-power.html`](../plugin-power.html)
 
-The host injects a JS API so plugins can listen to panel events, intercept actions, call the API, open modals, contribute search results, and register shortcuts — **without rebuilding the panel**.
+Host injects a JS API so plugins can listen to events, intercept actions, call the API, open modals, contribute search, and register shortcuts — **without rebuilding the panel**.
 
 ## Boot helper
-
-Put a script in `Frontend/index.js` or inside a component:
 
 ```js
 (function () {
   function boot() {
     var FP = window.FeatherPanel;
     if (!FP || !FP.events) return setTimeout(boot, 50);
-
-    FP.events.on('fp:route:change', function (p) {
-      console.log('route', p);
-    });
+    // use FP…
   }
   boot();
 })();
 ```
 
-Iframe widgets use a same-origin `postMessage` bridge (`featherpanel-bus`) so the same API shape works inside components.
+Iframe widgets use same-origin `postMessage` bridge (`featherpanel-bus`).
 
 ## Namespaces
 
 | Namespace | Role |
 |-----------|------|
 | `events` | `on`, `once`, `off`, `emit` |
-| `actions` | `register`, `unregister`, `run` — cancellable middleware pipeline |
+| `actions` | `register`, `unregister`, `run` — cancellable middleware |
 | `theme` | `getMode`, `getAccent`, `getPackId`, `subscribe` |
-| `api` | HTTP helpers (axios-backed); can intercept via `fp:api:request` |
-| `toast` | User notifications |
-| `navigate` | Client navigation (`fp:nav:push`) |
-| `context` | `getPathname`, `getUser`, `getUiPackId`, `subscribe` |
-| `ui.modal` | `register` / `open` / `close` |
-| `search` | `contribute`, `query` |
-| `shortcuts` | `register` |
+| `api` | HTTP helpers; intercept via `fp:api:request` |
+| `toast` | Notifications |
+| `navigate` | Client nav (`fp:nav:push`) |
+| `context` | pathname / user / ui pack |
+| `ui.modal` | register / open / close |
+| `search` | contribute / query |
+| `shortcuts` | register |
 
-## Canonical event IDs
+## Canonical IDs
 
-From `FP_EVENTS`:
+**Events:** `fp:host:ready`, `fp:route:change`, `fp:page:mount|unmount`, `fp:theme:change`, `fp:uipack:change`, `fp:session:change`, `fp:server:context`, `fp:server:power:result`, `fp:server:console:ready`, `fp:files:saved|selection`, `fp:api:error`
 
-| ID | When |
-|----|------|
-| `fp:host:ready` | Host API installed |
-| `fp:route:change` | Pathname changes |
-| `fp:page:mount` / `fp:page:unmount` | Route settle |
-| `fp:theme:change` | Theme / accent / pack |
-| `fp:uipack:change` | Active UI pack |
-| `fp:session:change` | Login / user change |
-| `fp:server:context` | Enter/leave server routes |
-| `fp:server:power:result` | Power action result |
-| `fp:server:console:ready` | Console ready |
-| `fp:files:saved` / `fp:files:selection` | File manager |
-| `fp:api:error` | API error |
+**Actions:** `fp:server:power`, `fp:files:save|upload`, `fp:nav:push`, `fp:form:submit`, `fp:ui:confirm`, `fp:api:request`, `fp:search:query`, `fp:shortcut:invoke`, `fp:data:action`
 
-## Canonical action IDs
-
-From `FP_ACTIONS`:
-
-| ID | Purpose |
-|----|---------|
-| `fp:server:power` | Start/stop/restart/kill |
-| `fp:files:save` / `fp:files:upload` | Files |
-| `fp:nav:push` | Navigation |
-| `fp:form:submit` | Forms |
-| `fp:ui:confirm` | Confirm dialogs |
-| `fp:api:request` | Outgoing API |
-| `fp:search:query` | Search |
-| `fp:shortcut:invoke` | Shortcuts |
-| `fp:data:action` | `data-fp-action` DOM hooks |
-
-### Action middleware example
+## Full SDK example (UI-pack scaffold)
 
 ```js
 FP.actions.register('fp:server:power', {
   id: 'myplugin.guard-kill',
   priority: 100,
   handler: async function (ctx, next) {
-    if (ctx.action === 'kill' && !confirm('Kill server?')) {
+    if (ctx.action === 'kill' && !confirm('Kill?')) {
       ctx.cancel('aborted');
       return;
     }
     await next();
   },
 });
-```
 
-### Search + shortcuts
-
-```js
 FP.search.contribute({
   id: 'myplugin',
   search: function (q) {
-    return q
-      ? [{ id: '1', title: 'My plugin', href: '/admin/myplugin' }]
-      : [];
+    return q ? [{ id: '1', title: 'My plugin', href: '/admin/myplugin' }] : [];
   },
 });
 
 FP.shortcuts.register({
   id: 'myplugin-toast',
   combo: 'ctrl+shift+m',
-  handler: function () {
-    FP.toast.info('Hello from plugin');
-  },
+  handler: function () { FP.toast.info('Hello'); },
 });
 ```
 
-## DOM actions
+## Real plugin patterns (lighter than full SDK)
 
-`data-fp-action` attributes can bind clicks to the action pipeline (`bindFpActionClicks`). Prefer documented action ids.
+### discordplus — API polling gate
 
-## Versioning
+`Frontend/index.js` waits for `window.FeatherPanel.api`, then `GET /api/user/discordplus/status`, and shows a link overlay when required. Does not need `FP.actions`.
 
-Host version is exposed as `FEATHERPANEL_HOST_VERSION` / `FP.version` (see `types.ts`). Feature-detect namespaces (`if (FP.ui && FP.ui.modal)`) when supporting older panels.
+### billingreferrals — route DOM hooks
 
-## When to use SDK vs widgets vs PHP events
+Listens for navigation / injects UI on `/auth/register` using sessionStorage — useful when you only need a page-specific enhancement.
+
+### widgetbot — third-party embed
+
+Scaffold-style `waitForAPI()` then loads an external widget library.
+
+## DOM `data-fp-action`
+
+Attributes can bind clicks into the action pipeline. Prefer documented action ids.
+
+## When to use what
 
 | Need | Prefer |
 |------|--------|
-| Inject HTML into a page | `widgets.json` |
-| Add nav entry / full page | `sidebar.json` + component |
-| Intercept UI power/files/nav | Power SDK actions |
-| React to server create/delete in PHP | PHP `processEvents` |
-| Custom REST API | PHP `Routes/` + Controllers |
+| Inject HTML card | `widgets.json` |
+| Nav + page | `sidebar.json` |
+| Intercept power/files/nav | Power SDK `actions` |
+| Theme tokens | `theme.json` |
+| PHP server create hooks | `processEvents` |
+| REST API | `Routes/` + Controllers |
+
+## Feature detection
+
+```js
+if (FP.ui && FP.ui.modal) { /* … */ }
+```
+
+Check `FP.version` / `FEATHERPANEL_HOST_VERSION` when supporting older panels.

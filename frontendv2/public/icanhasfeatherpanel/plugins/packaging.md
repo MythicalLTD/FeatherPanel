@@ -1,75 +1,59 @@
 # Packaging, Install & Distribution
 
-## Install locations
-
-Installed addons always expand to:
+## Install location
 
 ```
 backend/storage/addons/{identifier}/
 ```
 
-Identifier comes from `conf.yml` (`plugin.identifier`) and must match the folder name.
+`plugin.identifier` must match the folder name.
 
-## Validation before install
+## Pre-install validation
 
 `PluginEntryValidator::validatePackage($dir)` checks:
 
-1. `conf.yml` exists and parses
-2. `PluginConfig::isConfigValid`
-3. Identifier valid
-4. Entry class file present (`{plugin.name}.php` or single discoverable `AppPlugin`)
-5. Namespace is `App\Addons\{identifier}`
-6. Class implements `App\Plugins\AppPlugin`
-
-Fix validation errors before packaging.
+1. `conf.yml` parses and passes `PluginConfig::isConfigValid`
+2. Identifier valid
+3. Entry class file / discoverable `AppPlugin`
+4. Namespace `App\Addons\{identifier}`
+5. Implements `AppPlugin`
 
 ## `.fpa` packages
 
-Marketplace / upload installs use a password-protected ZIP with the `.fpa` extension.
+Password-protected ZIP used by marketplace / upload install.
 
-- Extracted via PHP `ZipArchive` (AES) with `unzip` fallback (`AddonPackageHelper`)
-- Upload endpoint: `POST /api/admin/plugins/upload/install`
-- Cloud/marketplace installs call the same perform-install path
+- Extract via PHP `ZipArchive` (AES) with `unzip` fallback
+- Upload: `POST /api/admin/plugins/upload/install`
+- Prefer **Export** in developer mode over hand-rolled zips
 
-Exact zip password is defined in `CloudPluginsController` for the development kit / panel packaging flow. Prefer exporting through the panel’s **Export** action in developer mode rather than inventing a zip by hand.
+## Install / update steps (panel)
 
-### Export (developer mode)
+Approximate order:
 
-Admin Plugins / Plugin Manager export builds a zip with ignore patterns (e.g. `.featherexport` / node_modules exclusions). Use that artifact for distribution.
+1. Extract / stage  
+2. Validate entry + conf  
+3. On update: backup `Storage/` + settings  
+4. Replace addon tree  
+5. Restore `Storage/`  
+6. Symlink `Public/` → `public/addons/{identifier}`  
+7. Symlink `Frontend/Components/` → `public/components/{identifier}`  
+8. Run `Migrations/*.sql`  
+9. Call `pluginUpdate` or `pluginInstall`  
+10. Record installed plugin metadata  
 
-## Install steps (what the panel does)
-
-Approximate order in `performAddonInstall`:
-
-1. Extract / stage package
-2. Validate entry + conf
-3. Backup existing `Storage/` and settings on update
-4. Copy/replace addon tree
-5. Restore `Storage/`
-6. Symlink `Public/` → `public/addons/{identifier}`
-7. Symlink `Frontend/Components/` → `public/components/{identifier}`
-8. Run `Migrations/*.sql`
-9. Call `pluginUpdate` or `pluginInstall`
-10. Record installed plugin metadata
-
-## Updates
-
-- Compare `plugin.version`
-- Prefer implementing `pluginUpdate($old, $new)` for migrations of settings/data
-- Never wipe `Storage/` in your uninstall/update logic unless intentional — panel tries to preserve it
+**Never wipe `Storage/`** in your uninstall/update logic unless intentional — the panel preserves it across marketplace updates (e.g. billing file store uploads).
 
 ## Manual / git installs
 
-For development you can clone or copy directly into `storage/addons/{identifier}/`. Ensure:
+Copy into `storage/addons/{identifier}/`, restart PHP-FPM/opcache if needed, `php fuse migrate`, ensure Components/Public symlinks exist.
 
-- Composer autoload can see `App\Addons\…` (already configured)
-- Opcache/PHP-FPM restarted if classes don’t appear
-- Run `php fuse migrate` for SQL
-- Create symlinks for Components/Public if the install path didn’t
+## What to ship
 
-## Cloud marketplace fields
+**Include:** conf.yml, entry class, Routes, Controllers, Migrations, Cron, Commands, built `Frontend/Components`, manifest JSON, README  
 
-Optional in `conf.yml`:
+**Exclude:** `Frontend/App/node_modules/`, build caches, `.git`, secrets, panel core files  
+
+## Cloud fields
 
 ```yaml
 plugin:
@@ -78,25 +62,14 @@ plugin:
   maximum_panel_version: "2.0.0"
 ```
 
-## What to ship / what to ignore
+## Operator checklist
 
-**Ship:**
+1. Enable / configure settings (`requiredConfigs`)  
+2. Hit new API routes  
+3. Confirm sidebar/widgets/public pages appear (hard refresh)  
+4. Confirm theme/UI packs selectable if shipped  
+5. Check `backend/storage/logs/` on failure  
 
-- `conf.yml`, entry class, Routes, Controllers, Migrations, Cron, Commands
-- Built frontend assets under `Frontend/Components/`
-- Manifest JSON files
-- `README.md`
+## Related
 
-**Do not ship:**
-
-- `Frontend/App/node_modules/`
-- Build caches, `.git` (optional), local secrets
-- Panel core files
-
-## Post-install operator checklist
-
-1. Admin → Plugins → enable / configure settings
-2. Fill `requiredConfigs` keys
-3. Confirm routes respond
-4. Confirm sidebar/widgets appear (hard refresh frontend)
-5. Check logs under `backend/storage/logs/` on failure
+- [examples.md](./examples.md) · [database.md](./database.md) · [ai-guide.md](./ai-guide.md)

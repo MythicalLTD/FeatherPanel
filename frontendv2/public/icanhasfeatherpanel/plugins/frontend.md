@@ -1,75 +1,134 @@
-# Frontend Plugin Manifests & UI
+# Frontend Manifests & Assets
 
-Frontend integration is **declarative JSON** under `Frontend/`, plus static HTML/JS/CSS published under `Frontend/Components/` (served at `/components/{identifier}/`).
+Frontend integration is mostly **declarative JSON** under `Frontend/`, plus static HTML/JS/CSS published from `Frontend/Components/` (URL prefix `/components/{identifier}/`).
 
-Optional Power SDK scripts use `window.FeatherPanel` — see [power-sdk.md](./power-sdk.md).
+## Complete Frontend file inventory
 
-JSON schemas:
-
-- [`../schemas/plugin-ui-pack.schema.json`](../schemas/plugin-ui-pack.schema.json)
-- [`../schemas/plugin-theme.schema.json`](../schemas/plugin-theme.schema.json)
-- [`../schemas/plugin-overrides.schema.json`](../schemas/plugin-overrides.schema.json)
+| File | Purpose | Live examples |
+|------|---------|---------------|
+| `sidebar.json` | Nav entries | discordplus, featherimages, minecraftutils, billing* |
+| `widgets.json` | Page injections | discordplus, billingcore, … |
+| `public.json` | Unauthenticated pages | billingplans, billingfilesstore → [public-pages.md](./public-pages.md) |
+| `theme.json` + `theme.css` | Theme packs | scaffold only → [themes.md](./themes.md) |
+| `ui.json` | UI packs | scaffold only → [ui-packs.md](./ui-packs.md) |
+| `overrides.json` | Slot overrides | scaffold only → [ui-packs.md](./ui-packs.md) |
+| `index.js` | Boot / Power SDK / gates | discordplus, widgetbot, billingreferrals |
+| `index.css` | Global plugin CSS | discordplus, widgetbot |
+| `Components/**` | Served static UI | symlink → `/components/{id}/` |
+| `App/**` | Optional Vite/React/Vue source | featherimages, minecraftutils, discordplus |
 
 ## Asset publishing
 
-On install/update the panel links:
+On install/update:
 
-| Addon path | Public URL prefix |
-|------------|-------------------|
+| Addon path | Public URL |
+|------------|------------|
 | `Frontend/Components/` | `/components/{identifier}/` |
 | `Public/` | `/addons/{identifier}/` |
 
-Widget iframes load component URLs with query params for theme/route/context.
+Widget iframes load component URLs with theme/route/context query params.
 
-When using a Vite/React/Vue app in `Frontend/App/`, configure the build `outDir` so outputs land in `Frontend/Components/` (or a subfolder referenced by your JSON).
+### Vite / SPA pattern (featherimages, minecraftutils, discordplus)
+
+```
+Frontend/App/           # package.json, vite.config, src/
+Frontend/Components/    # build output (or symlink/copy dist here)
+```
+
+Point JSON `component` fields at built HTML, e.g.:
+
+- `/discordplus/dist/admin.html`
+- `/featherimages/dist/client.html`
+- `/mcutils/dist/index.html` (note: component path may use a short folder name if that is how Components are laid out)
+
+Runtime resolves under `/components/…`.
+
+## `sidebar.json`
+
+Sections merged by the panel: **`server`**, **`vds`**, **`webspace`**, **`client`**, **`admin`**.
+
+⚠️ Keys like `"dashboard"` (seen in some minecraft addons) are **silently ignored**.
+
+### Real example — discordplus (admin)
+
+```json
+{
+  "client": {},
+  "admin": {
+    "/discordplus": {
+      "name": "Discord Plus",
+      "lucideIcon": "search",
+      "showBadge": false,
+      "redirect": "/discordplus",
+      "component": "/discordplus/dist/admin.html",
+      "description": "Search users by Discord ID or username",
+      "category": "admin",
+      "group": "Users"
+    }
+  },
+  "server": {}
+}
+```
+
+### Real example — minecraftutils (server group)
+
+```json
+{
+  "server": {
+    "/minecraftutils": {
+      "name": "Minecraft Utils",
+      "lucideIcon": "wrench",
+      "redirect": "/minecraftutils",
+      "component": "/mcutils/dist/index.html",
+      "description": "View Minecraft Utils",
+      "category": "server",
+      "group": "Minecraft Java Edition"
+    }
+  }
+}
+```
+
+Common fields: `name`, `description`, `lucideIcon` / `icon`, `redirect`, `component`, `js`, `permission`, `category`, `group`, `priority`, `showBadge`.
+
+Server items may be filtered by spell IDs via settings (`plugin-sidebar-server-allowedOnlyOnSpells`).
 
 ## `widgets.json`
 
-Array of widget definitions. Aggregated by `GET /api/system/plugin-widgets`.
+Array of objects. Required: `id`, `page`, `location`, `component`.
 
-### Required fields
-
-| Field | Description |
-|-------|-------------|
-| `id` | Unique widget id |
-| `page` | Page slug (e.g. `dashboard`, `admin-users-edit`, `server-console`) |
-| `location` | Injection point (e.g. `top-of-page`, `after-header`, `before-content`, `bottom-of-page`) |
-| `component` | Path under `/components/` (often `{identifier}/file.html`) |
-
-### Common optional fields
-
-`enabled`, `hidden`, `priority`, `pluginName`, `title`, `description`, `icon`, `size`, `borderless`, `useRawRendering`, `card`, `iframe`, `behavior`
-
-### Example
+### Real example — discordplus (truncated)
 
 ```json
 [
   {
-    "id": "helloplugin-dashboard-banner",
-    "component": "helloplugin/banner.html",
+    "id": "discordplus-link-gate-dashboard",
+    "component": "discordplus/dist/link-widget.html",
     "enabled": true,
-    "priority": 50,
+    "priority": 100,
     "page": "dashboard",
     "location": "top-of-page",
-    "pluginName": "HelloPlugin",
-    "title": "Hello",
-    "size": "full",
     "useRawRendering": true,
+    "borderless": true,
     "card": { "enabled": false },
-    "iframe": {
-      "minHeight": "80px",
-      "title": "Hello plugin",
-      "ariaLabel": "Hello plugin banner"
-    }
+    "iframe": { "minHeight": "88px", "title": "Discord account linking" }
+  },
+  {
+    "id": "discordplus-admin-user-edit",
+    "component": "discordplus/dist/admin-user-widget.html",
+    "page": "admin-users-edit",
+    "location": "after-header",
+    "title": "Discord",
+    "size": "full",
+    "card": { "enabled": true, "padding": "sm", "header": { "show": true } }
   }
 ]
 ```
 
 ### Finding page slugs & locations
 
-Browse `/icanhasfeatherpanel/widgets/` or search the panel for `usePluginWidgets('…')`.
+Browse [../widgets/](../widgets/) or `../widgets/index.json`.
 
-Visibility can depend on settings:
+### Visibility
 
 ```json
 "hidden": {
@@ -79,94 +138,31 @@ Visibility can depend on settings:
 }
 ```
 
-## `sidebar.json`
+Types: `always` | `never` | `plugin_setting`.
 
-Object with sections: `client`, `admin`, `server`, `vds`, `webspace`.
+### Sizes
 
-Each key is a path segment under the plugin; the API prefixes with `/{identifier}`.
+`full` | `half` | `third` | `quarter`
 
-### Example
+## Calling APIs from widgets
 
-```json
-{
-  "client": {},
-  "admin": {
-    "/hello": {
-      "name": "Hello Admin",
-      "lucideIcon": "sparkles",
-      "showBadge": false,
-      "redirect": "/hello",
-      "component": "/helloplugin/admin.html",
-      "description": "Hello plugin admin UI",
-      "category": "admin",
-      "group": "Plugins"
-    }
-  },
-  "server": {}
-}
+Same-origin fetch with cookies:
+
+```js
+const res = await fetch('/api/user/discordplus/status', {
+  credentials: 'include',
+  headers: { Accept: 'application/json' },
+});
 ```
 
-Common item fields: `name`, `description`, `lucideIcon` or `icon`, `redirect`, `component`, `js`, `permission`, `category`, `group`, `priority`, `showBadge`.
+Or use `window.FeatherPanel.api` / postMessage bridge — [power-sdk.md](./power-sdk.md).
 
-Server sidebar items may be filtered by spell IDs via plugin settings (`plugin-sidebar-server-allowedOnlyOnSpells`).
+## `index.js` patterns (real)
 
-Routes for plugin pages are handled by the panel’s catch-all plugin path pages (admin/server/webspace). Your `component` should be an HTML document under `/components/{identifier}/…`.
-
-## `public.json`
-
-Unauthenticated / public pages. Aggregated by `GET /api/system/plugin-public-pages`.
-
-Typical shape includes a `pages` array with path match + component. See live plugins and `PluginPublicPagesController` for the exact fields your panel version expects.
-
-## `ui.json` (UI packs)
-
-Layout takeover packs: replace shell regions or whole pages, hide slots, register actions.
-
-See schema `plugin-ui-pack.schema.json` and `/icanhasfeatherpanel/plugin-themes.html`.
-
-Highlights:
-
-- `shell.replace` — replace chrome pieces
-- `pages[]` with `match` path patterns (`/dashboard`, `/server/:uuidShort/console`)
-- `hide[]` — slot ids to hide
-- `theme` — theme pack id
-- Nested `packs[]` allowed
-- `enabled` / `hidden` visibility rules
-
-## `theme.json` + `theme.css`
-
-Design tokens for light/dark, accents, optional CSS file path. Schema: `plugin-theme.schema.json`.
-
-## `overrides.json`
-
-Slot-level hide/replace/actions (`component` iframe HTML vs `remote` ESM). Schema: `plugin-overrides.schema.json`.
-
-## Building HTML widgets that call the API
-
-Inside an iframe/component:
-
-1. Prefer `window.parent.FeatherPanel` / postMessage bridge (Power SDK installs a same-origin bus)
-2. Or call relative `/api/...` endpoints with the user’s session cookies (`credentials: 'include'`) when same-origin
-
-Keep widgets small; use `iframe.minHeight` and `useRawRendering` for borderless banners.
-
-## Compiling a SPA inside a plugin
-
-Pattern used by many addons:
-
-```
-Frontend/App/          # package.json, vite.config, src/
-Frontend/Components/   # build output (html/js/css)
-```
-
-Point `sidebar.json` / `widgets.json` `component` fields at the built HTML (e.g. `myplugin/dist/admin.html` if that is how you structure Components).
-
-## Admin visibility overrides
-
-Admins can hide plugin UI pieces via plugin settings keys generated for visibility scopes. Design `enabled`/`hidden` rules so operators can disable widgets without code edits.
+**discordplus:** wait for `FeatherPanel.api`, poll status, show link gate overlay.  
+**billingreferrals:** DOM hooks on `/auth/register`.  
+**UI-pack scaffold:** full Power SDK (`events`, `actions`, `search`, `shortcuts`).
 
 ## Related docs
 
-- [power-sdk.md](./power-sdk.md)
-- Widgets reference: `../widgets/`
-- HTML overview: `../plugin-power.html`, `../plugin-themes.html`
+- [public-pages.md](./public-pages.md) · [themes.md](./themes.md) · [ui-packs.md](./ui-packs.md) · [power-sdk.md](./power-sdk.md) · [examples.md](./examples.md)

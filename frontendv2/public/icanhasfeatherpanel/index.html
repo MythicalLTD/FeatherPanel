@@ -26,18 +26,13 @@
     </nav>
 
 <header class="fp-hero">
-  <h1>FeatherPanel Developer Docs</h1>
-  <p>Browse the human UI, or fetch Markdown and JSON from the same GitHub Pages site for RAG and coding agents.</p>
-  <div class="fp-meta">
-      <span class="fp-badge">GitHub Pages</span>
-      <span class="fp-badge">Markdown + JSON</span>
-      <span class="fp-badge">OpenAPI</span>
-    </div>
+  <h1>FeatherPanel Docs</h1>
+  <p>Developer reference. Also available as Markdown and JSON for RAG.</p>
+  
   <div class="fp-formats">
     <a href="/icanhasfeatherpanel/llms.txt">llms.txt</a>
     <a href="/icanhasfeatherpanel/catalog.json">catalog.json</a>
-    <a href="/icanhasfeatherpanel/rag/">RAG index</a>
-    <a href="/icanhasfeatherpanel/plugins/ai-guide.md">Plugin AI guide</a>
+    <a href="/icanhasfeatherpanel/plugins/">Plugin guides</a>
   </div>
 </header>
 
@@ -45,60 +40,43 @@
 <a class="fp-card-link" href="/icanhasfeatherpanel/plugins/">
   <div class="fp-card">
     <h2>Plugins</h2>
-    <p>Full addon authoring guides in Markdown — conf.yml, backend, frontend, SDK, packaging, AI recipes.</p>
-    <div class="fp-meta" style="margin-top:0.85rem"><span class="fp-badge">Markdown · llms.txt</span></div>
+    <p>Build addons: conf.yml, backend, frontend, themes, cron, and more.</p>
   </div>
 </a>
 <a class="fp-card-link" href="/icanhasfeatherpanel/widgets/">
   <div class="fp-card">
     <h2>Widgets</h2>
-    <p>Page slugs and injection points for plugin UI.</p>
-    <div class="fp-meta" style="margin-top:0.85rem"><span class="fp-badge">155 slugs</span></div>
+    <p>Page slugs and injection points (155).</p>
   </div>
 </a>
 <a class="fp-card-link" href="/icanhasfeatherpanel/events/">
   <div class="fp-card">
     <h2>Events</h2>
     <p>PHP plugin hooks and payload keys.</p>
-    <div class="fp-meta" style="margin-top:0.85rem"><span class="fp-badge">HTML · MD · JSON</span></div>
   </div>
 </a>
 <a class="fp-card-link" href="/icanhasfeatherpanel/permissions/">
   <div class="fp-card">
     <h2>Permissions</h2>
-    <p>Every permission node from permission_nodes.fpperm.</p>
-    <div class="fp-meta" style="margin-top:0.85rem"><span class="fp-badge">HTML · MD · JSON</span></div>
+    <p>All permission nodes.</p>
   </div>
 </a>
 <a class="fp-card-link" href="/icanhasfeatherpanel/api/">
   <div class="fp-card">
     <h2>API</h2>
-    <p>OpenAPI reference (Redoc) plus raw openapi.json for tools.</p>
-    <div class="fp-meta" style="margin-top:0.85rem"><span class="fp-badge">OpenAPI JSON</span></div>
+    <p>OpenAPI reference and openapi.json.</p>
   </div>
 </a>
 <a class="fp-card-link" href="/icanhasfeatherpanel/rag/">
   <div class="fp-card">
-    <h2>RAG / AI index</h2>
-    <p>Catalog of every .md and .json document published on this site.</p>
-    <div class="fp-meta" style="margin-top:0.85rem"><span class="fp-badge">catalog.json</span></div>
+    <h2>RAG</h2>
+    <p>Index of every .md and .json file.</p>
   </div>
 </a>
 </section>
 
-<section class="fp-section fp-card">
-  <h2>Quick start</h2>
-  <p class="fp-muted">Building a plugin? Start with the <a href="/icanhasfeatherpanel/plugins/">plugin docs</a> (especially <a href="/icanhasfeatherpanel/view.html?doc=plugins/ai-guide.md">ai-guide.md</a>), then use widgets/events/permissions/API as references.</p>
-  <ol class="fp-muted">
-    <li>Create <code>backend/storage/addons/{identifier}/</code> with <code>conf.yml</code> + <code>AppPlugin</code> entry class</li>
-    <li>Add <code>Routes/</code>, <code>Frontend/widgets.json</code>, or sidebar pages as needed</li>
-    <li>Pull machine-readable dumps from <a href="/icanhasfeatherpanel/rag/">/rag/</a> into your RAG index</li>
-  </ol>
-</section>
-
     <footer class="fp-footer">
-      Machine-readable sources (.md / .json) are published next to these pages for RAG and AI agents.
-      See <a href="/icanhasfeatherpanel/rag/">RAG index</a> or <a href="/icanhasfeatherpanel/llms.txt">llms.txt</a>.
+      <a href="/icanhasfeatherpanel/rag/">RAG</a> · <a href="/icanhasfeatherpanel/llms.txt">llms.txt</a> · <a href="/icanhasfeatherpanel/catalog.json">catalog.json</a>
     </footer>
   </div>
   

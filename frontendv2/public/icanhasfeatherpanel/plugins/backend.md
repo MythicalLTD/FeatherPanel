@@ -1,10 +1,26 @@
 # Backend Plugin Development
 
-Core classes live under `backend/app/Plugins/`. Your code lives under `backend/storage/addons/{identifier}/`.
+Core runtime: `backend/app/Plugins/*`  
+Your code: `backend/storage/addons/{identifier}/`
+
+## Optional backend folders (complete)
+
+| Folder | Role | Examples |
+|--------|------|----------|
+| `Routes/` | Auto-loaded route registrars | discordplus, featherimages, minecraftutils |
+| `Controllers/` | HTTP handlers (manual wire) | all feature plugins |
+| `Chat/` | PDO models | featherimages, billinglinks |
+| `Migrations/` | SQL | featherimages, billinglinks |
+| `Cron/` | Scheduled tasks | billinglinks |
+| `Commands/` | `php fuse …` | devutils |
+| `Helpers/` / `Services/` / `Libs/` | Shared PHP | discordplus, minecraftutils |
+| `middleware/` | HTTP middleware classes | discordplus |
+| `Events/` | Plugin-local helpers | discordplus, fivemutils |
+| `Mail/` | Optional mail templates | some billing addons |
+| `Public/` | → `/addons/{id}/` | discordplus, fivemutils |
+| `Storage/` | Durable files (preserved on update) | marketplace installs |
 
 ## Entry class (`AppPlugin`)
-
-Interface: `App\Plugins\AppPlugin`
 
 ```php
 namespace App\Addons\myplugin;
@@ -22,181 +38,113 @@ class MyPlugin implements AppPlugin
 }
 ```
 
-### Lifecycle
+| Hook | When |
+|------|------|
+| `processEvents` | Every boot — register `$event->on(...)` |
+| `pluginInstall` | Fresh install — seed settings |
+| `pluginUpdate` | Update path |
+| `pluginUninstall` | Uninstall cleanup |
 
-| Hook | Caller | Notes |
-|------|--------|-------|
-| `processEvents` | `PluginProcessor` on every boot | Register `$event->on(...)` listeners here |
-| `pluginInstall` | Install / create flows | Seed settings, create dirs |
-| `pluginUpdate` | Update flows | Migrate data; often re-call install defaults |
-| `pluginUninstall` | Uninstall | Cleanup; settings may remain until cleared |
+Resolution: `App\Addons\{id}\{plugin.name}` with fallback to single root `AppPlugin`.
 
-## Routes
-
-### Auto-loading
-
-Every file matching `Routes/*.php` is loaded when the panel registers API routes.
-
-Requirements:
-
-1. File **returns** a callable: `return function (RouteCollection $routes): void { ... };`
-2. Basename should not collide with another addon’s identifier (copy-paste guard)
-
-Controllers are **not** auto-discovered. Instantiate them from the route closure.
-
-### Example route file
-
-`Routes/myplugin.php`:
+### Real — discordplus install seeding
 
 ```php
-<?php
-
-use App\App;
-use App\Permissions;
-use App\Addons\myplugin\Controllers\Admin\MyPluginController;
-use App\Addons\myplugin\Controllers\User\MyPluginController as UserMyPluginController;
-use Symfony\Component\Routing\RouteCollection;
-
-return function (RouteCollection $routes): void {
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-myplugin-status',
-        '/api/admin/myplugin/status',
-        function ($request) {
-            return (new MyPluginController())->status($request);
-        },
-        Permissions::ADMIN_ROOT, // pick a real permission
-        ['GET']
-    );
-
-    App::getInstance(true)->registerAuthRoute(
-        $routes,
-        'user-myplugin-status',
-        '/api/user/myplugin/status',
-        function ($request) {
-            return (new UserMyPluginController())->status($request);
-        },
-        ['GET']
-    );
-};
+PluginSettings::setSetting('discordplus', 'require_discord_link', 'false');
 ```
 
-Use the same response helpers as core controllers (`ApiResponse`, etc.). Follow existing addon controllers (e.g. `discordplus`) for patterns.
-
-### `onRouterReady`
-
-After routes are registered, the panel emits `AppEvent::onRouterReady()`. Use this to attach middleware or mutate the collection:
+### Real — discordplus router hook
 
 ```php
-use App\Plugins\Events\Events\AppEvent;
-
-public static function processEvents(PluginEvents $event): void
-{
-    $event->on(AppEvent::onRouterReady(), function ($payload) {
-        $router = is_array($payload) ? ($payload['router'] ?? null) : $payload;
-        if ($router !== null) {
-            // attach middleware / extra routes
-        }
-    });
-}
-```
-
-## Plugin events catalog
-
-Domain events live in `backend/app/Plugins/Events/Events/*.php`. Each class exposes static methods returning event name strings (e.g. `ServerEvent::onServerCreated()`).
-
-Browse the published docs:
-
-- HTML: `/icanhasfeatherpanel/events/`
-- Generated from the same source as the panel
-
-Register listeners only in `processEvents`.
-
-Example pattern:
-
-```php
-$event->on(SomeEvent::onSomething(), function (...$args) {
-    // handle
+$event->on(AppEvent::onRouterReady(), function ($payload) {
+    $router = is_array($payload) ? ($payload['router'] ?? null) : $payload;
+    if ($router !== null) {
+        RouteGuard::attach($router);
+    }
 });
 ```
 
-## Settings (`PluginSettings`)
+## Routes
+
+Each `Routes/*.php` **returns**:
+
+```php
+return function (RouteCollection $routes): void {
+    // register…
+};
+```
+
+Helpers (via `App::getInstance(true)`):
+
+- `registerAuthRoute` — logged-in user APIs (`discordplus`, `featherimages`)
+- `registerAdminRoute` — admin + permission node (`featherimages` admin)
+- `registerServerRoute` — server-scoped (`minecraftutils`, `bedrockaddoninstaller`, `fivemutils`)
+
+### Auth route sketch (discordplus-style)
+
+```php
+App::getInstance(true)->registerAuthRoute(
+    $routes,
+    'user-discordplus-status',
+    '/api/user/discordplus/status',
+    function ($request) {
+        return (new UserController())->status($request);
+    },
+    ['GET']
+);
+```
+
+### Server route sketch (minecraftutils-style)
+
+```php
+App::getInstance(true)->registerServerRoute(
+    $routes,
+    'mcutils-player-manager',
+    '/api/user/servers/{uuidShort}/addons/mcutils/playermanager',
+    function ($request, $uuidShort) {
+        return (new PlayerManagerController())->index($request, $uuidShort);
+    },
+    ['GET']
+);
+```
+
+**Controllers are not auto-discovered** — import and call them from the route closure.
+
+Route basename should not equal another addon’s identifier (copy-paste guard).
+
+## Settings
 
 ```php
 use App\Plugins\PluginSettings;
 
-PluginSettings::setSetting($identifier, $key, (string) $value);
-PluginSettings::getSetting($identifier, $key);      // ?string
-PluginSettings::getSettings($identifier);            // all rows
-PluginSettings::deleteSettings($identifier, $key);   // soft-delete
+PluginSettings::setSetting($id, $key, (string) $value);
+PluginSettings::getSetting($id, $key); // ?string
+PluginSettings::getSettings($id);
+PluginSettings::deleteSettings($id, $key);
 ```
 
-Admin API:
+Admin HTTP: `POST /api/admin/plugins/{identifier}/settings/set` `{ "key", "value" }`.
 
-- Set: `POST /api/admin/plugins/{identifier}/settings/set` `{ "key": "...", "value": "..." }`
-- Emits `PluginsSettingsEvent` on update
+Schema for the admin UI comes from top-level `config:` in `conf.yml` — see [conf-yml.md](./conf-yml.md).  
+`requiredConfigs` lists keys that must exist for “configured” status (`minecraftpluginmanger` / CurseForge key).
 
-Seed defaults in `pluginInstall()` so `requiredConfigs` and visibility rules work.
+## Permissions
 
-## Migrations
+Use `App\Permissions` constants on admin routes. Full list: [../permissions/](../permissions/) and `../permissions/all.json`.
 
-Path: `Migrations/*.sql`
+## Plugin PHP events
 
-- Run on addon install (`CloudPluginsController::runAddonMigrations`)
-- Also via `php fuse migrate`
-- Tracked in `featherpanel_migrations` with a plugin namespace prefix
+Catalog: [../events/](../events/) + `../events/all.json`.  
+Registration details: [middleware-and-hooks.md](./middleware-and-hooks.md).
 
-Conventions:
+## Dependencies between plugins
 
-- Prefer table names `featherpanel_{identifier}_…`
-- Idempotent SQL (`CREATE TABLE IF NOT EXISTS`, `INSERT IGNORE`) when possible
-- Timestamp-style filenames (starter scaffold uses `Y-m-d-H.i`)
-
-## Cron jobs
-
-Path: `Cron/*.php`
-
-Loaded by `backend/storage/cron/runner.php` (not the core `storage/cron/php/` tree).
-
-Typical pattern (see billing addons):
-
-```php
-namespace App\Addons\myplugin\Cron;
-
-use App\Cron\Cron;
-use App\Cron\TimeTask;
-
-class MyPurgeCron implements TimeTask
-{
-    public function run()
-    {
-        $cron = new Cron('myplugin-purge', '1D');
-        $cron->runIfDue(function () {
-            // work
-        });
-    }
-}
+```yaml
+dependencies:
+  - plugin=billingcore
 ```
 
-Namespace for plugin crons is usually `App\Addons\{identifier}\Cron\…`. Some scaffolds historically used `App\Cron\` — prefer the addon namespace to avoid collisions.
-
-## CLI commands
-
-Path: `Commands/*.php`
-
-Discovered by `backend/app/Cli/App.php`. Invoke:
-
-```bash
-php fuse {CommandName}
-```
-
-Class should implement `App\Cli\CommandBuilder` with `execute`, `getDescription`, `getSubCommands`.
-
-Namespace: `App\Addons\{identifier}\Commands\{CommandName}`.
-
-## Models / Chat layer
-
-Optional `Chat/` classes for plugin tables, following core `App\Chat\*` PDO patterns. Namespace: `App\Addons\{identifier}\Chat\…`.
+Real: `billinglinks` depends on `billingcore`. Fail closed if classes are missing.
 
 ## Logging
 
@@ -204,23 +152,8 @@ Optional `Chat/` classes for plugin tables, following core `App\Chat\*` PDO patt
 \App\App::getInstance(true)->getLogger()->error('myplugin: …');
 ```
 
-Never log secrets, tokens, or passwords.
+Never log tokens/passwords.
 
-## Permissions
+## Related
 
-Reuse core permission constants from `App\Permissions` for admin routes. See the permissions docs section of icanhasfeatherpanel for the full node list. Plugins rarely ship new global permission nodes unless integrated with the panel’s permission system deliberately.
-
-## Public / Storage directories
-
-| Dir | Purpose |
-|-----|---------|
-| `Public/` | Symlinked to `backend/public/addons/{identifier}/` |
-| `Storage/` | Durable plugin data; preserved across marketplace reinstall/update |
-| `Frontend/Components/` | Symlinked to `backend/public/components/{identifier}/` |
-
-## Testing tips
-
-1. Validate package: ensure `PluginEntryValidator::validatePackage` would pass (conf + entry class)
-2. Hit your routes with auth cookies / API keys like core endpoints
-3. Confirm migrations applied (`featherpanel_migrations`)
-4. Confirm frontend JSON appears in `/api/system/plugin-*` aggregators when enabled
+- [database.md](./database.md) · [cron-and-commands.md](./cron-and-commands.md) · [middleware-and-hooks.md](./middleware-and-hooks.md) · [examples.md](./examples.md) · [mixins.md](./mixins.md)
