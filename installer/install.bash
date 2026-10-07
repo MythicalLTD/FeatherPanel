@@ -3378,9 +3378,15 @@ export_wings_migration() {
 	trap "rm -rf '$temp'" RETURN
 
 	mkdir -p "$temp/volumes" "$temp/backups" "$temp/config"
-	[ -d "$volumes_dir" ] && cp -a "$volumes_dir"/. "$temp/volumes/" 2>>"$LOG_FILE" || true
-	[ -d "$backups_dir" ] && cp -a "$backups_dir"/. "$temp/backups/" 2>>"$LOG_FILE" || true
-	[ -f "$WINGS_CONFIG_FILE" ] && cp -a "$WINGS_CONFIG_FILE" "$temp/config/config.yml" 2>>"$LOG_FILE" || true
+	if [ -d "$volumes_dir" ]; then
+		cp -a "$volumes_dir"/. "$temp/volumes/" 2>>"$LOG_FILE" || true
+	fi
+	if [ -d "$backups_dir" ]; then
+		cp -a "$backups_dir"/. "$temp/backups/" 2>>"$LOG_FILE" || true
+	fi
+	if [ -f "$WINGS_CONFIG_FILE" ]; then
+		cp -a "$WINGS_CONFIG_FILE" "$temp/config/config.yml" 2>>"$LOG_FILE" || true
+	fi
 
 	cat >"$temp/migration_info.txt" <<EOF
 FeatherWings Migration Package
