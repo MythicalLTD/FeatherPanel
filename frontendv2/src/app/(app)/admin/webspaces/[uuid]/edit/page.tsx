@@ -26,6 +26,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
+import { SizeInput } from '@/components/featherui/SizeInput';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -77,6 +78,7 @@ export default function AdminWebSpaceEditPage() {
     const uuid = String(params.uuid || '');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [sizeValidity, setSizeValidity] = useState<Record<string, boolean>>({});
     const [plates, setPlates] = useState<WebPlateOption[]>([]);
     const [domainRoutes, setDomainRoutes] = useState<DomainRoute[]>([]);
     const [customSsl, setCustomSsl] = useState<CustomSslStatus | null>(null);
@@ -183,6 +185,10 @@ export default function AdminWebSpaceEditPage() {
     }, [load]);
 
     const performSave = async () => {
+        if (Object.values(sizeValidity).some((valid) => !valid)) {
+            toast.error(t('common.sizeInput.invalid'));
+            return;
+        }
         const domains = domainRoutes.filter((r) => r.domain.trim()).map((r) => r.domain.trim().toLowerCase());
 
         setSaving(true);
@@ -339,11 +345,13 @@ export default function AdminWebSpaceEditPage() {
                         </div>
                         <div className='space-y-2'>
                             <Label>{t('admin.webSpaces.form.disk')}</Label>
-                            <Input
-                                type='number'
+                            <SizeInput
                                 min={1}
-                                value={form.disk}
-                                onChange={(e) => setForm({ ...form, disk: e.target.value })}
+                                value={Number(form.disk)}
+                                onValueChange={(value) => setForm({ ...form, disk: String(value) })}
+                                unit='MiB'
+                                ariaLabel={t('admin.webSpaces.form.disk')}
+                                onValidityChange={(valid) => setSizeValidity((prev) => ({ ...prev, disk: valid }))}
                             />
                         </div>
                         <div className='space-y-2'>
@@ -359,11 +367,15 @@ export default function AdminWebSpaceEditPage() {
                         </div>
                         <div className='space-y-2'>
                             <Label>{t('admin.webSpaces.form.memory_limit')}</Label>
-                            <Input
-                                type='number'
+                            <SizeInput
                                 min={0}
-                                value={form.memory_limit}
-                                onChange={(e) => setForm({ ...form, memory_limit: e.target.value })}
+                                value={Number(form.memory_limit)}
+                                onValueChange={(value) => setForm({ ...form, memory_limit: String(value) })}
+                                unit='MiB'
+                                ariaLabel={t('admin.webSpaces.form.memory_limit')}
+                                onValidityChange={(valid) =>
+                                    setSizeValidity((prev) => ({ ...prev, memory_limit: valid }))
+                                }
                             />
                             <p className='text-muted-foreground text-xs'>
                                 {t('admin.webSpaces.form.memory_limit_help')}
@@ -371,12 +383,16 @@ export default function AdminWebSpaceEditPage() {
                         </div>
                         <div className='space-y-2'>
                             <Label>{t('admin.webSpaces.form.bandwidth_limit_gb')}</Label>
-                            <Input
-                                type='number'
+                            <SizeInput
                                 min={0}
-                                value={form.bandwidth_limit_gb}
-                                onChange={(e) => setForm({ ...form, bandwidth_limit_gb: e.target.value })}
-                                placeholder={t('admin.webSpaces.form.bandwidth_limit_gb_placeholder')}
+                                value={form.bandwidth_limit_gb === '' ? '' : Number(form.bandwidth_limit_gb)}
+                                onValueChange={(value) => setForm({ ...form, bandwidth_limit_gb: String(value) })}
+                                unit='GiB'
+                                ariaLabel={t('admin.webSpaces.form.bandwidth_limit_gb')}
+                                allowEmpty
+                                onValidityChange={(valid) =>
+                                    setSizeValidity((prev) => ({ ...prev, bandwidth_limit_gb: valid }))
+                                }
                             />
                             <p className='text-muted-foreground text-xs'>
                                 {t('admin.webSpaces.form.bandwidth_limit_gb_help')}

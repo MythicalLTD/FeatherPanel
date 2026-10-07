@@ -1,0 +1,19 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "App",
+  "slug": "app",
+  "total": 1,
+  "events": [
+    {
+      "name": "router::Ready",
+      "method": "onRouterReady",
+      "category": "App",
+      "callback": "No parameters",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/Admin/PluginManagerController.php"
+      ]
+    }
+  ]
+}

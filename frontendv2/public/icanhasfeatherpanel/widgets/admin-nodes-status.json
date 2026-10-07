@@ -1,0 +1,17 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-nodes-status",
+  "file_slug": "admin-nodes-status",
+  "files": [
+    "src/app/(app)/admin/nodes/status/page.tsx"
+  ],
+  "injection_points": [
+    "after-global-stats",
+    "after-header",
+    "after-individual-nodes",
+    "after-resource-usage",
+    "before-global-stats",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

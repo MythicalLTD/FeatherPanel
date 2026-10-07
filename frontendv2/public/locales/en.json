@@ -1500,6 +1500,17 @@
         "delete": "Delete",
         "mb": "MB",
         "gb": "GB",
+        "sizeInput": {
+            "placeholderMb": "1024 or 1 GB",
+            "placeholderGb": "10 or 10 GB",
+            "placeholderTb": "1 or 1 TB",
+            "selectUnit": "Choose unit for {field}",
+            "converted": "Stored as {value} {unit}",
+            "convertedRounded": "Rounded up to {value} {unit} for this field.",
+            "invalid": "Enter a size such as 1 GB or 512 MB.",
+            "min": "Minimum: {value} {unit}.",
+            "max": "Maximum: {value} {unit}."
+        },
         "remove": "Remove",
         "next": "Next",
         "previous": "Previous",
@@ -6562,6 +6573,10 @@
                 "flag_none": "None",
                 "type": "Location Type",
                 "type_description": "Each location serves one infrastructure type only. The type is permanent and cannot be changed after creation.",
+                "webhosting_alpha_title": "FeatherPanel WebHosting is still in ALPHA",
+                "webhosting_alpha_description": "Bugs, outages, or data loss may occur. To the extent permitted by applicable law, FeatherPanel and its developers are not liable for damages, losses, or issues arising from use of this alpha feature. Please report problems so we can fix them. Thank you for supporting FeatherPanel!",
+                "webhosting_alpha_consent": "I understand the alpha risks and agree to the notice above.",
+                "webhosting_alpha_required": "Please agree to the WebHosting alpha notice before creating this location.",
                 "type_immutable_notice": "Location type is permanent and was set when this location was created."
             },
             "type": {
@@ -7074,7 +7089,9 @@
                 "hostname_required": "Hostname is required.",
                 "owner_required": "You must select an owner for this VM.",
                 "ci_user_required": "Cloud-init username is required.",
-                "ci_password_required": "Cloud-init password is required."
+                "ci_password_required": "Cloud-init password is required.",
+                "network_ips_required": "Select a different IP for each network interface.",
+                "resources_invalid": "Memory, CPUs, cores, and disk must be above their minimum values."
             },
             "create_success": "VM instance created successfully.",
             "creating_clone": "Cloning template…",
@@ -7246,7 +7263,7 @@
             "no_templates_qemu": "No QEMU/KVM templates for this node. Add a template in VM Nodes → this node → Templates tab.",
             "no_templates_lxc": "No LXC templates for this node. Add an LXC template in VM Nodes → this node → Templates tab.",
             "no_free_ips": "No free IPs for this node. Add IPs in VM Node.",
-            "ip_pool_required": "Configure at least one IP in the node IP pool, then try again.",
+            "ip_pool_required": "Create an IP here, or continue to Resources to assign one.",
             "details": {
                 "title": "VDS Instance Details",
                 "subtitle": "Viewing details for {name}",
@@ -7275,11 +7292,12 @@
             "network": "Network",
             "resources": "Plan resources",
             "hostname_help": "Valid DNS name: only letters, numbers, and hyphens (e.g. my-vm). Required.",
-            "ip_help": "Leave on Auto to assign the first free IP from the node pool.",
+            "ip_help": "Assign one free IP to each network interface.",
             "node": "VDS Node",
             "select_node": "Select node",
             "node_help": "Proxmox node where the VM will be created.",
             "proxmox_node": "Proxmox Node",
+            "select_proxmox_node": "Select a Proxmox node.",
             "proxmox_node_help": "Exact Proxmox cluster node where this VM will be created.",
             "select_node_template": "Select a node, template, and ensure IPs are available.",
             "memory": "Memory (MB)",
@@ -7291,11 +7309,13 @@
             "on_boot": "Start on boot",
             "wizard": {
                 "step1_title": "Node & template",
-                "step1_subtitle": "Choose node, template, and IP",
+                "step1_subtitle": "Choose a node and template",
                 "step2_title": "Resources",
                 "step2_subtitle": "CPU, memory, disk, and network",
                 "step3_title": "Details & owner",
                 "step3_subtitle": "Hostname and assign owner",
+                "step4_title": "Review & create",
+                "step4_subtitle": "Confirm the configuration before creating the VDS",
                 "resources_title": "Resources"
             },
             "help": {
@@ -12851,7 +12871,10 @@
                 "step2_title": "Resources & domains",
                 "step2_subtitle": "Disk limits, databases, and domains",
                 "step3_title": "Details & owner",
-                "step3_subtitle": "Name, options, and assign owner"
+                "step3_subtitle": "Name, options, and assign owner",
+                "step4_title": "Review & create",
+                "step4_subtitle": "Confirm the site configuration before syncing",
+                "deployment_options": "Installation options"
             },
             "infrastructure_required": "Infrastructure required",
             "create_web_node_first": "Add at least one web node before creating a WebSpace.",

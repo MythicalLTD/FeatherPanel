@@ -1,0 +1,32 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin Images",
+  "slug": "admin-images",
+  "total": 4,
+  "permissions": [
+    {
+      "constant": "ADMIN_IMAGES_CREATE",
+      "node": "admin.images.create",
+      "category": "Admin Images",
+      "description": "Create new images"
+    },
+    {
+      "constant": "ADMIN_IMAGES_DELETE",
+      "node": "admin.images.delete",
+      "category": "Admin Images",
+      "description": "Delete images"
+    },
+    {
+      "constant": "ADMIN_IMAGES_EDIT",
+      "node": "admin.images.edit",
+      "category": "Admin Images",
+      "description": "Edit existing images"
+    },
+    {
+      "constant": "ADMIN_IMAGES_VIEW",
+      "node": "admin.images.view",
+      "category": "Admin Images",
+      "description": "View images"
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "ServerDatabase",
+  "slug": "server-database",
+  "total": 4,
+  "events": [
+    {
+      "name": "featherpanel:user:server:database:created",
+      "method": "onServerDatabaseCreated",
+      "category": "ServerDatabase",
+      "callback": "string server uuid, array database data.",
+      "emitted": true,
+      "data_keys": [
+        "database_id",
+        "server_uuid",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/Server/ServerDatabaseController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:user:server:database:deleted",
+      "method": "onServerDatabaseDeleted",
+      "category": "ServerDatabase",
+      "callback": "string server uuid, int database id.",
+      "emitted": true,
+      "data_keys": [
+        "bulk",
+        "database_id",
+        "server_uuid",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/Server/ServerDatabaseController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:user:server:database:error",
+      "method": "onServerDatabaseError",
+      "category": "ServerDatabase",
+      "callback": "string error message, array context.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:user:server:database:updated",
+      "method": "onServerDatabaseUpdated",
+      "category": "ServerDatabase",
+      "callback": "string server uuid, int database id, array updated data.",
+      "emitted": true,
+      "data_keys": [
+        "database_id",
+        "server_uuid",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/Server/ServerDatabaseController.php"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin Users",
+  "slug": "admin-users",
+  "total": 4,
+  "permissions": [
+    {
+      "constant": "ADMIN_USERS_CREATE",
+      "node": "admin.users.create",
+      "category": "Admin Users",
+      "description": "Create new users"
+    },
+    {
+      "constant": "ADMIN_USERS_DELETE",
+      "node": "admin.users.delete",
+      "category": "Admin Users",
+      "description": "Delete users"
+    },
+    {
+      "constant": "ADMIN_USERS_EDIT",
+      "node": "admin.users.edit",
+      "category": "Admin Users",
+      "description": "Edit existing users"
+    },
+    {
+      "constant": "ADMIN_USERS_VIEW",
+      "node": "admin.users.list",
+      "category": "Admin Users",
+      "description": "View the users"
+    }
+  ]
+}

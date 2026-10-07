@@ -1,0 +1,32 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin Knowledgebase Categories",
+  "slug": "admin-knowledgebase-categories",
+  "total": 4,
+  "permissions": [
+    {
+      "constant": "ADMIN_KNOWLEDGEBASE_CATEGORIES_CREATE",
+      "node": "admin.knowledgebase.categories.create",
+      "category": "Admin Knowledgebase Categories",
+      "description": "Create new knowledgebase categories"
+    },
+    {
+      "constant": "ADMIN_KNOWLEDGEBASE_CATEGORIES_DELETE",
+      "node": "admin.knowledgebase.categories.delete",
+      "category": "Admin Knowledgebase Categories",
+      "description": "Delete knowledgebase categories"
+    },
+    {
+      "constant": "ADMIN_KNOWLEDGEBASE_CATEGORIES_EDIT",
+      "node": "admin.knowledgebase.categories.edit",
+      "category": "Admin Knowledgebase Categories",
+      "description": "Edit existing knowledgebase categories"
+    },
+    {
+      "constant": "ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW",
+      "node": "admin.knowledgebase.categories.view",
+      "category": "Admin Knowledgebase Categories",
+      "description": "View knowledgebase categories"
+    }
+  ]
+}

@@ -1,0 +1,164 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "Subdomains",
+  "slug": "subdomains",
+  "total": 10,
+  "events": [
+    {
+      "name": "featherpanel:user:subdomain:created",
+      "method": "onSubdomainCreated",
+      "category": "Subdomains",
+      "callback": "string subdomain uuid, array subdomain data, array server data.",
+      "emitted": true,
+      "data_keys": [
+        "server_data",
+        "subdomain_data",
+        "subdomain_uuid",
+        "user",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/Server/SubdomainController.php",
+        "backend/app/Services/Chatbot/Tools/CreateSubdomainTool.php"
+      ]
+    },
+    {
+      "name": "featherpanel:user:subdomain:deleted",
+      "method": "onSubdomainDeleted",
+      "category": "Subdomains",
+      "callback": "string subdomain uuid, array subdomain data, array server data.",
+      "emitted": true,
+      "data_keys": [
+        "server_data",
+        "subdomain_data",
+        "subdomain_uuid",
+        "user",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/Server/SubdomainController.php",
+        "backend/app/Services/Chatbot/Tools/DeleteSubdomainTool.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:subdomains:domain:created",
+      "method": "onSubdomainDomainCreated",
+      "category": "Subdomains",
+      "callback": "array domain data.",
+      "emitted": true,
+      "data_keys": [
+        "created_by",
+        "domain_data"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/SubdomainsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:subdomains:domain:deleted",
+      "method": "onSubdomainDomainDeleted",
+      "category": "Subdomains",
+      "callback": "string domain uuid, array domain data.",
+      "emitted": true,
+      "data_keys": [
+        "deleted_by",
+        "domain_data",
+        "domain_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/SubdomainsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:subdomains:domain:not:found",
+      "method": "onSubdomainDomainNotFound",
+      "category": "Subdomains",
+      "callback": "string domain uuid, string error message.",
+      "emitted": true,
+      "data_keys": [
+        "domain_uuid",
+        "error_message"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/SubdomainsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:subdomains:domain:retrieved",
+      "method": "onSubdomainDomainRetrieved",
+      "category": "Subdomains",
+      "callback": "string domain uuid, array domain data.",
+      "emitted": true,
+      "data_keys": [
+        "domain_data",
+        "domain_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/SubdomainsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:subdomains:domains:retrieved",
+      "method": "onSubdomainDomainsRetrieved",
+      "category": "Subdomains",
+      "callback": "array domains list.",
+      "emitted": true,
+      "data_keys": [
+        "domains",
+        "filters",
+        "includeInactive",
+        "limit",
+        "page",
+        "pagination",
+        "search",
+        "total"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/SubdomainsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:subdomains:domain:updated",
+      "method": "onSubdomainDomainUpdated",
+      "category": "Subdomains",
+      "callback": "string domain uuid, array old data, array new data.",
+      "emitted": true,
+      "data_keys": [
+        "domain_uuid",
+        "new_data",
+        "old_data",
+        "updated_by"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/SubdomainsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:subdomains:error",
+      "method": "onSubdomainsError",
+      "category": "Subdomains",
+      "callback": "string error message, array context.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:subdomains:settings:updated",
+      "method": "onSubdomainSettingsUpdated",
+      "category": "Subdomains",
+      "callback": "array settings data.",
+      "emitted": true,
+      "data_keys": [
+        "allow_user_subdomains",
+        "cloudflare_api_key_set",
+        "cloudflare_email",
+        "max_subdomains_per_server",
+        "settings",
+        "updated_by"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/SubdomainsController.php"
+      ]
+    }
+  ]
+}

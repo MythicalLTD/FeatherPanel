@@ -1,0 +1,32 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin Allocations",
+  "slug": "admin-allocations",
+  "total": 4,
+  "permissions": [
+    {
+      "constant": "ADMIN_ALLOCATIONS_CREATE",
+      "node": "admin.allocations.create",
+      "category": "Admin Allocations",
+      "description": "Create new allocations"
+    },
+    {
+      "constant": "ADMIN_ALLOCATIONS_DELETE",
+      "node": "admin.allocations.delete",
+      "category": "Admin Allocations",
+      "description": "Delete allocations"
+    },
+    {
+      "constant": "ADMIN_ALLOCATIONS_EDIT",
+      "node": "admin.allocations.edit",
+      "category": "Admin Allocations",
+      "description": "Edit existing allocations"
+    },
+    {
+      "constant": "ADMIN_ALLOCATIONS_VIEW",
+      "node": "admin.allocations.view",
+      "category": "Admin Allocations",
+      "description": "View allocations"
+    }
+  ]
+}

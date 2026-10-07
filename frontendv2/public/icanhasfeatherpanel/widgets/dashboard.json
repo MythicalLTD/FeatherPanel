@@ -1,0 +1,14 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "dashboard",
+  "file_slug": "dashboard",
+  "files": [
+    "src/app/(app)/dashboard/page.tsx"
+  ],
+  "injection_points": [
+    "after-server-list",
+    "before-server-list",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

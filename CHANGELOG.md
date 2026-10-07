@@ -62,6 +62,8 @@
 - The entire telemetry system was reworked to enhance privacy, ensure GDPR compliance, and provide secure error reporting to Mythical. by @nayskutzu
 - Enhanced handling of Pterodactyl egg file formats with expanded support for additional egg features. by @nayskutzu
 - Redesigned the VDS console to look better on more devices. by @nayskutzu
+- The documentation was improved to be more accurate and up to date on how to create plugins, widgets, events, permissions, and more. by @nayskutzu
+- Redesigned the create server experience for vds,servers,webspaces by @nayskutzu
 
 ### Fixed
 

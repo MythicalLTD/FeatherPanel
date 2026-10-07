@@ -1,0 +1,14 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-realms",
+  "file_slug": "admin-realms",
+  "files": [
+    "src/app/(app)/admin/realms/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "before-list",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

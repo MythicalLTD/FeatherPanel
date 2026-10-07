@@ -2,608 +2,224 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Events: Wings</title>
+  <title>Events: Wings — FeatherPanel Docs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
-    a { color: #60a5fa; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .container { max-width: 960px; margin: 0 auto; }
-    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
-    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
-    h3 { font-size: 1rem; margin-top: 1.25rem; }
-    .muted { color: #9ca3af; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
-    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
-    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
-    .back-link { margin-bottom: 1.5rem; display: inline-block; }
-    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-left: 0.5rem; vertical-align: middle; }
-  </style>
+  <link rel="stylesheet" href="/icanhasfeatherpanel/assets/docs.css" />
 </head>
-<body>
-  <main class="container">
-    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
-    <header>
-      <h1>Wings</h1>
-      <p class="muted">22 events in this category.
-        22 emitted,
-        0 defined only.
-      </p>
-    </header>
+<body class="fp-docs">
+  <div class="fp-shell">
+    <nav class="fp-nav" aria-label="Documentation">
+      <a class="fp-brand" href="/icanhasfeatherpanel/">
+        <span class="fp-brand-mark" aria-hidden="true"></span>
+        <span>FeatherPanel Docs</span>
+      </a>
+      <div class="fp-nav-links">
+      <a href="/icanhasfeatherpanel/">Home</a>
+      <a href="/icanhasfeatherpanel/plugins/">Plugins</a>
+      <a href="/icanhasfeatherpanel/widgets/">Widgets</a>
+      <a href="/icanhasfeatherpanel/events/" class="active">Events</a>
+      <a href="/icanhasfeatherpanel/permissions/">Permissions</a>
+      <a href="/icanhasfeatherpanel/api/">API</a>
+      <a href="/icanhasfeatherpanel/rag/">RAG</a>
+      </div>
+    </nav>
 
-<article class="card">
-  <h2><code>featherpanel:wings:activity:logged</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsActivityLogged</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array activity data.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> activities, error_count, errors, node, processed_count</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/Activity/WingsActivityController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsActivityLogged(), function ($activities, $errorCount, $errors, $node, $processedCount) {
-        // Handle featherpanel:wings:activity:logged
-        // Data keys: activities, error_count, errors, node, processed_count
-    });
-}</code></pre>
+<a class="fp-back" href="/icanhasfeatherpanel/events/">&larr; All event categories</a>
+<header class="fp-hero">
+  <h1>Wings</h1>
+  <p>22 events · 22 emitted · 0 defined only</p>
+  
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/events/wings.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/events/wings.json">JSON</a>
+  </div>
+</header>
+<input class="fp-search" type="search" placeholder="Filter events…" data-fp-search />
+<p class="fp-muted fp-hidden" data-fp-search-empty>No events match.</p>
+<div class="fp-list"><article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:activity:logged onWingsActivityLogged activities, error_count, errors, node, processed_count">
+  <h2><code>featherpanel:wings:activity:logged</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsActivityLogged</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array activity data.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> activities, error_count, errors, node, processed_count</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/Activity/WingsActivityController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:backup:completion:reported</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsBackupCompletionReported</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string backup uuid, array completion data.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> backup, backup_uuid, completion_data, node, server</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/Backup/WingsBackupController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsBackupCompletionReported(), function ($backup, $backupUuid, $completionData, $node, $server) {
-        // Handle featherpanel:wings:backup:completion:reported
-        // Data keys: backup, backup_uuid, completion_data, node, server
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:backup:completion:reported onWingsBackupCompletionReported backup, backup_uuid, completion_data, node, server">
+  <h2><code>featherpanel:wings:backup:completion:reported</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsBackupCompletionReported</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string backup uuid, array completion data.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> backup, backup_uuid, completion_data, node, server</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/Backup/WingsBackupController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:backup:restoration:reported</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsBackupRestorationReported</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string backup uuid, array restoration data.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> backup, backup_uuid, node, restoration_data, server</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/Backup/WingsBackupController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsBackupRestorationReported(), function ($backup, $backupUuid, $node, $restorationData, $server) {
-        // Handle featherpanel:wings:backup:restoration:reported
-        // Data keys: backup, backup_uuid, node, restoration_data, server
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:backup:restoration:reported onWingsBackupRestorationReported backup, backup_uuid, node, restoration_data, server">
+  <h2><code>featherpanel:wings:backup:restoration:reported</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsBackupRestorationReported</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string backup uuid, array restoration data.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> backup, backup_uuid, node, restoration_data, server</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/Backup/WingsBackupController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:backup:upload:info:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsBackupUploadInfoRetrieved</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string backup uuid, array upload info.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> backup, backup_uuid, node, part_size, parts, server, total_size, upload_info</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/Backup/WingsBackupController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsBackupUploadInfoRetrieved(), function ($backup, $backupUuid, $node, $partSize, $parts, $server, $totalSize, $uploadInfo) {
-        // Handle featherpanel:wings:backup:upload:info:retrieved
-        // Data keys: backup, backup_uuid, node, part_size, parts, server, total_size, upload_info
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:backup:upload:info:retrieved onWingsBackupUploadInfoRetrieved backup, backup_uuid, node, part_size, parts, server, total_size, upload_info">
+  <h2><code>featherpanel:wings:backup:upload:info:retrieved</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsBackupUploadInfoRetrieved</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string backup uuid, array upload info.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> backup, backup_uuid, node, part_size, parts, server, total_size, upload_info</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/Backup/WingsBackupController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:docker:disk:usage:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsDockerDiskUsageRetrieved</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> int node id, array disk usage data.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> docker_disk_usage, node, node_id</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/WingsAdminController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsDockerDiskUsageRetrieved(), function ($dockerDiskUsage, $node, $nodeId) {
-        // Handle featherpanel:wings:docker:disk:usage:retrieved
-        // Data keys: docker_disk_usage, node, node_id
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:docker:disk:usage:retrieved onWingsDockerDiskUsageRetrieved docker_disk_usage, node, node_id">
+  <h2><code>featherpanel:wings:docker:disk:usage:retrieved</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsDockerDiskUsageRetrieved</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> int node id, array disk usage data.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> docker_disk_usage, node, node_id</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/WingsAdminController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:docker:prune:completed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsDockerPruneCompleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> int node id, array prune results.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> docker_prune, node, node_id</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/WingsAdminController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsDockerPruneCompleted(), function ($dockerPrune, $node, $nodeId) {
-        // Handle featherpanel:wings:docker:prune:completed
-        // Data keys: docker_prune, node, node_id
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:docker:prune:completed onWingsDockerPruneCompleted docker_prune, node, node_id">
+  <h2><code>featherpanel:wings:docker:prune:completed</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsDockerPruneCompleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> int node id, array prune results.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> docker_prune, node, node_id</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/WingsAdminController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:error</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsError</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string error message, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> error, message, server_uuid, token_id</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/Server/WingsServerInfoController.php</code></li>
-<li><code>backend/app/Middleware/WingsMiddleware.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsError(), function ($error, $message, $serverUuid, $tokenId) {
-        // Handle featherpanel:wings:error
-        // Data keys: error, message, server_uuid, token_id
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:error onWingsError error, message, server_uuid, token_id">
+  <h2><code>featherpanel:wings:error</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsError</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string error message, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> error, message, server_uuid, token_id</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/Server/WingsServerInfoController.php</code></li>
+<li><code>backend/app/Middleware/WingsMiddleware.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:node:connection:status</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsNodeConnectionStatus</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> int node id, string status.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> node_id, status, token_id</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/WingsHealthController.php</code></li>
-<li><code>backend/app/Middleware/WingsMiddleware.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsNodeConnectionStatus(), function ($nodeId, $status, $tokenId) {
-        // Handle featherpanel:wings:node:connection:status
-        // Data keys: node_id, status, token_id
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:node:connection:status onWingsNodeConnectionStatus node_id, status, token_id">
+  <h2><code>featherpanel:wings:node:connection:status</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsNodeConnectionStatus</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> int node id, string status.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> node_id, status, token_id</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/WingsHealthController.php</code></li>
+<li><code>backend/app/Middleware/WingsMiddleware.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:node:error</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsNodeError</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> int node id, string error message.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> error, node_id</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/WingsHealthController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsNodeError(), function ($error, $nodeId) {
-        // Handle featherpanel:wings:node:error
-        // Data keys: error, node_id
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:node:error onWingsNodeError error, node_id">
+  <h2><code>featherpanel:wings:node:error</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsNodeError</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> int node id, string error message.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> error, node_id</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/WingsHealthController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:node:ips:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsNodeIpsRetrieved</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> int node id, array ip addresses.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> ips, node, node_id</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/WingsAdminController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsNodeIpsRetrieved(), function ($ips, $node, $nodeId) {
-        // Handle featherpanel:wings:node:ips:retrieved
-        // Data keys: ips, node, node_id
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:node:ips:retrieved onWingsNodeIpsRetrieved ips, node, node_id">
+  <h2><code>featherpanel:wings:node:ips:retrieved</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsNodeIpsRetrieved</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> int node id, array ip addresses.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> ips, node, node_id</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/WingsAdminController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:node:system:info:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsNodeSystemInfoRetrieved</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> int node id, array system info.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> node, node_id, system_info</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/WingsAdminController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsNodeSystemInfoRetrieved(), function ($node, $nodeId, $systemInfo) {
-        // Handle featherpanel:wings:node:system:info:retrieved
-        // Data keys: node, node_id, system_info
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:node:system:info:retrieved onWingsNodeSystemInfoRetrieved node, node_id, system_info">
+  <h2><code>featherpanel:wings:node:system:info:retrieved</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsNodeSystemInfoRetrieved</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> int node id, array system info.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> node, node_id, system_info</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/WingsAdminController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:node:utilization:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsNodeUtilizationRetrieved</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> int node id, array utilization data.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> node, node_id, utilization</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/WingsAdminController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsNodeUtilizationRetrieved(), function ($node, $nodeId, $utilization) {
-        // Handle featherpanel:wings:node:utilization:retrieved
-        // Data keys: node, node_id, utilization
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:node:utilization:retrieved onWingsNodeUtilizationRetrieved node, node_id, utilization">
+  <h2><code>featherpanel:wings:node:utilization:retrieved</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsNodeUtilizationRetrieved</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> int node id, array utilization data.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> node, node_id, utilization</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/WingsAdminController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:servers:remote:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsRemoteServersRetrieved</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array servers list.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> node, pagination, servers, total</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/Server/WingsServerListController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsRemoteServersRetrieved(), function ($node, $pagination, $servers, $total) {
-        // Handle featherpanel:wings:servers:remote:retrieved
-        // Data keys: node, pagination, servers, total
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:servers:remote:retrieved onWingsRemoteServersRetrieved node, pagination, servers, total">
+  <h2><code>featherpanel:wings:servers:remote:retrieved</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsRemoteServersRetrieved</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array servers list.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> node, pagination, servers, total</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/Server/WingsServerListController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:server:connection:status</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsServerConnectionStatus</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string server uuid, string status.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> node_id, server_uuid, status</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/Server/WingsServerStatusController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsServerConnectionStatus(), function ($nodeId, $serverUuid, $status) {
-        // Handle featherpanel:wings:server:connection:status
-        // Data keys: node_id, server_uuid, status
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:server:connection:status onWingsServerConnectionStatus node_id, server_uuid, status">
+  <h2><code>featherpanel:wings:server:connection:status</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsServerConnectionStatus</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string server uuid, string status.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> node_id, server_uuid, status</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/Server/WingsServerStatusController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:server:error</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsServerError</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string server uuid, string error message.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> error, server_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/Server/WingsServerInfoController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsServerError(), function ($error, $serverUuid) {
-        // Handle featherpanel:wings:server:error
-        // Data keys: error, server_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:server:error onWingsServerError error, server_uuid">
+  <h2><code>featherpanel:wings:server:error</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsServerError</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string server uuid, string error message.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> error, server_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/Server/WingsServerInfoController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:server:info:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsServerInfoRetrieved</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string server uuid, array server info.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> allocation, node, realm, server, server_uuid, spell</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/Server/WingsServerInfoController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsServerInfoRetrieved(), function ($allocation, $node, $realm, $server, $serverUuid, $spell) {
-        // Handle featherpanel:wings:server:info:retrieved
-        // Data keys: allocation, node, realm, server, server_uuid, spell
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:server:info:retrieved onWingsServerInfoRetrieved allocation, node, realm, server, server_uuid, spell">
+  <h2><code>featherpanel:wings:server:info:retrieved</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsServerInfoRetrieved</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string server uuid, array server info.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> allocation, node, realm, server, server_uuid, spell</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/Server/WingsServerInfoController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:server:install:completed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsServerInstallCompleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string server uuid, array install results.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> installed_at, node, reinstall, server, server_uuid, status, successful</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/Server/WingsServerInstallController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsServerInstallCompleted(), function ($installedAt, $node, $reinstall, $server, $serverUuid, $status, $successful) {
-        // Handle featherpanel:wings:server:install:completed
-        // Data keys: installed_at, node, reinstall, server, server_uuid, status, successful
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:server:install:completed onWingsServerInstallCompleted installed_at, node, reinstall, server, server_uuid, status, successful">
+  <h2><code>featherpanel:wings:server:install:completed</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsServerInstallCompleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string server uuid, array install results.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> installed_at, node, reinstall, server, server_uuid, status, successful</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/Server/WingsServerInstallController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:server:install:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsServerInstallRetrieved</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string server uuid, array install data.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> install_config, node, server, server_uuid, spell</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/Server/WingsServerInstallController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsServerInstallRetrieved(), function ($installConfig, $node, $server, $serverUuid, $spell) {
-        // Handle featherpanel:wings:server:install:retrieved
-        // Data keys: install_config, node, server, server_uuid, spell
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:server:install:retrieved onWingsServerInstallRetrieved install_config, node, server, server_uuid, spell">
+  <h2><code>featherpanel:wings:server:install:retrieved</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsServerInstallRetrieved</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string server uuid, array install data.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> install_config, node, server, server_uuid, spell</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/Server/WingsServerInstallController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:servers:reset:completed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsServersResetCompleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array reset results.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> node, queued_auto_starts, reset_result</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/Server/WingsServersResetController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsServersResetCompleted(), function ($node, $queuedAutoStarts, $resetResult) {
-        // Handle featherpanel:wings:servers:reset:completed
-        // Data keys: node, queued_auto_starts, reset_result
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:servers:reset:completed onWingsServersResetCompleted node, queued_auto_starts, reset_result">
+  <h2><code>featherpanel:wings:servers:reset:completed</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsServersResetCompleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array reset results.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> node, queued_auto_starts, reset_result</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/Server/WingsServersResetController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:server:status:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsServerStatusRetrieved</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string server uuid, array status data.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> node, server, server_uuid, state</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/Server/WingsServerStatusController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsServerStatusRetrieved(), function ($node, $server, $serverUuid, $state) {
-        // Handle featherpanel:wings:server:status:retrieved
-        // Data keys: node, server, server_uuid, state
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:server:status:retrieved onWingsServerStatusRetrieved node, server, server_uuid, state">
+  <h2><code>featherpanel:wings:server:status:retrieved</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsServerStatusRetrieved</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string server uuid, array status data.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> node, server, server_uuid, state</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/Server/WingsServerStatusController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:wings:server:status:updated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsServerStatusUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string server uuid, array status data.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> new_state, node, old_state, server, server_uuid, update_data</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/Server/WingsServerStatusController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsServerStatusUpdated(), function ($newState, $node, $oldState, $server, $serverUuid, $updateData) {
-        // Handle featherpanel:wings:server:status:updated
-        // Data keys: new_state, node, old_state, server, server_uuid, update_data
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:server:status:updated onWingsServerStatusUpdated new_state, node, old_state, server, server_uuid, update_data">
+  <h2><code>featherpanel:wings:server:status:updated</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsServerStatusUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string server uuid, array status data.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> new_state, node, old_state, server, server_uuid, update_data</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/Server/WingsServerStatusController.php</code></li></ul>
 </article>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:wings:sftp:authentication onWingsSftpAuthentication auth_type, client_version, ip, permissions, server, session_id, user">
+  <h2><code>featherpanel:wings:sftp:authentication</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWingsSftpAuthentication</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array auth data.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> auth_type, client_version, ip, permissions, server, session_id, user</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/Sftp/SftpAuthController.php</code></li></ul>
+</article></div>
 
-<article class="card">
-  <h2><code>featherpanel:wings:sftp:authentication</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWingsSftpAuthentication</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array auth data.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> auth_type, client_version, ip, permissions, server, session_id, user</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/Sftp/SftpAuthController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WingsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WingsEvent::onWingsSftpAuthentication(), function ($authType, $clientVersion, $ip, $permissions, $server, $sessionId, $user) {
-        // Handle featherpanel:wings:sftp:authentication
-        // Data keys: auth_type, client_version, ip, permissions, server, session_id, user
-    });
-}</code></pre>
-</article>
-  </main>
+    <footer class="fp-footer">
+      Machine-readable sources (.md / .json) are published next to these pages for RAG and AI agents.
+      See <a href="/icanhasfeatherpanel/rag/">RAG index</a> or <a href="/icanhasfeatherpanel/llms.txt">llms.txt</a>.
+    </footer>
+  </div>
+  <script src="/icanhasfeatherpanel/assets/docs.js"></script>
 </body>
 </html>

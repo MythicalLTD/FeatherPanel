@@ -2,218 +2,104 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Events: PluginUi</title>
+  <title>Events: PluginUi — FeatherPanel Docs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
-    a { color: #60a5fa; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .container { max-width: 960px; margin: 0 auto; }
-    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
-    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
-    h3 { font-size: 1rem; margin-top: 1.25rem; }
-    .muted { color: #9ca3af; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
-    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
-    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
-    .back-link { margin-bottom: 1.5rem; display: inline-block; }
-    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-left: 0.5rem; vertical-align: middle; }
-  </style>
+  <link rel="stylesheet" href="/icanhasfeatherpanel/assets/docs.css" />
 </head>
-<body>
-  <main class="container">
-    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
-    <header>
-      <h1>PluginUi</h1>
-      <p class="muted">7 events in this category.
-        7 emitted,
-        0 defined only.
-      </p>
-    </header>
+<body class="fp-docs">
+  <div class="fp-shell">
+    <nav class="fp-nav" aria-label="Documentation">
+      <a class="fp-brand" href="/icanhasfeatherpanel/">
+        <span class="fp-brand-mark" aria-hidden="true"></span>
+        <span>FeatherPanel Docs</span>
+      </a>
+      <div class="fp-nav-links">
+      <a href="/icanhasfeatherpanel/">Home</a>
+      <a href="/icanhasfeatherpanel/plugins/">Plugins</a>
+      <a href="/icanhasfeatherpanel/widgets/">Widgets</a>
+      <a href="/icanhasfeatherpanel/events/" class="active">Events</a>
+      <a href="/icanhasfeatherpanel/permissions/">Permissions</a>
+      <a href="/icanhasfeatherpanel/api/">API</a>
+      <a href="/icanhasfeatherpanel/rag/">RAG</a>
+      </div>
+    </nav>
 
-<article class="card">
-  <h2><code>featherpanel:system:plugins:ui:overrides:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onOverridesRetrieved</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array overrides from Frontend/overrides.json aggregations.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> actions, hide, replace</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/System/PluginOverridesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\PluginUiEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(PluginUiEvent::onOverridesRetrieved(), function ($actions, $hide, $replace) {
-        // Handle featherpanel:system:plugins:ui:overrides:retrieved
-        // Data keys: actions, hide, replace
-    });
-}</code></pre>
+<a class="fp-back" href="/icanhasfeatherpanel/events/">&larr; All event categories</a>
+<header class="fp-hero">
+  <h1>PluginUi</h1>
+  <p>7 events · 7 emitted · 0 defined only</p>
+  
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/events/plugin-ui.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/events/plugin-ui.json">JSON</a>
+  </div>
+</header>
+<input class="fp-search" type="search" placeholder="Filter events…" data-fp-search />
+<p class="fp-muted fp-hidden" data-fp-search-empty>No events match.</p>
+<div class="fp-list"><article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:system:plugins:ui:overrides:retrieved onOverridesRetrieved actions, hide, replace">
+  <h2><code>featherpanel:system:plugins:ui:overrides:retrieved</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onOverridesRetrieved</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array overrides from Frontend/overrides.json aggregations.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> actions, hide, replace</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/System/PluginOverridesController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:system:plugins:ui:public-pages:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onPublicPagesRetrieved</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array public pages from Frontend/public.json aggregations.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> pages</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/System/PluginPublicPagesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\PluginUiEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(PluginUiEvent::onPublicPagesRetrieved(), function ($pages) {
-        // Handle featherpanel:system:plugins:ui:public-pages:retrieved
-        // Data keys: pages
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:system:plugins:ui:public-pages:retrieved onPublicPagesRetrieved pages">
+  <h2><code>featherpanel:system:plugins:ui:public-pages:retrieved</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onPublicPagesRetrieved</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array public pages from Frontend/public.json aggregations.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> pages</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/System/PluginPublicPagesController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:system:plugins:ui:sidebar:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onSidebarRetrieved</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array sidebar sections, array context metadata.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> context, server_spell_id, sidebar</p>
-
-  <h3>Emitted From</h3>
-  <ul>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:system:plugins:ui:sidebar:retrieved onSidebarRetrieved context, server_spell_id, sidebar">
+  <h2><code>featherpanel:system:plugins:ui:sidebar:retrieved</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onSidebarRetrieved</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array sidebar sections, array context metadata.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> context, server_spell_id, sidebar</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/System/PluginSidebarController.php</code></li></ul>
+</article>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:system:plugins:ui:themes:retrieved onThemesRetrieved themes">
+  <h2><code>featherpanel:system:plugins:ui:themes:retrieved</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onThemesRetrieved</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array themes from Frontend/theme.json aggregations.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> themes</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/System/PluginThemesController.php</code></li></ul>
+</article>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:system:plugins:ui:error onUiError context, message, plugin, source">
+  <h2><code>featherpanel:system:plugins:ui:error</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onUiError</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string source, string message, array context metadata.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> context, message, plugin, source</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/System/PluginPublicPagesController.php</code></li>
 <li><code>backend/app/Controllers/System/PluginSidebarController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\PluginUiEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(PluginUiEvent::onSidebarRetrieved(), function ($context, $serverSpellId, $sidebar) {
-        // Handle featherpanel:system:plugins:ui:sidebar:retrieved
-        // Data keys: context, server_spell_id, sidebar
-    });
-}</code></pre>
+<li><code>backend/app/Controllers/System/PluginWidgetController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:system:plugins:ui:themes:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onThemesRetrieved</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array themes from Frontend/theme.json aggregations.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> themes</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/System/PluginThemesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\PluginUiEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(PluginUiEvent::onThemesRetrieved(), function ($themes) {
-        // Handle featherpanel:system:plugins:ui:themes:retrieved
-        // Data keys: themes
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:system:plugins:ui:packs:retrieved onUiPacksRetrieved packs">
+  <h2><code>featherpanel:system:plugins:ui:packs:retrieved</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onUiPacksRetrieved</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array UI packs from Frontend/ui.json aggregations.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> packs</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/System/PluginUiPacksController.php</code></li></ul>
 </article>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:system:plugins:ui:widgets:retrieved onWidgetsRetrieved context, page_filter, widgets">
+  <h2><code>featherpanel:system:plugins:ui:widgets:retrieved</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWidgetsRetrieved</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array widgets by page/location, array context metadata.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> context, page_filter, widgets</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/System/PluginWidgetController.php</code></li></ul>
+</article></div>
 
-<article class="card">
-  <h2><code>featherpanel:system:plugins:ui:error</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onUiError</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string source, string message, array context metadata.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> context, message, plugin, source</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/System/PluginPublicPagesController.php</code></li>
-<li><code>backend/app/Controllers/System/PluginSidebarController.php</code></li>
-<li><code>backend/app/Controllers/System/PluginWidgetController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\PluginUiEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(PluginUiEvent::onUiError(), function ($context, $message, $plugin, $source) {
-        // Handle featherpanel:system:plugins:ui:error
-        // Data keys: context, message, plugin, source
-    });
-}</code></pre>
-</article>
-
-<article class="card">
-  <h2><code>featherpanel:system:plugins:ui:packs:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onUiPacksRetrieved</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array UI packs from Frontend/ui.json aggregations.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> packs</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/System/PluginUiPacksController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\PluginUiEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(PluginUiEvent::onUiPacksRetrieved(), function ($packs) {
-        // Handle featherpanel:system:plugins:ui:packs:retrieved
-        // Data keys: packs
-    });
-}</code></pre>
-</article>
-
-<article class="card">
-  <h2><code>featherpanel:system:plugins:ui:widgets:retrieved</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWidgetsRetrieved</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array widgets by page/location, array context metadata.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> context, page_filter, widgets</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/System/PluginWidgetController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\PluginUiEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(PluginUiEvent::onWidgetsRetrieved(), function ($context, $pageFilter, $widgets) {
-        // Handle featherpanel:system:plugins:ui:widgets:retrieved
-        // Data keys: context, page_filter, widgets
-    });
-}</code></pre>
-</article>
-  </main>
+    <footer class="fp-footer">
+      Machine-readable sources (.md / .json) are published next to these pages for RAG and AI agents.
+      See <a href="/icanhasfeatherpanel/rag/">RAG index</a> or <a href="/icanhasfeatherpanel/llms.txt">llms.txt</a>.
+    </footer>
+  </div>
+  <script src="/icanhasfeatherpanel/assets/docs.js"></script>
 </body>
 </html>

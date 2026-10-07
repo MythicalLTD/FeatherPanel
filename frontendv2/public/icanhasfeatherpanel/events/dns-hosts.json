@@ -1,0 +1,49 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "DnsHosts",
+  "slug": "dns-hosts",
+  "total": 3,
+  "events": [
+    {
+      "name": "featherpanel:admin:dns_hosts:host:created",
+      "method": "onDnsHostCreated",
+      "category": "DnsHosts",
+      "callback": "array host data.",
+      "emitted": true,
+      "data_keys": [
+        "host"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/DnsHostsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:dns_hosts:host:deleted",
+      "method": "onDnsHostDeleted",
+      "category": "DnsHosts",
+      "callback": "int host id, array host data.",
+      "emitted": true,
+      "data_keys": [
+        "host",
+        "host_id"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/DnsHostsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:dns_hosts:host:updated",
+      "method": "onDnsHostUpdated",
+      "category": "DnsHosts",
+      "callback": "int host id, array host data.",
+      "emitted": true,
+      "data_keys": [
+        "host",
+        "host_id"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/DnsHostsController.php"
+      ]
+    }
+  ]
+}

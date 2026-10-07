@@ -2,177 +2,410 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>FeatherPanel Permission Nodes</title>
+  <title>Permissions — FeatherPanel Docs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
-    a { color: #60a5fa; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .container { max-width: 960px; margin: 0 auto; }
-    h1 { font-size: 2.25rem; margin-bottom: 0.5rem; }
-    h2 { font-size: 1.5rem; margin-top: 2rem; }
-    h3 { font-size: 1.125rem; margin-top: 1.5rem; }
-    .muted { color: #9ca3af; }
-    .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-right: 0.5rem; }
-    ul { padding-left: 1.25rem; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
-    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
-    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.5rem; margin-top: 2rem; }
-  </style>
+  <meta name="description" content="FeatherPanel permission nodes reference" />
+  <link rel="stylesheet" href="/icanhasfeatherpanel/assets/docs.css" />
 </head>
-<body>
-  <main class="container">
-    <header>
-      <h1>Permission Nodes</h1>
-      <p class="muted">
-        Complete reference of all permission nodes available in FeatherPanel for role-based access control.
-      </p>
-      <div style="margin-top: 0.75rem;">
-        <span class="badge">38 categories</span>
-        <span class="badge">137 permissions</span>
+<body class="fp-docs">
+  <div class="fp-shell">
+    <nav class="fp-nav" aria-label="Documentation">
+      <a class="fp-brand" href="/icanhasfeatherpanel/">
+        <span class="fp-brand-mark" aria-hidden="true"></span>
+        <span>FeatherPanel Docs</span>
+      </a>
+      <div class="fp-nav-links">
+      <a href="/icanhasfeatherpanel/">Home</a>
+      <a href="/icanhasfeatherpanel/plugins/">Plugins</a>
+      <a href="/icanhasfeatherpanel/widgets/">Widgets</a>
+      <a href="/icanhasfeatherpanel/events/">Events</a>
+      <a href="/icanhasfeatherpanel/permissions/" class="active">Permissions</a>
+      <a href="/icanhasfeatherpanel/api/">API</a>
+      <a href="/icanhasfeatherpanel/rag/">RAG</a>
       </div>
-    </header>
+    </nav>
 
-    <section>
-      <h2>Permission Categories</h2>
-      <p class="muted">Click a category to see all permissions in that category.</p>
-      <ul>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-api.html">Admin API</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-allocations.html">Admin Allocations</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-backup-schedules.html">Admin Backup Schedules</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-banned-ips.html">Admin Banned IPs</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-dashboard-view.html">Admin Dashboard View</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-database-snapshots.html">Admin Database Snapshots</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-databases.html">Admin Databases</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-email-templates.html">Admin Email Templates</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-featherzerotrust.html">Admin FeatherZeroTrust</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-images.html">Admin Images</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-knowledgebase-articles.html">Admin Knowledgebase Articles</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-knowledgebase-categories.html">Admin Knowledgebase Categories</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-locations.html">Admin Locations</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-nodes.html">Admin Nodes</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-notifications.html">Admin Notifications</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-plugins.html">Admin Plugins</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-realms.html">Admin Realms</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-redirect-links.html">Admin Redirect Links</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-role-permissions.html">Admin Role Permissions</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-roles.html">Admin Roles</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-root.html">Admin Root</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-servers.html">Admin Servers</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-settings.html">Admin Settings</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-spells.html">Admin Spells</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-statistics.html">Admin Statistics</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-storage-sense.html">Admin Storage Sense</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-subdomains.html">Admin Subdomains</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-ticket-attachments.html">Admin Ticket Attachments</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-ticket-categories.html">Admin Ticket Categories</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-ticket-messages.html">Admin Ticket Messages</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-ticket-priorities.html">Admin Ticket Priorities</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-ticket-statuses.html">Admin Ticket Statuses</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-tickets.html">Admin Tickets</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-users.html">Admin Users</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-vm-instances.html">Admin VM Instances</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-webplates.html">Admin WebPlates</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-webspaces.html">Admin WebSpaces</a>
-</li>
-<li>
-    <a href="/icanhasfeatherpanel/permissions/admin-wings-backups.html">Admin Wings Backups</a>
-</li>
-      </ul>
-    </section>
+<header class="fp-hero">
+  <h1>Permission Nodes</h1>
+  <p>Complete role-based access control reference. Available as HTML for browsing and as Markdown/JSON for RAG pipelines.</p>
+  <div class="fp-meta">
+      <span class="fp-badge">38 categories</span>
+      <span class="fp-badge">137 permissions</span>
+    </div>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/index.md">index.md</a>
+    <a href="/icanhasfeatherpanel/permissions/index.json">index.json</a>
+    <a href="/icanhasfeatherpanel/permissions/all.json">all.json</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/index.md">View Markdown</a>
+  </div>
+</header>
 
-    <section class="card">
-      <h2>About Permissions</h2>
-      <p class="muted">
-        FeatherPanel uses a role-based permission system where permissions are assigned to roles, and users are assigned roles.
-        Each permission node controls access to specific features or actions.
-      </p>
+<section class="fp-section">
+  <h2>Categories</h2>
+  <input class="fp-search" type="search" placeholder="Filter categories…" data-fp-search />
+  <p class="fp-muted fp-hidden" data-fp-search-empty>No categories match.</p>
+  <ul class="fp-list">
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin API admin-api">
+  <a href="/icanhasfeatherpanel/permissions/admin-api.html"><h2>Admin API</h2></a>
+  <p class="fp-muted">1 permission</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-api.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-api.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-api.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Allocations admin-allocations">
+  <a href="/icanhasfeatherpanel/permissions/admin-allocations.html"><h2>Admin Allocations</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-allocations.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-allocations.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-allocations.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Backup Schedules admin-backup-schedules">
+  <a href="/icanhasfeatherpanel/permissions/admin-backup-schedules.html"><h2>Admin Backup Schedules</h2></a>
+  <p class="fp-muted">5 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-backup-schedules.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-backup-schedules.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-backup-schedules.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Banned IPs admin-banned-ips">
+  <a href="/icanhasfeatherpanel/permissions/admin-banned-ips.html"><h2>Admin Banned IPs</h2></a>
+  <p class="fp-muted">3 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-banned-ips.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-banned-ips.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-banned-ips.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Dashboard View admin-dashboard-view">
+  <a href="/icanhasfeatherpanel/permissions/admin-dashboard-view.html"><h2>Admin Dashboard View</h2></a>
+  <p class="fp-muted">1 permission</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-dashboard-view.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-dashboard-view.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-dashboard-view.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Database Snapshots admin-database-snapshots">
+  <a href="/icanhasfeatherpanel/permissions/admin-database-snapshots.html"><h2>Admin Database Snapshots</h2></a>
+  <p class="fp-muted">5 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-database-snapshots.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-database-snapshots.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-database-snapshots.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Databases admin-databases">
+  <a href="/icanhasfeatherpanel/permissions/admin-databases.html"><h2>Admin Databases</h2></a>
+  <p class="fp-muted">5 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-databases.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-databases.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-databases.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Email Templates admin-email-templates">
+  <a href="/icanhasfeatherpanel/permissions/admin-email-templates.html"><h2>Admin Email Templates</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-email-templates.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-email-templates.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-email-templates.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin FeatherZeroTrust admin-featherzerotrust">
+  <a href="/icanhasfeatherpanel/permissions/admin-featherzerotrust.html"><h2>Admin FeatherZeroTrust</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-featherzerotrust.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-featherzerotrust.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-featherzerotrust.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Images admin-images">
+  <a href="/icanhasfeatherpanel/permissions/admin-images.html"><h2>Admin Images</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-images.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-images.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-images.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Knowledgebase Articles admin-knowledgebase-articles">
+  <a href="/icanhasfeatherpanel/permissions/admin-knowledgebase-articles.html"><h2>Admin Knowledgebase Articles</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-knowledgebase-articles.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-knowledgebase-articles.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-knowledgebase-articles.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Knowledgebase Categories admin-knowledgebase-categories">
+  <a href="/icanhasfeatherpanel/permissions/admin-knowledgebase-categories.html"><h2>Admin Knowledgebase Categories</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-knowledgebase-categories.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-knowledgebase-categories.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-knowledgebase-categories.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Locations admin-locations">
+  <a href="/icanhasfeatherpanel/permissions/admin-locations.html"><h2>Admin Locations</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-locations.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-locations.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-locations.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Nodes admin-nodes">
+  <a href="/icanhasfeatherpanel/permissions/admin-nodes.html"><h2>Admin Nodes</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-nodes.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-nodes.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-nodes.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Notifications admin-notifications">
+  <a href="/icanhasfeatherpanel/permissions/admin-notifications.html"><h2>Admin Notifications</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-notifications.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-notifications.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-notifications.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Plugins admin-plugins">
+  <a href="/icanhasfeatherpanel/permissions/admin-plugins.html"><h2>Admin Plugins</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-plugins.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-plugins.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-plugins.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Realms admin-realms">
+  <a href="/icanhasfeatherpanel/permissions/admin-realms.html"><h2>Admin Realms</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-realms.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-realms.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-realms.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Redirect Links admin-redirect-links">
+  <a href="/icanhasfeatherpanel/permissions/admin-redirect-links.html"><h2>Admin Redirect Links</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-redirect-links.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-redirect-links.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-redirect-links.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Role Permissions admin-role-permissions">
+  <a href="/icanhasfeatherpanel/permissions/admin-role-permissions.html"><h2>Admin Role Permissions</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-role-permissions.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-role-permissions.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-role-permissions.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Roles admin-roles">
+  <a href="/icanhasfeatherpanel/permissions/admin-roles.html"><h2>Admin Roles</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-roles.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-roles.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-roles.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Root admin-root">
+  <a href="/icanhasfeatherpanel/permissions/admin-root.html"><h2>Admin Root</h2></a>
+  <p class="fp-muted">1 permission</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-root.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-root.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-root.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Servers admin-servers">
+  <a href="/icanhasfeatherpanel/permissions/admin-servers.html"><h2>Admin Servers</h2></a>
+  <p class="fp-muted">8 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-servers.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-servers.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-servers.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Settings admin-settings">
+  <a href="/icanhasfeatherpanel/permissions/admin-settings.html"><h2>Admin Settings</h2></a>
+  <p class="fp-muted">2 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-settings.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-settings.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-settings.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Spells admin-spells">
+  <a href="/icanhasfeatherpanel/permissions/admin-spells.html"><h2>Admin Spells</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-spells.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-spells.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-spells.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Statistics admin-statistics">
+  <a href="/icanhasfeatherpanel/permissions/admin-statistics.html"><h2>Admin Statistics</h2></a>
+  <p class="fp-muted">1 permission</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-statistics.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-statistics.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-statistics.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Storage Sense admin-storage-sense">
+  <a href="/icanhasfeatherpanel/permissions/admin-storage-sense.html"><h2>Admin Storage Sense</h2></a>
+  <p class="fp-muted">2 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-storage-sense.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-storage-sense.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-storage-sense.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Subdomains admin-subdomains">
+  <a href="/icanhasfeatherpanel/permissions/admin-subdomains.html"><h2>Admin Subdomains</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-subdomains.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-subdomains.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-subdomains.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Ticket Attachments admin-ticket-attachments">
+  <a href="/icanhasfeatherpanel/permissions/admin-ticket-attachments.html"><h2>Admin Ticket Attachments</h2></a>
+  <p class="fp-muted">2 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-ticket-attachments.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-ticket-attachments.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-ticket-attachments.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Ticket Categories admin-ticket-categories">
+  <a href="/icanhasfeatherpanel/permissions/admin-ticket-categories.html"><h2>Admin Ticket Categories</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-ticket-categories.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-ticket-categories.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-ticket-categories.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Ticket Messages admin-ticket-messages">
+  <a href="/icanhasfeatherpanel/permissions/admin-ticket-messages.html"><h2>Admin Ticket Messages</h2></a>
+  <p class="fp-muted">2 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-ticket-messages.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-ticket-messages.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-ticket-messages.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Ticket Priorities admin-ticket-priorities">
+  <a href="/icanhasfeatherpanel/permissions/admin-ticket-priorities.html"><h2>Admin Ticket Priorities</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-ticket-priorities.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-ticket-priorities.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-ticket-priorities.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Ticket Statuses admin-ticket-statuses">
+  <a href="/icanhasfeatherpanel/permissions/admin-ticket-statuses.html"><h2>Admin Ticket Statuses</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-ticket-statuses.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-ticket-statuses.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-ticket-statuses.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Tickets admin-tickets">
+  <a href="/icanhasfeatherpanel/permissions/admin-tickets.html"><h2>Admin Tickets</h2></a>
+  <p class="fp-muted">5 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-tickets.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-tickets.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-tickets.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Users admin-users">
+  <a href="/icanhasfeatherpanel/permissions/admin-users.html"><h2>Admin Users</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-users.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-users.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-users.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin VM Instances admin-vm-instances">
+  <a href="/icanhasfeatherpanel/permissions/admin-vm-instances.html"><h2>Admin VM Instances</h2></a>
+  <p class="fp-muted">3 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-vm-instances.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-vm-instances.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-vm-instances.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin WebPlates admin-webplates">
+  <a href="/icanhasfeatherpanel/permissions/admin-webplates.html"><h2>Admin WebPlates</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-webplates.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-webplates.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-webplates.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin WebSpaces admin-webspaces">
+  <a href="/icanhasfeatherpanel/permissions/admin-webspaces.html"><h2>Admin WebSpaces</h2></a>
+  <p class="fp-muted">4 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-webspaces.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-webspaces.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-webspaces.md">View MD</a>
+  </div>
+</li>
+<li class="fp-item" data-fp-search-item data-fp-search-text="Admin Wings Backups admin-wings-backups">
+  <a href="/icanhasfeatherpanel/permissions/admin-wings-backups.html"><h2>Admin Wings Backups</h2></a>
+  <p class="fp-muted">3 permissions</p>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/permissions/admin-wings-backups.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/permissions/admin-wings-backups.json">JSON</a>
+    <a href="/icanhasfeatherpanel/view.html?doc=permissions/admin-wings-backups.md">View MD</a>
+  </div>
+</li>
+  </ul>
+</section>
 
-      <h3>Permission Format</h3>
-      <p class="muted">Permissions follow a hierarchical dot notation format:</p>
-      <pre><code>admin.users.view
-admin.servers.create
-admin.settings.edit</code></pre>
+<section class="fp-section fp-card">
+  <h2>About permissions</h2>
+  <p class="fp-muted">Permissions use hierarchical dot notation (<code>admin.users.view</code>). <code>admin.root</code> grants full access.</p>
+  <pre><code>use App\Helpers\PermissionHelper;
+use App\Permissions;
 
-      <h3>Root Permission</h3>
-      <p class="muted">
-        The <code>admin.root</code> permission grants full access to everything in the panel. Users with this permission
-        bypass all other permission checks.
-      </p>
-    </section>
-  </main>
+if (PermissionHelper::hasPermission($userUuid, Permissions::ADMIN_USERS_VIEW)) {
+    // allowed
+}</code></pre>
+</section>
+
+    <footer class="fp-footer">
+      Machine-readable sources (.md / .json) are published next to these pages for RAG and AI agents.
+      See <a href="/icanhasfeatherpanel/rag/">RAG index</a> or <a href="/icanhasfeatherpanel/llms.txt">llms.txt</a>.
+    </footer>
+  </div>
+  <script src="/icanhasfeatherpanel/assets/docs.js"></script>
 </body>
 </html>

@@ -1,0 +1,15 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-tickets-view",
+  "file_slug": "admin-tickets-view",
+  "files": [
+    "src/app/(app)/admin/tickets/[uuid]/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "after-messages",
+    "sidebar-bottom",
+    "sidebar-top",
+    "top-of-page"
+  ]
+}

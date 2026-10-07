@@ -1,0 +1,65 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "DatabaseSnapshots",
+  "slug": "database-snapshots",
+  "total": 4,
+  "events": [
+    {
+      "name": "featherpanel:database:snapshot:created",
+      "method": "onSnapshotCreated",
+      "category": "DatabaseSnapshots",
+      "callback": "string filename, int size, string user uuid.",
+      "emitted": true,
+      "data_keys": [
+        "filename",
+        "size",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/DatabaseSnapshotsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:database:snapshot:deleted",
+      "method": "onSnapshotDeleted",
+      "category": "DatabaseSnapshots",
+      "callback": "string filename, string user uuid.",
+      "emitted": true,
+      "data_keys": [
+        "filename",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/DatabaseSnapshotsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:database:snapshot:downloaded",
+      "method": "onSnapshotDownloaded",
+      "category": "DatabaseSnapshots",
+      "callback": "string filename, string user uuid.",
+      "emitted": true,
+      "data_keys": [
+        "filename",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/DatabaseSnapshotsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:database:snapshot:restored",
+      "method": "onSnapshotRestored",
+      "category": "DatabaseSnapshots",
+      "callback": "string filename, string user uuid.",
+      "emitted": true,
+      "data_keys": [
+        "filename",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/DatabaseSnapshotsController.php"
+      ]
+    }
+  ]
+}

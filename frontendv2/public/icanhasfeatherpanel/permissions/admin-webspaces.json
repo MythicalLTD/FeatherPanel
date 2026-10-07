@@ -1,0 +1,32 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin WebSpaces",
+  "slug": "admin-webspaces",
+  "total": 4,
+  "permissions": [
+    {
+      "constant": "ADMIN_WEBSPACES_CREATE",
+      "node": "admin.webspaces.create",
+      "category": "Admin WebSpaces",
+      "description": "Create new webspaces"
+    },
+    {
+      "constant": "ADMIN_WEBSPACES_DELETE",
+      "node": "admin.webspaces.delete",
+      "category": "Admin WebSpaces",
+      "description": "Delete webspaces"
+    },
+    {
+      "constant": "ADMIN_WEBSPACES_EDIT",
+      "node": "admin.webspaces.edit",
+      "category": "Admin WebSpaces",
+      "description": "Edit existing webspaces"
+    },
+    {
+      "constant": "ADMIN_WEBSPACES_VIEW",
+      "node": "admin.webspaces.view",
+      "category": "Admin WebSpaces",
+      "description": "View webspaces"
+    }
+  ]
+}

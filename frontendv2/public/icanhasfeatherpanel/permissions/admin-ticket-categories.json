@@ -1,0 +1,32 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin Ticket Categories",
+  "slug": "admin-ticket-categories",
+  "total": 4,
+  "permissions": [
+    {
+      "constant": "ADMIN_TICKET_CATEGORIES_CREATE",
+      "node": "admin.ticket_categories.create",
+      "category": "Admin Ticket Categories",
+      "description": "Create ticket categories"
+    },
+    {
+      "constant": "ADMIN_TICKET_CATEGORIES_DELETE",
+      "node": "admin.ticket_categories.delete",
+      "category": "Admin Ticket Categories",
+      "description": "Delete ticket categories"
+    },
+    {
+      "constant": "ADMIN_TICKET_CATEGORIES_EDIT",
+      "node": "admin.ticket_categories.edit",
+      "category": "Admin Ticket Categories",
+      "description": "Edit ticket categories"
+    },
+    {
+      "constant": "ADMIN_TICKET_CATEGORIES_VIEW",
+      "node": "admin.ticket_categories.view",
+      "category": "Admin Ticket Categories",
+      "description": "View ticket categories"
+    }
+  ]
+}

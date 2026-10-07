@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "webspace-backups",
+  "file_slug": "webspace-backups",
+  "files": [
+    "src/app/(app)/webspace/[uuidShort]/backups/page.tsx"
+  ],
+  "injection_points": [
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

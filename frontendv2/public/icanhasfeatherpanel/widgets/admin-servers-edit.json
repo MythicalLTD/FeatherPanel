@@ -1,0 +1,13 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-servers-edit",
+  "file_slug": "admin-servers-edit",
+  "files": [
+    "src/app/(app)/admin/servers/[id]/edit/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "FileManager",
+  "slug": "file-manager",
+  "total": 6,
+  "events": [
+    {
+      "name": "featherpanel:admin:file_manager:directory:browsed",
+      "method": "onDirectoryBrowsed",
+      "category": "FileManager",
+      "callback": "string path, array items.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:file_manager:file:created",
+      "method": "onFileCreated",
+      "category": "FileManager",
+      "callback": "string path, bool is_directory.",
+      "emitted": true,
+      "data_keys": [
+        "created_by",
+        "is_directory",
+        "path"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/FileManagerController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:file_manager:file:deleted",
+      "method": "onFileDeleted",
+      "category": "FileManager",
+      "callback": "string path, bool was_directory.",
+      "emitted": true,
+      "data_keys": [
+        "deleted_by",
+        "path",
+        "was_directory"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/FileManagerController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:file_manager:error",
+      "method": "onFileManagerError",
+      "category": "FileManager",
+      "callback": "string error message, array context.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:file_manager:file:read",
+      "method": "onFileRead",
+      "category": "FileManager",
+      "callback": "string path, array file data.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:file_manager:file:saved",
+      "method": "onFileSaved",
+      "category": "FileManager",
+      "callback": "string path, int size.",
+      "emitted": true,
+      "data_keys": [
+        "path",
+        "saved_by",
+        "size"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/FileManagerController.php"
+      ]
+    }
+  ]
+}

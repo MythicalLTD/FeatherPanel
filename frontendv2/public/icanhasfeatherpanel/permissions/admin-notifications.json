@@ -1,0 +1,32 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin Notifications",
+  "slug": "admin-notifications",
+  "total": 4,
+  "permissions": [
+    {
+      "constant": "ADMIN_NOTIFICATIONS_CREATE",
+      "node": "admin.notifications.create",
+      "category": "Admin Notifications",
+      "description": "Create new notifications"
+    },
+    {
+      "constant": "ADMIN_NOTIFICATIONS_DELETE",
+      "node": "admin.notifications.delete",
+      "category": "Admin Notifications",
+      "description": "Delete notifications"
+    },
+    {
+      "constant": "ADMIN_NOTIFICATIONS_EDIT",
+      "node": "admin.notifications.edit",
+      "category": "Admin Notifications",
+      "description": "Edit existing notifications"
+    },
+    {
+      "constant": "ADMIN_NOTIFICATIONS_VIEW",
+      "node": "admin.notifications.view",
+      "category": "Admin Notifications",
+      "description": "View notifications"
+    }
+  ]
+}

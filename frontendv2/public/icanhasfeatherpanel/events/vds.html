@@ -2,484 +2,190 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Events: Vds</title>
+  <title>Events: Vds — FeatherPanel Docs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
-    a { color: #60a5fa; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .container { max-width: 960px; margin: 0 auto; }
-    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
-    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
-    h3 { font-size: 1rem; margin-top: 1.25rem; }
-    .muted { color: #9ca3af; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
-    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
-    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
-    .back-link { margin-bottom: 1.5rem; display: inline-block; }
-    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-left: 0.5rem; vertical-align: middle; }
-  </style>
+  <link rel="stylesheet" href="/icanhasfeatherpanel/assets/docs.css" />
 </head>
-<body>
-  <main class="container">
-    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
-    <header>
-      <h1>Vds</h1>
-      <p class="muted">17 events in this category.
-        17 emitted,
-        0 defined only.
-      </p>
-    </header>
+<body class="fp-docs">
+  <div class="fp-shell">
+    <nav class="fp-nav" aria-label="Documentation">
+      <a class="fp-brand" href="/icanhasfeatherpanel/">
+        <span class="fp-brand-mark" aria-hidden="true"></span>
+        <span>FeatherPanel Docs</span>
+      </a>
+      <div class="fp-nav-links">
+      <a href="/icanhasfeatherpanel/">Home</a>
+      <a href="/icanhasfeatherpanel/plugins/">Plugins</a>
+      <a href="/icanhasfeatherpanel/widgets/">Widgets</a>
+      <a href="/icanhasfeatherpanel/events/" class="active">Events</a>
+      <a href="/icanhasfeatherpanel/permissions/">Permissions</a>
+      <a href="/icanhasfeatherpanel/api/">API</a>
+      <a href="/icanhasfeatherpanel/rag/">RAG</a>
+      </div>
+    </nav>
 
-<article class="card">
-  <h2><code>featherpanel:vds:backup:create</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onVdsBackupCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, string backup id, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> backup_id, context, source, storage, user_uuid, vds_id, vmid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li>
+<a class="fp-back" href="/icanhasfeatherpanel/events/">&larr; All event categories</a>
+<header class="fp-hero">
+  <h1>Vds</h1>
+  <p>17 events · 17 emitted · 0 defined only</p>
+  
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/events/vds.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/events/vds.json">JSON</a>
+  </div>
+</header>
+<input class="fp-search" type="search" placeholder="Filter events…" data-fp-search />
+<p class="fp-muted fp-hidden" data-fp-search-empty>No events match.</p>
+<div class="fp-list"><article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:vds:backup:create onVdsBackupCreated backup_id, context, source, storage, user_uuid, vds_id, vmid">
+  <h2><code>featherpanel:vds:backup:create</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onVdsBackupCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, int vds instance id, int vmid, string backup id, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> backup_id, context, source, storage, user_uuid, vds_id, vmid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li>
 <li><code>backend/app/Controllers/User/Vds/VmUserBackupController.php</code></li>
-<li><code>backend/app/Services/Chatbot/Tools/Vds/CreateVdsBackupTool.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\VdsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(VdsEvent::onVdsBackupCreated(), function ($backupId, $context, $source, $storage, $userUuid, $vdsId, $vmid) {
-        // Handle featherpanel:vds:backup:create
-        // Data keys: backup_id, context, source, storage, user_uuid, vds_id, vmid
-    });
-}</code></pre>
+<li><code>backend/app/Services/Chatbot/Tools/Vds/CreateVdsBackupTool.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:vds:backup:delete</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onVdsBackupDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, string volid, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> context, source, storage, user_uuid, vds_id, vmid, volid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li>
-<li><code>backend/app/Controllers/User/Vds/VmUserBackupController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\VdsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(VdsEvent::onVdsBackupDeleted(), function ($context, $source, $storage, $userUuid, $vdsId, $vmid, $volid) {
-        // Handle featherpanel:vds:backup:delete
-        // Data keys: context, source, storage, user_uuid, vds_id, vmid, volid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:vds:backup:delete onVdsBackupDeleted context, source, storage, user_uuid, vds_id, vmid, volid">
+  <h2><code>featherpanel:vds:backup:delete</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onVdsBackupDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, int vds instance id, int vmid, string volid, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> context, source, storage, user_uuid, vds_id, vmid, volid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li>
+<li><code>backend/app/Controllers/User/Vds/VmUserBackupController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:vds:backup:restore</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onVdsBackupRestored</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, string restore id, string volid, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> context, restore_id, source, storage, user_uuid, vds_id, vmid, volid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li>
-<li><code>backend/app/Controllers/User/Vds/VmUserBackupController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\VdsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(VdsEvent::onVdsBackupRestored(), function ($context, $restoreId, $source, $storage, $userUuid, $vdsId, $vmid, $volid) {
-        // Handle featherpanel:vds:backup:restore
-        // Data keys: context, restore_id, source, storage, user_uuid, vds_id, vmid, volid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:vds:backup:restore onVdsBackupRestored context, restore_id, source, storage, user_uuid, vds_id, vmid, volid">
+  <h2><code>featherpanel:vds:backup:restore</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onVdsBackupRestored</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, int vds instance id, int vmid, string restore id, string volid, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> context, restore_id, source, storage, user_uuid, vds_id, vmid, volid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li>
+<li><code>backend/app/Controllers/User/Vds/VmUserBackupController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:vds:console:access</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onVdsConsoleAccessed</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> context, source, user_uuid, vds_id, vmid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:vds:console:access onVdsConsoleAccessed context, source, user_uuid, vds_id, vmid">
+  <h2><code>featherpanel:vds:console:access</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onVdsConsoleAccessed</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, int vds instance id, int vmid, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> context, source, user_uuid, vds_id, vmid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li>
+<li><code>backend/app/Controllers/User/Vds/VmUserInstanceController.php</code></li></ul>
+</article>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:vds:created onVdsCreated context, creation_id, source, template_id, user_uuid, vds_id, vm_node_id, vmid">
+  <h2><code>featherpanel:vds:created</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onVdsCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, int vds instance id, int vmid, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> context, creation_id, source, template_id, user_uuid, vds_id, vm_node_id, vmid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li></ul>
+</article>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:vds:deleted onVdsDeleted context, hard_delete, queued, reason, source, task_id, user_uuid, vds_id, vmid">
+  <h2><code>featherpanel:vds:deleted</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onVdsDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, int vds instance id, int vmid, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> context, hard_delete, queued, reason, source, task_id, user_uuid, vds_id, vmid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li></ul>
+</article>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:vds:iso:mount onVdsIsoMounted context, method, source, storage, task_id, user_uuid, vds_id, vmid, volid">
+  <h2><code>featherpanel:vds:iso:mount</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onVdsIsoMounted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, int vds instance id, int vmid, string volid, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> context, method, source, storage, task_id, user_uuid, vds_id, vmid, volid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Vds/VmUserInstanceController.php</code></li></ul>
+</article>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:vds:iso:unmount onVdsIsoUnmounted context, source, user_uuid, vds_id, vmid">
+  <h2><code>featherpanel:vds:iso:unmount</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onVdsIsoUnmounted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, int vds instance id, int vmid, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> context, source, user_uuid, vds_id, vmid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Vds/VmUserInstanceController.php</code></li></ul>
+</article>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:vds:network:update onVdsNetworkUpdated changes, context, nameserver, searchdomain, source, user_uuid, vds_id, vmid">
+  <h2><code>featherpanel:vds:network:update</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onVdsNetworkUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, int vds instance id, int vmid, array dns/network payload, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> changes, context, nameserver, searchdomain, source, user_uuid, vds_id, vmid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Vds/VmUserInstanceController.php</code></li></ul>
+</article>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:vds:power:action onVdsPowerAction action, context, source, task_id, user_uuid, vds_id, vmid">
+  <h2><code>featherpanel:vds:power:action</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onVdsPowerAction</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, int vds instance id, int vmid, string action, string task id, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> action, context, source, task_id, user_uuid, vds_id, vmid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li>
 <li><code>backend/app/Controllers/User/Vds/VmUserInstanceController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\VdsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(VdsEvent::onVdsConsoleAccessed(), function ($context, $source, $userUuid, $vdsId, $vmid) {
-        // Handle featherpanel:vds:console:access
-        // Data keys: context, source, user_uuid, vds_id, vmid
-    });
-}</code></pre>
+<li><code>backend/app/Services/Chatbot/Tools/Vds/VdsPowerActionTool.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:vds:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onVdsCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> context, creation_id, source, template_id, user_uuid, vds_id, vm_node_id, vmid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\VdsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(VdsEvent::onVdsCreated(), function ($context, $creationId, $source, $templateId, $userUuid, $vdsId, $vmNodeId, $vmid) {
-        // Handle featherpanel:vds:created
-        // Data keys: context, creation_id, source, template_id, user_uuid, vds_id, vm_node_id, vmid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:vds:qemu:hardware:update onVdsQemuHardwareUpdated bios, changes, context, efi_enabled, serial0_enabled, source, tpm_enabled, user_uuid, vds_id, vmid">
+  <h2><code>featherpanel:vds:qemu:hardware:update</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onVdsQemuHardwareUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, int vds instance id, int vmid, array qemu payload, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> bios, changes, context, efi_enabled, serial0_enabled, source, tpm_enabled, user_uuid, vds_id, vmid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Vds/VmUserInstanceController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:vds:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onVdsDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> context, hard_delete, queued, reason, source, task_id, user_uuid, vds_id, vmid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\VdsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(VdsEvent::onVdsDeleted(), function ($context, $hardDelete, $queued, $reason, $source, $taskId, $userUuid, $vdsId, $vmid) {
-        // Handle featherpanel:vds:deleted
-        // Data keys: context, hard_delete, queued, reason, source, task_id, user_uuid, vds_id, vmid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:vds:reinstall onVdsReinstalled context, reinstall_id, source, user_uuid, vds_id, vmid">
+  <h2><code>featherpanel:vds:reinstall</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onVdsReinstalled</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, int vds instance id, int vmid, string reinstall id, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> context, reinstall_id, source, user_uuid, vds_id, vmid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li>
+<li><code>backend/app/Controllers/User/Vds/VmUserInstanceController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:vds:iso:mount</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onVdsIsoMounted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, string volid, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> context, method, source, storage, task_id, user_uuid, vds_id, vmid, volid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Vds/VmUserInstanceController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\VdsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(VdsEvent::onVdsIsoMounted(), function ($context, $method, $source, $storage, $taskId, $userUuid, $vdsId, $vmid, $volid) {
-        // Handle featherpanel:vds:iso:mount
-        // Data keys: context, method, source, storage, task_id, user_uuid, vds_id, vmid, volid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:vds:subuser:create onVdsSubuserCreated context, source, subuser_id, target_user_id, user_uuid, vds_id, vmid">
+  <h2><code>featherpanel:vds:subuser:create</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onVdsSubuserCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, int vds instance id, int vmid, int subuser id, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> context, source, subuser_id, target_user_id, user_uuid, vds_id, vmid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Vds/VmUserSubuserController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:vds:iso:unmount</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onVdsIsoUnmounted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> context, source, user_uuid, vds_id, vmid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Vds/VmUserInstanceController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\VdsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(VdsEvent::onVdsIsoUnmounted(), function ($context, $source, $userUuid, $vdsId, $vmid) {
-        // Handle featherpanel:vds:iso:unmount
-        // Data keys: context, source, user_uuid, vds_id, vmid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:vds:subuser:delete onVdsSubuserDeleted context, source, subuser_id, user_uuid, vds_id, vmid">
+  <h2><code>featherpanel:vds:subuser:delete</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onVdsSubuserDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, int vds instance id, int vmid, int subuser id, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> context, source, subuser_id, user_uuid, vds_id, vmid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Vds/VmUserSubuserController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:vds:network:update</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onVdsNetworkUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, array dns/network payload, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> changes, context, nameserver, searchdomain, source, user_uuid, vds_id, vmid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Vds/VmUserInstanceController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\VdsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(VdsEvent::onVdsNetworkUpdated(), function ($changes, $context, $nameserver, $searchdomain, $source, $userUuid, $vdsId, $vmid) {
-        // Handle featherpanel:vds:network:update
-        // Data keys: changes, context, nameserver, searchdomain, source, user_uuid, vds_id, vmid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:vds:suspended onVdsSuspended context, source, user_uuid, vds_id, vmid">
+  <h2><code>featherpanel:vds:suspended</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onVdsSuspended</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, int vds instance id, int vmid, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> context, source, user_uuid, vds_id, vmid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:vds:power:action</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onVdsPowerAction</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, string action, string task id, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> action, context, source, task_id, user_uuid, vds_id, vmid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li>
-<li><code>backend/app/Controllers/User/Vds/VmUserInstanceController.php</code></li>
-<li><code>backend/app/Services/Chatbot/Tools/Vds/VdsPowerActionTool.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\VdsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(VdsEvent::onVdsPowerAction(), function ($action, $context, $source, $taskId, $userUuid, $vdsId, $vmid) {
-        // Handle featherpanel:vds:power:action
-        // Data keys: action, context, source, task_id, user_uuid, vds_id, vmid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:vds:unsuspended onVdsUnsuspended context, source, user_uuid, vds_id, vmid">
+  <h2><code>featherpanel:vds:unsuspended</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onVdsUnsuspended</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, int vds instance id, int vmid, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> context, source, user_uuid, vds_id, vmid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li></ul>
 </article>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:vds:updated onVdsUpdated changed_fields, context, source, user_uuid, vds_id, vmid">
+  <h2><code>featherpanel:vds:updated</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onVdsUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, int vds instance id, int vmid, array changed fields, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> changed_fields, context, source, user_uuid, vds_id, vmid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li></ul>
+</article></div>
 
-<article class="card">
-  <h2><code>featherpanel:vds:qemu:hardware:update</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onVdsQemuHardwareUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, array qemu payload, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> bios, changes, context, efi_enabled, serial0_enabled, source, tpm_enabled, user_uuid, vds_id, vmid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Vds/VmUserInstanceController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\VdsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(VdsEvent::onVdsQemuHardwareUpdated(), function ($bios, $changes, $context, $efiEnabled, $serial0Enabled, $source, $tpmEnabled, $userUuid, $vdsId, $vmid) {
-        // Handle featherpanel:vds:qemu:hardware:update
-        // Data keys: bios, changes, context, efi_enabled, serial0_enabled, source, tpm_enabled, user_uuid, vds_id, vmid
-    });
-}</code></pre>
-</article>
-
-<article class="card">
-  <h2><code>featherpanel:vds:reinstall</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onVdsReinstalled</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, string reinstall id, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> context, reinstall_id, source, user_uuid, vds_id, vmid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li>
-<li><code>backend/app/Controllers/User/Vds/VmUserInstanceController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\VdsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(VdsEvent::onVdsReinstalled(), function ($context, $reinstallId, $source, $userUuid, $vdsId, $vmid) {
-        // Handle featherpanel:vds:reinstall
-        // Data keys: context, reinstall_id, source, user_uuid, vds_id, vmid
-    });
-}</code></pre>
-</article>
-
-<article class="card">
-  <h2><code>featherpanel:vds:subuser:create</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onVdsSubuserCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, int subuser id, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> context, source, subuser_id, target_user_id, user_uuid, vds_id, vmid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Vds/VmUserSubuserController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\VdsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(VdsEvent::onVdsSubuserCreated(), function ($context, $source, $subuserId, $targetUserId, $userUuid, $vdsId, $vmid) {
-        // Handle featherpanel:vds:subuser:create
-        // Data keys: context, source, subuser_id, target_user_id, user_uuid, vds_id, vmid
-    });
-}</code></pre>
-</article>
-
-<article class="card">
-  <h2><code>featherpanel:vds:subuser:delete</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onVdsSubuserDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, int subuser id, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> context, source, subuser_id, user_uuid, vds_id, vmid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Vds/VmUserSubuserController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\VdsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(VdsEvent::onVdsSubuserDeleted(), function ($context, $source, $subuserId, $userUuid, $vdsId, $vmid) {
-        // Handle featherpanel:vds:subuser:delete
-        // Data keys: context, source, subuser_id, user_uuid, vds_id, vmid
-    });
-}</code></pre>
-</article>
-
-<article class="card">
-  <h2><code>featherpanel:vds:suspended</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onVdsSuspended</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> context, source, user_uuid, vds_id, vmid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\VdsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(VdsEvent::onVdsSuspended(), function ($context, $source, $userUuid, $vdsId, $vmid) {
-        // Handle featherpanel:vds:suspended
-        // Data keys: context, source, user_uuid, vds_id, vmid
-    });
-}</code></pre>
-</article>
-
-<article class="card">
-  <h2><code>featherpanel:vds:unsuspended</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onVdsUnsuspended</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> context, source, user_uuid, vds_id, vmid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\VdsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(VdsEvent::onVdsUnsuspended(), function ($context, $source, $userUuid, $vdsId, $vmid) {
-        // Handle featherpanel:vds:unsuspended
-        // Data keys: context, source, user_uuid, vds_id, vmid
-    });
-}</code></pre>
-</article>
-
-<article class="card">
-  <h2><code>featherpanel:vds:updated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onVdsUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, int vds instance id, int vmid, array changed fields, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> changed_fields, context, source, user_uuid, vds_id, vmid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/VmInstancesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\VdsEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(VdsEvent::onVdsUpdated(), function ($changedFields, $context, $source, $userUuid, $vdsId, $vmid) {
-        // Handle featherpanel:vds:updated
-        // Data keys: changed_fields, context, source, user_uuid, vds_id, vmid
-    });
-}</code></pre>
-</article>
-  </main>
+    <footer class="fp-footer">
+      Machine-readable sources (.md / .json) are published next to these pages for RAG and AI agents.
+      See <a href="/icanhasfeatherpanel/rag/">RAG index</a> or <a href="/icanhasfeatherpanel/llms.txt">llms.txt</a>.
+    </footer>
+  </div>
+  <script src="/icanhasfeatherpanel/assets/docs.js"></script>
 </body>
 </html>

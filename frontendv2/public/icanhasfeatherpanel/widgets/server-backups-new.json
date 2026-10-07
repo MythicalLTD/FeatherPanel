@@ -1,0 +1,13 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "server-backups-new",
+  "file_slug": "server-backups-new",
+  "files": [
+    "src/app/(app)/server/[uuidShort]/backups/new/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

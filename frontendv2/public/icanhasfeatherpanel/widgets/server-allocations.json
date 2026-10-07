@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "server-allocations",
+  "file_slug": "server-allocations",
+  "files": [
+    "src/app/(app)/server/[uuidShort]/allocations/page.tsx"
+  ],
+  "injection_points": [
+    "allocation-bottom",
+    "allocation-header"
+  ]
+}

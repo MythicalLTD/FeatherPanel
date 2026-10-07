@@ -1,0 +1,13 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "server-proxy-new",
+  "file_slug": "server-proxy-new",
+  "files": [
+    "src/app/(app)/server/[uuidShort]/proxy/new/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

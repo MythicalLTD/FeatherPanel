@@ -82,6 +82,7 @@ export default function VmInstanceEditPage() {
     const [selectedOwner, setSelectedOwner] = useState<OwnerUser | null>(null);
     const [vmIpId, setVmIpId] = useState<number | null>(null);
     const [memory, setMemory] = useState(512);
+    const [memorySizeValid, setMemorySizeValid] = useState(true);
     const [cpus, setCpus] = useState(1);
     const [cores, setCores] = useState(1);
     const [onBoot, setOnBoot] = useState(false);
@@ -107,6 +108,7 @@ export default function VmInstanceEditPage() {
     const [newNetworkRow, setNewNetworkRow] = useState<NetworkRow | null>(null);
     const [newDiskStorage, setNewDiskStorage] = useState('local-lvm');
     const [newDiskSizeGb, setNewDiskSizeGb] = useState(10);
+    const [newDiskSizeValid, setNewDiskSizeValid] = useState(true);
     const [newDiskPath, setNewDiskPath] = useState('');
     const [creatingDisk, setCreatingDisk] = useState(false);
     const [deletingDisk, setDeletingDisk] = useState<string | null>(null);
@@ -453,6 +455,10 @@ export default function VmInstanceEditPage() {
 
     const handleSaveResources = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!memorySizeValid) {
+            toast.error(t('common.sizeInput.invalid'));
+            return;
+        }
         setSavingTab('resources');
         try {
             const payload: Record<string, unknown> = {
@@ -504,6 +510,10 @@ export default function VmInstanceEditPage() {
 
     const handleCreateDisk = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!newDiskSizeValid) {
+            toast.error(t('common.sizeInput.invalid'));
+            return;
+        }
         if (newDiskSizeGb < 1) {
             toast.error(t('admin.vmInstances.disk_size_min') ?? 'Size must be at least 1 GB');
             return;
@@ -777,6 +787,7 @@ export default function VmInstanceEditPage() {
                             config={config}
                             memory={memory}
                             setMemory={setMemory}
+                            onMemoryValidityChange={setMemorySizeValid}
                             cpus={cpus}
                             setCpus={setCpus}
                             cores={cores}
@@ -817,6 +828,7 @@ export default function VmInstanceEditPage() {
                                 setNewDiskStorage={setNewDiskStorage}
                                 newDiskSizeGb={newDiskSizeGb}
                                 setNewDiskSizeGb={setNewDiskSizeGb}
+                                onNewDiskSizeValidityChange={setNewDiskSizeValid}
                                 newDiskPath={newDiskPath}
                                 setNewDiskPath={setNewDiskPath}
                                 resizeDisk={resizeDisk}

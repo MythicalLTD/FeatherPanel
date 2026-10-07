@@ -1,0 +1,87 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "Locations",
+  "slug": "locations",
+  "total": 7,
+  "events": [
+    {
+      "name": "featherpanel:admin:locations:location:created",
+      "method": "onLocationCreated",
+      "category": "Locations",
+      "callback": "array location data.",
+      "emitted": true,
+      "data_keys": [
+        "created_by",
+        "location"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/LocationsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:locations:location:deleted",
+      "method": "onLocationDeleted",
+      "category": "Locations",
+      "callback": "int location id, array location data.",
+      "emitted": true,
+      "data_keys": [
+        "deleted_by",
+        "location"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/LocationsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:locations:location:not:found",
+      "method": "onLocationNotFound",
+      "category": "Locations",
+      "callback": "int location id, string error message.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:locations:location:retrieved",
+      "method": "onLocationRetrieved",
+      "category": "Locations",
+      "callback": "int location id, array location data.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:locations:error",
+      "method": "onLocationsError",
+      "category": "Locations",
+      "callback": "string error message, array context.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:locations:retrieved",
+      "method": "onLocationsRetrieved",
+      "category": "Locations",
+      "callback": "array locations list.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:locations:location:updated",
+      "method": "onLocationUpdated",
+      "category": "Locations",
+      "callback": "int location id, array old data, array new data.",
+      "emitted": true,
+      "data_keys": [
+        "location",
+        "updated_by",
+        "updated_data"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/LocationsController.php"
+      ]
+    }
+  ]
+}

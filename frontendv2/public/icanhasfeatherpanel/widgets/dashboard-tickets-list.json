@@ -1,0 +1,16 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "dashboard-tickets-list",
+  "file_slug": "dashboard-tickets-list",
+  "files": [
+    "src/app/(app)/dashboard/tickets/page.tsx"
+  ],
+  "injection_points": [
+    "after-filters",
+    "after-header",
+    "after-tickets-list",
+    "before-tickets-list",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

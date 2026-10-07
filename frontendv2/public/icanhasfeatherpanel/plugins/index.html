@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Plugin Development — FeatherPanel Docs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Full documentation for creating FeatherPanel plugins, including Markdown sources for AI agents and RAG." />
+  <link rel="stylesheet" href="/icanhasfeatherpanel/assets/docs.css" />
+</head>
+<body class="fp-docs">
+  <div class="fp-shell">
+    <nav class="fp-nav" aria-label="Documentation">
+      <a class="fp-brand" href="/icanhasfeatherpanel/">
+        <span class="fp-brand-mark" aria-hidden="true"></span>
+        <span>FeatherPanel Docs</span>
+      </a>
+      <div class="fp-nav-links">
+        <a href="/icanhasfeatherpanel/">Home</a>
+        <a href="/icanhasfeatherpanel/plugins/" class="active">Plugins</a>
+        <a href="/icanhasfeatherpanel/widgets/">Widgets</a>
+        <a href="/icanhasfeatherpanel/events/">Events</a>
+        <a href="/icanhasfeatherpanel/permissions/">Permissions</a>
+        <a href="/icanhasfeatherpanel/api/">API</a>
+        <a href="/icanhasfeatherpanel/rag/">RAG</a>
+      </div>
+    </nav>
+
+    <header class="fp-hero">
+      <h1>Plugin Development</h1>
+      <p>Full guides for building FeatherPanel plugins (addons). Markdown sources ship on GitHub Pages for humans, AIs, and RAG loaders.</p>
+      <div class="fp-meta">
+        <span class="fp-badge">Markdown</span>
+        <span class="fp-badge">AI-oriented</span>
+        <span class="fp-badge">llms.txt</span>
+      </div>
+      <div class="fp-formats">
+        <a href="./ai-guide.md">ai-guide.md</a>
+        <a href="./llms.txt">plugins/llms.txt</a>
+        <a href="/icanhasfeatherpanel/llms.txt">site llms.txt</a>
+        <a href="/icanhasfeatherpanel/catalog.json">catalog.json</a>
+      </div>
+    </header>
+
+    <section class="fp-section fp-card">
+      <h2>For AI agents &amp; RAG</h2>
+      <p class="fp-muted">Fetch raw Markdown (not HTML). Start with the dense guide, then pull topic files.</p>
+      <ul class="fp-muted">
+        <li><a href="./ai-guide.md"><code>ai-guide.md</code></a> — checklist, pitfalls, minimal plugin</li>
+        <li><a href="./README.md"><code>README.md</code></a> — reading order</li>
+        <li><a href="/icanhasfeatherpanel/rag/">Site-wide RAG index</a> — every .md/.json including permissions &amp; events</li>
+      </ul>
+    </section>
+
+    <section class="fp-section">
+      <h2>Guides</h2>
+      <div class="fp-grid">
+        <a class="fp-card-link" href="/icanhasfeatherpanel/view.html?doc=plugins/ai-guide.md"><div class="fp-card"><h2>AI guide</h2><p>Dense contract for coding agents.</p></div></a>
+        <a class="fp-card-link" href="/icanhasfeatherpanel/view.html?doc=plugins/getting-started.md"><div class="fp-card"><h2>Getting started</h2><p>Layout, create flow, boot sequence.</p></div></a>
+        <a class="fp-card-link" href="/icanhasfeatherpanel/view.html?doc=plugins/conf-yml.md"><div class="fp-card"><h2>conf.yml</h2><p>Manifest fields, flags, dependencies.</p></div></a>
+        <a class="fp-card-link" href="/icanhasfeatherpanel/view.html?doc=plugins/backend.md"><div class="fp-card"><h2>Backend</h2><p>Routes, events, settings, migrations, cron, CLI.</p></div></a>
+        <a class="fp-card-link" href="/icanhasfeatherpanel/view.html?doc=plugins/frontend.md"><div class="fp-card"><h2>Frontend</h2><p>Widgets, sidebar, themes, UI packs.</p></div></a>
+        <a class="fp-card-link" href="/icanhasfeatherpanel/view.html?doc=plugins/power-sdk.md"><div class="fp-card"><h2>Power SDK</h2><p><code>window.FeatherPanel</code> events and actions.</p></div></a>
+        <a class="fp-card-link" href="/icanhasfeatherpanel/view.html?doc=plugins/packaging.md"><div class="fp-card"><h2>Packaging</h2><p><code>.fpa</code> install, update, export.</p></div></a>
+        <a class="fp-card-link" href="/icanhasfeatherpanel/view.html?doc=plugins/recipes.md"><div class="fp-card"><h2>Recipes</h2><p>Copy-paste API, widget, and sidebar examples.</p></div></a>
+      </div>
+    </section>
+
+    <section class="fp-section fp-card">
+      <h2>Raw Markdown</h2>
+      <table class="fp-table">
+        <thead><tr><th>Doc</th><th>Raw</th><th>Rendered</th></tr></thead>
+        <tbody>
+          <tr><td>Index</td><td><a href="./README.md">README.md</a></td><td><a href="/icanhasfeatherpanel/view.html?doc=plugins/README.md">view</a></td></tr>
+          <tr><td>AI guide</td><td><a href="./ai-guide.md">ai-guide.md</a></td><td><a href="/icanhasfeatherpanel/view.html?doc=plugins/ai-guide.md">view</a></td></tr>
+          <tr><td>Getting started</td><td><a href="./getting-started.md">getting-started.md</a></td><td><a href="/icanhasfeatherpanel/view.html?doc=plugins/getting-started.md">view</a></td></tr>
+          <tr><td>conf.yml</td><td><a href="./conf-yml.md">conf-yml.md</a></td><td><a href="/icanhasfeatherpanel/view.html?doc=plugins/conf-yml.md">view</a></td></tr>
+          <tr><td>Backend</td><td><a href="./backend.md">backend.md</a></td><td><a href="/icanhasfeatherpanel/view.html?doc=plugins/backend.md">view</a></td></tr>
+          <tr><td>Frontend</td><td><a href="./frontend.md">frontend.md</a></td><td><a href="/icanhasfeatherpanel/view.html?doc=plugins/frontend.md">view</a></td></tr>
+          <tr><td>Power SDK</td><td><a href="./power-sdk.md">power-sdk.md</a></td><td><a href="/icanhasfeatherpanel/view.html?doc=plugins/power-sdk.md">view</a></td></tr>
+          <tr><td>Packaging</td><td><a href="./packaging.md">packaging.md</a></td><td><a href="/icanhasfeatherpanel/view.html?doc=plugins/packaging.md">view</a></td></tr>
+          <tr><td>Recipes</td><td><a href="./recipes.md">recipes.md</a></td><td><a href="/icanhasfeatherpanel/view.html?doc=plugins/recipes.md">view</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer class="fp-footer">
+      Related: <a href="/icanhasfeatherpanel/widgets/">Widgets</a> ·
+      <a href="/icanhasfeatherpanel/events/">Events</a> ·
+      <a href="/icanhasfeatherpanel/permissions/">Permissions</a> ·
+      <a href="/icanhasfeatherpanel/api/">API</a> ·
+      <a href="/icanhasfeatherpanel/rag/">RAG</a>
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-web-nodes",
+  "file_slug": "admin-web-nodes",
+  "files": [
+    "src/app/(app)/admin/web-nodes/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "before-list",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

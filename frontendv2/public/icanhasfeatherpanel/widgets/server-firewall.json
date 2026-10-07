@@ -1,0 +1,15 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "server-firewall",
+  "file_slug": "server-firewall",
+  "files": [
+    "src/app/(app)/server/[uuidShort]/firewall/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "after-rules-list",
+    "before-rules-list",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

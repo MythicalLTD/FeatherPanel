@@ -1,0 +1,38 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin Database Snapshots",
+  "slug": "admin-database-snapshots",
+  "total": 5,
+  "permissions": [
+    {
+      "constant": "ADMIN_BACKUPS_CREATE",
+      "node": "admin.backups.create",
+      "category": "Admin Database Snapshots",
+      "description": "Create database snapshots"
+    },
+    {
+      "constant": "ADMIN_BACKUPS_DELETE",
+      "node": "admin.backups.delete",
+      "category": "Admin Database Snapshots",
+      "description": "Delete database snapshots"
+    },
+    {
+      "constant": "ADMIN_BACKUPS_DOWNLOAD",
+      "node": "admin.backups.download",
+      "category": "Admin Database Snapshots",
+      "description": "Download database snapshots"
+    },
+    {
+      "constant": "ADMIN_BACKUPS_RESTORE",
+      "node": "admin.backups.restore",
+      "category": "Admin Database Snapshots",
+      "description": "Restore database from snapshot"
+    },
+    {
+      "constant": "ADMIN_BACKUPS_VIEW",
+      "node": "admin.backups.view",
+      "category": "Admin Database Snapshots",
+      "description": "View database snapshots"
+    }
+  ]
+}

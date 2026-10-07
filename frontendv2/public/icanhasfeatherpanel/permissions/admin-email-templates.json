@@ -1,0 +1,32 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin Email Templates",
+  "slug": "admin-email-templates",
+  "total": 4,
+  "permissions": [
+    {
+      "constant": "ADMIN_TEMPLATE_EMAIL_CREATE",
+      "node": "admin.email.templates.create",
+      "category": "Admin Email Templates",
+      "description": "Create new email templates"
+    },
+    {
+      "constant": "ADMIN_TEMPLATE_EMAIL_DELETE",
+      "node": "admin.email.templates.delete",
+      "category": "Admin Email Templates",
+      "description": "Delete email templates"
+    },
+    {
+      "constant": "ADMIN_TEMPLATE_EMAIL_EDIT",
+      "node": "admin.email.templates.edit",
+      "category": "Admin Email Templates",
+      "description": "Edit existing email templates"
+    },
+    {
+      "constant": "ADMIN_TEMPLATE_EMAIL_VIEW",
+      "node": "admin.email.templates.view",
+      "category": "Admin Email Templates",
+      "description": "View email templates"
+    }
+  ]
+}

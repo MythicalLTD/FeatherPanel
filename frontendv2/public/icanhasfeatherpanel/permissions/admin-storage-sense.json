@@ -1,0 +1,20 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin Storage Sense",
+  "slug": "admin-storage-sense",
+  "total": 2,
+  "permissions": [
+    {
+      "constant": "ADMIN_STORAGE_SENSE_MANAGE",
+      "node": "admin.storage_sense.manage",
+      "category": "Admin Storage Sense",
+      "description": "Run Storage Sense cleanup actions"
+    },
+    {
+      "constant": "ADMIN_STORAGE_SENSE_VIEW",
+      "node": "admin.storage_sense.view",
+      "category": "Admin Storage Sense",
+      "description": "View Storage Sense insights and cleanup candidates"
+    }
+  ]
+}

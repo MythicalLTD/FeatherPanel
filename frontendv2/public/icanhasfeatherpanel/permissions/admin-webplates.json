@@ -1,0 +1,32 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin WebPlates",
+  "slug": "admin-webplates",
+  "total": 4,
+  "permissions": [
+    {
+      "constant": "ADMIN_WEBPLATES_CREATE",
+      "node": "admin.webplates.create",
+      "category": "Admin WebPlates",
+      "description": "Create new webplates"
+    },
+    {
+      "constant": "ADMIN_WEBPLATES_DELETE",
+      "node": "admin.webplates.delete",
+      "category": "Admin WebPlates",
+      "description": "Delete webplates"
+    },
+    {
+      "constant": "ADMIN_WEBPLATES_EDIT",
+      "node": "admin.webplates.edit",
+      "category": "Admin WebPlates",
+      "description": "Edit existing webplates"
+    },
+    {
+      "constant": "ADMIN_WEBPLATES_VIEW",
+      "node": "admin.webplates.view",
+      "category": "Admin WebPlates",
+      "description": "View webplates"
+    }
+  ]
+}

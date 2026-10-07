@@ -120,6 +120,7 @@ export function ResourceCard({
             <div
                 className={cn(
                     'relative z-10 flex flex-col gap-6 p-6',
+                    href && 'pointer-events-none [&_a]:pointer-events-auto [&_button]:pointer-events-auto',
                     layout === 'horizontal' ? 'md:flex-row md:items-center' : 'sm:flex-row sm:items-start',
                 )}
             >
@@ -163,6 +164,7 @@ export function ResourceCard({
                     <div
                         className={cn(
                             'flex items-center gap-2',
+                            href && 'pointer-events-auto',
                             layout === 'stacked' ? 'w-full sm:w-auto sm:self-center' : 'md:self-center',
                         )}
                     >
@@ -175,9 +177,10 @@ export function ResourceCard({
 
     if (href) {
         return (
-            <Link href={href} style={style} className={cardClassName} onClick={onClick}>
+            <div style={style} className={cardClassName}>
+                <Link href={href} aria-label={title} className='absolute inset-0 z-[5]' onClick={onClick} />
                 {cardBody}
-            </Link>
+            </div>
         );
     }
 

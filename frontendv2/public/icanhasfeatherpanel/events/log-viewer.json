@@ -1,0 +1,55 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "LogViewer",
+  "slug": "log-viewer",
+  "total": 4,
+  "events": [
+    {
+      "name": "featherpanel:admin:log_viewer:cleared",
+      "method": "onLogCleared",
+      "category": "LogViewer",
+      "callback": "string log type, string file name.",
+      "emitted": true,
+      "data_keys": [
+        "cleared_by",
+        "log_file",
+        "log_type"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/LogViewerController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:log_viewer:uploaded",
+      "method": "onLogsUploaded",
+      "category": "LogViewer",
+      "callback": "array upload results.",
+      "emitted": true,
+      "data_keys": [
+        "results",
+        "uploaded_by"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/LogViewerController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:log_viewer:viewed",
+      "method": "onLogViewed",
+      "category": "LogViewer",
+      "callback": "string log type, string file name.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:log_viewer:error",
+      "method": "onLogViewerError",
+      "category": "LogViewer",
+      "callback": "string error message, array context.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    }
+  ]
+}

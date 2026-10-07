@@ -1,0 +1,80 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "BackupPolicy",
+  "slug": "backup-policy",
+  "total": 5,
+  "events": [
+    {
+      "name": "featherpanel:admin:backup_policy:created",
+      "method": "onBackupPolicyCreated",
+      "category": "BackupPolicy",
+      "callback": "No parameters",
+      "emitted": true,
+      "data_keys": [
+        "created_by",
+        "policy"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/BackupSchedulesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:backup_policy:deleted",
+      "method": "onBackupPolicyDeleted",
+      "category": "BackupPolicy",
+      "callback": "No parameters",
+      "emitted": true,
+      "data_keys": [
+        "deleted_by",
+        "policy"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/BackupSchedulesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:backup_policy:run:completed",
+      "method": "onBackupPolicyRunCompleted",
+      "category": "BackupPolicy",
+      "callback": "No parameters",
+      "emitted": true,
+      "data_keys": [
+        "manual",
+        "policy",
+        "result"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/BackupSchedulesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:backup_policy:run:started",
+      "method": "onBackupPolicyRunStarted",
+      "category": "BackupPolicy",
+      "callback": "No parameters",
+      "emitted": true,
+      "data_keys": [
+        "manual",
+        "policy",
+        "triggered_by"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/BackupSchedulesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:backup_policy:updated",
+      "method": "onBackupPolicyUpdated",
+      "category": "BackupPolicy",
+      "callback": "No parameters",
+      "emitted": true,
+      "data_keys": [
+        "policy",
+        "updated_by"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/BackupSchedulesController.php"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "Nodes",
+  "slug": "nodes",
+  "total": 9,
+  "events": [
+    {
+      "name": "featherpanel:admin:nodes:node:connection:error",
+      "method": "onNodeConnectionError",
+      "category": "Nodes",
+      "callback": "int node id, string error message.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:nodes:node:created",
+      "method": "onNodeCreated",
+      "category": "Nodes",
+      "callback": "array node data.",
+      "emitted": true,
+      "data_keys": [
+        "created_by",
+        "node"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/NodesController.php",
+        "backend/app/Controllers/Admin/PterodactylImporterController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:nodes:node:deleted",
+      "method": "onNodeDeleted",
+      "category": "Nodes",
+      "callback": "int node id, array node data.",
+      "emitted": true,
+      "data_keys": [
+        "deleted_by",
+        "node"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/NodesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:nodes:node:key:reset",
+      "method": "onNodeKeyReset",
+      "category": "Nodes",
+      "callback": "int node id, string new key.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:nodes:node:not:found",
+      "method": "onNodeNotFound",
+      "category": "Nodes",
+      "callback": "int node id, string error message.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:nodes:node:retrieved",
+      "method": "onNodeRetrieved",
+      "category": "Nodes",
+      "callback": "int node id, array node data.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:nodes:error",
+      "method": "onNodesError",
+      "category": "Nodes",
+      "callback": "string error message, array context.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:nodes:retrieved",
+      "method": "onNodesRetrieved",
+      "category": "Nodes",
+      "callback": "array nodes list.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:nodes:node:updated",
+      "method": "onNodeUpdated",
+      "category": "Nodes",
+      "callback": "int node id, array old data, array new data.",
+      "emitted": true,
+      "data_keys": [
+        "node",
+        "updated_by",
+        "updated_data"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/NodesController.php"
+      ]
+    }
+  ]
+}

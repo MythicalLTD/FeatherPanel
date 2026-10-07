@@ -1,0 +1,81 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "ServerTask",
+  "slug": "server-task",
+  "total": 5,
+  "events": [
+    {
+      "name": "featherpanel:user:server:task:created",
+      "method": "onServerTaskCreated",
+      "category": "ServerTask",
+      "callback": "string server uuid, int schedule id, array task data.",
+      "emitted": true,
+      "data_keys": [
+        "schedule_id",
+        "server_uuid",
+        "task_id",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/Server/TaskController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:user:server:task:deleted",
+      "method": "onServerTaskDeleted",
+      "category": "ServerTask",
+      "callback": "string server uuid, int schedule id, int task id.",
+      "emitted": true,
+      "data_keys": [
+        "schedule_id",
+        "server_uuid",
+        "task_id",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/Server/TaskController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:user:server:task:error",
+      "method": "onServerTaskError",
+      "category": "ServerTask",
+      "callback": "string error message, array context.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:user:server:task:sequence:updated",
+      "method": "onServerTaskSequenceUpdated",
+      "category": "ServerTask",
+      "callback": "string server uuid, int schedule id, int task id, array new sequence.",
+      "emitted": true,
+      "data_keys": [
+        "schedule_id",
+        "server_uuid",
+        "task_id",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/Server/TaskController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:user:server:task:updated",
+      "method": "onServerTaskUpdated",
+      "category": "ServerTask",
+      "callback": "string server uuid, int schedule id, int task id, array updated data.",
+      "emitted": true,
+      "data_keys": [
+        "schedule_id",
+        "server_uuid",
+        "task_id",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/Server/TaskController.php"
+      ]
+    }
+  ]
+}

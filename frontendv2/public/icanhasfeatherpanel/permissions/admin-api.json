@@ -1,0 +1,14 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin API",
+  "slug": "admin-api",
+  "total": 1,
+  "permissions": [
+    {
+      "constant": "ADMIN_API_BYPASS_RESTRICTIONS",
+      "node": "admin.api.bypass_restrictions",
+      "category": "Admin API",
+      "description": "Bypass API rate limits and restrictions"
+    }
+  ]
+}

@@ -2,893 +2,311 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Events: WebSpace</title>
+  <title>Events: WebSpace — FeatherPanel Docs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
-    a { color: #60a5fa; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .container { max-width: 960px; margin: 0 auto; }
-    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
-    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
-    h3 { font-size: 1rem; margin-top: 1.25rem; }
-    .muted { color: #9ca3af; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
-    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
-    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
-    .back-link { margin-bottom: 1.5rem; display: inline-block; }
-    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-left: 0.5rem; vertical-align: middle; }
-  </style>
+  <link rel="stylesheet" href="/icanhasfeatherpanel/assets/docs.css" />
 </head>
-<body>
-  <main class="container">
-    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
-    <header>
-      <h1>WebSpace</h1>
-      <p class="muted">33 events in this category.
-        32 emitted,
-        1 defined only.
-      </p>
-    </header>
+<body class="fp-docs">
+  <div class="fp-shell">
+    <nav class="fp-nav" aria-label="Documentation">
+      <a class="fp-brand" href="/icanhasfeatherpanel/">
+        <span class="fp-brand-mark" aria-hidden="true"></span>
+        <span>FeatherPanel Docs</span>
+      </a>
+      <div class="fp-nav-links">
+      <a href="/icanhasfeatherpanel/">Home</a>
+      <a href="/icanhasfeatherpanel/plugins/">Plugins</a>
+      <a href="/icanhasfeatherpanel/widgets/">Widgets</a>
+      <a href="/icanhasfeatherpanel/events/" class="active">Events</a>
+      <a href="/icanhasfeatherpanel/permissions/">Permissions</a>
+      <a href="/icanhasfeatherpanel/api/">API</a>
+      <a href="/icanhasfeatherpanel/rag/">RAG</a>
+      </div>
+    </nav>
 
-<article class="card">
-  <h2><code>featherpanel:webspace:app:installed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceAppInstalled</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, string app, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpaceAppsController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceAppInstalled(), function ($uuid, $uuid, $uuid_short, $app, $context) {
-        // Handle featherpanel:webspace:app:installed
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, string app, array context.
-    });
-}</code></pre>
+<a class="fp-back" href="/icanhasfeatherpanel/events/">&larr; All event categories</a>
+<header class="fp-hero">
+  <h1>WebSpace</h1>
+  <p>33 events · 32 emitted · 1 defined only</p>
+  
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/events/web-space.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/events/web-space.json">JSON</a>
+  </div>
+</header>
+<input class="fp-search" type="search" placeholder="Filter events…" data-fp-search />
+<p class="fp-muted fp-hidden" data-fp-search-empty>No events match.</p>
+<div class="fp-list"><article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:app:installed onWebSpaceAppInstalled N/A">
+  <h2><code>featherpanel:webspace:app:installed</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceAppInstalled</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, string app, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/WebSpaces/WebSpaceAppsController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:app:updated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceAppUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, string app, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpaceAppsController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceAppUpdated(), function ($uuid, $uuid, $uuid_short, $app, $context) {
-        // Handle featherpanel:webspace:app:updated
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, string app, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:app:updated onWebSpaceAppUpdated N/A">
+  <h2><code>featherpanel:webspace:app:updated</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceAppUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, string app, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/WebSpaces/WebSpaceAppsController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:backup:create</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceBackupCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, string|null backup uuid, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/WebSpacesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceBackupCreated(), function ($uuid, $uuid, $uuid_short, $uuid, $context) {
-        // Handle featherpanel:webspace:backup:create
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, string|null backup uuid, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:backup:create onWebSpaceBackupCreated N/A">
+  <h2><code>featherpanel:webspace:backup:create</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceBackupCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, string|null backup uuid, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/WebSpacesController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:backup:delete</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceBackupDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, string backup uuid, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/WebSpacesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceBackupDeleted(), function ($uuid, $uuid, $uuid_short, $uuid, $context) {
-        // Handle featherpanel:webspace:backup:delete
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, string backup uuid, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:backup:delete onWebSpaceBackupDeleted N/A">
+  <h2><code>featherpanel:webspace:backup:delete</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceBackupDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, string backup uuid, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/WebSpacesController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:backup:restore</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceBackupRestored</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, string backup uuid, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/WebSpacesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceBackupRestored(), function ($uuid, $uuid, $uuid_short, $uuid, $context) {
-        // Handle featherpanel:webspace:backup:restore
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, string backup uuid, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:backup:restore onWebSpaceBackupRestored N/A">
+  <h2><code>featherpanel:webspace:backup:restore</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceBackupRestored</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, string backup uuid, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/WebSpacesController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:console:access</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceConsoleAccessed</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li class="muted">No known emission locations.</li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceConsoleAccessed(), function ($uuid, $uuid, $uuid_short, $context) {
-        // Handle featherpanel:webspace:console:access
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:console:access onWebSpaceConsoleAccessed N/A">
+  <h2><code>featherpanel:webspace:console:access</code> <span class="fp-badge warn">Defined only</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceConsoleAccessed</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li class="fp-muted">No known emission locations.</li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array webspace, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/WebSpacesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceCreated(), function ($uuid, $uuid, $uuid_short, $webspace, $context) {
-        // Handle featherpanel:webspace:created
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array webspace, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:created onWebSpaceCreated N/A">
+  <h2><code>featherpanel:webspace:created</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, array webspace, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/WebSpacesController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:database:create</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceDatabaseCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int database id, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpaceDatabaseController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceDatabaseCreated(), function ($uuid, $uuid, $uuid_short, $id, $context) {
-        // Handle featherpanel:webspace:database:create
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int database id, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:database:create onWebSpaceDatabaseCreated N/A">
+  <h2><code>featherpanel:webspace:database:create</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceDatabaseCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, int database id, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/WebSpaces/WebSpaceDatabaseController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:database:delete</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceDatabaseDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int database id, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpaceDatabaseController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceDatabaseDeleted(), function ($uuid, $uuid, $uuid_short, $id, $context) {
-        // Handle featherpanel:webspace:database:delete
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int database id, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:database:delete onWebSpaceDatabaseDeleted N/A">
+  <h2><code>featherpanel:webspace:database:delete</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceDatabaseDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, int database id, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/WebSpaces/WebSpaceDatabaseController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/WebSpacesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceDeleted(), function ($uuid, $uuid, $uuid_short, $context) {
-        // Handle featherpanel:webspace:deleted
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:deleted onWebSpaceDeleted N/A">
+  <h2><code>featherpanel:webspace:deleted</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/WebSpacesController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:directory:create</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceDirectoryCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, string path, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpaceFilesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceDirectoryCreated(), function ($uuid, $uuid, $uuid_short, $path, $context) {
-        // Handle featherpanel:webspace:directory:create
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, string path, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:directory:create onWebSpaceDirectoryCreated N/A">
+  <h2><code>featherpanel:webspace:directory:create</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceDirectoryCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, string path, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/WebSpaces/WebSpaceFilesController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:dns:record:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceDnsRecordCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array record.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/WebSpaceDnsController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceDnsRecordCreated(), function ($uuid, $uuid, $uuid_short, $record) {
-        // Handle featherpanel:webspace:dns:record:created
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array record.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:dns:record:created onWebSpaceDnsRecordCreated N/A">
+  <h2><code>featherpanel:webspace:dns:record:created</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceDnsRecordCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, array record.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/WebSpaceDnsController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:dns:record:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceDnsRecordDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, string record id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/WebSpaceDnsController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceDnsRecordDeleted(), function ($uuid, $uuid, $uuid_short, $id) {
-        // Handle featherpanel:webspace:dns:record:deleted
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, string record id.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:dns:record:deleted onWebSpaceDnsRecordDeleted N/A">
+  <h2><code>featherpanel:webspace:dns:record:deleted</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceDnsRecordDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, string record id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/WebSpaceDnsController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:dns:record:updated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceDnsRecordUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array record.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/WebSpaceDnsController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceDnsRecordUpdated(), function ($uuid, $uuid, $uuid_short, $record) {
-        // Handle featherpanel:webspace:dns:record:updated
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array record.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:dns:record:updated onWebSpaceDnsRecordUpdated N/A">
+  <h2><code>featherpanel:webspace:dns:record:updated</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceDnsRecordUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, array record.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/WebSpaceDnsController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:dns:zone:linked</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceDnsZoneLinked</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array zone.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/WebSpaceDnsController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceDnsZoneLinked(), function ($uuid, $uuid, $uuid_short, $zone) {
-        // Handle featherpanel:webspace:dns:zone:linked
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array zone.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:dns:zone:linked onWebSpaceDnsZoneLinked N/A">
+  <h2><code>featherpanel:webspace:dns:zone:linked</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceDnsZoneLinked</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, array zone.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/WebSpaceDnsController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:dns:zone:unlinked</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceDnsZoneUnlinked</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int zone id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/WebSpaceDnsController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceDnsZoneUnlinked(), function ($uuid, $uuid, $uuid_short, $id) {
-        // Handle featherpanel:webspace:dns:zone:unlinked
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int zone id.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:dns:zone:unlinked onWebSpaceDnsZoneUnlinked N/A">
+  <h2><code>featherpanel:webspace:dns:zone:unlinked</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceDnsZoneUnlinked</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, int zone id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/WebSpaceDnsController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:files:delete</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceFilesDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array paths, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpaceFilesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceFilesDeleted(), function ($uuid, $uuid, $uuid_short, $paths, $context) {
-        // Handle featherpanel:webspace:files:delete
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array paths, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:files:delete onWebSpaceFilesDeleted N/A">
+  <h2><code>featherpanel:webspace:files:delete</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceFilesDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, array paths, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/WebSpaces/WebSpaceFilesController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:mailbox:create</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceMailboxCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int mailbox id, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpaceMailboxController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceMailboxCreated(), function ($uuid, $uuid, $uuid_short, $id, $context) {
-        // Handle featherpanel:webspace:mailbox:create
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int mailbox id, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:mailbox:create onWebSpaceMailboxCreated N/A">
+  <h2><code>featherpanel:webspace:mailbox:create</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceMailboxCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, int mailbox id, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/WebSpaces/WebSpaceMailboxController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:mailbox:delete</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceMailboxDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int mailbox id, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpaceMailboxController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceMailboxDeleted(), function ($uuid, $uuid, $uuid_short, $id, $context) {
-        // Handle featherpanel:webspace:mailbox:delete
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int mailbox id, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:mailbox:delete onWebSpaceMailboxDeleted N/A">
+  <h2><code>featherpanel:webspace:mailbox:delete</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceMailboxDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, int mailbox id, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/WebSpaces/WebSpaceMailboxController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:reinstall</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceReinstalled</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpacesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceReinstalled(), function ($uuid, $uuid, $uuid_short, $context) {
-        // Handle featherpanel:webspace:reinstall
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:reinstall onWebSpaceReinstalled N/A">
+  <h2><code>featherpanel:webspace:reinstall</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceReinstalled</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/WebSpaces/WebSpacesController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:schedule:create</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceScheduleCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int schedule id, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpaceScheduleController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceScheduleCreated(), function ($uuid, $uuid, $uuid_short, $id, $context) {
-        // Handle featherpanel:webspace:schedule:create
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int schedule id, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:schedule:create onWebSpaceScheduleCreated N/A">
+  <h2><code>featherpanel:webspace:schedule:create</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceScheduleCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, int schedule id, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/WebSpaces/WebSpaceScheduleController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:schedule:delete</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceScheduleDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int schedule id, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpaceScheduleController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceScheduleDeleted(), function ($uuid, $uuid, $uuid_short, $id, $context) {
-        // Handle featherpanel:webspace:schedule:delete
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int schedule id, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:schedule:delete onWebSpaceScheduleDeleted N/A">
+  <h2><code>featherpanel:webspace:schedule:delete</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceScheduleDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, int schedule id, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/WebSpaces/WebSpaceScheduleController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:schedule:update</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceScheduleUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int schedule id, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpaceScheduleController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceScheduleUpdated(), function ($uuid, $uuid, $uuid_short, $id, $context) {
-        // Handle featherpanel:webspace:schedule:update
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int schedule id, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:schedule:update onWebSpaceScheduleUpdated N/A">
+  <h2><code>featherpanel:webspace:schedule:update</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceScheduleUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, int schedule id, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/WebSpaces/WebSpaceScheduleController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:sftp:account:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceSftpAccountCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array account.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpaceSftpAccountController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceSftpAccountCreated(), function ($uuid, $uuid, $uuid_short, $account) {
-        // Handle featherpanel:webspace:sftp:account:created
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array account.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:sftp:account:created onWebSpaceSftpAccountCreated N/A">
+  <h2><code>featherpanel:webspace:sftp:account:created</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceSftpAccountCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, array account.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/WebSpaces/WebSpaceSftpAccountController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:sftp:account:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceSftpAccountDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int account id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpaceSftpAccountController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceSftpAccountDeleted(), function ($uuid, $uuid, $uuid_short, $id) {
-        // Handle featherpanel:webspace:sftp:account:deleted
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int account id.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:sftp:account:deleted onWebSpaceSftpAccountDeleted N/A">
+  <h2><code>featherpanel:webspace:sftp:account:deleted</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceSftpAccountDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, int account id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/WebSpaces/WebSpaceSftpAccountController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:sftp:account:updated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceSftpAccountUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array account.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpaceSftpAccountController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceSftpAccountUpdated(), function ($uuid, $uuid, $uuid_short, $account) {
-        // Handle featherpanel:webspace:sftp:account:updated
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array account.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:sftp:account:updated onWebSpaceSftpAccountUpdated N/A">
+  <h2><code>featherpanel:webspace:sftp:account:updated</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceSftpAccountUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, array account.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/WebSpaces/WebSpaceSftpAccountController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:sftp:password:reset</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceSftpPasswordReset</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int account id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpaceSftpAccountController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceSftpPasswordReset(), function ($uuid, $uuid, $uuid_short, $id) {
-        // Handle featherpanel:webspace:sftp:password:reset
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int account id.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:sftp:password:reset onWebSpaceSftpPasswordReset N/A">
+  <h2><code>featherpanel:webspace:sftp:password:reset</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceSftpPasswordReset</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, int account id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/WebSpaces/WebSpaceSftpAccountController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:subuser:create</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceSubuserCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int subuser id, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpaceSubuserController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceSubuserCreated(), function ($uuid, $uuid, $uuid_short, $id, $context) {
-        // Handle featherpanel:webspace:subuser:create
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int subuser id, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:subuser:create onWebSpaceSubuserCreated N/A">
+  <h2><code>featherpanel:webspace:subuser:create</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceSubuserCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, int subuser id, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/WebSpaces/WebSpaceSubuserController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:subuser:delete</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceSubuserDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int subuser id, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpaceSubuserController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceSubuserDeleted(), function ($uuid, $uuid, $uuid_short, $id, $context) {
-        // Handle featherpanel:webspace:subuser:delete
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int subuser id, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:subuser:delete onWebSpaceSubuserDeleted N/A">
+  <h2><code>featherpanel:webspace:subuser:delete</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceSubuserDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, int subuser id, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/WebSpaces/WebSpaceSubuserController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:subuser:update</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceSubuserUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int subuser id, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpaceSubuserController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceSubuserUpdated(), function ($uuid, $uuid, $uuid_short, $id, $context) {
-        // Handle featherpanel:webspace:subuser:update
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int subuser id, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:subuser:update onWebSpaceSubuserUpdated N/A">
+  <h2><code>featherpanel:webspace:subuser:update</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceSubuserUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, int subuser id, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/WebSpaces/WebSpaceSubuserController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:suspended</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceSuspended</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/WebSpacesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceSuspended(), function ($uuid, $uuid, $uuid_short, $context) {
-        // Handle featherpanel:webspace:suspended
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:suspended onWebSpaceSuspended N/A">
+  <h2><code>featherpanel:webspace:suspended</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceSuspended</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/WebSpacesController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:webspace:unsuspended</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceUnsuspended</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/WebSpacesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceUnsuspended(), function ($uuid, $uuid, $uuid_short, $context) {
-        // Handle featherpanel:webspace:unsuspended
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array context.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:unsuspended onWebSpaceUnsuspended N/A">
+  <h2><code>featherpanel:webspace:unsuspended</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceUnsuspended</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/WebSpacesController.php</code></li></ul>
 </article>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:webspace:updated onWebSpaceUpdated N/A">
+  <h2><code>featherpanel:webspace:updated</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onWebSpaceUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string webspace uuid, string uuid_short, array changed fields, array context.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/WebSpacesController.php</code></li>
+<li><code>backend/app/Controllers/User/WebSpaces/WebSpacesController.php</code></li></ul>
+</article></div>
 
-<article class="card">
-  <h2><code>featherpanel:webspace:updated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onWebSpaceUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array changed fields, array context.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/WebSpacesController.php</code></li>
-<li><code>backend/app/Controllers/User/WebSpaces/WebSpacesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\WebSpaceEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(WebSpaceEvent::onWebSpaceUpdated(), function ($uuid, $uuid, $uuid_short, $fields, $context) {
-        // Handle featherpanel:webspace:updated
-        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array changed fields, array context.
-    });
-}</code></pre>
-</article>
-  </main>
+    <footer class="fp-footer">
+      Machine-readable sources (.md / .json) are published next to these pages for RAG and AI agents.
+      See <a href="/icanhasfeatherpanel/rag/">RAG index</a> or <a href="/icanhasfeatherpanel/llms.txt">llms.txt</a>.
+    </footer>
+  </div>
+  <script src="/icanhasfeatherpanel/assets/docs.js"></script>
 </body>
 </html>

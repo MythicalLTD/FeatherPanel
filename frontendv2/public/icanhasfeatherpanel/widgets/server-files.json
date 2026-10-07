@@ -1,0 +1,16 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "server-files",
+  "file_slug": "server-files",
+  "files": [
+    "src/app/(app)/server/[uuidShort]/files/page.tsx"
+  ],
+  "injection_points": [
+    "after-files-list",
+    "after-header",
+    "after-search-bar",
+    "before-files-list",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

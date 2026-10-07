@@ -143,6 +143,7 @@ export default function EditServerPage() {
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState('details');
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [sizeValidity, setSizeValidity] = useState<Record<string, boolean>>({});
 
     const [form, setForm] = useState<ServerFormData>(initialFormData);
     const [selectedEntities, setSelectedEntities] = useState<SelectedEntities>(initialSelectedEntities);
@@ -935,6 +936,9 @@ export default function EditServerPage() {
                 },
             ),
         );
+        for (const field of ['memory', 'swap', 'disk'] as const) {
+            if (sizeValidity[field] === false) newErrors[field] = t('common.sizeInput.invalid');
+        }
 
         spellVariables.forEach((variable) => {
             const value = form.variables[variable.env_variable];
@@ -982,7 +986,7 @@ export default function EditServerPage() {
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
-    }, [form, t, spellVariables]);
+    }, [form, t, spellVariables, sizeValidity]);
 
     const handleSubmit = async () => {
         if (!validate()) {
@@ -1126,7 +1130,14 @@ export default function EditServerPage() {
                     </TabsContent>
 
                     <TabsContent value='resources' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-                        <ResourcesTab form={form} setForm={setForm} errors={errors} />
+                        <ResourcesTab
+                            form={form}
+                            setForm={setForm}
+                            errors={errors}
+                            onSizeValidityChange={(field, valid) =>
+                                setSizeValidity((prev) => ({ ...prev, [field]: valid }))
+                            }
+                        />
                     </TabsContent>
 
                     <TabsContent value='application' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>

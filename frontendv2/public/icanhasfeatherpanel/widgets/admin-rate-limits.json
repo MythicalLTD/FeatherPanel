@@ -1,0 +1,14 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-rate-limits",
+  "file_slug": "admin-rate-limits",
+  "files": [
+    "src/app/(app)/admin/rate-limits/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "before-list",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

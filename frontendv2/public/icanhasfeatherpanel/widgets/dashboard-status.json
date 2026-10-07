@@ -1,0 +1,16 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "dashboard-status",
+  "file_slug": "dashboard-status",
+  "files": [
+    "src/app/(app)/dashboard/status/page.tsx"
+  ],
+  "injection_points": [
+    "after-global-stats",
+    "after-header",
+    "after-node-list",
+    "before-node-list",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

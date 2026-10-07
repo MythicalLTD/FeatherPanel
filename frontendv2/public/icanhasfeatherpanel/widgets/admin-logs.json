@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-logs",
+  "file_slug": "admin-logs",
+  "files": [
+    "src/app/(app)/admin/logs/page.tsx"
+  ],
+  "injection_points": [
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

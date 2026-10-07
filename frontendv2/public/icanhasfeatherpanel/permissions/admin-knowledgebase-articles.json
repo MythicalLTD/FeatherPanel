@@ -1,0 +1,32 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin Knowledgebase Articles",
+  "slug": "admin-knowledgebase-articles",
+  "total": 4,
+  "permissions": [
+    {
+      "constant": "ADMIN_KNOWLEDGEBASE_ARTICLES_CREATE",
+      "node": "admin.knowledgebase.articles.create",
+      "category": "Admin Knowledgebase Articles",
+      "description": "Create new knowledgebase articles"
+    },
+    {
+      "constant": "ADMIN_KNOWLEDGEBASE_ARTICLES_DELETE",
+      "node": "admin.knowledgebase.articles.delete",
+      "category": "Admin Knowledgebase Articles",
+      "description": "Delete knowledgebase articles"
+    },
+    {
+      "constant": "ADMIN_KNOWLEDGEBASE_ARTICLES_EDIT",
+      "node": "admin.knowledgebase.articles.edit",
+      "category": "Admin Knowledgebase Articles",
+      "description": "Edit existing knowledgebase articles"
+    },
+    {
+      "constant": "ADMIN_KNOWLEDGEBASE_ARTICLES_VIEW",
+      "node": "admin.knowledgebase.articles.view",
+      "category": "Admin Knowledgebase Articles",
+      "description": "View knowledgebase articles"
+    }
+  ]
+}

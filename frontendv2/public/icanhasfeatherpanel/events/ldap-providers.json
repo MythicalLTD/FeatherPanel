@@ -1,0 +1,50 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "LdapProviders",
+  "slug": "ldap-providers",
+  "total": 3,
+  "events": [
+    {
+      "name": "featherpanel:ldap:provider:create",
+      "method": "onLdapProviderCreated",
+      "category": "LdapProviders",
+      "callback": "string|null user uuid, array provider.",
+      "emitted": true,
+      "data_keys": [
+        "provider",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/LdapProvidersController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:ldap:provider:delete",
+      "method": "onLdapProviderDeleted",
+      "category": "LdapProviders",
+      "callback": "string|null user uuid, array provider.",
+      "emitted": true,
+      "data_keys": [
+        "provider",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/LdapProvidersController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:ldap:provider:update",
+      "method": "onLdapProviderUpdated",
+      "category": "LdapProviders",
+      "callback": "string|null user uuid, array provider, array changed fields.",
+      "emitted": true,
+      "data_keys": [
+        "provider",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/LdapProvidersController.php"
+      ]
+    }
+  ]
+}

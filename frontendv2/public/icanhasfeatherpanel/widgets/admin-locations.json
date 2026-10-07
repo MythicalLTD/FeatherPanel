@@ -1,0 +1,14 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-locations",
+  "file_slug": "admin-locations",
+  "files": [
+    "src/app/(app)/admin/locations/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "before-list",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

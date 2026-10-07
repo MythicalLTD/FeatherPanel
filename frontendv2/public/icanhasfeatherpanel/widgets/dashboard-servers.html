@@ -2,98 +2,74 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Widget: dashboard-servers - FeatherPanel</title>
+  <title>Widget: dashboard-servers — FeatherPanel Docs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
-    a { color: #60a5fa; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .container { max-width: 960px; margin: 0 auto; }
-    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
-    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
-    h3 { font-size: 1rem; margin-top: 1.25rem; }
-    .muted { color: #9ca3af; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
-    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
-    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
-    .back-link { margin-bottom: 1.5rem; display: inline-block; }
-    ul { padding-left: 1.25rem; }
-    .italic { font-style: italic; }
-  </style>
+  <link rel="stylesheet" href="/icanhasfeatherpanel/assets/docs.css" />
 </head>
-<body>
-  <main class="container">
-    <a href="/icanhasfeatherpanel/widgets/index.html" class="back-link">&larr; Back to Widgets</a>
-    <header>
-      <h1><code>dashboard-servers</code></h1>
-      <p class="muted">Widget slug and injection point details</p>
-    </header>
+<body class="fp-docs">
+  <div class="fp-shell">
+    <nav class="fp-nav" aria-label="Documentation">
+      <a class="fp-brand" href="/icanhasfeatherpanel/">
+        <span class="fp-brand-mark" aria-hidden="true"></span>
+        <span>FeatherPanel Docs</span>
+      </a>
+      <div class="fp-nav-links">
+      <a href="/icanhasfeatherpanel/">Home</a>
+      <a href="/icanhasfeatherpanel/plugins/">Plugins</a>
+      <a href="/icanhasfeatherpanel/widgets/" class="active">Widgets</a>
+      <a href="/icanhasfeatherpanel/events/">Events</a>
+      <a href="/icanhasfeatherpanel/permissions/">Permissions</a>
+      <a href="/icanhasfeatherpanel/api/">API</a>
+      <a href="/icanhasfeatherpanel/rag/">RAG</a>
+      </div>
+    </nav>
 
-    <section class="card">
-      <h2>Injection Points</h2>
-      <p class="muted">Available injection points for this widget slug:</p>
-      <ul>
-<li><code>after-header</code></li>
+<a class="fp-back" href="/icanhasfeatherpanel/widgets/">&larr; All widgets</a>
+<header class="fp-hero">
+  <h1><code>dashboard-servers</code></h1>
+  <p>Widget slug and injection point details</p>
+  
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/widgets/dashboard-servers.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/widgets/dashboard-servers.json">JSON</a>
+  </div>
+</header>
+<section class="fp-section fp-card">
+  <h2>Injection points</h2>
+  <ul><li><code>after-header</code></li>
 <li><code>after-server-list</code></li>
 <li><code>before-server-list</code></li>
 <li><code>bottom-of-page</code></li>
-<li><code>top-of-page</code></li>
-      </ul>
-    </section>
-
-    <section class="card">
-      <h2>Source Files</h2>
-      <p class="muted">Files where this widget slug is used:</p>
-      <ul>
-<li><code>page.tsx</code> <span class="muted">(src/app/(app)/dashboard/servers/page.tsx)</span></li>
-      </ul>
-    </section>
-
-    <section class="card">
-      <h2>Plugin Widget Integration</h2>
-      <h3>Widget Configuration</h3>
-      <p class="muted">To inject a widget into this page, create a <code>widgets.json</code> file in your plugin's <code>Frontend/</code> directory:</p>
-      <pre><code>{
-  "id": "my-plugin-widget",
-  "component": "my-widget.html",
-  "enabled": true,
-  "hidden": {
-    "type": "plugin_setting",
-    "key": "hide-my-plugin-widget",
-    "equals": "true"
+<li><code>top-of-page</code></li></ul>
+</section>
+<section class="fp-section fp-card">
+  <h2>Source files</h2>
+  <ul><li><code>page.tsx</code> <span class="fp-muted">(src/app/(app)/dashboard/servers/page.tsx)</span></li></ul>
+</section>
+<section class="fp-section fp-card">
+  <h2>Plugin widget integration</h2>
+  <p class="fp-muted">Add an entry to your plugin <code>Frontend/widgets.json</code>:</p>
+  <pre><code>{
+  &quot;id&quot;: &quot;my-plugin-widget&quot;,
+  &quot;component&quot;: &quot;my-widget.html&quot;,
+  &quot;enabled&quot;: true,
+  &quot;hidden&quot;: {
+    &quot;type&quot;: &quot;plugin_setting&quot;,
+    &quot;key&quot;: &quot;hide-my-plugin-widget&quot;,
+    &quot;equals&quot;: &quot;true&quot;
   },
-  "priority": 100,
-  "page": "dashboard-servers",
-  "location": "after-header",
-  "size": "full"
+  &quot;priority&quot;: 100,
+  &quot;page&quot;: &quot;dashboard-servers&quot;,
+  &quot;location&quot;: &quot;after-header&quot;,
+  &quot;size&quot;: &quot;full&quot;
 }</code></pre>
-      <p class="muted"><code>enabled</code> and <code>hidden</code> may be booleans or a plugin setting rule like <code>{ "type": "plugin_setting", "key": "hide-my-widget", "equals": "true" }</code>, so admins can hide widgets without editing component code.</p>
+</section>
 
-      <h3>Available Injection Points</h3>
-      <p class="muted">This page supports the following injection points. Use the <code>location</code> property in your widget configuration:</p>
-      <ul>
-<li><code>after-header</code></li>
-<li><code>after-server-list</code></li>
-<li><code>before-server-list</code></li>
-<li><code>bottom-of-page</code></li>
-<li><code>top-of-page</code></li>
-      </ul>
-
-      <h3>Widget Sizing</h3>
-      <p class="muted">Set the <code>size</code> property to control widget width:</p>
-      <ul class="muted">
-        <li><code>"full"</code> - Full width (default)</li>
-        <li><code>"half"</code> - Half width (2 per row)</li>
-        <li><code>"third"</code> - One-third width (3 per row)</li>
-        <li><code>"quarter"</code> - One-quarter width (4 per row)</li>
-      </ul>
-
-      <h3>Widget Context</h3>
-      <p class="muted">Widgets automatically receive context information accessible via:</p>
-      <pre><code>const context = window.FeatherPanel?.widgetContext || {};
-const userUuid = context.userUuid;
-const serverUuid = context.serverUuid;</code></pre>
-    </section>
-  </main>
+    <footer class="fp-footer">
+      Machine-readable sources (.md / .json) are published next to these pages for RAG and AI agents.
+      See <a href="/icanhasfeatherpanel/rag/">RAG index</a> or <a href="/icanhasfeatherpanel/llms.txt">llms.txt</a>.
+    </footer>
+  </div>
+  
 </body>
 </html>

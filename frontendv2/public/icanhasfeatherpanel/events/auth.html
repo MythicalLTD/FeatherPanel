@@ -2,507 +2,195 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Events: Auth</title>
+  <title>Events: Auth — FeatherPanel Docs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
-    a { color: #60a5fa; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .container { max-width: 960px; margin: 0 auto; }
-    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
-    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
-    h3 { font-size: 1rem; margin-top: 1.25rem; }
-    .muted { color: #9ca3af; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
-    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
-    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
-    .back-link { margin-bottom: 1.5rem; display: inline-block; }
-    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-left: 0.5rem; vertical-align: middle; }
-  </style>
+  <link rel="stylesheet" href="/icanhasfeatherpanel/assets/docs.css" />
 </head>
-<body>
-  <main class="container">
-    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
-    <header>
-      <h1>Auth</h1>
-      <p class="muted">18 events in this category.
-        18 emitted,
-        0 defined only.
-      </p>
-    </header>
+<body class="fp-docs">
+  <div class="fp-shell">
+    <nav class="fp-nav" aria-label="Documentation">
+      <a class="fp-brand" href="/icanhasfeatherpanel/">
+        <span class="fp-brand-mark" aria-hidden="true"></span>
+        <span>FeatherPanel Docs</span>
+      </a>
+      <div class="fp-nav-links">
+      <a href="/icanhasfeatherpanel/">Home</a>
+      <a href="/icanhasfeatherpanel/plugins/">Plugins</a>
+      <a href="/icanhasfeatherpanel/widgets/">Widgets</a>
+      <a href="/icanhasfeatherpanel/events/" class="active">Events</a>
+      <a href="/icanhasfeatherpanel/permissions/">Permissions</a>
+      <a href="/icanhasfeatherpanel/api/">API</a>
+      <a href="/icanhasfeatherpanel/rag/">RAG</a>
+      </div>
+    </nav>
 
-<article class="card">
-  <h2><code>featherpanel:auth:2fa:enabled</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onAuth2FAEnabled</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> user</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Auth/TwoFactorController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\AuthEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(AuthEvent::onAuth2FAEnabled(), function ($user) {
-        // Handle featherpanel:auth:2fa:enabled
-        // Data keys: user
-    });
-}</code></pre>
+<a class="fp-back" href="/icanhasfeatherpanel/events/">&larr; All event categories</a>
+<header class="fp-hero">
+  <h1>Auth</h1>
+  <p>18 events · 18 emitted · 0 defined only</p>
+  
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/events/auth.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/events/auth.json">JSON</a>
+  </div>
+</header>
+<input class="fp-search" type="search" placeholder="Filter events…" data-fp-search />
+<p class="fp-muted fp-hidden" data-fp-search-empty>No events match.</p>
+<div class="fp-list"><article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:auth:2fa:enabled onAuth2FAEnabled user">
+  <h2><code>featherpanel:auth:2fa:enabled</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onAuth2FAEnabled</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array user info.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> user</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Auth/TwoFactorController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:auth:2fa:failed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onAuth2FAFailed</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> ip_address, user</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Auth/TwoFactorController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\AuthEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(AuthEvent::onAuth2FAFailed(), function ($ipAddress, $user) {
-        // Handle featherpanel:auth:2fa:failed
-        // Data keys: ip_address, user
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:auth:2fa:failed onAuth2FAFailed ip_address, user">
+  <h2><code>featherpanel:auth:2fa:failed</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onAuth2FAFailed</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array user info.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> ip_address, user</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Auth/TwoFactorController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:auth:2fa:setup</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onAuth2FASetup</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> user</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Auth/TwoFactorController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\AuthEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(AuthEvent::onAuth2FASetup(), function ($user) {
-        // Handle featherpanel:auth:2fa:setup
-        // Data keys: user
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:auth:2fa:setup onAuth2FASetup user">
+  <h2><code>featherpanel:auth:2fa:setup</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onAuth2FASetup</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array user info.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> user</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Auth/TwoFactorController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:auth:2fa:verified</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onAuth2FAVerified</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> user</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Auth/TwoFactorController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\AuthEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(AuthEvent::onAuth2FAVerified(), function ($user) {
-        // Handle featherpanel:auth:2fa:verified
-        // Data keys: user
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:auth:2fa:verified onAuth2FAVerified user">
+  <h2><code>featherpanel:auth:2fa:verified</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onAuth2FAVerified</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array user info.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> user</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Auth/TwoFactorController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:auth:account:locked</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onAuthAccountLocked</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> already_locked, attempts, identifier, lockout_seconds</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Helpers/AccountLockoutHelper.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\AuthEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(AuthEvent::onAuthAccountLocked(), function ($alreadyLocked, $attempts, $identifier, $lockoutSeconds) {
-        // Handle featherpanel:auth:account:locked
-        // Data keys: already_locked, attempts, identifier, lockout_seconds
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:auth:account:locked onAuthAccountLocked already_locked, attempts, identifier, lockout_seconds">
+  <h2><code>featherpanel:auth:account:locked</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onAuthAccountLocked</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array user info.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> already_locked, attempts, identifier, lockout_seconds</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Helpers/AccountLockoutHelper.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:auth:account:unlocked</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onAuthAccountUnlocked</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> identifier</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Helpers/AccountLockoutHelper.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\AuthEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(AuthEvent::onAuthAccountUnlocked(), function ($identifier) {
-        // Handle featherpanel:auth:account:unlocked
-        // Data keys: identifier
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:auth:account:unlocked onAuthAccountUnlocked identifier">
+  <h2><code>featherpanel:auth:account:unlocked</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onAuthAccountUnlocked</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array user info.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> identifier</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Helpers/AccountLockoutHelper.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:auth:email:changed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onAuthEmailChanged</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array user info, string email.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> ip_address, new_email, old_email, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/User/SessionController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\AuthEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(AuthEvent::onAuthEmailChanged(), function ($ipAddress, $newEmail, $oldEmail, $userUuid) {
-        // Handle featherpanel:auth:email:changed
-        // Data keys: ip_address, new_email, old_email, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:auth:email:changed onAuthEmailChanged ip_address, new_email, old_email, user_uuid">
+  <h2><code>featherpanel:auth:email:changed</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onAuthEmailChanged</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array user info, string email.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> ip_address, new_email, old_email, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/User/SessionController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:auth:email:login:code:requested</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onAuthEmailLoginCodeRequested</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array user info, string ip_address.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> ip_address, user</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Auth/EmailLoginController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\AuthEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(AuthEvent::onAuthEmailLoginCodeRequested(), function ($ipAddress, $user) {
-        // Handle featherpanel:auth:email:login:code:requested
-        // Data keys: ip_address, user
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:auth:email:login:code:requested onAuthEmailLoginCodeRequested ip_address, user">
+  <h2><code>featherpanel:auth:email:login:code:requested</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onAuthEmailLoginCodeRequested</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array user info, string ip_address.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> ip_address, user</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Auth/EmailLoginController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:auth:forgot:password</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onAuthForgotPassword</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array user info, string reset_url, string reset_token.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> ip_address, reset_token, reset_url, user</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Auth/ForgotPasswordController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\AuthEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(AuthEvent::onAuthForgotPassword(), function ($ipAddress, $resetToken, $resetUrl, $user) {
-        // Handle featherpanel:auth:forgot:password
-        // Data keys: ip_address, reset_token, reset_url, user
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:auth:forgot:password onAuthForgotPassword ip_address, reset_token, reset_url, user">
+  <h2><code>featherpanel:auth:forgot:password</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onAuthForgotPassword</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array user info, string reset_url, string reset_token.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> ip_address, reset_token, reset_url, user</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Auth/ForgotPasswordController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:auth:forgot:password:failed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onAuthForgotPasswordFailed</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string email, string reason.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> email, ip_address, reason</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Auth/ForgotPasswordController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\AuthEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(AuthEvent::onAuthForgotPasswordFailed(), function ($email, $ipAddress, $reason) {
-        // Handle featherpanel:auth:forgot:password:failed
-        // Data keys: email, ip_address, reason
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:auth:forgot:password:failed onAuthForgotPasswordFailed email, ip_address, reason">
+  <h2><code>featherpanel:auth:forgot:password:failed</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onAuthForgotPasswordFailed</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string email, string reason.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> email, ip_address, reason</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Auth/ForgotPasswordController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:auth:login:failed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onAuthLoginFailed</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> positional values from the emitted payload in key insertion order (see PluginEvents::emit).
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:auth:login:failed onAuthLoginFailed email, error, ip_address, provider, reason, user, username, username_or_email">
+  <h2><code>featherpanel:auth:login:failed</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onAuthLoginFailed</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> positional values from the emitted payload in key insertion order (see PluginEvents::emit).
      * Possible keys across emitters: email, error, ip_address, provider, reason, user, username, username_or_email.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> email, error, ip_address, provider, reason, user, username, username_or_email</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Auth/EmailLoginController.php</code></li>
+  <p class="fp-muted"><strong>Data keys:</strong> email, error, ip_address, provider, reason, user, username, username_or_email</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Auth/EmailLoginController.php</code></li>
 <li><code>backend/app/Controllers/User/Auth/LdapController.php</code></li>
-<li><code>backend/app/Controllers/User/Auth/LoginController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\AuthEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(AuthEvent::onAuthLoginFailed(), function ($email, $error, $ipAddress, $provider, $reason, $user, $username, $usernameOrEmail) {
-        // Handle featherpanel:auth:login:failed
-        // Data keys: email, error, ip_address, provider, reason, user, username, username_or_email
-    });
-}</code></pre>
+<li><code>backend/app/Controllers/User/Auth/LoginController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:auth:login:success</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onAuthLoginSuccess</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> user</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Auth/LoginController.php</code></li>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:auth:login:success onAuthLoginSuccess user">
+  <h2><code>featherpanel:auth:login:success</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onAuthLoginSuccess</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array user info.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> user</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Auth/LoginController.php</code></li>
 <li><code>backend/app/Controllers/User/Auth/RegisterController.php</code></li>
-<li><code>backend/app/Controllers/User/Auth/TwoFactorController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\AuthEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(AuthEvent::onAuthLoginSuccess(), function ($user) {
-        // Handle featherpanel:auth:login:success
-        // Data keys: user
-    });
-}</code></pre>
+<li><code>backend/app/Controllers/User/Auth/TwoFactorController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:auth:logout</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onAuthLogout</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Auth/AuthLogoutController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\AuthEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(AuthEvent::onAuthLogout(), function ($info) {
-        // Handle featherpanel:auth:logout
-        // Parameters: array user info.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:auth:logout onAuthLogout N/A">
+  <h2><code>featherpanel:auth:logout</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onAuthLogout</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array user info.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Auth/AuthLogoutController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:auth:password:changed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onAuthPasswordChanged</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> ip_address, user, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/User/SessionController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\AuthEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(AuthEvent::onAuthPasswordChanged(), function ($ipAddress, $user, $userUuid) {
-        // Handle featherpanel:auth:password:changed
-        // Data keys: ip_address, user, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:auth:password:changed onAuthPasswordChanged ip_address, user, user_uuid">
+  <h2><code>featherpanel:auth:password:changed</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onAuthPasswordChanged</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array user info.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> ip_address, user, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/User/SessionController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:auth:password:reset:failed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onAuthPasswordResetFailed</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string email, string reason.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> ip_address, reason, token</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Auth/ResetPasswordController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\AuthEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(AuthEvent::onAuthPasswordResetFailed(), function ($ipAddress, $reason, $token) {
-        // Handle featherpanel:auth:password:reset:failed
-        // Data keys: ip_address, reason, token
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:auth:password:reset:failed onAuthPasswordResetFailed ip_address, reason, token">
+  <h2><code>featherpanel:auth:password:reset:failed</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onAuthPasswordResetFailed</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string email, string reason.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> ip_address, reason, token</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Auth/ResetPasswordController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:auth:register:success</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onAuthRegisterSuccess</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> user</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Auth/RegisterController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\AuthEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(AuthEvent::onAuthRegisterSuccess(), function ($user) {
-        // Handle featherpanel:auth:register:success
-        // Data keys: user
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:auth:register:success onAuthRegisterSuccess user">
+  <h2><code>featherpanel:auth:register:success</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onAuthRegisterSuccess</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array user info.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> user</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Auth/RegisterController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:auth:registration:failed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onAuthRegistrationFailed</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string email, string reason.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> abuse_confidence_score, email, ip_address, reason, username</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Auth/RegisterController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\AuthEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(AuthEvent::onAuthRegistrationFailed(), function ($abuseConfidenceScore, $email, $ipAddress, $reason, $username) {
-        // Handle featherpanel:auth:registration:failed
-        // Data keys: abuse_confidence_score, email, ip_address, reason, username
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:auth:registration:failed onAuthRegistrationFailed abuse_confidence_score, email, ip_address, reason, username">
+  <h2><code>featherpanel:auth:registration:failed</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onAuthRegistrationFailed</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string email, string reason.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> abuse_confidence_score, email, ip_address, reason, username</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Auth/RegisterController.php</code></li></ul>
 </article>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:auth:reset:password:success onAuthResetPasswordSuccess user">
+  <h2><code>featherpanel:auth:reset:password:success</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onAuthResetPasswordSuccess</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array user info.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> user</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Auth/ResetPasswordController.php</code></li></ul>
+</article></div>
 
-<article class="card">
-  <h2><code>featherpanel:auth:reset:password:success</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onAuthResetPasswordSuccess</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> user</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Auth/ResetPasswordController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\AuthEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(AuthEvent::onAuthResetPasswordSuccess(), function ($user) {
-        // Handle featherpanel:auth:reset:password:success
-        // Data keys: user
-    });
-}</code></pre>
-</article>
-  </main>
+    <footer class="fp-footer">
+      Machine-readable sources (.md / .json) are published next to these pages for RAG and AI agents.
+      See <a href="/icanhasfeatherpanel/rag/">RAG index</a> or <a href="/icanhasfeatherpanel/llms.txt">llms.txt</a>.
+    </footer>
+  </div>
+  <script src="/icanhasfeatherpanel/assets/docs.js"></script>
 </body>
 </html>

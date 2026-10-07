@@ -1,0 +1,62 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "ServerSubuser",
+  "slug": "server-subuser",
+  "total": 4,
+  "events": [
+    {
+      "name": "featherpanel:user:server:subuser:created",
+      "method": "onServerSubuserCreated",
+      "category": "ServerSubuser",
+      "callback": "string server uuid, array subuser data.",
+      "emitted": true,
+      "data_keys": [
+        "server_uuid",
+        "subuser_id",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/Server/SubuserController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:user:server:subuser:deleted",
+      "method": "onServerSubuserDeleted",
+      "category": "ServerSubuser",
+      "callback": "string server uuid, int subuser id.",
+      "emitted": true,
+      "data_keys": [
+        "server_uuid",
+        "subuser_id",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/Server/SubuserController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:user:server:subuser:error",
+      "method": "onServerSubuserError",
+      "category": "ServerSubuser",
+      "callback": "string error message, array context.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:user:server:subuser:updated",
+      "method": "onServerSubuserUpdated",
+      "category": "ServerSubuser",
+      "callback": "string server uuid, int subuser id, array updated data.",
+      "emitted": true,
+      "data_keys": [
+        "server_uuid",
+        "subuser_id",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/Server/SubuserController.php"
+      ]
+    }
+  ]
+}

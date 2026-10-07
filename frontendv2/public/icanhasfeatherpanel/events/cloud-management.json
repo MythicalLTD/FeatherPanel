@@ -1,0 +1,81 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "CloudManagement",
+  "slug": "cloud-management",
+  "total": 5,
+  "events": [
+    {
+      "name": "featherpanel:admin:cloud:credentials:retrieved",
+      "method": "onCloudCredentialsRetrieved",
+      "category": "CloudManagement",
+      "callback": "array credentials data.",
+      "emitted": true,
+      "data_keys": [
+        "credentials"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/CloudManagementController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:cloud:credentials:rotated",
+      "method": "onCloudCredentialsRotated",
+      "category": "CloudManagement",
+      "callback": "string credential type.",
+      "emitted": true,
+      "data_keys": [
+        "credential_type",
+        "rotated_by"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/CloudManagementController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:cloud:cloud:credentials:stored",
+      "method": "onCloudCredentialsStored",
+      "category": "CloudManagement",
+      "callback": "array credentials data.",
+      "emitted": true,
+      "data_keys": [
+        "credentials",
+        "last_rotated_at",
+        "mythic_user_id",
+        "private_key",
+        "public_key",
+        "source",
+        "stored_by",
+        "team_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/CloudManagementController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:cloud:error",
+      "method": "onCloudManagementError",
+      "category": "CloudManagement",
+      "callback": "string error message, array context.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:cloud:panel:credentials:stored",
+      "method": "onPanelCredentialsStored",
+      "category": "CloudManagement",
+      "callback": "array credentials data.",
+      "emitted": true,
+      "data_keys": [
+        "credentials",
+        "last_rotated_at",
+        "private_key",
+        "public_key",
+        "stored_by"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/CloudManagementController.php"
+      ]
+    }
+  ]
+}

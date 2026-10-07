@@ -1,0 +1,61 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "UserApiClient",
+  "slug": "user-api-client",
+  "total": 4,
+  "events": [
+    {
+      "name": "featherpanel:user:api_client:created",
+      "method": "onUserApiClientCreated",
+      "category": "UserApiClient",
+      "callback": "array api_client data.",
+      "emitted": true,
+      "data_keys": [
+        "api_client",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/User/ApiClientController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:user:api_client:deleted",
+      "method": "onUserApiClientDeleted",
+      "category": "UserApiClient",
+      "callback": "int api_client id, array api_client data.",
+      "emitted": true,
+      "data_keys": [
+        "api_client",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/User/ApiClientController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:user:api_client:error",
+      "method": "onUserApiClientError",
+      "category": "UserApiClient",
+      "callback": "string error message, array context.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:user:api_client:updated",
+      "method": "onUserApiClientUpdated",
+      "category": "UserApiClient",
+      "callback": "int api_client id, array updated data.",
+      "emitted": true,
+      "data_keys": [
+        "action",
+        "api_client",
+        "updated_data",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/User/ApiClientController.php"
+      ]
+    }
+  ]
+}

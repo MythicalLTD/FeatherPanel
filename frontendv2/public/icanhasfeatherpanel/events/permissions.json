@@ -1,0 +1,87 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "Permissions",
+  "slug": "permissions",
+  "total": 7,
+  "events": [
+    {
+      "name": "featherpanel:admin:permissions:permission:created",
+      "method": "onPermissionCreated",
+      "category": "Permissions",
+      "callback": "array permission data.",
+      "emitted": true,
+      "data_keys": [
+        "created_by",
+        "permission"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/PermissionsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:permissions:permission:deleted",
+      "method": "onPermissionDeleted",
+      "category": "Permissions",
+      "callback": "int permission id, array permission data.",
+      "emitted": true,
+      "data_keys": [
+        "deleted_by",
+        "permission"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/PermissionsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:permissions:permission:not:found",
+      "method": "onPermissionNotFound",
+      "category": "Permissions",
+      "callback": "int permission id, string error message.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:permissions:permission:retrieved",
+      "method": "onPermissionRetrieved",
+      "category": "Permissions",
+      "callback": "int permission id, array permission data.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:permissions:error",
+      "method": "onPermissionsError",
+      "category": "Permissions",
+      "callback": "string error message, array context.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:permissions:retrieved",
+      "method": "onPermissionsRetrieved",
+      "category": "Permissions",
+      "callback": "array permissions list.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:permissions:permission:updated",
+      "method": "onPermissionUpdated",
+      "category": "Permissions",
+      "callback": "int permission id, array old data, array new data.",
+      "emitted": true,
+      "data_keys": [
+        "permission",
+        "updated_by",
+        "updated_data"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/PermissionsController.php"
+      ]
+    }
+  ]
+}

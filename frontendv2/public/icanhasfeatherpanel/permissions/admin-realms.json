@@ -1,0 +1,32 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin Realms",
+  "slug": "admin-realms",
+  "total": 4,
+  "permissions": [
+    {
+      "constant": "ADMIN_REALMS_CREATE",
+      "node": "admin.realms.create",
+      "category": "Admin Realms",
+      "description": "Create new realms"
+    },
+    {
+      "constant": "ADMIN_REALMS_DELETE",
+      "node": "admin.realms.delete",
+      "category": "Admin Realms",
+      "description": "Delete realms"
+    },
+    {
+      "constant": "ADMIN_REALMS_EDIT",
+      "node": "admin.realms.edit",
+      "category": "Admin Realms",
+      "description": "Edit existing realms"
+    },
+    {
+      "constant": "ADMIN_REALMS_VIEW",
+      "node": "admin.realms.view",
+      "category": "Admin Realms",
+      "description": "View realms"
+    }
+  ]
+}

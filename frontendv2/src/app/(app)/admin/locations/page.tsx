@@ -30,6 +30,7 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
+import { WebHostingAlphaNotice } from '@/components/admin/WebHostingAlphaNotice';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -276,6 +277,7 @@ export default function LocationsPage() {
         flag_code: string;
         type: LocationType;
     }>({ name: '', description: '', flag_code: '', type: 'game' });
+    const [webHostingAccepted, setWebHostingAccepted] = useState(false);
 
     const [refreshKey, setRefreshKey] = useState(0);
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
@@ -382,11 +384,16 @@ export default function LocationsPage() {
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (createForm.type === 'web' && !webHostingAccepted) {
+            toast.error(t('admin.locations.form.webhosting_alpha_required'));
+            return;
+        }
         setIsSubmitting(true);
         try {
             const payload = {
                 name: createForm.name,
                 type: createForm.type,
+                ...(createForm.type === 'web' ? { webhosting_alpha_accepted: true } : {}),
                 ...(createForm.description ? { description: createForm.description } : {}),
                 flag_code: createForm.flag_code === '__NONE__' ? null : createForm.flag_code || null,
             };
@@ -394,6 +401,7 @@ export default function LocationsPage() {
             toast.success(t('admin.locations.messages.created'));
             setCreateOpen(false);
             setCreateForm({ name: '', description: '', flag_code: '', type: 'game' });
+            setWebHostingAccepted(false);
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.create_failed'));
@@ -711,7 +719,13 @@ export default function LocationsPage() {
             </Sheet>
 
             {/* Create Sheet */}
-            <Sheet open={createOpen} onOpenChange={setCreateOpen}>
+            <Sheet
+                open={createOpen}
+                onOpenChange={(open) => {
+                    setCreateOpen(open);
+                    if (!open) setWebHostingAccepted(false);
+                }}
+            >
                 <SheetContent>
                     <SheetHeader>
                         <SheetTitle>{t('admin.locations.form.create_title')}</SheetTitle>
@@ -757,14 +771,34 @@ export default function LocationsPage() {
                             </p>
                             <TypeSelector
                                 value={createForm.type}
-                                onChange={(v) => setCreateForm({ ...createForm, type: v })}
+                                onChange={(v) => {
+                                    setCreateForm({ ...createForm, type: v });
+                                    setWebHostingAccepted(false);
+                                }}
                             />
                         </div>
+                        {createForm.type === 'web' && (
+                            <WebHostingAlphaNotice
+                                accepted={webHostingAccepted}
+                                onAcceptedChange={setWebHostingAccepted}
+                            />
+                        )}
                         <SheetFooter>
-                            <Button type='button' variant='outline' onClick={() => setCreateOpen(false)}>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                onClick={() => {
+                                    setCreateOpen(false);
+                                    setWebHostingAccepted(false);
+                                }}
+                            >
                                 {t('common.cancel')}
                             </Button>
-                            <Button type='submit' loading={isSubmitting}>
+                            <Button
+                                type='submit'
+                                loading={isSubmitting}
+                                disabled={createForm.type === 'web' && !webHostingAccepted}
+                            >
                                 {t('common.create')}
                             </Button>
                         </SheetFooter>

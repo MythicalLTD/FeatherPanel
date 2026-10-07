@@ -1,0 +1,40 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "ServerUser",
+  "slug": "server-user",
+  "total": 3,
+  "events": [
+    {
+      "name": "featherpanel:user:server:deleted",
+      "method": "onServerUserDeleted",
+      "category": "ServerUser",
+      "callback": "string server uuid.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:user:server:error",
+      "method": "onServerUserError",
+      "category": "ServerUser",
+      "callback": "string error message, array context.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:user:server:updated",
+      "method": "onServerUserUpdated",
+      "category": "ServerUser",
+      "callback": "string server uuid, array updated data.",
+      "emitted": true,
+      "data_keys": [
+        "server_uuid",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/Server/ServerUserController.php"
+      ]
+    }
+  ]
+}

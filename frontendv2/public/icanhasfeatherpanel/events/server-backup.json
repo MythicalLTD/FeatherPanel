@@ -1,0 +1,78 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "ServerBackup",
+  "slug": "server-backup",
+  "total": 5,
+  "events": [
+    {
+      "name": "featherpanel:user:server:backup:created",
+      "method": "onServerBackupCreated",
+      "category": "ServerBackup",
+      "callback": "string server uuid, array backup data.",
+      "emitted": true,
+      "data_keys": [
+        "backup_data",
+        "backup_uuid",
+        "id",
+        "name",
+        "server_uuid",
+        "type",
+        "user_uuid",
+        "uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/Server/ServerBackupController.php",
+        "backend/app/Services/Chatbot/Tools/CreateBackupTool.php"
+      ]
+    },
+    {
+      "name": "featherpanel:user:server:backup:deleted",
+      "method": "onServerBackupDeleted",
+      "category": "ServerBackup",
+      "callback": "string server uuid, string backup uuid.",
+      "emitted": true,
+      "data_keys": [
+        "backup_uuid",
+        "server_uuid",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/Server/ServerBackupController.php",
+        "backend/app/Services/Chatbot/Tools/DeleteBackupTool.php"
+      ]
+    },
+    {
+      "name": "featherpanel:user:server:backup:downloaded",
+      "method": "onServerBackupDownloaded",
+      "category": "ServerBackup",
+      "callback": "string server uuid, string backup uuid, string download url.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:user:server:backup:error",
+      "method": "onServerBackupError",
+      "category": "ServerBackup",
+      "callback": "string error message, array context.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:user:server:backup:restored",
+      "method": "onServerBackupRestored",
+      "category": "ServerBackup",
+      "callback": "string server uuid, string backup uuid.",
+      "emitted": true,
+      "data_keys": [
+        "backup_uuid",
+        "server_uuid",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/Server/ServerBackupController.php"
+      ]
+    }
+  ]
+}

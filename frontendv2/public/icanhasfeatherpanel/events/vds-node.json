@@ -1,0 +1,188 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "VdsNode",
+  "slug": "vds-node",
+  "total": 10,
+  "events": [
+    {
+      "name": "featherpanel:vds:node:create",
+      "method": "onVdsNodeCreated",
+      "category": "VdsNode",
+      "callback": "string|null user uuid, int vm node id, array node payload, array context.",
+      "emitted": true,
+      "data_keys": [
+        "context",
+        "source",
+        "user_uuid",
+        "vm_node",
+        "vm_node_id"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/VmNodesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:vds:node:delete",
+      "method": "onVdsNodeDeleted",
+      "category": "VdsNode",
+      "callback": "string|null user uuid, int vm node id, array node payload, array context.",
+      "emitted": true,
+      "data_keys": [
+        "context",
+        "source",
+        "user_uuid",
+        "vm_node",
+        "vm_node_id"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/VmNodesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:vds:node:ip:create",
+      "method": "onVdsNodeIpCreated",
+      "category": "VdsNode",
+      "callback": "string|null user uuid, int vm node id, int ip id, array ip payload, array context.",
+      "emitted": true,
+      "data_keys": [
+        "context",
+        "ip",
+        "ip_id",
+        "source",
+        "user_uuid",
+        "vm_node_id"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/VmNodesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:vds:node:ip:delete",
+      "method": "onVdsNodeIpDeleted",
+      "category": "VdsNode",
+      "callback": "string|null user uuid, int vm node id, int ip id, array ip payload, array context.",
+      "emitted": true,
+      "data_keys": [
+        "context",
+        "ip",
+        "ip_id",
+        "source",
+        "user_uuid",
+        "vm_node_id"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/VmNodesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:vds:node:ip:primary",
+      "method": "onVdsNodeIpPrimarySet",
+      "category": "VdsNode",
+      "callback": "string|null user uuid, int vm node id, int ip id, array ip payload, array context.",
+      "emitted": true,
+      "data_keys": [
+        "context",
+        "ip",
+        "ip_id",
+        "source",
+        "user_uuid",
+        "vm_node_id"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/VmNodesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:vds:node:ip:update",
+      "method": "onVdsNodeIpUpdated",
+      "category": "VdsNode",
+      "callback": "string|null user uuid, int vm node id, int ip id, array ip payload, array changed fields, array context.",
+      "emitted": true,
+      "data_keys": [
+        "changed_fields",
+        "context",
+        "ip",
+        "ip_id",
+        "source",
+        "user_uuid",
+        "vm_node_id"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/VmNodesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:vds:node:update",
+      "method": "onVdsNodeUpdated",
+      "category": "VdsNode",
+      "callback": "string|null user uuid, int vm node id, array node payload, array changed fields, array context.",
+      "emitted": true,
+      "data_keys": [
+        "changed_fields",
+        "context",
+        "source",
+        "user_uuid",
+        "vm_node",
+        "vm_node_id"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/VmNodesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:vds:template:create",
+      "method": "onVdsTemplateCreated",
+      "category": "VdsNode",
+      "callback": "string|null user uuid, int template id, int vm node id, array template payload, array context.",
+      "emitted": true,
+      "data_keys": [
+        "context",
+        "source",
+        "template",
+        "template_id",
+        "user_uuid",
+        "vm_node_id"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/VmNodesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:vds:template:delete",
+      "method": "onVdsTemplateDeleted",
+      "category": "VdsNode",
+      "callback": "string|null user uuid, int template id, int vm node id, array template payload, array context.",
+      "emitted": true,
+      "data_keys": [
+        "context",
+        "source",
+        "template",
+        "template_id",
+        "user_uuid",
+        "vm_node_id"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/VmNodesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:vds:template:update",
+      "method": "onVdsTemplateUpdated",
+      "category": "VdsNode",
+      "callback": "string|null user uuid, int template id, int vm node id, array template payload, array changed fields, array context.",
+      "emitted": true,
+      "data_keys": [
+        "changed_fields",
+        "context",
+        "source",
+        "template",
+        "template_id",
+        "user_uuid",
+        "vm_node_id"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/VmNodesController.php"
+      ]
+    }
+  ]
+}

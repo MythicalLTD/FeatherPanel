@@ -46,6 +46,15 @@ function ensureOpenApiSpec() {
     });
 }
 
+function rewriteHtmlPaths(html) {
+    return html
+        .replaceAll('href="/icanhasfeatherpanel/', `href="${BASE_PATH}/icanhasfeatherpanel/`)
+        .replaceAll("href='/icanhasfeatherpanel/", `href='${BASE_PATH}/icanhasfeatherpanel/`)
+        .replaceAll('src="/icanhasfeatherpanel/', `src="${BASE_PATH}/icanhasfeatherpanel/`)
+        .replaceAll("src='/icanhasfeatherpanel/", `src='${BASE_PATH}/icanhasfeatherpanel/`)
+        .replaceAll('url(/icanhasfeatherpanel/', `url(${BASE_PATH}/icanhasfeatherpanel/`);
+}
+
 function copyRecursive(source, destination) {
     fs.mkdirSync(destination, { recursive: true });
 
@@ -68,16 +77,18 @@ function copyRecursive(source, destination) {
     }
 }
 
-function rewriteHtmlPaths(html) {
-    return html
-        .replaceAll('href="/icanhasfeatherpanel/', `href="${BASE_PATH}/icanhasfeatherpanel/`)
-        .replaceAll("href='/icanhasfeatherpanel/", `href='${BASE_PATH}/icanhasfeatherpanel/`)
-        .replaceAll('url(/icanhasfeatherpanel/', `url(${BASE_PATH}/icanhasfeatherpanel/`);
+function countByExt(dir, ext, acc = { count: 0 }) {
+    if (!fs.existsSync(dir)) return acc.count;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) countByExt(full, ext, acc);
+        else if (entry.name.endsWith(ext)) acc.count += 1;
+    }
+    return acc.count;
 }
 
 function writeRootIndex() {
     const target = './icanhasfeatherpanel/index.html';
-
     const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -89,10 +100,10 @@ function writeRootIndex() {
 </head>
 <body>
   <p>Redirecting to <a href="${target}">FeatherPanel developer documentation</a>…</p>
+  <p>RAG: <a href="./icanhasfeatherpanel/catalog.json">catalog.json</a> · <a href="./icanhasfeatherpanel/llms.txt">llms.txt</a></p>
 </body>
 </html>
 `;
-
     fs.writeFileSync(path.join(OUTPUT_DIR, 'index.html'), html);
 }
 
@@ -109,6 +120,10 @@ function main() {
         );
     }
 
+    // Make OpenAPI available under the docs tree before catalog export
+    fs.mkdirSync(path.join(SOURCE_DOCS_DIR, 'api'), { recursive: true });
+    fs.copyFileSync(OPENAPI_SOURCE, path.join(SOURCE_DOCS_DIR, 'api/openapi.json'));
+
     console.log('Exporting icanhasfeatherpanel docs from source…');
     execSync('pnpm export:docs', { cwd: FRONTEND_DIR, stdio: 'inherit' });
 
@@ -123,12 +138,27 @@ function main() {
     fs.mkdirSync(path.join(OUTPUT_DIR, 'api'), { recursive: true });
     fs.copyFileSync(OPENAPI_SOURCE, path.join(OUTPUT_DIR, 'api/openapi.json'));
 
+    // Convenience copies at site root for RAG crawlers
+    const docsLlms = path.join(OUTPUT_DIR, 'icanhasfeatherpanel/llms.txt');
+    const docsCatalog = path.join(OUTPUT_DIR, 'icanhasfeatherpanel/catalog.json');
+    if (fs.existsSync(docsLlms)) fs.copyFileSync(docsLlms, path.join(OUTPUT_DIR, 'llms.txt'));
+    if (fs.existsSync(docsCatalog)) fs.copyFileSync(docsCatalog, path.join(OUTPUT_DIR, 'catalog.json'));
+
     writeRootIndex();
     fs.writeFileSync(path.join(OUTPUT_DIR, '.nojekyll'), '');
 
+    const mdCount = countByExt(path.join(OUTPUT_DIR, 'icanhasfeatherpanel'), '.md');
+    const jsonCount = countByExt(path.join(OUTPUT_DIR, 'icanhasfeatherpanel'), '.json');
+
     console.log('✅ Public docs site ready.');
     console.log(`   - Entry: ${BASE_PATH || ''}/icanhasfeatherpanel/index.html`);
+    console.log(`   - RAG: ${BASE_PATH || ''}/icanhasfeatherpanel/rag/`);
+    console.log(`   - Markdown files: ${mdCount}`);
+    console.log(`   - JSON files: ${jsonCount}`);
     console.log(`   - OpenAPI: ${BASE_PATH || ''}/api/openapi.json`);
+    console.log(`   - OpenAPI (docs tree): ${BASE_PATH || ''}/icanhasfeatherpanel/api/openapi.json`);
+    console.log(`   - llms.txt: ${BASE_PATH || ''}/llms.txt`);
+    console.log(`   - catalog.json: ${BASE_PATH || ''}/catalog.json`);
 }
 
 main();

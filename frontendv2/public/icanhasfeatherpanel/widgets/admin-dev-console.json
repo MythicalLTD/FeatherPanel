@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-dev-console",
+  "file_slug": "admin-dev-console",
+  "files": [
+    "src/app/(app)/admin/dev/console/page.tsx"
+  ],
+  "injection_points": [
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

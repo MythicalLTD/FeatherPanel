@@ -1,0 +1,38 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin Tickets",
+  "slug": "admin-tickets",
+  "total": 5,
+  "permissions": [
+    {
+      "constant": "ADMIN_TICKETS_CREATE",
+      "node": "admin.tickets.create",
+      "category": "Admin Tickets",
+      "description": "Create support tickets"
+    },
+    {
+      "constant": "ADMIN_TICKETS_DELETE",
+      "node": "admin.tickets.delete",
+      "category": "Admin Tickets",
+      "description": "Delete support tickets"
+    },
+    {
+      "constant": "ADMIN_TICKETS_EDIT",
+      "node": "admin.tickets.edit",
+      "category": "Admin Tickets",
+      "description": "Edit support tickets"
+    },
+    {
+      "constant": "ADMIN_TICKETS_MANAGE",
+      "node": "admin.tickets.manage",
+      "category": "Admin Tickets",
+      "description": "Manage all aspects of support tickets"
+    },
+    {
+      "constant": "ADMIN_TICKETS_VIEW",
+      "node": "admin.tickets.view",
+      "category": "Admin Tickets",
+      "description": "View support tickets"
+    }
+  ]
+}

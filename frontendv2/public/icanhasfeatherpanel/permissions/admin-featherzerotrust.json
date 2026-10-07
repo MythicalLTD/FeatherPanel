@@ -1,0 +1,32 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin FeatherZeroTrust",
+  "slug": "admin-featherzerotrust",
+  "total": 4,
+  "permissions": [
+    {
+      "constant": "ADMIN_FEATHERZEROTRUST_CONFIGURE",
+      "node": "admin.featherzerotrust.configure",
+      "category": "Admin FeatherZeroTrust",
+      "description": "Configure FeatherZeroTrust settings"
+    },
+    {
+      "constant": "ADMIN_FEATHERZEROTRUST_MANAGE",
+      "node": "admin.featherzerotrust.manage",
+      "category": "Admin FeatherZeroTrust",
+      "description": "Manage FeatherZeroTrust"
+    },
+    {
+      "constant": "ADMIN_FEATHERZEROTRUST_SCAN",
+      "node": "admin.featherzerotrust.scan",
+      "category": "Admin FeatherZeroTrust",
+      "description": "Run scans with FeatherZeroTrust"
+    },
+    {
+      "constant": "ADMIN_FEATHERZEROTRUST_VIEW",
+      "node": "admin.featherzerotrust.view",
+      "category": "Admin FeatherZeroTrust",
+      "description": "View FeatherZeroTrust scanner"
+    }
+  ]
+}

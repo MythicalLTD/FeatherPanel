@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "server-activities",
+  "file_slug": "server-activities",
+  "files": [
+    "src/app/(app)/server/[uuidShort]/activities/page.tsx"
+  ],
+  "injection_points": [
+    "activity-bottom",
+    "activity-top"
+  ]
+}

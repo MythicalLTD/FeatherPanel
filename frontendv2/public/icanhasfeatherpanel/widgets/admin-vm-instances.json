@@ -1,0 +1,13 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-vm-instances",
+  "file_slug": "admin-vm-instances",
+  "files": [
+    "src/app/(app)/admin/vm-instances/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "before-list",
+    "top-of-page"
+  ]
+}

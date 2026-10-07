@@ -1,0 +1,66 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "RateLimiter",
+  "slug": "rate-limiter",
+  "total": 4,
+  "events": [
+    {
+      "name": "featherpanel:rate-limiter:bulk:update",
+      "method": "onRateLimiterBulkUpdated",
+      "category": "RateLimiter",
+      "callback": "string|null user uuid, array updated routes, array errors.",
+      "emitted": true,
+      "data_keys": [
+        "errors",
+        "updated_routes",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/RateLimitController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:rate-limiter:delete",
+      "method": "onRateLimiterDeleted",
+      "category": "RateLimiter",
+      "callback": "string|null user uuid, string route name.",
+      "emitted": true,
+      "data_keys": [
+        "route_name",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/RateLimitController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:rate-limiter:global:update",
+      "method": "onRateLimiterGlobalUpdated",
+      "category": "RateLimiter",
+      "callback": "string|null user uuid, bool enabled.",
+      "emitted": true,
+      "data_keys": [
+        "enabled",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/RateLimitController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:rate-limiter:update",
+      "method": "onRateLimiterUpdated",
+      "category": "RateLimiter",
+      "callback": "string|null user uuid, string route name, array config.",
+      "emitted": true,
+      "data_keys": [
+        "config",
+        "route_name",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/RateLimitController.php"
+      ]
+    }
+  ]
+}

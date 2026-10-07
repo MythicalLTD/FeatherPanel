@@ -1,0 +1,15 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "server-import",
+  "file_slug": "server-import",
+  "files": [
+    "src/app/(app)/server/[uuidShort]/import/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "after-imports-list",
+    "before-imports-list",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

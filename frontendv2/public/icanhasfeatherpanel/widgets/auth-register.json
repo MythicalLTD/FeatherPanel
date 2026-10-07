@@ -1,0 +1,14 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "auth-register",
+  "file_slug": "auth-register",
+  "files": [
+    "src/app/(app)/auth/register/RegisterForm.tsx"
+  ],
+  "injection_points": [
+    "auth-register-after-form",
+    "auth-register-before-form",
+    "auth-register-bottom",
+    "auth-register-top"
+  ]
+}

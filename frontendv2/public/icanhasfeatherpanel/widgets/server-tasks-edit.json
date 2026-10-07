@@ -1,0 +1,13 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "server-tasks-edit",
+  "file_slug": "server-tasks-edit",
+  "files": [
+    "src/app/(app)/server/[uuidShort]/schedules/[id]/tasks/[taskId]/edit/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

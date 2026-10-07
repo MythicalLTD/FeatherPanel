@@ -1,0 +1,13 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-webspaces",
+  "file_slug": "admin-webspaces",
+  "files": [
+    "src/app/(app)/admin/webspaces/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "before-list",
+    "top-of-page"
+  ]
+}

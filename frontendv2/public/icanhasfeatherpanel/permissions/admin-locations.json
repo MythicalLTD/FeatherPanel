@@ -1,0 +1,32 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin Locations",
+  "slug": "admin-locations",
+  "total": 4,
+  "permissions": [
+    {
+      "constant": "ADMIN_LOCATIONS_CREATE",
+      "node": "admin.locations.create",
+      "category": "Admin Locations",
+      "description": "Create new locations"
+    },
+    {
+      "constant": "ADMIN_LOCATIONS_DELETE",
+      "node": "admin.locations.delete",
+      "category": "Admin Locations",
+      "description": "Delete locations"
+    },
+    {
+      "constant": "ADMIN_LOCATIONS_EDIT",
+      "node": "admin.locations.edit",
+      "category": "Admin Locations",
+      "description": "Edit existing locations"
+    },
+    {
+      "constant": "ADMIN_LOCATIONS_VIEW",
+      "node": "admin.locations.view",
+      "category": "Admin Locations",
+      "description": "View locations"
+    }
+  ]
+}

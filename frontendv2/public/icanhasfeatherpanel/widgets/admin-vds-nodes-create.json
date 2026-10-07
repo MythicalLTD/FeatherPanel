@@ -1,0 +1,13 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-vds-nodes-create",
+  "file_slug": "admin-vds-nodes-create",
+  "files": [
+    "src/app/(app)/admin/vds-nodes/create/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

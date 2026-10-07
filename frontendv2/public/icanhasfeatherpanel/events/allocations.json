@@ -1,0 +1,101 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "Allocations",
+  "slug": "allocations",
+  "total": 7,
+  "events": [
+    {
+      "name": "featherpanel:admin:allocations:allocation:created",
+      "method": "onAllocationCreated",
+      "category": "Allocations",
+      "callback": "array allocation data.",
+      "emitted": true,
+      "data_keys": [
+        "allocations",
+        "created_by",
+        "created_count"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/AllocationsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:allocations:allocation:deleted",
+      "method": "onAllocationDeleted",
+      "category": "Allocations",
+      "callback": "int allocation id, array allocation data.",
+      "emitted": true,
+      "data_keys": [
+        "allocation",
+        "deleted_by",
+        "deleted_count",
+        "ids",
+        "ip",
+        "node_id",
+        "skipped_count"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/AllocationsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:allocations:allocation:not:found",
+      "method": "onAllocationNotFound",
+      "category": "Allocations",
+      "callback": "int allocation id, string error message.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:allocations:allocation:retrieved",
+      "method": "onAllocationRetrieved",
+      "category": "Allocations",
+      "callback": "int allocation id, array allocation data.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:allocations:error",
+      "method": "onAllocationsError",
+      "category": "Allocations",
+      "callback": "string error message, array context.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:allocations:retrieved",
+      "method": "onAllocationsRetrieved",
+      "category": "Allocations",
+      "callback": "array allocations list.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:allocations:allocation:updated",
+      "method": "onAllocationUpdated",
+      "category": "Allocations",
+      "callback": "int allocation id, array old data, array new data.",
+      "emitted": true,
+      "data_keys": [
+        "allocation",
+        "deleted_source_conflicts",
+        "deleted_target_conflicts",
+        "from_ip",
+        "ip_alias",
+        "matched_count",
+        "node_id",
+        "to_ip",
+        "updated_by",
+        "updated_count",
+        "updated_data"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/AllocationsController.php"
+      ]
+    }
+  ]
+}

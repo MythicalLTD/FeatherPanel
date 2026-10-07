@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-mounts",
+  "file_slug": "admin-mounts",
+  "files": [
+    "src/app/(app)/admin/mounts/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "top-of-page"
+  ]
+}

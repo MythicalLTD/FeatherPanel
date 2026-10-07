@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "webspace-logs",
+  "file_slug": "webspace-logs",
+  "files": [
+    "src/app/(app)/webspace/[uuidShort]/logs/page.tsx"
+  ],
+  "injection_points": [
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

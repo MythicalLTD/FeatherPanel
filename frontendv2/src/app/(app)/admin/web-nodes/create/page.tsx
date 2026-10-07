@@ -27,6 +27,7 @@ import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
+import { WebHostingAlphaNotice } from '@/components/admin/WebHostingAlphaNotice';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
@@ -87,6 +88,7 @@ export default function CreateWebNodePage() {
     });
     const [countryCodes, setCountryCodes] = useState<Record<string, string>>({});
     const [creatingLocation, setCreatingLocation] = useState(false);
+    const [webHostingAccepted, setWebHostingAccepted] = useState(false);
     const [selectedLocationName, setSelectedLocationName] = useState('');
     const [locationSearch, setLocationSearch] = useState('');
     const [debouncedLocationSearch, setDebouncedLocationSearch] = useState('');
@@ -225,6 +227,10 @@ export default function CreateWebNodePage() {
 
     const handleCreateLocationInline = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!webHostingAccepted) {
+            toast.error(t('admin.locations.form.webhosting_alpha_required'));
+            return;
+        }
         const name = newLocationForm.name.trim();
         if (name.length < 2) {
             toast.error(t('admin.webNodes.form.create_location_name_required'));
@@ -235,6 +241,7 @@ export default function CreateWebNodePage() {
             const payload = {
                 name,
                 type: 'web' as const,
+                webhosting_alpha_accepted: true,
                 ...(newLocationForm.description.trim() ? { description: newLocationForm.description.trim() } : {}),
                 flag_code: newLocationForm.flag_code === '__NONE__' ? null : newLocationForm.flag_code || null,
             };
@@ -248,6 +255,7 @@ export default function CreateWebNodePage() {
             setSelectedLocationName(loc.name);
             setLocationPickerMode('select');
             setNewLocationForm({ name: '', description: '', flag_code: '__NONE__' });
+            setWebHostingAccepted(false);
             setLocationModalOpen(false);
             toast.success(t('admin.locations.messages.created'));
         } catch (error: unknown) {
@@ -362,7 +370,13 @@ export default function CreateWebNodePage() {
                 </Tabs>
             </div>
 
-            <Sheet open={locationModalOpen} onOpenChange={setLocationModalOpen}>
+            <Sheet
+                open={locationModalOpen}
+                onOpenChange={(open) => {
+                    setLocationModalOpen(open);
+                    if (!open) setWebHostingAccepted(false);
+                }}
+            >
                 <SheetContent className='flex w-full flex-col sm:max-w-lg'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.webNodes.form.select_location')}</SheetTitle>
@@ -378,7 +392,10 @@ export default function CreateWebNodePage() {
                             type='button'
                             size='sm'
                             variant={locationPickerMode === 'select' ? 'default' : 'outline'}
-                            onClick={() => setLocationPickerMode('select')}
+                            onClick={() => {
+                                setLocationPickerMode('select');
+                                setWebHostingAccepted(false);
+                            }}
                         >
                             {t('admin.webNodes.form.location_picker_existing')}
                         </Button>
@@ -508,7 +525,16 @@ export default function CreateWebNodePage() {
                                     ))}
                                 </Select>
                             </div>
-                            <Button type='submit' loading={creatingLocation} className='w-full'>
+                            <WebHostingAlphaNotice
+                                accepted={webHostingAccepted}
+                                onAcceptedChange={setWebHostingAccepted}
+                            />
+                            <Button
+                                type='submit'
+                                loading={creatingLocation}
+                                disabled={!webHostingAccepted}
+                                className='w-full'
+                            >
                                 {t('admin.webNodes.form.create_location_submit')}
                             </Button>
                         </form>

@@ -2,79 +2,105 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>FeatherPanel Documentation</title>
+  <title>Home — FeatherPanel Docs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
-    a { color: #60a5fa; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .container { max-width: 960px; margin: 0 auto; }
-    h1 { font-size: 2.25rem; margin-bottom: 0.5rem; }
-    h2 { font-size: 1.5rem; margin-top: 2rem; }
-    h3 { font-size: 1.125rem; margin-top: 1.5rem; }
-    .muted { color: #9ca3af; }
-    .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-right: 0.5rem; }
-    ul { padding-left: 1.25rem; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
-    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
-    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.5rem; margin-top: 2rem; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
-    .card-link { display: block; }
-  </style>
+  <meta name="description" content="FeatherPanel developer documentation" />
+  <link rel="stylesheet" href="/icanhasfeatherpanel/assets/docs.css" />
 </head>
-<body>
-  <main class="container">
-    <header>
-      <h1>FeatherPanel Documentation</h1>
-      <p class="muted">Comprehensive guides and references for developers and widget creators.</p>
-    </header>
-
-    <section class="grid">
-      <a href="/icanhasfeatherpanel/widgets/index.html" class="card-link">
-        <div class="card">
-          <h2>Widgets</h2>
-          <p class="muted">Explore all available widget injection points and learn how to create custom widgets for FeatherPanel.</p>
-          <span class="badge">155 widget slugs available</span>
-        </div>
+<body class="fp-docs">
+  <div class="fp-shell">
+    <nav class="fp-nav" aria-label="Documentation">
+      <a class="fp-brand" href="/icanhasfeatherpanel/">
+        <span class="fp-brand-mark" aria-hidden="true"></span>
+        <span>FeatherPanel Docs</span>
       </a>
+      <div class="fp-nav-links">
+      <a href="/icanhasfeatherpanel/" class="active">Home</a>
+      <a href="/icanhasfeatherpanel/plugins/">Plugins</a>
+      <a href="/icanhasfeatherpanel/widgets/">Widgets</a>
+      <a href="/icanhasfeatherpanel/events/">Events</a>
+      <a href="/icanhasfeatherpanel/permissions/">Permissions</a>
+      <a href="/icanhasfeatherpanel/api/">API</a>
+      <a href="/icanhasfeatherpanel/rag/">RAG</a>
+      </div>
+    </nav>
 
-      <a href="/icanhasfeatherpanel/api/index.html" class="card-link">
-        <div class="card">
-          <h2>API Reference</h2>
-          <p class="muted">Complete API documentation with interactive examples and endpoint details.</p>
-        </div>
-      </a>
+<header class="fp-hero">
+  <h1>FeatherPanel Developer Docs</h1>
+  <p>Browse the human UI, or fetch Markdown and JSON from the same GitHub Pages site for RAG and coding agents.</p>
+  <div class="fp-meta">
+      <span class="fp-badge">GitHub Pages</span>
+      <span class="fp-badge">Markdown + JSON</span>
+      <span class="fp-badge">OpenAPI</span>
+    </div>
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/llms.txt">llms.txt</a>
+    <a href="/icanhasfeatherpanel/catalog.json">catalog.json</a>
+    <a href="/icanhasfeatherpanel/rag/">RAG index</a>
+    <a href="/icanhasfeatherpanel/plugins/ai-guide.md">Plugin AI guide</a>
+  </div>
+</header>
 
-      <a href="/icanhasfeatherpanel/permissions/index.html" class="card-link">
-        <div class="card">
-          <h2>Permissions</h2>
-          <p class="muted">Complete reference of all permission nodes available in FeatherPanel for role-based access control.</p>
-        </div>
-      </a>
+<section class="fp-grid">
+<a class="fp-card-link" href="/icanhasfeatherpanel/plugins/">
+  <div class="fp-card">
+    <h2>Plugins</h2>
+    <p>Full addon authoring guides in Markdown — conf.yml, backend, frontend, SDK, packaging, AI recipes.</p>
+    <div class="fp-meta" style="margin-top:0.85rem"><span class="fp-badge">Markdown · llms.txt</span></div>
+  </div>
+</a>
+<a class="fp-card-link" href="/icanhasfeatherpanel/widgets/">
+  <div class="fp-card">
+    <h2>Widgets</h2>
+    <p>Page slugs and injection points for plugin UI.</p>
+    <div class="fp-meta" style="margin-top:0.85rem"><span class="fp-badge">155 slugs</span></div>
+  </div>
+</a>
+<a class="fp-card-link" href="/icanhasfeatherpanel/events/">
+  <div class="fp-card">
+    <h2>Events</h2>
+    <p>PHP plugin hooks and payload keys.</p>
+    <div class="fp-meta" style="margin-top:0.85rem"><span class="fp-badge">HTML · MD · JSON</span></div>
+  </div>
+</a>
+<a class="fp-card-link" href="/icanhasfeatherpanel/permissions/">
+  <div class="fp-card">
+    <h2>Permissions</h2>
+    <p>Every permission node from permission_nodes.fpperm.</p>
+    <div class="fp-meta" style="margin-top:0.85rem"><span class="fp-badge">HTML · MD · JSON</span></div>
+  </div>
+</a>
+<a class="fp-card-link" href="/icanhasfeatherpanel/api/">
+  <div class="fp-card">
+    <h2>API</h2>
+    <p>OpenAPI reference (Redoc) plus raw openapi.json for tools.</p>
+    <div class="fp-meta" style="margin-top:0.85rem"><span class="fp-badge">OpenAPI JSON</span></div>
+  </div>
+</a>
+<a class="fp-card-link" href="/icanhasfeatherpanel/rag/">
+  <div class="fp-card">
+    <h2>RAG / AI index</h2>
+    <p>Catalog of every .md and .json document published on this site.</p>
+    <div class="fp-meta" style="margin-top:0.85rem"><span class="fp-badge">catalog.json</span></div>
+  </div>
+</a>
+</section>
 
-      <a href="/icanhasfeatherpanel/events/index.html" class="card-link">
-        <div class="card">
-          <h2>Events</h2>
-          <p class="muted">Complete reference of all plugin events and hooks available in FeatherPanel for extending functionality.</p>
-        </div>
-      </a>
-    </section>
+<section class="fp-section fp-card">
+  <h2>Quick start</h2>
+  <p class="fp-muted">Building a plugin? Start with the <a href="/icanhasfeatherpanel/plugins/">plugin docs</a> (especially <a href="/icanhasfeatherpanel/view.html?doc=plugins/ai-guide.md">ai-guide.md</a>), then use widgets/events/permissions/API as references.</p>
+  <ol class="fp-muted">
+    <li>Create <code>backend/storage/addons/{identifier}/</code> with <code>conf.yml</code> + <code>AppPlugin</code> entry class</li>
+    <li>Add <code>Routes/</code>, <code>Frontend/widgets.json</code>, or sidebar pages as needed</li>
+    <li>Pull machine-readable dumps from <a href="/icanhasfeatherpanel/rag/">/rag/</a> into your RAG index</li>
+  </ol>
+</section>
 
-    <section class="card">
-      <h2>Quick Start</h2>
-      <h3>For Widget Developers</h3>
-      <p class="muted">
-        Widgets allow you to extend FeatherPanel's functionality by injecting custom components into specific pages.
-        Each page has unique injection points where widgets can be rendered.
-      </p>
-
-      <h3>Getting Started</h3>
-      <ol class="muted">
-        <li>Browse available widget slugs and injection points</li>
-        <li>Create your widget component following FeatherPanel's patterns</li>
-        <li>Register your widget with the appropriate slug and injection point</li>
-      </ol>
-    </section>
-  </main>
+    <footer class="fp-footer">
+      Machine-readable sources (.md / .json) are published next to these pages for RAG and AI agents.
+      See <a href="/icanhasfeatherpanel/rag/">RAG index</a> or <a href="/icanhasfeatherpanel/llms.txt">llms.txt</a>.
+    </footer>
+  </div>
+  
 </body>
 </html>

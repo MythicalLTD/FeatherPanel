@@ -1,0 +1,87 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "Roles",
+  "slug": "roles",
+  "total": 7,
+  "events": [
+    {
+      "name": "featherpanel:admin:roles:role:created",
+      "method": "onRoleCreated",
+      "category": "Roles",
+      "callback": "array role data.",
+      "emitted": true,
+      "data_keys": [
+        "created_by",
+        "role"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/RolesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:roles:role:deleted",
+      "method": "onRoleDeleted",
+      "category": "Roles",
+      "callback": "int role id, array role data.",
+      "emitted": true,
+      "data_keys": [
+        "deleted_by",
+        "role"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/RolesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:roles:role:not:found",
+      "method": "onRoleNotFound",
+      "category": "Roles",
+      "callback": "int role id, string error message.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:roles:role:retrieved",
+      "method": "onRoleRetrieved",
+      "category": "Roles",
+      "callback": "int role id, array role data.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:roles:error",
+      "method": "onRolesError",
+      "category": "Roles",
+      "callback": "string error message, array context.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:roles:retrieved",
+      "method": "onRolesRetrieved",
+      "category": "Roles",
+      "callback": "array roles list.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:roles:role:updated",
+      "method": "onRoleUpdated",
+      "category": "Roles",
+      "callback": "int role id, array old data, array new data.",
+      "emitted": true,
+      "data_keys": [
+        "role",
+        "updated_by",
+        "updated_data"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/RolesController.php"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "server-startup",
+  "file_slug": "server-startup",
+  "files": [
+    "src/app/(app)/server/[uuidShort]/startup/page.tsx"
+  ],
+  "injection_points": [
+    "after-docker-image",
+    "after-header",
+    "after-spell-selection",
+    "after-startup-command",
+    "after-variables",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

@@ -22,13 +22,14 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
+import { SizeInput } from '@/components/featherui/SizeInput';
 import { Textarea } from '@/components/featherui/Textarea';
 import { PageCard } from '@/components/featherui/PageCard';
-import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { SettingToggleCard } from '@/components/admin/SettingToggleCard';
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { OwnerPickerSheet } from '@/components/admin/OwnerPickerSheet';
+import { ChoicePickerSheet, PickerTrigger, type ChoiceOption } from '@/components/admin/ChoicePickerSheet';
 import { WebSpaceSslDnsGuide } from '@/components/webspace/WebSpaceSslDnsGuide';
 import { WebSpaceDomainsManager, type DomainRoute } from '@/components/webspace/WebSpaceDomainsManager';
 import type { InfrastructureCheck } from '@/hooks/useWebSpaceInfrastructure';
@@ -38,8 +39,6 @@ import { getApiErrorMessage } from '@/lib/api-errors';
 import {
     AppWindow,
     LayoutTemplate,
-    Search,
-    UserCircle,
     X,
     ChevronLeft,
     ChevronRight,
@@ -49,6 +48,8 @@ import {
     Settings,
     HardDrive,
     Globe,
+    ClipboardCheck,
+    UserCircle,
 } from 'lucide-react';
 
 function BlockingChecksList({ checks, title }: { checks: InfrastructureCheck[]; title: string }) {
@@ -97,7 +98,8 @@ interface HostingPackageOption {
     webplate_id?: number | null;
 }
 
-const totalSteps = 3;
+const totalSteps = 4;
+type WebSpaceChoiceKind = 'node' | 'plate' | 'package';
 
 export default function CreateWebSpacePage() {
     const { t } = useTranslation();
@@ -106,10 +108,13 @@ export default function CreateWebSpacePage() {
     const [currentStep, setCurrentStep] = useState(1);
     const [saving, setSaving] = useState(false);
     const [loadingOptions, setLoadingOptions] = useState(false);
+    const [sizeValidity, setSizeValidity] = useState({ disk: true, memory: true, bandwidth: true });
+    const [sizeResetKey, setSizeResetKey] = useState(0);
 
     const [nodes, setNodes] = useState<WebNodeOption[]>([]);
     const [plates, setPlates] = useState<WebPlateOption[]>([]);
     const [hostingPackages, setHostingPackages] = useState<HostingPackageOption[]>([]);
+    const [choicePicker, setChoicePicker] = useState<WebSpaceChoiceKind | null>(null);
     const [selectedOwner, setSelectedOwner] = useState<User | null>(null);
     const [ownerModalOpen, setOwnerModalOpen] = useState(false);
     const [owners, setOwners] = useState<User[]>([]);
@@ -157,16 +162,102 @@ export default function CreateWebSpacePage() {
             title: t('admin.webSpaces.wizard.step3_title'),
             subtitle: t('admin.webSpaces.wizard.step3_subtitle'),
         },
+        {
+            title: t('admin.webSpaces.wizard.step4_title'),
+            subtitle: t('admin.webSpaces.wizard.step4_subtitle'),
+        },
     ];
 
     const selectedPlate = plates.find((p) => String(p.id) === form.webplate_id);
+    const selectedNode = nodes.find((node) => String(node.id) === form.web_node_id);
+    const selectedPackage = hostingPackages.find((pkg) => String(pkg.id) === form.hosting_package_id);
+    const selectedDomains = domainRoutes.filter((route) => route.domain.trim());
+    const unlimited = t('admin.servers.form.wizard.review.unlimited');
     const canProceedStep1 = Boolean(form.web_node_id && form.webplate_id);
     const canCreate =
         currentStep === totalSteps &&
         form.name.trim().length > 0 &&
         form.web_node_id &&
         form.webplate_id &&
-        form.owner_id;
+        form.owner_id &&
+        Number(form.disk) >= 1 &&
+        Object.values(sizeValidity).every(Boolean);
+    const reviewGroups = [
+        {
+            step: 1,
+            title: t('admin.webSpaces.wizard.step1_title'),
+            icon: LayoutTemplate,
+            items: [
+                { label: t('admin.webSpaces.form.web_node'), value: selectedNode?.name },
+                { label: t('admin.webSpaces.form.webplate'), value: selectedPlate?.name },
+                {
+                    label: t('admin.webSpaces.form.document_root'),
+                    value: form.document_root.trim() || selectedPlate?.document_root || 'public',
+                },
+            ],
+        },
+        {
+            step: 2,
+            title: t('admin.webSpaces.wizard.step2_title'),
+            icon: HardDrive,
+            items: [
+                {
+                    label: t('admin.webSpaces.form.hostingPackage'),
+                    value: selectedPackage?.name || t('admin.webSpaces.form.hostingPackageNone'),
+                },
+                { label: t('admin.webSpaces.form.disk'), value: `${form.disk} MiB` },
+                {
+                    label: t('admin.webSpaces.form.cpu_limit'),
+                    value: Number(form.cpu_limit) === 0 ? unlimited : form.cpu_limit,
+                },
+                {
+                    label: t('admin.webSpaces.form.memory_limit'),
+                    value: Number(form.memory_limit) === 0 ? unlimited : `${form.memory_limit} MiB`,
+                },
+                {
+                    label: t('admin.webSpaces.form.bandwidth_limit_gb'),
+                    value:
+                        form.bandwidth_limit_gb === ''
+                            ? t('admin.webSpaces.form.bandwidth_limit_gb_placeholder')
+                            : Number(form.bandwidth_limit_gb) === 0
+                              ? unlimited
+                              : `${form.bandwidth_limit_gb} GiB`,
+                },
+                { label: t('admin.webSpaces.database_limit'), value: form.database_limit },
+                { label: t('admin.webSpaces.mailbox_limit'), value: form.mailbox_limit },
+                {
+                    label: t('admin.webSpaces.form.domains'),
+                    value:
+                        selectedDomains.map((route) => route.domain.trim()).join(', ') ||
+                        t('admin.webSpaces.no_domains'),
+                },
+            ],
+        },
+        {
+            step: 3,
+            title: t('admin.webSpaces.wizard.step3_title'),
+            icon: UserCircle,
+            items: [
+                { label: t('admin.webSpaces.form.name'), value: form.name.trim() },
+                ...(form.description.trim()
+                    ? [{ label: t('admin.webSpaces.form.description'), value: form.description.trim() }]
+                    : []),
+                {
+                    label: t('admin.webSpaces.form.owner_id'),
+                    value: selectedOwner ? `${selectedOwner.username} (${selectedOwner.email})` : undefined,
+                },
+                { label: t('admin.webSpaces.form.ssl'), value: t(form.ssl ? 'common.yes' : 'common.no') },
+                {
+                    label: t('admin.webSpaces.form.skip_scripts'),
+                    value: t(form.skip_scripts ? 'common.yes' : 'common.no'),
+                },
+                {
+                    label: t('admin.webSpaces.form.start_on_completion'),
+                    value: t(form.start_on_completion ? 'common.yes' : 'common.no'),
+                },
+            ],
+        },
+    ];
 
     const loadOptions = useCallback(async () => {
         setLoadingOptions(true);
@@ -237,6 +328,63 @@ export default function CreateWebSpacePage() {
         setOwnerModalOpen(false);
     };
 
+    const choiceOptions: ChoiceOption[] =
+        choicePicker === 'node'
+            ? nodes.map((node) => ({ id: String(node.id), name: node.name, description: node.fqdn }))
+            : choicePicker === 'plate'
+              ? plates.map((plate) => ({ id: String(plate.id), name: plate.name, description: plate.runtime }))
+              : choicePicker === 'package'
+                ? [
+                      { id: '', name: t('admin.webSpaces.form.hostingPackageNone') },
+                      ...hostingPackages.map((pkg) => ({
+                          id: String(pkg.id),
+                          name: pkg.name,
+                          description: `${pkg.disk} MiB · ${pkg.cpu_limit} CPU · ${pkg.memory_limit} MiB`,
+                      })),
+                  ]
+                : [];
+    const choiceTitle =
+        choicePicker === 'node'
+            ? t('admin.webSpaces.form.web_node')
+            : choicePicker === 'plate'
+              ? t('admin.webSpaces.form.webplate')
+              : t('admin.webSpaces.form.hostingPackage');
+    const choiceSelectedId =
+        choicePicker === 'node'
+            ? form.web_node_id
+            : choicePicker === 'plate'
+              ? form.webplate_id
+              : form.hosting_package_id;
+    const selectChoice = (id: string | number) => {
+        const value = String(id);
+        if (choicePicker === 'node') {
+            setForm((prev) => ({ ...prev, web_node_id: value }));
+        } else if (choicePicker === 'plate') {
+            setForm((prev) => ({ ...prev, webplate_id: value }));
+        } else if (choicePicker === 'package') {
+            const pkg = hostingPackages.find((item) => String(item.id) === value);
+            if (pkg) {
+                setSizeValidity({ disk: true, memory: true, bandwidth: true });
+                setSizeResetKey((key) => key + 1);
+            }
+            setForm((prev) => ({
+                ...prev,
+                hosting_package_id: value,
+                ...(pkg
+                    ? {
+                          disk: String(pkg.disk),
+                          cpu_limit: String(pkg.cpu_limit),
+                          memory_limit: String(pkg.memory_limit),
+                          bandwidth_limit_gb: String(pkg.bandwidth_limit_gb ?? 0),
+                          database_limit: String(pkg.database_limit),
+                          mailbox_limit: String(pkg.mailbox_limit),
+                          webplate_id: pkg.webplate_id ? String(pkg.webplate_id) : prev.webplate_id,
+                      }
+                    : {}),
+            }));
+        }
+    };
+
     const validateCurrentStep = () => {
         if (currentStep === 1) {
             if (!form.web_node_id) {
@@ -260,6 +408,12 @@ export default function CreateWebSpacePage() {
             }
             return true;
         }
+        if (currentStep === 2) {
+            if (Object.values(sizeValidity).some((valid) => !valid) || Number(form.disk) < 1) {
+                toast.error(t('common.sizeInput.invalid'));
+                return false;
+            }
+        }
         return true;
     };
 
@@ -273,7 +427,14 @@ export default function CreateWebSpacePage() {
 
     const handleCreate = async () => {
         if (currentStep !== totalSteps) return;
-        if (!validateCurrentStep()) return;
+        if (Object.values(sizeValidity).some((valid) => !valid) || Number(form.disk) < 1) {
+            toast.error(t('common.sizeInput.invalid'));
+            return;
+        }
+        if (!form.web_node_id || !form.webplate_id || !form.name.trim() || !form.owner_id) {
+            toast.error(t('admin.webSpaces.messages.required'));
+            return;
+        }
 
         const ownerId = Number(form.owner_id);
         if (!Number.isFinite(ownerId) || ownerId <= 0) {
@@ -394,46 +555,35 @@ export default function CreateWebSpacePage() {
                             icon={Settings}
                             className='animate-in fade-in-0 slide-in-from-right-4 duration-300'
                         >
-                            <div className='space-y-6'>
-                                <div className='space-y-3'>
+                            <div className='grid gap-6 md:grid-cols-2'>
+                                <div className='min-w-0 space-y-3'>
                                     <Label className='flex items-center gap-1.5'>
                                         {t('admin.webSpaces.form.web_node')}
                                         <span className='font-bold text-red-500'>*</span>
                                     </Label>
-                                    <Select
-                                        value={form.web_node_id}
-                                        onChange={(e) => setForm({ ...form, web_node_id: e.target.value })}
-                                        className='bg-muted/30 h-11 rounded-xl'
-                                    >
-                                        <option value=''>{t('admin.webSpaces.form.web_node_placeholder')}</option>
-                                        {nodes.map((node) => (
-                                            <option key={node.id} value={String(node.id)}>
-                                                {node.name}
-                                                {node.fqdn ? ` (${node.fqdn})` : ''}
-                                            </option>
-                                        ))}
-                                    </Select>
+                                    <PickerTrigger
+                                        value={selectedNode?.name}
+                                        detail={selectedNode?.fqdn}
+                                        placeholder={t('admin.webSpaces.form.web_node_placeholder')}
+                                        disabled={loadingOptions || nodes.length === 0}
+                                        onClick={() => setChoicePicker('node')}
+                                    />
                                     <p className='text-muted-foreground text-xs'>{t('admin.webSpaces.node_help')}</p>
                                 </div>
 
-                                <div className='space-y-3'>
+                                <div className='min-w-0 space-y-3'>
                                     <Label className='flex items-center gap-1.5'>
                                         <LayoutTemplate className='h-4 w-4' />
                                         {t('admin.webSpaces.form.webplate')}
                                         <span className='font-bold text-red-500'>*</span>
                                     </Label>
-                                    <Select
-                                        value={form.webplate_id}
-                                        onChange={(e) => setForm({ ...form, webplate_id: e.target.value })}
-                                        className='bg-muted/30 h-11 rounded-xl'
-                                    >
-                                        <option value=''>{t('admin.webSpaces.form.webplate_placeholder')}</option>
-                                        {plates.map((plate) => (
-                                            <option key={plate.id} value={String(plate.id)}>
-                                                {plate.name} ({plate.runtime})
-                                            </option>
-                                        ))}
-                                    </Select>
+                                    <PickerTrigger
+                                        value={selectedPlate?.name}
+                                        detail={selectedPlate?.runtime}
+                                        placeholder={t('admin.webSpaces.form.webplate_placeholder')}
+                                        disabled={loadingOptions || plates.length === 0}
+                                        onClick={() => setChoicePicker('plate')}
+                                    />
                                     <p className='text-muted-foreground text-xs'>
                                         {t('admin.webSpaces.webplate_help')}
                                     </p>
@@ -454,7 +604,7 @@ export default function CreateWebSpacePage() {
                                     )}
                                 </div>
 
-                                <div className='space-y-3'>
+                                <div className='space-y-3 md:col-span-2'>
                                     <Label>{t('admin.webSpaces.form.document_root')}</Label>
                                     <Input
                                         value={form.document_root}
@@ -484,55 +634,32 @@ export default function CreateWebSpacePage() {
                             {hostingPackages.length > 0 && (
                                 <div className='mb-6 space-y-3'>
                                     <Label>{t('admin.webSpaces.form.hostingPackage')}</Label>
-                                    <Select
-                                        value={form.hosting_package_id}
-                                        onChange={(e) => {
-                                            const id = e.target.value;
-                                            const pkg = hostingPackages.find((p) => String(p.id) === id);
-                                            setForm((prev) => ({
-                                                ...prev,
-                                                hosting_package_id: id,
-                                                ...(pkg
-                                                    ? {
-                                                          disk: String(pkg.disk),
-                                                          cpu_limit: String(pkg.cpu_limit),
-                                                          memory_limit: String(pkg.memory_limit),
-                                                          bandwidth_limit_gb: String(pkg.bandwidth_limit_gb ?? 0),
-                                                          database_limit: String(pkg.database_limit),
-                                                          mailbox_limit: String(pkg.mailbox_limit),
-                                                          webplate_id: pkg.webplate_id
-                                                              ? String(pkg.webplate_id)
-                                                              : prev.webplate_id,
-                                                      }
-                                                    : {}),
-                                            }));
-                                        }}
-                                        className='bg-muted/30 h-11 rounded-xl'
-                                    >
-                                        <option value=''>{t('admin.webSpaces.form.hostingPackageNone')}</option>
-                                        {hostingPackages.map((pkg) => (
-                                            <option key={pkg.id} value={String(pkg.id)}>
-                                                {pkg.name}
-                                            </option>
-                                        ))}
-                                    </Select>
+                                    <PickerTrigger
+                                        value={selectedPackage?.name}
+                                        placeholder={t('admin.webSpaces.form.hostingPackageNone')}
+                                        onClick={() => setChoicePicker('package')}
+                                    />
                                     <p className='text-muted-foreground text-xs'>
                                         {t('admin.webSpaces.form.hostingPackageHelp')}
                                     </p>
                                 </div>
                             )}
-                            <div className='grid grid-cols-1 gap-6 sm:grid-cols-2'>
+                            <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
                                 <div className='space-y-3'>
                                     <Label className='flex items-center gap-1.5'>
                                         <HardDrive className='h-4 w-4' />
                                         {t('admin.webSpaces.form.disk')}
                                     </Label>
-                                    <Input
-                                        type='number'
+                                    <SizeInput
+                                        value={form.disk === '' ? '' : Number(form.disk)}
+                                        onValueChange={(value) => setForm((prev) => ({ ...prev, disk: String(value) }))}
+                                        unit='MiB'
+                                        ariaLabel={t('admin.webSpaces.form.disk')}
                                         min={1}
-                                        value={form.disk}
-                                        onChange={(e) => setForm({ ...form, disk: e.target.value })}
-                                        className='bg-muted/30 h-11'
+                                        resetKey={sizeResetKey}
+                                        onValidityChange={(valid) =>
+                                            setSizeValidity((prev) => ({ ...prev, disk: valid }))
+                                        }
                                     />
                                 </div>
                                 <div className='space-y-3'>
@@ -551,12 +678,17 @@ export default function CreateWebSpacePage() {
                                 </div>
                                 <div className='space-y-3'>
                                     <Label>{t('admin.webSpaces.form.memory_limit')}</Label>
-                                    <Input
-                                        type='number'
-                                        min={0}
-                                        value={form.memory_limit}
-                                        onChange={(e) => setForm({ ...form, memory_limit: e.target.value })}
-                                        className='bg-muted/30 h-11'
+                                    <SizeInput
+                                        value={form.memory_limit === '' ? '' : Number(form.memory_limit)}
+                                        onValueChange={(value) =>
+                                            setForm((prev) => ({ ...prev, memory_limit: String(value) }))
+                                        }
+                                        unit='MiB'
+                                        ariaLabel={t('admin.webSpaces.form.memory_limit')}
+                                        resetKey={sizeResetKey}
+                                        onValidityChange={(valid) =>
+                                            setSizeValidity((prev) => ({ ...prev, memory: valid }))
+                                        }
                                     />
                                     <p className='text-muted-foreground text-xs'>
                                         {t('admin.webSpaces.form.memory_limit_help')}
@@ -564,13 +696,18 @@ export default function CreateWebSpacePage() {
                                 </div>
                                 <div className='space-y-3'>
                                     <Label>{t('admin.webSpaces.form.bandwidth_limit_gb')}</Label>
-                                    <Input
-                                        type='number'
-                                        min={0}
-                                        value={form.bandwidth_limit_gb}
-                                        onChange={(e) => setForm({ ...form, bandwidth_limit_gb: e.target.value })}
-                                        placeholder={t('admin.webSpaces.form.bandwidth_limit_gb_placeholder')}
-                                        className='bg-muted/30 h-11'
+                                    <SizeInput
+                                        value={form.bandwidth_limit_gb === '' ? '' : Number(form.bandwidth_limit_gb)}
+                                        onValueChange={(value) =>
+                                            setForm((prev) => ({ ...prev, bandwidth_limit_gb: String(value) }))
+                                        }
+                                        unit='GiB'
+                                        ariaLabel={t('admin.webSpaces.form.bandwidth_limit_gb')}
+                                        allowEmpty
+                                        resetKey={sizeResetKey}
+                                        onValidityChange={(valid) =>
+                                            setSizeValidity((prev) => ({ ...prev, bandwidth: valid }))
+                                        }
                                     />
                                     <p className='text-muted-foreground text-xs'>
                                         {t('admin.webSpaces.form.bandwidth_limit_gb_help')}
@@ -586,7 +723,7 @@ export default function CreateWebSpacePage() {
                                         className='bg-muted/30 h-11'
                                     />
                                 </div>
-                                <div className='space-y-3 sm:col-span-2'>
+                                <div className='space-y-3'>
                                     <Label>{t('admin.webSpaces.mailbox_limit')}</Label>
                                     <Input
                                         type='number'
@@ -657,42 +794,12 @@ export default function CreateWebSpacePage() {
                                         <span className='font-bold text-red-500'>*</span>
                                     </Label>
                                     <div className='flex gap-2'>
-                                        <div
-                                            role='button'
-                                            tabIndex={0}
-                                            className='bg-muted/30 border-border/50 focus-visible:ring-ring flex h-11 flex-1 cursor-pointer items-center rounded-xl border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
+                                        <PickerTrigger
+                                            value={selectedOwner?.username}
+                                            detail={selectedOwner?.email}
+                                            placeholder={t('admin.servers.form.select_owner')}
                                             onClick={openOwnerModal}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' || e.key === ' ') {
-                                                    e.preventDefault();
-                                                    openOwnerModal();
-                                                }
-                                            }}
-                                        >
-                                            {selectedOwner ? (
-                                                <div className='flex items-center gap-2'>
-                                                    <UserCircle className='text-primary h-4 w-4' />
-                                                    <span className='text-foreground font-medium'>
-                                                        {selectedOwner.username}
-                                                    </span>
-                                                    <span className='text-muted-foreground'>
-                                                        ({selectedOwner.email})
-                                                    </span>
-                                                </div>
-                                            ) : (
-                                                <span className='text-muted-foreground'>
-                                                    {t('admin.servers.form.select_owner')}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <Button
-                                            type='button'
-                                            size='icon'
-                                            onClick={openOwnerModal}
-                                            className='h-11 w-11'
-                                        >
-                                            <Search className='h-4 w-4' />
-                                        </Button>
+                                        />
                                         {selectedOwner && (
                                             <Button
                                                 type='button'
@@ -712,48 +819,88 @@ export default function CreateWebSpacePage() {
                                         {t('admin.webSpaces.form.owner_id_help')}
                                     </p>
                                 </div>
+                            </div>
+                        </PageCard>
 
-                                <div className='bg-muted/20 border-border/50 flex items-center justify-between rounded-xl border p-4'>
-                                    <div className='space-y-0.5'>
-                                        <Label>{t('admin.webSpaces.form.ssl')}</Label>
-                                        <p className='text-muted-foreground text-xs'>
-                                            {t('admin.webSpaces.form.ssl_help')}
-                                        </p>
-                                    </div>
-                                    <Switch
-                                        checked={form.ssl}
-                                        onCheckedChange={(checked) => setForm({ ...form, ssl: checked })}
-                                    />
-                                </div>
+                        <PageCard
+                            title={t('admin.webSpaces.wizard.deployment_options')}
+                            icon={Settings}
+                            className='animate-in fade-in-0 slide-in-from-right-4 duration-300'
+                        >
+                            <div className='grid gap-4 md:grid-cols-2'>
+                                <SettingToggleCard
+                                    className='md:col-span-2'
+                                    title={t('admin.webSpaces.form.ssl')}
+                                    description={t('admin.webSpaces.form.ssl_help')}
+                                    checked={form.ssl}
+                                    onCheckedChange={(checked) => setForm({ ...form, ssl: checked })}
+                                />
 
-                                <div className='bg-muted/20 border-border/50 flex items-center justify-between rounded-xl border p-4'>
-                                    <div className='space-y-0.5'>
-                                        <Label>{t('admin.webSpaces.form.skip_scripts')}</Label>
-                                    </div>
-                                    <Switch
-                                        checked={form.skip_scripts}
-                                        onCheckedChange={(checked) => setForm({ ...form, skip_scripts: checked })}
-                                    />
-                                </div>
+                                <SettingToggleCard
+                                    title={t('admin.webSpaces.form.skip_scripts')}
+                                    checked={form.skip_scripts}
+                                    onCheckedChange={(checked) => setForm({ ...form, skip_scripts: checked })}
+                                />
 
-                                <div className='bg-muted/20 border-border/50 flex items-center justify-between rounded-xl border p-4'>
-                                    <div className='space-y-0.5'>
-                                        <Label>{t('admin.webSpaces.form.start_on_completion')}</Label>
-                                    </div>
-                                    <Switch
-                                        checked={form.start_on_completion}
-                                        onCheckedChange={(checked) =>
-                                            setForm({ ...form, start_on_completion: checked })
-                                        }
-                                    />
-                                </div>
+                                <SettingToggleCard
+                                    title={t('admin.webSpaces.form.start_on_completion')}
+                                    checked={form.start_on_completion}
+                                    onCheckedChange={(checked) => setForm({ ...form, start_on_completion: checked })}
+                                />
                             </div>
                         </PageCard>
                     </div>
                 )}
+
+                {currentStep === 4 && (
+                    <PageCard
+                        title={t('admin.webSpaces.wizard.step4_title')}
+                        icon={ClipboardCheck}
+                        className='animate-in fade-in-0 slide-in-from-right-4 duration-300'
+                    >
+                        <div className='space-y-6'>
+                            {reviewGroups.map((group) => {
+                                const Icon = group.icon;
+                                return (
+                                    <section
+                                        key={group.step}
+                                        className='border-border/50 bg-muted/15 rounded-2xl border p-5'
+                                    >
+                                        <div className='mb-4 flex items-center justify-between gap-3'>
+                                            <h3 className='flex items-center gap-2 text-base font-semibold'>
+                                                <Icon className='text-primary h-5 w-5' />
+                                                {group.title}
+                                            </h3>
+                                            <Button
+                                                type='button'
+                                                variant='ghost'
+                                                size='sm'
+                                                onClick={() => setCurrentStep(group.step)}
+                                            >
+                                                {t('common.edit')}
+                                            </Button>
+                                        </div>
+                                        <dl className='grid gap-4 sm:grid-cols-2'>
+                                            {group.items.map((item) => (
+                                                <div key={item.label} className='min-w-0'>
+                                                    <dt className='text-muted-foreground text-xs font-medium'>
+                                                        {item.label}
+                                                    </dt>
+                                                    <dd className='mt-1 text-sm font-semibold break-words'>
+                                                        {item.value || '—'}
+                                                    </dd>
+                                                </div>
+                                            ))}
+                                        </dl>
+                                    </section>
+                                );
+                            })}
+                        </div>
+                    </PageCard>
+                )}
             </div>
 
-            <div className='bg-card/50 border-border/50 mt-8 flex items-center justify-between rounded-2xl border p-6 backdrop-blur-xl'>
+            <div className='bg-card/50 border-border/50 mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 backdrop-blur-xl sm:p-6'>
                 <Button
                     type='button'
                     variant='outline'
@@ -765,7 +912,7 @@ export default function CreateWebSpacePage() {
                     {t('admin.servers.form.wizard.previous')}
                 </Button>
 
-                <span className='text-muted-foreground text-sm'>
+                <span className='text-muted-foreground order-3 w-full text-center text-sm sm:order-none sm:w-auto'>
                     {t('admin.servers.form.wizard.step', {
                         current: String(currentStep),
                         total: String(totalSteps),
@@ -795,6 +942,17 @@ export default function CreateWebSpacePage() {
                     </Button>
                 )}
             </div>
+
+            <ChoicePickerSheet
+                open={choicePicker !== null}
+                onOpenChange={(open) => {
+                    if (!open) setChoicePicker(null);
+                }}
+                title={choiceTitle}
+                options={choiceOptions}
+                selectedId={choiceSelectedId}
+                onSelect={selectChoice}
+            />
 
             <OwnerPickerSheet
                 open={ownerModalOpen}

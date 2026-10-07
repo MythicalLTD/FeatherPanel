@@ -52,7 +52,7 @@ import {
     WizardStep,
 } from './types';
 import { resolveSpellDefaultDockerImage } from '@/lib/spellDockerImages';
-import { validateServerResourceLimits } from '@/lib/server-utils';
+import { SERVER_RESOURCE_LIMITS, validateServerResourceLimits } from '@/lib/server-utils';
 import { Step1CoreDetails } from './Step1CoreDetails';
 import { Step2Allocation } from './Step2Allocation';
 import { Step3Application } from './Step3Application';
@@ -115,6 +115,7 @@ export default function CreateServerPage() {
     const totalSteps = 6;
 
     const [formData, setFormData] = useState<ServerFormData>(initialFormData);
+    const [sizeValidity, setSizeValidity] = useState({ memory: true, swap: true, disk: true });
     const [selectedEntities, setSelectedEntities] = useState<SelectedEntities>(initialSelectedEntities);
 
     const [spellDetails, setSpellDetails] = useState<Spell | null>(null);
@@ -539,6 +540,20 @@ export default function CreateServerPage() {
         }
     }, [spellModalOpen, fetchSpells]);
 
+    const getSizeInputError = () => {
+        if (Object.values(sizeValidity).some((valid) => !valid)) return t('common.sizeInput.invalid');
+        if (!formData.memoryUnlimited && formData.memory < SERVER_RESOURCE_LIMITS.memory.min) {
+            return t('admin.servers.form.wizard.validation.memory_limit');
+        }
+        if (formData.swapType === 'limited' && formData.swap < SERVER_RESOURCE_LIMITS.swap.min) {
+            return t('admin.servers.form.wizard.validation.swap_limit');
+        }
+        if (!formData.diskUnlimited && formData.disk < SERVER_RESOURCE_LIMITS.disk.min) {
+            return t('admin.servers.form.wizard.validation.disk_limit');
+        }
+        return null;
+    };
+
     const validateFormForSubmit = () => {
         if (!formData.name.trim()) {
             toast.error(t('admin.servers.form.wizard.validation.name_required'));
@@ -574,6 +589,12 @@ export default function CreateServerPage() {
         }
         if (!formData.startup?.trim()) {
             toast.error(t('admin.servers.form.wizard.validation.startup_required'));
+            return false;
+        }
+
+        const sizeError = getSizeInputError();
+        if (sizeError) {
+            toast.error(sizeError);
             return false;
         }
 
@@ -642,6 +663,14 @@ export default function CreateServerPage() {
                     return false;
                 }
                 return true;
+            case 4: {
+                const sizeError = getSizeInputError();
+                if (sizeError) {
+                    toast.error(sizeError);
+                    return false;
+                }
+                return true;
+            }
             default:
                 return true;
         }
@@ -885,7 +914,14 @@ export default function CreateServerPage() {
                         fetchSpells={fetchSpells}
                     />
                 )}
-                {currentStep === 4 && <Step4Resources {...stepProps} />}
+                {currentStep === 4 && (
+                    <Step4Resources
+                        {...stepProps}
+                        onSizeValidityChange={(field, valid) =>
+                            setSizeValidity((prev) => (prev[field] === valid ? prev : { ...prev, [field]: valid }))
+                        }
+                    />
+                )}
                 {currentStep === 5 && <Step5FeatureLimits {...stepProps} />}
                 {currentStep === 6 && <Step6Review {...stepProps} />}
             </div>

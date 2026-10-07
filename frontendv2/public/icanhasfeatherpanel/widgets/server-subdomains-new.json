@@ -1,0 +1,13 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "server-subdomains-new",
+  "file_slug": "server-subdomains-new",
+  "files": [
+    "src/app/(app)/server/[uuidShort]/subdomains/new/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-analytics-content",
+  "file_slug": "admin-analytics-content",
+  "files": [
+    "src/app/(app)/admin/analytics/content/page.tsx"
+  ],
+  "injection_points": [
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

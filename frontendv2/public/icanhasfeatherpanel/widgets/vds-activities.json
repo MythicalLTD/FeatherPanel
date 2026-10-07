@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "vds-activities",
+  "file_slug": "vds-activities",
+  "files": [
+    "src/app/(app)/vds/[id]/activities/page.tsx"
+  ],
+  "injection_points": [
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

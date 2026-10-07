@@ -1,0 +1,32 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin Subdomains",
+  "slug": "admin-subdomains",
+  "total": 4,
+  "permissions": [
+    {
+      "constant": "ADMIN_SUBDOMAINS_CREATE",
+      "node": "admin.subdomains.create",
+      "category": "Admin Subdomains",
+      "description": "Create new subdomains"
+    },
+    {
+      "constant": "ADMIN_SUBDOMAINS_DELETE",
+      "node": "admin.subdomains.delete",
+      "category": "Admin Subdomains",
+      "description": "Delete subdomains"
+    },
+    {
+      "constant": "ADMIN_SUBDOMAINS_EDIT",
+      "node": "admin.subdomains.edit",
+      "category": "Admin Subdomains",
+      "description": "Edit subdomains"
+    },
+    {
+      "constant": "ADMIN_SUBDOMAINS_VIEW",
+      "node": "admin.subdomains.view",
+      "category": "Admin Subdomains",
+      "description": "View subdomains"
+    }
+  ]
+}

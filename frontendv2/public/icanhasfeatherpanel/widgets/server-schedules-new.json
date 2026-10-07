@@ -1,0 +1,11 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "server-schedules-new",
+  "file_slug": "server-schedules-new",
+  "files": [
+    "src/app/(app)/server/[uuidShort]/schedules/new/page.tsx"
+  ],
+  "injection_points": [
+    "after-header"
+  ]
+}

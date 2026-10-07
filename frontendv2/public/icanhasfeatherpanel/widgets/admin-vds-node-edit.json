@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-vds-node-edit",
+  "file_slug": "admin-vds-node-edit",
+  "files": [
+    "src/app/(app)/admin/vds-nodes/[id]/edit/page.tsx"
+  ],
+  "injection_points": [
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

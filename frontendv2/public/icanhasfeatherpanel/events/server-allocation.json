@@ -1,0 +1,50 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "ServerAllocation",
+  "slug": "server-allocation",
+  "total": 3,
+  "events": [
+    {
+      "name": "featherpanel:user:server:allocation:deleted",
+      "method": "onServerAllocationDeleted",
+      "category": "ServerAllocation",
+      "callback": "string server uuid, int allocation id.",
+      "emitted": true,
+      "data_keys": [
+        "allocation_id",
+        "server_uuid",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/Server/ServerAllocationController.php",
+        "backend/app/Services/Chatbot/Tools/DeleteAllocationTool.php"
+      ]
+    },
+    {
+      "name": "featherpanel:user:server:allocation:error",
+      "method": "onServerAllocationError",
+      "category": "ServerAllocation",
+      "callback": "string error message, array context.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:user:server:allocation:set_primary",
+      "method": "onServerAllocationSetPrimary",
+      "category": "ServerAllocation",
+      "callback": "string server uuid, int allocation id, bool is_primary.",
+      "emitted": true,
+      "data_keys": [
+        "allocation_id",
+        "is_primary",
+        "server_uuid",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/Server/ServerAllocationController.php",
+        "backend/app/Services/Chatbot/Tools/SetPrimaryAllocationTool.php"
+      ]
+    }
+  ]
+}

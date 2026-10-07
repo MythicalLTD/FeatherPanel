@@ -1,0 +1,14 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-roles",
+  "file_slug": "admin-roles",
+  "files": [
+    "src/app/(app)/admin/roles/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "before-list",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

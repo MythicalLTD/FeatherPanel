@@ -1,0 +1,828 @@
+{
+  "type": "featherpanel.permissions.all",
+  "total": 137,
+  "permissions": [
+    {
+      "constant": "ADMIN_ROOT",
+      "node": "admin.root",
+      "category": "Admin Root",
+      "description": "Full access to everything"
+    },
+    {
+      "constant": "ADMIN_DASHBOARD_VIEW",
+      "node": "admin.dashboard.view",
+      "category": "Admin Dashboard View",
+      "description": "Access to view the admin dashboard"
+    },
+    {
+      "constant": "ADMIN_USERS_VIEW",
+      "node": "admin.users.list",
+      "category": "Admin Users",
+      "description": "View the users"
+    },
+    {
+      "constant": "ADMIN_USERS_CREATE",
+      "node": "admin.users.create",
+      "category": "Admin Users",
+      "description": "Create new users"
+    },
+    {
+      "constant": "ADMIN_USERS_EDIT",
+      "node": "admin.users.edit",
+      "category": "Admin Users",
+      "description": "Edit existing users"
+    },
+    {
+      "constant": "ADMIN_USERS_DELETE",
+      "node": "admin.users.delete",
+      "category": "Admin Users",
+      "description": "Delete users"
+    },
+    {
+      "constant": "ADMIN_BLOCKED_IPS_VIEW",
+      "node": "admin.blocked_ips.view",
+      "category": "Admin Banned IPs",
+      "description": "View banned panel IPs"
+    },
+    {
+      "constant": "ADMIN_BLOCKED_IPS_CREATE",
+      "node": "admin.blocked_ips.create",
+      "category": "Admin Banned IPs",
+      "description": "Ban IPs from panel registration"
+    },
+    {
+      "constant": "ADMIN_BLOCKED_IPS_DELETE",
+      "node": "admin.blocked_ips.delete",
+      "category": "Admin Banned IPs",
+      "description": "Remove panel IP bans"
+    },
+    {
+      "constant": "ADMIN_LOCATIONS_VIEW",
+      "node": "admin.locations.view",
+      "category": "Admin Locations",
+      "description": "View locations"
+    },
+    {
+      "constant": "ADMIN_LOCATIONS_CREATE",
+      "node": "admin.locations.create",
+      "category": "Admin Locations",
+      "description": "Create new locations"
+    },
+    {
+      "constant": "ADMIN_LOCATIONS_EDIT",
+      "node": "admin.locations.edit",
+      "category": "Admin Locations",
+      "description": "Edit existing locations"
+    },
+    {
+      "constant": "ADMIN_LOCATIONS_DELETE",
+      "node": "admin.locations.delete",
+      "category": "Admin Locations",
+      "description": "Delete locations"
+    },
+    {
+      "constant": "ADMIN_REALMS_VIEW",
+      "node": "admin.realms.view",
+      "category": "Admin Realms",
+      "description": "View realms"
+    },
+    {
+      "constant": "ADMIN_REALMS_CREATE",
+      "node": "admin.realms.create",
+      "category": "Admin Realms",
+      "description": "Create new realms"
+    },
+    {
+      "constant": "ADMIN_REALMS_EDIT",
+      "node": "admin.realms.edit",
+      "category": "Admin Realms",
+      "description": "Edit existing realms"
+    },
+    {
+      "constant": "ADMIN_REALMS_DELETE",
+      "node": "admin.realms.delete",
+      "category": "Admin Realms",
+      "description": "Delete realms"
+    },
+    {
+      "constant": "ADMIN_SPELLS_VIEW",
+      "node": "admin.spells.view",
+      "category": "Admin Spells",
+      "description": "View spells"
+    },
+    {
+      "constant": "ADMIN_SPELLS_CREATE",
+      "node": "admin.spells.create",
+      "category": "Admin Spells",
+      "description": "Create new spells"
+    },
+    {
+      "constant": "ADMIN_SPELLS_EDIT",
+      "node": "admin.spells.edit",
+      "category": "Admin Spells",
+      "description": "Edit existing spells"
+    },
+    {
+      "constant": "ADMIN_SPELLS_DELETE",
+      "node": "admin.spells.delete",
+      "category": "Admin Spells",
+      "description": "Delete spells"
+    },
+    {
+      "constant": "ADMIN_NODES_VIEW",
+      "node": "admin.nodes.view",
+      "category": "Admin Nodes",
+      "description": "View nodes"
+    },
+    {
+      "constant": "ADMIN_NODES_CREATE",
+      "node": "admin.nodes.create",
+      "category": "Admin Nodes",
+      "description": "Create new nodes"
+    },
+    {
+      "constant": "ADMIN_NODES_EDIT",
+      "node": "admin.nodes.edit",
+      "category": "Admin Nodes",
+      "description": "Edit existing nodes"
+    },
+    {
+      "constant": "ADMIN_NODES_DELETE",
+      "node": "admin.nodes.delete",
+      "category": "Admin Nodes",
+      "description": "Delete nodes"
+    },
+    {
+      "constant": "ADMIN_ROLES_VIEW",
+      "node": "admin.roles.view",
+      "category": "Admin Roles",
+      "description": "View roles"
+    },
+    {
+      "constant": "ADMIN_ROLES_CREATE",
+      "node": "admin.roles.create",
+      "category": "Admin Roles",
+      "description": "Create new roles"
+    },
+    {
+      "constant": "ADMIN_ROLES_EDIT",
+      "node": "admin.roles.edit",
+      "category": "Admin Roles",
+      "description": "Edit existing roles"
+    },
+    {
+      "constant": "ADMIN_ROLES_DELETE",
+      "node": "admin.roles.delete",
+      "category": "Admin Roles",
+      "description": "Delete roles"
+    },
+    {
+      "constant": "ADMIN_DATABASES_VIEW",
+      "node": "admin.databases.view",
+      "category": "Admin Databases",
+      "description": "View databases"
+    },
+    {
+      "constant": "ADMIN_DATABASES_CREATE",
+      "node": "admin.databases.create",
+      "category": "Admin Databases",
+      "description": "Create new databases"
+    },
+    {
+      "constant": "ADMIN_DATABASES_EDIT",
+      "node": "admin.databases.edit",
+      "category": "Admin Databases",
+      "description": "Edit existing databases"
+    },
+    {
+      "constant": "ADMIN_DATABASES_DELETE",
+      "node": "admin.databases.delete",
+      "category": "Admin Databases",
+      "description": "Delete databases"
+    },
+    {
+      "constant": "ADMIN_ROLES_PERMISSIONS_VIEW",
+      "node": "admin.roles.permissions.view",
+      "category": "Admin Role Permissions",
+      "description": "View role permissions"
+    },
+    {
+      "constant": "ADMIN_ROLES_PERMISSIONS_CREATE",
+      "node": "admin.roles.permissions.create",
+      "category": "Admin Role Permissions",
+      "description": "Create new role permissions"
+    },
+    {
+      "constant": "ADMIN_ROLES_PERMISSIONS_EDIT",
+      "node": "admin.roles.permissions.edit",
+      "category": "Admin Role Permissions",
+      "description": "Edit existing role permissions"
+    },
+    {
+      "constant": "ADMIN_ROLES_PERMISSIONS_DELETE",
+      "node": "admin.roles.permissions.delete",
+      "category": "Admin Role Permissions",
+      "description": "Delete role permissions"
+    },
+    {
+      "constant": "ADMIN_SETTINGS_VIEW",
+      "node": "admin.settings.view",
+      "category": "Admin Settings",
+      "description": "View settings"
+    },
+    {
+      "constant": "ADMIN_SETTINGS_EDIT",
+      "node": "admin.settings.edit",
+      "category": "Admin Settings",
+      "description": "Edit and manage settings"
+    },
+    {
+      "constant": "ADMIN_STORAGE_SENSE_VIEW",
+      "node": "admin.storage_sense.view",
+      "category": "Admin Storage Sense",
+      "description": "View Storage Sense insights and cleanup candidates"
+    },
+    {
+      "constant": "ADMIN_STORAGE_SENSE_MANAGE",
+      "node": "admin.storage_sense.manage",
+      "category": "Admin Storage Sense",
+      "description": "Run Storage Sense cleanup actions"
+    },
+    {
+      "constant": "ADMIN_ALLOCATIONS_VIEW",
+      "node": "admin.allocations.view",
+      "category": "Admin Allocations",
+      "description": "View allocations"
+    },
+    {
+      "constant": "ADMIN_ALLOCATIONS_CREATE",
+      "node": "admin.allocations.create",
+      "category": "Admin Allocations",
+      "description": "Create new allocations"
+    },
+    {
+      "constant": "ADMIN_ALLOCATIONS_EDIT",
+      "node": "admin.allocations.edit",
+      "category": "Admin Allocations",
+      "description": "Edit existing allocations"
+    },
+    {
+      "constant": "ADMIN_ALLOCATIONS_DELETE",
+      "node": "admin.allocations.delete",
+      "category": "Admin Allocations",
+      "description": "Delete allocations"
+    },
+    {
+      "constant": "ADMIN_SERVERS_VIEW",
+      "node": "admin.servers.view",
+      "category": "Admin Servers",
+      "description": "View all servers"
+    },
+    {
+      "constant": "ADMIN_SERVERS_CREATE",
+      "node": "admin.servers.create",
+      "category": "Admin Servers",
+      "description": "Create new servers"
+    },
+    {
+      "constant": "ADMIN_SERVERS_EDIT",
+      "node": "admin.servers.edit",
+      "category": "Admin Servers",
+      "description": "Edit existing servers"
+    },
+    {
+      "constant": "ADMIN_SERVERS_DELETE",
+      "node": "admin.servers.delete",
+      "category": "Admin Servers",
+      "description": "Delete servers"
+    },
+    {
+      "constant": "ADMIN_SERVERS_INSTALL",
+      "node": "admin.servers.install",
+      "category": "Admin Servers",
+      "description": "Install servers"
+    },
+    {
+      "constant": "ADMIN_SERVERS_REINSTALL",
+      "node": "admin.servers.reinstall",
+      "category": "Admin Servers",
+      "description": "Reinstall servers"
+    },
+    {
+      "constant": "ADMIN_SERVERS_SUSPEND",
+      "node": "admin.servers.suspend",
+      "category": "Admin Servers",
+      "description": "Suspend servers"
+    },
+    {
+      "constant": "ADMIN_SERVERS_UNSUSPEND",
+      "node": "admin.servers.unsuspend",
+      "category": "Admin Servers",
+      "description": "Unsuspend servers"
+    },
+    {
+      "constant": "ADMIN_TEMPLATE_EMAIL_VIEW",
+      "node": "admin.email.templates.view",
+      "category": "Admin Email Templates",
+      "description": "View email templates"
+    },
+    {
+      "constant": "ADMIN_TEMPLATE_EMAIL_CREATE",
+      "node": "admin.email.templates.create",
+      "category": "Admin Email Templates",
+      "description": "Create new email templates"
+    },
+    {
+      "constant": "ADMIN_TEMPLATE_EMAIL_EDIT",
+      "node": "admin.email.templates.edit",
+      "category": "Admin Email Templates",
+      "description": "Edit existing email templates"
+    },
+    {
+      "constant": "ADMIN_TEMPLATE_EMAIL_DELETE",
+      "node": "admin.email.templates.delete",
+      "category": "Admin Email Templates",
+      "description": "Delete email templates"
+    },
+    {
+      "constant": "ADMIN_IMAGES_VIEW",
+      "node": "admin.images.view",
+      "category": "Admin Images",
+      "description": "View images"
+    },
+    {
+      "constant": "ADMIN_IMAGES_CREATE",
+      "node": "admin.images.create",
+      "category": "Admin Images",
+      "description": "Create new images"
+    },
+    {
+      "constant": "ADMIN_IMAGES_EDIT",
+      "node": "admin.images.edit",
+      "category": "Admin Images",
+      "description": "Edit existing images"
+    },
+    {
+      "constant": "ADMIN_IMAGES_DELETE",
+      "node": "admin.images.delete",
+      "category": "Admin Images",
+      "description": "Delete images"
+    },
+    {
+      "constant": "ADMIN_REDIRECT_LINKS_VIEW",
+      "node": "admin.redirect_links.view",
+      "category": "Admin Redirect Links",
+      "description": "View redirect links"
+    },
+    {
+      "constant": "ADMIN_REDIRECT_LINKS_CREATE",
+      "node": "admin.redirect_links.create",
+      "category": "Admin Redirect Links",
+      "description": "Create new redirect links"
+    },
+    {
+      "constant": "ADMIN_REDIRECT_LINKS_EDIT",
+      "node": "admin.redirect_links.edit",
+      "category": "Admin Redirect Links",
+      "description": "Edit existing redirect links"
+    },
+    {
+      "constant": "ADMIN_REDIRECT_LINKS_DELETE",
+      "node": "admin.redirect_links.delete",
+      "category": "Admin Redirect Links",
+      "description": "Delete redirect links"
+    },
+    {
+      "constant": "ADMIN_PLUGINS_VIEW",
+      "node": "admin.plugins.view",
+      "category": "Admin Plugins",
+      "description": "View plugins"
+    },
+    {
+      "constant": "ADMIN_PLUGINS_INSTALL",
+      "node": "admin.plugins.install",
+      "category": "Admin Plugins",
+      "description": "Install plugins"
+    },
+    {
+      "constant": "ADMIN_PLUGINS_UNINSTALL",
+      "node": "admin.plugins.uninstall",
+      "category": "Admin Plugins",
+      "description": "Uninstall plugins"
+    },
+    {
+      "constant": "ADMIN_PLUGINS_MANAGE",
+      "node": "admin.plugins.manage",
+      "category": "Admin Plugins",
+      "description": "Manage plugins"
+    },
+    {
+      "constant": "ADMIN_DATABASES_MANAGE",
+      "node": "admin.databases.manage",
+      "category": "Admin Databases",
+      "description": "Manage database"
+    },
+    {
+      "constant": "ADMIN_STATISTICS_VIEW",
+      "node": "admin.statistics.view",
+      "category": "Admin Statistics",
+      "description": "View statistics"
+    },
+    {
+      "constant": "ADMIN_SUBDOMAINS_VIEW",
+      "node": "admin.subdomains.view",
+      "category": "Admin Subdomains",
+      "description": "View subdomains"
+    },
+    {
+      "constant": "ADMIN_SUBDOMAINS_CREATE",
+      "node": "admin.subdomains.create",
+      "category": "Admin Subdomains",
+      "description": "Create new subdomains"
+    },
+    {
+      "constant": "ADMIN_SUBDOMAINS_EDIT",
+      "node": "admin.subdomains.edit",
+      "category": "Admin Subdomains",
+      "description": "Edit subdomains"
+    },
+    {
+      "constant": "ADMIN_SUBDOMAINS_DELETE",
+      "node": "admin.subdomains.delete",
+      "category": "Admin Subdomains",
+      "description": "Delete subdomains"
+    },
+    {
+      "constant": "ADMIN_FEATHERZEROTRUST_VIEW",
+      "node": "admin.featherzerotrust.view",
+      "category": "Admin FeatherZeroTrust",
+      "description": "View FeatherZeroTrust scanner"
+    },
+    {
+      "constant": "ADMIN_FEATHERZEROTRUST_SCAN",
+      "node": "admin.featherzerotrust.scan",
+      "category": "Admin FeatherZeroTrust",
+      "description": "Run scans with FeatherZeroTrust"
+    },
+    {
+      "constant": "ADMIN_FEATHERZEROTRUST_CONFIGURE",
+      "node": "admin.featherzerotrust.configure",
+      "category": "Admin FeatherZeroTrust",
+      "description": "Configure FeatherZeroTrust settings"
+    },
+    {
+      "constant": "ADMIN_FEATHERZEROTRUST_MANAGE",
+      "node": "admin.featherzerotrust.manage",
+      "category": "Admin FeatherZeroTrust",
+      "description": "Manage FeatherZeroTrust"
+    },
+    {
+      "constant": "ADMIN_NOTIFICATIONS_VIEW",
+      "node": "admin.notifications.view",
+      "category": "Admin Notifications",
+      "description": "View notifications"
+    },
+    {
+      "constant": "ADMIN_NOTIFICATIONS_CREATE",
+      "node": "admin.notifications.create",
+      "category": "Admin Notifications",
+      "description": "Create new notifications"
+    },
+    {
+      "constant": "ADMIN_NOTIFICATIONS_EDIT",
+      "node": "admin.notifications.edit",
+      "category": "Admin Notifications",
+      "description": "Edit existing notifications"
+    },
+    {
+      "constant": "ADMIN_NOTIFICATIONS_DELETE",
+      "node": "admin.notifications.delete",
+      "category": "Admin Notifications",
+      "description": "Delete notifications"
+    },
+    {
+      "constant": "ADMIN_BACKUPS_VIEW",
+      "node": "admin.backups.view",
+      "category": "Admin Database Snapshots",
+      "description": "View database snapshots"
+    },
+    {
+      "constant": "ADMIN_BACKUPS_CREATE",
+      "node": "admin.backups.create",
+      "category": "Admin Database Snapshots",
+      "description": "Create database snapshots"
+    },
+    {
+      "constant": "ADMIN_BACKUPS_DELETE",
+      "node": "admin.backups.delete",
+      "category": "Admin Database Snapshots",
+      "description": "Delete database snapshots"
+    },
+    {
+      "constant": "ADMIN_BACKUPS_RESTORE",
+      "node": "admin.backups.restore",
+      "category": "Admin Database Snapshots",
+      "description": "Restore database from snapshot"
+    },
+    {
+      "constant": "ADMIN_BACKUPS_DOWNLOAD",
+      "node": "admin.backups.download",
+      "category": "Admin Database Snapshots",
+      "description": "Download database snapshots"
+    },
+    {
+      "constant": "ADMIN_BACKUP_SCHEDULES_VIEW",
+      "node": "admin.backup_schedules.view",
+      "category": "Admin Backup Schedules",
+      "description": "View server backup schedules"
+    },
+    {
+      "constant": "ADMIN_BACKUP_SCHEDULES_CREATE",
+      "node": "admin.backup_schedules.create",
+      "category": "Admin Backup Schedules",
+      "description": "Create server backup schedules"
+    },
+    {
+      "constant": "ADMIN_BACKUP_SCHEDULES_EDIT",
+      "node": "admin.backup_schedules.edit",
+      "category": "Admin Backup Schedules",
+      "description": "Edit server backup schedules"
+    },
+    {
+      "constant": "ADMIN_BACKUP_SCHEDULES_DELETE",
+      "node": "admin.backup_schedules.delete",
+      "category": "Admin Backup Schedules",
+      "description": "Delete server backup schedules"
+    },
+    {
+      "constant": "ADMIN_BACKUP_SCHEDULES_RUN",
+      "node": "admin.backup_schedules.run",
+      "category": "Admin Backup Schedules",
+      "description": "Manually run server backup schedules"
+    },
+    {
+      "constant": "ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW",
+      "node": "admin.knowledgebase.categories.view",
+      "category": "Admin Knowledgebase Categories",
+      "description": "View knowledgebase categories"
+    },
+    {
+      "constant": "ADMIN_KNOWLEDGEBASE_CATEGORIES_CREATE",
+      "node": "admin.knowledgebase.categories.create",
+      "category": "Admin Knowledgebase Categories",
+      "description": "Create new knowledgebase categories"
+    },
+    {
+      "constant": "ADMIN_KNOWLEDGEBASE_CATEGORIES_EDIT",
+      "node": "admin.knowledgebase.categories.edit",
+      "category": "Admin Knowledgebase Categories",
+      "description": "Edit existing knowledgebase categories"
+    },
+    {
+      "constant": "ADMIN_KNOWLEDGEBASE_CATEGORIES_DELETE",
+      "node": "admin.knowledgebase.categories.delete",
+      "category": "Admin Knowledgebase Categories",
+      "description": "Delete knowledgebase categories"
+    },
+    {
+      "constant": "ADMIN_KNOWLEDGEBASE_ARTICLES_VIEW",
+      "node": "admin.knowledgebase.articles.view",
+      "category": "Admin Knowledgebase Articles",
+      "description": "View knowledgebase articles"
+    },
+    {
+      "constant": "ADMIN_KNOWLEDGEBASE_ARTICLES_CREATE",
+      "node": "admin.knowledgebase.articles.create",
+      "category": "Admin Knowledgebase Articles",
+      "description": "Create new knowledgebase articles"
+    },
+    {
+      "constant": "ADMIN_KNOWLEDGEBASE_ARTICLES_EDIT",
+      "node": "admin.knowledgebase.articles.edit",
+      "category": "Admin Knowledgebase Articles",
+      "description": "Edit existing knowledgebase articles"
+    },
+    {
+      "constant": "ADMIN_KNOWLEDGEBASE_ARTICLES_DELETE",
+      "node": "admin.knowledgebase.articles.delete",
+      "category": "Admin Knowledgebase Articles",
+      "description": "Delete knowledgebase articles"
+    },
+    {
+      "constant": "ADMIN_API_BYPASS_RESTRICTIONS",
+      "node": "admin.api.bypass_restrictions",
+      "category": "Admin API",
+      "description": "Bypass API rate limits and restrictions"
+    },
+    {
+      "constant": "ADMIN_TICKETS_VIEW",
+      "node": "admin.tickets.view",
+      "category": "Admin Tickets",
+      "description": "View support tickets"
+    },
+    {
+      "constant": "ADMIN_TICKETS_CREATE",
+      "node": "admin.tickets.create",
+      "category": "Admin Tickets",
+      "description": "Create support tickets"
+    },
+    {
+      "constant": "ADMIN_TICKETS_EDIT",
+      "node": "admin.tickets.edit",
+      "category": "Admin Tickets",
+      "description": "Edit support tickets"
+    },
+    {
+      "constant": "ADMIN_TICKETS_DELETE",
+      "node": "admin.tickets.delete",
+      "category": "Admin Tickets",
+      "description": "Delete support tickets"
+    },
+    {
+      "constant": "ADMIN_TICKETS_MANAGE",
+      "node": "admin.tickets.manage",
+      "category": "Admin Tickets",
+      "description": "Manage all aspects of support tickets"
+    },
+    {
+      "constant": "ADMIN_TICKET_CATEGORIES_VIEW",
+      "node": "admin.ticket_categories.view",
+      "category": "Admin Ticket Categories",
+      "description": "View ticket categories"
+    },
+    {
+      "constant": "ADMIN_TICKET_CATEGORIES_CREATE",
+      "node": "admin.ticket_categories.create",
+      "category": "Admin Ticket Categories",
+      "description": "Create ticket categories"
+    },
+    {
+      "constant": "ADMIN_TICKET_CATEGORIES_EDIT",
+      "node": "admin.ticket_categories.edit",
+      "category": "Admin Ticket Categories",
+      "description": "Edit ticket categories"
+    },
+    {
+      "constant": "ADMIN_TICKET_CATEGORIES_DELETE",
+      "node": "admin.ticket_categories.delete",
+      "category": "Admin Ticket Categories",
+      "description": "Delete ticket categories"
+    },
+    {
+      "constant": "ADMIN_TICKET_PRIORITIES_VIEW",
+      "node": "admin.ticket_priorities.view",
+      "category": "Admin Ticket Priorities",
+      "description": "View ticket priorities"
+    },
+    {
+      "constant": "ADMIN_TICKET_PRIORITIES_CREATE",
+      "node": "admin.ticket_priorities.create",
+      "category": "Admin Ticket Priorities",
+      "description": "Create ticket priorities"
+    },
+    {
+      "constant": "ADMIN_TICKET_PRIORITIES_EDIT",
+      "node": "admin.ticket_priorities.edit",
+      "category": "Admin Ticket Priorities",
+      "description": "Edit ticket priorities"
+    },
+    {
+      "constant": "ADMIN_TICKET_PRIORITIES_DELETE",
+      "node": "admin.ticket_priorities.delete",
+      "category": "Admin Ticket Priorities",
+      "description": "Delete ticket priorities"
+    },
+    {
+      "constant": "ADMIN_TICKET_STATUSES_VIEW",
+      "node": "admin.ticket_statuses.view",
+      "category": "Admin Ticket Statuses",
+      "description": "View ticket statuses"
+    },
+    {
+      "constant": "ADMIN_TICKET_STATUSES_CREATE",
+      "node": "admin.ticket_statuses.create",
+      "category": "Admin Ticket Statuses",
+      "description": "Create ticket statuses"
+    },
+    {
+      "constant": "ADMIN_TICKET_STATUSES_EDIT",
+      "node": "admin.ticket_statuses.edit",
+      "category": "Admin Ticket Statuses",
+      "description": "Edit ticket statuses"
+    },
+    {
+      "constant": "ADMIN_TICKET_STATUSES_DELETE",
+      "node": "admin.ticket_statuses.delete",
+      "category": "Admin Ticket Statuses",
+      "description": "Delete ticket statuses"
+    },
+    {
+      "constant": "ADMIN_TICKET_ATTACHMENTS_VIEW",
+      "node": "admin.ticket_attachments.view",
+      "category": "Admin Ticket Attachments",
+      "description": "View ticket attachments"
+    },
+    {
+      "constant": "ADMIN_TICKET_ATTACHMENTS_MANAGE",
+      "node": "admin.ticket_attachments.manage",
+      "category": "Admin Ticket Attachments",
+      "description": "Manage ticket attachments"
+    },
+    {
+      "constant": "ADMIN_TICKET_MESSAGES_VIEW",
+      "node": "admin.ticket_messages.view",
+      "category": "Admin Ticket Messages",
+      "description": "View ticket messages"
+    },
+    {
+      "constant": "ADMIN_TICKET_MESSAGES_MANAGE",
+      "node": "admin.ticket_messages.manage",
+      "category": "Admin Ticket Messages",
+      "description": "Manage ticket messages"
+    },
+    {
+      "constant": "ADMIN_VM_INSTANCES_VIEW",
+      "node": "admin.vm_instances.view",
+      "category": "Admin VM Instances",
+      "description": "View VM instances"
+    },
+    {
+      "constant": "ADMIN_VM_INSTANCES_EDIT",
+      "node": "admin.vm_instances.edit",
+      "category": "Admin VM Instances",
+      "description": "Edit existing VM instances"
+    },
+    {
+      "constant": "ADMIN_VM_INSTANCES_DELETE",
+      "node": "admin.vm_instances.delete",
+      "category": "Admin VM Instances",
+      "description": "Delete VM instances"
+    },
+    {
+      "constant": "ADMIN_WEBPLATES_VIEW",
+      "node": "admin.webplates.view",
+      "category": "Admin WebPlates",
+      "description": "View webplates"
+    },
+    {
+      "constant": "ADMIN_WEBPLATES_CREATE",
+      "node": "admin.webplates.create",
+      "category": "Admin WebPlates",
+      "description": "Create new webplates"
+    },
+    {
+      "constant": "ADMIN_WEBPLATES_EDIT",
+      "node": "admin.webplates.edit",
+      "category": "Admin WebPlates",
+      "description": "Edit existing webplates"
+    },
+    {
+      "constant": "ADMIN_WEBPLATES_DELETE",
+      "node": "admin.webplates.delete",
+      "category": "Admin WebPlates",
+      "description": "Delete webplates"
+    },
+    {
+      "constant": "ADMIN_WEBSPACES_VIEW",
+      "node": "admin.webspaces.view",
+      "category": "Admin WebSpaces",
+      "description": "View webspaces"
+    },
+    {
+      "constant": "ADMIN_WEBSPACES_CREATE",
+      "node": "admin.webspaces.create",
+      "category": "Admin WebSpaces",
+      "description": "Create new webspaces"
+    },
+    {
+      "constant": "ADMIN_WEBSPACES_EDIT",
+      "node": "admin.webspaces.edit",
+      "category": "Admin WebSpaces",
+      "description": "Edit existing webspaces"
+    },
+    {
+      "constant": "ADMIN_WEBSPACES_DELETE",
+      "node": "admin.webspaces.delete",
+      "category": "Admin WebSpaces",
+      "description": "Delete webspaces"
+    },
+    {
+      "constant": "ADMIN_WINGS_BACKUPS_VIEW",
+      "node": "admin.wings_backups.view",
+      "category": "Admin Wings Backups",
+      "description": "View Wings backups"
+    },
+    {
+      "constant": "ADMIN_WINGS_BACKUPS_MANAGE",
+      "node": "admin.wings_backups.manage",
+      "category": "Admin Wings Backups",
+      "description": "Manage Wings backup settings"
+    },
+    {
+      "constant": "ADMIN_WINGS_BACKUPS_RUN",
+      "node": "admin.wings_backups.run",
+      "category": "Admin Wings Backups",
+      "description": "Run or trigger Wings backups"
+    }
+  ]
+}

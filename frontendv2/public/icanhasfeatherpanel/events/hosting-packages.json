@@ -1,0 +1,49 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "HostingPackages",
+  "slug": "hosting-packages",
+  "total": 3,
+  "events": [
+    {
+      "name": "featherpanel:admin:hosting_packages:package:created",
+      "method": "onHostingPackageCreated",
+      "category": "HostingPackages",
+      "callback": "array package data.",
+      "emitted": true,
+      "data_keys": [
+        "package"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/HostingPackagesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:hosting_packages:package:deleted",
+      "method": "onHostingPackageDeleted",
+      "category": "HostingPackages",
+      "callback": "int package id, array package data.",
+      "emitted": true,
+      "data_keys": [
+        "package",
+        "package_id"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/HostingPackagesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:hosting_packages:package:updated",
+      "method": "onHostingPackageUpdated",
+      "category": "HostingPackages",
+      "callback": "int package id, array package data.",
+      "emitted": true,
+      "data_keys": [
+        "package",
+        "package_id"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/HostingPackagesController.php"
+      ]
+    }
+  ]
+}

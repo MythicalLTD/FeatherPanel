@@ -1,0 +1,13 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-servers-create",
+  "file_slug": "admin-servers-create",
+  "files": [
+    "src/app/(app)/admin/servers/create/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

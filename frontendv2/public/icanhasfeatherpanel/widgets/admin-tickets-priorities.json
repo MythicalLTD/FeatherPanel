@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-tickets-priorities",
+  "file_slug": "admin-tickets-priorities",
+  "files": [
+    "src/app/(app)/admin/tickets/priorities/page.tsx"
+  ],
+  "injection_points": [
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

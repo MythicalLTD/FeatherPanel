@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "webspace-file-editor",
+  "file_slug": "webspace-file-editor",
+  "files": [
+    "src/app/(app)/webspace/[uuidShort]/files/edit/page.tsx"
+  ],
+  "injection_points": [
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

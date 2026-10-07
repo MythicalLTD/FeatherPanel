@@ -121,10 +121,12 @@ Docker images for the backend, frontend, and async runner are published through 
 
 | Section | Contents |
 | --- | --- |
-| 🧩 **Widgets** | Injection points and widget slugs for plugin UI |
-| 🔐 **Permissions** | Every permission node from `permission_nodes.fpperm` |
-| 📡 **Events** | Plugin hooks and event payloads |
-| 🔌 **API reference** | Redoc UI backed by the generated OpenAPI spec |
+| 🧩 **Plugins** | Full Markdown guides for building addons (`conf.yml`, backend, frontend, SDK, packaging, AI recipes) |
+| 🧩 **Widgets** | Injection points as HTML + `.md` + `.json` |
+| 🔐 **Permissions** | Every permission node as HTML + `.md` + `.json` (`all.json`) |
+| 📡 **Events** | Plugin hooks as HTML + `.md` + `.json` (`all.json`) |
+| 🔌 **API reference** | Redoc UI + raw `openapi.json` |
+| 🧠 **RAG index** | `catalog.json` + `llms.txt` listing every machine-readable doc |
 | 🔑 **OAuth2 playground** | OAuth2 docs (live API calls still need a panel) |
 
 </details>
@@ -135,6 +137,18 @@ Docker images for the backend, frontend, and async runner are published through 
 <br />
 
 **https://mythicalltd.github.io/FeatherPanel/icanhasfeatherpanel/**
+
+Plugin authoring (Markdown + AI index):
+
+**https://mythicalltd.github.io/FeatherPanel/icanhasfeatherpanel/plugins/**
+
+RAG / machine-readable index:
+
+- **https://mythicalltd.github.io/FeatherPanel/icanhasfeatherpanel/rag/**
+- **https://mythicalltd.github.io/FeatherPanel/catalog.json**
+- **https://mythicalltd.github.io/FeatherPanel/llms.txt**
+
+Examples for crawlers: `…/permissions/all.json`, `…/events/all.json`, `…/widgets/index.json`, `…/api/openapi.json`, `…/plugins/ai-guide.md`.
 
 </details>
 
@@ -196,7 +210,7 @@ Optional environment variables for `build:public-docs`:
 </tr>
 <tr>
 <td><a href="workflows/docs-pages.yml">docs-pages.yml</a></td>
-<td>Builds icanhasfeatherpanel + OpenAPI and deploys to GitHub Pages</td>
+<td>Builds icanhasfeatherpanel (widgets, events, permissions, plugin Markdown docs) + OpenAPI and deploys to GitHub Pages</td>
 </tr>
 <tr>
 <td><a href="workflows/docker-dev.yml">docker-dev.yml</a></td>
@@ -226,20 +240,20 @@ Optional environment variables for `build:public-docs`:
 
 <!-- COUNT-STATS:START -->
 
-_Last updated: 2026-10-07T15:34:17.861Z_
+_Last updated: 2026-10-07T22:31:51.402Z_
 
 | Extension | Files | Lines |
 | --- | ---: | ---: |
-| `.php` | 712 | 180,381 |
-| `.tsx` | 554 | 164,652 |
+| `.php` | 733 | 184,508 |
+| `.tsx` | 569 | 168,464 |
 | `.ts` | 192 | 24,484 |
-| `.json` | 17 | 16,522 |
+| `.json` | 17 | 16,546 |
 | `.yaml` | 5 | 7,755 |
+| `.sql` | 211 | 3,428 |
 | `.rs` | 16 | 3,363 |
-| `.sql` | 208 | 3,238 |
-| `.yml` | 21 | 2,580 |
+| `.yml` | 21 | 2,581 |
 | `.css` | 5 | 609 |
-| **Total** | 1,730 | 403,584 |
+| **Total** | 1,769 | 411,738 |
 
 <!-- COUNT-STATS:END -->
 

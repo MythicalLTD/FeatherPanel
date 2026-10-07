@@ -1,0 +1,539 @@
+{
+  "type": "featherpanel.events.index",
+  "total": 465,
+  "emitted": 358,
+  "defined_only": 107,
+  "categories": [
+    {
+      "name": "Allocations",
+      "slug": "allocations",
+      "total": 7,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/allocations.html",
+      "markdown": "/icanhasfeatherpanel/events/allocations.md",
+      "json": "/icanhasfeatherpanel/events/allocations.json"
+    },
+    {
+      "name": "App",
+      "slug": "app",
+      "total": 1,
+      "emitted": 1,
+      "html": "/icanhasfeatherpanel/events/app.html",
+      "markdown": "/icanhasfeatherpanel/events/app.md",
+      "json": "/icanhasfeatherpanel/events/app.json"
+    },
+    {
+      "name": "Auth",
+      "slug": "auth",
+      "total": 18,
+      "emitted": 18,
+      "html": "/icanhasfeatherpanel/events/auth.html",
+      "markdown": "/icanhasfeatherpanel/events/auth.md",
+      "json": "/icanhasfeatherpanel/events/auth.json"
+    },
+    {
+      "name": "BackupPolicy",
+      "slug": "backup-policy",
+      "total": 5,
+      "emitted": 5,
+      "html": "/icanhasfeatherpanel/events/backup-policy.html",
+      "markdown": "/icanhasfeatherpanel/events/backup-policy.md",
+      "json": "/icanhasfeatherpanel/events/backup-policy.json"
+    },
+    {
+      "name": "Chatbot",
+      "slug": "chatbot",
+      "total": 2,
+      "emitted": 2,
+      "html": "/icanhasfeatherpanel/events/chatbot.html",
+      "markdown": "/icanhasfeatherpanel/events/chatbot.md",
+      "json": "/icanhasfeatherpanel/events/chatbot.json"
+    },
+    {
+      "name": "CloudManagement",
+      "slug": "cloud-management",
+      "total": 5,
+      "emitted": 4,
+      "html": "/icanhasfeatherpanel/events/cloud-management.html",
+      "markdown": "/icanhasfeatherpanel/events/cloud-management.md",
+      "json": "/icanhasfeatherpanel/events/cloud-management.json"
+    },
+    {
+      "name": "CloudPlugins",
+      "slug": "cloud-plugins",
+      "total": 2,
+      "emitted": 1,
+      "html": "/icanhasfeatherpanel/events/cloud-plugins.html",
+      "markdown": "/icanhasfeatherpanel/events/cloud-plugins.md",
+      "json": "/icanhasfeatherpanel/events/cloud-plugins.json"
+    },
+    {
+      "name": "Console",
+      "slug": "console",
+      "total": 3,
+      "emitted": 1,
+      "html": "/icanhasfeatherpanel/events/console.html",
+      "markdown": "/icanhasfeatherpanel/events/console.md",
+      "json": "/icanhasfeatherpanel/events/console.json"
+    },
+    {
+      "name": "DatabaseManagement",
+      "slug": "database-management",
+      "total": 3,
+      "emitted": 1,
+      "html": "/icanhasfeatherpanel/events/database-management.html",
+      "markdown": "/icanhasfeatherpanel/events/database-management.md",
+      "json": "/icanhasfeatherpanel/events/database-management.json"
+    },
+    {
+      "name": "DatabaseSnapshots",
+      "slug": "database-snapshots",
+      "total": 4,
+      "emitted": 4,
+      "html": "/icanhasfeatherpanel/events/database-snapshots.html",
+      "markdown": "/icanhasfeatherpanel/events/database-snapshots.md",
+      "json": "/icanhasfeatherpanel/events/database-snapshots.json"
+    },
+    {
+      "name": "Databases",
+      "slug": "databases",
+      "total": 11,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/databases.html",
+      "markdown": "/icanhasfeatherpanel/events/databases.md",
+      "json": "/icanhasfeatherpanel/events/databases.json"
+    },
+    {
+      "name": "DnsHosts",
+      "slug": "dns-hosts",
+      "total": 3,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/dns-hosts.html",
+      "markdown": "/icanhasfeatherpanel/events/dns-hosts.md",
+      "json": "/icanhasfeatherpanel/events/dns-hosts.json"
+    },
+    {
+      "name": "FeatherZeroTrust",
+      "slug": "feather-zero-trust",
+      "total": 7,
+      "emitted": 4,
+      "html": "/icanhasfeatherpanel/events/feather-zero-trust.html",
+      "markdown": "/icanhasfeatherpanel/events/feather-zero-trust.md",
+      "json": "/icanhasfeatherpanel/events/feather-zero-trust.json"
+    },
+    {
+      "name": "FileManager",
+      "slug": "file-manager",
+      "total": 6,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/file-manager.html",
+      "markdown": "/icanhasfeatherpanel/events/file-manager.md",
+      "json": "/icanhasfeatherpanel/events/file-manager.json"
+    },
+    {
+      "name": "HostingPackages",
+      "slug": "hosting-packages",
+      "total": 3,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/hosting-packages.html",
+      "markdown": "/icanhasfeatherpanel/events/hosting-packages.md",
+      "json": "/icanhasfeatherpanel/events/hosting-packages.json"
+    },
+    {
+      "name": "Images",
+      "slug": "images",
+      "total": 7,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/images.html",
+      "markdown": "/icanhasfeatherpanel/events/images.md",
+      "json": "/icanhasfeatherpanel/events/images.json"
+    },
+    {
+      "name": "Knowledgebase",
+      "slug": "knowledgebase",
+      "total": 23,
+      "emitted": 23,
+      "html": "/icanhasfeatherpanel/events/knowledgebase.html",
+      "markdown": "/icanhasfeatherpanel/events/knowledgebase.md",
+      "json": "/icanhasfeatherpanel/events/knowledgebase.json"
+    },
+    {
+      "name": "LdapProviders",
+      "slug": "ldap-providers",
+      "total": 3,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/ldap-providers.html",
+      "markdown": "/icanhasfeatherpanel/events/ldap-providers.md",
+      "json": "/icanhasfeatherpanel/events/ldap-providers.json"
+    },
+    {
+      "name": "Locations",
+      "slug": "locations",
+      "total": 7,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/locations.html",
+      "markdown": "/icanhasfeatherpanel/events/locations.md",
+      "json": "/icanhasfeatherpanel/events/locations.json"
+    },
+    {
+      "name": "LogViewer",
+      "slug": "log-viewer",
+      "total": 4,
+      "emitted": 2,
+      "html": "/icanhasfeatherpanel/events/log-viewer.html",
+      "markdown": "/icanhasfeatherpanel/events/log-viewer.md",
+      "json": "/icanhasfeatherpanel/events/log-viewer.json"
+    },
+    {
+      "name": "MailHosts",
+      "slug": "mail-hosts",
+      "total": 3,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/mail-hosts.html",
+      "markdown": "/icanhasfeatherpanel/events/mail-hosts.md",
+      "json": "/icanhasfeatherpanel/events/mail-hosts.json"
+    },
+    {
+      "name": "MailTemplates",
+      "slug": "mail-templates",
+      "total": 7,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/mail-templates.html",
+      "markdown": "/icanhasfeatherpanel/events/mail-templates.md",
+      "json": "/icanhasfeatherpanel/events/mail-templates.json"
+    },
+    {
+      "name": "Mounts",
+      "slug": "mounts",
+      "total": 3,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/mounts.html",
+      "markdown": "/icanhasfeatherpanel/events/mounts.md",
+      "json": "/icanhasfeatherpanel/events/mounts.json"
+    },
+    {
+      "name": "Nodes",
+      "slug": "nodes",
+      "total": 9,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/nodes.html",
+      "markdown": "/icanhasfeatherpanel/events/nodes.md",
+      "json": "/icanhasfeatherpanel/events/nodes.json"
+    },
+    {
+      "name": "Notifications",
+      "slug": "notifications",
+      "total": 8,
+      "emitted": 7,
+      "html": "/icanhasfeatherpanel/events/notifications.html",
+      "markdown": "/icanhasfeatherpanel/events/notifications.md",
+      "json": "/icanhasfeatherpanel/events/notifications.json"
+    },
+    {
+      "name": "OidcProviders",
+      "slug": "oidc-providers",
+      "total": 3,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/oidc-providers.html",
+      "markdown": "/icanhasfeatherpanel/events/oidc-providers.md",
+      "json": "/icanhasfeatherpanel/events/oidc-providers.json"
+    },
+    {
+      "name": "Passkeys",
+      "slug": "passkeys",
+      "total": 5,
+      "emitted": 5,
+      "html": "/icanhasfeatherpanel/events/passkeys.html",
+      "markdown": "/icanhasfeatherpanel/events/passkeys.md",
+      "json": "/icanhasfeatherpanel/events/passkeys.json"
+    },
+    {
+      "name": "Permissions",
+      "slug": "permissions",
+      "total": 7,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/permissions.html",
+      "markdown": "/icanhasfeatherpanel/events/permissions.md",
+      "json": "/icanhasfeatherpanel/events/permissions.json"
+    },
+    {
+      "name": "PluginManager",
+      "slug": "plugin-manager",
+      "total": 5,
+      "emitted": 4,
+      "html": "/icanhasfeatherpanel/events/plugin-manager.html",
+      "markdown": "/icanhasfeatherpanel/events/plugin-manager.md",
+      "json": "/icanhasfeatherpanel/events/plugin-manager.json"
+    },
+    {
+      "name": "PluginUi",
+      "slug": "plugin-ui",
+      "total": 7,
+      "emitted": 7,
+      "html": "/icanhasfeatherpanel/events/plugin-ui.html",
+      "markdown": "/icanhasfeatherpanel/events/plugin-ui.md",
+      "json": "/icanhasfeatherpanel/events/plugin-ui.json"
+    },
+    {
+      "name": "PluginsSettings",
+      "slug": "plugins-settings",
+      "total": 2,
+      "emitted": 2,
+      "html": "/icanhasfeatherpanel/events/plugins-settings.html",
+      "markdown": "/icanhasfeatherpanel/events/plugins-settings.md",
+      "json": "/icanhasfeatherpanel/events/plugins-settings.json"
+    },
+    {
+      "name": "Quilld",
+      "slug": "quilld",
+      "total": 8,
+      "emitted": 8,
+      "html": "/icanhasfeatherpanel/events/quilld.html",
+      "markdown": "/icanhasfeatherpanel/events/quilld.md",
+      "json": "/icanhasfeatherpanel/events/quilld.json"
+    },
+    {
+      "name": "RateLimiter",
+      "slug": "rate-limiter",
+      "total": 4,
+      "emitted": 4,
+      "html": "/icanhasfeatherpanel/events/rate-limiter.html",
+      "markdown": "/icanhasfeatherpanel/events/rate-limiter.md",
+      "json": "/icanhasfeatherpanel/events/rate-limiter.json"
+    },
+    {
+      "name": "Realms",
+      "slug": "realms",
+      "total": 7,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/realms.html",
+      "markdown": "/icanhasfeatherpanel/events/realms.md",
+      "json": "/icanhasfeatherpanel/events/realms.json"
+    },
+    {
+      "name": "RedirectLinks",
+      "slug": "redirect-links",
+      "total": 7,
+      "emitted": 7,
+      "html": "/icanhasfeatherpanel/events/redirect-links.html",
+      "markdown": "/icanhasfeatherpanel/events/redirect-links.md",
+      "json": "/icanhasfeatherpanel/events/redirect-links.json"
+    },
+    {
+      "name": "Roles",
+      "slug": "roles",
+      "total": 7,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/roles.html",
+      "markdown": "/icanhasfeatherpanel/events/roles.md",
+      "json": "/icanhasfeatherpanel/events/roles.json"
+    },
+    {
+      "name": "Server",
+      "slug": "server",
+      "total": 51,
+      "emitted": 35,
+      "html": "/icanhasfeatherpanel/events/server.html",
+      "markdown": "/icanhasfeatherpanel/events/server.md",
+      "json": "/icanhasfeatherpanel/events/server.json"
+    },
+    {
+      "name": "ServerAllocation",
+      "slug": "server-allocation",
+      "total": 3,
+      "emitted": 2,
+      "html": "/icanhasfeatherpanel/events/server-allocation.html",
+      "markdown": "/icanhasfeatherpanel/events/server-allocation.md",
+      "json": "/icanhasfeatherpanel/events/server-allocation.json"
+    },
+    {
+      "name": "ServerBackup",
+      "slug": "server-backup",
+      "total": 5,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/server-backup.html",
+      "markdown": "/icanhasfeatherpanel/events/server-backup.md",
+      "json": "/icanhasfeatherpanel/events/server-backup.json"
+    },
+    {
+      "name": "ServerDatabase",
+      "slug": "server-database",
+      "total": 4,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/server-database.html",
+      "markdown": "/icanhasfeatherpanel/events/server-database.md",
+      "json": "/icanhasfeatherpanel/events/server-database.json"
+    },
+    {
+      "name": "ServerFiles",
+      "slug": "server-files",
+      "total": 7,
+      "emitted": 6,
+      "html": "/icanhasfeatherpanel/events/server-files.html",
+      "markdown": "/icanhasfeatherpanel/events/server-files.md",
+      "json": "/icanhasfeatherpanel/events/server-files.json"
+    },
+    {
+      "name": "ServerProxy",
+      "slug": "server-proxy",
+      "total": 2,
+      "emitted": 2,
+      "html": "/icanhasfeatherpanel/events/server-proxy.html",
+      "markdown": "/icanhasfeatherpanel/events/server-proxy.md",
+      "json": "/icanhasfeatherpanel/events/server-proxy.json"
+    },
+    {
+      "name": "ServerSchedule",
+      "slug": "server-schedule",
+      "total": 5,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/server-schedule.html",
+      "markdown": "/icanhasfeatherpanel/events/server-schedule.md",
+      "json": "/icanhasfeatherpanel/events/server-schedule.json"
+    },
+    {
+      "name": "ServerSubuser",
+      "slug": "server-subuser",
+      "total": 4,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/server-subuser.html",
+      "markdown": "/icanhasfeatherpanel/events/server-subuser.md",
+      "json": "/icanhasfeatherpanel/events/server-subuser.json"
+    },
+    {
+      "name": "ServerTask",
+      "slug": "server-task",
+      "total": 5,
+      "emitted": 4,
+      "html": "/icanhasfeatherpanel/events/server-task.html",
+      "markdown": "/icanhasfeatherpanel/events/server-task.md",
+      "json": "/icanhasfeatherpanel/events/server-task.json"
+    },
+    {
+      "name": "ServerUser",
+      "slug": "server-user",
+      "total": 3,
+      "emitted": 1,
+      "html": "/icanhasfeatherpanel/events/server-user.html",
+      "markdown": "/icanhasfeatherpanel/events/server-user.md",
+      "json": "/icanhasfeatherpanel/events/server-user.json"
+    },
+    {
+      "name": "Settings",
+      "slug": "settings",
+      "total": 7,
+      "emitted": 4,
+      "html": "/icanhasfeatherpanel/events/settings.html",
+      "markdown": "/icanhasfeatherpanel/events/settings.md",
+      "json": "/icanhasfeatherpanel/events/settings.json"
+    },
+    {
+      "name": "Spells",
+      "slug": "spells",
+      "total": 15,
+      "emitted": 7,
+      "html": "/icanhasfeatherpanel/events/spells.html",
+      "markdown": "/icanhasfeatherpanel/events/spells.md",
+      "json": "/icanhasfeatherpanel/events/spells.json"
+    },
+    {
+      "name": "Subdomains",
+      "slug": "subdomains",
+      "total": 10,
+      "emitted": 9,
+      "html": "/icanhasfeatherpanel/events/subdomains.html",
+      "markdown": "/icanhasfeatherpanel/events/subdomains.md",
+      "json": "/icanhasfeatherpanel/events/subdomains.json"
+    },
+    {
+      "name": "Ticket",
+      "slug": "ticket",
+      "total": 21,
+      "emitted": 20,
+      "html": "/icanhasfeatherpanel/events/ticket.html",
+      "markdown": "/icanhasfeatherpanel/events/ticket.md",
+      "json": "/icanhasfeatherpanel/events/ticket.json"
+    },
+    {
+      "name": "User",
+      "slug": "user",
+      "total": 10,
+      "emitted": 4,
+      "html": "/icanhasfeatherpanel/events/user.html",
+      "markdown": "/icanhasfeatherpanel/events/user.md",
+      "json": "/icanhasfeatherpanel/events/user.json"
+    },
+    {
+      "name": "UserApiClient",
+      "slug": "user-api-client",
+      "total": 4,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/user-api-client.html",
+      "markdown": "/icanhasfeatherpanel/events/user-api-client.md",
+      "json": "/icanhasfeatherpanel/events/user-api-client.json"
+    },
+    {
+      "name": "UserSshKey",
+      "slug": "user-ssh-key",
+      "total": 4,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/user-ssh-key.html",
+      "markdown": "/icanhasfeatherpanel/events/user-ssh-key.md",
+      "json": "/icanhasfeatherpanel/events/user-ssh-key.json"
+    },
+    {
+      "name": "Vds",
+      "slug": "vds",
+      "total": 17,
+      "emitted": 17,
+      "html": "/icanhasfeatherpanel/events/vds.html",
+      "markdown": "/icanhasfeatherpanel/events/vds.md",
+      "json": "/icanhasfeatherpanel/events/vds.json"
+    },
+    {
+      "name": "VdsNode",
+      "slug": "vds-node",
+      "total": 10,
+      "emitted": 10,
+      "html": "/icanhasfeatherpanel/events/vds-node.html",
+      "markdown": "/icanhasfeatherpanel/events/vds-node.md",
+      "json": "/icanhasfeatherpanel/events/vds-node.json"
+    },
+    {
+      "name": "WebNode",
+      "slug": "web-node",
+      "total": 4,
+      "emitted": 4,
+      "html": "/icanhasfeatherpanel/events/web-node.html",
+      "markdown": "/icanhasfeatherpanel/events/web-node.md",
+      "json": "/icanhasfeatherpanel/events/web-node.json"
+    },
+    {
+      "name": "WebPlates",
+      "slug": "web-plates",
+      "total": 3,
+      "emitted": 3,
+      "html": "/icanhasfeatherpanel/events/web-plates.html",
+      "markdown": "/icanhasfeatherpanel/events/web-plates.md",
+      "json": "/icanhasfeatherpanel/events/web-plates.json"
+    },
+    {
+      "name": "WebSpace",
+      "slug": "web-space",
+      "total": 33,
+      "emitted": 32,
+      "html": "/icanhasfeatherpanel/events/web-space.html",
+      "markdown": "/icanhasfeatherpanel/events/web-space.md",
+      "json": "/icanhasfeatherpanel/events/web-space.json"
+    },
+    {
+      "name": "Wings",
+      "slug": "wings",
+      "total": 22,
+      "emitted": 22,
+      "html": "/icanhasfeatherpanel/events/wings.html",
+      "markdown": "/icanhasfeatherpanel/events/wings.md",
+      "json": "/icanhasfeatherpanel/events/wings.json"
+    }
+  ]
+}

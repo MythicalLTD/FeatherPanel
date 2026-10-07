@@ -1,0 +1,121 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "Quilld",
+  "slug": "quilld",
+  "total": 8,
+  "events": [
+    {
+      "name": "featherpanel:quilld:activity:logged",
+      "method": "onQuilldActivityLogged",
+      "category": "Quilld",
+      "callback": "array activity.",
+      "emitted": true,
+      "data_keys": [
+        "processed_count"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Quilld/QuilldActivityController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:quilld:config:retrieved",
+      "method": "onQuilldConfigRetrieved",
+      "category": "Quilld",
+      "callback": "array config.",
+      "emitted": true,
+      "data_keys": [
+        "panel_url",
+        "web_node_id"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Quilld/FeatherQuilldConfigController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:quilld:install:completed",
+      "method": "onQuilldInstallCompleted",
+      "category": "Quilld",
+      "callback": "array webspace.",
+      "emitted": true,
+      "data_keys": [
+        "reinstall",
+        "status",
+        "successful",
+        "webspace"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Quilld/FeatherQuilldWebSpaceController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:quilld:install:retrieved",
+      "method": "onQuilldInstallRetrieved",
+      "category": "Quilld",
+      "callback": "array webspace, array install.",
+      "emitted": true,
+      "data_keys": [
+        "install",
+        "webspace"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Quilld/FeatherQuilldWebSpaceController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:quilld:sftp:authenticated",
+      "method": "onQuilldSftpAuthenticated",
+      "category": "Quilld",
+      "callback": "array auth context.",
+      "emitted": true,
+      "data_keys": [
+        "permissions",
+        "user_uuid",
+        "webspace_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Quilld/Sftp/SftpAuthController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:quilld:transfer:status",
+      "method": "onQuilldTransferStatusReported",
+      "category": "Quilld",
+      "callback": "array transfer.",
+      "emitted": true,
+      "data_keys": [
+        "error",
+        "successful",
+        "webspace_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Quilld/FeatherQuilldTransferController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:quilld:webspace:retrieved",
+      "method": "onQuilldWebSpaceRetrieved",
+      "category": "Quilld",
+      "callback": "array webspace.",
+      "emitted": true,
+      "data_keys": [
+        "webspace"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Quilld/FeatherQuilldWebSpaceController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:quilld:webspace:updated",
+      "method": "onQuilldWebSpaceUpdated",
+      "category": "Quilld",
+      "callback": "array webspace.",
+      "emitted": true,
+      "data_keys": [
+        "webspace"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Quilld/FeatherQuilldWebSpaceController.php"
+      ]
+    }
+  ]
+}

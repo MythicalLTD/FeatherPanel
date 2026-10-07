@@ -25,11 +25,12 @@
 		"translations:add": "node scripts/add-translation.js",
 		"scan:translations:unused": "node scripts/scan-unused-translations.js",
 		"fix:translations": "node scripts/fix-translation-placeholders.js",
-		"export:docs": "run-s export:docs:widgets export:docs:permissions export:docs:events export:docs:api",
+		"export:docs": "run-s export:docs:widgets export:docs:permissions export:docs:events export:docs:api export:docs:catalog",
 		"export:docs:widgets": "node scripts/export-widget-docs.js",
 		"export:docs:permissions": "node scripts/export-permissions-docs.js",
 		"export:docs:events": "node scripts/export-events-docs.js",
 		"export:docs:api": "node scripts/export-api-docs.js",
+		"export:docs:catalog": "node scripts/export-catalog-docs.mjs",
 		"build:public-docs": "node scripts/build-public-docs.mjs"
 	},
 	"dependencies": {
@@ -107,5 +108,5 @@
 		"tailwindcss": "^4",
 		"typescript": "^7.0.2"
 	},
-	"packageManager": "pnpm@12.9.1"
+	"packageManager": "pnpm@12.10.1"
 }

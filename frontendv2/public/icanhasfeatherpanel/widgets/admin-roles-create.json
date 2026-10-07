@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-roles-create",
+  "file_slug": "admin-roles-create",
+  "files": [
+    "src/app/(app)/admin/roles/create/page.tsx"
+  ],
+  "injection_points": [
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

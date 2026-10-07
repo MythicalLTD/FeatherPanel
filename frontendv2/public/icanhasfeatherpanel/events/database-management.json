@@ -1,0 +1,43 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "DatabaseManagement",
+  "slug": "database-management",
+  "total": 3,
+  "events": [
+    {
+      "name": "featherpanel:admin:database_management:error",
+      "method": "onDatabaseManagementError",
+      "category": "DatabaseManagement",
+      "callback": "string error message, array context.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:admin:database_management:migrations:executed",
+      "method": "onMigrationsExecuted",
+      "category": "DatabaseManagement",
+      "callback": "array migration results.",
+      "emitted": true,
+      "data_keys": [
+        "executed",
+        "executed_by",
+        "failed",
+        "skipped",
+        "total_time"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/DatabaseManagmentController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:admin:database_management:status:retrieved",
+      "method": "onStatusRetrieved",
+      "category": "DatabaseManagement",
+      "callback": "array status data.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    }
+  ]
+}

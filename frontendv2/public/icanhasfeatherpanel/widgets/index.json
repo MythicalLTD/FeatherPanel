@@ -1,0 +1,1885 @@
+{
+  "type": "featherpanel.widgets.index",
+  "total": 155,
+  "widgets": [
+    {
+      "slug": "admin-ai-agent",
+      "file_slug": "admin-ai-agent",
+      "files": [
+        "src/app/(app)/admin/featherpanel-ai-agent/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-content",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-analytics",
+      "file_slug": "admin-analytics",
+      "files": [
+        "src/app/(app)/admin/analytics/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-analytics-activity",
+      "file_slug": "admin-analytics-activity",
+      "files": [
+        "src/app/(app)/admin/analytics/activity/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-analytics-content",
+      "file_slug": "admin-analytics-content",
+      "files": [
+        "src/app/(app)/admin/analytics/content/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-analytics-infrastructure",
+      "file_slug": "admin-analytics-infrastructure",
+      "files": [
+        "src/app/(app)/admin/analytics/infrastructure/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-analytics-knowledgebase",
+      "file_slug": "admin-analytics-knowledgebase",
+      "files": [
+        "src/app/(app)/admin/analytics/knowledgebase/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-analytics-plugins",
+      "file_slug": "admin-analytics-plugins",
+      "files": [
+        "src/app/(app)/admin/analytics/plugins/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-analytics-servers",
+      "file_slug": "admin-analytics-servers",
+      "files": [
+        "src/app/(app)/admin/analytics/servers/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-analytics-system",
+      "file_slug": "admin-analytics-system",
+      "files": [
+        "src/app/(app)/admin/analytics/system/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-analytics-tickets",
+      "file_slug": "admin-analytics-tickets",
+      "files": [
+        "src/app/(app)/admin/analytics/tickets/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-analytics-users",
+      "file_slug": "admin-analytics-users",
+      "files": [
+        "src/app/(app)/admin/analytics/users/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-analytics-vds",
+      "file_slug": "admin-analytics-vds",
+      "files": [
+        "src/app/(app)/admin/analytics/vds/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-api-keys",
+      "file_slug": "admin-api-keys",
+      "files": [
+        "src/app/(app)/admin/api-keys/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-databases-management",
+      "file_slug": "admin-databases-management",
+      "files": [
+        "src/app/(app)/admin/databases/management/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-dev-console",
+      "file_slug": "admin-dev-console",
+      "files": [
+        "src/app/(app)/admin/dev/console/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-dev-logs-redirect",
+      "file_slug": "admin-dev-logs-redirect",
+      "files": [
+        "src/app/(app)/admin/dev/logs/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-dev-plugins",
+      "file_slug": "admin-dev-plugins",
+      "files": [
+        "src/app/(app)/admin/dev/plugins/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-dev-plugins-create",
+      "file_slug": "admin-dev-plugins-create",
+      "files": [
+        "src/app/(app)/admin/dev/plugins/create/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-dev-plugins-edit",
+      "file_slug": "admin-dev-plugins-edit",
+      "files": [
+        "src/app/(app)/admin/dev/plugins/[identifier]/edit/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-feathercloud-marketplace",
+      "file_slug": "admin-feathercloud-marketplace",
+      "files": [
+        "src/app/(app)/admin/feathercloud/marketplace/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-content",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-feathercloud-spells",
+      "file_slug": "admin-feathercloud-spells",
+      "files": [
+        "src/app/(app)/admin/feathercloud/spells/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-content",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-featherzerotrust",
+      "file_slug": "admin-featherzerotrust",
+      "files": [
+        "src/app/(app)/admin/featherzerotrust/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-home",
+      "file_slug": "admin-home",
+      "files": [
+        "src/app/(app)/admin/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "after-widgets-grid",
+        "before-widgets-grid",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-images",
+      "file_slug": "admin-images",
+      "files": [
+        "src/app/(app)/admin/images/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-knowledgebase-article-edit",
+      "file_slug": "admin-knowledgebase-article-edit",
+      "files": [
+        "src/app/(app)/admin/knowledgebase/articles/[id]/edit/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-content",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-knowledgebase-categories",
+      "file_slug": "admin-knowledgebase-categories",
+      "files": [
+        "src/app/(app)/admin/knowledgebase/categories/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-knowledgebase-category-articles",
+      "file_slug": "admin-knowledgebase-category-articles",
+      "files": [
+        "src/app/(app)/admin/knowledgebase/categories/[id]/articles/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-ldap-providers",
+      "file_slug": "admin-ldap-providers",
+      "files": [
+        "src/app/(app)/admin/ldap-providers/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-locations",
+      "file_slug": "admin-locations",
+      "files": [
+        "src/app/(app)/admin/locations/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-logs",
+      "file_slug": "admin-logs",
+      "files": [
+        "src/app/(app)/admin/logs/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-mail-templates",
+      "file_slug": "admin-mail-templates",
+      "files": [
+        "src/app/(app)/admin/mail-templates/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-mounts",
+      "file_slug": "admin-mounts",
+      "files": [
+        "src/app/(app)/admin/mounts/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-node-databases",
+      "file_slug": "admin-node-databases",
+      "files": [
+        "src/app/(app)/admin/databases/nodes/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-node-databases-id",
+      "file_slug": "admin-node-databases-id",
+      "files": [
+        "src/app/(app)/admin/nodes/[id]/databases/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-nodes",
+      "file_slug": "admin-nodes",
+      "files": [
+        "src/app/(app)/admin/nodes/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-nodes-create",
+      "file_slug": "admin-nodes-create",
+      "files": [
+        "src/app/(app)/admin/nodes/create/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-nodes-edit",
+      "file_slug": "admin-nodes-edit",
+      "files": [
+        "src/app/(app)/admin/nodes/[id]/edit/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-nodes-status",
+      "file_slug": "admin-nodes-status",
+      "files": [
+        "src/app/(app)/admin/nodes/status/page.tsx"
+      ],
+      "injection_points": [
+        "after-global-stats",
+        "after-header",
+        "after-individual-nodes",
+        "after-resource-usage",
+        "before-global-stats",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-notifications",
+      "file_slug": "admin-notifications",
+      "files": [
+        "src/app/(app)/admin/notifications/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-oidc-providers",
+      "file_slug": "admin-oidc-providers",
+      "files": [
+        "src/app/(app)/admin/oidc-providers/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-plugin-page",
+      "file_slug": "admin-plugin-page",
+      "files": [
+        "src/app/(app)/admin/[...pluginPath]/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-plugins",
+      "file_slug": "admin-plugins",
+      "files": [
+        "src/app/(app)/admin/plugins/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-pterodactyl-importer",
+      "file_slug": "admin-pterodactyl-importer",
+      "files": [
+        "src/app/(app)/admin/pterodactyl-importer/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-content",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-rate-limits",
+      "file_slug": "admin-rate-limits",
+      "files": [
+        "src/app/(app)/admin/rate-limits/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-realms",
+      "file_slug": "admin-realms",
+      "files": [
+        "src/app/(app)/admin/realms/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-roles",
+      "file_slug": "admin-roles",
+      "files": [
+        "src/app/(app)/admin/roles/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-roles-create",
+      "file_slug": "admin-roles-create",
+      "files": [
+        "src/app/(app)/admin/roles/create/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-roles-edit",
+      "file_slug": "admin-roles-edit",
+      "files": [
+        "src/app/(app)/admin/roles/[id]/edit/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-servers",
+      "file_slug": "admin-servers",
+      "files": [
+        "src/app/(app)/admin/servers/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-servers-create",
+      "file_slug": "admin-servers-create",
+      "files": [
+        "src/app/(app)/admin/servers/create/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-servers-edit",
+      "file_slug": "admin-servers-edit",
+      "files": [
+        "src/app/(app)/admin/servers/[id]/edit/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-settings",
+      "file_slug": "admin-settings",
+      "files": [
+        "src/app/(app)/admin/settings/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-spells",
+      "file_slug": "admin-spells",
+      "files": [
+        "src/app/(app)/admin/spells/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-spells-create",
+      "file_slug": "admin-spells-create",
+      "files": [
+        "src/app/(app)/admin/spells/create/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-spells-edit",
+      "file_slug": "admin-spells-edit",
+      "files": [
+        "src/app/(app)/admin/spells/[id]/edit/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-storage-sense",
+      "file_slug": "admin-storage-sense",
+      "files": [
+        "src/app/(app)/admin/storage-sense/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-subdomains",
+      "file_slug": "admin-subdomains",
+      "files": [
+        "src/app/(app)/admin/subdomains/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-tickets",
+      "file_slug": "admin-tickets",
+      "files": [
+        "src/app/(app)/admin/tickets/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-tickets-categories",
+      "file_slug": "admin-tickets-categories",
+      "files": [
+        "src/app/(app)/admin/tickets/categories/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-tickets-priorities",
+      "file_slug": "admin-tickets-priorities",
+      "files": [
+        "src/app/(app)/admin/tickets/priorities/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-tickets-statuses",
+      "file_slug": "admin-tickets-statuses",
+      "files": [
+        "src/app/(app)/admin/tickets/statuses/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-tickets-view",
+      "file_slug": "admin-tickets-view",
+      "files": [
+        "src/app/(app)/admin/tickets/[uuid]/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "after-messages",
+        "sidebar-bottom",
+        "sidebar-top",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-translations",
+      "file_slug": "admin-translations",
+      "files": [
+        "src/app/(app)/admin/translations/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-users",
+      "file_slug": "admin-users",
+      "files": [
+        "src/app/(app)/admin/users/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-users-create",
+      "file_slug": "admin-users-create",
+      "files": [
+        "src/app/(app)/admin/users/create/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-users-edit",
+      "file_slug": "admin-users-edit",
+      "files": [
+        "src/app/(app)/admin/users/[uuid]/edit/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-users-servers",
+      "file_slug": "admin-users-servers",
+      "files": [
+        "src/app/(app)/admin/users/[uuid]/servers/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-vds-node-edit",
+      "file_slug": "admin-vds-node-edit",
+      "files": [
+        "src/app/(app)/admin/vds-nodes/[id]/edit/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-vds-nodes-create",
+      "file_slug": "admin-vds-nodes-create",
+      "files": [
+        "src/app/(app)/admin/vds-nodes/create/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-vm-instance-edit",
+      "file_slug": "admin-vm-instance-edit",
+      "files": [
+        "src/app/(app)/admin/vm-instances/[id]/edit/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-vm-instances",
+      "file_slug": "admin-vm-instances",
+      "files": [
+        "src/app/(app)/admin/vm-instances/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-vm-instances-create",
+      "file_slug": "admin-vm-instances-create",
+      "files": [
+        "src/app/(app)/admin/vm-instances/create/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-vm-nodes",
+      "file_slug": "admin-vm-nodes",
+      "files": [
+        "src/app/(app)/admin/vds-nodes/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-web-node-edit",
+      "file_slug": "admin-web-node-edit",
+      "files": [
+        "src/app/(app)/admin/web-nodes/[id]/edit/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-web-nodes",
+      "file_slug": "admin-web-nodes",
+      "files": [
+        "src/app/(app)/admin/web-nodes/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-web-nodes-create",
+      "file_slug": "admin-web-nodes-create",
+      "files": [
+        "src/app/(app)/admin/web-nodes/create/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-webplates",
+      "file_slug": "admin-webplates",
+      "files": [
+        "src/app/(app)/admin/webplates/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-webplates-create",
+      "file_slug": "admin-webplates-create",
+      "files": [
+        "src/app/(app)/admin/webplates/create/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-webplates-edit",
+      "file_slug": "admin-webplates-edit",
+      "files": [
+        "src/app/(app)/admin/webplates/[id]/edit/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "admin-webspaces",
+      "file_slug": "admin-webspaces",
+      "files": [
+        "src/app/(app)/admin/webspaces/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "before-list",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "auth-forgot-password",
+      "file_slug": "auth-forgot-password",
+      "files": [
+        "src/app/(app)/auth/forgot-password/ForgotPasswordForm.tsx"
+      ],
+      "injection_points": [
+        "auth-forgot-password-after-form",
+        "auth-forgot-password-before-form",
+        "auth-forgot-password-bottom",
+        "auth-forgot-password-top"
+      ]
+    },
+    {
+      "slug": "auth-login",
+      "file_slug": "auth-login",
+      "files": [
+        "src/app/(app)/auth/login/LoginForm.tsx"
+      ],
+      "injection_points": [
+        "auth-login-after-form",
+        "auth-login-before-form",
+        "auth-login-top"
+      ]
+    },
+    {
+      "slug": "auth-register",
+      "file_slug": "auth-register",
+      "files": [
+        "src/app/(app)/auth/register/RegisterForm.tsx"
+      ],
+      "injection_points": [
+        "auth-register-after-form",
+        "auth-register-before-form",
+        "auth-register-bottom",
+        "auth-register-top"
+      ]
+    },
+    {
+      "slug": "auth-reset-password",
+      "file_slug": "auth-reset-password",
+      "files": [
+        "src/app/(app)/auth/reset-password/ResetPasswordForm.tsx"
+      ],
+      "injection_points": [
+        "auth-reset-password-after-form",
+        "auth-reset-password-before-form",
+        "auth-reset-password-bottom",
+        "auth-reset-password-top"
+      ]
+    },
+    {
+      "slug": "auth-setup-2fa",
+      "file_slug": "auth-setup-2fa",
+      "files": [
+        "src/app/(app)/auth/setup-2fa/SetupTwoFactorForm.tsx"
+      ],
+      "injection_points": [
+        "auth-setup-2fa-after-form",
+        "auth-setup-2fa-before-form",
+        "auth-setup-2fa-bottom",
+        "auth-setup-2fa-top"
+      ]
+    },
+    {
+      "slug": "auth-verify-2fa",
+      "file_slug": "auth-verify-2fa",
+      "files": [
+        "src/app/(app)/auth/verify-2fa/VerifyTwoFactorForm.tsx"
+      ],
+      "injection_points": [
+        "auth-verify-2fa-after-form",
+        "auth-verify-2fa-before-form",
+        "auth-verify-2fa-bottom",
+        "auth-verify-2fa-top"
+      ]
+    },
+    {
+      "slug": "dashboard",
+      "file_slug": "dashboard",
+      "files": [
+        "src/app/(app)/dashboard/page.tsx"
+      ],
+      "injection_points": [
+        "after-server-list",
+        "before-server-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "dashboard-account",
+      "file_slug": "dashboard-account",
+      "files": [
+        "src/app/(app)/dashboard/account/page.tsx"
+      ],
+      "injection_points": [
+        "after-profile-card",
+        "after-tabs",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "dashboard-knowledgebase",
+      "file_slug": "dashboard-knowledgebase",
+      "files": [
+        "src/app/(app)/dashboard/knowledgebase/page.tsx"
+      ],
+      "injection_points": [
+        "after-categories-list",
+        "after-header",
+        "before-categories-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "dashboard-knowledgebase-article",
+      "file_slug": "dashboard-knowledgebase-article",
+      "files": [
+        "src/app/(app)/dashboard/knowledgebase/article/[id]/page.tsx"
+      ],
+      "injection_points": [
+        "after-article-content",
+        "after-attachments",
+        "after-header",
+        "before-article-content",
+        "before-attachments",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "dashboard-knowledgebase-category",
+      "file_slug": "dashboard-knowledgebase-category",
+      "files": [
+        "src/app/(app)/dashboard/knowledgebase/category/[id]/page.tsx"
+      ],
+      "injection_points": [
+        "after-articles-list",
+        "after-header",
+        "before-articles-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "dashboard-servers",
+      "file_slug": "dashboard-servers",
+      "files": [
+        "src/app/(app)/dashboard/servers/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "after-server-list",
+        "before-server-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "dashboard-status",
+      "file_slug": "dashboard-status",
+      "files": [
+        "src/app/(app)/dashboard/status/page.tsx"
+      ],
+      "injection_points": [
+        "after-global-stats",
+        "after-header",
+        "after-node-list",
+        "before-node-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "dashboard-tickets-create",
+      "file_slug": "dashboard-tickets-create",
+      "files": [
+        "src/app/(app)/dashboard/tickets/create/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "dashboard-tickets-list",
+      "file_slug": "dashboard-tickets-list",
+      "files": [
+        "src/app/(app)/dashboard/tickets/page.tsx"
+      ],
+      "injection_points": [
+        "after-filters",
+        "after-header",
+        "after-tickets-list",
+        "before-tickets-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "dashboard-tickets-view",
+      "file_slug": "dashboard-tickets-view",
+      "files": [
+        "src/app/(app)/dashboard/tickets/[uuid]/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "after-messages",
+        "bottom-of-page",
+        "sidebar-bottom",
+        "sidebar-top",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "dashboard-webspaces",
+      "file_slug": "dashboard-webspaces",
+      "files": [
+        "src/app/(app)/dashboard/webspaces/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "after-toolbar",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-activities",
+      "file_slug": "server-activities",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/activities/page.tsx"
+      ],
+      "injection_points": [
+        "activity-bottom",
+        "activity-top"
+      ]
+    },
+    {
+      "slug": "server-allocations",
+      "file_slug": "server-allocations",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/allocations/page.tsx"
+      ],
+      "injection_points": [
+        "allocation-bottom",
+        "allocation-header"
+      ]
+    },
+    {
+      "slug": "server-backups",
+      "file_slug": "server-backups",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/backups/page.tsx"
+      ],
+      "injection_points": [
+        "backup-bottom",
+        "backup-header"
+      ]
+    },
+    {
+      "slug": "server-backups-new",
+      "file_slug": "server-backups-new",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/backups/new/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-console",
+      "file_slug": "server-console",
+      "files": [
+        "src/components/server/ServerConsolePage.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "after-performance",
+        "after-terminal",
+        "after-wings-status",
+        "before-performance",
+        "before-terminal",
+        "bottom-of-page",
+        "top-of-page",
+        "under-server-info-cards"
+      ]
+    },
+    {
+      "slug": "server-databases",
+      "file_slug": "server-databases",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/databases/page.tsx"
+      ],
+      "injection_points": [
+        "after-databases-list",
+        "after-warning-banner",
+        "before-databases-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-databases-new",
+      "file_slug": "server-databases-new",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/databases/new/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-fastdl",
+      "file_slug": "server-fastdl",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/fastdl/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-file-editor",
+      "file_slug": "server-file-editor",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/files/edit/page.tsx",
+        "src/app/(app)/server/[uuidShort]/files/ide/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-files",
+      "file_slug": "server-files",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/files/page.tsx"
+      ],
+      "injection_points": [
+        "after-files-list",
+        "after-header",
+        "after-search-bar",
+        "before-files-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-firewall",
+      "file_slug": "server-firewall",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/firewall/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "after-rules-list",
+        "before-rules-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-import",
+      "file_slug": "server-import",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/import/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "after-imports-list",
+        "before-imports-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-import-new",
+      "file_slug": "server-import-new",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/import/new/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-lifecycle-hooks",
+      "file_slug": "server-lifecycle-hooks",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/lifecycle-hooks/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-lifecycle-step-create",
+      "file_slug": "server-lifecycle-step-create",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/lifecycle-hooks/step/new/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-lifecycle-step-edit",
+      "file_slug": "server-lifecycle-step-edit",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/lifecycle-hooks/step/[stepId]/edit/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-plugin-page",
+      "file_slug": "server-plugin-page",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/[[...pluginPath]]/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-proxy",
+      "file_slug": "server-proxy",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/proxy/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "after-proxies-list",
+        "before-proxies-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-proxy-new",
+      "file_slug": "server-proxy-new",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/proxy/new/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-schedules",
+      "file_slug": "server-schedules",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/schedules/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "after-schedules-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-schedules-edit",
+      "file_slug": "server-schedules-edit",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/schedules/[id]/edit/page.tsx"
+      ],
+      "injection_points": [
+        "after-header"
+      ]
+    },
+    {
+      "slug": "server-schedules-new",
+      "file_slug": "server-schedules-new",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/schedules/new/page.tsx"
+      ],
+      "injection_points": [
+        "after-header"
+      ]
+    },
+    {
+      "slug": "server-settings",
+      "file_slug": "server-settings",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/settings/page.tsx"
+      ],
+      "injection_points": [
+        "after-delete-server",
+        "after-header",
+        "after-server-actions",
+        "after-server-info",
+        "after-sftp-details",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-startup",
+      "file_slug": "server-startup",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/startup/page.tsx"
+      ],
+      "injection_points": [
+        "after-docker-image",
+        "after-header",
+        "after-spell-selection",
+        "after-startup-command",
+        "after-variables",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-startup-transfer-spell",
+      "file_slug": "server-startup-transfer-spell",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/startup/transfer/spell/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-subdomains",
+      "file_slug": "server-subdomains",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/subdomains/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "after-subdomains-list",
+        "before-subdomains-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-subdomains-new",
+      "file_slug": "server-subdomains-new",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/subdomains/new/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-tasks",
+      "file_slug": "server-tasks",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/schedules/[id]/tasks/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "after-tasks-list",
+        "before-tasks-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-tasks-edit",
+      "file_slug": "server-tasks-edit",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/schedules/[id]/tasks/[taskId]/edit/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-tasks-new",
+      "file_slug": "server-tasks-new",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/schedules/[id]/tasks/new/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "server-users",
+      "file_slug": "server-users",
+      "files": [
+        "src/app/(app)/server/[uuidShort]/users/page.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "after-subusers-list",
+        "before-subusers-list",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "vds-activities",
+      "file_slug": "vds-activities",
+      "files": [
+        "src/app/(app)/vds/[id]/activities/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "vds-backups",
+      "file_slug": "vds-backups",
+      "files": [
+        "src/app/(app)/vds/[id]/backups/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "vds-console",
+      "file_slug": "vds-console",
+      "files": [
+        "src/app/(app)/vds/[id]/VdsConsolePage.tsx"
+      ],
+      "injection_points": []
+    },
+    {
+      "slug": "vds-network",
+      "file_slug": "vds-network",
+      "files": [
+        "src/app/(app)/vds/[id]/network/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "vds-plugin-page",
+      "file_slug": "vds-plugin-page",
+      "files": [
+        "src/app/(app)/vds/[id]/[[...pluginPath]]/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "vds-settings",
+      "file_slug": "vds-settings",
+      "files": [
+        "src/app/(app)/vds/[id]/settings/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "vds-users",
+      "file_slug": "vds-users",
+      "files": [
+        "src/app/(app)/vds/[id]/users/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-access",
+      "file_slug": "webspace-access",
+      "files": [
+        "src/app/(app)/webspace/[uuidShort]/access/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-activities",
+      "file_slug": "webspace-activities",
+      "files": [
+        "src/app/(app)/webspace/[uuidShort]/activities/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-analytics",
+      "file_slug": "webspace-analytics",
+      "files": [
+        "src/app/(app)/webspace/[uuidShort]/analytics/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-apps",
+      "file_slug": "webspace-apps",
+      "files": [
+        "src/app/(app)/webspace/[uuidShort]/apps/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-backups",
+      "file_slug": "webspace-backups",
+      "files": [
+        "src/app/(app)/webspace/[uuidShort]/backups/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-console",
+      "file_slug": "webspace-console",
+      "files": [
+        "src/components/webspace/WebSpaceConsolePage.tsx"
+      ],
+      "injection_points": [
+        "after-header",
+        "after-terminal",
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-databases",
+      "file_slug": "webspace-databases",
+      "files": [
+        "src/app/(app)/webspace/[uuidShort]/databases/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-databases-new",
+      "file_slug": "webspace-databases-new",
+      "files": [
+        "src/app/(app)/webspace/[uuidShort]/databases/new/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-domains",
+      "file_slug": "webspace-domains",
+      "files": [
+        "src/app/(app)/webspace/[uuidShort]/domains/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-email",
+      "file_slug": "webspace-email",
+      "files": [
+        "src/app/(app)/webspace/[uuidShort]/email/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-file-editor",
+      "file_slug": "webspace-file-editor",
+      "files": [
+        "src/app/(app)/webspace/[uuidShort]/files/edit/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-files",
+      "file_slug": "webspace-files",
+      "files": [
+        "src/app/(app)/webspace/[uuidShort]/files/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-files-trash",
+      "file_slug": "webspace-files-trash",
+      "files": [
+        "src/app/(app)/webspace/[uuidShort]/files/trash/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-logs",
+      "file_slug": "webspace-logs",
+      "files": [
+        "src/app/(app)/webspace/[uuidShort]/logs/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-malware",
+      "file_slug": "webspace-malware",
+      "files": [
+        "src/app/(app)/webspace/[uuidShort]/malware/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-plugin-page",
+      "file_slug": "webspace-plugin-page",
+      "files": [
+        "src/app/(app)/webspace/[uuidShort]/[[...pluginPath]]/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-schedules",
+      "file_slug": "webspace-schedules",
+      "files": [
+        "src/app/(app)/webspace/[uuidShort]/schedules/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-settings",
+      "file_slug": "webspace-settings",
+      "files": [
+        "src/app/(app)/webspace/[uuidShort]/settings/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-users",
+      "file_slug": "webspace-users",
+      "files": [
+        "src/app/(app)/webspace/[uuidShort]/users/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    },
+    {
+      "slug": "webspace-waf",
+      "file_slug": "webspace-waf",
+      "files": [
+        "src/app/(app)/webspace/[uuidShort]/waf/page.tsx"
+      ],
+      "injection_points": [
+        "bottom-of-page",
+        "top-of-page"
+      ]
+    }
+  ]
+}

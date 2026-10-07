@@ -2,138 +2,78 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Events: RateLimiter</title>
+  <title>Events: RateLimiter — FeatherPanel Docs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
-    a { color: #60a5fa; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .container { max-width: 960px; margin: 0 auto; }
-    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
-    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
-    h3 { font-size: 1rem; margin-top: 1.25rem; }
-    .muted { color: #9ca3af; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
-    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
-    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
-    .back-link { margin-bottom: 1.5rem; display: inline-block; }
-    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-left: 0.5rem; vertical-align: middle; }
-  </style>
+  <link rel="stylesheet" href="/icanhasfeatherpanel/assets/docs.css" />
 </head>
-<body>
-  <main class="container">
-    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
-    <header>
-      <h1>RateLimiter</h1>
-      <p class="muted">4 events in this category.
-        4 emitted,
-        0 defined only.
-      </p>
-    </header>
+<body class="fp-docs">
+  <div class="fp-shell">
+    <nav class="fp-nav" aria-label="Documentation">
+      <a class="fp-brand" href="/icanhasfeatherpanel/">
+        <span class="fp-brand-mark" aria-hidden="true"></span>
+        <span>FeatherPanel Docs</span>
+      </a>
+      <div class="fp-nav-links">
+      <a href="/icanhasfeatherpanel/">Home</a>
+      <a href="/icanhasfeatherpanel/plugins/">Plugins</a>
+      <a href="/icanhasfeatherpanel/widgets/">Widgets</a>
+      <a href="/icanhasfeatherpanel/events/" class="active">Events</a>
+      <a href="/icanhasfeatherpanel/permissions/">Permissions</a>
+      <a href="/icanhasfeatherpanel/api/">API</a>
+      <a href="/icanhasfeatherpanel/rag/">RAG</a>
+      </div>
+    </nav>
 
-<article class="card">
-  <h2><code>featherpanel:rate-limiter:bulk:update</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onRateLimiterBulkUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, array updated routes, array errors.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> errors, updated_routes, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/RateLimitController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\RateLimiterEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(RateLimiterEvent::onRateLimiterBulkUpdated(), function ($errors, $updatedRoutes, $userUuid) {
-        // Handle featherpanel:rate-limiter:bulk:update
-        // Data keys: errors, updated_routes, user_uuid
-    });
-}</code></pre>
+<a class="fp-back" href="/icanhasfeatherpanel/events/">&larr; All event categories</a>
+<header class="fp-hero">
+  <h1>RateLimiter</h1>
+  <p>4 events · 4 emitted · 0 defined only</p>
+  
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/events/rate-limiter.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/events/rate-limiter.json">JSON</a>
+  </div>
+</header>
+<input class="fp-search" type="search" placeholder="Filter events…" data-fp-search />
+<p class="fp-muted fp-hidden" data-fp-search-empty>No events match.</p>
+<div class="fp-list"><article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:rate-limiter:bulk:update onRateLimiterBulkUpdated errors, updated_routes, user_uuid">
+  <h2><code>featherpanel:rate-limiter:bulk:update</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onRateLimiterBulkUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, array updated routes, array errors.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> errors, updated_routes, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/RateLimitController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:rate-limiter:delete</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onRateLimiterDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string route name.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> route_name, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/RateLimitController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\RateLimiterEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(RateLimiterEvent::onRateLimiterDeleted(), function ($routeName, $userUuid) {
-        // Handle featherpanel:rate-limiter:delete
-        // Data keys: route_name, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:rate-limiter:delete onRateLimiterDeleted route_name, user_uuid">
+  <h2><code>featherpanel:rate-limiter:delete</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onRateLimiterDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string route name.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> route_name, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/RateLimitController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:rate-limiter:global:update</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onRateLimiterGlobalUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, bool enabled.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> enabled, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/RateLimitController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\RateLimiterEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(RateLimiterEvent::onRateLimiterGlobalUpdated(), function ($enabled, $userUuid) {
-        // Handle featherpanel:rate-limiter:global:update
-        // Data keys: enabled, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:rate-limiter:global:update onRateLimiterGlobalUpdated enabled, user_uuid">
+  <h2><code>featherpanel:rate-limiter:global:update</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onRateLimiterGlobalUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, bool enabled.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> enabled, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/RateLimitController.php</code></li></ul>
 </article>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:rate-limiter:update onRateLimiterUpdated config, route_name, user_uuid">
+  <h2><code>featherpanel:rate-limiter:update</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onRateLimiterUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string|null user uuid, string route name, array config.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> config, route_name, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/RateLimitController.php</code></li></ul>
+</article></div>
 
-<article class="card">
-  <h2><code>featherpanel:rate-limiter:update</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onRateLimiterUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string route name, array config.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> config, route_name, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/RateLimitController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\RateLimiterEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(RateLimiterEvent::onRateLimiterUpdated(), function ($config, $routeName, $userUuid) {
-        // Handle featherpanel:rate-limiter:update
-        // Data keys: config, route_name, user_uuid
-    });
-}</code></pre>
-</article>
-  </main>
+    <footer class="fp-footer">
+      Machine-readable sources (.md / .json) are published next to these pages for RAG and AI agents.
+      See <a href="/icanhasfeatherpanel/rag/">RAG index</a> or <a href="/icanhasfeatherpanel/llms.txt">llms.txt</a>.
+    </footer>
+  </div>
+  <script src="/icanhasfeatherpanel/assets/docs.js"></script>
 </body>
 </html>

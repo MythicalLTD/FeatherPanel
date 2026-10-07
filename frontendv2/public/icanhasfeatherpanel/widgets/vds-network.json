@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "vds-network",
+  "file_slug": "vds-network",
+  "files": [
+    "src/app/(app)/vds/[id]/network/page.tsx"
+  ],
+  "injection_points": [
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

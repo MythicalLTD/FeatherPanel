@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-dev-plugins-create",
+  "file_slug": "admin-dev-plugins-create",
+  "files": [
+    "src/app/(app)/admin/dev/plugins/create/page.tsx"
+  ],
+  "injection_points": [
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

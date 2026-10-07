@@ -2,1373 +2,467 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Events: Server</title>
+  <title>Events: Server — FeatherPanel Docs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
-    a { color: #60a5fa; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .container { max-width: 960px; margin: 0 auto; }
-    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
-    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
-    h3 { font-size: 1rem; margin-top: 1.25rem; }
-    .muted { color: #9ca3af; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
-    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
-    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
-    .back-link { margin-bottom: 1.5rem; display: inline-block; }
-    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-left: 0.5rem; vertical-align: middle; }
-  </style>
+  <link rel="stylesheet" href="/icanhasfeatherpanel/assets/docs.css" />
 </head>
-<body>
-  <main class="container">
-    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
-    <header>
-      <h1>Server</h1>
-      <p class="muted">51 events in this category.
-        35 emitted,
-        16 defined only.
-      </p>
-    </header>
+<body class="fp-docs">
+  <div class="fp-shell">
+    <nav class="fp-nav" aria-label="Documentation">
+      <a class="fp-brand" href="/icanhasfeatherpanel/">
+        <span class="fp-brand-mark" aria-hidden="true"></span>
+        <span>FeatherPanel Docs</span>
+      </a>
+      <div class="fp-nav-links">
+      <a href="/icanhasfeatherpanel/">Home</a>
+      <a href="/icanhasfeatherpanel/plugins/">Plugins</a>
+      <a href="/icanhasfeatherpanel/widgets/">Widgets</a>
+      <a href="/icanhasfeatherpanel/events/" class="active">Events</a>
+      <a href="/icanhasfeatherpanel/permissions/">Permissions</a>
+      <a href="/icanhasfeatherpanel/api/">API</a>
+      <a href="/icanhasfeatherpanel/rag/">RAG</a>
+      </div>
+    </nav>
 
-<article class="card">
-  <h2><code>featherpanel:server:allocation:create</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerAllocationCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, int allocation id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> allocation_id, server_uuid, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Server/ServerAllocationController.php</code></li>
-<li><code>backend/app/Services/Chatbot/Tools/AutoAllocateTool.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerAllocationCreated(), function ($allocationId, $serverUuid, $userUuid) {
-        // Handle featherpanel:server:allocation:create
-        // Data keys: allocation_id, server_uuid, user_uuid
-    });
-}</code></pre>
+<a class="fp-back" href="/icanhasfeatherpanel/events/">&larr; All event categories</a>
+<header class="fp-hero">
+  <h1>Server</h1>
+  <p>51 events · 35 emitted · 16 defined only</p>
+  
+  <div class="fp-formats">
+    <a href="/icanhasfeatherpanel/events/server.md">Markdown</a>
+    <a href="/icanhasfeatherpanel/events/server.json">JSON</a>
+  </div>
+</header>
+<input class="fp-search" type="search" placeholder="Filter events…" data-fp-search />
+<p class="fp-muted fp-hidden" data-fp-search-empty>No events match.</p>
+<div class="fp-list"><article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:allocation:create onServerAllocationCreated allocation_id, server_uuid, user_uuid">
+  <h2><code>featherpanel:server:allocation:create</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerAllocationCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, int allocation id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> allocation_id, server_uuid, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Server/ServerAllocationController.php</code></li>
+<li><code>backend/app/Services/Chatbot/Tools/AutoAllocateTool.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:allocation:deleted</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerAllocationDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, int allocation id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li class="muted">No known emission locations.</li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerAllocationDeleted(), function ($uuid, $uuid, $id) {
-        // Handle featherpanel:user:server:allocation:deleted
-        // Parameters: string user uuid, string server uuid, int allocation id.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:allocation:deleted onServerAllocationDeleted N/A">
+  <h2><code>featherpanel:user:server:allocation:deleted</code> <span class="fp-badge warn">Defined only</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerAllocationDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, int allocation id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li class="fp-muted">No known emission locations.</li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:allocation:update</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerAllocationUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, int allocation id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li class="muted">No known emission locations.</li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerAllocationUpdated(), function ($uuid, $uuid, $id) {
-        // Handle featherpanel:server:allocation:update
-        // Parameters: string user uuid, string server uuid, int allocation id.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:allocation:update onServerAllocationUpdated N/A">
+  <h2><code>featherpanel:server:allocation:update</code> <span class="fp-badge warn">Defined only</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerAllocationUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, int allocation id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li class="fp-muted">No known emission locations.</li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:backup:created</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerBackupCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string backup uuid.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li class="muted">No known emission locations.</li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerBackupCreated(), function ($uuid, $uuid, $uuid) {
-        // Handle featherpanel:user:server:backup:created
-        // Parameters: string user uuid, string server uuid, string backup uuid.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:backup:created onServerBackupCreated N/A">
+  <h2><code>featherpanel:user:server:backup:created</code> <span class="fp-badge warn">Defined only</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerBackupCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string backup uuid.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li class="fp-muted">No known emission locations.</li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:backup:deleted</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerBackupDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string backup uuid.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li class="muted">No known emission locations.</li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerBackupDeleted(), function ($uuid, $uuid, $uuid) {
-        // Handle featherpanel:user:server:backup:deleted
-        // Parameters: string user uuid, string server uuid, string backup uuid.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:backup:deleted onServerBackupDeleted N/A">
+  <h2><code>featherpanel:user:server:backup:deleted</code> <span class="fp-badge warn">Defined only</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerBackupDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string backup uuid.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li class="fp-muted">No known emission locations.</li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:backup:lock</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerBackupLocked</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string backup uuid.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> backup_uuid, server_uuid, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Server/ServerBackupController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerBackupLocked(), function ($backupUuid, $serverUuid, $userUuid) {
-        // Handle featherpanel:server:backup:lock
-        // Data keys: backup_uuid, server_uuid, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:backup:lock onServerBackupLocked backup_uuid, server_uuid, user_uuid">
+  <h2><code>featherpanel:server:backup:lock</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerBackupLocked</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string backup uuid.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> backup_uuid, server_uuid, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Server/ServerBackupController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:backup:restored</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerBackupRestored</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string backup uuid.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li class="muted">No known emission locations.</li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerBackupRestored(), function ($uuid, $uuid, $uuid) {
-        // Handle featherpanel:user:server:backup:restored
-        // Parameters: string user uuid, string server uuid, string backup uuid.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:backup:restored onServerBackupRestored N/A">
+  <h2><code>featherpanel:user:server:backup:restored</code> <span class="fp-badge warn">Defined only</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerBackupRestored</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string backup uuid.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li class="fp-muted">No known emission locations.</li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:backup:unlock</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerBackupUnlocked</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string backup uuid.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> backup_uuid, server_uuid, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Server/ServerBackupController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerBackupUnlocked(), function ($backupUuid, $serverUuid, $userUuid) {
-        // Handle featherpanel:server:backup:unlock
-        // Data keys: backup_uuid, server_uuid, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:backup:unlock onServerBackupUnlocked backup_uuid, server_uuid, user_uuid">
+  <h2><code>featherpanel:server:backup:unlock</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerBackupUnlocked</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string backup uuid.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> backup_uuid, server_uuid, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Server/ServerBackupController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> int server id, array server data, array created by.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> created_by, server_data, server_id</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/PterodactylImporterController.php</code></li>
-<li><code>backend/app/Controllers/Admin/ServersController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerCreated(), function ($createdBy, $serverData, $serverId) {
-        // Handle featherpanel:server:created
-        // Data keys: created_by, server_data, server_id
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:created onServerCreated created_by, server_data, server_id">
+  <h2><code>featherpanel:server:created</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> int server id, array server data, array created by.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> created_by, server_data, server_id</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/PterodactylImporterController.php</code></li>
+<li><code>backend/app/Controllers/Admin/ServersController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:database:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerDatabaseCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, int database id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> database_id, server_uuid, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Services/Chatbot/Tools/CreateDatabaseTool.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerDatabaseCreated(), function ($databaseId, $serverUuid, $userUuid) {
-        // Handle featherpanel:user:server:database:created
-        // Data keys: database_id, server_uuid, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:database:created onServerDatabaseCreated database_id, server_uuid, user_uuid">
+  <h2><code>featherpanel:user:server:database:created</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerDatabaseCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, int database id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> database_id, server_uuid, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Services/Chatbot/Tools/CreateDatabaseTool.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:database:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerDatabaseDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, int database id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> database_id, server_uuid, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Services/Chatbot/Tools/DeleteDatabaseTool.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerDatabaseDeleted(), function ($databaseId, $serverUuid, $userUuid) {
-        // Handle featherpanel:user:server:database:deleted
-        // Data keys: database_id, server_uuid, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:database:deleted onServerDatabaseDeleted database_id, server_uuid, user_uuid">
+  <h2><code>featherpanel:user:server:database:deleted</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerDatabaseDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, int database id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> database_id, server_uuid, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Services/Chatbot/Tools/DeleteDatabaseTool.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:database:updated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerDatabaseUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, int database id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> database_id, server_uuid, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Services/Chatbot/Tools/UpdateDatabaseTool.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerDatabaseUpdated(), function ($databaseId, $serverUuid, $userUuid) {
-        // Handle featherpanel:user:server:database:updated
-        // Data keys: database_id, server_uuid, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:database:updated onServerDatabaseUpdated database_id, server_uuid, user_uuid">
+  <h2><code>featherpanel:user:server:database:updated</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerDatabaseUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, int database id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> database_id, server_uuid, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Services/Chatbot/Tools/UpdateDatabaseTool.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:delete</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> deleted_by, hard_delete, server</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/ServersController.php</code></li>
-<li><code>backend/app/Controllers/User/Server/ServerUserController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerDeleted(), function ($deletedBy, $hardDelete, $server) {
-        // Handle featherpanel:server:delete
-        // Data keys: deleted_by, hard_delete, server
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:delete onServerDeleted deleted_by, hard_delete, server">
+  <h2><code>featherpanel:server:delete</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> deleted_by, hard_delete, server</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/ServersController.php</code></li>
+<li><code>backend/app/Controllers/User/Server/ServerUserController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:directory:created</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerDirectoryCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string directory path.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li class="muted">No known emission locations.</li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerDirectoryCreated(), function ($uuid, $uuid, $path) {
-        // Handle featherpanel:user:server:directory:created
-        // Parameters: string user uuid, string server uuid, string directory path.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:directory:created onServerDirectoryCreated N/A">
+  <h2><code>featherpanel:user:server:directory:created</code> <span class="fp-badge warn">Defined only</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerDirectoryCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string directory path.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li class="fp-muted">No known emission locations.</li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:file:compress</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerFileCompressed</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string file path.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> file_path, server_uuid, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Server/Files/ServerFilesController.php</code></li>
-<li><code>backend/app/Services/Chatbot/Tools/CompressFilesTool.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerFileCompressed(), function ($filePath, $serverUuid, $userUuid) {
-        // Handle featherpanel:server:file:compress
-        // Data keys: file_path, server_uuid, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:file:compress onServerFileCompressed file_path, server_uuid, user_uuid">
+  <h2><code>featherpanel:server:file:compress</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerFileCompressed</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string file path.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> file_path, server_uuid, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Server/Files/ServerFilesController.php</code></li>
+<li><code>backend/app/Services/Chatbot/Tools/CompressFilesTool.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:file:decompress</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerFileDecompressed</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string file path.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> file_path, server_uuid, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Server/Files/ServerFilesController.php</code></li>
-<li><code>backend/app/Services/Chatbot/Tools/DecompressArchiveTool.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerFileDecompressed(), function ($filePath, $serverUuid, $userUuid) {
-        // Handle featherpanel:server:file:decompress
-        // Data keys: file_path, server_uuid, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:file:decompress onServerFileDecompressed file_path, server_uuid, user_uuid">
+  <h2><code>featherpanel:server:file:decompress</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerFileDecompressed</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string file path.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> file_path, server_uuid, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Server/Files/ServerFilesController.php</code></li>
+<li><code>backend/app/Services/Chatbot/Tools/DecompressArchiveTool.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:file:permissions</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerFilePermissionsChanged</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string file path, string permissions.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> file_path, permissions, server_uuid, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Server/Files/ServerFilesController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerFilePermissionsChanged(), function ($filePath, $permissions, $serverUuid, $userUuid) {
-        // Handle featherpanel:server:file:permissions
-        // Data keys: file_path, permissions, server_uuid, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:file:permissions onServerFilePermissionsChanged file_path, permissions, server_uuid, user_uuid">
+  <h2><code>featherpanel:server:file:permissions</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerFilePermissionsChanged</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string file path, string permissions.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> file_path, permissions, server_uuid, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Server/Files/ServerFilesController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:file:renamed</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerFileRenamed</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string old path, string new path.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li class="muted">No known emission locations.</li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerFileRenamed(), function ($uuid, $uuid, $path, $path) {
-        // Handle featherpanel:user:server:file:renamed
-        // Parameters: string user uuid, string server uuid, string old path, string new path.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:file:renamed onServerFileRenamed N/A">
+  <h2><code>featherpanel:user:server:file:renamed</code> <span class="fp-badge warn">Defined only</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerFileRenamed</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string old path, string new path.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li class="fp-muted">No known emission locations.</li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:files:copy</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerFilesCopied</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, array file paths.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> file_paths, server_uuid, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Server/Files/ServerFilesController.php</code></li>
-<li><code>backend/app/Services/Chatbot/Tools/CopyFilesTool.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerFilesCopied(), function ($filePaths, $serverUuid, $userUuid) {
-        // Handle featherpanel:server:files:copy
-        // Data keys: file_paths, server_uuid, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:files:copy onServerFilesCopied file_paths, server_uuid, user_uuid">
+  <h2><code>featherpanel:server:files:copy</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerFilesCopied</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, array file paths.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> file_paths, server_uuid, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Server/Files/ServerFilesController.php</code></li>
+<li><code>backend/app/Services/Chatbot/Tools/CopyFilesTool.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:files:deleted</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerFilesDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li class="muted">No known emission locations.</li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerFilesDeleted(), function ($uuid, $uuid) {
-        // Handle featherpanel:user:server:files:deleted
-        // Parameters: string user uuid, string server uuid.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:files:deleted onServerFilesDeleted N/A">
+  <h2><code>featherpanel:user:server:files:deleted</code> <span class="fp-badge warn">Defined only</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerFilesDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li class="fp-muted">No known emission locations.</li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:file:uploaded</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerFileUploaded</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string file path.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li class="muted">No known emission locations.</li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerFileUploaded(), function ($uuid, $uuid, $path) {
-        // Handle featherpanel:user:server:file:uploaded
-        // Parameters: string user uuid, string server uuid, string file path.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:file:uploaded onServerFileUploaded N/A">
+  <h2><code>featherpanel:user:server:file:uploaded</code> <span class="fp-badge warn">Defined only</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerFileUploaded</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string file path.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li class="fp-muted">No known emission locations.</li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:file:saved</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerFileWritten</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string file path.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li class="muted">No known emission locations.</li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerFileWritten(), function ($uuid, $uuid, $path) {
-        // Handle featherpanel:user:server:file:saved
-        // Parameters: string user uuid, string server uuid, string file path.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:file:saved onServerFileWritten N/A">
+  <h2><code>featherpanel:user:server:file:saved</code> <span class="fp-badge warn">Defined only</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerFileWritten</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string file path.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li class="fp-muted">No known emission locations.</li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:lifecycle-hook:completed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerLifecycleHookCompleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string power action, int hook id, string hook type.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Services/Server/LifecycleHookExecutorService.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerLifecycleHookCompleted(), function ($uuid, $uuid, $action, $id, $type) {
-        // Handle featherpanel:server:lifecycle-hook:completed
-        // Parameters: string user uuid, string server uuid, string power action, int hook id, string hook type.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:lifecycle-hook:completed onServerLifecycleHookCompleted N/A">
+  <h2><code>featherpanel:server:lifecycle-hook:completed</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerLifecycleHookCompleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string power action, int hook id, string hook type.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Services/Server/LifecycleHookExecutorService.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:lifecycle-hook:failed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerLifecycleHookFailed</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string power action, int hook id, string hook type, string error.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Services/Server/LifecycleHookExecutorService.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerLifecycleHookFailed(), function ($uuid, $uuid, $action, $id, $type, $error) {
-        // Handle featherpanel:server:lifecycle-hook:failed
-        // Parameters: string user uuid, string server uuid, string power action, int hook id, string hook type, string error.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:lifecycle-hook:failed onServerLifecycleHookFailed N/A">
+  <h2><code>featherpanel:server:lifecycle-hook:failed</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerLifecycleHookFailed</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string power action, int hook id, string hook type, string error.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Services/Server/LifecycleHookExecutorService.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:lifecycle-hook:started</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerLifecycleHookStarted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string power action, int hook id, string hook type.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Services/Server/LifecycleHookExecutorService.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerLifecycleHookStarted(), function ($uuid, $uuid, $action, $id, $type) {
-        // Handle featherpanel:server:lifecycle-hook:started
-        // Parameters: string user uuid, string server uuid, string power action, int hook id, string hook type.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:lifecycle-hook:started onServerLifecycleHookStarted N/A">
+  <h2><code>featherpanel:server:lifecycle-hook:started</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerLifecycleHookStarted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string power action, int hook id, string hook type.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Services/Server/LifecycleHookExecutorService.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:lifecycle-hook:step:completed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerLifecycleHookStepCompleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string power action, int hook id, int step id, string task type.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Services/Server/LifecycleHookExecutorService.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerLifecycleHookStepCompleted(), function ($uuid, $uuid, $action, $id, $id, $type) {
-        // Handle featherpanel:server:lifecycle-hook:step:completed
-        // Parameters: string user uuid, string server uuid, string power action, int hook id, int step id, string task type.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:lifecycle-hook:step:completed onServerLifecycleHookStepCompleted N/A">
+  <h2><code>featherpanel:server:lifecycle-hook:step:completed</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerLifecycleHookStepCompleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string power action, int hook id, int step id, string task type.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Services/Server/LifecycleHookExecutorService.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:lifecycle-hook:step:failed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerLifecycleHookStepFailed</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string power action, int hook id, int step id, string task type, string error.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Services/Server/LifecycleHookExecutorService.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerLifecycleHookStepFailed(), function ($uuid, $uuid, $action, $id, $id, $type, $error) {
-        // Handle featherpanel:server:lifecycle-hook:step:failed
-        // Parameters: string user uuid, string server uuid, string power action, int hook id, int step id, string task type, string error.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:lifecycle-hook:step:failed onServerLifecycleHookStepFailed N/A">
+  <h2><code>featherpanel:server:lifecycle-hook:step:failed</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerLifecycleHookStepFailed</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string power action, int hook id, int step id, string task type, string error.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Services/Server/LifecycleHookExecutorService.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:lifecycle-hook:step:started</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerLifecycleHookStepStarted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string power action, int hook id, int step id, string task type.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Services/Server/LifecycleHookExecutorService.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerLifecycleHookStepStarted(), function ($uuid, $uuid, $action, $id, $id, $type) {
-        // Handle featherpanel:server:lifecycle-hook:step:started
-        // Parameters: string user uuid, string server uuid, string power action, int hook id, int step id, string task type.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:lifecycle-hook:step:started onServerLifecycleHookStepStarted N/A">
+  <h2><code>featherpanel:server:lifecycle-hook:step:started</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerLifecycleHookStepStarted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string power action, int hook id, int step id, string task type.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Services/Server/LifecycleHookExecutorService.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:power:action</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerPowerAction</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string action.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> action, server_uuid, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Server/Power/ServerPowerController.php</code></li>
-<li><code>backend/app/Services/Chatbot/Tools/ServerPowerActionTool.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerPowerAction(), function ($action, $serverUuid, $userUuid) {
-        // Handle featherpanel:server:power:action
-        // Data keys: action, server_uuid, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:power:action onServerPowerAction action, server_uuid, user_uuid">
+  <h2><code>featherpanel:server:power:action</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerPowerAction</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string action.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> action, server_uuid, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Server/Power/ServerPowerController.php</code></li>
+<li><code>backend/app/Services/Chatbot/Tools/ServerPowerActionTool.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:pull:deleted</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerPullProcessDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, string pull id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li class="muted">No known emission locations.</li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerPullProcessDeleted(), function ($uuid, $uuid, $id) {
-        // Handle featherpanel:user:server:pull:deleted
-        // Parameters: string user uuid, string server uuid, string pull id.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:pull:deleted onServerPullProcessDeleted N/A">
+  <h2><code>featherpanel:user:server:pull:deleted</code> <span class="fp-badge warn">Defined only</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerPullProcessDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, string pull id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li class="fp-muted">No known emission locations.</li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:reinstall</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerReinstalled</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> server, server_uuid, updated_by, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/ServersController.php</code></li>
-<li><code>backend/app/Controllers/User/Server/ServerUserController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerReinstalled(), function ($server, $serverUuid, $updatedBy, $userUuid) {
-        // Handle featherpanel:server:reinstall
-        // Data keys: server, server_uuid, updated_by, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:reinstall onServerReinstalled server, server_uuid, updated_by, user_uuid">
+  <h2><code>featherpanel:server:reinstall</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerReinstalled</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> server, server_uuid, updated_by, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/ServersController.php</code></li>
+<li><code>backend/app/Controllers/User/Server/ServerUserController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:schedule:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerScheduleCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, int schedule id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> schedule_id, server_uuid, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Services/Chatbot/Tools/CreateScheduleTool.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerScheduleCreated(), function ($scheduleId, $serverUuid, $userUuid) {
-        // Handle featherpanel:user:server:schedule:created
-        // Data keys: schedule_id, server_uuid, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:schedule:created onServerScheduleCreated schedule_id, server_uuid, user_uuid">
+  <h2><code>featherpanel:user:server:schedule:created</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerScheduleCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, int schedule id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> schedule_id, server_uuid, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Services/Chatbot/Tools/CreateScheduleTool.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:schedule:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerScheduleDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, int schedule id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> schedule_id, server_uuid, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Services/Chatbot/Tools/DeleteScheduleTool.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerScheduleDeleted(), function ($scheduleId, $serverUuid, $userUuid) {
-        // Handle featherpanel:user:server:schedule:deleted
-        // Data keys: schedule_id, server_uuid, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:schedule:deleted onServerScheduleDeleted schedule_id, server_uuid, user_uuid">
+  <h2><code>featherpanel:user:server:schedule:deleted</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerScheduleDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, int schedule id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> schedule_id, server_uuid, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Services/Chatbot/Tools/DeleteScheduleTool.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:schedule:status:toggle</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerScheduleStatusToggled</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, int schedule id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> schedule_id, server_uuid, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Server/ServerScheduleController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerScheduleStatusToggled(), function ($scheduleId, $serverUuid, $userUuid) {
-        // Handle featherpanel:server:schedule:status:toggle
-        // Data keys: schedule_id, server_uuid, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:schedule:status:toggle onServerScheduleStatusToggled schedule_id, server_uuid, user_uuid">
+  <h2><code>featherpanel:server:schedule:status:toggle</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerScheduleStatusToggled</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, int schedule id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> schedule_id, server_uuid, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Server/ServerScheduleController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:schedule:updated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerScheduleUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, int schedule id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> schedule_id, server_uuid, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Services/Chatbot/Tools/UpdateScheduleTool.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerScheduleUpdated(), function ($scheduleId, $serverUuid, $userUuid) {
-        // Handle featherpanel:user:server:schedule:updated
-        // Data keys: schedule_id, server_uuid, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:schedule:updated onServerScheduleUpdated schedule_id, server_uuid, user_uuid">
+  <h2><code>featherpanel:user:server:schedule:updated</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerScheduleUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, int schedule id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> schedule_id, server_uuid, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Services/Chatbot/Tools/UpdateScheduleTool.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:subuser:created</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerSubuserCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, int subuser id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li class="muted">No known emission locations.</li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerSubuserCreated(), function ($uuid, $uuid, $id) {
-        // Handle featherpanel:user:server:subuser:created
-        // Parameters: string user uuid, string server uuid, int subuser id.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:subuser:created onServerSubuserCreated N/A">
+  <h2><code>featherpanel:user:server:subuser:created</code> <span class="fp-badge warn">Defined only</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerSubuserCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, int subuser id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li class="fp-muted">No known emission locations.</li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:subuser:deleted</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerSubuserDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, int subuser id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li class="muted">No known emission locations.</li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerSubuserDeleted(), function ($uuid, $uuid, $id) {
-        // Handle featherpanel:user:server:subuser:deleted
-        // Parameters: string user uuid, string server uuid, int subuser id.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:subuser:deleted onServerSubuserDeleted N/A">
+  <h2><code>featherpanel:user:server:subuser:deleted</code> <span class="fp-badge warn">Defined only</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerSubuserDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, int subuser id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li class="fp-muted">No known emission locations.</li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:subuser:updated</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerSubuserUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, int subuser id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li class="muted">No known emission locations.</li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerSubuserUpdated(), function ($uuid, $uuid, $id) {
-        // Handle featherpanel:user:server:subuser:updated
-        // Parameters: string user uuid, string server uuid, int subuser id.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:subuser:updated onServerSubuserUpdated N/A">
+  <h2><code>featherpanel:user:server:subuser:updated</code> <span class="fp-badge warn">Defined only</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerSubuserUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, int subuser id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li class="fp-muted">No known emission locations.</li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:suspended</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerSuspended</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array server data, array suspended by.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> email, server, suspended_by, username, uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/ServersController.php</code></li>
-<li><code>backend/app/Services/FeatherZeroTrust/SuspensionService.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerSuspended(), function ($email, $server, $suspendedBy, $username, $uuid) {
-        // Handle featherpanel:server:suspended
-        // Data keys: email, server, suspended_by, username, uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:suspended onServerSuspended email, server, suspended_by, username, uuid">
+  <h2><code>featherpanel:server:suspended</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerSuspended</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array server data, array suspended by.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> email, server, suspended_by, username, uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/ServersController.php</code></li>
+<li><code>backend/app/Services/FeatherZeroTrust/SuspensionService.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:task:created</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerTaskCreated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, int schedule id, int task id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> schedule_id, server_uuid, task_id, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Services/Chatbot/Tools/CreateTaskTool.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerTaskCreated(), function ($scheduleId, $serverUuid, $taskId, $userUuid) {
-        // Handle featherpanel:user:server:task:created
-        // Data keys: schedule_id, server_uuid, task_id, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:task:created onServerTaskCreated schedule_id, server_uuid, task_id, user_uuid">
+  <h2><code>featherpanel:user:server:task:created</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerTaskCreated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, int schedule id, int task id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> schedule_id, server_uuid, task_id, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Services/Chatbot/Tools/CreateTaskTool.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:task:deleted</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerTaskDeleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, int schedule id, int task id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> schedule_id, server_uuid, task_id, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Services/Chatbot/Tools/DeleteTaskTool.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerTaskDeleted(), function ($scheduleId, $serverUuid, $taskId, $userUuid) {
-        // Handle featherpanel:user:server:task:deleted
-        // Data keys: schedule_id, server_uuid, task_id, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:task:deleted onServerTaskDeleted schedule_id, server_uuid, task_id, user_uuid">
+  <h2><code>featherpanel:user:server:task:deleted</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerTaskDeleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, int schedule id, int task id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> schedule_id, server_uuid, task_id, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Services/Chatbot/Tools/DeleteTaskTool.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:task:sequence:updated</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerTaskSequenceUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, int schedule id, int task id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li class="muted">No known emission locations.</li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerTaskSequenceUpdated(), function ($uuid, $uuid, $id, $id) {
-        // Handle featherpanel:user:server:task:sequence:updated
-        // Parameters: string user uuid, string server uuid, int schedule id, int task id.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:task:sequence:updated onServerTaskSequenceUpdated N/A">
+  <h2><code>featherpanel:user:server:task:sequence:updated</code> <span class="fp-badge warn">Defined only</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerTaskSequenceUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, int schedule id, int task id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li class="fp-muted">No known emission locations.</li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:task:status:toggle</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerTaskStatusToggled</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, int schedule id, int task id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> schedule_id, server_uuid, task_id, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/User/Server/TaskController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerTaskStatusToggled(), function ($scheduleId, $serverUuid, $taskId, $userUuid) {
-        // Handle featherpanel:server:task:status:toggle
-        // Data keys: schedule_id, server_uuid, task_id, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:task:status:toggle onServerTaskStatusToggled schedule_id, server_uuid, task_id, user_uuid">
+  <h2><code>featherpanel:server:task:status:toggle</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerTaskStatusToggled</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, int schedule id, int task id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> schedule_id, server_uuid, task_id, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/User/Server/TaskController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:user:server:task:updated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerTaskUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid, int schedule id, int task id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> schedule_id, server_uuid, task_id, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Services/Chatbot/Tools/UpdateTaskTool.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerTaskUpdated(), function ($scheduleId, $serverUuid, $taskId, $userUuid) {
-        // Handle featherpanel:user:server:task:updated
-        // Data keys: schedule_id, server_uuid, task_id, user_uuid
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:user:server:task:updated onServerTaskUpdated schedule_id, server_uuid, task_id, user_uuid">
+  <h2><code>featherpanel:user:server:task:updated</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerTaskUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid, int schedule id, int task id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> schedule_id, server_uuid, task_id, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Services/Chatbot/Tools/UpdateTaskTool.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:transfer:cancelled</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerTransferCancelled</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array server data, array cancelled_by.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> cancelled_by, server</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/ServersController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerTransferCancelled(), function ($cancelledBy, $server) {
-        // Handle featherpanel:server:transfer:cancelled
-        // Data keys: cancelled_by, server
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:transfer:cancelled onServerTransferCancelled cancelled_by, server">
+  <h2><code>featherpanel:server:transfer:cancelled</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerTransferCancelled</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array server data, array cancelled_by.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> cancelled_by, server</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/ServersController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:transfer:completed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerTransferCompleted</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array server data, bool successful, int|null destination_node_id.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> destination_node_id, old_node_id, server, successful</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/Transfer/WingsTransferStatusController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerTransferCompleted(), function ($destinationNodeId, $oldNodeId, $server, $successful) {
-        // Handle featherpanel:server:transfer:completed
-        // Data keys: destination_node_id, old_node_id, server, successful
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:transfer:completed onServerTransferCompleted destination_node_id, old_node_id, server, successful">
+  <h2><code>featherpanel:server:transfer:completed</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerTransferCompleted</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array server data, bool successful, int|null destination_node_id.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> destination_node_id, old_node_id, server, successful</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/Transfer/WingsTransferStatusController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:transfer:failed</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerTransferFailed</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array server data, bool successful, string|null error.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> error, server, source_node_id, successful</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Wings/Transfer/WingsTransferStatusController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerTransferFailed(), function ($error, $server, $sourceNodeId, $successful) {
-        // Handle featherpanel:server:transfer:failed
-        // Data keys: error, server, source_node_id, successful
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:transfer:failed onServerTransferFailed error, server, source_node_id, successful">
+  <h2><code>featherpanel:server:transfer:failed</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerTransferFailed</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array server data, bool successful, string|null error.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> error, server, source_node_id, successful</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Wings/Transfer/WingsTransferStatusController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:transfer:initiated</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerTransferInitiated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array server data, array source_node, array destination_node, array initiated_by.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> destination_node, initiated_by, server, source_node</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Services/Servers/ServerTransferInitiator.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerTransferInitiated(), function ($destinationNode, $initiatedBy, $server, $sourceNode) {
-        // Handle featherpanel:server:transfer:initiated
-        // Data keys: destination_node, initiated_by, server, source_node
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:transfer:initiated onServerTransferInitiated destination_node, initiated_by, server, source_node">
+  <h2><code>featherpanel:server:transfer:initiated</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerTransferInitiated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array server data, array source_node, array destination_node, array initiated_by.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> destination_node, initiated_by, server, source_node</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Services/Servers/ServerTransferInitiator.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:transferred</code> <span class="badge" style="border-color:#854d0e;color:#fde68a;background:#422006;">Defined only</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerTransferred</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array server data, array transferred by.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> N/A</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li class="muted">No known emission locations.</li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerTransferred(), function ($data, $by) {
-        // Handle featherpanel:server:transferred
-        // Parameters: array server data, array transferred by.
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:transferred onServerTransferred N/A">
+  <h2><code>featherpanel:server:transferred</code> <span class="fp-badge warn">Defined only</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerTransferred</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array server data, array transferred by.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> N/A</p>
+  <h3>Emitted from</h3>
+  <ul><li class="fp-muted">No known emission locations.</li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:unsuspended</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerUnsuspended</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array server data, array unsuspended by.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> server, unsuspended_by</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/ServersController.php</code></li>
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerUnsuspended(), function ($server, $unsuspendedBy) {
-        // Handle featherpanel:server:unsuspended
-        // Data keys: server, unsuspended_by
-    });
-}</code></pre>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:unsuspended onServerUnsuspended server, unsuspended_by">
+  <h2><code>featherpanel:server:unsuspended</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerUnsuspended</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> array server data, array unsuspended by.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> server, unsuspended_by</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/ServersController.php</code></li></ul>
 </article>
-
-<article class="card">
-  <h2><code>featherpanel:server:update</code> <span class="badge" style="border-color:#166534;color:#86efac;background:#052e16;">Emitted</span></h2>
-  <p class="muted"><strong>Method:</strong> <code>onServerUpdated</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> string user uuid, string server uuid.</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> action, hook_type, import_id, sequence_id, server, server_uuid, step_id, updated_by, updated_data, user_uuid</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-<li><code>backend/app/Controllers/Admin/ServersController.php</code></li>
+<article class="fp-item" data-fp-search-item data-fp-search-text="featherpanel:server:update onServerUpdated action, hook_type, import_id, sequence_id, server, server_uuid, step_id, updated_by, updated_data, user_uuid">
+  <h2><code>featherpanel:server:update</code> <span class="fp-badge ok">Emitted</span></h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>onServerUpdated</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> string user uuid, string server uuid.</p>
+  <p class="fp-muted"><strong>Data keys:</strong> action, hook_type, import_id, sequence_id, server, server_uuid, step_id, updated_by, updated_data, user_uuid</p>
+  <h3>Emitted from</h3>
+  <ul><li><code>backend/app/Controllers/Admin/ServersController.php</code></li>
 <li><code>backend/app/Controllers/User/Server/ServerFirewallController.php</code></li>
 <li><code>backend/app/Controllers/User/Server/ServerImportController.php</code></li>
 <li><code>backend/app/Controllers/User/Server/ServerLifecycleHookController.php</code></li>
-<li><code>backend/app/Services/Chatbot/Tools/UpdateServerTool.php</code></li>
-  </ul>
+<li><code>backend/app/Services/Chatbot/Tools/UpdateServerTool.php</code></li></ul>
+</article></div>
 
-  <h3>Usage Example</h3>
-  <pre><code>use App\Plugins\PluginEvents;
-use App\Plugins\Events\Events\ServerEvent;
-
-public static function processEvents(PluginEvents $evt): void
-{
-    $evt->on(ServerEvent::onServerUpdated(), function ($action, $hookType, $importId, $sequenceId, $server, $serverUuid, $stepId, $updatedBy, $updatedData, $userUuid) {
-        // Handle featherpanel:server:update
-        // Data keys: action, hook_type, import_id, sequence_id, server, server_uuid, step_id, updated_by, updated_data, user_uuid
-    });
-}</code></pre>
-</article>
-  </main>
+    <footer class="fp-footer">
+      Machine-readable sources (.md / .json) are published next to these pages for RAG and AI agents.
+      See <a href="/icanhasfeatherpanel/rag/">RAG index</a> or <a href="/icanhasfeatherpanel/llms.txt">llms.txt</a>.
+    </footer>
+  </div>
+  <script src="/icanhasfeatherpanel/assets/docs.js"></script>
 </body>
 </html>

@@ -1,0 +1,39 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "Chatbot",
+  "slug": "chatbot",
+  "total": 2,
+  "events": [
+    {
+      "name": "featherpanel:chatbot:conversation:delete",
+      "method": "onConversationDeleted",
+      "category": "Chatbot",
+      "callback": "string user uuid, int conversation id.",
+      "emitted": true,
+      "data_keys": [
+        "conversation_id",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/ChatbotController.php",
+        "backend/app/Controllers/User/VdsChatbotController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:chatbot:conversation:memory:update",
+      "method": "onConversationMemoryUpdated",
+      "category": "Chatbot",
+      "callback": "string user uuid, int conversation id, string memory.",
+      "emitted": true,
+      "data_keys": [
+        "conversation_id",
+        "memory",
+        "user_uuid"
+      ],
+      "source_files": [
+        "backend/app/Controllers/User/ChatbotController.php",
+        "backend/app/Controllers/User/VdsChatbotController.php"
+      ]
+    }
+  ]
+}

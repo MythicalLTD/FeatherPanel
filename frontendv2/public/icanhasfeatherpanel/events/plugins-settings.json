@@ -1,0 +1,37 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "PluginsSettings",
+  "slug": "plugins-settings",
+  "total": 2,
+  "events": [
+    {
+      "name": "plugins:settings:delete",
+      "method": "onPluginSettingDelete",
+      "category": "PluginsSettings",
+      "callback": "No parameters",
+      "emitted": true,
+      "data_keys": [
+        "identifier",
+        "key"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/PluginsController.php"
+      ]
+    },
+    {
+      "name": "plugins:settings:update",
+      "method": "onPluginSettingUpdate",
+      "category": "PluginsSettings",
+      "callback": "No parameters",
+      "emitted": true,
+      "data_keys": [
+        "identifier",
+        "key",
+        "value"
+      ],
+      "source_files": [
+        "backend/app/Controllers/Admin/PluginsController.php"
+      ]
+    }
+  ]
+}

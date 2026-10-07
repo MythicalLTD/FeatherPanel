@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "webspace-email",
+  "file_slug": "webspace-email",
+  "files": [
+    "src/app/(app)/webspace/[uuidShort]/email/page.tsx"
+  ],
+  "injection_points": [
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

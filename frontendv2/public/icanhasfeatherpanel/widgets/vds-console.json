@@ -1,0 +1,9 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "vds-console",
+  "file_slug": "vds-console",
+  "files": [
+    "src/app/(app)/vds/[id]/VdsConsolePage.tsx"
+  ],
+  "injection_points": []
+}

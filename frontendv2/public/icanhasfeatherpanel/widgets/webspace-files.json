@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "webspace-files",
+  "file_slug": "webspace-files",
+  "files": [
+    "src/app/(app)/webspace/[uuidShort]/files/page.tsx"
+  ],
+  "injection_points": [
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

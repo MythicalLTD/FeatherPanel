@@ -1,0 +1,110 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "PluginUi",
+  "slug": "plugin-ui",
+  "total": 7,
+  "events": [
+    {
+      "name": "featherpanel:system:plugins:ui:overrides:retrieved",
+      "method": "onOverridesRetrieved",
+      "category": "PluginUi",
+      "callback": "array overrides from Frontend/overrides.json aggregations.",
+      "emitted": true,
+      "data_keys": [
+        "actions",
+        "hide",
+        "replace"
+      ],
+      "source_files": [
+        "backend/app/Controllers/System/PluginOverridesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:system:plugins:ui:public-pages:retrieved",
+      "method": "onPublicPagesRetrieved",
+      "category": "PluginUi",
+      "callback": "array public pages from Frontend/public.json aggregations.",
+      "emitted": true,
+      "data_keys": [
+        "pages"
+      ],
+      "source_files": [
+        "backend/app/Controllers/System/PluginPublicPagesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:system:plugins:ui:sidebar:retrieved",
+      "method": "onSidebarRetrieved",
+      "category": "PluginUi",
+      "callback": "array sidebar sections, array context metadata.",
+      "emitted": true,
+      "data_keys": [
+        "context",
+        "server_spell_id",
+        "sidebar"
+      ],
+      "source_files": [
+        "backend/app/Controllers/System/PluginSidebarController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:system:plugins:ui:themes:retrieved",
+      "method": "onThemesRetrieved",
+      "category": "PluginUi",
+      "callback": "array themes from Frontend/theme.json aggregations.",
+      "emitted": true,
+      "data_keys": [
+        "themes"
+      ],
+      "source_files": [
+        "backend/app/Controllers/System/PluginThemesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:system:plugins:ui:error",
+      "method": "onUiError",
+      "category": "PluginUi",
+      "callback": "string source, string message, array context metadata.",
+      "emitted": true,
+      "data_keys": [
+        "context",
+        "message",
+        "plugin",
+        "source"
+      ],
+      "source_files": [
+        "backend/app/Controllers/System/PluginPublicPagesController.php",
+        "backend/app/Controllers/System/PluginSidebarController.php",
+        "backend/app/Controllers/System/PluginWidgetController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:system:plugins:ui:packs:retrieved",
+      "method": "onUiPacksRetrieved",
+      "category": "PluginUi",
+      "callback": "array UI packs from Frontend/ui.json aggregations.",
+      "emitted": true,
+      "data_keys": [
+        "packs"
+      ],
+      "source_files": [
+        "backend/app/Controllers/System/PluginUiPacksController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:system:plugins:ui:widgets:retrieved",
+      "method": "onWidgetsRetrieved",
+      "category": "PluginUi",
+      "callback": "array widgets by page/location, array context metadata.",
+      "emitted": true,
+      "data_keys": [
+        "context",
+        "page_filter",
+        "widgets"
+      ],
+      "source_files": [
+        "backend/app/Controllers/System/PluginWidgetController.php"
+      ]
+    }
+  ]
+}

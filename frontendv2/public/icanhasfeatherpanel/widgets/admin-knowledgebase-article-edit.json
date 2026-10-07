@@ -1,0 +1,14 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-knowledgebase-article-edit",
+  "file_slug": "admin-knowledgebase-article-edit",
+  "files": [
+    "src/app/(app)/admin/knowledgebase/articles/[id]/edit/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "before-content",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "webspace-console",
+  "file_slug": "webspace-console",
+  "files": [
+    "src/components/webspace/WebSpaceConsolePage.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "after-terminal",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

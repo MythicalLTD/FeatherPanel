@@ -1,0 +1,29 @@
+# FeatherPanel Plugin Docs
+
+> Prefer site-wide indexes for RAG: ../llms.txt and ../catalog.json
+
+Base URL (GitHub Pages): https://mythicalltd.github.io/FeatherPanel/icanhasfeatherpanel/plugins/
+Repo path: frontendv2/public/icanhasfeatherpanel/plugins/
+
+## Core docs
+
+- [AI guide](./ai-guide.md): Dense checklist, pitfalls, validation rules for AI agents
+- [Getting started](./getting-started.md): Directory layout, create flow, minimal plugin
+- [conf.yml](./conf-yml.md): Manifest schema, flags, dependencies, admin config fields
+- [Backend](./backend.md): AppPlugin lifecycle, routes, events, settings, migrations, cron, CLI
+- [Frontend](./frontend.md): widgets.json, sidebar.json, public.json, ui.json, theme.json
+- [Power SDK](./power-sdk.md): window.FeatherPanel events, actions, API, modals, shortcuts
+- [Packaging](./packaging.md): .fpa packages, install/update, Public/Components symlinks
+- [Recipes](./recipes.md): Copy-paste minimal API + widget + sidebar examples
+- [Index](./README.md): Reading order
+
+## Adjacent machine-readable references
+
+- Permissions JSON: ../permissions/all.json
+- Permissions MD: ../permissions/index.md
+- Events JSON: ../events/all.json
+- Events MD: ../events/index.md
+- Widgets JSON: ../widgets/index.json
+- OpenAPI: ../api/openapi.json
+- Site catalog: ../catalog.json
+- Site llms.txt: ../llms.txt

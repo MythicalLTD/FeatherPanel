@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-featherzerotrust",
+  "file_slug": "admin-featherzerotrust",
+  "files": [
+    "src/app/(app)/admin/featherzerotrust/page.tsx"
+  ],
+  "injection_points": [
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

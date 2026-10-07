@@ -1,0 +1,14 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-dev-plugins",
+  "file_slug": "admin-dev-plugins",
+  "files": [
+    "src/app/(app)/admin/dev/plugins/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "before-list",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

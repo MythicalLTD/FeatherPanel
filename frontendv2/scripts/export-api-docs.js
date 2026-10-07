@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { DOCS_BASE, writeJson, writeMarkdown, writeText } from './lib/docs-site.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,37 +29,48 @@ function generateApiDocsPage() {
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>API Reference - FeatherPanel</title>
+  <title>API Reference — FeatherPanel Docs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="${DOCS_BASE}/assets/docs.css" />
   <style>
-    body { margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    .header { position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #1f2937; background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(8px); }
-    .header-content { max-width: 100%; margin: 0 auto; padding: 1rem; display: flex; align-items: center; gap: 1rem; }
-    .back-link { color: #60a5fa; text-decoration: none; padding: 0.5rem 1rem; border-radius: 0.375rem; transition: background 0.2s; }
-    .back-link:hover { background: rgba(96, 165, 250, 0.1); }
-    .header-title { display: flex; align-items: center; gap: 0.5rem; color: #e5e7eb; font-size: 1.125rem; font-weight: 600; }
-    #redoc-container { min-height: calc(100vh - 73px); }
+    body.fp-docs { padding: 0; }
+    .fp-api-shell { max-width: none; padding: 0; }
+    .fp-api-shell .fp-nav { margin: 0.75rem 1rem 0; }
+    .fp-api-bar { display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center; padding:0.75rem 1rem 0.25rem; }
+    #redoc-container { min-height: calc(100vh - 120px); }
+    .fp-api-shell .fp-footer { margin: 0 1rem 1.5rem; }
   </style>
 </head>
-<body>
-  <div class="header">
-    <div class="header-content">
-      <a href="/icanhasfeatherpanel/index.html" class="back-link">&larr; Back to Documentation</a>
-      <a href="/icanhasfeatherpanel/api/oauth2-playground.html" class="back-link">OAuth2 Docs & Playground</a>
-      <div class="header-title">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #60a5fa;">
-          <polyline points="16 18 22 12 16 6"></polyline>
-          <polyline points="8 6 2 12 8 18"></polyline>
-        </svg>
-        API Reference
+<body class="fp-docs">
+  <div class="fp-shell fp-api-shell">
+    <nav class="fp-nav" aria-label="Documentation">
+      <a class="fp-brand" href="${DOCS_BASE}/">
+        <span class="fp-brand-mark" aria-hidden="true"></span>
+        <span>FeatherPanel Docs</span>
+      </a>
+      <div class="fp-nav-links">
+        <a href="${DOCS_BASE}/">Home</a>
+        <a href="${DOCS_BASE}/plugins/">Plugins</a>
+        <a href="${DOCS_BASE}/widgets/">Widgets</a>
+        <a href="${DOCS_BASE}/events/">Events</a>
+        <a href="${DOCS_BASE}/permissions/">Permissions</a>
+        <a href="${DOCS_BASE}/api/" class="active">API</a>
+        <a href="${DOCS_BASE}/rag/">RAG</a>
       </div>
+    </nav>
+    <div class="fp-api-bar">
+      <a class="fp-badge" href="${DOCS_BASE}/api/openapi.json">openapi.json</a>
+      <a class="fp-badge" href="${DOCS_BASE}/api/index.md">index.md</a>
+      <a class="fp-badge" href="${DOCS_BASE}/api/index.json">index.json</a>
+      <a class="fp-badge" href="${DOCS_BASE}/api/oauth2-playground.html">OAuth2 playground</a>
     </div>
-  </div>
   <div id="redoc-container"></div>
+  <footer class="fp-footer">Raw OpenAPI for RAG/tools: <a href="${DOCS_BASE}/api/openapi.json">openapi.json</a></footer>
+  </div>
 
   <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
   <script>
-    Redoc.init('../../api/openapi.json', {
+    Redoc.init('./openapi.json', {
       theme: {
         colors: {
           primary: {
@@ -388,5 +400,44 @@ const oauth2PlaygroundPage = generateOAuth2DocsAndPlaygroundPage();
 fs.writeFileSync(oauth2PlaygroundPath, oauth2PlaygroundPage);
 console.log(`✓ OAuth2 docs/playground page: ${oauth2PlaygroundPath}`);
 
+writeMarkdown(
+    path.join(API_DOCS_DIR, 'index.md'),
+    `# FeatherPanel HTTP API
+
+Interactive docs: [HTML (Redoc)](./index.html)
+
+## Machine-readable
+
+- [\`openapi.json\`](./openapi.json) — full OpenAPI 3 specification (preferred for RAG / codegen)
+- [\`index.json\`](./index.json) — pointers for this section
+- [OAuth2 playground](./oauth2-playground.html) — browser helper (live calls need a running panel)
+
+Copy or fetch \`openapi.json\` into your RAG corpus. Do not scrape the Redoc HTML.
+`,
+);
+
+writeJson(path.join(API_DOCS_DIR, 'index.json'), {
+    type: 'featherpanel.api.index',
+    formats: {
+        html: `${DOCS_BASE}/api/`,
+        openapi_json: `${DOCS_BASE}/api/openapi.json`,
+        markdown: `${DOCS_BASE}/api/index.md`,
+        oauth2_playground: `${DOCS_BASE}/api/oauth2-playground.html`,
+    },
+    notes: [
+        'Prefer openapi.json for RAG and tooling.',
+        'openapi.json is copied into this folder during build:public-docs.',
+    ],
+});
+
+writeText(
+    path.join(API_DOCS_DIR, 'README.md'),
+    `# API docs
+
+See [index.md](./index.md). Raw spec: [openapi.json](./openapi.json).
+`,
+);
+
 console.log(`\n✅ API documentation generated successfully!`);
-console.log(`   - API docs page: /icanhasfeatherpanel/api`);
+console.log(`   - API docs page: ${DOCS_BASE}/api`);
+console.log(`   - Machine-readable: index.md / index.json (+ openapi.json at build time)`);

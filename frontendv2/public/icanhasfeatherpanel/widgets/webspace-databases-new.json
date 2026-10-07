@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "webspace-databases-new",
+  "file_slug": "webspace-databases-new",
+  "files": [
+    "src/app/(app)/webspace/[uuidShort]/databases/new/page.tsx"
+  ],
+  "injection_points": [
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "type": "featherpanel.rag.index",
+  "catalog": "/icanhasfeatherpanel/catalog.json",
+  "llms_txt": "/icanhasfeatherpanel/llms.txt",
+  "totals": {
+    "documents": 534,
+    "markdown": 268,
+    "json": 264,
+    "text": 2
+  },
+  "entrypoints": {
+    "home": "/icanhasfeatherpanel/",
+    "rag": "/icanhasfeatherpanel/rag/",
+    "llms_txt": "/icanhasfeatherpanel/llms.txt",
+    "catalog_json": "/icanhasfeatherpanel/catalog.json",
+    "plugins_ai_guide": "/icanhasfeatherpanel/plugins/ai-guide.md",
+    "permissions_all_json": "/icanhasfeatherpanel/permissions/all.json",
+    "events_all_json": "/icanhasfeatherpanel/events/all.json",
+    "widgets_index_json": "/icanhasfeatherpanel/widgets/index.json",
+    "openapi_json": "/icanhasfeatherpanel/api/openapi.json"
+  }
+}

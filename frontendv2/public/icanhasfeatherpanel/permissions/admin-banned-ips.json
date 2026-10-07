@@ -1,0 +1,26 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin Banned IPs",
+  "slug": "admin-banned-ips",
+  "total": 3,
+  "permissions": [
+    {
+      "constant": "ADMIN_BLOCKED_IPS_CREATE",
+      "node": "admin.blocked_ips.create",
+      "category": "Admin Banned IPs",
+      "description": "Ban IPs from panel registration"
+    },
+    {
+      "constant": "ADMIN_BLOCKED_IPS_DELETE",
+      "node": "admin.blocked_ips.delete",
+      "category": "Admin Banned IPs",
+      "description": "Remove panel IP bans"
+    },
+    {
+      "constant": "ADMIN_BLOCKED_IPS_VIEW",
+      "node": "admin.blocked_ips.view",
+      "category": "Admin Banned IPs",
+      "description": "View banned panel IPs"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-node-databases-id",
+  "file_slug": "admin-node-databases-id",
+  "files": [
+    "src/app/(app)/admin/nodes/[id]/databases/page.tsx"
+  ],
+  "injection_points": [
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

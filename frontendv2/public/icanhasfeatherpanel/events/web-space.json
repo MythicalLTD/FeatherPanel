@@ -1,0 +1,370 @@
+{
+  "type": "featherpanel.events.category",
+  "category": "WebSpace",
+  "slug": "web-space",
+  "total": 33,
+  "events": [
+    {
+      "name": "featherpanel:webspace:app:installed",
+      "method": "onWebSpaceAppInstalled",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, string app, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/User/WebSpaces/WebSpaceAppsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:app:updated",
+      "method": "onWebSpaceAppUpdated",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, string app, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/User/WebSpaces/WebSpaceAppsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:backup:create",
+      "method": "onWebSpaceBackupCreated",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, string|null backup uuid, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/Admin/WebSpacesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:backup:delete",
+      "method": "onWebSpaceBackupDeleted",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, string backup uuid, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/Admin/WebSpacesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:backup:restore",
+      "method": "onWebSpaceBackupRestored",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, string backup uuid, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/Admin/WebSpacesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:console:access",
+      "method": "onWebSpaceConsoleAccessed",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, array context.",
+      "emitted": false,
+      "data_keys": [],
+      "source_files": []
+    },
+    {
+      "name": "featherpanel:webspace:created",
+      "method": "onWebSpaceCreated",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, array webspace, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/Admin/WebSpacesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:database:create",
+      "method": "onWebSpaceDatabaseCreated",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, int database id, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/User/WebSpaces/WebSpaceDatabaseController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:database:delete",
+      "method": "onWebSpaceDatabaseDeleted",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, int database id, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/User/WebSpaces/WebSpaceDatabaseController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:deleted",
+      "method": "onWebSpaceDeleted",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/Admin/WebSpacesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:directory:create",
+      "method": "onWebSpaceDirectoryCreated",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, string path, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/User/WebSpaces/WebSpaceFilesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:dns:record:created",
+      "method": "onWebSpaceDnsRecordCreated",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, array record.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/Admin/WebSpaceDnsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:dns:record:deleted",
+      "method": "onWebSpaceDnsRecordDeleted",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, string record id.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/Admin/WebSpaceDnsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:dns:record:updated",
+      "method": "onWebSpaceDnsRecordUpdated",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, array record.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/Admin/WebSpaceDnsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:dns:zone:linked",
+      "method": "onWebSpaceDnsZoneLinked",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, array zone.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/Admin/WebSpaceDnsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:dns:zone:unlinked",
+      "method": "onWebSpaceDnsZoneUnlinked",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, int zone id.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/Admin/WebSpaceDnsController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:files:delete",
+      "method": "onWebSpaceFilesDeleted",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, array paths, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/User/WebSpaces/WebSpaceFilesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:mailbox:create",
+      "method": "onWebSpaceMailboxCreated",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, int mailbox id, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/User/WebSpaces/WebSpaceMailboxController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:mailbox:delete",
+      "method": "onWebSpaceMailboxDeleted",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, int mailbox id, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/User/WebSpaces/WebSpaceMailboxController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:reinstall",
+      "method": "onWebSpaceReinstalled",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/User/WebSpaces/WebSpacesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:schedule:create",
+      "method": "onWebSpaceScheduleCreated",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, int schedule id, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/User/WebSpaces/WebSpaceScheduleController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:schedule:delete",
+      "method": "onWebSpaceScheduleDeleted",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, int schedule id, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/User/WebSpaces/WebSpaceScheduleController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:schedule:update",
+      "method": "onWebSpaceScheduleUpdated",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, int schedule id, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/User/WebSpaces/WebSpaceScheduleController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:sftp:account:created",
+      "method": "onWebSpaceSftpAccountCreated",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, array account.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/User/WebSpaces/WebSpaceSftpAccountController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:sftp:account:deleted",
+      "method": "onWebSpaceSftpAccountDeleted",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, int account id.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/User/WebSpaces/WebSpaceSftpAccountController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:sftp:account:updated",
+      "method": "onWebSpaceSftpAccountUpdated",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, array account.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/User/WebSpaces/WebSpaceSftpAccountController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:sftp:password:reset",
+      "method": "onWebSpaceSftpPasswordReset",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, int account id.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/User/WebSpaces/WebSpaceSftpAccountController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:subuser:create",
+      "method": "onWebSpaceSubuserCreated",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, int subuser id, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/User/WebSpaces/WebSpaceSubuserController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:subuser:delete",
+      "method": "onWebSpaceSubuserDeleted",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, int subuser id, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/User/WebSpaces/WebSpaceSubuserController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:subuser:update",
+      "method": "onWebSpaceSubuserUpdated",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, int subuser id, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/User/WebSpaces/WebSpaceSubuserController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:suspended",
+      "method": "onWebSpaceSuspended",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/Admin/WebSpacesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:unsuspended",
+      "method": "onWebSpaceUnsuspended",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/Admin/WebSpacesController.php"
+      ]
+    },
+    {
+      "name": "featherpanel:webspace:updated",
+      "method": "onWebSpaceUpdated",
+      "category": "WebSpace",
+      "callback": "string|null user uuid, string webspace uuid, string uuid_short, array changed fields, array context.",
+      "emitted": true,
+      "data_keys": [],
+      "source_files": [
+        "backend/app/Controllers/Admin/WebSpacesController.php",
+        "backend/app/Controllers/User/WebSpaces/WebSpacesController.php"
+      ]
+    }
+  ]
+}

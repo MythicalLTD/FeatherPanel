@@ -1,0 +1,19 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "server-console",
+  "file_slug": "server-console",
+  "files": [
+    "src/components/server/ServerConsolePage.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "after-performance",
+    "after-terminal",
+    "after-wings-status",
+    "before-performance",
+    "before-terminal",
+    "bottom-of-page",
+    "top-of-page",
+    "under-server-info-cards"
+  ]
+}

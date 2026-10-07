@@ -1,0 +1,14 @@
+{
+  "type": "featherpanel.widgets.slug",
+  "slug": "admin-mail-templates",
+  "file_slug": "admin-mail-templates",
+  "files": [
+    "src/app/(app)/admin/mail-templates/page.tsx"
+  ],
+  "injection_points": [
+    "after-header",
+    "before-list",
+    "bottom-of-page",
+    "top-of-page"
+  ]
+}

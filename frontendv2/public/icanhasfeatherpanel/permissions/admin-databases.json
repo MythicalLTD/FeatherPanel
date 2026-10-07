@@ -1,0 +1,38 @@
+{
+  "type": "featherpanel.permissions.category",
+  "category": "Admin Databases",
+  "slug": "admin-databases",
+  "total": 5,
+  "permissions": [
+    {
+      "constant": "ADMIN_DATABASES_CREATE",
+      "node": "admin.databases.create",
+      "category": "Admin Databases",
+      "description": "Create new databases"
+    },
+    {
+      "constant": "ADMIN_DATABASES_DELETE",
+      "node": "admin.databases.delete",
+      "category": "Admin Databases",
+      "description": "Delete databases"
+    },
+    {
+      "constant": "ADMIN_DATABASES_EDIT",
+      "node": "admin.databases.edit",
+      "category": "Admin Databases",
+      "description": "Edit existing databases"
+    },
+    {
+      "constant": "ADMIN_DATABASES_MANAGE",
+      "node": "admin.databases.manage",
+      "category": "Admin Databases",
+      "description": "Manage database"
+    },
+    {
+      "constant": "ADMIN_DATABASES_VIEW",
+      "node": "admin.databases.view",
+      "category": "Admin Databases",
+      "description": "View databases"
+    }
+  ]
+}
