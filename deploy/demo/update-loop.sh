@@ -1,6 +1,10 @@
 #!/bin/sh
 # Pulls latest :dev / daemon images and recreates the demo stack on a schedule.
 # Prunes unused images/containers/build cache so the demo VM does not fill the disk.
+#
+# IMPORTANT: never include demo-updater in `compose up`. Recreating this container
+# from inside itself SIGKILLs the loop (exit 137) mid-recreate and leaves
+# demo-reset / async-runner intentionally stopped (unless-stopped will not revive them).
 set -eu
 
 INTERVAL="${DEMO_UPDATE_INTERVAL_SECONDS:-3600}"
@@ -8,6 +12,17 @@ COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.yml}"
 
 log() {
 	printf '[demo-updater] %s\n' "$*"
+}
+
+# Long-running services only. host-prep is one-shot (run --rm below).
+# demo-updater must be omitted so we do not stop ourselves.
+up_services() {
+	docker compose -f "$COMPOSE_FILE" config --services | while read -r svc; do
+		case "$svc" in
+			demo-updater|host-prep) ;;
+			*) printf '%s\n' "$svc" ;;
+		esac
+	done
 }
 
 prune_disk() {
@@ -29,9 +44,10 @@ sleep 120
 while true; do
 	log "Pulling latest images (panel :dev, wings :latest, quilld :main)..."
 	if docker compose -f "$COMPOSE_FILE" pull; then
-		log "Recreating stack with latest images..."
+		log "Recreating stack with latest images (excluding demo-updater)..."
 		docker compose -f "$COMPOSE_FILE" run --rm --no-deps host-prep >/dev/null 2>&1 || true
-		docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
+		# shellcheck disable=SC2046
+		docker compose -f "$COMPOSE_FILE" up -d --remove-orphans $(up_services)
 		prune_disk
 		log "Update cycle finished."
 	else
