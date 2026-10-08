@@ -1,19 +1,20 @@
 # FeatherPanel
 # ==========================================
 
-# Directory configurations
 FRONTENDV2_DIR = frontendv2
 BACKEND_DIR = backend
 RUNNER_DIR = runner
 MCP_DIR = mcp
 
-# Commands
+# Only these entrypoints define APP_DEBUG — do not scan the whole tree
+APP_DEBUG_FILES = $(BACKEND_DIR)/public/index.php $(BACKEND_DIR)/storage/cron/runner.php
+
 PNPM = pnpm
-NPM = npm
 PHP = php
 COMPOSER = COMPOSER_ALLOW_SUPERUSER=1 composer
 SED = sed
-CARGO = cargo	
+CARGO = cargo
+NODE = node
 
 # Colors and formatting
 RED = \033[0;31m
@@ -26,7 +27,6 @@ WHITE = \033[1;37m
 BOLD = \033[1m
 NC = \033[0m
 
-# Emoji indicators
 CHECK = ✓
 WARN = ⚠
 INFO = ℹ
@@ -38,54 +38,64 @@ SERVER = 🌐
 PROD = 🛡️
 DEV = 🔍
 
-# Make sure we use bash
 SHELL := /bin/bash
 
-.PHONY: help frontend backend mcp mcp-dev mcp-build release install clean test set-prod set-dev
+.PHONY: help frontend backend mcp mcp-dev mcp-build runner release install \
+	clean test lint lint-backend lint-frontend set-prod set-dev \
+	permissions readme-stats ncu-frontend deps-update clean-license
 
 # Default target
 help:
 	@echo -e "${BOLD}${BLUE}FeatherPanel Build System${NC}"
 	@echo -e "${CYAN}================================${NC}\n"
-	@echo -e "${BOLD}Available commands:${NC}"
-	@echo -e "  ${GREEN}make frontend${NC}    ${ROCKET} Builds the frontend for production"
-	@echo -e "  ${GREEN}make backend${NC}     ${BUILD} Builds the backend components"
-	@echo -e "  ${GREEN}make mcp${NC}         ${BUILD} Builds the MCP server"
-	@echo -e "  ${GREEN}make mcp-dev${NC}     ${SERVER} Runs MCP HTTP server with pnpm (tsx watch)"
-	@echo -e "  ${GREEN}make mcp-build${NC}   ${BUILD} Alias for make mcp"
-	@echo -e "  ${GREEN}make release${NC}     ${PACKAGE} Prepares a full release build"
-	@echo -e "  ${GREEN}make install${NC}     ${INFO} Installs all dependencies"
-	@echo -e "  ${GREEN}make clean${NC}       ${CLEAN} Cleans all build artifacts"
-	@echo -e "  ${GREEN}make test${NC}        ${CHECK} Runs all tests"
-	@echo -e "  ${GREEN}make set-prod${NC}    ${PROD} Sets APP_DEBUG to false for production\n"
-	@echo -e "  ${GREEN}make set-dev${NC}     ${DEV} Sets APP_DEBUG to true for development"
+	@echo -e "${BOLD}Build:${NC}"
+	@echo -e "  ${GREEN}make frontend${NC}     ${ROCKET} Production frontend (+ docs)"
+	@echo -e "  ${GREEN}make backend${NC}      ${BUILD} Composer install (optimized)"
+	@echo -e "  ${GREEN}make mcp${NC}          ${BUILD} Build MCP server"
+	@echo -e "  ${GREEN}make runner${NC}       ${BUILD} Release-build async runner"
+	@echo -e "  ${GREEN}make release${NC}      ${PACKAGE} Full release prep (includes frontend ncu -u)"
+	@echo -e ""
+	@echo -e "${BOLD}Dev / ops:${NC}"
+	@echo -e "  ${GREEN}make install${NC}      ${INFO} Install dependencies"
+	@echo -e "  ${GREEN}make lint${NC}         ${CHECK} Lint backend + frontend"
+	@echo -e "  ${GREEN}make test${NC}         ${CHECK} Run backend tests"
+	@echo -e "  ${GREEN}make mcp-dev${NC}      ${SERVER} MCP HTTP server (tsx watch)"
+	@echo -e "  ${GREEN}make set-prod${NC}     ${PROD} APP_DEBUG=false on entrypoints"
+	@echo -e "  ${GREEN}make set-dev${NC}      ${DEV} APP_DEBUG=true on entrypoints"
+	@echo -e "  ${GREEN}make clean${NC}        ${CLEAN} Remove build artifacts"
+	@echo -e "  ${GREEN}make deps-update${NC}  ${WARN} Bump frontend + backend + mcp deps"
+	@echo -e "  ${GREEN}make permissions${NC}  ${INFO} Export permissions"
+	@echo -e "  ${GREEN}make readme-stats${NC} ${INFO} Local README stats (CI: readme-stats.yml)"
 	@echo -e "${YELLOW}Use 'make <command>' to execute a command${NC}\n"
 
-# Frontend tasks
+# ------------------------------------------
+# Core build targets
+# ------------------------------------------
+
 frontend:
 	@echo -e "\n${BOLD}${BLUE}Frontend Build${NC} ${ROCKET}"
 	@echo -e "${CYAN}=================${NC}"
-	@echo -e "${GREEN}${INFO} Building frontend + icanhas docs for production...${NC}"
 	@cd $(FRONTENDV2_DIR) && $(PNPM) build:with-docs
-	@echo -e "${GREEN}${CHECK} Frontend build complete!${NC}\n"
+	@echo -e "${GREEN}${CHECK} Frontend build complete${NC}\n"
 
-# Backend tasks
 backend:
 	@echo -e "\n${BOLD}${BLUE}Backend Build${NC} ${BUILD}"
 	@echo -e "${CYAN}=================${NC}"
-	@echo -e "${GREEN}${INFO} Building backend components...${NC}"
-	@cd $(BACKEND_DIR) && $(COMPOSER) install
-	@cd $(BACKEND_DIR) && $(COMPOSER) dump-autoload
-	@echo -e "${GREEN}${CHECK} Backend build complete!${NC}\n"
+	@cd $(BACKEND_DIR) && $(COMPOSER) install --optimize-autoloader
+	@echo -e "${GREEN}${CHECK} Backend build complete${NC}\n"
 
-# MCP server
 mcp mcp-build:
 	@echo -e "\n${BOLD}${BLUE}MCP Build${NC} ${BUILD}"
 	@echo -e "${CYAN}=================${NC}"
-	@echo -e "${GREEN}${INFO} Building FeatherPanel MCP server...${NC}"
-	@cd $(MCP_DIR) && $(PNPM) install
+	@if [ ! -d $(MCP_DIR)/node_modules ]; then cd $(MCP_DIR) && $(PNPM) install; fi
 	@cd $(MCP_DIR) && $(PNPM) run build
-	@echo -e "${GREEN}${CHECK} MCP build complete!${NC}\n"
+	@echo -e "${GREEN}${CHECK} MCP build complete${NC}\n"
+
+runner:
+	@echo -e "\n${BOLD}${BLUE}Runner Build${NC} ${BUILD}"
+	@echo -e "${CYAN}=================${NC}"
+	@cd $(RUNNER_DIR) && $(CARGO) build --release
+	@echo -e "${GREEN}${CHECK} Runner built${NC}\n"
 
 # Local MCP HTTP server (Streamable HTTP on :3001)
 # Env: FEATHERPANEL_URL (default http://127.0.0.1:4831), optional FEATHERPANEL_API_KEY for stdio only
@@ -96,112 +106,116 @@ mcp-dev:
 	@echo -e "${YELLOW}${INFO} Set FEATHERPANEL_URL to your panel (default http://127.0.0.1:4831)${NC}"
 	@cd $(MCP_DIR) && FEATHERPANEL_URL=$${FEATHERPANEL_URL:-http://127.0.0.1:4831} MCP_HOST=$${MCP_HOST:-0.0.0.0} MCP_PORT=$${MCP_PORT:-3001} $(PNPM) run dev
 
-clean-license:
-	@echo -e "\n${BOLD}${BLUE}Cleaning License${NC} ${CLEAN}"
-	@echo -e "${CYAN}=======================${NC}"
-	@echo -e "${YELLOW}${WARN} Cleaning license...${NC}"
-	@rm -rf /var/www/featherpanel/backend/storage/caches/licenses/*.json 
-	@echo -e "${GREEN}${CHECK} License cleaned${NC}\n"
+# ------------------------------------------
+# Release — ordered, fail-fast; README stats live in CI
+# ------------------------------------------
+# Frontend ncu -u stays in release (needed).
+# Full composer/mcp bumps: `make deps-update`.
+# README code stats: `.github/workflows/readme-stats.yml` (or `make readme-stats` locally).
 
-# Release build
 release:
 	@echo -e "\n${BOLD}${BLUE}Release Build${NC} ${ROCKET}"
 	@echo -e "${CYAN}=================${NC}"
-	@echo -e "${YELLOW}${WARN} Starting comprehensive release build...${NC}\n"
+	@echo -e "${YELLOW}${WARN} Release prep (ncu frontend, checks, then builds)${NC}\n"
+	@$(MAKE) --no-print-directory permissions
+	@$(MAKE) --no-print-directory set-prod
+	@$(MAKE) --no-print-directory ncu-frontend
+	@$(MAKE) --no-print-directory install
+	@$(MAKE) --no-print-directory lint-backend
+	@$(MAKE) --no-print-directory test
+	@$(MAKE) --no-print-directory frontend
+	@$(MAKE) --no-print-directory mcp
+	@$(MAKE) --no-print-directory runner
+	@echo -e "${GREEN}${ROCKET} Release build successful!${NC}\n"
+	@echo -e "${CYAN}${INFO} README stats are updated by CI (readme-stats.yml)${NC}\n"
 
+permissions:
 	@echo -e "${PURPLE}${INFO} Exporting permissions...${NC}"
-	@php app exportPermissions
+	@$(PHP) app exportPermissions
 	@echo -e "${GREEN}${CHECK} Permissions exported${NC}\n"
 
+# Kept for local/manual use — release does not run this (CI owns it)
+readme-stats:
+	@echo -e "${PURPLE}${INFO} Updating README code stats...${NC}"
+	@$(NODE) .github/tools/count.js --update-readme
+	@echo -e "${GREEN}${CHECK} README updated${NC}\n"
 
-	@echo -e "\n${BOLD}${BLUE}Setting Production Mode${NC} ${PROD}"
-	@echo -e "${CYAN}=======================${NC}"
-	@echo -e "${GREEN}${INFO} Setting APP_DEBUG to false...${NC}"
-	@find $(BACKEND_DIR) -type f -name "*.php" -exec $(SED) -i 's/define('\''APP_DEBUG'\'', true);/define('\''APP_DEBUG'\'', false);/g' {} +
-	@echo -e "${GREEN}${CHECK} Production mode set successfully!${NC}\n"
-	
-	@echo -e "${PURPLE}${INFO} Frontend checks...${NC}"
+# ------------------------------------------
+# Quality
+# ------------------------------------------
 
+lint: lint-backend lint-frontend
+
+lint-backend:
+	@echo -e "${PURPLE}${INFO} Backend lint...${NC}"
 	@cd $(BACKEND_DIR) && $(COMPOSER) run lint
-	@echo -e "${GREEN}${CHECK} Frontend checks complete${NC}\n"
-	
-	@echo -e "${PURPLE}${INFO} Updating dependencies...${NC}"
-	@cd $(FRONTENDV2_DIR) && npx --yes npm-check-updates -u
-	@cd $(FRONTENDV2_DIR) && $(PNPM) install
-	@cd $(BACKEND_DIR) && $(COMPOSER) update
-	@echo -e "${GREEN}${CHECK} Dependencies updated${NC}\n"
-	
-	@echo -e "${PURPLE}${INFO} Building applications (with generated developer docs)…${NC}"
-	@cd $(FRONTENDV2_DIR) && $(PNPM) build:with-docs
-	@cd $(MCP_DIR) && $(PNPM) install && $(PNPM) run build
-	@cd $(BACKEND_DIR) && $(COMPOSER) dump-autoload
-	@cd $(BACKEND_DIR) && $(COMPOSER) install --optimize-autoloader
-	@echo -e "${GREEN}${CHECK} Build complete${NC}\n"
+	@echo -e "${GREEN}${CHECK} Backend lint complete${NC}\n"
 
-	@echo -e "${PURPLE}${INFO} Updating README file with code stats...${NC}"
-	@node .github/tools/count.js --update-readme
-	@echo -e "${GREEN}${CHECK} README updated with code statistics${NC}\n"
-	
-
-	@echo -e "${PURPLE}${INFO} Running backend tests...${NC}"
-	@cd $(BACKEND_DIR) && $(COMPOSER) test
-	@echo -e "${GREEN}${CHECK} Backend tests completed${NC}\n"
-
-	@echo -e "${PURPLE}${INFO} Building runner...${NC}"
-	@cd $(RUNNER_DIR) && $(CARGO) build --release
-	@echo -e "${GREEN}${CHECK} Runner built${NC}\n"
-
-
-
-	@echo -e "${GREEN}${ROCKET} Release build successful!${NC}\n"
-
-lint: 
-	@cd $(BACKEND_DIR) && $(COMPOSER) run lint
+lint-frontend:
+	@echo -e "${PURPLE}${INFO} Frontend lint...${NC}"
 	@cd $(FRONTENDV2_DIR) && $(PNPM) lint
-	@echo -e "${GREEN}${CHECK} Linting complete${NC}\n"
-# Install dependencies
-install:
-	@echo -e "\n${BOLD}${BLUE}Installing Dependencies${NC} ${PACKAGE}"
-	@echo -e "${CYAN}=======================${NC}"
-	@echo -e "${GREEN}${INFO} Installing frontend packages...${NC}"
-	@cd $(FRONTENDV2_DIR) && $(PNPM) install
-	@echo -e "${GREEN}${CHECK} Frontend packages installed${NC}\n"
-	@echo -e "${GREEN}${INFO} Installing backend packages...${NC}"
-	@cd $(BACKEND_DIR) && $(COMPOSER) install
-	@echo -e "${GREEN}${CHECK} Backend packages installed${NC}\n"
-	@echo -e "${GREEN}${INFO} Installing MCP packages...${NC}"
-	@cd $(MCP_DIR) && $(PNPM) install
-	@echo -e "${GREEN}${CHECK} MCP packages installed${NC}\n"
+	@echo -e "${GREEN}${CHECK} Frontend lint complete${NC}\n"
 
-# Clean build artifacts
-clean:
-	@echo -e "\n${BOLD}${BLUE}Cleaning Artifacts${NC} ${CLEAN}"
-	@echo -e "${CYAN}=======================${NC}"
-	@echo -e "${YELLOW}${WARN} Removing artifacts and caches...${NC}"
-	@cd $(FRONTENDV2_DIR) && rm -rf dist node_modules/
-	@cd $(MCP_DIR) && rm -rf dist node_modules/
-	@echo -e "${GREEN}${CHECK} Clean complete!${NC}\n"
-
-# Run tests
 test:
 	@echo -e "\n${BOLD}${BLUE}Running Tests${NC} ${CHECK}"
 	@echo -e "${CYAN}=============${NC}"
-	@echo -e "${GREEN}${INFO} Running backend tests...${NC}"
 	@cd $(BACKEND_DIR) && $(COMPOSER) test
-	@echo -e "${GREEN}${CHECK} All tests complete!${NC}\n"
+	@echo -e "${GREEN}${CHECK} Backend tests complete${NC}\n"
 
-# Set production mode
+# ------------------------------------------
+# Dependencies
+# ------------------------------------------
+
+ncu-frontend:
+	@echo -e "${PURPLE}${INFO} Bumping frontend deps (ncu -u)...${NC}"
+	@cd $(FRONTENDV2_DIR) && npx --yes npm-check-updates -u
+	@cd $(FRONTENDV2_DIR) && $(PNPM) install
+	@echo -e "${GREEN}${CHECK} Frontend deps updated${NC}\n"
+
+install:
+	@echo -e "\n${BOLD}${BLUE}Installing Dependencies${NC} ${PACKAGE}"
+	@echo -e "${CYAN}=======================${NC}"
+	@cd $(FRONTENDV2_DIR) && $(PNPM) install
+	@cd $(BACKEND_DIR) && $(COMPOSER) install --optimize-autoloader
+	@cd $(MCP_DIR) && $(PNPM) install
+	@echo -e "${GREEN}${CHECK} Dependencies installed${NC}\n"
+
+# Broader bump (frontend ncu + composer update + mcp) — optional
+deps-update:
+	@echo -e "\n${BOLD}${BLUE}Updating Dependencies${NC} ${WARN}"
+	@echo -e "${CYAN}=======================${NC}"
+	@$(MAKE) --no-print-directory ncu-frontend
+	@echo -e "${YELLOW}${WARN} Running composer update...${NC}"
+	@cd $(BACKEND_DIR) && $(COMPOSER) update
+	@cd $(MCP_DIR) && $(PNPM) update
+	@echo -e "${GREEN}${CHECK} Dependencies updated — review lockfile diffs before committing${NC}\n"
+
+# ------------------------------------------
+# Mode / cleanup
+# ------------------------------------------
+
 set-prod:
 	@echo -e "\n${BOLD}${BLUE}Setting Production Mode${NC} ${PROD}"
 	@echo -e "${CYAN}=======================${NC}"
-	@echo -e "${GREEN}${INFO} Setting APP_DEBUG to false...${NC}"
-	@find $(BACKEND_DIR) -type f -name "*.php" -exec $(SED) -i 's/define('\''APP_DEBUG'\'', true);/define('\''APP_DEBUG'\'', false);/g' {} +
-	@echo -e "${GREEN}${CHECK} Production mode set successfully!${NC}\n"
+	@$(SED) -i "s/define('APP_DEBUG', true);/define('APP_DEBUG', false);/g" $(APP_DEBUG_FILES)
+	@echo -e "${GREEN}${CHECK} APP_DEBUG=false on entrypoints${NC}\n"
 
 set-dev:
 	@echo -e "\n${BOLD}${BLUE}Setting Development Mode${NC} ${DEV}"
 	@echo -e "${CYAN}=======================${NC}"
-	@echo -e "${GREEN}${INFO} Setting APP_DEBUG to true...${NC}"
-	@find $(BACKEND_DIR) -type f -name "*.php" -exec $(SED) -i 's/define('\''APP_DEBUG'\'', false);/define('\''APP_DEBUG'\'', true);/g' {} +
-	@echo -e "${GREEN}${CHECK} Development mode set successfully!${NC}\n"
+	@$(SED) -i "s/define('APP_DEBUG', false);/define('APP_DEBUG', true);/g" $(APP_DEBUG_FILES)
+	@echo -e "${GREEN}${CHECK} APP_DEBUG=true on entrypoints${NC}\n"
 
+clean:
+	@echo -e "\n${BOLD}${BLUE}Cleaning Artifacts${NC} ${CLEAN}"
+	@echo -e "${CYAN}=======================${NC}"
+	@rm -rf $(FRONTENDV2_DIR)/dist $(FRONTENDV2_DIR)/.next $(FRONTENDV2_DIR)/node_modules
+	@rm -rf $(MCP_DIR)/dist $(MCP_DIR)/node_modules
+	@rm -rf $(RUNNER_DIR)/target/release $(RUNNER_DIR)/target/debug
+	@echo -e "${GREEN}${CHECK} Clean complete${NC}\n"
+
+clean-license:
+	@echo -e "\n${BOLD}${BLUE}Cleaning License${NC} ${CLEAN}"
+	@echo -e "${CYAN}=======================${NC}"
+	@rm -rf $(BACKEND_DIR)/storage/caches/licenses/*.json
+	@echo -e "${GREEN}${CHECK} License cleaned${NC}\n"

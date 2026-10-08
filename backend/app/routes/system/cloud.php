@@ -18,6 +18,7 @@
 use App\App;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
+use App\Helpers\DemoCloudHelper;
 use Symfony\Component\Routing\Route;
 use App\Middleware\CloudAccessMiddleware;
 use App\Middleware\PanelAccessMiddleware;
@@ -71,6 +72,10 @@ return static function (RouteCollection $routes): void {
         '/api/cloud/v1/panel-handshake',
         [
             '_controller' => static function (Request $request) {
+                if (DemoCloudHelper::isBlocked()) {
+                    return DemoCloudHelper::denyResponse();
+                }
+
                 $app = App::getInstance(true);
                 $config = $app->getConfig();
                 $logger = $app->getLogger();
@@ -232,6 +237,10 @@ return static function (RouteCollection $routes): void {
         '/api/cloud/v1/oauth2/callback',
         [
             '_controller' => static function (Request $request) {
+                if (DemoCloudHelper::isBlocked()) {
+                    return DemoCloudHelper::denyResponse();
+                }
+
                 $app = App::getInstance(true);
                 $config = $app->getConfig();
                 $logger = $app->getLogger();

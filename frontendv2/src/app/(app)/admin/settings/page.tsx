@@ -19,6 +19,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { adminSettingsApi, OrganizedSettings, Setting } from '@/lib/admin-settings-api';
+import { useDemoMode } from '@/hooks/useDemoMode';
+import { DemoFeatureCallout } from '@/components/common/DemoFeatureCallout';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -274,6 +276,7 @@ function SettingFieldRow({
 
 export default function SettingsPage() {
     const { t } = useTranslation();
+    const isDemo = useDemoMode();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [sendingTestEmail, setSendingTestEmail] = useState(false);
@@ -547,7 +550,7 @@ export default function SettingsPage() {
                 icon={Settings}
                 actions={
                     <div className='flex flex-wrap items-center justify-end gap-2'>
-                        <Button variant='outline' onClick={handleUploadLogs} className='shrink-0'>
+                        <Button variant='outline' onClick={handleUploadLogs} className='shrink-0' disabled={isDemo}>
                             <UploadCloud className='mr-2 h-4 w-4' />
                             {t('admin.settings.actions.upload_logs')}
                         </Button>
@@ -562,6 +565,8 @@ export default function SettingsPage() {
                     </div>
                 }
             />
+
+            {isDemo ? <DemoFeatureCallout /> : null}
 
             <WidgetRenderer widgets={getWidgets('admin-settings', 'after-header')} />
 

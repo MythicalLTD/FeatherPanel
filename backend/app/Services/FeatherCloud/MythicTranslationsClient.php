@@ -20,6 +20,7 @@ namespace App\Services\FeatherCloud;
 use App\App;
 use GuzzleHttp\Client;
 use App\Config\ConfigInterface;
+use App\Helpers\DemoCloudHelper;
 use GuzzleHttp\Exception\RequestException;
 
 /**
@@ -112,6 +113,8 @@ class MythicTranslationsClient
      */
     public function downloadLocale(string $slug, string $locale): string
     {
+        DemoCloudHelper::assertAllowed();
+
         $path = 'projects/' . rawurlencode($slug) . '/locales/' . rawurlencode($locale) . '/download';
 
         try {
@@ -154,6 +157,8 @@ class MythicTranslationsClient
      */
     private function makeRequest(string $endpoint, string $method = 'GET', array $query = []): array
     {
+        DemoCloudHelper::assertAllowed();
+
         try {
             $options = [];
             if ($query !== []) {

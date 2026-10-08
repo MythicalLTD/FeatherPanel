@@ -18,6 +18,7 @@
 namespace App\Controllers\Admin;
 
 use App\App;
+use App\Helpers\DemoGuard;
 use App\Helpers\ApiResponse;
 use App\Plugins\PluginFlags;
 use App\Plugins\PluginConfig;
@@ -270,6 +271,10 @@ class PluginManagerController
     )]
     public function createPlugin(Request $request): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $config = App::getInstance(true)->getConfig();
         if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
             return ApiResponse::error('You are not allowed to create plugins in non-developer mode', 403);

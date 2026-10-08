@@ -20,6 +20,7 @@ namespace App\Services\FeatherCloud;
 use App\App;
 use GuzzleHttp\Client;
 use App\Config\ConfigInterface;
+use App\Helpers\DemoCloudHelper;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 
@@ -487,6 +488,8 @@ class FeatherCloudClient
      */
     private function downloadBinary(string $path, bool $requireAuth = true): string
     {
+        DemoCloudHelper::assertAllowed();
+
         if ($requireAuth && !$this->isConfigured()) {
             throw new FeatherCloudException('Mythic Panel API credentials are not configured', 'CREDENTIALS_NOT_CONFIGURED', 503);
         }
@@ -562,6 +565,8 @@ class FeatherCloudClient
         bool $requireAuth = true,
         bool $requireMemberUuid = false,
     ): array {
+        DemoCloudHelper::assertAllowed();
+
         if ($requireAuth && !$this->isConfigured()) {
             throw new FeatherCloudException('Mythic Panel API credentials are not configured', 'CREDENTIALS_NOT_CONFIGURED', 503);
         }

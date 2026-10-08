@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { ArrowUpRight, Bug, Cloud, Lightbulb, Package, Sparkles, Store } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 
@@ -34,6 +35,11 @@ interface HubItem {
 
 export function CloudHubWidget() {
     const { t } = useTranslation();
+    const { settings } = useSettings();
+
+    if (settings?.app_demo_yes === 'true') {
+        return null;
+    }
 
     const items: HubItem[] = [
         {

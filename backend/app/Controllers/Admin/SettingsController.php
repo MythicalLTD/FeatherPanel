@@ -20,6 +20,7 @@ namespace App\Controllers\Admin;
 use App\App;
 use App\Chat\Activity;
 use App\Chat\Database;
+use App\Helpers\DemoGuard;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
@@ -3763,6 +3764,8 @@ class SettingsController
     ),]
     public function update(Request $request): Response
     {
+        // Demo panels may change settings — periodic wipe / reset restores defaults.
+
         $raw = $request->getContent();
         $data = json_decode($raw ?? '', true);
         if (!is_array($data)) {
@@ -4102,6 +4105,10 @@ class SettingsController
     ),]
     public function sendTestEmail(Request $request): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $user = $request->attributes->get('user');
         if (!$user || empty($user['email'])) {
             return ApiResponse::error(

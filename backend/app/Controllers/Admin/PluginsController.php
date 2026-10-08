@@ -19,6 +19,7 @@ namespace App\Controllers\Admin;
 
 use App\App;
 use App\Chat\Activity;
+use App\Helpers\DemoGuard;
 use App\Helpers\ApiResponse;
 use App\Chat\InstalledPlugin;
 use App\Plugins\PluginConfig;
@@ -568,6 +569,10 @@ class PluginsController
     )]
     public function uninstall(Request $request, string $identifier): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         try {
             if (!defined('APP_ADDONS_DIR')) {
                 define('APP_ADDONS_DIR', dirname(__DIR__, 3) . '/storage/addons');
@@ -734,6 +739,10 @@ class PluginsController
     )]
     public function uploadInstall(Request $request): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         try {
             $files = $request->files->all();
             if (empty($files) || !isset($files['file'])) {
@@ -806,6 +815,10 @@ class PluginsController
     )]
     public function uploadInstallFromUrl(Request $request): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         try {
             $body = json_decode($request->getContent(), true);
             $url = $body['url'] ?? null;

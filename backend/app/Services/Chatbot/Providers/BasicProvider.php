@@ -17,6 +17,7 @@
 
 namespace App\Services\Chatbot\Providers;
 
+use App\App;
 use App\Services\Chatbot\TokenUsage;
 
 class BasicProvider implements ProviderInterface
@@ -33,9 +34,26 @@ class BasicProvider implements ProviderInterface
     public function processMessage(string $message, array $history, string $systemPrompt = ''): array
     {
         $lowerMessage = strtolower($message);
+        $isDemo = false;
+        try {
+            $isDemo = App::getInstance(true)->isDemoMode();
+        } catch (\Throwable) {
+            $isDemo = false;
+        }
 
         if (strpos($lowerMessage, 'hello') !== false || strpos($lowerMessage, 'hi') !== false) {
-            return $this->response($message, "Hello! I'm your AI assistant for FeatherPanel. How can I help you today?");
+            $hello = $isDemo
+                ? "Hello! I'm Feather Demo AI — a basic chatbot with no external API key. Explore the panel, but remember this demo wipes and some actions are limited."
+                : "Hello! I'm your AI assistant for FeatherPanel. How can I help you today?";
+
+            return $this->response($message, $hello);
+        }
+
+        if (strpos($lowerMessage, 'demo') !== false || strpos($lowerMessage, 'wipe') !== false) {
+            return $this->response(
+                $message,
+                "You're on the public FeatherPanel demo. It wipes on a schedule. Cloud linking, SMTP, secrets, plugin installs, developer console, and DB snapshots are disabled. Features like trash bin, status page, tickets, and this chatbot are enabled for showcase only — not production configs."
+            );
         }
 
         if (strpos($lowerMessage, 'help') !== false) {
@@ -44,6 +62,9 @@ class BasicProvider implements ProviderInterface
                 "• Configuration questions\n" .
                 "• General panel information\n" .
                 "• Troubleshooting\n\n" .
+                ($isDemo
+                    ? "On this demo I'm the basic provider (no API key). Ask about servers, files, tickets, or the demo limits.\n\n"
+                    : '') .
                 'What would you like to know?');
         }
 
@@ -62,7 +83,9 @@ class BasicProvider implements ProviderInterface
         }
 
         return $this->response($message, "I understand you're asking about: " . $message . "\n\n" .
-            "I'm a basic assistant. For more advanced responses, please configure Google Gemini, OpenRouter, or OpenAI in admin settings.");
+            ($isDemo
+                ? "I'm the demo basic assistant (no cloud AI key). Try the file manager, trash bin, schedules, tickets, or status page — or ask about demo limits."
+                : "I'm a basic assistant. For more advanced responses, please configure Google Gemini, OpenRouter, or OpenAI in admin settings."));
     }
 
     private function response(string $input, string $output): array

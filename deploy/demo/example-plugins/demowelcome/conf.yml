@@ -1,0 +1,16 @@
+plugin:
+  name: DemoWelcome
+  identifier: demowelcome
+  description: 'Free example plugin shipped with the FeatherPanel demo — welcome banner / showcase stub.'
+  flags:
+    - hasEvents
+  version: 1.0.0
+  target: v2
+  author:
+    - FeatherPanel Demo
+  icon: 'https://cdn.mythical.systems/featherpanel/logo.png'
+  requiredConfigs: {}
+  dependencies:
+    - php=8.3
+    - php-ext=pdo
+config: {}

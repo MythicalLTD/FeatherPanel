@@ -22,6 +22,7 @@ use App\Chat\Activity;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Helpers\DemoCloudHelper;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -80,6 +81,10 @@ class CloudManagementController
     )]
     public function show(Request $request): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
         $config = $this->app->getConfig();
 
         $panelPublic = $config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, '');
@@ -146,6 +151,10 @@ class CloudManagementController
     )]
     public function storePanel(Request $request): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
         $payload = json_decode($request->getContent() ?: '[]', true);
         if (!is_array($payload)) {
             return ApiResponse::error('Invalid JSON payload provided.', 'INVALID_JSON_PAYLOAD', 400);
@@ -221,6 +230,10 @@ class CloudManagementController
     )]
     public function storeCloud(Request $request): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
         $payload = json_decode($request->getContent() ?: '[]', true);
         if (!is_array($payload)) {
             return ApiResponse::error('Invalid JSON payload provided.', 'INVALID_JSON_PAYLOAD', 400);
@@ -285,6 +298,10 @@ class CloudManagementController
     )]
     public function rotate(Request $request): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
         $config = $this->app->getConfig();
 
         try {
@@ -355,6 +372,10 @@ class CloudManagementController
     )]
     public function getOAuth2Link(Request $request): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
         try {
             $config = $this->app->getConfig();
             $config->setSetting(ConfigInterface::FEATHERCLOUD_RELINK_PENDING_AT, gmdate('c'));
@@ -461,6 +482,10 @@ class CloudManagementController
     )]
     public function saveOAuth2Callback(Request $request): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
         $payload = json_decode($request->getContent() ?: '[]', true);
         if (!is_array($payload)) {
             return ApiResponse::error('Invalid JSON payload provided.', 'INVALID_JSON_PAYLOAD', 400);
@@ -704,6 +729,10 @@ class CloudManagementController
     )]
     public function disconnect(Request $request): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
         try {
             $config = $this->app->getConfig();
 
@@ -770,6 +799,10 @@ class CloudManagementController
     )]
     public function updateSettings(Request $request): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
         $payload = json_decode($request->getContent() ?: '[]', true);
         if (!is_array($payload)) {
             return ApiResponse::error('Invalid JSON payload provided.', 'INVALID_JSON_PAYLOAD', 400);
@@ -834,6 +867,16 @@ class CloudManagementController
     )]
     public function getSettings(Request $request): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return ApiResponse::success([
+                'linked' => false,
+                'demo_mode' => true,
+                'cloud_disabled' => true,
+                'has_access_keys' => false,
+                'has_identity_keys' => false,
+            ], 'Mythic Cloud is disabled on demo instances', 200);
+        }
+
         return ApiResponse::success($this->settingsPayload($request), 'Mythic Cloud settings fetched', 200);
     }
 
@@ -847,6 +890,10 @@ class CloudManagementController
     )]
     public function syncMembers(Request $request): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
         try {
             $client = new FeatherCloudClient();
             if (!$client->isConfigured()) {
@@ -883,6 +930,10 @@ class CloudManagementController
     )]
     public function syncNow(Request $request): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
         try {
             $result = \App\Controllers\System\CloudV1Controller::runSync();
 

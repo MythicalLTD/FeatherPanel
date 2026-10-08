@@ -22,6 +22,7 @@ use App\Chat\WebNode;
 use App\Chat\Activity;
 use App\Chat\Location;
 use App\Chat\MailHost;
+use App\Helpers\DemoGuard;
 use App\Helpers\ApiResponse;
 use App\Helpers\AppUrlHelper;
 use OpenApi\Attributes as OA;
@@ -510,6 +511,10 @@ class WebNodesController
     )]
     public function delete(Request $request, int $id): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $admin = $request->attributes->get('user');
         $webNode = WebNode::getWebNodeById($id);
         if (!$webNode) {
@@ -555,6 +560,10 @@ class WebNodesController
     )]
     public function resetToken(Request $request, int $id): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $admin = $request->attributes->get('user');
         $webNode = WebNode::getWebNodeById($id);
         if (!$webNode) {
@@ -1049,6 +1058,10 @@ class WebNodesController
 
     public function triggerSelfUpdate(Request $request, int $id): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $admin = $request->attributes->get('user');
         $webNode = WebNode::getWebNodeById($id);
         if (!$webNode) {

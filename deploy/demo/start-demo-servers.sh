@@ -82,6 +82,95 @@ done
 log "Waiting for installs to complete..."
 sleep 15
 
+# Seed sample files so the file manager / trash bin have something to explore.
+# Install may recreate the volume root — write after install settles.
+for uuid in "${SERVERS[@]}"; do
+	vol="${ROOT}/volumes/${uuid}"
+	mkdir -p "${vol}/config" "${vol}/plugins" "${vol}/logs" "${vol}/.trash-demo"
+	cat >"${vol}/README-DEMO.txt" <<EOF
+FeatherPanel Demo Server
+========================
+This volume is part of the public FeatherPanel demo.
+It wipes periodically. Feel free to browse files, edit configs,
+and try the trash bin — nothing here is production data.
+EOF
+	cat >"${vol}/server.properties" <<'EOF'
+# Demo sample config (not a real Minecraft server)
+motd=FeatherPanel Demo World
+max-players=20
+gamemode=survival
+difficulty=easy
+pvp=true
+online-mode=false
+EOF
+	cat >"${vol}/config/settings.yml" <<'EOF'
+demo: true
+panel: FeatherPanel
+features:
+  - console
+  - files
+  - trash
+  - schedules
+  - subusers
+note: Spoofed / limited on the public demo. Not for production.
+EOF
+	printf 'Demo plugin placeholder — safe to delete into trash.\n' >"${vol}/plugins/DemoPlugin.jar.txt"
+	printf '[%s] Demo server started\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >>"${vol}/logs/latest.log"
+	mkdir -p "${vol}/backups" "${vol}/imports" "${vol}/world/region" "${vol}/mods"
+	cat >"${vol}/eula.txt" <<'EOF'
+#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://aka.ms/MinecraftEULA).
+eula=true
+EOF
+	cat >"${vol}/ops.json" <<'EOF'
+[{"uuid":"00000000-0000-4000-8000-000000000001","name":"DemoAdmin","level":4,"bypassesPlayerLimit":true}]
+EOF
+	cat >"${vol}/whitelist.json" <<'EOF'
+[{"uuid":"00000000-0000-4000-8000-000000000002","name":"DemoPlayer"}]
+EOF
+	printf 'placeholder region file for file-manager demos\n' >"${vol}/world/region/r.0.0.mca.txt"
+	printf 'DemoMod v1.0 — safe to delete into trash\n' >"${vol}/mods/DemoMod.jar.txt"
+	cat >"${vol}/imports/README.txt" <<'EOF'
+Import staging folder for the FeatherPanel demo.
+Panel import history is seeded in MySQL; these files are for the file manager.
+EOF
+	# Sample files that look good in FeatherIDE (Monaco editor)
+	mkdir -p "${vol}/scripts"
+	cat >"${vol}/scripts/hello.js" <<'EOF'
+// FeatherIDE demo script — safe to edit
+console.log('Hello from FeatherPanel Demo');
+function greet(name) {
+  return `Welcome, ${name}!`;
+}
+greet('Demo');
+EOF
+	cat >"${vol}/scripts/backup.sh" <<'EOF'
+#!/bin/sh
+# Demo backup helper — not executed by the panel automatically
+echo "Demo backup stub at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+EOF
+	cat >"${vol}/config/featheride-notes.md" <<'EOF'
+# FeatherIDE
+
+Open any of these files in the panel file manager / FeatherIDE:
+- `server.properties`
+- `config/settings.yml`
+- `scripts/hello.js`
+- `scripts/backup.sh`
+
+Edits on the public demo are wiped on the next reset.
+EOF
+	cat >"${vol}/backups/README.txt" <<'EOF'
+Local backup ghosts appear in the panel Backups UI (DB-seeded).
+This folder is just volume filler for demos.
+EOF
+	# A few log lines so log viewers aren't empty
+	for i in 1 2 3 4 5; do
+		printf '[%s] [Server thread/INFO]: Demo tick %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$i" >>"${vol}/logs/latest.log"
+	done
+	chown -R "${DEMO_WINGS_UID:-988}:${DEMO_WINGS_GID:-988}" "${vol}" 2>/dev/null || true
+	log "Seeded sample files for ${uuid}"
+done
+
 for uuid in "${SERVERS[@]}"; do
 	log "Starting ${uuid}..."
 	# Retry a few times in case install is still finishing

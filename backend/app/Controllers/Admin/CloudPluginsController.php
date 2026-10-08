@@ -24,6 +24,7 @@ use App\Helpers\ApiResponse;
 use App\Chat\InstalledPlugin;
 use OpenApi\Attributes as OA;
 use App\Helpers\PanelAssetUrl;
+use App\Helpers\DemoCloudHelper;
 use App\Helpers\AddonPackageHelper;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
@@ -189,6 +190,10 @@ class CloudPluginsController
     )]
     public function list(Request $request): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
         try {
             $client = new FeatherCloudClient();
             if (!$client->isConfigured()) {
@@ -304,6 +309,10 @@ class CloudPluginsController
     )]
     public function popular(Request $request): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
         try {
             $client = new FeatherCloudClient();
             if (!$client->isConfigured()) {
@@ -365,6 +374,10 @@ class CloudPluginsController
     )]
     public function show(Request $request, string $identifier): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
         try {
             $client = new FeatherCloudClient();
             if (!$client->isConfigured()) {
@@ -440,6 +453,10 @@ class CloudPluginsController
     )]
     public function searchByTag(Request $request, string $tag): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
         try {
             $client = new FeatherCloudClient();
             if (!$client->isConfigured()) {
@@ -516,6 +533,10 @@ class CloudPluginsController
     )]
     public function checkRequirements(Request $request, string $identifier): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
         try {
             $client = new FeatherCloudClient();
             if (!$client->isConfigured()) {
@@ -718,6 +739,10 @@ class CloudPluginsController
     )]
     public function install(Request $request): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
         try {
             $body = json_decode($request->getContent(), true);
             if (!is_array($body)) {

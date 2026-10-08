@@ -9,7 +9,7 @@ BACKUPS_DIR="${APP_ROOT}/storage/backups"
 GOLDEN_NAME="${DEMO_GOLDEN_SNAPSHOT:-demo-golden.fpb}"
 GOLDEN_PATH="${BACKUPS_DIR}/${GOLDEN_NAME}"
 MARKER="${BACKUPS_DIR}/.demo-bootstrapped"
-SEED_VERSION="7"
+SEED_VERSION="10"
 VERSION_MARKER="${BACKUPS_DIR}/.demo-seed-version"
 
 log() {
@@ -102,10 +102,14 @@ ensure_users() {
 }
 
 seed_demo_infrastructure() {
+	log "Installing free example plugins..."
+	/bin/bash /demo/install-example-plugins.sh || log "WARNING: example plugins install failed (continuing)."
 	log "Seeding locations, Wings, servers, FeatherQuill webspaces, fake Proxmox VMs..."
 	php /demo/seed-infrastructure.php
 	log "Seeding banned users, suspended servers, tickets, KPI clutter..."
 	php /demo/seed-junk.php || log "WARNING: junk seed failed (continuing)."
+	log "Seeding heavy bloat (DBs, backups, ZT, plugins, SSH, mail lists, blocklists)..."
+	php /demo/seed-bloat.php || log "WARNING: bloat seed failed (continuing)."
 }
 
 write_daemon_configs() {
@@ -173,7 +177,14 @@ print_credentials() {
     Password: ${DEMO_ADMIN_PASSWORD:-admin@featherpanel.com}
 
   Seeded: Wings + FeatherQuilld + fake Proxmox + banned users,
-          suspended servers, tickets, KPI clutter.
+          suspended servers, tickets, knowledgebase, announcements,
+          real MariaDB DBs, backup ghosts, schedules, subusers,
+          custom env vars, import logs, Ghost + more webspaces, mailboxes,
+          mailing lists/forwarders, Zero Trust scan history, example plugins,
+          SSH keys, banned IPs, blocked email domains, API keys, redirects,
+          trash bin + demo AI chatbot + status page, sample server files.
+          Admin settings are editable (reset restores defaults).
+  Note:    DEMO configs are not suitable for production.
 ========================================
 
 EOF

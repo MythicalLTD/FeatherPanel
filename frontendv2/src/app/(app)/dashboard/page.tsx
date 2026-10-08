@@ -47,6 +47,7 @@ import { VmCard } from '@/components/vms/VmCard';
 import { WebSpaceCard, type DashboardWebSpace } from '@/components/webspace/WebSpaceCard';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
 import { AnnouncementBanner } from '@/components/dashboard/AnnouncementBanner';
+import { DemoFeatureCallout } from '@/components/common/DemoFeatureCallout';
 import { TicketList } from '@/components/dashboard/TicketList';
 import { KnowledgeBaseList } from '@/components/dashboard/KnowledgeBaseList';
 import { DashboardRecentMails } from '@/components/dashboard/DashboardRecentMails';
@@ -915,6 +916,8 @@ export default function DashboardPage() {
     return (
         <div className='space-y-8'>
             <WidgetRenderer widgets={getWidgets('dashboard', 'top-of-page')} {...pluginWidgetProps} />
+
+            <DemoFeatureCallout />
 
             {!heroAtBottom && (
                 <div className={cn('transition-all duration-500', !isVisible('hero', isCustomizing) && 'hidden')}>

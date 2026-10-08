@@ -26,8 +26,11 @@ use App\App;
 new App(false, false, true);
 use App\Chat\Allocation;
 use App\Chat\DatabaseInstance;
+use App\Chat\KnowledgebaseArticle;
+use App\Chat\KnowledgebaseCategory;
 use App\Chat\Location;
 use App\Chat\Node;
+use App\Chat\Notification;
 use App\Chat\Realm;
 use App\Chat\Server;
 use App\Chat\Spell;
@@ -400,9 +403,9 @@ function ensure_game_servers(array $node, array $realm, array $spell): void
             'startup' => $startup,
             'image' => $image,
             'skip_scripts' => 0,
-            'database_limit' => 2,
-            'backup_limit' => 3,
-            'allocation_limit' => 2,
+            'database_limit' => 5,
+            'backup_limit' => 8,
+            'allocation_limit' => 4,
             'show_on_status' => 1,
             'status' => 'installing',
         ]);
@@ -548,6 +551,38 @@ function ensure_webspaces(array $webNode): void
             'status' => 'installed',
             'state' => 'stopped',
         ],
+        [
+            'name' => 'Docs Hub',
+            'runtime' => 'static',
+            'owner' => $adminUser,
+            'domains' => ['docs.demo.local'],
+            'status' => 'installed',
+            'state' => 'running',
+        ],
+        [
+            'name' => 'Laravel Shop',
+            'runtime' => 'php',
+            'owner' => $demoUser,
+            'domains' => ['shop.demo.local', 'www.shop.demo.local'],
+            'status' => 'installed',
+            'state' => 'running',
+        ],
+        [
+            'name' => 'Staging Node App',
+            'runtime' => 'node',
+            'owner' => $demoUser,
+            'domains' => ['staging-app.demo.local'],
+            'status' => 'installed',
+            'state' => 'stopped',
+        ],
+        [
+            'name' => 'Broken Install Site',
+            'runtime' => 'php',
+            'owner' => $demoUser,
+            'domains' => ['broken.demo.local'],
+            'status' => 'install_failed',
+            'state' => 'stopped',
+        ],
     ];
 
     foreach ($specs as $spec) {
@@ -577,8 +612,8 @@ function ensure_webspaces(array $webNode): void
             'cpu_limit' => 1,
             'memory_limit' => 512,
             'bandwidth_limit_gb' => 100,
-            'database_limit' => 2,
-            'mailbox_limit' => 0,
+            'database_limit' => 3,
+            'mailbox_limit' => 5,
             'ssl' => 0,
             'domains' => $spec['domains'],
             'status' => $spec['status'],
@@ -736,6 +771,7 @@ function apply_demo_settings(): void
     $config = App::getInstance(false, false, true)->getConfig();
     $config->setSetting(ConfigInterface::APP_DEMO_YES, 'true');
     $config->setSetting(ConfigInterface::APP_NAME, 'FeatherPanel Demo');
+    $config->setSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false');
 
     $appUrl = env_str('FEATHERPANEL_APP_URL', '');
     if ($appUrl !== '') {
@@ -746,9 +782,200 @@ function apply_demo_settings(): void
     $wingsRemote = env_str('DEMO_WINGS_REMOTE_URL', 'http://backend:80');
     $config->setSetting(ConfigInterface::WINGS_REMOTE_URL, $wingsRemote);
 
+    // Public-demo safety (not production-ready configs).
     $config->setSetting(ConfigInterface::REGISTRATION_ENABLED, 'false');
+    $config->setSetting(ConfigInterface::USER_ALLOW_ACCOUNT_DELETION, 'false');
+    $config->setSetting(ConfigInterface::TICKET_SYSTEM_ALLOW_ATTACHMENTS, 'false');
+    $config->setSetting(ConfigInterface::EMAIL_LOGIN_ENABLED, 'false');
+    $config->setSetting(ConfigInterface::SMTP_ENABLED, 'false');
+    $config->setSetting(ConfigInterface::TELEMETRY, 'false');
 
-    demo_log('Demo settings applied (app_demo_yes=true, wings_remote_url=' . $wingsRemote . ')');
+    // Showcase features visitors should be able to click through.
+    $config->setSetting(ConfigInterface::STATUS_PAGE_ENABLED, 'true');
+    $config->setSetting(ConfigInterface::STATUS_PAGE_PUBLIC_ENABLED, 'true');
+    $config->setSetting(ConfigInterface::STATUS_PAGE_SHOW_NODE_STATUS, 'true');
+    $config->setSetting(ConfigInterface::STATUS_PAGE_SHOW_LOAD_USAGE, 'true');
+    $config->setSetting(ConfigInterface::STATUS_PAGE_SHOW_TOTAL_SERVERS, 'true');
+    $config->setSetting(ConfigInterface::STATUS_PAGE_SHOW_INDIVIDUAL_NODES, 'true');
+    $config->setSetting(ConfigInterface::STATUS_PAGE_SHOW_PLAYER_COUNT, 'true');
+    $config->setSetting(ConfigInterface::STATUS_PAGE_SERVERS_VISIBLE_BY_DEFAULT, 'true');
+
+    $config->setSetting(ConfigInterface::FILE_TRASH_ENABLED, 'true');
+    $config->setSetting(ConfigInterface::FILE_TRASH_MAX_SIZE_MB, '512');
+    $config->setSetting(ConfigInterface::FILE_TRASH_RETENTION_DAYS, '7');
+
+    $config->setSetting(ConfigInterface::CHATBOT_ENABLED, 'true');
+    $config->setSetting(ConfigInterface::CHATBOT_AI_PROVIDER, 'basic');
+    $config->setSetting(ConfigInterface::CHATBOT_DISPLAY_NAME, 'Feather Demo AI');
+    $config->setSetting(
+        ConfigInterface::CHATBOT_SYSTEM_PROMPT,
+        'You are FeatherPanel Demo AI. This is a public demo — some actions are limited, spoofed, or wiped on a schedule.'
+    );
+
+    $config->setSetting(ConfigInterface::KNOWLEDGEBASE_ENABLED, 'true');
+    $config->setSetting(ConfigInterface::KNOWLEDGEBASE_PUBLIC_ENABLED, 'true');
+    $config->setSetting(ConfigInterface::KNOWLEDGEBASE_SHOW_CATEGORIES, 'true');
+    $config->setSetting(ConfigInterface::KNOWLEDGEBASE_SHOW_ARTICLES, 'true');
+    $config->setSetting(ConfigInterface::KNOWLEDGEBASE_SHOW_TAGS, 'true');
+
+    $config->setSetting(ConfigInterface::TICKET_SYSTEM_ENABLED, 'true');
+    $config->setSetting(ConfigInterface::TICKET_SYSTEM_MAX_OPEN_TICKETS, '5');
+
+    $config->setSetting(ConfigInterface::SERVER_ALLOW_SCHEDULES, 'true');
+    $config->setSetting(ConfigInterface::SERVER_ALLOW_SUBUSERS, 'true');
+    $config->setSetting(ConfigInterface::SERVER_ALLOW_ALLOCATION_SELECT, 'true');
+    $config->setSetting(ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE, 'true');
+    $config->setSetting(ConfigInterface::SERVER_ALLOW_EGG_CHANGE, 'true');
+    $config->setSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_FIREWALL, 'true');
+    $config->setSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_PROXY, 'true');
+    $config->setSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL, 'true');
+    $config->setSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_IMPORT, 'true');
+    // Subdomains need real Cloudflare credentials — keep off on the public demo.
+    $config->setSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_SUBDOMAINS, 'false');
+    $config->setSetting(ConfigInterface::SERVER_ALLOW_USER_SERVER_DELETION, 'false');
+
+    // FeatherZeroTrust malware scanner UI — enabled with fake history from seed-bloat.
+    $config->setSetting('featherzerotrust.enabled', 'true');
+    $config->setSetting('featherzerotrust.scan_interval', '30');
+    $config->setSetting('featherzerotrust.auto_suspend', 'false');
+    $config->setSetting('featherzerotrust.webhook_enabled', 'false');
+
+    demo_log('Demo settings applied (rich feature flags + demo safety locks, wings_remote_url=' . $wingsRemote . ')');
+}
+
+function ensure_knowledgebase(): void
+{
+    $gettingStarted = KnowledgebaseCategory::getBySlug('getting-started');
+    if ($gettingStarted === null) {
+        $catId = KnowledgebaseCategory::create([
+            'name' => 'Getting Started',
+            'slug' => 'getting-started',
+            'icon' => 'book-open',
+            'description' => 'Welcome guides for the FeatherPanel demo',
+            'position' => 1,
+        ]);
+        $gettingStarted = $catId ? KnowledgebaseCategory::getById((int) $catId) : null;
+        demo_log($gettingStarted ? 'Created knowledgebase category: Getting Started' : 'WARNING: failed to create KB category');
+    }
+
+    $features = KnowledgebaseCategory::getBySlug('panel-features');
+    if ($features === null) {
+        $catId = KnowledgebaseCategory::create([
+            'name' => 'Panel Features',
+            'slug' => 'panel-features',
+            'icon' => 'sparkles',
+            'description' => 'Highlights of what FeatherPanel can do',
+            'position' => 2,
+        ]);
+        $features = $catId ? KnowledgebaseCategory::getById((int) $catId) : null;
+        demo_log($features ? 'Created knowledgebase category: Panel Features' : 'WARNING: failed to create KB category');
+    }
+
+    $admin = User::getUserByUsername(env_str('DEMO_ADMIN_USERNAME', 'admin'))
+        ?? User::getUserByUsername(env_str('DEMO_USER_USERNAME', 'demo'));
+    if ($admin === null) {
+        demo_log('WARNING: no admin user for knowledgebase author — skipping articles');
+
+        return;
+    }
+
+    $authorId = (int) $admin['id'];
+    $articles = [
+        [
+            'category' => $gettingStarted,
+            'title' => 'Welcome to the FeatherPanel Demo',
+            'slug' => 'welcome-to-the-demo',
+            'content' => <<<'MD'
+# Welcome
+
+This is a **public FeatherPanel demo**. It periodically wipes, and some features are limited, disabled, or spoofed.
+
+## What you can explore
+- Game servers (console, files, trash bin, schedules, subusers)
+- Tickets & knowledgebase
+- Status page
+- Webspaces & fake VDS inventory
+- Built-in demo AI chatbot (basic provider — no external API key)
+
+## Not for production
+Cloud linking, SMTP, OAuth secrets, plugin uploads, developer console, and DB snapshots are disabled here.
+MD
+            ,
+        ],
+        [
+            'category' => $features,
+            'title' => 'File manager & trash bin',
+            'slug' => 'file-manager-trash-bin',
+            'content' => <<<'MD'
+# File manager
+
+Open any running demo server → **Files**. Delete something to see the **trash bin** (enabled on this demo).
+
+Restoring from trash works like production. The whole environment still resets on a schedule.
+MD
+            ,
+        ],
+        [
+            'category' => $features,
+            'title' => 'AI chatbot (demo mode)',
+            'slug' => 'ai-chatbot-demo-mode',
+            'content' => <<<'MD'
+# Feather Demo AI
+
+The chatbot is enabled with the **basic** provider so you can try the UI without an API key.
+
+In a real panel you would connect Google Gemini, OpenAI, OpenRouter, Ollama, etc. Those keys are intentionally not configured here.
+MD
+            ,
+        ],
+    ];
+
+    foreach ($articles as $spec) {
+        $category = $spec['category'];
+        if (!is_array($category) || empty($category['id'])) {
+            continue;
+        }
+        if (KnowledgebaseArticle::getBySlug($spec['slug']) !== null) {
+            continue;
+        }
+        $id = KnowledgebaseArticle::create([
+            'category_id' => (int) $category['id'],
+            'title' => $spec['title'],
+            'slug' => $spec['slug'],
+            'icon' => 'file-text',
+            'content' => $spec['content'],
+            'author_id' => $authorId,
+            'status' => 'published',
+            'pinned' => $spec['slug'] === 'welcome-to-the-demo',
+            'sort_order' => 0,
+            'published_at' => gmdate('Y-m-d H:i:s'),
+        ]);
+        demo_log($id ? 'Created KB article: ' . $spec['title'] : 'WARNING: failed article ' . $spec['slug']);
+    }
+}
+
+function ensure_demo_announcements(): void
+{
+    $existing = Notification::searchNotifications(1, 50, 'FeatherPanel DEMO notice');
+    foreach ($existing as $row) {
+        if (($row['title'] ?? '') === 'FeatherPanel DEMO notice') {
+            demo_log('Demo announcement already present');
+
+            return;
+        }
+    }
+
+    $id = Notification::createNotification([
+        'title' => 'FeatherPanel DEMO notice',
+        'message_markdown' => "This panel **wipes on a schedule**. Some features are **enabled for showcase**, others are **disabled or spoofed** (Cloud, SMTP, secrets, developer tools). Config here is **not suitable for production**.",
+        'type' => 'warning',
+        'is_dismissible' => true,
+        'is_sticky' => true,
+        'user_id' => null,
+        'server_id' => null,
+    ]);
+
+    demo_log($id ? 'Created demo announcement banner' : 'WARNING: failed to create demo announcement');
 }
 
 // ---------------------------------------------------------------------------
@@ -813,6 +1040,9 @@ $vmNode = ensure_vm_node($vpsLocation);
 if ($vmNode !== []) {
     ensure_fake_vms($vmNode);
 }
+
+ensure_knowledgebase();
+ensure_demo_announcements();
 
 $panelUrl = env_str('DEMO_WINGS_REMOTE_URL', 'http://backend:80');
 demo_log('Demo infrastructure ready (Wings remote: ' . $panelUrl . ').');

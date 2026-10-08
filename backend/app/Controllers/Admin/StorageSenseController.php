@@ -18,6 +18,7 @@
 namespace App\Controllers\Admin;
 
 use App\Chat\Activity;
+use App\Helpers\DemoGuard;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
@@ -77,6 +78,10 @@ class StorageSenseController
     )]
     public function purge(Request $request): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
             return ApiResponse::error('Invalid JSON body', 'INVALID_REQUEST', 400);
@@ -122,6 +127,10 @@ class StorageSenseController
     )]
     public function purgeBatch(Request $request): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
             return ApiResponse::error('Invalid JSON body', 'INVALID_REQUEST', 400);

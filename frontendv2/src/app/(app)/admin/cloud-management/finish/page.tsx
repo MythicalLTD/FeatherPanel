@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -36,6 +37,7 @@ function param(searchParams: URLSearchParams, ...keys: string[]): string | null 
 
 export default function CloudManagementFinishPage() {
     const { t } = useTranslation();
+    const { settings } = useSettings();
     const router = useRouter();
     const searchParams = useSearchParams();
     const ran = useRef(false);
@@ -44,6 +46,12 @@ export default function CloudManagementFinishPage() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        if (settings?.app_demo_yes === 'true') {
+            setPhase('error');
+            setError(t('errors.codes.CLOUD_DISABLED_IN_DEMO'));
+            return;
+        }
+
         if (ran.current) return;
         ran.current = true;
 
@@ -133,7 +141,7 @@ export default function CloudManagementFinishPage() {
         };
 
         void finish();
-    }, [searchParams, router, t]);
+    }, [searchParams, router, t, settings?.app_demo_yes]);
 
     return (
         <div className='flex min-h-[60vh] items-center justify-center p-6'>
