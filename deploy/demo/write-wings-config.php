@@ -53,6 +53,28 @@ if ($panelUrl === '') {
 }
 $panelUrl = rtrim($panelUrl, '/');
 
+// Browser Origin is APP_URL (e.g. https://demo…); Wings remote stays http://backend:80
+// for Docker DNS. Without allowed_origins, wss:// is blocked (CORS / Origin check).
+$browserOrigins = [];
+foreach ([
+    getenv('FEATHERPANEL_APP_URL') ?: '',
+    (string) $app->getConfig()->getSetting(ConfigInterface::APP_URL, ''),
+    'http://localhost:8088',
+    'http://127.0.0.1:8088',
+] as $origin) {
+    $origin = rtrim(trim((string) $origin), '/');
+    if ($origin !== '' && $origin !== $panelUrl) {
+        $browserOrigins[$origin] = true;
+    }
+}
+$allowedOriginsYaml = "allowed_origins: []\n";
+if ($browserOrigins !== []) {
+    $allowedOriginsYaml = "allowed_origins:\n";
+    foreach (array_keys($browserOrigins) as $origin) {
+        $allowedOriginsYaml .= '  - ' . $origin . "\n";
+    }
+}
+
 $uuid = (string) ($node['uuid'] ?? '');
 $tokenId = (string) ($node['daemon_token_id'] ?? '');
 $token = (string) ($node['daemon_token'] ?? '');
@@ -103,6 +125,13 @@ api:
     cert: /etc/letsencrypt/live/{$fqdn}/fullchain.pem
     key: /etc/letsencrypt/live/{$fqdn}/privkey.pem
   upload_limit: {$uploadLimit}
+  # cloudflared / docker bridge so client IPs are not all 127.0.0.1
+  trusted_proxies:
+    - 127.0.0.1
+    - ::1
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
 system:
   root_directory: {$wingsRoot}
   log_directory: /var/log/featherpanel
@@ -150,7 +179,7 @@ docker:
         subnet: {$dockerSubnet}
         gateway: {$dockerGateway}
 allowed_mounts: []
-remote: '{$panelUrl}'
+{$allowedOriginsYaml}remote: '{$panelUrl}'
 ignore_panel_config_updates: true
 BlockBaseDirMount: false
 YAML;

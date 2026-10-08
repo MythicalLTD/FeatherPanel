@@ -742,9 +742,13 @@ function apply_demo_settings(): void
         $config->setSetting(ConfigInterface::APP_URL, $appUrl);
     }
 
+    // JWT issuer must match Wings `remote:` (Docker DNS), not the public APP_URL.
+    $wingsRemote = env_str('DEMO_WINGS_REMOTE_URL', 'http://backend:80');
+    $config->setSetting(ConfigInterface::WINGS_REMOTE_URL, $wingsRemote);
+
     $config->setSetting(ConfigInterface::REGISTRATION_ENABLED, 'false');
 
-    demo_log('Demo settings applied (app_demo_yes=true)');
+    demo_log('Demo settings applied (app_demo_yes=true, wings_remote_url=' . $wingsRemote . ')');
 }
 
 // ---------------------------------------------------------------------------
