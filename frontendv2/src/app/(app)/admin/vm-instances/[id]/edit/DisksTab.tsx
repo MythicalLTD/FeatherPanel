@@ -141,7 +141,9 @@ export function DisksTab({
                 )}
                 <form
                     onSubmit={onCreateDisk}
-                    className='border-border/50 bg-muted/10 flex flex-wrap items-end gap-3 rounded-xl border p-4' data-fp-save-shortcut>
+                    className='border-border/50 bg-muted/10 flex flex-wrap items-end gap-3 rounded-xl border p-4'
+                    data-fp-save-shortcut
+                >
                     <div className='min-w-[160px]'>
                         <Label className='text-xs'>{t('admin.vmInstances.disk_storage') ?? 'Storage'}</Label>
                         <HeadlessSelect

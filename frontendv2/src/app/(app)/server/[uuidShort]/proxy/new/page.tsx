@@ -218,7 +218,9 @@ export default function CreateProxyPage() {
                             size='default'
                             onClick={handleCreate}
                             disabled={saving || !dnsVerified}
-                            className='w-full sm:w-auto' data-fp-save-shortcut>
+                            className='w-full sm:w-auto'
+                            data-fp-save-shortcut
+                        >
                             {saving ? (
                                 <>
                                     <Loader2 className='mr-2 h-4 w-4 animate-spin' />
@@ -517,7 +519,12 @@ export default function CreateProxyPage() {
                     </FormSection>
 
                     <div className='pt-2 md:hidden'>
-                        <Button size='default' onClick={handleCreate} disabled={saving || !dnsVerified} data-fp-save-shortcut>
+                        <Button
+                            size='default'
+                            onClick={handleCreate}
+                            disabled={saving || !dnsVerified}
+                            data-fp-save-shortcut
+                        >
                             {saving ? (
                                 <>
                                     <Loader2 className='mr-2 h-4 w-4 animate-spin' />

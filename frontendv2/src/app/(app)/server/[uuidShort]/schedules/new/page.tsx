@@ -157,7 +157,9 @@ export default function CreateSchedulePage() {
                             onClick={handleCreate}
                             disabled={saving}
                             loading={saving}
-                            className='order-1 w-full sm:order-2 sm:w-auto' data-fp-save-shortcut>
+                            className='order-1 w-full sm:order-2 sm:w-auto'
+                            data-fp-save-shortcut
+                        >
                             <Plus className='mr-2 h-4 w-4' />
                             {t('serverSchedules.create')}
                         </Button>

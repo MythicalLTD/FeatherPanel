@@ -747,7 +747,9 @@ export default function ServerSubusersPage() {
                             size='default'
                             onClick={handleSavePermissions}
                             disabled={savingPermissions}
-                            className='rounded-2xl' data-fp-save-shortcut>
+                            className='rounded-2xl'
+                            data-fp-save-shortcut
+                        >
                             {savingPermissions ? (
                                 <Loader2 className='mr-2 h-5 w-5 animate-spin' />
                             ) : (

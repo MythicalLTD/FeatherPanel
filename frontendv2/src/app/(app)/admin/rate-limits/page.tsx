@@ -253,7 +253,11 @@ export default function RateLimitsPage() {
                             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                             {t('admin.rate_limits.actions.refresh')}
                         </Button>
-                        <Button onClick={handleSaveAll} disabled={saving || changedRoutes.size === 0} data-fp-save-shortcut>
+                        <Button
+                            onClick={handleSaveAll}
+                            disabled={saving || changedRoutes.size === 0}
+                            data-fp-save-shortcut
+                        >
                             {saving ? (
                                 <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                             ) : (

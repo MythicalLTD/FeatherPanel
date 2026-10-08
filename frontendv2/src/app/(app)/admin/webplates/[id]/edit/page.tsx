@@ -114,9 +114,12 @@ export default function EditWebPlatePage() {
         }
     }, [form, id, router, t]);
 
-    useSaveShortcut(() => {
-        void handleSave();
-    }, { enabled: !loading, disabled: saving });
+    useSaveShortcut(
+        () => {
+            void handleSave();
+        },
+        { enabled: !loading, disabled: saving },
+    );
 
     const setField = <K extends keyof WebPlateFormState>(key: K, value: WebPlateFormState[K]) => {
         setForm((prev) => ({ ...prev, [key]: value }));

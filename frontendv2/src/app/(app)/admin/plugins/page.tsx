@@ -1171,7 +1171,9 @@ export default function PluginsPage() {
                                                 className='w-full'
                                                 size='lg'
                                                 onClick={saveAllSettings}
-                                                disabled={savingSetting} data-fp-save-shortcut>
+                                                disabled={savingSetting}
+                                                data-fp-save-shortcut
+                                            >
                                                 {savingSetting ? (
                                                     <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                                                 ) : (
@@ -1546,7 +1548,9 @@ export default function PluginsPage() {
                                         <Button
                                             className='bg-primary hover:bg-primary/90 h-10 w-full font-medium'
                                             onClick={saveSpellRestrictions}
-                                            disabled={savingSpellRestrictions} data-fp-save-shortcut>
+                                            disabled={savingSpellRestrictions}
+                                            data-fp-save-shortcut
+                                        >
                                             {savingSpellRestrictions ? (
                                                 <>
                                                     <RefreshCw className='mr-2 h-4 w-4 animate-spin' />

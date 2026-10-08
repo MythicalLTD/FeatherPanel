@@ -673,7 +673,12 @@ export default function SettingsPage() {
                                                 ) : (
                                                     <span />
                                                 )}
-                                                <Button onClick={handleSave} disabled={saving} className='shrink-0' data-fp-save-shortcut>
+                                                <Button
+                                                    onClick={handleSave}
+                                                    disabled={saving}
+                                                    className='shrink-0'
+                                                    data-fp-save-shortcut
+                                                >
                                                     {saving ? (
                                                         <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                                     ) : (

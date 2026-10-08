@@ -322,7 +322,8 @@ function LoginDeviceContent() {
                 <p className='text-muted-foreground text-sm'>{t('account.loginDevice.subtitle')}</p>
             </div>
 
-            <form data-fp-save-shortcut
+            <form
+                data-fp-save-shortcut
                 className='border-border bg-card space-y-4 rounded-2xl border p-5 shadow-xl'
                 onSubmit={(e) => {
                     e.preventDefault();

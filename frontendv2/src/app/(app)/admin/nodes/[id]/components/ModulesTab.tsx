@@ -308,7 +308,9 @@ export function ModulesTab({ node }: ModulesTabProps) {
                     <Button
                         onClick={handleSaveConfig}
                         loading={savingConfig}
-                        disabled={fetchingConfig || selectedModule?.enabled} data-fp-save-shortcut>
+                        disabled={fetchingConfig || selectedModule?.enabled}
+                        data-fp-save-shortcut
+                    >
                         {t('common.save')}
                     </Button>
                 </DialogFooter>

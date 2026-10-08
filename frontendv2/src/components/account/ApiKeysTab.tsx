@@ -450,7 +450,11 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                 </div>
 
                 <DialogFooter>
-                    <Button onClick={editModal ? handleEditClient : handleCreateClient} className='flex-1' data-fp-save-shortcut>
+                    <Button
+                        onClick={editModal ? handleEditClient : handleCreateClient}
+                        className='flex-1'
+                        data-fp-save-shortcut
+                    >
                         {editModal ? t('account.apiKeys.updateKey') : t('account.apiKeys.addKey')}
                     </Button>
                     <Button

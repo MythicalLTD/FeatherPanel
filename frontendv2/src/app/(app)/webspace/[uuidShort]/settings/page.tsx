@@ -331,7 +331,12 @@ export default function WebSpaceSettingsPage() {
                                 <p className='text-muted-foreground text-xs'>
                                     {t('webSpaces.settings.resourceLimitsHelp')}
                                 </p>
-                                <Button loading={saving} onClick={() => void saveSettings()} size='sm' data-fp-save-shortcut>
+                                <Button
+                                    loading={saving}
+                                    onClick={() => void saveSettings()}
+                                    size='sm'
+                                    data-fp-save-shortcut
+                                >
                                     <Save className='mr-2 h-4 w-4' />
                                     {t('webSpaces.settings.saveSettings')}
                                 </Button>
@@ -397,7 +402,12 @@ export default function WebSpaceSettingsPage() {
                                         </div>
                                     )}
                                     <div className='flex flex-wrap gap-2'>
-                                        <Button loading={saving} onClick={() => void saveSettings()} size='sm' data-fp-save-shortcut>
+                                        <Button
+                                            loading={saving}
+                                            onClick={() => void saveSettings()}
+                                            size='sm'
+                                            data-fp-save-shortcut
+                                        >
                                             <Save className='mr-2 h-4 w-4' />
                                             {t('webSpaces.settings.saveSettings')}
                                         </Button>

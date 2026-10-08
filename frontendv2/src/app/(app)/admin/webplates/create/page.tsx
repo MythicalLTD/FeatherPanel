@@ -82,9 +82,12 @@ export default function CreateWebPlatePage() {
         }
     }, [form, router, t]);
 
-    useSaveShortcut(() => {
-        void handleCreate();
-    }, { disabled: saving });
+    useSaveShortcut(
+        () => {
+            void handleCreate();
+        },
+        { disabled: saving },
+    );
 
     const setField = <K extends keyof WebPlateFormState>(key: K, value: WebPlateFormState[K]) => {
         setForm((prev) => ({ ...prev, [key]: value }));

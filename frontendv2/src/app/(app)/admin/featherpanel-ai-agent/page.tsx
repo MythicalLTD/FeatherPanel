@@ -190,7 +190,8 @@ export default function FeatherAiAgentPage() {
                         </div>
                     </div>
                 ) : chatbotSettings ? (
-                    <form data-fp-save-shortcut
+                    <form
+                        data-fp-save-shortcut
                         className='space-y-10'
                         onSubmit={(e) => {
                             e.preventDefault();

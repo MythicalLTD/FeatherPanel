@@ -268,7 +268,11 @@ export function RoleEditor({
                                 {t('common.delete')}
                             </Button>
                         )}
-                        <Button loading={isSubmitting} onClick={(e) => onSave(e as unknown as React.FormEvent)} data-fp-save-shortcut>
+                        <Button
+                            loading={isSubmitting}
+                            onClick={(e) => onSave(e as unknown as React.FormEvent)}
+                            data-fp-save-shortcut
+                        >
                             <Save className='mr-2 h-4 w-4' />
                             {mode === 'create'
                                 ? t('admin.roles.form.submit_create')

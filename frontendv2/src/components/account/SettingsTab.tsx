@@ -1324,7 +1324,12 @@ export default function SettingsTab() {
                         >
                             {t('common.cancel')}
                         </Button>
-                        <Button type='button' disabled={isSubmitting} onClick={() => void handleSaveRenamePasskey()} data-fp-save-shortcut>
+                        <Button
+                            type='button'
+                            disabled={isSubmitting}
+                            onClick={() => void handleSaveRenamePasskey()}
+                            data-fp-save-shortcut
+                        >
                             {isSubmitting ? t('common.saving') : t('common.save')}
                         </Button>
                     </DialogFooter>

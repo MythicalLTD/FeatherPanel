@@ -24,16 +24,15 @@ use App\App;
  */
 class Notification
 {
-    /**
-     * @var string The notifications table name
-     */
-    private static string $table = 'featherpanel_notifications';
-
     /** Max bytes for title (VARCHAR). */
     public const TITLE_MAX_LENGTH = 255;
 
     /** Max bytes for message_markdown (MySQL TEXT). */
     public const MESSAGE_MAX_LENGTH = 65535;
+    /**
+     * @var string The notifications table name
+     */
+    private static string $table = 'featherpanel_notifications';
 
     /**
      * Create a new notification.

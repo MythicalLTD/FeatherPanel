@@ -1405,7 +1405,9 @@ export default function VmInstancesCreatePage() {
                             onClick={handleCreate}
                             disabled={!canCreate || submitting || wizardBlockedByInfra || wizardNavWaitingInfra}
                             loading={submitting}
-                            className='gap-2' data-fp-save-shortcut>
+                            className='gap-2'
+                            data-fp-save-shortcut
+                        >
                             {submitting ? (
                                 <>{t('admin.vmInstances.creating_clone') ?? 'Creating…'}</>
                             ) : (

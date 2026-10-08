@@ -935,7 +935,9 @@ export default function CreateWebSpacePage() {
                         onClick={handleCreate}
                         disabled={!canCreate || saving}
                         loading={saving}
-                        className='gap-2' data-fp-save-shortcut>
+                        className='gap-2'
+                        data-fp-save-shortcut
+                    >
                         <Plus className='h-4 w-4' />
                         {t('admin.webSpaces.form.submit_create')}
                     </Button>
