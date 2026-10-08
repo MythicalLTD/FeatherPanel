@@ -383,6 +383,7 @@ export default function ServerTransferSpellPage() {
                             variant='default'
                             onClick={handleSave}
                             disabled={currentStep !== 3 || saving || Object.keys(variableErrors).length > 0}
+                            data-fp-save-shortcut
                             loading={saving}
                             className='order-1 w-full sm:order-2 sm:w-auto'
                         >
@@ -682,6 +683,7 @@ export default function ServerTransferSpellPage() {
                                 disabled={saving}
                                 className='h-14 px-16 text-lg'
                                 loading={saving}
+                                data-fp-save-shortcut
                             >
                                 {saving ? (
                                     t('common.processing')

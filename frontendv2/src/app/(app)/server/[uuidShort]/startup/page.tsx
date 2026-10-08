@@ -420,6 +420,7 @@ export default function ServerStartupPage() {
                             size='default'
                             onClick={handleSave}
                             disabled={saving || !hasChanges() || Object.keys(variableErrors).length > 0}
+                            data-fp-save-shortcut
                             loading={saving}
                             className='order-1 w-full sm:order-2 sm:w-auto'
                         >

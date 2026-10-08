@@ -20,7 +20,6 @@ import {
     DOCS_BASE,
     escapeHtml,
     ensureDir,
-    formatsBar,
     hero,
     renderDocsPage,
     writeJson,
