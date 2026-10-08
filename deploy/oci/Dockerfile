@@ -10,6 +10,7 @@ FROM node:22-bookworm AS frontend-builder
 WORKDIR /app
 RUN npm install -g pnpm
 COPY frontendv2/package.json frontendv2/pnpm-lock.yaml frontendv2/pnpm-workspace.yaml ./
+COPY frontendv2/patches ./patches
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 COPY frontendv2/ .
