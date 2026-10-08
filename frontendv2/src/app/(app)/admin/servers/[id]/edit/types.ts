@@ -39,6 +39,11 @@ export interface Server {
     startup: string;
     image: string;
     skip_scripts: number;
+    skip_zerotrust?: number;
+    show_on_status?: number;
+    auto_start?: number;
+    auto_start_delay?: number;
+    manually_stopped?: number;
     external_id: string | null;
     installed_at: string | null;
     created_at: string;
@@ -130,6 +135,9 @@ export interface ServerFormData {
     owner_id: number | null;
     skip_scripts: boolean;
     skip_zerotrust: boolean;
+    show_on_status: boolean;
+    auto_start: boolean;
+    auto_start_delay: number;
     external_id: string;
     expires_at: string | null;
 

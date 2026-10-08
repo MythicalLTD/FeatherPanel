@@ -35,6 +35,8 @@ const ALL_BLOCK_IDS: DashboardBlockId[] = ['hero', ...LEFT_POOL, ...RIGHT_POOL];
 
 export interface DashboardLayoutState {
     hidden: DashboardBlockId[];
+    /** Plugin widget ids the user has hidden from the dashboard. */
+    hiddenPluginWidgets: string[];
     leftOrder: DashboardLeftBlockId[];
     rightOrder: DashboardRightBlockId[];
     columnsReversed: boolean;
@@ -44,6 +46,7 @@ export interface DashboardLayoutState {
 
 const DEFAULT_STATE: DashboardLayoutState = {
     hidden: [],
+    hiddenPluginWidgets: [],
     leftOrder: [...LEFT_DEFAULT],
     rightOrder: [...RIGHT_DEFAULT],
     columnsReversed: false,
@@ -135,6 +138,18 @@ function parseHidden(raw: unknown): DashboardBlockId[] {
     return mapped.filter((x): x is DashboardBlockId => x != null && ALL_BLOCK_IDS.includes(x as DashboardBlockId));
 }
 
+function parseHiddenPluginWidgets(raw: unknown): string[] {
+    if (!Array.isArray(raw)) return [];
+    const out: string[] = [];
+    const seen = new Set<string>();
+    for (const x of raw) {
+        if (typeof x !== 'string' || !x || seen.has(x)) continue;
+        seen.add(x);
+        out.push(x);
+    }
+    return out;
+}
+
 function loadState(): DashboardLayoutState {
     if (typeof window === 'undefined') return DEFAULT_STATE;
     try {
@@ -155,6 +170,7 @@ function loadState(): DashboardLayoutState {
 
         return {
             hidden: parseHidden(parsed.hidden),
+            hiddenPluginWidgets: parseHiddenPluginWidgets(parsed.hiddenPluginWidgets),
             leftOrder,
             rightOrder: parseRightOrder(parsed.rightOrder),
             columnsReversed: Boolean(parsed.columnsReversed),
@@ -187,6 +203,21 @@ export function useDashboardLayout() {
             hidden: s.hidden.includes(id) ? s.hidden.filter((x) => x !== id) : [...s.hidden, id],
         }));
     }, []);
+
+    const toggleHiddenPluginWidget = useCallback((widgetId: string) => {
+        if (!widgetId) return;
+        setState((s) => ({
+            ...s,
+            hiddenPluginWidgets: s.hiddenPluginWidgets.includes(widgetId)
+                ? s.hiddenPluginWidgets.filter((x) => x !== widgetId)
+                : [...s.hiddenPluginWidgets, widgetId],
+        }));
+    }, []);
+
+    const isPluginWidgetVisible = useCallback(
+        (widgetId: string, customizing: boolean) => !state.hiddenPluginWidgets.includes(widgetId) || customizing,
+        [state.hiddenPluginWidgets],
+    );
 
     const moveInLeft = useCallback((id: DashboardLeftBlockId, direction: -1 | 1) => {
         setState((s) => {
@@ -257,6 +288,8 @@ export function useDashboardLayout() {
     return {
         ...state,
         toggleHidden,
+        toggleHiddenPluginWidget,
+        isPluginWidgetVisible,
         moveInLeft,
         moveInRight,
         removeFromLeft,

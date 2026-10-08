@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { toast } from 'sonner';
 import axios from 'axios';
 import {
@@ -24,7 +25,7 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { AlertCircle, ExternalLink } from 'lucide-react';
 import { Server } from '@/types/server';
 
@@ -62,9 +63,11 @@ export function EulaDialog({ isOpen, onClose, server, onAccepted }: EulaDialogPr
         } catch (error) {
             console.error('Failed to accept EULA:', error);
             if (axios.isAxiosError(error) && error.response?.status === 415) {
-                toast.error(t('features.eula.failedToAccept') + ' (Invalid upload content-type)');
+                toast.error(
+                    `${getApiErrorMessage(error, t, 'features.eula.failedToAccept')} (Invalid upload content-type)`,
+                );
             } else {
-                toast.error(t('features.eula.failedToAccept'));
+                toast.error(getApiErrorMessage(error, t, 'features.eula.failedToAccept'));
             }
         } finally {
             setAccepting(false);

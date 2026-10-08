@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { useSettings } from '@/contexts/SettingsContext';
 import { cn } from '@/lib/utils';
 import {
@@ -122,8 +123,8 @@ export default function FeatherPanelPremiumPage() {
                 } else {
                     toast.error(t('admin.featherpanel_premium.load_failed'));
                 }
-            } catch {
-                toast.error(t('admin.featherpanel_premium.load_failed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'admin.featherpanel_premium.load_failed'));
             } finally {
                 setLoading(false);
                 setRefreshing(false);
@@ -154,15 +155,15 @@ export default function FeatherPanelPremiumPage() {
                 await refetchSettings();
                 toast.success(t('admin.featherpanel_premium.saved'));
             } else {
-                toast.error(res.data.message || t('admin.featherpanel_premium.save_failed'));
+                toast.error(getApiErrorMessageFromPayload(res.data, t, 'admin.featherpanel_premium.save_failed'));
             }
         } catch (err: unknown) {
             const e = err as { response?: { data?: { message?: string; error_code?: string } } };
             if (e?.response?.data?.error_code === 'PREMIUM_REQUIRED') {
-                toast.error(t('admin.featherpanel_premium.premium_required'));
+                toast.error(getApiErrorMessage(err, t, 'admin.featherpanel_premium.premium_required'));
                 void load(true);
             } else {
-                toast.error(e?.response?.data?.message || t('admin.featherpanel_premium.save_failed'));
+                toast.error(getApiErrorMessage(e, t, 'admin.featherpanel_premium.save_failed'));
             }
         } finally {
             setSaving(false);
@@ -246,7 +247,7 @@ export default function FeatherPanelPremiumPage() {
                                     {premium?.using_cache && (
                                         <p className='text-sm text-amber-600 dark:text-amber-400'>
                                             {t('admin.featherpanel_premium.status.using_cache', {
-                                                expires: premium.expires_at || '—',
+                                                expires: premium.expires_at || '-',
                                             })}
                                         </p>
                                     )}

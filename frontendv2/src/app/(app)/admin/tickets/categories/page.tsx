@@ -325,7 +325,7 @@ export default function TicketCategoriesPage() {
                             <SheetTitle>{t('admin.tickets.categories.create')}</SheetTitle>
                             <SheetDescription>{t('admin.tickets.categories.description')}</SheetDescription>
                         </SheetHeader>
-                        <form onSubmit={handleCreate} className='space-y-4'>
+                        <form onSubmit={handleCreate} className='space-y-4' data-fp-save-shortcut>
                             <div className='space-y-2'>
                                 <Label>{t('admin.tickets.categories.form.name')}</Label>
                                 <Input
@@ -400,7 +400,7 @@ export default function TicketCategoriesPage() {
                             <SheetTitle>{t('admin.tickets.categories.edit')}</SheetTitle>
                             <SheetDescription>{t('admin.tickets.categories.description')}</SheetDescription>
                         </SheetHeader>
-                        <form onSubmit={handleUpdate} className='space-y-4'>
+                        <form onSubmit={handleUpdate} className='space-y-4' data-fp-save-shortcut>
                             <div className='space-y-2'>
                                 <Label>{t('admin.tickets.categories.form.name')}</Label>
                                 <Input

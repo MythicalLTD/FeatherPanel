@@ -19,12 +19,13 @@ import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import {
@@ -139,7 +140,7 @@ export function ActionsTab({
         } catch (error) {
             console.error('Error fetching Wings runtime:', error);
             setRuntime(null);
-            toast.error(t('admin.servers.edit.actions.runtime_unknown'));
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.edit.actions.runtime_unknown'));
         } finally {
             setRuntimeLoading(false);
         }
@@ -166,11 +167,7 @@ export function ActionsTab({
             void fetchRuntime();
         } catch (error: unknown) {
             console.error('Error reconciling server runtime:', error);
-            const message =
-                axios.isAxiosError(error) && error.response?.data?.message
-                    ? String(error.response.data.message)
-                    : t('admin.servers.edit.actions.reconcile_failed');
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.edit.actions.reconcile_failed'));
         } finally {
             setReconciling(false);
         }
@@ -191,11 +188,7 @@ export function ActionsTab({
             onRefresh();
         } catch (error: unknown) {
             console.error('Error suspending server:', error);
-            const message =
-                axios.isAxiosError(error) && error.response?.data?.message
-                    ? String(error.response.data.message)
-                    : t('admin.servers.edit.actions.suspend_failed');
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.edit.actions.suspend_failed'));
         } finally {
             setSuspending(false);
         }
@@ -209,7 +202,7 @@ export function ActionsTab({
             onRefresh();
         } catch (error) {
             console.error('Error unsuspending server:', error);
-            toast.error(t('admin.servers.edit.actions.unsuspend_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.edit.actions.unsuspend_failed'));
         } finally {
             setSuspending(false);
         }
@@ -236,11 +229,7 @@ export function ActionsTab({
             setWarnSendEmail(true);
         } catch (error: unknown) {
             console.error('Error sending warning:', error);
-            const message =
-                axios.isAxiosError(error) && error.response?.data?.error_message
-                    ? String(error.response.data.error_message)
-                    : t('admin.servers.edit.actions.warn_failed');
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.edit.actions.warn_failed'));
         } finally {
             setWarning(false);
         }
@@ -261,7 +250,7 @@ export function ActionsTab({
             router.push('/admin/servers');
         } catch (error) {
             console.error('Error deleting server:', error);
-            toast.error(t('admin.servers.edit.actions.delete_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.edit.actions.delete_failed'));
             setDeleting(false);
         }
     };
@@ -276,7 +265,7 @@ export function ActionsTab({
             setNodes(next.filter((n) => String(n.id) !== String(currentNodeId ?? '')));
         } catch (error) {
             console.error('Error fetching nodes:', error);
-            toast.error(t('admin.servers.transfer.fetch_nodes_failed', { defaultValue: 'Failed to fetch nodes.' }));
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.transfer.fetch_nodes_failed'));
         } finally {
             setLoadingNodes(false);
         }
@@ -296,9 +285,7 @@ export function ActionsTab({
             setAllocations((data?.data?.allocations || []) as ApiAllocation[]);
         } catch (error) {
             console.error('Error fetching allocations:', error);
-            toast.error(
-                t('admin.servers.transfer.fetch_allocations_failed', { defaultValue: 'Failed to fetch allocations.' }),
-            );
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.transfer.fetch_allocations_failed'));
         } finally {
             setLoadingAllocations(false);
         }
@@ -325,7 +312,7 @@ export function ActionsTab({
             onRefresh();
         } catch (error) {
             console.error('Error transferring server:', error);
-            toast.error(t('admin.servers.messages.transfer_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.messages.transfer_failed'));
         } finally {
             setTransferring(false);
         }
@@ -358,7 +345,7 @@ export function ActionsTab({
                             <div className='text-muted-foreground flex flex-wrap items-center gap-2 text-sm'>
                                 <span>{t('admin.servers.edit.actions.runtime_state')}:</span>
                                 <code className='bg-muted rounded px-1.5 py-0.5 text-xs'>
-                                    {wingsState || serverStatus || '—'}
+                                    {wingsState || serverStatus || '-'}
                                 </code>
                             </div>
                             {runtime?.message ? (
@@ -720,11 +707,18 @@ export function ActionsTab({
                 </AlertDialogContent>
             </AlertDialog>
 
-            <HeadlessModal
-                isOpen={nodeModalOpen}
+            <Dialog
+                open={nodeModalOpen}
                 onClose={() => setNodeModalOpen(false)}
-                title={t('admin.servers.transfer.destination_node')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setNodeModalOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('admin.servers.transfer.destination_node')}</DialogTitle>
+                </DialogHeader>
                 <div className='space-y-3'>
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
@@ -761,13 +755,20 @@ export function ActionsTab({
                         )}
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={allocationModalOpen}
+            <Dialog
+                open={allocationModalOpen}
                 onClose={() => setAllocationModalOpen(false)}
-                title={t('admin.servers.transfer.destination_allocation')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setAllocationModalOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('admin.servers.transfer.destination_allocation')}</DialogTitle>
+                </DialogHeader>
                 <div className='space-y-3'>
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
@@ -805,7 +806,7 @@ export function ActionsTab({
                         )}
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
         </div>
     );
 }

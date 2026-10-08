@@ -140,7 +140,7 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
 
                     <div className='space-y-4'>
                         <h3 className='flex items-center gap-2 text-lg font-semibold'>
-                            <Wand2 className='h-5 w-5 text-purple-500' />
+                            <Wand2 className='text-primary h-5 w-5' />
                             {t('admin.servers.form.wizard.review.application')}
                         </h3>
                         <div className='bg-muted/20 grid grid-cols-1 gap-4 rounded-xl p-4 md:grid-cols-3'>

@@ -32,10 +32,13 @@ import {
     getCurrentServerUuidShort,
     getRecentServerUuidShorts,
     getServerRouteId,
+    isServerFileViewerPath,
+    joinServerFilePath,
     sortServersForSwitcher,
     sortServersWithFavoritesFirst,
     type ServerSwitcherTab,
 } from '@/lib/server-switch';
+import { filesApi } from '@/lib/files-api';
 import { displayStatus, getStatusDotColor } from '@/lib/server-utils';
 import type { Server } from '@/types/server';
 
@@ -132,6 +135,15 @@ export function ServerSwitcher({ fallbackTitle }: ServerSwitcherProps) {
         return null;
     }, [sortedServers, currentUuidShort, serverContext?.server]);
 
+    const currentServerStatus = useMemo(() => {
+        if (!currentServer) return null;
+        // Prefer live Wings status from console over cached list stats (which go stale after stop).
+        if (serverContext?.liveStatus) {
+            return serverContext.liveStatus;
+        }
+        return displayStatus(currentServer);
+    }, [currentServer, serverContext?.liveStatus]);
+
     const filteredServers = useMemo(() => {
         let list = filterServersForSwitcherTab(sortedServers, activeTab, favoriteUuids, recentUuidShorts);
         list = filterServersBySearch(list, searchQuery);
@@ -157,10 +169,31 @@ export function ServerSwitcher({ fallbackTitle }: ServerSwitcherProps) {
         return null;
     }
 
-    const handleSelect = (server: Server) => {
+    const handleSelect = async (server: Server) => {
         const targetId = getServerRouteId(server);
         if (!targetId || targetId === currentUuidShort) return;
-        router.push(buildServerSwitchUrl(targetId, pathname));
+
+        const search = typeof window !== 'undefined' ? window.location.search : '';
+
+        // While viewing a file: open the same path on the target if it exists, else files root
+        if (isServerFileViewerPath(pathname)) {
+            const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+            const file = params.get('file')?.trim();
+            if (!file) {
+                router.push(`/server/${targetId}/files`);
+                return;
+            }
+
+            const fullPath = joinServerFilePath(params.get('directory'), file);
+            const exists = await filesApi.fileExists(targetId, fullPath);
+            if (exists === false) {
+                router.push(`/server/${targetId}/files`);
+                return;
+            }
+            // exists === true → keep editor URL; null (unknown) → try the file, editor handles miss
+        }
+
+        router.push(buildServerSwitchUrl(targetId, pathname, search));
     };
 
     const displayName = currentServer?.name ?? fallbackTitle ?? t('navbar.server_switcher.current');
@@ -206,17 +239,23 @@ export function ServerSwitcher({ fallbackTitle }: ServerSwitcherProps) {
                             <Star className='text-primary ml-1 inline h-3 w-3 fill-current' aria-hidden />
                         )}
                     </span>
-                    {currentServer && (
+                    {currentServer && currentServerStatus && (
                         <span className='text-muted-foreground hidden items-center gap-1 text-[11px] sm:flex'>
-                            <span
-                                className={cn(
-                                    'h-1.5 w-1.5 shrink-0 rounded-full',
-                                    getStatusDotColor(displayStatus(currentServer)),
-                                )}
-                            />
-                            {t(`servers.status.${displayStatus(currentServer)}`, {
-                                defaultValue: displayStatus(currentServer),
-                            })}
+                            {currentServerStatus === 'unknown' ? (
+                                <span className='bg-muted/40 h-2.5 w-16 animate-pulse rounded-md' aria-busy='true' />
+                            ) : (
+                                <>
+                                    <span
+                                        className={cn(
+                                            'h-1.5 w-1.5 shrink-0 rounded-full',
+                                            getStatusDotColor(currentServerStatus),
+                                        )}
+                                    />
+                                    {t(`servers.status.${currentServerStatus}`, {
+                                        defaultValue: currentServerStatus,
+                                    })}
+                                </>
+                            )}
                         </span>
                     )}
                 </span>
@@ -340,7 +379,10 @@ export function ServerSwitcher({ fallbackTitle }: ServerSwitcherProps) {
                             filteredServers.map((server) => {
                                 const id = getServerRouteId(server);
                                 const isCurrent = id === currentUuidShort;
-                                const status = displayStatus(server);
+                                const status =
+                                    isCurrent && serverContext?.liveStatus
+                                        ? serverContext.liveStatus
+                                        : displayStatus(server);
                                 const favorited = favoriteUuidSet.has(server.uuid);
 
                                 return (
@@ -371,13 +413,24 @@ export function ServerSwitcher({ fallbackTitle }: ServerSwitcherProps) {
                                                             )}
                                                         </span>
                                                         <span className='text-muted-foreground flex items-center gap-1.5 text-[11px]'>
-                                                            <span
-                                                                className={cn(
-                                                                    'h-1.5 w-1.5 shrink-0 rounded-full',
-                                                                    getStatusDotColor(status),
-                                                                )}
-                                                            />
-                                                            {t(`servers.status.${status}`, { defaultValue: status })}
+                                                            {status === 'unknown' ? (
+                                                                <span
+                                                                    className='bg-muted/40 h-2.5 w-14 animate-pulse rounded-md'
+                                                                    aria-busy='true'
+                                                                />
+                                                            ) : (
+                                                                <>
+                                                                    <span
+                                                                        className={cn(
+                                                                            'h-1.5 w-1.5 shrink-0 rounded-full',
+                                                                            getStatusDotColor(status),
+                                                                        )}
+                                                                    />
+                                                                    {t(`servers.status.${status}`, {
+                                                                        defaultValue: status,
+                                                                    })}
+                                                                </>
+                                                            )}
                                                         </span>
                                                     </span>
                                                     {isCurrent && (

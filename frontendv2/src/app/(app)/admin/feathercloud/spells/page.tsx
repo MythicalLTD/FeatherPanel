@@ -47,7 +47,8 @@ import {
     Loader2,
     Trash2,
 } from 'lucide-react';
-import { StarDisplay, StarRatingInput } from '@/app/(app)/admin/feathercloud/products/_shared';
+import { StarDisplay, StarRatingInput, mythicCloudErrorMessage } from '@/app/(app)/admin/feathercloud/products/_shared';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface OnlineSpell {
     id?: string | number | null;
@@ -76,23 +77,6 @@ interface EggReview {
     createdAt?: string;
     created_at?: string;
     user?: { id?: number | string; name?: string; username?: string };
-}
-
-function mythicCloudErrorMessage(err: unknown, fallback: string): string {
-    if (!axios.isAxiosError(err)) return fallback;
-    const code = String(err.response?.data?.error_code || '');
-    const message = err.response?.data?.message || fallback;
-    switch (code) {
-        case 'PANEL_DOWNLOADS_DISABLED':
-            return 'This product does not allow MythicalCloud panel downloads.';
-        case 'ACCESS_DENIED':
-            return 'Access denied for this Mythic marketplace action.';
-        case 'INVALID_USER_UUID':
-        case 'MEMBER_UUID_REQUIRED':
-            return 'Your panel user is not mapped to a Mythic team member. Re-link Cloud Connections with a matching email.';
-        default:
-            return message;
-    }
 }
 
 interface OnlinePagination {
@@ -175,8 +159,9 @@ export default function SpellsPage() {
             setInstalledSpellIds(spells.map((s: { name: string }) => s.name));
         } catch (error) {
             console.error('Failed to fetch installed spells:', error);
+            toast.error(getApiErrorMessage(error, t, 'admin.marketplace.spells.toasts.fetch_failed'));
         }
-    }, []);
+    }, [t]);
 
     const fetchOnlineSpells = useCallback(
         async (page: number, mode: 'replace' | 'append' = 'replace') => {
@@ -220,8 +205,7 @@ export default function SpellsPage() {
                 setOnlinePagination(pagination);
                 setCurrentOnlinePage(page);
             } catch (err: unknown) {
-                const e = err as { response?: { data?: { message?: string } } };
-                setOnlineError(e?.response?.data?.message || t('admin.marketplace.spells.loading_error'));
+                setOnlineError(getApiErrorMessage(err, t, 'admin.marketplace.spells.loading_error'));
             } finally {
                 if (mode === 'append') {
                     setLoadingMore(false);
@@ -264,7 +248,7 @@ export default function SpellsPage() {
                 reviewCount: Number.isFinite(reviewCount) ? reviewCount : undefined,
             });
         } catch (err) {
-            toast.error(mythicCloudErrorMessage(err, 'Failed to load reviews'));
+            toast.error(mythicCloudErrorMessage(err, t('admin.marketplace.spells.toasts.review_load_failed'), t));
         } finally {
             setReviewsLoading(false);
         }
@@ -278,10 +262,10 @@ export default function SpellsPage() {
                 rating: reviewRating,
                 comment: reviewComment.trim() || undefined,
             });
-            toast.success('Review saved');
+            toast.success(t('admin.marketplace.spells.toasts.review_saved'));
             await openReviews(reviewSpell);
         } catch (err) {
-            toast.error(mythicCloudErrorMessage(err, 'Failed to save review'));
+            toast.error(mythicCloudErrorMessage(err, t('admin.marketplace.spells.toasts.review_save_failed'), t));
         } finally {
             setSavingReview(false);
         }
@@ -292,10 +276,10 @@ export default function SpellsPage() {
         setSavingReview(true);
         try {
             await axios.delete(`/api/admin/cloud/data/eggs/${encodeURIComponent(eggIdFor(reviewSpell))}/reviews`);
-            toast.success('Review deleted');
+            toast.success(t('admin.marketplace.spells.toasts.review_deleted'));
             await openReviews(reviewSpell);
         } catch (err) {
-            toast.error(mythicCloudErrorMessage(err, 'Failed to delete review'));
+            toast.error(mythicCloudErrorMessage(err, t('admin.marketplace.spells.toasts.review_delete_failed'), t));
         } finally {
             setSavingReview(false);
         }
@@ -317,9 +301,9 @@ export default function SpellsPage() {
             a.click();
             a.remove();
             URL.revokeObjectURL(url);
-            toast.success('Egg JSON downloaded');
+            toast.success(t('admin.marketplace.spells.toasts.egg_downloaded'));
         } catch (err) {
-            toast.error(mythicCloudErrorMessage(err, 'Download failed'));
+            toast.error(mythicCloudErrorMessage(err, t('admin.marketplace.spells.toasts.egg_download_failed'), t));
         } finally {
             setDownloadingEggId(null);
         }
@@ -403,8 +387,7 @@ export default function SpellsPage() {
             fetchInstalledSpells();
             setConfirmInstallOpen(false);
         } catch (err: unknown) {
-            const e = err as { response?: { data?: { message?: string } } };
-            toast.error(e?.response?.data?.message || t('admin.marketplace.spells.install_error'));
+            toast.error(getApiErrorMessage(err, t, 'admin.marketplace.spells.install_error'));
         } finally {
             setInstallingId(null);
         }
@@ -451,7 +434,7 @@ export default function SpellsPage() {
                 </div>
                 <div className='bg-card/60 rounded-2xl px-4 py-3'>
                     <p className='text-muted-foreground text-xs'>Catalog</p>
-                    <p className='mt-1 text-sm font-medium'>{onlinePagination?.total_records ?? '—'}</p>
+                    <p className='mt-1 text-sm font-medium'>{onlinePagination?.total_records ?? '-'}</p>
                 </div>
                 <div className='bg-card/60 rounded-2xl px-4 py-3'>
                     <p className='text-muted-foreground text-xs'>Installed matches</p>
@@ -484,7 +467,7 @@ export default function SpellsPage() {
                         className='border-border bg-background h-9 rounded-md border px-3 text-sm'
                         value={channel}
                         onChange={(e) => setChannel(e.target.value)}
-                        aria-label='Channel'
+                        aria-label={t('admin.marketplace.spells.aria.channel')}
                     >
                         <option value=''>All channels</option>
                         <option value='mythicalsystems'>Mythic</option>
@@ -494,7 +477,7 @@ export default function SpellsPage() {
                         className='border-border bg-background h-9 rounded-md border px-3 text-sm'
                         value={sort}
                         onChange={(e) => setSort(e.target.value)}
-                        aria-label='Sort'
+                        aria-label={t('admin.marketplace.spells.aria.sort')}
                     >
                         <option value='downloads'>Downloads</option>
                         <option value='rating'>Rating</option>
@@ -647,7 +630,7 @@ export default function SpellsPage() {
                                         <Button
                                             size='sm'
                                             variant='outline'
-                                            title='Download egg JSON'
+                                            title={t('admin.marketplace.spells.grid.download_egg')}
                                             disabled={downloadingEggId === eggIdFor(spell)}
                                             onClick={() => void downloadEggJson(spell)}
                                         >
@@ -660,7 +643,7 @@ export default function SpellsPage() {
                                         <Button
                                             size='sm'
                                             variant='outline'
-                                            title='Reviews'
+                                            title={t('admin.marketplace.spells.grid.reviews')}
                                             onClick={() => void openReviews(spell)}
                                         >
                                             <Star className='h-3.5 w-3.5' />
@@ -988,7 +971,7 @@ export default function SpellsPage() {
                                     <p className='text-sm font-medium'>
                                         {Number(reviewsMeta?.averageRating || 0) > 0
                                             ? Number(reviewsMeta?.averageRating).toFixed(1)
-                                            : '—'}{' '}
+                                            : '-'}{' '}
                                         <span className='text-muted-foreground font-normal'>
                                             · {reviewsMeta?.reviewCount ?? 0} review
                                             {(reviewsMeta?.reviewCount ?? 0) === 1 ? '' : 's'}

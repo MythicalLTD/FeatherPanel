@@ -19,7 +19,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { Switch } from '@/components/ui/switch';
+import { SettingToggleCard } from '@/components/admin/SettingToggleCard';
 import { Label } from '@/components/ui/label';
 import { Settings, Search, UserCircle } from 'lucide-react';
 import { StepProps, User } from './types';
@@ -119,15 +119,46 @@ export function Step1CoreDetails({
                         <p className='text-muted-foreground text-xs'>{t('admin.servers.form.owner_help')}</p>
                     </div>
 
-                    <div className='bg-muted/20 border-border/50 flex items-center justify-between rounded-xl border p-4'>
-                        <div className='space-y-0.5'>
-                            <Label>{t('admin.servers.form.skip_scripts')}</Label>
-                            <p className='text-muted-foreground text-xs'>{t('admin.servers.form.skip_scripts_help')}</p>
-                        </div>
-                        <Switch
-                            checked={formData.skipScripts}
-                            onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, skipScripts: checked }))}
+                    <SettingToggleCard
+                        title={t('admin.servers.form.skip_scripts')}
+                        description={t('admin.servers.form.skip_scripts_help')}
+                        checked={formData.skipScripts}
+                        onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, skipScripts: checked }))}
+                    />
+
+                    <SettingToggleCard
+                        title={t('admin.servers.edit.details.show_on_status')}
+                        description={t('admin.servers.edit.details.show_on_status_help')}
+                        checked={formData.showOnStatus}
+                        onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, showOnStatus: checked }))}
+                    />
+
+                    <SettingToggleCard
+                        title={t('admin.servers.edit.details.auto_start')}
+                        description={t('admin.servers.edit.details.auto_start_help')}
+                        checked={formData.autoStart}
+                        onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, autoStart: checked }))}
+                    />
+
+                    <div className='border-border/50 bg-muted/20 space-y-3 rounded-xl border p-4'>
+                        <Label>{t('admin.servers.edit.details.auto_start_delay')}</Label>
+                        <Input
+                            type='number'
+                            min={0}
+                            max={3600}
+                            value={formData.autoStartDelay}
+                            disabled={!formData.autoStart}
+                            onChange={(e) =>
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    autoStartDelay: Math.max(0, Math.min(3600, parseInt(e.target.value) || 0)),
+                                }))
+                            }
+                            className='bg-muted/30 h-11'
                         />
+                        <p className='text-muted-foreground text-xs'>
+                            {t('admin.servers.edit.details.auto_start_delay_help')}
+                        </p>
                     </div>
                 </div>
             </PageCard>

@@ -49,6 +49,14 @@ class Permissions
     /** Delete users */
     public const ADMIN_USERS_DELETE = 'admin.users.delete';
 
+    // Admin Banned IPs Permissions
+    /** View banned panel IPs */
+    public const ADMIN_BLOCKED_IPS_VIEW = 'admin.blocked_ips.view';
+    /** Ban IPs from panel registration */
+    public const ADMIN_BLOCKED_IPS_CREATE = 'admin.blocked_ips.create';
+    /** Remove panel IP bans */
+    public const ADMIN_BLOCKED_IPS_DELETE = 'admin.blocked_ips.delete';
+
     // Admin Locations Permissions
     /** View locations */
     public const ADMIN_LOCATIONS_VIEW = 'admin.locations.view';
@@ -247,6 +255,18 @@ class Permissions
     /** Download database snapshots */
     public const ADMIN_BACKUPS_DOWNLOAD = 'admin.backups.download';
 
+    // Admin Backup Schedules Permissions
+    /** View server backup schedules */
+    public const ADMIN_BACKUP_SCHEDULES_VIEW = 'admin.backup_schedules.view';
+    /** Create server backup schedules */
+    public const ADMIN_BACKUP_SCHEDULES_CREATE = 'admin.backup_schedules.create';
+    /** Edit server backup schedules */
+    public const ADMIN_BACKUP_SCHEDULES_EDIT = 'admin.backup_schedules.edit';
+    /** Delete server backup schedules */
+    public const ADMIN_BACKUP_SCHEDULES_DELETE = 'admin.backup_schedules.delete';
+    /** Manually run server backup schedules */
+    public const ADMIN_BACKUP_SCHEDULES_RUN = 'admin.backup_schedules.run';
+
     // Admin Knowledgebase Categories Permissions
     /** View knowledgebase categories */
     public const ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW = 'admin.knowledgebase.categories.view';
@@ -333,6 +353,34 @@ class Permissions
     /** Delete VM instances */
     public const ADMIN_VM_INSTANCES_DELETE = 'admin.vm_instances.delete';
 
+    // Admin WebPlates Permissions
+    /** View webplates */
+    public const ADMIN_WEBPLATES_VIEW = 'admin.webplates.view';
+    /** Create new webplates */
+    public const ADMIN_WEBPLATES_CREATE = 'admin.webplates.create';
+    /** Edit existing webplates */
+    public const ADMIN_WEBPLATES_EDIT = 'admin.webplates.edit';
+    /** Delete webplates */
+    public const ADMIN_WEBPLATES_DELETE = 'admin.webplates.delete';
+
+    // Admin WebSpaces Permissions
+    /** View webspaces */
+    public const ADMIN_WEBSPACES_VIEW = 'admin.webspaces.view';
+    /** Create new webspaces */
+    public const ADMIN_WEBSPACES_CREATE = 'admin.webspaces.create';
+    /** Edit existing webspaces */
+    public const ADMIN_WEBSPACES_EDIT = 'admin.webspaces.edit';
+    /** Delete webspaces */
+    public const ADMIN_WEBSPACES_DELETE = 'admin.webspaces.delete';
+
+    // Admin Wings Backups Permissions
+    /** View Wings backups */
+    public const ADMIN_WINGS_BACKUPS_VIEW = 'admin.wings_backups.view';
+    /** Manage Wings backup settings */
+    public const ADMIN_WINGS_BACKUPS_MANAGE = 'admin.wings_backups.manage';
+    /** Run or trigger Wings backups */
+    public const ADMIN_WINGS_BACKUPS_RUN = 'admin.wings_backups.run';
+
     /**
      * Returns all permission nodes with metadata.
      */
@@ -374,6 +422,24 @@ class Permissions
                 'value' => self::ADMIN_USERS_DELETE,
                 'category' => 'Admin Users',
                 'description' => 'Delete users',
+            ],
+            [
+                'constant' => 'ADMIN_BLOCKED_IPS_VIEW',
+                'value' => self::ADMIN_BLOCKED_IPS_VIEW,
+                'category' => 'Admin Banned IPs',
+                'description' => 'View banned panel IPs',
+            ],
+            [
+                'constant' => 'ADMIN_BLOCKED_IPS_CREATE',
+                'value' => self::ADMIN_BLOCKED_IPS_CREATE,
+                'category' => 'Admin Banned IPs',
+                'description' => 'Ban IPs from panel registration',
+            ],
+            [
+                'constant' => 'ADMIN_BLOCKED_IPS_DELETE',
+                'value' => self::ADMIN_BLOCKED_IPS_DELETE,
+                'category' => 'Admin Banned IPs',
+                'description' => 'Remove panel IP bans',
             ],
             [
                 'constant' => 'ADMIN_LOCATIONS_VIEW',
@@ -850,6 +916,36 @@ class Permissions
                 'description' => 'Download database snapshots',
             ],
             [
+                'constant' => 'ADMIN_BACKUP_SCHEDULES_VIEW',
+                'value' => self::ADMIN_BACKUP_SCHEDULES_VIEW,
+                'category' => 'Admin Backup Schedules',
+                'description' => 'View server backup schedules',
+            ],
+            [
+                'constant' => 'ADMIN_BACKUP_SCHEDULES_CREATE',
+                'value' => self::ADMIN_BACKUP_SCHEDULES_CREATE,
+                'category' => 'Admin Backup Schedules',
+                'description' => 'Create server backup schedules',
+            ],
+            [
+                'constant' => 'ADMIN_BACKUP_SCHEDULES_EDIT',
+                'value' => self::ADMIN_BACKUP_SCHEDULES_EDIT,
+                'category' => 'Admin Backup Schedules',
+                'description' => 'Edit server backup schedules',
+            ],
+            [
+                'constant' => 'ADMIN_BACKUP_SCHEDULES_DELETE',
+                'value' => self::ADMIN_BACKUP_SCHEDULES_DELETE,
+                'category' => 'Admin Backup Schedules',
+                'description' => 'Delete server backup schedules',
+            ],
+            [
+                'constant' => 'ADMIN_BACKUP_SCHEDULES_RUN',
+                'value' => self::ADMIN_BACKUP_SCHEDULES_RUN,
+                'category' => 'Admin Backup Schedules',
+                'description' => 'Manually run server backup schedules',
+            ],
+            [
                 'constant' => 'ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW',
                 'value' => self::ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW,
                 'category' => 'Admin Knowledgebase Categories',
@@ -1046,6 +1142,72 @@ class Permissions
                 'value' => self::ADMIN_VM_INSTANCES_DELETE,
                 'category' => 'Admin VM Instances',
                 'description' => 'Delete VM instances',
+            ],
+            [
+                'constant' => 'ADMIN_WEBPLATES_VIEW',
+                'value' => self::ADMIN_WEBPLATES_VIEW,
+                'category' => 'Admin WebPlates',
+                'description' => 'View webplates',
+            ],
+            [
+                'constant' => 'ADMIN_WEBPLATES_CREATE',
+                'value' => self::ADMIN_WEBPLATES_CREATE,
+                'category' => 'Admin WebPlates',
+                'description' => 'Create new webplates',
+            ],
+            [
+                'constant' => 'ADMIN_WEBPLATES_EDIT',
+                'value' => self::ADMIN_WEBPLATES_EDIT,
+                'category' => 'Admin WebPlates',
+                'description' => 'Edit existing webplates',
+            ],
+            [
+                'constant' => 'ADMIN_WEBPLATES_DELETE',
+                'value' => self::ADMIN_WEBPLATES_DELETE,
+                'category' => 'Admin WebPlates',
+                'description' => 'Delete webplates',
+            ],
+            [
+                'constant' => 'ADMIN_WEBSPACES_VIEW',
+                'value' => self::ADMIN_WEBSPACES_VIEW,
+                'category' => 'Admin WebSpaces',
+                'description' => 'View webspaces',
+            ],
+            [
+                'constant' => 'ADMIN_WEBSPACES_CREATE',
+                'value' => self::ADMIN_WEBSPACES_CREATE,
+                'category' => 'Admin WebSpaces',
+                'description' => 'Create new webspaces',
+            ],
+            [
+                'constant' => 'ADMIN_WEBSPACES_EDIT',
+                'value' => self::ADMIN_WEBSPACES_EDIT,
+                'category' => 'Admin WebSpaces',
+                'description' => 'Edit existing webspaces',
+            ],
+            [
+                'constant' => 'ADMIN_WEBSPACES_DELETE',
+                'value' => self::ADMIN_WEBSPACES_DELETE,
+                'category' => 'Admin WebSpaces',
+                'description' => 'Delete webspaces',
+            ],
+            [
+                'constant' => 'ADMIN_WINGS_BACKUPS_VIEW',
+                'value' => self::ADMIN_WINGS_BACKUPS_VIEW,
+                'category' => 'Admin Wings Backups',
+                'description' => 'View Wings backups',
+            ],
+            [
+                'constant' => 'ADMIN_WINGS_BACKUPS_MANAGE',
+                'value' => self::ADMIN_WINGS_BACKUPS_MANAGE,
+                'category' => 'Admin Wings Backups',
+                'description' => 'Manage Wings backup settings',
+            ],
+            [
+                'constant' => 'ADMIN_WINGS_BACKUPS_RUN',
+                'value' => self::ADMIN_WINGS_BACKUPS_RUN,
+                'category' => 'Admin Wings Backups',
+                'description' => 'Run or trigger Wings backups',
             ],
         ];
     }

@@ -54,6 +54,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select-native';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface Category {
     id: number;
@@ -145,8 +146,8 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
             if (data?.success) {
                 setCategory(data.data.category);
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.categories.messages.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.categories.messages.fetch_failed'));
             router.push('/admin/knowledgebase/categories');
         }
     }, [id, router, t]);
@@ -177,8 +178,8 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
             } else {
                 toast.error(t('admin.knowledgebase.articles.messages.fetch_failed'));
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.articles.messages.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.articles.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -223,8 +224,8 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
             });
             setArticles(sorted);
             return true;
-        } catch {
-            toast.error(t('admin.knowledgebase.articles.messages.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.articles.messages.fetch_failed'));
             return false;
         }
     }, [id, t]);
@@ -273,8 +274,8 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
             } else {
                 toast.error(t('admin.knowledgebase.order.messages.save_failed'));
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.order.messages.save_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.order.messages.save_failed'));
         } finally {
             setReorderLoading(false);
         }
@@ -319,9 +320,11 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             if (data?.success) return data.data.url;
-            throw new Error(data?.message || t('admin.knowledgebase.categories.messages.upload_failed'));
-        } catch {
-            toast.error(t('admin.knowledgebase.categories.messages.upload_failed'));
+            throw new Error(
+                getApiErrorMessageFromPayload(data, t, 'admin.knowledgebase.categories.messages.upload_failed'),
+            );
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.categories.messages.upload_failed'));
             return null;
         }
     };
@@ -357,10 +360,12 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 setCreateOpen(false);
                 fetchArticles();
             } else {
-                toast.error(data?.message || t('admin.knowledgebase.articles.messages.create_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(data, t, 'admin.knowledgebase.articles.messages.create_failed'),
+                );
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.articles.messages.create_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.articles.messages.create_failed'));
         } finally {
             setFormLoading(false);
         }
@@ -375,10 +380,12 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 toast.success(t('admin.knowledgebase.articles.messages.deleted'));
                 fetchArticles();
             } else {
-                toast.error(data?.message || t('admin.knowledgebase.articles.messages.delete_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(data, t, 'admin.knowledgebase.articles.messages.delete_failed'),
+                );
             }
-        } catch {
-            toast.error(t('admin.knowledgebase.articles.messages.delete_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.articles.messages.delete_failed'));
         }
     };
 
@@ -625,7 +632,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                         if (article.pinned === 'true') {
                             badges.push({
                                 label: t('admin.knowledgebase.articles.badges.pinned'),
-                                className: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20',
+                                className: 'bg-primary/10 text-primary border-primary/20',
                             });
                         }
 
@@ -731,7 +738,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                         <SheetDescription>{t('admin.knowledgebase.articles.form.create_description')}</SheetDescription>
                     </SheetHeader>
 
-                    <form onSubmit={handleCreate} className='mt-6 flex-1 space-y-4'>
+                    <form onSubmit={handleCreate} className='mt-6 flex-1 space-y-4' data-fp-save-shortcut>
                         <div className='space-y-2'>
                             <Label htmlFor='create-title'>{t('admin.knowledgebase.articles.form.title')}</Label>
                             <Input

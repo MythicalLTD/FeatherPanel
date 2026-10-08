@@ -23,7 +23,7 @@ import {
     ShaderMaterial,
     Vector3,
     Vector2,
-    Clock,
+    Timer,
 } from 'three';
 
 import './FloatingLines.css';
@@ -292,7 +292,8 @@ export default function FloatingLines({
     const bottomLineDistance = enabledWaves.includes('bottom') ? getLineDistance('bottom') * 0.01 : 0.01;
 
     useEffect(() => {
-        if (!containerRef.current) return;
+        const container = containerRef.current;
+        if (!container) return;
 
         const scene = new Scene();
 
@@ -303,7 +304,7 @@ export default function FloatingLines({
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         renderer.domElement.style.width = '100%';
         renderer.domElement.style.height = '100%';
-        containerRef.current.appendChild(renderer.domElement);
+        container.appendChild(renderer.domElement);
 
         const uniforms = {
             iTime: { value: 0 },
@@ -380,12 +381,11 @@ export default function FloatingLines({
         const mesh = new Mesh(geometry, material);
         scene.add(mesh);
 
-        const clock = new Clock();
+        const timer = new Timer();
 
         const setSize = () => {
-            const el = containerRef.current;
-            const width = el.clientWidth || 1;
-            const height = el.clientHeight || 1;
+            const width = container.clientWidth || 1;
+            const height = container.clientHeight || 1;
 
             renderer.setSize(width, height, false);
 
@@ -398,8 +398,8 @@ export default function FloatingLines({
 
         const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(setSize) : null;
 
-        if (ro && containerRef.current) {
-            ro.observe(containerRef.current);
+        if (ro) {
+            ro.observe(container);
         }
 
         const handlePointerMove = (event) => {
@@ -430,8 +430,9 @@ export default function FloatingLines({
         }
 
         let raf = 0;
-        const renderLoop = () => {
-            uniforms.iTime.value = clock.getElapsedTime();
+        const renderLoop = (timestamp) => {
+            timer.update(timestamp);
+            uniforms.iTime.value = timer.getElapsed();
 
             if (interactive) {
                 currentMouseRef.current.lerp(targetMouseRef.current, mouseDamping);
@@ -454,10 +455,8 @@ export default function FloatingLines({
 
         return () => {
             cancelAnimationFrame(raf);
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-            if (ro && containerRef.current) {
-                ro.disconnect();
-            }
+            ro?.disconnect();
+            timer.dispose();
 
             if (interactive) {
                 renderer.domElement.removeEventListener('pointermove', handlePointerMove);

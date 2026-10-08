@@ -23,6 +23,10 @@ export interface ApiServer {
     status?: string;
     suspended?: number;
     skip_scripts: number;
+    show_on_status?: number;
+    auto_start?: number;
+    auto_start_delay?: number;
+    manually_stopped?: number;
     owner_id: number;
     memory: number;
     swap: number;

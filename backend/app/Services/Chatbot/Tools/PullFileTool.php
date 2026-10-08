@@ -95,7 +95,7 @@ class PullFileTool implements ToolInterface
         $url = $params['url'] ?? null;
         $root = $params['root'] ?? '/';
         $fileName = $params['file_name'] ?? null;
-        $foreground = isset($params['foreground']) ? (bool) $params['foreground'] : false;
+        $foreground = isset($params['foreground']) ? (bool) $params['foreground'] : true;
         $useHeader = isset($params['use_header']) ? (bool) $params['use_header'] : true;
 
         if (!$url) {

@@ -13,19 +13,13 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-import DashboardShell from '@/components/layout/DashboardShell';
 import { Metadata } from 'next';
-import ChatbotWidget from '@/components/ai/ChatbotWidget';
+import DashboardChrome from './DashboardChrome';
 
 export const metadata: Metadata = {
     title: 'Dashboard',
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-    return (
-        <>
-            <DashboardShell>{children}</DashboardShell>
-            <ChatbotWidget />
-        </>
-    );
+    return <DashboardChrome>{children}</DashboardChrome>;
 }

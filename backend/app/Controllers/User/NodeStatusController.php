@@ -130,7 +130,8 @@ class NodeStatusController
                     $nodeData['fqdn'] = $node['fqdn'];
                     $nodeData['servers'] = NodeStatusHelper::buildServersForNode(
                         $nodeId,
-                        $showPlayerCount
+                        $showPlayerCount,
+                        true
                     );
                     $nodeData['server_count'] = count($nodeData['servers']);
 
@@ -205,9 +206,9 @@ class NodeStatusController
             }
         }
 
-        // Get total servers if enabled
+        // Get total servers if enabled (only count servers visible on the status page)
         if ($showTotalServers) {
-            $totalServers = Server::getCount();
+            $totalServers = Server::getStatusPageVisibleCount();
             if (!isset($responseData['data'])) {
                 $responseData['data'] = [];
             }

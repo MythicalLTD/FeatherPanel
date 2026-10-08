@@ -17,15 +17,33 @@
 
 namespace App\Services\Wings\Exceptions;
 
-use Exception;
-
 /**
  * Exception thrown when Wings request fails.
  */
 class WingsRequestException extends \Exception
 {
-    public function __construct(string $message = '', int $code = 0, ?\Exception $previous = null)
-    {
+    private ?string $requestId;
+    private ?array $responseBody;
+
+    public function __construct(
+        string $message = '',
+        int $code = 0,
+        ?\Exception $previous = null,
+        ?string $requestId = null,
+        ?array $responseBody = null,
+    ) {
         parent::__construct($message, $code, $previous);
+        $this->requestId = $requestId;
+        $this->responseBody = $responseBody;
+    }
+
+    public function getRequestId(): ?string
+    {
+        return $this->requestId;
+    }
+
+    public function getResponseBody(): ?array
+    {
+        return $this->responseBody;
     }
 }

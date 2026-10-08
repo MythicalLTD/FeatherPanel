@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import type { AppSettings, CoreInfo } from '@/types/settings';
 import { settingsApi } from '@/lib/settings-api';
+import { getFeatherpanelApiErrorMessage } from '@/lib/api';
 
 interface SettingsContextType {
     settings: AppSettings | null;
@@ -32,21 +33,29 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 const CACHE_KEY = 'app_settings';
 const CACHE_VERSION = '1.6';
 
-export function SettingsProvider({ children }: { children: ReactNode }) {
-    const [settings, setSettings] = useState<AppSettings | null>(null);
-    const [core, setCore] = useState<CoreInfo | null>(null);
-    const [loading, setLoading] = useState(true);
+type SettingsProviderProps = {
+    children: ReactNode;
+    initialSettings?: AppSettings | null;
+    initialCore?: CoreInfo | null;
+};
+
+export function SettingsProvider({ children, initialSettings = null, initialCore = null }: SettingsProviderProps) {
+    const [settings, setSettings] = useState<AppSettings | null>(initialSettings);
+    const [core, setCore] = useState<CoreInfo | null>(initialCore);
+    const [loading, setLoading] = useState(!initialSettings);
     const [error, setError] = useState<string | null>(null);
 
     const fetchSettings = useCallback(async () => {
         try {
-            const cached = localStorage.getItem(CACHE_KEY);
-            if (cached) {
-                const { data, version } = JSON.parse(cached);
-                if (version === CACHE_VERSION) {
-                    setSettings(data.settings);
-                    setCore(data.core);
-                    setLoading(false);
+            if (!initialSettings) {
+                const cached = localStorage.getItem(CACHE_KEY);
+                if (cached) {
+                    const { data, version } = JSON.parse(cached);
+                    if (version === CACHE_VERSION) {
+                        setSettings(data.settings);
+                        setCore(data.core);
+                        setLoading(false);
+                    }
                 }
             }
 
@@ -65,17 +74,20 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                         timestamp: Date.now(),
                     }),
                 );
-            } else {
+            } else if (!initialSettings) {
                 throw new Error('Failed to load settings');
             }
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to load settings';
+            const errorMessage =
+                getFeatherpanelApiErrorMessage(err) ||
+                (err instanceof Error ? err.message : null) ||
+                'Failed to load settings';
             setError(errorMessage);
             console.error('Settings fetch error:', err);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [initialSettings]);
 
     useEffect(() => {
         fetchSettings();

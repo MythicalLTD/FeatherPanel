@@ -19,6 +19,7 @@ namespace App\Controllers\Admin;
 
 use App\App;
 use App\Chat\Activity;
+use App\Helpers\DemoGuard;
 use App\Helpers\ApiResponse;
 use App\Chat\InstalledPlugin;
 use App\Plugins\PluginConfig;
@@ -29,8 +30,11 @@ use App\Plugins\PluginSettings;
 use App\Helpers\AddonPackageHelper;
 use App\Plugins\PluginDependencies;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\PluginFrontendScanner;
+use App\Plugins\PluginFrontendVisibility;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\PluginsSettingsEvent;
 
 #[OA\Schema(
     schema: 'PluginInfo',
@@ -119,38 +123,11 @@ class PluginsController
                     continue;
                 }
 
-                // Compute unmet dependencies
-                $unmet = [];
-                try {
-                    $unmet = PluginDependencies::getUnmetDependencies($info);
-                } catch (\Throwable $t) {
-                    $unmet = [];
-                }
-
-                // Compute missing required configs
-                $missingConfigs = [];
-                try {
-                    $required = $info['plugin']['requiredConfigs'] ?? [];
-                    if (is_array($required) && !empty($required)) {
-                        $settings = PluginSettings::getSettings($identifier);
-                        $configuredKeys = array_column($settings, 'key');
-                        foreach ($required as $reqKey) {
-                            if (!in_array($reqKey, $configuredKeys, true)) {
-                                $missingConfigs[] = $reqKey;
-                            }
-                        }
-                    }
-                } catch (\Throwable $t) {
-                    $missingConfigs = [];
-                }
-
                 // Get enhanced config schema if available
                 $configSchema = PluginConfig::getPluginRequiredAdminConfig($identifier);
 
                 // Augment plugin info for frontend consumption
-                $info['plugin']['loaded'] = in_array($identifier, $loaded, true);
-                $info['plugin']['unmetDependencies'] = $unmet;
-                $info['plugin']['missingConfigs'] = $missingConfigs;
+                $info = $this->addRuntimeStatus($identifier, $info, $loaded);
                 $info['configSchema'] = $configSchema;
                 if (isset($info['plugin']['icon']) && is_string($info['plugin']['icon'])) {
                     $rewritten = PanelAssetUrl::rewriteCloudStorageIcon($info['plugin']['icon']);
@@ -212,6 +189,9 @@ class PluginsController
                 ]);
             }
 
+            global $pluginManager;
+            $info = $this->addRuntimeStatus($identifier, $info, $pluginManager->getLoadedMemoryPlugins());
+
             $settings = PluginSettings::getSettings($identifier);
             $settingsList = [];
             foreach ($settings as $setting) {
@@ -240,6 +220,47 @@ class PluginsController
             ], 'Plugin config fetched successfully', 200);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to fetch plugin config: ' . $e->getMessage(), 500);
+        }
+    }
+
+    #[OA\Get(
+        path: '/api/admin/plugins/{identifier}/visibility',
+        summary: 'Get plugin frontend visibility controls',
+        description: 'List widgets, sidebar routes, public pages, and UI-pack entries that admins can hide for a plugin.',
+        tags: ['Admin - Plugins'],
+        parameters: [
+            new OA\Parameter(
+                name: 'identifier',
+                in: 'path',
+                description: 'Plugin identifier',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Plugin visibility controls retrieved successfully'),
+            new OA\Response(response: 404, description: 'Plugin not found'),
+        ]
+    )]
+    public function getVisibility(Request $request, string $identifier): Response
+    {
+        try {
+            $info = PluginConfig::getConfig($identifier);
+            if (empty($info) || !isset($info['plugin'])) {
+                return ApiResponse::error('Plugin not found', 'PLUGIN_NOT_FOUND', 404);
+            }
+
+            $settings = PluginSettings::getSettings($identifier);
+            $settingsList = [];
+            foreach ($settings as $setting) {
+                $settingsList[$setting['key']] = $setting['value'];
+            }
+
+            return ApiResponse::success([
+                'visibility' => $this->buildVisibilityPayload($identifier, $settingsList),
+            ], 'Plugin visibility controls fetched successfully', 200);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to fetch plugin visibility controls: ' . $e->getMessage(), 500);
         }
     }
 
@@ -320,7 +341,7 @@ class PluginsController
             global $eventManager;
 
             if (isset($eventManager) && $eventManager !== null) {
-                $eventManager->emit('PluginsSettingsEvent::onPluginSettingUpdate', [
+                $eventManager->emit(PluginsSettingsEvent::onPluginSettingUpdate(), [
                     'identifier' => $identifier,
                     'key' => $key,
                     'value' => $value,
@@ -406,7 +427,7 @@ class PluginsController
             global $eventManager;
 
             if (isset($eventManager) && $eventManager !== null) {
-                $eventManager->emit('PluginsSettingsEvent::onPluginSettingDelete', [
+                $eventManager->emit(PluginsSettingsEvent::onPluginSettingDelete(), [
                     'identifier' => $identifier,
                     'key' => $key,
                 ]);
@@ -548,6 +569,10 @@ class PluginsController
     )]
     public function uninstall(Request $request, string $identifier): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         try {
             if (!defined('APP_ADDONS_DIR')) {
                 define('APP_ADDONS_DIR', dirname(__DIR__, 3) . '/storage/addons');
@@ -602,10 +627,14 @@ class PluginsController
     public function export(Request $request, string $identifier): Response
     {
         try {
-            // Restrict export to developer mode only
+            // Restrict export to developer mode only.
             $config = App::getInstance(true)->getConfig();
             if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('Plugin export is only available in developer mode', 'DEVELOPER_MODE_REQUIRED', 403);
+                return ApiResponse::error(
+                    'Plugin export is only available in developer mode.',
+                    'DEVELOPER_MODE_REQUIRED',
+                    403
+                );
             }
 
             if (!defined('APP_ADDONS_DIR')) {
@@ -621,13 +650,9 @@ class PluginsController
             $exportFile = $tempDir . '/' . $identifier . '.fpa';
             $pwd = CloudPluginsController::PASSWORD;
 
-            // Parse .featherexport file for exclusions
             $exclusions = $this->parseFeatherExportIgnore($pluginDir);
-
-            // Always exclude .featherexport itself from the export
             $exclusions[] = '.featherexport';
 
-            // Build zip command with exclusions
             $zipCmd = sprintf(
                 'cd %s && zip -r -P %s %s *',
                 escapeshellarg($pluginDir),
@@ -635,11 +660,9 @@ class PluginsController
                 escapeshellarg($exportFile)
             );
 
-            // Add exclusion patterns
             if (!empty($exclusions)) {
                 $exclusionArgs = [];
                 foreach ($exclusions as $pattern) {
-                    // Escape the pattern for shell but preserve glob characters
                     $exclusionArgs[] = escapeshellarg($pattern);
                 }
                 if (!empty($exclusionArgs)) {
@@ -716,6 +739,10 @@ class PluginsController
     )]
     public function uploadInstall(Request $request): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         try {
             $files = $request->files->all();
             if (empty($files) || !isset($files['file'])) {
@@ -788,6 +815,10 @@ class PluginsController
     )]
     public function uploadInstallFromUrl(Request $request): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         try {
             $body = json_decode($request->getContent(), true);
             $url = $body['url'] ?? null;
@@ -934,6 +965,286 @@ class PluginsController
 
             return ApiResponse::error('Failed to resync symlinks: ' . $e->getMessage(), 500);
         }
+    }
+
+    private function addRuntimeStatus(string $identifier, array $info, array $loaded): array
+    {
+        $unmetDependencies = [];
+        try {
+            $unmetDependencies = PluginDependencies::getUnmetDependencies($info);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->warning(
+                'Failed to check dependencies for plugin ' . $identifier . ': ' . $e->getMessage()
+            );
+        }
+
+        $missingConfigs = [];
+        try {
+            $required = $info['plugin']['requiredConfigs'] ?? [];
+            if (is_array($required) && $required !== []) {
+                $settings = PluginSettings::getSettings($identifier);
+                $configuredKeys = array_column($settings, 'key');
+                foreach ($required as $requiredKey) {
+                    if (!in_array($requiredKey, $configuredKeys, true)) {
+                        $missingConfigs[] = $requiredKey;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->warning(
+                'Failed to check required configuration for plugin ' . $identifier . ': ' . $e->getMessage()
+            );
+        }
+
+        $info['plugin']['loaded'] = in_array($identifier, $loaded, true);
+        $info['plugin']['unmetDependencies'] = $unmetDependencies;
+        $info['plugin']['missingConfigs'] = $missingConfigs;
+
+        return $info;
+    }
+
+    /**
+     * @param array<string, string> $settings
+     *
+     * @return array<string, list<array<string, mixed>>>
+     */
+    private function buildVisibilityPayload(string $identifier, array $settings): array
+    {
+        return [
+            'sidebar' => $this->sidebarVisibilityEntries($identifier, $settings),
+            'widgets' => $this->widgetVisibilityEntries($identifier, $settings),
+            'publicPages' => $this->publicPageVisibilityEntries($identifier, $settings),
+            'uiPacks' => $this->uiPackVisibilityEntries($identifier, $settings),
+        ];
+    }
+
+    /**
+     * @param array<string, string> $settings
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function sidebarVisibilityEntries(string $identifier, array $settings): array
+    {
+        $config = PluginFrontendScanner::readJsonFile($identifier, 'Frontend/sidebar.json');
+        if ($config === null) {
+            return [];
+        }
+
+        $entries = [];
+        foreach (['server', 'vds', 'webspace', 'client', 'admin'] as $section) {
+            if (!isset($config[$section]) || !is_array($config[$section])) {
+                continue;
+            }
+
+            foreach ($config[$section] as $key => $item) {
+                if (!is_array($item)) {
+                    continue;
+                }
+
+                $id = $section . ':' . (string) $key;
+                $entries[] = $this->visibilityEntry(
+                    'sidebar',
+                    $id,
+                    (string) ($item['name'] ?? $item['title'] ?? $key),
+                    $settings,
+                    [
+                        'section' => $section,
+                        'path' => (string) $key,
+                        'component' => isset($item['component']) ? (string) $item['component'] : null,
+                        'redirect' => isset($item['redirect']) ? (string) $item['redirect'] : null,
+                    ]
+                );
+            }
+        }
+
+        return $entries;
+    }
+
+    /**
+     * @param array<string, string> $settings
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function widgetVisibilityEntries(string $identifier, array $settings): array
+    {
+        $config = PluginFrontendScanner::readJsonFile($identifier, 'Frontend/widgets.json');
+        if ($config === null) {
+            return [];
+        }
+
+        $entries = [];
+        foreach ($config as $widget) {
+            if (!is_array($widget) || !isset($widget['id'])) {
+                continue;
+            }
+
+            $entries[] = $this->visibilityEntry(
+                'widget',
+                (string) $widget['id'],
+                (string) ($widget['title'] ?? $widget['id']),
+                $settings,
+                [
+                    'page' => isset($widget['page']) ? (string) $widget['page'] : null,
+                    'location' => isset($widget['location']) ? (string) $widget['location'] : null,
+                    'component' => isset($widget['component']) ? (string) $widget['component'] : null,
+                ]
+            );
+        }
+
+        return $entries;
+    }
+
+    /**
+     * @param array<string, string> $settings
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function publicPageVisibilityEntries(string $identifier, array $settings): array
+    {
+        $config = PluginFrontendScanner::readJsonFile($identifier, 'Frontend/public.json');
+        if ($config === null || !isset($config['pages']) || !is_array($config['pages'])) {
+            return [];
+        }
+
+        $entries = [];
+        foreach ($config['pages'] as $page) {
+            if (!is_array($page) || !isset($page['path'])) {
+                continue;
+            }
+
+            $path = $this->normalizePluginPath((string) $page['path']);
+            if ($path === '') {
+                continue;
+            }
+
+            $entries[] = $this->visibilityEntry(
+                'public-page',
+                $path,
+                (string) ($page['name'] ?? $path),
+                $settings,
+                [
+                    'path' => $path,
+                    'component' => isset($page['component']) ? (string) $page['component'] : null,
+                ]
+            );
+        }
+
+        return $entries;
+    }
+
+    /**
+     * @param array<string, string> $settings
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function uiPackVisibilityEntries(string $identifier, array $settings): array
+    {
+        $config = PluginFrontendScanner::readJsonFile($identifier, 'Frontend/ui.json');
+        if ($config === null) {
+            return [];
+        }
+
+        $packs = [];
+        if (isset($config['packs']) && is_array($config['packs'])) {
+            $packs = $config['packs'];
+        } elseif (isset($config['id']) || isset($config['shell']) || isset($config['pages'])) {
+            $packs = [$config];
+        }
+
+        $entries = [];
+        foreach ($packs as $pack) {
+            if (!is_array($pack)) {
+                continue;
+            }
+
+            $packId = preg_replace('/[^a-zA-Z0-9_\-]/', '', (string) ($pack['id'] ?? 'default')) ?: 'default';
+            $entries[] = $this->visibilityEntry(
+                'ui-pack',
+                $packId,
+                (string) ($pack['name'] ?? $packId),
+                $settings,
+                ['packId' => $packId]
+            );
+
+            if (isset($pack['pages']) && is_array($pack['pages'])) {
+                foreach ($pack['pages'] as $page) {
+                    if (!is_array($page)) {
+                        continue;
+                    }
+                    $match = trim((string) ($page['match'] ?? ''));
+                    if ($match === '') {
+                        continue;
+                    }
+                    $entries[] = $this->visibilityEntry(
+                        'ui-page',
+                        $packId . ':' . $match,
+                        $match,
+                        $settings,
+                        ['packId' => $packId, 'match' => $match]
+                    );
+                }
+            }
+
+            if (isset($pack['actions']) && is_array($pack['actions'])) {
+                foreach ($pack['actions'] as $action) {
+                    if (!is_array($action)) {
+                        continue;
+                    }
+                    $actionId = (string) ($action['id'] ?? ($action['slot'] ?? '') . ':' . ($action['label'] ?? ''));
+                    if (trim($actionId) === '') {
+                        continue;
+                    }
+                    $entries[] = $this->visibilityEntry(
+                        'ui-action',
+                        $packId . ':' . $actionId,
+                        (string) ($action['label'] ?? $actionId),
+                        $settings,
+                        [
+                            'packId' => $packId,
+                            'slot' => isset($action['slot']) ? (string) $action['slot'] : null,
+                        ]
+                    );
+                }
+            }
+        }
+
+        return $entries;
+    }
+
+    /**
+     * @param array<string, string> $settings
+     * @param array<string, mixed> $meta
+     *
+     * @return array<string, mixed>
+     */
+    private function visibilityEntry(string $scope, string $id, string $label, array $settings, array $meta = []): array
+    {
+        $settingKey = PluginFrontendVisibility::hiddenSettingKey($scope, $id);
+
+        return array_filter([
+            'scope' => $scope,
+            'id' => $id,
+            'label' => $label,
+            'settingKey' => $settingKey,
+            'hidden' => ($settings[$settingKey] ?? 'false') === 'true',
+            'meta' => array_filter($meta, static fn ($value) => $value !== null && $value !== ''),
+        ], static fn ($value) => $value !== null);
+    }
+
+    private function normalizePluginPath(string $path): string
+    {
+        $path = trim($path);
+        if ($path === '') {
+            return '';
+        }
+
+        if ($path[0] !== '/') {
+            $path = '/' . $path;
+        }
+
+        $path = preg_replace('#/+#', '/', $path) ?? $path;
+
+        return $path !== '/' ? rtrim($path, '/') : $path;
     }
 
     #[OA\Get(

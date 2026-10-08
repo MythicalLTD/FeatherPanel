@@ -15,13 +15,10 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useEffect, useState, type DragEvent } from 'react';
-import {
-    ARCHIVE_EXTRACT_DRAG_MIME,
-    filesApi,
-    type ArchiveExtractDragPayload,
-    type ArchiveListEntry,
-} from '@/lib/files-api';
+import { ARCHIVE_EXTRACT_DRAG_MIME, type ArchiveExtractDragPayload, type ArchiveListEntry } from '@/lib/files-api';
+import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { Button } from '@/components/featherui/Button';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { formatFileSize } from '@/lib/utils';
@@ -55,6 +52,7 @@ export function ArchiveBrowsePanel({
     onExtractEntries,
     onExtractComplete,
 }: ArchiveBrowsePanelProps) {
+    const filesApi = useFileManagerApi();
     const { t } = useTranslation();
     const [innerPath, setInnerPath] = useState('');
     const [entries, setEntries] = useState<ArchiveListEntry[]>([]);
@@ -78,9 +76,9 @@ export function ArchiveBrowsePanel({
                     setEntries(data.contents);
                     setTruncated(data.truncated);
                 }
-            } catch {
+            } catch (error) {
                 if (!cancelled) {
-                    toast.error(t('files.archive_browser.error'));
+                    toast.error(getApiErrorMessage(error, t, 'files.archive_browser.error'));
                     setEntries([]);
                     setTruncated(false);
                     onOpenChange(false);
@@ -94,7 +92,7 @@ export function ArchiveBrowsePanel({
         return () => {
             cancelled = true;
         };
-    }, [archiveFileName, innerPath, onOpenChange, open, serverDirectory, t, uuid]);
+    }, [archiveFileName, filesApi, innerPath, onOpenChange, open, serverDirectory, t, uuid]);
 
     useEffect(() => {
         if (open) {
@@ -147,9 +145,7 @@ export function ArchiveBrowsePanel({
             onExtractComplete?.();
             onOpenChange(false);
         } catch (error) {
-            const err = error as { response?: { data?: { error?: string } } };
-            const errorMessage = err.response?.data?.error || t('files.messages.extract_failed');
-            toast.error(errorMessage, { id: toastId });
+            toast.error(getApiErrorMessage(error, t, 'files.messages.extract_failed'), { id: toastId });
         } finally {
             setFullExtracting(false);
         }

@@ -386,6 +386,8 @@ class CalagopusClientCompatController
                 return $this->error('Power action failed: ' . $response->getError(), $response->getStatusCode() ?: 500);
             }
 
+            \App\Services\Server\ServerAutoStartService::markPowerIntent((int) $server['id'], $action);
+
             return new Response('', 204);
         } catch (\Throwable $e) {
             return $this->error('Power action failed: ' . $e->getMessage(), 500);
@@ -1660,8 +1662,8 @@ class CalagopusClientCompatController
     }
 
     /**
-     * @param array{bytes:int,entries:int} $budget Cumulative counters shared across the whole
-     *                                              recursive operation, to bound resource usage.
+     * @param array{bytes:int,entries:int} $budget cumulative counters shared across the whole
+     *                                             recursive operation, to bound resource usage
      */
     private function copyRemoteEntryThroughPanel(
         object $sourceService,

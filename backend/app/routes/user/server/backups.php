@@ -24,6 +24,24 @@ use App\Controllers\User\Server\ServerBackupController;
 
 return function (RouteCollection $routes): void {
 
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-recover-backup',
+        '/api/user/servers/{uuidShort}/backups/{backupUuid}/recover',
+        function (Request $request, array $args) {
+            $server = \App\Chat\Server::getServerByUuidShort($args['uuidShort'] ?? '');
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new ServerBackupController())->recoverBackup($request, $server['uuid'], $args['backupUuid']);
+        },
+        'uuidShort',
+        ['POST'],
+        Rate::perMinute(5),
+        'user-server-backups'
+    );
+
     // Backup-related routes
     App::getInstance(true)->registerServerRoute(
         $routes,
@@ -73,6 +91,29 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerServerRoute(
         $routes,
+        'session-server-create-database-backup',
+        '/api/user/servers/{uuidShort}/backups/databases',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new ServerBackupController())->createDatabaseBackup($request, $server['uuid']);
+        },
+        'uuidShort',
+        ['POST'],
+        Rate::perMinute(2),
+        'user-server-backups'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
         'session-server-backup-destinations',
         '/api/user/servers/{uuidShort}/backups/destinations',
         function (Request $request, array $args) {
@@ -91,6 +132,29 @@ return function (RouteCollection $routes): void {
         'uuidShort',
         ['GET'],
         Rate::perMinute(30),
+        'user-server-backups'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-bulk-delete-backups',
+        '/api/user/servers/{uuidShort}/backups/bulk-delete',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new ServerBackupController())->bulkDeleteBackups($request, $server['uuid']);
+        },
+        'uuidShort',
+        ['DELETE'],
+        Rate::perMinute(5),
         'user-server-backups'
     );
 

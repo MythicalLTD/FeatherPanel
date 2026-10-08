@@ -26,6 +26,7 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function FeatherCloudSuggestionsPage() {
     const router = useRouter();
@@ -47,9 +48,7 @@ export default function FeatherCloudSuggestionsPage() {
             if (axios.isAxiosError(err)) {
                 const code = err.response?.data?.error_code;
                 if (code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED' || err.response?.status === 503) {
-                    setCredentialsError(
-                        err.response?.data?.message || t('admin.feathercloud.common.credentials_error'),
-                    );
+                    setCredentialsError(getApiErrorMessage(err, t, 'admin.feathercloud.common.credentials_error'));
                 }
             }
         } finally {
@@ -85,23 +84,23 @@ export default function FeatherCloudSuggestionsPage() {
                 setBody('');
                 setWhy('');
             } else {
-                throw new Error(response.data?.message || t('admin.feathercloud.suggestions.failed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'admin.feathercloud.suggestions.failed'));
             }
         } catch (err) {
             if (axios.isAxiosError(err)) {
                 const code = err.response?.data?.error_code;
                 if (code === 'MEMBER_UUID_REQUIRED') {
-                    toast.error(err.response?.data?.message || t('admin.feathercloud.common.member_uuid_required'));
+                    toast.error(getApiErrorMessage(err, t, 'admin.feathercloud.common.member_uuid_required'));
                     return;
                 }
                 if (code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
-                    setCredentialsError(err.response?.data?.message || t('admin.feathercloud.common.not_linked_short'));
+                    setCredentialsError(getApiErrorMessage(err, t, 'admin.feathercloud.common.not_linked_short'));
                     return;
                 }
-                toast.error(err.response?.data?.message || t('admin.feathercloud.suggestions.failed'));
+                toast.error(getApiErrorMessage(err, t, 'admin.feathercloud.suggestions.failed'));
                 return;
             }
-            toast.error(t('admin.feathercloud.suggestions.failed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.feathercloud.suggestions.failed'));
         } finally {
             setSubmitting(false);
             setProgress(null);

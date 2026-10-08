@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { reportPanelInteraction } from '@/lib/panel-analytics';
 import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -50,6 +51,7 @@ export function ListPagination({ page, totalPages, disabled, onPageChange, class
         const nextPage = clampPage(parsed);
         setPageInput(String(nextPage));
         if (nextPage !== page) {
+            reportPanelInteraction('panel.pagination', 'jump');
             onPageChange(nextPage);
         }
     };
@@ -69,7 +71,10 @@ export function ListPagination({ page, totalPages, disabled, onPageChange, class
                 variant='outline'
                 size='sm'
                 disabled={disabled || page <= 1}
-                onClick={() => onPageChange(page - 1)}
+                onClick={() => {
+                    reportPanelInteraction('panel.pagination', 'previous');
+                    onPageChange(page - 1);
+                }}
                 className='gap-1.5'
             >
                 <ChevronLeft className='h-4 w-4' />
@@ -100,7 +105,10 @@ export function ListPagination({ page, totalPages, disabled, onPageChange, class
                 variant='outline'
                 size='sm'
                 disabled={disabled || page >= totalPages}
-                onClick={() => onPageChange(page + 1)}
+                onClick={() => {
+                    reportPanelInteraction('panel.pagination', 'next');
+                    onPageChange(page + 1);
+                }}
                 className='gap-1.5'
             >
                 {t('common.next')}

@@ -64,6 +64,12 @@
 		<testsuite name="Unit Tests">
 			<file>tests/HelloWorldTest.php</file>
 		</testsuite>
+		<testsuite name="Backup Recovery">
+			<directory>tests/Backup</directory>
+		</testsuite>
+		<testsuite name="Cli">
+			<directory>tests/Cli</directory>
+		</testsuite>
 	</testsuites>
 
 	<!-- Source Files for Coverage -->

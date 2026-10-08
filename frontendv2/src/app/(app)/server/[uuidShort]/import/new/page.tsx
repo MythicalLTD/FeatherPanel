@@ -43,7 +43,10 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
+import { FormSection } from '@/components/featherui/FormSection';
 import { safeBack } from '@/lib/safe-back';
+import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function CreateServerImportPage() {
     const { uuidShort } = useParams();
@@ -121,11 +124,11 @@ export default function CreateServerImportPage() {
 
                 router.push(`/server/${uuidShort}/import?success=true`);
             } else {
-                toast.error(data.message || t('serverImport.importFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverImport.importFailed'));
             }
         } catch (error) {
             console.error('Import failed:', error);
-            toast.error(t('serverImport.importFailed'));
+            toast.error(getApiErrorMessage(error, t, 'serverImport.importFailed'));
         } finally {
             setSaving(false);
         }
@@ -139,7 +142,9 @@ export default function CreateServerImportPage() {
         isEnabled(settings?.server_allow_user_made_import) &&
         supportsDaemonFeature(server?.node?.capabilities, 'import', server?.node?.daemon_type);
 
-    if (permissionsLoading || settingsLoading) return null;
+    if (permissionsLoading || settingsLoading) {
+        return <PageLoading />;
+    }
     if (!canManage) {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center'>
@@ -214,7 +219,7 @@ export default function CreateServerImportPage() {
             <div className='grid grid-cols-1 gap-8 lg:grid-cols-12'>
                 <div className='space-y-8 lg:col-span-8'>
                     <div className='grid grid-cols-1 gap-8 md:grid-cols-2'>
-                        <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                        <FormSection>
                             <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                                 <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
                                     <Globe className='text-primary h-5 w-5' />
@@ -288,9 +293,9 @@ export default function CreateServerImportPage() {
                                     )}
                                 </div>
                             </div>
-                        </div>
+                        </FormSection>
 
-                        <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                        <FormSection>
                             <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                                 <div className='flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/10'>
                                     <User className='h-5 w-5 text-blue-500' />
@@ -343,10 +348,10 @@ export default function CreateServerImportPage() {
                                     )}
                                 </div>
                             </div>
-                        </div>
+                        </FormSection>
                     </div>
 
-                    <div className='bg-card/50 border-border/50 relative space-y-8 overflow-hidden rounded-3xl border p-8 backdrop-blur-3xl'>
+                    <FormSection className='relative space-y-8 overflow-hidden'>
                         <div className='pointer-events-none absolute top-0 right-0 h-48 w-48 bg-emerald-500/5 blur-[80px]' />
                         <div className='border-border/10 flex items-center gap-5 border-b pb-8'>
                             <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10'>
@@ -425,11 +430,11 @@ export default function CreateServerImportPage() {
                                 )}
                             </div>
                         </div>
-                    </div>
+                    </FormSection>
                 </div>
 
                 <div className='space-y-8 lg:col-span-4'>
-                    <div className='bg-card/50 border-border/50 group relative space-y-6 overflow-hidden rounded-3xl border p-8 backdrop-blur-3xl'>
+                    <FormSection className='group relative overflow-hidden'>
                         <div className='bg-primary/5 group-hover:bg-primary/10 pointer-events-none absolute top-0 right-0 h-32 w-32 blur-2xl transition-all duration-700' />
                         <div className='border-border/10 relative z-10 flex items-center gap-4 border-b pb-6'>
                             <div className='bg-secondary/50 border-border/10 flex h-10 w-10 items-center justify-center rounded-xl border'>
@@ -544,9 +549,9 @@ export default function CreateServerImportPage() {
                                 </div>
                             </div>
                         )}
-                    </div>
+                    </FormSection>
 
-                    <div className='group relative space-y-4 overflow-hidden rounded-3xl border border-blue-500/10 bg-blue-500/5 p-8 backdrop-blur-3xl'>
+                    <FormSection className='group relative space-y-4 overflow-hidden border-blue-500/10 bg-blue-500/5'>
                         <div className='pointer-events-none absolute -right-6 -bottom-6 h-24 w-24 bg-blue-500/10 blur-2xl transition-transform duration-1000 group-hover:scale-150' />
                         <div className='relative z-10 flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/10'>
                             <ShieldAlert className='h-5 w-5 text-blue-500' />
@@ -559,7 +564,7 @@ export default function CreateServerImportPage() {
                                 {t('serverImport.infoDescription')}
                             </p>
                         </div>
-                    </div>
+                    </FormSection>
                 </div>
             </div>
 

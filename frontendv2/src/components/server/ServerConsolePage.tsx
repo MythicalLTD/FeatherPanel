@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import axios from 'axios';
-import { useWingsWebSocket } from '@/hooks/useWingsWebSocket';
+import { useWingsWebSocket, type CommandSuggestResponse } from '@/hooks/useWingsWebSocket';
 import ServerHeader from '@/components/server/ServerHeader';
 import ServerInfoCards from '@/components/server/ServerInfoCards';
 import ServerTerminal, { ServerTerminalRef, ConsoleFilterRule } from '@/components/server/ServerTerminal';
@@ -30,6 +30,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { AlertTriangle, Wifi, WifiOff, Loader2, Copy } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useFeatureDetector } from '@/hooks/useFeatureDetector';
 import { EulaDialog } from '@/components/server/features/EulaDialog';
@@ -37,9 +38,11 @@ import { JavaVersionDialog } from '@/components/server/features/JavaVersionDialo
 import { PidLimitDialog } from '@/components/server/features/PidLimitDialog';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { PluginSlot } from '@/components/plugins/PluginSlot';
 import PlayerStatusWidget from '@/components/server/PlayerStatusWidget';
 import { toast } from 'sonner';
 import { copyToClipboard } from '@/lib/utils';
+import { getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { resolveServerSpellBannerStyle } from '@/lib/server-spell-banner';
 
 interface WingsStats {
@@ -102,8 +105,10 @@ export default function ServerConsolePage() {
 
     const hasInitializedStatus = useRef(false);
 
-    const { hasPermission, loading: permissionsLoading, server } = useServerPermissions(serverUuid);
-    const [serverStatus, setServerStatus] = useState('offline');
+    const { hasPermission, loading: permissionsLoading, server, setLiveStatus } = useServerPermissions(serverUuid);
+    const { user: sessionUser, isLoading: sessionLoading, isSessionChecked } = useSession();
+    const sessionReady = isSessionChecked && !sessionLoading && !!sessionUser;
+    const [serverStatus, setServerStatus] = useState('unknown');
     const [wingsUptime, setWingsUptime] = useState<string>('');
     const [showLogDialog, setShowLogDialog] = useState(false);
     const [uploadedLogs, setUploadedLogs] = useState<{ id: string; url: string; raw: string } | null>(null);
@@ -111,17 +116,20 @@ export default function ServerConsolePage() {
     useEffect(() => {
         hasRequestedLogsRef.current = false;
         hasInitializedStatus.current = false;
+        setServerStatus('unknown');
     }, [serverUuid]);
 
     useEffect(() => {
-        if (server?.status && !hasInitializedStatus.current) {
-            const timer = setTimeout(() => {
-                setServerStatus(server.status);
-                hasInitializedStatus.current = true;
-            }, 0);
-            return () => clearTimeout(timer);
-        }
-    }, [server?.status]);
+        if (hasInitializedStatus.current) return;
+        const seed = server?.stats?.state || server?.status;
+        if (!seed) return;
+        const timer = setTimeout(() => {
+            setServerStatus(seed);
+            setLiveStatus(seed);
+            hasInitializedStatus.current = true;
+        }, 0);
+        return () => clearTimeout(timer);
+    }, [server?.stats?.state, server?.status, setLiveStatus]);
 
     const [cpuData, setCpuData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const [memoryData, setMemoryData] = useState<Array<{ timestamp: number; value: number }>>([]);
@@ -276,128 +284,136 @@ export default function ServerConsolePage() {
         [processLog, compiledConsoleFilters, consoleAppDisplayName],
     );
 
-    const handleStatusUpdate = useCallback((status: string) => {
-        setServerStatus(status);
-        if (pendingActionResolveRef.current) {
-            pendingActionResolveRef.current();
-            pendingActionResolveRef.current = null;
-        }
-    }, []);
+    const handleStatusUpdate = useCallback(
+        (status: string) => {
+            setServerStatus(status);
+            setLiveStatus(status);
+            if (pendingActionResolveRef.current) {
+                pendingActionResolveRef.current();
+                pendingActionResolveRef.current = null;
+            }
+        },
+        [setLiveStatus],
+    );
 
-    const handleStatsUpdate = useCallback((stats: WingsStats) => {
-        const timestamp = new Date().getTime();
-        // Light EMA so bursty Wings samples don't make rates / charts jump every tick.
-        const smoothRate = (previous: number, next: number, alpha = 0.35) => previous * (1 - alpha) + next * alpha;
+    const handleStatsUpdate = useCallback(
+        (stats: WingsStats) => {
+            const timestamp = new Date().getTime();
+            // Light EMA so bursty Wings samples don't make rates / charts jump every tick.
+            const smoothRate = (previous: number, next: number, alpha = 0.35) => previous * (1 - alpha) + next * alpha;
 
-        if (stats.state) {
-            setServerStatus(stats.state);
-        }
-
-        if (stats.uptime) {
-            setWingsUptime(formatUptime(stats.uptime));
-        }
-
-        if (stats.cpu_absolute !== undefined && stats.cpu_absolute !== null) {
-            const cpuValue = Number(stats.cpu_absolute) || 0;
-            setCurrentCpu(cpuValue);
-            setCpuData((prev) => {
-                const newData = [...prev, { timestamp, value: cpuValue }];
-                return newData.slice(-maxDataPoints);
-            });
-        }
-
-        if (stats.memory_bytes !== undefined && stats.memory_bytes !== null) {
-            const memoryMiB = Number(stats.memory_bytes) / (1024 * 1024);
-            setCurrentMemory(memoryMiB);
-            setMemoryData((prev) => {
-                const newData = [...prev, { timestamp, value: memoryMiB }];
-                return newData.slice(-maxDataPoints);
-            });
-        }
-
-        if (stats.disk_bytes !== undefined && stats.disk_bytes !== null) {
-            const diskMiB = Number(stats.disk_bytes) / (1024 * 1024);
-            setCurrentDisk(diskMiB);
-            setDiskData((prev) => {
-                const newData = [...prev, { timestamp, value: diskMiB }];
-                return newData.slice(-maxDataPoints);
-            });
-        }
-
-        if (stats.network && stats.network.rx_bytes !== undefined && stats.network.tx_bytes !== undefined) {
-            const currentRxBytes = Number(stats.network.rx_bytes);
-            const currentTxBytes = Number(stats.network.tx_bytes);
-            const now = new Date().getTime();
-
-            setNetworkRxTotal(Math.max(0, currentRxBytes));
-            setNetworkTxTotal(Math.max(0, currentTxBytes));
-
-            if (prevNetworkRef.current.timestamp > 0) {
-                const timeDiff = (now - prevNetworkRef.current.timestamp) / 1000;
-                if (timeDiff > 0) {
-                    const rxRate = Math.max(0, currentRxBytes - prevNetworkRef.current.rx) / timeDiff;
-                    const txRate = Math.max(0, currentTxBytes - prevNetworkRef.current.tx) / timeDiff;
-
-                    smoothNetworkRef.current = {
-                        rx: smoothRate(smoothNetworkRef.current.rx, rxRate),
-                        tx: smoothRate(smoothNetworkRef.current.tx, txRate),
-                    };
-
-                    setCurrentNetworkRx(smoothNetworkRef.current.rx);
-                    setCurrentNetworkTx(smoothNetworkRef.current.tx);
-
-                    const totalRate = smoothNetworkRef.current.rx + smoothNetworkRef.current.tx;
-                    setNetworkData((prev) => {
-                        const newData = [...prev, { timestamp, value: totalRate }];
-                        return newData.slice(-maxDataPoints);
-                    });
-                }
+            if (stats.state) {
+                setServerStatus(stats.state);
+                setLiveStatus(stats.state);
             }
 
-            prevNetworkRef.current = {
-                rx: currentRxBytes,
-                tx: currentTxBytes,
-                timestamp: now,
-            };
-        }
-
-        if (stats.disk_io?.read_bytes !== undefined && stats.disk_io?.write_bytes !== undefined) {
-            const currentReadBytes = Number(stats.disk_io.read_bytes);
-            const currentWriteBytes = Number(stats.disk_io.write_bytes);
-            const now = new Date().getTime();
-
-            setDiskIoReadTotal(Math.max(0, currentReadBytes));
-            setDiskIoWriteTotal(Math.max(0, currentWriteBytes));
-
-            if (prevDiskIoRef.current.timestamp > 0) {
-                const timeDiff = (now - prevDiskIoRef.current.timestamp) / 1000;
-                if (timeDiff > 0) {
-                    const readRate = Math.max(0, currentReadBytes - prevDiskIoRef.current.read) / timeDiff;
-                    const writeRate = Math.max(0, currentWriteBytes - prevDiskIoRef.current.write) / timeDiff;
-
-                    smoothDiskIoRef.current = {
-                        read: smoothRate(smoothDiskIoRef.current.read, readRate),
-                        write: smoothRate(smoothDiskIoRef.current.write, writeRate),
-                    };
-
-                    setCurrentDiskIoRead(smoothDiskIoRef.current.read);
-                    setCurrentDiskIoWrite(smoothDiskIoRef.current.write);
-
-                    const totalRate = smoothDiskIoRef.current.read + smoothDiskIoRef.current.write;
-                    setDiskIoData((prev) => {
-                        const newData = [...prev, { timestamp, value: totalRate }];
-                        return newData.slice(-maxDataPoints);
-                    });
-                }
+            if (stats.uptime) {
+                setWingsUptime(formatUptime(stats.uptime));
             }
 
-            prevDiskIoRef.current = {
-                read: currentReadBytes,
-                write: currentWriteBytes,
-                timestamp: now,
-            };
-        }
-    }, []);
+            if (stats.cpu_absolute !== undefined && stats.cpu_absolute !== null) {
+                const cpuValue = Number(stats.cpu_absolute) || 0;
+                setCurrentCpu(cpuValue);
+                setCpuData((prev) => {
+                    const newData = [...prev, { timestamp, value: cpuValue }];
+                    return newData.slice(-maxDataPoints);
+                });
+            }
+
+            if (stats.memory_bytes !== undefined && stats.memory_bytes !== null) {
+                const memoryMiB = Number(stats.memory_bytes) / (1024 * 1024);
+                setCurrentMemory(memoryMiB);
+                setMemoryData((prev) => {
+                    const newData = [...prev, { timestamp, value: memoryMiB }];
+                    return newData.slice(-maxDataPoints);
+                });
+            }
+
+            if (stats.disk_bytes !== undefined && stats.disk_bytes !== null) {
+                const diskMiB = Number(stats.disk_bytes) / (1024 * 1024);
+                setCurrentDisk(diskMiB);
+                setDiskData((prev) => {
+                    const newData = [...prev, { timestamp, value: diskMiB }];
+                    return newData.slice(-maxDataPoints);
+                });
+            }
+
+            if (stats.network && stats.network.rx_bytes !== undefined && stats.network.tx_bytes !== undefined) {
+                const currentRxBytes = Number(stats.network.rx_bytes);
+                const currentTxBytes = Number(stats.network.tx_bytes);
+                const now = new Date().getTime();
+
+                setNetworkRxTotal(Math.max(0, currentRxBytes));
+                setNetworkTxTotal(Math.max(0, currentTxBytes));
+
+                if (prevNetworkRef.current.timestamp > 0) {
+                    const timeDiff = (now - prevNetworkRef.current.timestamp) / 1000;
+                    if (timeDiff > 0) {
+                        const rxRate = Math.max(0, currentRxBytes - prevNetworkRef.current.rx) / timeDiff;
+                        const txRate = Math.max(0, currentTxBytes - prevNetworkRef.current.tx) / timeDiff;
+
+                        smoothNetworkRef.current = {
+                            rx: smoothRate(smoothNetworkRef.current.rx, rxRate),
+                            tx: smoothRate(smoothNetworkRef.current.tx, txRate),
+                        };
+
+                        setCurrentNetworkRx(smoothNetworkRef.current.rx);
+                        setCurrentNetworkTx(smoothNetworkRef.current.tx);
+
+                        const totalRate = smoothNetworkRef.current.rx + smoothNetworkRef.current.tx;
+                        setNetworkData((prev) => {
+                            const newData = [...prev, { timestamp, value: totalRate }];
+                            return newData.slice(-maxDataPoints);
+                        });
+                    }
+                }
+
+                prevNetworkRef.current = {
+                    rx: currentRxBytes,
+                    tx: currentTxBytes,
+                    timestamp: now,
+                };
+            }
+
+            if (stats.disk_io?.read_bytes !== undefined && stats.disk_io?.write_bytes !== undefined) {
+                const currentReadBytes = Number(stats.disk_io.read_bytes);
+                const currentWriteBytes = Number(stats.disk_io.write_bytes);
+                const now = new Date().getTime();
+
+                setDiskIoReadTotal(Math.max(0, currentReadBytes));
+                setDiskIoWriteTotal(Math.max(0, currentWriteBytes));
+
+                if (prevDiskIoRef.current.timestamp > 0) {
+                    const timeDiff = (now - prevDiskIoRef.current.timestamp) / 1000;
+                    if (timeDiff > 0) {
+                        const readRate = Math.max(0, currentReadBytes - prevDiskIoRef.current.read) / timeDiff;
+                        const writeRate = Math.max(0, currentWriteBytes - prevDiskIoRef.current.write) / timeDiff;
+
+                        smoothDiskIoRef.current = {
+                            read: smoothRate(smoothDiskIoRef.current.read, readRate),
+                            write: smoothRate(smoothDiskIoRef.current.write, writeRate),
+                        };
+
+                        setCurrentDiskIoRead(smoothDiskIoRef.current.read);
+                        setCurrentDiskIoWrite(smoothDiskIoRef.current.write);
+
+                        const totalRate = smoothDiskIoRef.current.read + smoothDiskIoRef.current.write;
+                        setDiskIoData((prev) => {
+                            const newData = [...prev, { timestamp, value: totalRate }];
+                            return newData.slice(-maxDataPoints);
+                        });
+                    }
+                }
+
+                prevDiskIoRef.current = {
+                    read: currentReadBytes,
+                    write: currentWriteBytes,
+                    timestamp: now,
+                };
+            }
+        },
+        [setLiveStatus],
+    );
 
     const handleInstallOutput = useCallback(
         (output: string) => {
@@ -419,16 +435,22 @@ export default function ServerConsolePage() {
         }
     }, []);
 
-    const { connectionStatus, ping, sendCommand, sendPowerAction, requestStats, requestLogs } = useWingsWebSocket({
-        serverUuid,
-        connect: shouldConnectToWings,
-        onConsoleOutput: handleConsoleOutput,
-        onStatus: handleStatusUpdate,
-        onStats: handleStatsUpdate,
-        onInstallOutput: handleInstallOutput,
-        onInstallStarted: handleInstallStarted,
-        onInstallCompleted: handleInstallCompleted,
-    });
+    const handleCommandSuggestions = useCallback((response: CommandSuggestResponse) => {
+        terminalRef.current?.applyCommandSuggestions(response);
+    }, []);
+
+    const { connectionStatus, ping, sendCommand, suggestCommand, sendPowerAction, requestStats, requestLogs } =
+        useWingsWebSocket({
+            serverUuid,
+            connect: shouldConnectToWings,
+            onConsoleOutput: handleConsoleOutput,
+            onStatus: handleStatusUpdate,
+            onStats: handleStatsUpdate,
+            onInstallOutput: handleInstallOutput,
+            onInstallStarted: handleInstallStarted,
+            onInstallCompleted: handleInstallCompleted,
+            onCommandSuggestions: handleCommandSuggestions,
+        });
 
     useEffect(() => {
         if (connectionStatus !== 'connected' || !requestStats) return;
@@ -470,25 +492,79 @@ export default function ServerConsolePage() {
 
     const handlePowerAction = useCallback(
         async (action: 'start' | 'stop' | 'restart' | 'kill') => {
+            if (connectionStatus !== 'connected') {
+                toast.error(t('servers.console.connection.disconnected_hint'));
+                return;
+            }
+
+            const { pluginActionHooks } = await import('@/lib/plugin-sdk/action-hooks');
+            const { pluginEventBus } = await import('@/lib/plugin-sdk/event-bus');
+            const { FP_ACTIONS, FP_EVENTS } = await import('@/lib/plugin-sdk/ids');
+
+            const hookCtx = await pluginActionHooks.run(FP_ACTIONS.SERVER_POWER, {
+                action,
+                uuid: serverUuid,
+                uuidShort: server?.uuidShort ?? null,
+            });
+            if (hookCtx.cancelled) {
+                pluginEventBus.emit(FP_EVENTS.SERVER_POWER_RESULT, {
+                    uuid: serverUuid,
+                    action,
+                    ok: false,
+                    cancelled: true,
+                    reason: hookCtx.cancelReason,
+                });
+                return;
+            }
+            const finalAction = (hookCtx.action as typeof action) || action;
+
+            if (finalAction === 'kill') {
+                const confirmCtx = await pluginActionHooks.run(FP_ACTIONS.UI_CONFIRM, {
+                    kind: 'server-kill',
+                    uuid: serverUuid,
+                    message: 'Kill server?',
+                });
+                if (confirmCtx.cancelled) {
+                    return;
+                }
+            }
+
             const optimisticStatus: Record<'start' | 'stop' | 'restart' | 'kill', string> = {
                 start: 'starting',
                 stop: 'stopping',
                 restart: 'stopping',
                 kill: 'stopping',
             };
-            setServerStatus(optimisticStatus[action]);
+            setServerStatus(optimisticStatus[finalAction]);
+            setLiveStatus(optimisticStatus[finalAction]);
 
             return new Promise<void>((resolve) => {
                 if (pendingActionResolveRef.current) {
                     pendingActionResolveRef.current();
                 }
                 pendingActionResolveRef.current = resolve;
-                void sendPowerAction(action).finally(() => {
-                    if (pendingActionResolveRef.current === resolve) {
-                        pendingActionResolveRef.current();
-                        pendingActionResolveRef.current = null;
-                    }
-                });
+                void sendPowerAction(finalAction)
+                    .then(() => {
+                        pluginEventBus.emit(FP_EVENTS.SERVER_POWER_RESULT, {
+                            uuid: serverUuid,
+                            action: finalAction,
+                            ok: true,
+                        });
+                    })
+                    .catch((err: unknown) => {
+                        pluginEventBus.emit(FP_EVENTS.SERVER_POWER_RESULT, {
+                            uuid: serverUuid,
+                            action: finalAction,
+                            ok: false,
+                            error: err instanceof Error ? err.message : String(err),
+                        });
+                    })
+                    .finally(() => {
+                        if (pendingActionResolveRef.current === resolve) {
+                            pendingActionResolveRef.current();
+                            pendingActionResolveRef.current = null;
+                        }
+                    });
 
                 setTimeout(() => {
                     if (pendingActionResolveRef.current === resolve) {
@@ -498,7 +574,7 @@ export default function ServerConsolePage() {
                 }, 2000);
             });
         },
-        [sendPowerAction],
+        [connectionStatus, sendPowerAction, setLiveStatus, t, serverUuid, server?.uuidShort],
     );
 
     const handleUploadLogs = useCallback(() => {
@@ -514,7 +590,7 @@ export default function ServerConsolePage() {
             }>(`/api/user/servers/${serverUuid}/logs/upload`)
             .then(({ data }) => {
                 if (!data.success || !data.data) {
-                    throw new Error(data.message || t('servers.console.logs.upload_failed'));
+                    throw new Error(getApiErrorMessageFromPayload(data, t, 'servers.console.logs.upload_failed'));
                 }
                 return data;
             });
@@ -535,12 +611,25 @@ export default function ServerConsolePage() {
         });
     }, [serverUuid, t]);
 
+    useEffect(() => {
+        if (!server) return;
+        void import('@/lib/plugin-sdk/event-bus').then(({ pluginEventBus }) =>
+            import('@/lib/plugin-sdk/ids').then(({ FP_EVENTS }) => {
+                pluginEventBus.emit(FP_EVENTS.SERVER_CONSOLE_READY, {
+                    uuid: server.uuid,
+                    uuidShort: server.uuidShort ?? serverUuid,
+                });
+            }),
+        );
+    }, [server, serverUuid]);
+
     const getConnectionStatusInfo = () => {
         switch (connectionStatus) {
             case 'connecting':
                 return {
                     icon: Loader2,
                     message: t('servers.console.connection.connecting'),
+                    hint: t('servers.console.connection.info'),
                     color: 'text-blue-500',
                     bgColor: 'bg-blue-500/10 border-blue-500/20',
                     iconClass: 'animate-spin',
@@ -549,6 +638,7 @@ export default function ServerConsolePage() {
                 return {
                     icon: Wifi,
                     message: t('servers.console.connection.connected'),
+                    hint: t('servers.console.connection.info'),
                     color: 'text-green-500',
                     bgColor: 'bg-green-500/10 border-green-500/20',
                     iconClass: '',
@@ -557,22 +647,24 @@ export default function ServerConsolePage() {
                 return {
                     icon: AlertTriangle,
                     message: t('servers.console.connection.error'),
-                    color: 'text-yellow-500',
-                    bgColor: 'bg-yellow-500/10 border-yellow-500/20',
+                    hint: t('servers.console.connection.error_hint'),
+                    color: 'text-amber-500',
+                    bgColor: 'bg-amber-500/10 border-amber-500/20',
                     iconClass: '',
                 };
             default:
                 return {
                     icon: WifiOff,
                     message: t('servers.console.connection.disconnected'),
-                    color: 'text-red-500',
-                    bgColor: 'bg-red-500/10 border-red-500/20',
+                    hint: t('servers.console.connection.disconnected_hint'),
+                    color: 'text-amber-500',
+                    bgColor: 'bg-amber-500/10 border-amber-500/20',
                     iconClass: '',
                 };
         }
     };
 
-    if (permissionsLoading) {
+    if (permissionsLoading || !sessionReady) {
         return (
             <div className='flex min-h-screen items-center justify-center'>
                 <div className='flex flex-col items-center gap-4'>
@@ -605,6 +697,7 @@ export default function ServerConsolePage() {
                         <ServerTerminal
                             ref={terminalRef}
                             onSendCommand={sendCommand}
+                            onSuggestCommand={suggestCommand}
                             canSendCommands={connectionStatus === 'connected' && hasPermission('control.console')}
                             serverStatus={serverStatus}
                             filters={consoleFilters}
@@ -660,28 +753,30 @@ export default function ServerConsolePage() {
                 onKill={() => handlePowerAction('kill')}
             />
 
+            <PluginSlot id='toolbar.server-header' showActions className='w-full' />
+            <PluginSlot id='toolbar.server-console' showActions className='w-full' />
+
             <WidgetRenderer widgets={getWidgets('server-console', 'after-header')} />
 
             <div className='grid grid-cols-1 items-stretch gap-4 xl:grid-cols-12 xl:gap-5 2xl:gap-6'>
                 <div className='flex h-full min-h-0 min-w-0 flex-col gap-4 xl:col-span-9'>
-                    {shouldConnectToWings && connectionStatus !== 'connected' && (
+                    {/* Disconnected/error cable message lives in ServerNodeConnectionBanner (layout). */}
+                    {shouldConnectToWings && connectionStatus === 'connecting' && (
                         <Card className={`border-2 ${connectionInfo.bgColor}`}>
                             <CardContent className='p-4'>
                                 <div className='flex items-center gap-4'>
                                     <div
-                                        className={`flex h-12 w-12 items-center justify-center rounded-lg ${connectionInfo.bgColor}`}
+                                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${connectionInfo.bgColor}`}
                                     >
                                         <connectionInfo.icon
                                             className={`h-6 w-6 ${connectionInfo.color} ${connectionInfo.iconClass}`}
                                         />
                                     </div>
-                                    <div className='flex-1'>
+                                    <div className='min-w-0 flex-1'>
                                         <p className={`font-semibold ${connectionInfo.color}`}>
                                             {connectionInfo.message}
                                         </p>
-                                        <p className='text-muted-foreground text-sm'>
-                                            {t('servers.console.connection.info')}
-                                        </p>
+                                        <p className='text-muted-foreground mt-1 text-sm'>{connectionInfo.hint}</p>
                                     </div>
                                 </div>
                             </CardContent>
@@ -732,6 +827,7 @@ export default function ServerConsolePage() {
                             <ServerTerminal
                                 ref={terminalRef}
                                 onSendCommand={sendCommand}
+                                onSuggestCommand={suggestCommand}
                                 canSendCommands={connectionStatus === 'connected' && hasPermission('control.console')}
                                 serverStatus={serverStatus}
                                 filters={consoleFilters}
@@ -762,6 +858,7 @@ export default function ServerConsolePage() {
                             diskLimit={server.disk || 0}
                             wingsUptime={wingsUptime}
                             ping={ping}
+                            statsReady={connectionStatus === 'connected'}
                             cpuUsage={currentCpu}
                             memoryUsage={currentMemory}
                             diskUsage={currentDisk}

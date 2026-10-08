@@ -73,6 +73,9 @@ export interface ServerFormData {
     description: string;
     ownerId: number | null;
     skipScripts: boolean;
+    showOnStatus: boolean;
+    autoStart: boolean;
+    autoStartDelay: number;
 
     // Allocation
     locationId: number | null;

@@ -23,6 +23,13 @@ class ApiResponse
 {
     public const PRETTYPRINT = true;
 
+    private const SECURITY_HEADERS = [
+        'X-Content-Type-Options' => 'nosniff',
+        'X-Frame-Options' => 'DENY',
+        'Content-Security-Policy' => "default-src 'none'",
+        'Referrer-Policy' => 'no-referrer',
+    ];
+
     public static function success(?array $data = null, string $message = 'OK', int $status = 200): Response
     {
         $status = self::normalizeStatusForCdnSafeJson($status);
@@ -40,6 +47,7 @@ class ApiResponse
             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
             'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With, X-Panel-Public-Key, X-Panel-Private-Key, X-Api-Key, X-Api-Secret, X-Panel-User-Uuid',
             'Access-Control-Allow-Credentials' => 'true',
+            ...self::SECURITY_HEADERS,
         ]);
     }
 
@@ -67,6 +75,7 @@ class ApiResponse
             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
             'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With, X-Panel-Public-Key, X-Panel-Private-Key, X-Api-Key, X-Api-Secret, X-Panel-User-Uuid',
             'Access-Control-Allow-Credentials' => 'true',
+            ...self::SECURITY_HEADERS,
         ]);
     }
 
@@ -110,6 +119,7 @@ class ApiResponse
             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
             'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With, X-Panel-Public-Key, X-Panel-Private-Key, X-Api-Key, X-Api-Secret, X-Panel-User-Uuid',
             'Access-Control-Allow-Credentials' => 'true',
+            ...self::SECURITY_HEADERS,
         ]);
     }
 

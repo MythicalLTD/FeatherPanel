@@ -18,6 +18,7 @@
 namespace App\Chat;
 
 use App\App;
+use App\Plugins\Events\Events\RedirectLinksEvent;
 
 class RedirectLink
 {
@@ -35,7 +36,14 @@ class RedirectLink
         $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
         $stmt->execute();
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $links = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        self::emit(RedirectLinksEvent::onRedirectLinksRetrieved(), [
+            'links' => $links,
+            'page' => $page,
+            'limit' => $limit,
+        ]);
+
+        return $links;
     }
 
     public static function getById(int $id): ?array
@@ -46,8 +54,21 @@ class RedirectLink
         $stmt->execute();
 
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if ($result) {
+            self::emit(RedirectLinksEvent::onRedirectLinkRetrieved(), [
+                'link_id' => $id,
+                'link' => $result,
+            ]);
 
-        return $result ?: null;
+            return $result;
+        }
+
+        self::emit(RedirectLinksEvent::onRedirectLinkNotFound(), [
+            'link_id' => $id,
+            'error' => 'Redirect link not found',
+        ]);
+
+        return null;
     }
 
     public static function getByName(string $name): ?array
@@ -106,8 +127,19 @@ class RedirectLink
         $stmt->bindValue(':updated_at', $data['updated_at'], \PDO::PARAM_STR);
 
         if ($stmt->execute()) {
-            return (int) $pdo->lastInsertId();
+            $id = (int) $pdo->lastInsertId();
+            self::emit(RedirectLinksEvent::onRedirectLinkCreated(), [
+                'link_id' => $id,
+                'link' => array_merge($data, ['id' => $id]),
+            ]);
+
+            return $id;
         }
+
+        self::emit(RedirectLinksEvent::onRedirectLinksError(), [
+            'error' => 'Failed to create redirect link',
+            'context' => $data,
+        ]);
 
         return null;
     }
@@ -127,16 +159,47 @@ class RedirectLink
         $stmt->bindValue(':url', $data['url'], \PDO::PARAM_STR);
         $stmt->bindValue(':updated_at', $data['updated_at'], \PDO::PARAM_STR);
 
-        return $stmt->execute();
+        $ok = $stmt->execute();
+        if ($ok) {
+            self::emit(RedirectLinksEvent::onRedirectLinkUpdated(), [
+                'link_id' => $id,
+                'link' => array_merge($data, ['id' => $id]),
+            ]);
+        } else {
+            self::emit(RedirectLinksEvent::onRedirectLinksError(), [
+                'error' => 'Failed to update redirect link',
+                'context' => ['id' => $id, 'data' => $data],
+            ]);
+        }
+
+        return $ok;
     }
 
     public static function delete(int $id): bool
     {
         $pdo = Database::getPdoConnection();
+        $fetch = $pdo->prepare('SELECT * FROM featherpanel_redirect_links WHERE id = :id');
+        $fetch->bindValue(':id', $id, \PDO::PARAM_INT);
+        $fetch->execute();
+        $existing = $fetch->fetch(\PDO::FETCH_ASSOC) ?: null;
+
         $stmt = $pdo->prepare('DELETE FROM featherpanel_redirect_links WHERE id = :id');
         $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
 
-        return $stmt->execute();
+        $ok = $stmt->execute();
+        if ($ok) {
+            self::emit(RedirectLinksEvent::onRedirectLinkDeleted(), [
+                'link_id' => $id,
+                'link' => $existing,
+            ]);
+        } else {
+            self::emit(RedirectLinksEvent::onRedirectLinksError(), [
+                'error' => 'Failed to delete redirect link',
+                'context' => ['id' => $id],
+            ]);
+        }
+
+        return $ok;
     }
 
     public static function getCount(): int
@@ -205,5 +268,13 @@ class RedirectLink
         }
 
         return $slug;
+    }
+
+    private static function emit(string $event, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($event, $payload);
+        }
     }
 }

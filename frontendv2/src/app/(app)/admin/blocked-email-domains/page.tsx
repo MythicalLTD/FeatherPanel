@@ -48,6 +48,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface BlockedRow {
     id: number;
@@ -74,19 +75,9 @@ const WIDGET_PAGE = 'admin-blocked-email-domains';
 const SEARCH_DEBOUNCE_MS = 320;
 const ROWS_PER_PAGE = 50;
 
-function axiosApiMessage(err: unknown, fallback: string): string {
-    if (axios.isAxiosError(err) && err.response?.data && typeof err.response.data === 'object' && err.response.data) {
-        const msg = (err.response.data as { message?: string }).message;
-        if (typeof msg === 'string' && msg.trim()) {
-            return msg;
-        }
-    }
-    return fallback;
-}
-
 function formatAddedAt(iso: string | null): string {
     if (!iso) {
-        return '—';
+        return '-';
     }
     try {
         return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
@@ -158,10 +149,12 @@ export default function BlockedEmailDomainsPage() {
                     setBlockingEnabled(res.data.data.blocking_enabled === 'true');
                     setPresetFile(res.data.data.preset_source_path || '');
                 } else {
-                    toast.error(res.data.message || t('admin.blocked_email_domains.messages.load_failed'));
+                    toast.error(
+                        getApiErrorMessageFromPayload(res.data, t, 'admin.blocked_email_domains.messages.load_failed'),
+                    );
                 }
-            } catch {
-                toast.error(t('admin.blocked_email_domains.messages.load_failed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'admin.blocked_email_domains.messages.load_failed'));
             } finally {
                 setLoading(false);
             }
@@ -191,7 +184,7 @@ export default function BlockedEmailDomainsPage() {
             return 'border-blue-500/25 bg-blue-500/10 text-blue-700 dark:text-blue-300';
         }
         if (source === 'preset') {
-            return 'border-violet-500/25 bg-violet-500/10 text-violet-700 dark:text-violet-300';
+            return 'border-primary/25 bg-primary/10 text-primary dark:text-primary';
         }
         if (source === 'import') {
             return 'border-amber-500/25 bg-amber-500/10 text-amber-800 dark:text-amber-200';
@@ -230,10 +223,12 @@ export default function BlockedEmailDomainsPage() {
                         : t('admin.blocked_email_domains.messages.blocking_off'),
                 );
             } else {
-                toast.error(res.data.message || t('admin.blocked_email_domains.messages.toggle_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(res.data, t, 'admin.blocked_email_domains.messages.toggle_failed'),
+                );
             }
-        } catch {
-            toast.error(t('admin.blocked_email_domains.messages.toggle_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.blocked_email_domains.messages.toggle_failed'));
         } finally {
             setToggleSaving(false);
         }
@@ -255,10 +250,12 @@ export default function BlockedEmailDomainsPage() {
                 setPage(1);
                 await load({ page: 1, search: debouncedSearch });
             } else {
-                toast.error(res.data.message || t('admin.blocked_email_domains.messages.add_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(res.data, t, 'admin.blocked_email_domains.messages.add_failed'),
+                );
             }
         } catch (e: unknown) {
-            toast.error(axiosApiMessage(e, t('admin.blocked_email_domains.messages.add_failed')));
+            toast.error(getApiErrorMessage(e, t, 'admin.blocked_email_domains.messages.add_failed'));
         } finally {
             setAdding(false);
         }
@@ -276,10 +273,12 @@ export default function BlockedEmailDomainsPage() {
                 toast.success(t('admin.blocked_email_domains.messages.deleted'));
                 await load();
             } else {
-                toast.error(res.data.message || t('admin.blocked_email_domains.messages.delete_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(res.data, t, 'admin.blocked_email_domains.messages.delete_failed'),
+                );
             }
-        } catch {
-            toast.error(t('admin.blocked_email_domains.messages.delete_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.blocked_email_domains.messages.delete_failed'));
         }
     };
 
@@ -301,10 +300,12 @@ export default function BlockedEmailDomainsPage() {
             if (res.data.success && res.data.data) {
                 await refreshAfterImport(res.data.data, true);
             } else {
-                toast.error(res.data.message || t('admin.blocked_email_domains.messages.import_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(res.data, t, 'admin.blocked_email_domains.messages.import_failed'),
+                );
             }
         } catch (e: unknown) {
-            toast.error(axiosApiMessage(e, t('admin.blocked_email_domains.messages.import_failed')));
+            toast.error(getApiErrorMessage(e, t, 'admin.blocked_email_domains.messages.import_failed'));
         } finally {
             setImportBusy(false);
         }
@@ -325,10 +326,16 @@ export default function BlockedEmailDomainsPage() {
             if (res.data.success && res.data.data) {
                 await refreshAfterImport(res.data.data, true);
             } else {
-                toast.error(res.data.message || t('admin.blocked_email_domains.messages.import_url_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(
+                        res.data,
+                        t,
+                        'admin.blocked_email_domains.messages.import_url_failed',
+                    ),
+                );
             }
         } catch (e: unknown) {
-            toast.error(axiosApiMessage(e, t('admin.blocked_email_domains.messages.import_url_failed')));
+            toast.error(getApiErrorMessage(e, t, 'admin.blocked_email_domains.messages.import_url_failed'));
         } finally {
             setImportBusy(false);
         }
@@ -349,10 +356,16 @@ export default function BlockedEmailDomainsPage() {
             if (res.data.success && res.data.data) {
                 await refreshAfterImport(res.data.data, true);
             } else {
-                toast.error(res.data.message || t('admin.blocked_email_domains.messages.import_text_failed'));
+                toast.error(
+                    getApiErrorMessageFromPayload(
+                        res.data,
+                        t,
+                        'admin.blocked_email_domains.messages.import_text_failed',
+                    ),
+                );
             }
         } catch (e: unknown) {
-            toast.error(axiosApiMessage(e, t('admin.blocked_email_domains.messages.import_text_failed')));
+            toast.error(getApiErrorMessage(e, t, 'admin.blocked_email_domains.messages.import_text_failed'));
         } finally {
             setImportBusy(false);
         }
@@ -452,7 +465,7 @@ export default function BlockedEmailDomainsPage() {
                                 {t('admin.blocked_email_domains.import_preset_body')}
                             </p>
                             <p className='text-muted-foreground border-border/60 bg-muted/20 rounded-lg border px-3 py-2 font-mono text-xs'>
-                                {presetFile || '—'}
+                                {presetFile || '-'}
                             </p>
                         </TabsContent>
                         <TabsContent value='url' className='mt-4 space-y-3'>

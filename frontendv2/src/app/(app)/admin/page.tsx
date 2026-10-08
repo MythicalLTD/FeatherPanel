@@ -17,8 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Settings, Trash2, AlertTriangle, LayoutDashboard, Download } from 'lucide-react';
+import { Settings, Trash2, AlertTriangle, Download, RefreshCw, SlidersHorizontal, LayoutDashboard } from 'lucide-react';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
 import { useSystemHealth } from '@/hooks/useSystemHealth';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -26,6 +25,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { cn } from '@/lib/utils';
 import axios from 'axios';
 
@@ -42,13 +42,14 @@ import { RecentServersWidget } from '@/components/admin/RecentServersWidget';
 import { SupportTicketsWidget } from '@/components/admin/SupportTicketsWidget';
 import { CloudHubWidget } from '@/components/admin/CloudHubWidget';
 import { AdminWidgetFrame } from '@/components/admin/AdminWidgetFrame';
-import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
+import { PageHeader } from '@/components/featherui/PageHeader';
+import styles from './dashboard.module.css';
 
 export default function AdminDashboardPage() {
     const { t } = useTranslation();
-    const router = useRouter();
-    const { data, loading, refresh } = useAdminDashboard();
+    const { data, loading, error, refresh } = useAdminDashboard();
+    const initialLoading = loading && !data;
     const {
         stats: healthStats,
         nodes: healthNodes,
@@ -56,6 +57,7 @@ export default function AdminDashboardPage() {
         latency: healthLatency,
         systemsOk,
         loading: healthLoading,
+        refresh: refreshHealth,
     } = useSystemHealth();
     const { settings } = useSettings();
 
@@ -72,7 +74,8 @@ export default function AdminDashboardPage() {
         const stored = localStorage.getItem('admin-hidden-widgets');
         if (stored) {
             try {
-                setHiddenWidgets(JSON.parse(stored));
+                const parsed: unknown = JSON.parse(stored);
+                if (Array.isArray(parsed) && parsed.every((id) => typeof id === 'string')) setHiddenWidgets(parsed);
             } catch (e) {
                 console.error('Failed to parse hidden widgets', e);
             }
@@ -108,11 +111,7 @@ export default function AdminDashboardPage() {
                 });
             }
         } catch (err: unknown) {
-            let message = t('admin.dashboard.cache_failed');
-            if (axios.isAxiosError(err)) {
-                message = err.response?.data?.message || err.message;
-            }
-            toast.error(message, { id: toastId });
+            toast.error(getApiErrorMessage(err, t, 'admin.dashboard.cache_failed'), { id: toastId });
         } finally {
             setIsClearingCache(false);
         }
@@ -150,7 +149,7 @@ export default function AdminDashboardPage() {
             });
         }
 
-        if (!healthLoading) {
+        if (!healthLoading && healthStats && healthSelftest) {
             chips.push({
                 id: 'systems',
                 label: systemsOk ? t('admin.welcome.chip_systems_ok') : t('admin.welcome.chip_systems_attention'),
@@ -169,7 +168,7 @@ export default function AdminDashboardPage() {
         }
 
         return chips;
-    }, [healthLoading, healthStats, systemsOk, updateAvailable, latestVersion, t]);
+    }, [healthLoading, healthStats, healthSelftest, systemsOk, updateAvailable, latestVersion, t]);
 
     const frameProps = {
         isCustomizing,
@@ -178,26 +177,36 @@ export default function AdminDashboardPage() {
     };
 
     return (
-        <div className='space-y-6 md:space-y-8'>
+        <div className={cn(styles.dashboard, 'text-foreground space-y-6')}>
             <WidgetRenderer widgets={getWidgets('admin-home', 'top-of-page')} />
 
             <PageHeader
+                icon={LayoutDashboard}
                 title={t('admin.dashboard.title')}
                 description={t('admin.dashboard.subtitle')}
-                icon={LayoutDashboard}
                 actions={
-                    <div className='flex flex-wrap items-center gap-2 md:gap-3'>
+                    <div className='flex flex-wrap items-center gap-2'>
+                        <Button
+                            type='button'
+                            variant='ghost'
+                            onClick={() => {
+                                refresh();
+                                refreshHealth();
+                            }}
+                            loading={loading}
+                            className='gap-2 px-4'
+                        >
+                            {!loading && <RefreshCw className='h-4 w-4' aria-hidden />}
+                            {t('common.refresh')}
+                        </Button>
                         <Button
                             type='button'
                             variant={isCustomizing ? 'warning' : 'secondary'}
-                            size='sm'
                             onClick={() => setIsCustomizing(!isCustomizing)}
-                            className={cn(
-                                'gap-2 text-[10px] font-black tracking-widest',
-                                isCustomizing && 'border-amber-500/50 bg-amber-500/10 text-amber-500',
-                            )}
+                            aria-pressed={isCustomizing}
+                            className={cn('gap-2 px-4', isCustomizing && 'text-amber-800 dark:text-amber-400')}
                         >
-                            <Settings className={cn('h-4 w-4', isCustomizing && 'animate-spin-slow')} />
+                            <SlidersHorizontal className='h-4 w-4' aria-hidden />
                             <span className='hidden sm:inline'>
                                 {isCustomizing ? t('admin.dashboard.stop_customizing') : t('admin.dashboard.customize')}
                             </span>
@@ -208,16 +217,15 @@ export default function AdminDashboardPage() {
                         <Button
                             type='button'
                             variant='secondary'
-                            size='sm'
                             onClick={clearCache}
                             loading={isClearingCache}
-                            className='gap-2 text-[10px] font-black tracking-widest'
+                            className='gap-2 px-4'
                         >
                             {!isClearingCache && <Trash2 className='h-4 w-4' />}
                             <span className='hidden sm:inline'>{t('admin.dashboard.clear_cache')}</span>
                             <span className='sm:hidden'>{t('admin.dashboard.clear')}</span>
                         </Button>
-                        <Button asChild size='sm' className='gap-2 text-[10px] font-black tracking-widest'>
+                        <Button asChild variant='secondary' className='gap-2 px-4'>
                             <Link href='/admin/settings'>
                                 <Settings className='h-4 w-4' />
                                 <span className='hidden sm:inline'>{t('admin.dashboard.global_settings')}</span>
@@ -230,19 +238,37 @@ export default function AdminDashboardPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-home', 'after-header')} />
 
+            {error && (
+                <div
+                    role='alert'
+                    className='bg-card/50 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-500/30 p-4 backdrop-blur-sm'
+                >
+                    <p className='text-sm text-red-700 dark:text-red-400'>{error}</p>
+                    <Button
+                        type='button'
+                        variant='secondary'
+                        onClick={refresh}
+                        loading={loading}
+                        className='rounded-lg font-medium'
+                    >
+                        {t('common.retry')}
+                    </Button>
+                </div>
+            )}
+
             {showAppUrlWarning && (
-                <div className='animate-in slide-in-from-top-4 group relative overflow-hidden rounded-2xl border border-red-500/20 bg-red-500/10 p-4 backdrop-blur-3xl duration-500 md:rounded-[2.5rem] md:p-6'>
-                    <div className='absolute top-0 right-0 -mt-16 -mr-16 h-32 w-32 rounded-full bg-red-500/10 blur-3xl transition-all duration-700 group-hover:bg-red-500/20' />
+                <div
+                    role='alert'
+                    className='bg-card/50 rounded-2xl border border-red-500/30 p-4 text-red-700 backdrop-blur-sm dark:text-red-400'
+                >
                     <div className='relative z-10 flex flex-col justify-between gap-4 md:flex-row md:items-center md:gap-6'>
                         <div className='flex min-w-0 flex-1 items-start gap-3 md:gap-4'>
-                            <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-red-500/30 bg-red-500/20 text-red-500 md:h-12 md:w-12 md:rounded-2xl'>
+                            <div className='flex h-10 w-6 shrink-0 items-center justify-center'>
                                 <AlertTriangle className='h-5 w-5 md:h-6 md:w-6' />
                             </div>
                             <div className='min-w-0 flex-1 space-y-1'>
-                                <h3 className='text-lg font-black tracking-tight text-red-500 uppercase md:text-xl'>
-                                    {t('admin.dashboard.app_url_warning.title')}
-                                </h3>
-                                <p className='text-xs leading-relaxed font-bold text-red-500/70 md:text-sm'>
+                                <h2 className='text-sm font-semibold'>{t('admin.dashboard.app_url_warning.title')}</h2>
+                                <p className='text-muted-foreground text-sm leading-relaxed'>
                                     {t('admin.dashboard.app_url_warning.message')}
                                 </p>
                             </div>
@@ -251,41 +277,43 @@ export default function AdminDashboardPage() {
                             <button
                                 type='button'
                                 onClick={dismissWarning}
-                                className='rounded-xl border border-red-500/20 px-4 py-2 text-[10px] font-black tracking-widest whitespace-nowrap text-red-500 uppercase transition-all hover:bg-red-500/10 md:px-5 md:py-2.5'
+                                className='hover:bg-accent min-h-11 rounded-lg px-4 py-2 text-sm font-medium transition-colors'
                             >
                                 {t('admin.dashboard.app_url_warning.remind_me')}
                             </button>
-                            <button
-                                type='button'
-                                onClick={() => router.push('/admin/settings')}
-                                className='rounded-xl bg-red-500 px-4 py-2 text-[10px] font-black tracking-widest whitespace-nowrap text-white uppercase transition-all hover:scale-105 md:px-5 md:py-2.5'
+                            <Link
+                                href='/admin/settings'
+                                className='inline-flex min-h-11 items-center justify-center rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-800'
                             >
                                 {t('admin.dashboard.app_url_warning.update_settings')}
-                            </button>
+                            </Link>
                         </div>
                     </div>
                 </div>
             )}
 
             {updateAvailable && latestVersion && !showAppUrlWarning && (
-                <div className='group relative overflow-hidden rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 backdrop-blur-3xl md:rounded-3xl md:p-5'>
+                <div
+                    role='status'
+                    className='bg-card/50 rounded-2xl border border-amber-500/30 p-4 text-amber-800 backdrop-blur-sm dark:text-amber-400'
+                >
                     <div className='relative z-10 flex flex-col justify-between gap-3 sm:flex-row sm:items-center'>
                         <div className='flex min-w-0 items-start gap-3'>
-                            <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/20 text-amber-500'>
+                            <div className='flex h-10 w-6 shrink-0 items-center justify-center'>
                                 <Download className='h-5 w-5' />
                             </div>
                             <div className='min-w-0 space-y-0.5'>
-                                <h3 className='text-sm font-black tracking-tight text-amber-500 uppercase md:text-base'>
+                                <h2 className='text-sm font-semibold'>
                                     {t('admin.dashboard.update_banner.title', { version: latestVersion })}
-                                </h3>
-                                <p className='text-xs font-bold text-amber-500/70'>
+                                </h2>
+                                <p className='text-muted-foreground text-sm'>
                                     {t('admin.dashboard.update_banner.message')}
                                 </p>
                             </div>
                         </div>
                         <Link
                             href='/admin/updates'
-                            className='shrink-0 rounded-xl bg-amber-500 px-4 py-2 text-center text-[10px] font-black tracking-widest whitespace-nowrap text-black uppercase transition-all hover:scale-105'
+                            className='inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-amber-400'
                         >
                             {t('admin.dashboard.update_banner.action')}
                         </Link>
@@ -295,7 +323,7 @@ export default function AdminDashboardPage() {
 
             <AdminWidgetFrame widgetId='welcome' {...frameProps}>
                 <WelcomeWidget
-                    version={data?.version?.current?.version}
+                    version={initialLoading ? undefined : data?.version?.current?.version || t('common.unknown')}
                     chips={welcomeChips}
                     updateAvailable={updateAvailable}
                     latestVersion={latestVersion}
@@ -303,64 +331,72 @@ export default function AdminDashboardPage() {
             </AdminWidgetFrame>
 
             <AdminWidgetFrame widgetId='stats' {...frameProps}>
-                <QuickStatsWidget stats={data?.count} loading={loading} />
+                <QuickStatsWidget stats={data?.count} loading={initialLoading} />
             </AdminWidgetFrame>
 
             <WidgetRenderer widgets={getWidgets('admin-home', 'before-widgets-grid')} />
 
-            <div className='grid grid-cols-1 items-start gap-6 md:gap-8 lg:grid-cols-12'>
-                <AdminWidgetFrame widgetId='health' {...frameProps} className='lg:col-span-8'>
-                    <SystemHealthWidget
-                        stats={healthStats}
-                        selftest={healthSelftest}
-                        latency={healthLatency}
-                        loading={healthLoading}
-                    />
-                </AdminWidgetFrame>
+            <div className='grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]'>
+                <div className='min-w-0 space-y-5'>
+                    <AdminWidgetFrame widgetId='health' {...frameProps}>
+                        <SystemHealthWidget
+                            stats={healthStats}
+                            selftest={healthSelftest}
+                            latency={healthLatency}
+                            loading={healthLoading}
+                        />
+                    </AdminWidgetFrame>
 
-                <AdminWidgetFrame widgetId='attention' {...frameProps} className='lg:col-span-4'>
-                    <AttentionWidget
-                        stats={healthStats}
-                        selftest={healthSelftest}
-                        healthLoading={healthLoading}
-                        updateAvailable={updateAvailable}
-                        latestVersion={latestVersion}
-                        cronTasks={data?.cron?.recent}
-                    />
-                </AdminWidgetFrame>
+                    <AdminWidgetFrame widgetId='nodes' {...frameProps}>
+                        <NodesOverviewWidget nodes={healthNodes} loading={healthLoading} unavailable={!healthStats} />
+                    </AdminWidgetFrame>
 
-                <AdminWidgetFrame widgetId='nodes' {...frameProps} className='lg:col-span-6'>
-                    <NodesOverviewWidget nodes={healthNodes} loading={healthLoading} />
-                </AdminWidgetFrame>
+                    <AdminWidgetFrame widgetId='servers' {...frameProps}>
+                        <RecentServersWidget />
+                    </AdminWidgetFrame>
 
-                <AdminWidgetFrame widgetId='activity' {...frameProps} className='lg:col-span-6'>
-                    <RecentActivityWidget />
-                </AdminWidgetFrame>
+                    <AdminWidgetFrame widgetId='links' {...frameProps}>
+                        <QuickLinksWidget onClearCache={clearCache} isClearingCache={isClearingCache} />
+                    </AdminWidgetFrame>
+                </div>
 
-                <AdminWidgetFrame widgetId='servers' {...frameProps} className='lg:col-span-6'>
-                    <RecentServersWidget />
-                </AdminWidgetFrame>
+                <div className='min-w-0 space-y-5'>
+                    <AdminWidgetFrame widgetId='attention' {...frameProps}>
+                        <AttentionWidget
+                            stats={healthStats}
+                            selftest={healthSelftest}
+                            healthLoading={healthLoading}
+                            updateAvailable={updateAvailable}
+                            latestVersion={latestVersion}
+                            cronTasks={data?.cron?.recent}
+                            onRevealCron={() => {
+                                if (hiddenWidgets.includes('cron')) toggleWidgetVisibility('cron');
+                                requestAnimationFrame(() =>
+                                    document.getElementById('admin-cron')?.scrollIntoView({ block: 'start' }),
+                                );
+                            }}
+                        />
+                    </AdminWidgetFrame>
+                    <AdminWidgetFrame widgetId='tickets' {...frameProps}>
+                        <SupportTicketsWidget />
+                    </AdminWidgetFrame>
+                    <AdminWidgetFrame widgetId='activity' {...frameProps}>
+                        <RecentActivityWidget />
+                    </AdminWidgetFrame>
 
-                <AdminWidgetFrame widgetId='tickets' {...frameProps} className='lg:col-span-6'>
-                    <SupportTicketsWidget />
-                </AdminWidgetFrame>
+                    <AdminWidgetFrame widgetId='cron' {...frameProps}>
+                        <CronStatusWidget tasks={data?.cron?.recent} loading={initialLoading} />
+                    </AdminWidgetFrame>
 
-                <AdminWidgetFrame widgetId='version' {...frameProps} className='lg:col-span-7'>
-                    <VersionInfoWidget version={data?.version} loading={loading} />
-                </AdminWidgetFrame>
-
-                <AdminWidgetFrame widgetId='cron' {...frameProps} className='lg:col-span-5'>
-                    <CronStatusWidget tasks={data?.cron?.recent} loading={loading} />
-                </AdminWidgetFrame>
-
-                <AdminWidgetFrame widgetId='cloud' {...frameProps} className='lg:col-span-12'>
-                    <CloudHubWidget />
-                </AdminWidgetFrame>
-
-                <AdminWidgetFrame widgetId='links' {...frameProps} className='lg:col-span-12'>
-                    <QuickLinksWidget onClearCache={clearCache} isClearingCache={isClearingCache} />
-                </AdminWidgetFrame>
+                    <AdminWidgetFrame widgetId='version' {...frameProps}>
+                        <VersionInfoWidget version={data?.version} loading={initialLoading} />
+                    </AdminWidgetFrame>
+                </div>
             </div>
+
+            <AdminWidgetFrame widgetId='cloud' {...frameProps}>
+                <CloudHubWidget />
+            </AdminWidgetFrame>
 
             <WidgetRenderer widgets={getWidgets('admin-home', 'after-widgets-grid')} />
             <WidgetRenderer widgets={getWidgets('admin-home', 'bottom-of-page')} />

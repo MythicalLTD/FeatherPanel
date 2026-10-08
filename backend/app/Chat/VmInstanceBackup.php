@@ -62,6 +62,7 @@ class VmInstanceBackup
             'ctime',
             'format',
             'created_at',
+            'status',
         ];
 
         $insert = [
@@ -73,6 +74,7 @@ class VmInstanceBackup
             'ctime'          => isset($data['ctime']) ? (int) $data['ctime'] : 0,
             'format'         => isset($data['format']) ? (string) $data['format'] : null,
             'created_at'     => $data['created_at'] ?? date('Y-m-d H:i:s'),
+            'status'         => $data['status'] ?? (($data['volid'] !== 'pending' && $data['storage'] !== 'pending') ? 'completed' : 'pending'),
         ];
 
         $fieldList = '`' . implode('`, `', $fields) . '`';

@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS `featherpanel_webplates` (
+	`id` INT(11) NOT NULL AUTO_INCREMENT,
+	`uuid` CHAR(36) NOT NULL,
+	`author` VARCHAR(191) NOT NULL DEFAULT 'system',
+	`name` VARCHAR(191) NOT NULL,
+	`description` TEXT DEFAULT NULL,
+	`runtime` VARCHAR(32) NOT NULL DEFAULT 'static',
+	`docker_image` VARCHAR(191) NOT NULL DEFAULT '',
+	`document_root` VARCHAR(191) NOT NULL DEFAULT 'public',
+	`startup` TEXT DEFAULT NULL,
+	`container_port` INT(10) UNSIGNED NOT NULL DEFAULT 0,
+	`script_container` VARCHAR(191) NOT NULL DEFAULT 'alpine:3.20',
+	`script_entry` VARCHAR(191) NOT NULL DEFAULT 'ash',
+	`script_install` TEXT DEFAULT NULL,
+	`created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+	`updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	PRIMARY KEY (`id`),
+	UNIQUE KEY `featherpanel_webplates_uuid_unique` (`uuid`),
+	KEY `featherpanel_webplates_runtime` (`runtime`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;

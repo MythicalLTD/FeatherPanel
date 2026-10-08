@@ -54,9 +54,14 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copy only composer files first for better caching
 COPY --chown=www-data:www-data composer.json composer.lock ./
 
-# Install PHP dependencies with BuildKit cache mount
+# Install PHP dependencies with BuildKit cache mount (retry on transient GitHub/Packagist 5xx)
 RUN --mount=type=cache,target=/root/.composer/cache \
-    COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
+    export COMPOSER_ALLOW_SUPERUSER=1 COMPOSER_PROCESS_TIMEOUT=600; \
+    composer install --no-dev --optimize-autoloader --no-interaction \
+    || (echo "composer install failed, retry 1/4..." && sleep 20 && composer install --no-dev --optimize-autoloader --no-interaction) \
+    || (echo "composer install failed, retry 2/4..." && sleep 20 && composer install --no-dev --optimize-autoloader --no-interaction) \
+    || (echo "composer install failed, retry 3/4..." && sleep 20 && composer install --no-dev --optimize-autoloader --no-interaction) \
+    || (echo "composer install failed, retry 4/4..." && sleep 20 && composer install --no-dev --optimize-autoloader --no-interaction)
 
 # Copy remaining application files with correct ownership
 COPY --chown=www-data:www-data . .

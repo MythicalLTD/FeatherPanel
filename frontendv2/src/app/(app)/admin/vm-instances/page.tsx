@@ -30,6 +30,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import {
     Server,
     Plus,
@@ -62,7 +63,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Select } from '@/components/ui/select-native';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 
 interface VmInstance {
@@ -158,6 +159,7 @@ export default function VmInstancesPage() {
     const [instances, setInstances] = useState<VmInstance[]>([]);
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+    const [isHardDelete, setIsHardDelete] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
     const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
@@ -220,7 +222,7 @@ export default function VmInstancesPage() {
             });
         } catch (error) {
             console.error('Error fetching VM instances:', error);
-            toast.error(t('admin.vmInstances.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.vmInstances.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -234,6 +236,7 @@ export default function VmInstancesPage() {
     const handleDeleteClick = (e: React.MouseEvent, id: number) => {
         e.stopPropagation();
         setConfirmDeleteId(id);
+        setIsHardDelete(false);
     };
 
     const handleConfirmDelete = async () => {
@@ -245,8 +248,24 @@ export default function VmInstancesPage() {
             setConfirmDeleteId(null);
             fetchInstances();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    const handleHardDelete = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (!confirmDeleteId) return;
+        setDeleting(true);
+        try {
+            await axios.delete(`/api/admin/vm-instances/${confirmDeleteId}/hard`);
+            toast.success(t('admin.vmInstances.hard_delete_success'));
+            setConfirmDeleteId(null);
+            setIsHardDelete(false);
+            fetchInstances();
+        } catch (err) {
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setDeleting(false);
         }
@@ -284,6 +303,7 @@ export default function VmInstancesPage() {
             setNodesList(data.data?.vm_nodes || []);
         } catch (error) {
             console.error('Error fetching nodes:', error);
+            toast.error(getApiErrorMessage(error, t, 'admin.vmInstances.errors.fetch_failed'));
         } finally {
             setLoadingNodes(false);
         }
@@ -300,7 +320,7 @@ export default function VmInstancesPage() {
             }
         } catch (error) {
             console.error('Error fetching VM instance details:', error);
-            toast.error(t('admin.vmInstances.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.vmInstances.messages.fetch_failed'));
         }
     };
 
@@ -633,16 +653,46 @@ export default function VmInstancesPage() {
                 </PageCard>
             </div>
 
-            <AlertDialog open={confirmDeleteId !== null} onOpenChange={() => setConfirmDeleteId(null)}>
+            <AlertDialog
+                open={confirmDeleteId !== null}
+                onOpenChange={() => {
+                    if (!deleting) {
+                        setConfirmDeleteId(null);
+                        setIsHardDelete(false);
+                    }
+                }}
+            >
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>{t('admin.vmInstances.delete_confirm_title')}</AlertDialogTitle>
-                        <AlertDialogDescription>{t('admin.vmInstances.delete_confirm_desc')}</AlertDialogDescription>
+                        <AlertDialogTitle>
+                            {t(
+                                isHardDelete
+                                    ? 'admin.vmInstances.hard_delete_title'
+                                    : 'admin.vmInstances.delete_confirm_title',
+                            )}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t(
+                                isHardDelete
+                                    ? 'admin.vmInstances.hard_delete_desc'
+                                    : 'admin.vmInstances.delete_confirm_desc',
+                            )}
+                        </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel disabled={deleting}>{t('common.cancel')}</AlertDialogCancel>
+                        {!isHardDelete && (
+                            <Button
+                                type='button'
+                                variant='outline'
+                                onClick={() => setIsHardDelete(true)}
+                                disabled={deleting}
+                            >
+                                {t('admin.vmInstances.hard_delete')}
+                            </Button>
+                        )}
                         <AlertDialogAction
-                            onClick={handleConfirmDelete}
+                            onClick={isHardDelete ? handleHardDelete : handleConfirmDelete}
                             disabled={deleting}
                             className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
                         >
@@ -652,19 +702,26 @@ export default function VmInstancesPage() {
                                     {t('common.deleting')}
                                 </>
                             ) : (
-                                t('common.delete')
+                                t(isHardDelete ? 'admin.vmInstances.hard_delete_confirm' : 'common.delete')
                             )}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
 
-            <HeadlessModal
-                isOpen={isOwnerFilterModalOpen}
+            <Dialog
+                open={isOwnerFilterModalOpen}
                 onClose={() => setIsOwnerFilterModalOpen(false)}
-                title={t('admin.vmInstances.filters.select_user')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsOwnerFilterModalOpen(false);
+                    }
+                }}
             >
-                <div className='p-6'>
+                <DialogHeader>
+                    <DialogTitle>{t('admin.vmInstances.filters.select_user')}</DialogTitle>
+                </DialogHeader>
+                <div className='space-y-4'>
                     <Input
                         placeholder={t('common.search')}
                         value={ownerFilterSearch}
@@ -705,14 +762,21 @@ export default function VmInstancesPage() {
                         )}
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={isNodeFilterModalOpen}
+            <Dialog
+                open={isNodeFilterModalOpen}
                 onClose={() => setIsNodeFilterModalOpen(false)}
-                title={t('admin.vmInstances.filters.select_node')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsNodeFilterModalOpen(false);
+                    }
+                }}
             >
-                <div className='p-6'>
+                <DialogHeader>
+                    <DialogTitle>{t('admin.vmInstances.filters.select_node')}</DialogTitle>
+                </DialogHeader>
+                <div className='space-y-4'>
                     <div className='max-h-100 space-y-2 overflow-y-auto'>
                         {loadingNodes ? (
                             <div className='py-4 text-center'>
@@ -744,7 +808,7 @@ export default function VmInstancesPage() {
                         )}
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
             <Sheet open={isViewDrawerOpen} onOpenChange={setIsViewDrawerOpen}>
                 <SheetContent side='right' className='custom-scrollbar overflow-y-auto sm:max-w-2xl'>

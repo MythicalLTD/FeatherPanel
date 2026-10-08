@@ -36,15 +36,21 @@ class NodeStatusHelper
      * Player counts are read from Redis cache only so a cache miss cannot
      * block the status HTTP request with live GameQ queries.
      *
+     * @param bool $includePlayerCount Include cached player counts when available
+     * @param bool $onlyVisibleOnStatus When true, hide servers with show_on_status disabled
+     *
      * @return array<int, array<string, mixed>>
      */
-    public static function buildServersForNode(int $nodeId, bool $includePlayerCount = false): array
-    {
+    public static function buildServersForNode(
+        int $nodeId,
+        bool $includePlayerCount = false,
+        bool $onlyVisibleOnStatus = false,
+    ): array {
         if ($nodeId <= 0) {
             return [];
         }
 
-        $servers = Server::getServersByNodeId($nodeId);
+        $servers = Server::getServersByNodeId($nodeId, $onlyVisibleOnStatus);
         $result = [];
 
         foreach ($servers as $server) {

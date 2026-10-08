@@ -23,9 +23,11 @@ use App\Chat\User;
 use App\Chat\Realm;
 use App\Chat\Spell;
 use App\Chat\Server;
+use App\Chat\WebNode;
 use App\Chat\Activity;
 use App\Chat\MailList;
 use App\Chat\SsoToken;
+use App\Chat\WebSpace;
 use App\Chat\MailQueue;
 use App\Chat\Allocation;
 use App\Chat\VmInstance;
@@ -36,6 +38,7 @@ use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Mail\templates\Welcome;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\FeatherQuilldClient;
 use App\Helpers\AbuseIPDBBanReporter;
 use App\Helpers\EmailDomainValidator;
 use App\Mail\templates\AccountBanned;
@@ -834,6 +837,28 @@ class UsersController
             $data['reason']
         );
 
+        // Privilege-escalation guard: this endpoint only requires
+        // ADMIN_USERS_EDIT, but several columns are security-sensitive
+        // (role, 2FA state, session token). An admin with only "edit users"
+        // permission (not full ADMIN_ROOT) must not be able to grant
+        // themselves or another account a higher role, disable/hijack 2FA,
+        // or forge a session by setting remember_token directly. Restrict
+        // those fields to ADMIN_ROOT regardless of what the DB-column-based
+        // denylist above allows through.
+        $rootOnlyFields = ['role_id', 'two_fa_enabled', 'two_fa_key', 'two_fa_blocked', 'remember_token', 'external_id', 'deleted'];
+        $staffUuid = $request->attributes->get('user')['uuid'] ?? null;
+        $isRootAdmin = $staffUuid !== null && \App\Helpers\PermissionHelper::hasPermission($staffUuid, \App\Permissions::ADMIN_ROOT);
+        if (!$isRootAdmin) {
+            $attemptedRootFields = array_intersect($rootOnlyFields, array_keys($data));
+            if (!empty($attemptedRootFields)) {
+                return ApiResponse::error(
+                    'You do not have permission to modify: ' . implode(', ', $attemptedRootFields),
+                    'INSUFFICIENT_PERMISSIONS_FOR_FIELD',
+                    403
+                );
+            }
+        }
+
         if ($app->isDemoMode()) {
             if ($user['id'] === 1) {
                 return ApiResponse::error('Unmanaged actions are not permitted in demo mode', 'UNMANAGED_ACTIONS_NOT_PERMITTED', 400);
@@ -894,6 +919,10 @@ class UsersController
         if (isset($data['password'])) {
             $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
             $data['remember_token'] = User::generateAccountToken();
+        }
+
+        if (array_key_exists('webspace_limit', $data)) {
+            $data['webspace_limit'] = max(0, (int) $data['webspace_limit']);
         }
 
         $staffUser = $request->attributes->get('user');
@@ -971,6 +1000,7 @@ class UsersController
                 'suspension_reason' => $banReasonForEmail,
             ]);
         } elseif ($becameUnbanned) {
+            self::unsuspendOwnedWebSpaces((int) $user['id']);
             AccountUnBanned::send([
                 'email' => $user['email'],
                 'subject' => 'Your account has been unsuspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
@@ -1856,6 +1886,18 @@ class UsersController
 
         $abuseipdbReport = AbuseIPDBBanReporter::maybeReport($user, $body, $parsed['reason']);
 
+        foreach (WebSpace::listByOwnerId((int) $user['id']) as $space) {
+            $uuid = (string) ($space['uuid'] ?? '');
+            if ($uuid === '') {
+                continue;
+            }
+            $webNode = WebNode::getWebNodeById((int) ($space['web_node_id'] ?? 0));
+            if ($webNode) {
+                FeatherQuilldClient::powerWebSpace($webNode, $uuid, 'stop');
+            }
+            WebSpace::updateStatus($uuid, 'suspended');
+        }
+
         global $eventManager;
         if (isset($eventManager) && $eventManager !== null) {
             $eventManager->emit(
@@ -1940,6 +1982,8 @@ class UsersController
             return ApiResponse::error('Failed to unban user', 'FAILED_TO_UNBAN_USER', 500);
         }
 
+        self::unsuspendOwnedWebSpaces((int) $user['id']);
+
         global $eventManager;
         if (isset($eventManager) && $eventManager !== null) {
             $eventManager->emit(
@@ -1970,5 +2014,26 @@ class UsersController
         $app->getLogger()->info('User ' . $user['uuid'] . ' unbanned by ' . ($request->attributes->get('user')['uuid'] ?? 'unknown'));
 
         return ApiResponse::success([], 'User unbanned successfully', 200);
+    }
+
+    /**
+     * Restore ban-suspended WebSpaces to installed without auto-starting (mirrors WebSpacesController::unsuspend).
+     */
+    private static function unsuspendOwnedWebSpaces(int $ownerId): void
+    {
+        if ($ownerId <= 0) {
+            return;
+        }
+
+        foreach (WebSpace::listByOwnerId($ownerId) as $space) {
+            if (($space['status'] ?? '') !== 'suspended') {
+                continue;
+            }
+            $spaceUuid = (string) ($space['uuid'] ?? '');
+            if ($spaceUuid === '') {
+                continue;
+            }
+            WebSpace::updateStatus($spaceUuid, 'installed');
+        }
     }
 }

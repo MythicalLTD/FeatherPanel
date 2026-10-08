@@ -24,6 +24,7 @@ import { Calendar, Save, ExternalLink, Lock } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
+import { FormSection } from '@/components/featherui/FormSection';
 import { Label } from '@/components/ui/label';
 import { HeadlessSelect } from '@/components/ui/headless-select';
 import { toast } from 'sonner';
@@ -35,6 +36,8 @@ import { listSupportedTimezones } from '@/lib/dateUtils';
 import { useUserTimezone } from '@/contexts/PreferencesContext';
 import type { Schedule, ScheduleUpdateRequest } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
+import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function EditSchedulePage() {
     const { uuidShort, id } = useParams() as { uuidShort: string; id: string };
@@ -91,7 +94,7 @@ export default function EditSchedulePage() {
                 }
             } catch (error) {
                 console.error('Failed to fetch schedule:', error);
-                toast.error(t('serverSchedules.loadFailed'));
+                toast.error(getApiErrorMessage(error, t, 'serverSchedules.loadFailed'));
                 router.push(`/server/${uuidShort}/schedules`);
             } finally {
                 setLoading(false);
@@ -124,18 +127,20 @@ export default function EditSchedulePage() {
                 toast.success(t('serverSchedules.updateSuccess'));
                 router.push(`/server/${uuidShort}/schedules`);
             } else {
-                toast.error(data?.message || t('serverSchedules.updateFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverSchedules.updateFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            const msg = axiosError.response?.data?.message || t('serverSchedules.updateFailed');
+            const msg = getApiErrorMessage(axiosError, t, 'serverSchedules.updateFailed');
             toast.error(msg);
         } finally {
             setSaving(false);
         }
     };
 
-    if (permissionsLoading || settingsLoading || loading) return null;
+    if (permissionsLoading || settingsLoading || loading) {
+        return <PageLoading />;
+    }
 
     if (!canUpdate) {
         return (
@@ -179,6 +184,7 @@ export default function EditSchedulePage() {
                             disabled={saving}
                             loading={saving}
                             className='order-1 w-full sm:order-2 sm:w-auto'
+                            data-fp-save-shortcut
                         >
                             <Save className='mr-2 h-4 w-4' />
                             {t('serverSchedules.update')}
@@ -188,10 +194,10 @@ export default function EditSchedulePage() {
             />
             <WidgetRenderer widgets={getWidgets('server-schedules-edit', 'after-header')} />
 
-            <form onSubmit={handleUpdate} className='space-y-8'>
+            <form onSubmit={handleUpdate} className='space-y-8' data-fp-save-shortcut>
                 <div className='from-primary/5 pointer-events-none fixed inset-0 -z-10 bg-linear-to-br via-transparent to-blue-500/5' />
 
-                <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                <FormSection>
                     <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                         <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
                             <Calendar className='text-primary h-5 w-5' />
@@ -223,9 +229,9 @@ export default function EditSchedulePage() {
                         />
                         <p className='text-muted-foreground ml-1 text-xs'>{t('serverSchedules.nameHelp')}</p>
                     </div>
-                </div>
+                </FormSection>
 
-                <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                <FormSection>
                     <div className='border-border/10 flex items-center justify-between border-b pb-6'>
                         <div className='flex items-center gap-4'>
                             <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
@@ -341,9 +347,9 @@ export default function EditSchedulePage() {
                         />
                         <p className='text-muted-foreground ml-1 text-xs'>{t('serverSchedules.timezoneHelp')}</p>
                     </div>
-                </div>
+                </FormSection>
 
-                <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                <FormSection>
                     <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                         <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
                             <Calendar className='text-primary h-5 w-5' />
@@ -397,7 +403,7 @@ export default function EditSchedulePage() {
                             </p>
                         </div>
                     </div>
-                </div>
+                </FormSection>
 
                 <div className='flex flex-col gap-3 md:hidden'>
                     <Button

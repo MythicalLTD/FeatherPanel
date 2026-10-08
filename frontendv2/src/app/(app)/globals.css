@@ -2,7 +2,7 @@
 @plugin '@tailwindcss/typography';
 
 /* Class-based dark mode (matches ThemeContext / html.dark). Without this, Tailwind v4
-   keys `dark:` off prefers-color-scheme — so OS light + panel dark = white text on light panels. */
+   keys `dark:` off prefers-color-scheme - so OS light + panel dark = white text on light panels. */
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
@@ -53,7 +53,8 @@
     --color-ring: hsl(var(--ring));
     /* Tie Tailwind's font-sans to the app font variable. */
     --font-sans: var(--app-font-family);
-    --font-mono: var(--font-geist-mono);
+    /* System mono stack (Geist mono was never loaded via next/font). */
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 }
 
 .dark {
@@ -84,6 +85,14 @@ body {
     font-family: var(--app-font-family);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: clip;
+}
+
+/* Dashboard shell: one scroll container (main), not the document */
+html:has([data-fp-dashboard-shell]),
+body:has([data-fp-dashboard-shell]) {
+    height: 100%;
+    overflow: hidden;
 }
 
 /* Full-bleed plugin routes: body bg stacks under the fixed theme layer (pattern holes etc.),
@@ -263,10 +272,87 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
     animation: fadeInUp 0.4s ease-out forwards;
 }
 
-/* Page shell only: opacity fade avoids transform so fixed sidebar/nav stay viewport-bound */
+/* Discord-style QR login: QR ↔ scanned avatar transition */
+@keyframes qr-pop-in {
+    0% {
+        opacity: 0;
+        transform: scale(0.72);
+    }
+    70% {
+        opacity: 1;
+        transform: scale(1.06);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes qr-ring-pulse {
+    0% {
+        opacity: 0.55;
+        transform: scale(0.92);
+    }
+    70% {
+        opacity: 0;
+        transform: scale(1.35);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.35);
+    }
+}
+
+@keyframes qr-soft-float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+@keyframes qr-check-in {
+    0% {
+        opacity: 0;
+        transform: scale(0.4);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-qr-pop {
+    animation: qr-pop-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-qr-ring {
+    animation: qr-ring-pulse 1.8s ease-out infinite;
+}
+
+.animate-qr-float {
+    animation: qr-soft-float 2.8s ease-in-out infinite;
+}
+
+.animate-qr-check {
+    animation: qr-check-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-qr-pop,
+    .animate-qr-ring,
+    .animate-qr-float,
+    .animate-qr-check {
+        animation: none !important;
+    }
+}
+
+/* Page shell only: soft opacity fade (no transform) so fixed sidebar/nav stay viewport-bound */
 @keyframes pageShellEnter {
     from {
-        opacity: 0;
+        opacity: 0.92;
     }
     to {
         opacity: 1;
@@ -274,11 +360,11 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
 }
 
 .animate-page-shell {
-    animation: pageShellEnter 0.35s ease-out forwards;
+    animation: pageShellEnter 0.16s ease-out forwards;
 }
 
 .animate-page-shell-reduced {
-    animation: pageShellEnter 0.2s ease-out forwards;
+    animation: pageShellEnter 0.1s ease-out forwards;
 }
 
 .animate-scale-in {
@@ -449,6 +535,34 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
     transition-duration: 0.2s !important;
 }
 
+/* Portaled sidebar + shell chrome: respect the same motion preference as .motion-content */
+[data-motion='none'] .fp-desktop-sidebar,
+[data-motion='none'] .fp-desktop-sidebar *,
+[data-motion='none'] .fp-chrome-motion,
+[data-motion='none'] .fp-chrome-motion * {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+}
+
+[data-motion='reduced'] .fp-desktop-sidebar,
+[data-motion='reduced'] .fp-desktop-sidebar *,
+[data-motion='reduced'] .fp-chrome-motion,
+[data-motion='reduced'] .fp-chrome-motion * {
+    animation-duration: 0.15s !important;
+    transition-duration: 0.15s !important;
+}
+
+/* Chrome elevation - border only, no accent bloom */
+.fp-chrome-glow {
+    box-shadow: 0 0 0 1px hsl(var(--border) / 0.8);
+}
+
+.fp-chrome-glow-subtle {
+    box-shadow: 0 0 0 1px hsl(var(--border) / 0.55);
+}
+
 /* Custom scrollbar utilities */
 .hide-scrollbar::-webkit-scrollbar {
     display: none;
@@ -483,4 +597,127 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
 * {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--muted-foreground) / 0.2) transparent;
+}
+
+/* Bottom dock */
+.fp-mac-dock-shell {
+    overflow: visible;
+}
+
+.fp-mac-dock-provider {
+    overflow: visible;
+}
+
+.fp-mac-dock-track::before,
+.fp-mac-dock-track::after {
+    content: '';
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1.25rem;
+    z-index: 2;
+}
+
+.fp-mac-dock-track::before {
+    left: 0;
+    background: linear-gradient(to right, hsl(var(--card) / 0.95), transparent);
+}
+
+.fp-mac-dock-track::after {
+    right: 0;
+    background: linear-gradient(to left, hsl(var(--card) / 0.95), transparent);
+}
+
+.fp-mac-dock-tooltip {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: hsl(var(--foreground));
+    background: hsl(var(--popover));
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    box-shadow: 0 8px 24px -12px hsl(0 0% 0% / 0.45);
+    white-space: nowrap;
+    max-width: min(18rem, 90vw);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fp-mac-dock-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: hsl(var(--popover));
+}
+
+.fp-dock-item-glow-accent {
+    box-shadow: 0 0 0 1px hsl(var(--border));
+}
+
+.fp-dock-item-glow-subtle {
+    box-shadow: 0 0 0 1px hsl(var(--border) / 0.7);
+}
+
+.fp-overflow-text {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fp-overflow-text-content {
+    display: inline;
+}
+
+@media (max-width: 767px) {
+    .fp-overflow-text[data-overflow='true'] {
+        overflow-x: auto;
+        text-overflow: clip;
+        scrollbar-width: none;
+    }
+
+    .fp-overflow-text[data-overflow='true']::-webkit-scrollbar {
+        display: none;
+    }
+
+    .fp-overflow-text-content {
+        display: block;
+        width: max-content;
+    }
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+    .fp-overflow-text {
+        overflow: visible;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .fp-overflow-text-content {
+        display: inline;
+        width: auto;
+    }
+}
+
+.fp-sidebar-rail-tooltip {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: hsl(var(--foreground));
+    background: hsl(var(--popover));
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    box-shadow: 0 8px 24px -12px hsl(0 0% 0% / 0.45);
+    white-space: nowrap;
+    max-width: min(18rem, 90vw);
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

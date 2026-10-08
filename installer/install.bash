@@ -81,6 +81,12 @@ while [[ $# -gt 0 ]]; do
 		REFRESH_DOCKER_UPDATER_ONLY=true
 		shift
 		;;
+	--wings-install-only)
+		FP_COMPONENT=wings
+		FP_ACTION=install
+		FP_WINGS_SKIP_CONFIGURE=true
+		shift
+		;;
 	--help | -h)
 		echo "FeatherPanel Installer"
 		echo ""
@@ -93,6 +99,9 @@ while [[ $# -gt 0 ]]; do
 		echo "  --skip-virt-check      Skip virtualization compatibility checks"
 		echo "  --skip-system-update   Skip apt update and essential package installation"
 		echo "  --refresh-docker-updater-only  Rewrite /etc/featherpanel host updater scripts only (no full install)"
+		echo "  --wings-install-only   Install FeatherWings only (no setup wizard; for panel quick-setup step 1)"
+		echo "  Env for daemons:       FP_WINGS_METHOD = apt|direct  FP_WINGS_CHANNEL = stable|nightly"
+		echo "                         FP_QUILLD_CHANNEL = stable|nightly  (FeatherQuilld is APT-only)"
 		echo "  --dev                  Use latest dev release images"
 		echo "  --dev-branch BRANCH    Use dev images for specific branch (e.g., develop, main)"
 		echo "  --dev-sha SHA          Use dev images for specific commit SHA (requires --dev-branch)"
@@ -108,6 +117,12 @@ while [[ $# -gt 0 ]]; do
 		echo "may result in unsupported configurations. Use at your own risk."
 		echo ""
 		echo "Warning: Dev releases are development builds and may be unstable."
+		echo ""
+		echo "Support (install failures / tickets):"
+		echo "  Failed installs may upload logs automatically — share those URLs in your ticket."
+		echo "  Remote shell (sshx) is only for when FeatherPanel devs ask for access in an"
+		echo "  active support ticket. See Admin → Settings → Support in the panel, or run"
+		echo "  the installer until it fails to see sshx steps in the log output."
 		exit 0
 		;;
 	*)
@@ -121,6 +136,11 @@ done
 LOG_DIR=/var/www/featherpanel
 LOG_FILE=$LOG_DIR/install.log
 BACKUP_DIR="/var/www/featherpanel/backups"
+WINGS_BACKUP_DIR="/var/lib/featherpanel/wings_backup"
+WINGS_MIGRATION_DIR="/var/lib/featherpanel/wings_migrations"
+WINGS_CONFIG_FILE="/etc/featherpanel/config.yml"
+WINGS_VOLUMES_DEFAULT="/var/lib/featherpanel/volumes"
+WINGS_BACKUPS_DEFAULT="/var/lib/featherpanel/backups"
 CONFIG_FILE="/var/www/featherpanel/.featherpanel.conf"
 COMPOSE_FILE_PATH="$LOG_DIR/docker-compose.yml"
 
@@ -229,6 +249,23 @@ support_hint() {
 	echo -e "${YELLOW}Need help?${NC} Join Discord: ${BLUE}https://discord.mythical.systems${NC}  Docs: ${BLUE}https://docs.mythical.systems${NC}"
 }
 
+# Remote shell via sshx — only for users actively in a FeatherPanel dev support ticket.
+show_sshx_support_hint() {
+	echo ""
+	echo -e "${RED}${BOLD}⚠️  Remote shell (sshx) — ticket-only${NC}"
+	echo -e "${YELLOW}Use this ${BOLD}only${NC}${YELLOW} if you are ${BOLD}actively talking with FeatherPanel developers right now${NC}${YELLOW} in a support ticket${NC}"
+	echo -e "${YELLOW}and they explicitly asked you to share shell access.${NC}"
+	echo -e "${RED}An sshx link gives anyone full SSH access to this server. Do not share it outside that ticket.${NC}"
+	echo ""
+	echo -e "${BOLD}If a FeatherPanel dev requested remote access in your open ticket:${NC}"
+	echo -e "  ${CYAN}1.${NC} Install: ${BOLD}curl -sSf https://sshx.io/get | sh${NC}"
+	echo -e "  ${CYAN}2.${NC} Start:   ${BOLD}sshx${NC}"
+	echo -e "  ${CYAN}3.${NC} Copy the ${BOLD}Link:${NC} URL from the output and paste it only in that ticket."
+	echo -e "  ${CYAN}4.${NC} Press ${BOLD}Ctrl+C${NC} when support is done."
+	echo -e "${BLUE}Panel guide:${NC} Admin → Settings → Support → Remote shell (sshx)"
+	echo ""
+}
+
 ERROR_HANDLER_ACTIVE=0
 
 upload_logs_on_fail() {
@@ -289,6 +326,7 @@ upload_logs_on_fail() {
 		log_warn "curl not available; cannot upload logs automatically."
 	fi
 	support_hint
+	show_sshx_support_hint
 }
 
 handle_unexpected_error() {
@@ -552,6 +590,8 @@ refresh_compose_from_upstream
 
 PMA_BACKUP="${PANEL_ROOT}/.pma-update-backup"
 rm -rf "$PMA_BACKUP"
+DATA_BACKUP="${PANEL_ROOT}/.storage-data-update-backup"
+rm -rf "$DATA_BACKUP"
 if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx featherpanel_backend; then
 	if docker exec featherpanel_backend test -f /var/www/html/public/pma/index.php 2>/dev/null; then
 		log "featherpanel-docker-updater: backing up phpMyAdmin before container recreate"
@@ -562,6 +602,16 @@ if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx featherpanel_backend; 
 		else
 			log "featherpanel-docker-updater: warning: phpMyAdmin backup failed (continuing)"
 			rm -rf "$PMA_BACKUP"
+		fi
+	fi
+	if docker exec featherpanel_backend test -d /var/www/html/storage/data 2>/dev/null; then
+		log "featherpanel-docker-updater: backing up addon data before container recreate"
+		mkdir -p "$DATA_BACKUP"
+		if docker cp featherpanel_backend:/var/www/html/storage/data/. "$DATA_BACKUP/" >>"$LOG_FILE" 2>&1; then
+			log "featherpanel-docker-updater: addon data backup ready at ${DATA_BACKUP}"
+		else
+			log "featherpanel-docker-updater: warning: addon data backup failed (continuing)"
+			rm -rf "$DATA_BACKUP"
 		fi
 	fi
 fi
@@ -575,7 +625,28 @@ log "featherpanel-docker-updater: docker compose up (--pull always)"
 if ! docker compose -f "$COMPOSE_FILE" up -d --pull always --remove-orphans >>"$LOG_FILE" 2>&1; then
 	log "featherpanel-docker-updater: ERROR docker compose up failed (see ${LOG_FILE})"
 	rm -rf "$PMA_BACKUP"
+	rm -rf "$DATA_BACKUP"
 	exit 1
+fi
+
+if [ -d "$DATA_BACKUP" ]; then
+	log "featherpanel-docker-updater: restoring addon data into persisted volume"
+	restored_data=0
+	for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+		if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx featherpanel_backend; then
+			if docker exec featherpanel_backend mkdir -p /var/www/html/storage/data >>"$LOG_FILE" 2>&1 \
+				&& docker cp "$DATA_BACKUP/." featherpanel_backend:/var/www/html/storage/data/ >>"$LOG_FILE" 2>&1; then
+				log "featherpanel-docker-updater: addon data restored successfully"
+				restored_data=1
+				break
+			fi
+		fi
+		sleep 2
+	done
+	if [ "$restored_data" -ne 1 ]; then
+		log "featherpanel-docker-updater: warning: could not restore addon data backup"
+	fi
+	rm -rf "$DATA_BACKUP"
 fi
 
 if [ -d "$PMA_BACKUP" ] && [ -f "$PMA_BACKUP/index.php" ]; then
@@ -1410,7 +1481,11 @@ set_panel_install_mode() {
 }
 
 get_source_scripts_branch() {
-	echo "main"
+	if [ "${USE_DEV:-false}" = "true" ] || [ -n "${FP_DEV:-}" ]; then
+		echo "${DEV_BRANCH:-develop}"
+	else
+		echo "main"
+	fi
 }
 
 get_latest_panel_release_tag() {
@@ -1651,7 +1726,7 @@ show_main_menu() {
 	echo -e "  ${YELLOW}${BOLD}[4]${NC} ${BOLD}SSL Certificates${NC} ${CYAN}Let's Encrypt Tools${NC}"
 	echo -e "  ${MAGENTA}${BOLD}[5]${NC} ${BOLD}Databases${NC} ${CYAN}Remote MySQL/MariaDB Hosts${NC}"
 	echo -e "  ${RED}${BOLD}[6]${NC} ${BOLD}Proxmox VNC Agent${NC} ${CYAN}Install on Proxmox Node${NC}"
-	echo -e "  ${MAGENTA}${BOLD}[7]${NC} ${BOLD}FeatherFly Daemon${NC} ${CYAN}WebHosting Daemon${NC} ${YELLOW}${BOLD}[Coming Soon]${NC}"
+	echo -e "  ${MAGENTA}${BOLD}[7]${NC} ${BOLD}FeatherQuilld Daemon${NC} ${CYAN}WebHosting Daemon${NC}"
 	echo -e "  ${GREEN}${BOLD}[8]${NC} ${BOLD}Configuration${NC} ${CYAN}Settings & Preferences${NC}"
 	echo ""
 	echo -e "  ${BLUE}Tip:${NC} ${YELLOW}Choose ${BOLD}8${NC}${YELLOW} to set defaults like panel port and prefer-dev behavior.${NC}"
@@ -2132,22 +2207,53 @@ show_wings_menu() {
 	draw_hr
 	echo ""
 	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Install Wings${NC}"
-	echo -e "     ${BLUE}→ Install FeatherWings game server daemon${NC}"
-	echo -e "     ${BLUE}→ Creates systemd service for automatic startup${NC}"
-	echo -e "     ${BLUE}→ SSL (option 4) recommended for production; optional for home hosting${NC}"
+	echo -e "     ${GREEN}→ Recommended: MythicalSystems ${BOLD}APT repo${NC}${GREEN} (cleaner upgrades & easy migration)${NC}"
+	echo -e "     ${BLUE}→ Direct GitHub binary still available if you prefer${NC}"
+	echo -e "     ${BLUE}→ Installs Docker and required directories${NC}"
+	echo -e "     ${BLUE}→ Launches ${BOLD}featherwings configure${NC} to finish setup (node, SSL, service)${NC}"
 	echo ""
 	echo -e "  ${RED}${BOLD}[2]${NC} ${BOLD}Uninstall Wings${NC}"
 	echo -e "     ${YELLOW}⚠️  WARNING: This will remove Wings and its configuration${NC}"
-	echo -e "     ${BLUE}→ Stops and removes systemd service${NC}"
+	echo -e "     ${BLUE}→ Stops and removes systemd service / APT package${NC}"
 	echo -e "     ${BLUE}→ Removes Wings binary and data (optional)${NC}"
 	echo ""
 	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Update Wings${NC}"
-	echo -e "     ${BLUE}→ Download latest Wings binary${NC}"
-	echo -e "     ${BLUE}→ Restart Wings service with new version${NC}"
+	echo -e "     ${GREEN}→ APT (recommended): ${BOLD}apt upgrade${NC}${GREEN} — clean, supports stable ↔ nightly switches${NC}"
+	echo -e "     ${BLUE}→ Direct installs: download latest binary and restart${NC}"
 	echo ""
-	echo -e "  ${CYAN}${BOLD}[4]${NC} ${BOLD}Create SSL Certificate${NC}"
-	echo -e "     ${BLUE}→ Optional: use for domain-based nodes (Let's Encrypt)${NC}"
-	echo -e "     ${BLUE}→ Skip if home hosting; you can use self-signed or IP in config${NC}"
+	echo -e "  ${CYAN}${BOLD}[4]${NC} ${BOLD}Backup Manager${NC}"
+	echo -e "     ${BLUE}→ Create, list, restore, and manage Wings backups${NC}"
+	echo -e "     ${BLUE}→ Archive volumes under /var/lib/featherpanel/wings_backup${NC}"
+	echo -e "     ${BLUE}→ Export/Import for migrating Wings to another server${NC}"
+	echo ""
+	draw_hr
+}
+
+show_wings_backup_menu() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	print_centered "Wings Backup Manager" "$CYAN"
+	draw_hr
+	echo ""
+	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Create Backup${NC}"
+	echo -e "     ${BLUE}→ Zip server volumes into ${BOLD}$WINGS_BACKUP_DIR${NC}"
+	echo -e "     ${BLUE}→ Optional full mode also includes backups + config.yml${NC}"
+	echo ""
+	echo -e "  ${BLUE}${BOLD}[2]${NC} ${BOLD}List Backups${NC}"
+	echo -e "     ${BLUE}→ View local Wings backup archives${NC}"
+	echo ""
+	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Restore Backup${NC}"
+	echo -e "     ${YELLOW}⚠️  WARNING: This replaces volumes (and optionally config)${NC}"
+	echo ""
+	echo -e "  ${RED}${BOLD}[4]${NC} ${BOLD}Delete Backup${NC}"
+	echo -e "     ${YELLOW}⚠️  WARNING: Permanently deletes a backup file${NC}"
+	echo ""
+	echo -e "  ${CYAN}${BOLD}[5]${NC} ${BOLD}Export for Migration${NC}"
+	echo -e "     ${BLUE}→ Full package to move Wings from VM A to VM B${NC}"
+	echo ""
+	echo -e "  ${GREEN}${BOLD}[6]${NC} ${BOLD}Import Migration${NC}"
+	echo -e "     ${YELLOW}⚠️  WARNING: Replaces current Wings data${NC}"
 	echo ""
 	draw_hr
 }
@@ -2808,22 +2914,174 @@ setup_cloudflare_tunnel_client() {
 	fi
 }
 
-# Wings installation functions
-install_wings() {
-	log_step "Installing FeatherWings daemon..."
+# MythicalSystems APT repository (FeatherWings / FeatherQuilld packages)
+mythicalsystems_apt_supported() {
+	command -v apt-get >/dev/null 2>&1 && command -v dpkg >/dev/null 2>&1
+}
 
-	# Check and install Docker first (Wings requires Docker)
-	if command -v docker &>/dev/null; then
-		log_info "Docker is already installed."
-	else
-		log_step "Installing Docker engine (required for Wings, this may take a minute)..."
-		curl -sSL https://get.docker.com/ | CHANNEL=stable bash >>"$LOG_FILE" 2>&1
-		systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
-		usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
-		log_success "Docker installed. You may need to re-login for group changes to take effect."
+mythicalsystems_apt_package_installed() {
+	local pkg="$1"
+	dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q "install ok installed"
+}
+
+setup_mythicalsystems_apt_repo() {
+	log_step "Configuring MythicalSystems APT repository..."
+
+	if ! mythicalsystems_apt_supported; then
+		log_error "APT repository installs require Debian/Ubuntu (apt-get + dpkg)."
+		return 1
 	fi
 
-	# Check kernel version for swap support
+	apt-get install -y ca-certificates curl gnupg >>"$LOG_FILE" 2>&1
+	install -d -m 0755 /etc/apt/keyrings
+
+	if ! curl -fsSL https://apt.mythicalsystems.org/repository/keys/public.gpg |
+		gpg --dearmor -o /etc/apt/keyrings/mythicalsystems.gpg 2>>"$LOG_FILE"; then
+		log_error "Failed to import MythicalSystems APT GPG key."
+		return 1
+	fi
+	chmod a+r /etc/apt/keyrings/mythicalsystems.gpg
+
+	local arch
+	arch="$(dpkg --print-architecture)"
+	echo "deb [arch=${arch} signed-by=/etc/apt/keyrings/mythicalsystems.gpg] https://apt.mythicalsystems.org/repository/MythicalSystems/ stable main" \
+		>/etc/apt/sources.list.d/mythicalsystems.list
+
+	if ! apt-get update -qq >>"$LOG_FILE" 2>&1; then
+		log_error "Failed to refresh APT after adding MythicalSystems repository."
+		return 1
+	fi
+
+	log_success "MythicalSystems APT repository ready."
+}
+
+# Sets DAEMON_INSTALL_METHOD (apt|direct) and DAEMON_APT_CHANNEL (stable|nightly).
+# Optional 4th arg "apt_only" forces APT (used by FeatherQuilld).
+# Env overrides: FP_DAEMON_METHOD / FP_DAEMON_CHANNEL, or component-specific
+# FP_WINGS_METHOD / FP_WINGS_CHANNEL / FP_QUILLD_CHANNEL.
+prompt_daemon_install_method() {
+	local component_label="$1"
+	local env_method_var="$2"
+	local env_channel_var="$3"
+	local force_apt_only="${4:-}"
+	local method="" channel=""
+	local apt_ok=false
+
+	if mythicalsystems_apt_supported; then
+		apt_ok=true
+	fi
+
+	eval "method=\"\${${env_method_var}:-\${FP_DAEMON_METHOD:-}}\""
+	eval "channel=\"\${${env_channel_var}:-\${FP_DAEMON_CHANNEL:-}}\""
+	method="$(printf '%s' "$method" | tr '[:upper:]' '[:lower:]')"
+	channel="$(printf '%s' "$channel" | tr '[:upper:]' '[:lower:]')"
+
+	case "$method" in
+	apt | repo | package) method="apt" ;;
+	direct | binary | github | manual) method="direct" ;;
+	*) method="" ;;
+	esac
+
+	if [ "$force_apt_only" = "apt_only" ]; then
+		if [ "$method" = "direct" ]; then
+			log_warn "${component_label} only supports APT installs — ignoring direct method override."
+		fi
+		method="apt"
+		if [ "$apt_ok" != true ]; then
+			log_error "${component_label} requires Debian/Ubuntu with apt-get (APT-only install)."
+			return 1
+		fi
+	fi
+
+	if [ "$method" = "apt" ] && [ "$apt_ok" != true ]; then
+		if [ "$force_apt_only" = "apt_only" ]; then
+			log_error "${component_label} requires APT, but apt-get is unavailable on this system."
+			return 1
+		fi
+		log_warn "APT install requested but apt-get is unavailable; falling back to direct binary install."
+		method="direct"
+	fi
+
+	if [ -z "$method" ]; then
+		if [ ! -t 0 ] && [ ! -t 1 ]; then
+			if [ "$apt_ok" = true ]; then
+				method="apt"
+			else
+				method="direct"
+			fi
+		else
+			echo ""
+			echo -e "${BOLD}${CYAN}${component_label} install method${NC}"
+			if [ "$apt_ok" = true ]; then
+				echo -e "  ${GREEN}${BOLD}We strongly recommend APT${NC}${GREEN} — cleaner upgrades, package-managed systemd,${NC}"
+				echo -e "  ${GREEN}and easy migration between stable/nightly (or from a direct install).${NC}"
+				echo ""
+				echo -e "  ${GREEN}[1]${NC} ${BOLD}APT repository${NC} ${GREEN}(recommended)${NC}"
+				echo -e "  ${YELLOW}[2]${NC} ${BOLD}Direct binary${NC} ${CYAN}(GitHub download — manual updates)${NC}"
+				method_choice=""
+				prompt "${BOLD}Select method${NC} ${BLUE}(1 recommended / 2)${NC}: " method_choice
+				case "$method_choice" in
+				2) method="direct" ;;
+				*) method="apt" ;;
+				esac
+			else
+				log_info "APT is not available on this OS — using direct binary install."
+				method="direct"
+			fi
+		fi
+	fi
+
+	if [ "$method" = "apt" ]; then
+		case "$channel" in
+		stable | release) channel="stable" ;;
+		nightly | dev | development) channel="nightly" ;;
+		*)
+			if [ "${PREFER_DEV:-no}" = "yes" ]; then
+				channel="nightly"
+			elif [ ! -t 0 ] && [ ! -t 1 ]; then
+				channel="stable"
+			else
+				echo ""
+				echo -e "${BOLD}${CYAN}APT package channel${NC}"
+				echo -e "  ${GREEN}[1]${NC} ${BOLD}Stable${NC} ${CYAN}(published releases)${NC}"
+				echo -e "  ${GREEN}[2]${NC} ${BOLD}Nightly / Dev${NC} ${CYAN}(latest main builds)${NC}"
+				channel_choice=""
+				prompt "${BOLD}Select channel${NC} ${BLUE}(1/2)${NC}: " channel_choice
+				case "$channel_choice" in
+				2) channel="nightly" ;;
+				*) channel="stable" ;;
+				esac
+			fi
+			;;
+		esac
+	else
+		channel="stable"
+	fi
+
+	DAEMON_INSTALL_METHOD="$method"
+	DAEMON_APT_CHANNEL="$channel"
+	if [ "$DAEMON_INSTALL_METHOD" = "apt" ]; then
+		log_info "${component_label} install method: apt (${DAEMON_APT_CHANNEL})"
+	else
+		log_info "${component_label} install method: direct"
+	fi
+}
+
+ensure_docker_for_daemon() {
+	local label="${1:-daemon}"
+	if command -v docker &>/dev/null; then
+		log_info "Docker is already installed."
+		return 0
+	fi
+	log_step "Installing Docker engine (required for ${label}, this may take a minute)..."
+	curl -sSL https://get.docker.com/ | CHANNEL=stable bash >>"$LOG_FILE" 2>&1
+	systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
+	usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
+	log_success "Docker installed. You may need to re-login for group changes to take effect."
+}
+
+warn_docker_swap_kernel() {
+	local KERNEL_VERSION KERNEL_MAJOR KERNEL_MINOR
 	KERNEL_VERSION=$(uname -r | cut -d. -f1-2)
 	KERNEL_MAJOR=$(echo "$KERNEL_VERSION" | cut -d. -f1)
 	KERNEL_MINOR=$(echo "$KERNEL_VERSION" | cut -d. -f2)
@@ -2836,23 +3094,36 @@ install_wings() {
 	else
 		log_info "Kernel version $KERNEL_VERSION detected (6.1+) - swap enabled by default"
 	fi
+}
 
-	# Create directory structure
+create_wings_directories() {
 	log_info "Creating FeatherWings directory structure..."
 	mkdir -p /etc/featherpanel
 	mkdir -p /var/lib/featherpanel/volumes
 	mkdir -p /var/lib/featherpanel/archives
 	mkdir -p /var/lib/featherpanel/backups
+	mkdir -p /var/lib/featherpanel/wings_backup
+	mkdir -p /var/lib/featherpanel/wings_migrations
 	mkdir -p /var/log/featherpanel
 	mkdir -p /tmp/featherpanel
 	mkdir -p /var/run/featherwings
+}
 
-	# Download and install featherwings binary
+wings_apt_package_name() {
+	if mythicalsystems_apt_package_installed featherwings-dev; then
+		echo "featherwings-dev"
+	elif mythicalsystems_apt_package_installed featherwings; then
+		echo "featherwings"
+	else
+		echo ""
+	fi
+}
+
+install_wings_direct() {
 	log_info "Downloading FeatherWings binary..."
 	curl -L -o /usr/local/bin/featherwings "https://github.com/MythicalLTD/FeatherWings/releases/latest/download/wings_linux_$([[ "$(uname -m)" == "x86_64" ]] && echo "amd64" || echo "arm64")"
 	chmod +x /usr/local/bin/featherwings
 
-	# Create systemd service
 	cat <<EOF | tee /etc/systemd/system/featherwings.service >/dev/null
 [Unit]
 Description=FeatherWings Daemon
@@ -2875,52 +3146,123 @@ StandardError=journal
 WantedBy=multi-user.target
 EOF
 
-	# Enable but don't start yet (needs configuration)
 	systemctl daemon-reload
 	systemctl enable featherwings
+}
+
+install_wings_apt() {
+	local pkg="featherwings"
+	if [ "${DAEMON_APT_CHANNEL:-stable}" = "nightly" ]; then
+		pkg="featherwings-dev"
+	fi
+
+	if ! setup_mythicalsystems_apt_repo; then
+		return 1
+	fi
+
+	# Prefer package unit over a leftover manual unit from a prior direct install
+	systemctl stop featherwings >/dev/null 2>&1 || true
+	systemctl stop wings >/dev/null 2>&1 || true
+	rm -f /etc/systemd/system/featherwings.service /etc/systemd/system/wings.service
+	systemctl daemon-reload >/dev/null 2>&1 || true
+
+	log_info "Installing APT package: ${pkg}"
+	if ! apt-get install -y "$pkg" >>"$LOG_FILE" 2>&1; then
+		log_error "Failed to install ${pkg} from MythicalSystems APT repository."
+		return 1
+	fi
+
+	systemctl enable featherwings >/dev/null 2>&1 || true
+	log_success "Installed ${pkg} via APT."
+}
+
+# Wings installation functions
+install_wings() {
+	log_step "Installing FeatherWings daemon..."
+
+	prompt_daemon_install_method "FeatherWings" "FP_WINGS_METHOD" "FP_WINGS_CHANNEL"
+	ensure_docker_for_daemon "Wings"
+	warn_docker_swap_kernel
+	create_wings_directories
+
+	if [ "$DAEMON_INSTALL_METHOD" = "apt" ]; then
+		if ! install_wings_apt; then
+			return 1
+		fi
+	else
+		install_wings_direct
+	fi
 
 	log_success "FeatherWings daemon installed successfully."
-	log_info "Next steps:"
-	log_info "1. Create a node in your FeatherPanel admin panel"
-	log_info "2. Copy the configuration from the node to /etc/featherpanel/config.yml"
-	log_info "   (For home hosting: you can use your server IP and, if needed, a self-signed certificate in config.yml)"
-	log_info "3. Start FeatherWings with: systemctl start featherwings"
-	log_info "4. Or run in debug mode first: featherwings --debug"
+}
+
+run_featherwings_configure_wizard() {
+	local panel_url="${1:-}"
+
+	if ! command -v featherwings >/dev/null 2>&1; then
+		log_error "FeatherWings binary not found at /usr/local/bin/featherwings"
+		return 1
+	fi
+
+	if [ ! -t 0 ] || [ ! -t 1 ]; then
+		log_info "FeatherWings is installed. Run the setup wizard on this server:"
+		if [ -n "$panel_url" ]; then
+			log_info "  featherwings configure --panel-url $(printf '%q' "$panel_url")"
+		else
+			log_info "  featherwings configure"
+		fi
+		return 0
+	fi
+
+	echo ""
+	draw_hr
+	echo -e "${BOLD}${CYAN}FeatherWings setup wizard${NC}"
+	draw_hr
+	echo -e "${BLUE}The wizard will connect this machine to FeatherPanel, create or join the node,${NC}"
+	echo -e "${BLUE}handle SSL certificates when needed, and install the systemd service.${NC}"
+	echo ""
+	if [ -n "$panel_url" ]; then
+		featherwings configure --panel-url "$panel_url"
+	else
+		featherwings configure
+	fi
 }
 
 uninstall_wings() {
 	log_step "Uninstalling FeatherWings daemon..."
 
-	# Stop and disable service
+	local apt_pkg
+	apt_pkg="$(wings_apt_package_name)"
+
 	systemctl stop featherwings >/dev/null 2>&1 || true
 	systemctl disable featherwings >/dev/null 2>&1 || true
 
-	# Remove service file
-	rm -f /etc/systemd/system/featherwings.service
+	if [ -n "$apt_pkg" ]; then
+		log_info "Removing APT package: ${apt_pkg}"
+		apt-get remove -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || true
+		apt-get purge -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || true
+	fi
+
+	rm -f /etc/systemd/system/featherwings.service /etc/systemd/system/wings.service
 	systemctl daemon-reload
+	rm -f /usr/local/bin/featherwings /usr/local/bin/wings
 
-	# Remove binary
-	rm -f /usr/local/bin/featherwings
-
-	# Remove configuration (ask first)
 	if [ -d /etc/featherpanel ]; then
-		log_info "Remove FeatherWings configuration directory (/etc/featherpanel)? (y/n): "
-		read -r remove_config
+		remove_config="n"
+		prompt "Remove FeatherWings configuration directory (/etc/featherpanel)? (y/n): " remove_config
 		if [[ "$remove_config" =~ ^[yY]$ ]]; then
 			rm -rf /etc/featherpanel
 		fi
 	fi
 
-	# Remove data directories (ask first)
 	if [ -d /var/lib/featherpanel ]; then
-		log_info "Remove FeatherWings data directory (/var/lib/featherpanel)? (y/n): "
-		read -r remove_data
+		remove_data="n"
+		prompt "Remove FeatherWings data directory (/var/lib/featherpanel)? (y/n): " remove_data
 		if [[ "$remove_data" =~ ^[yY]$ ]]; then
 			rm -rf /var/lib/featherpanel
 		fi
 	fi
 
-	# Remove logs
 	rm -rf /var/log/featherpanel
 
 	log_success "FeatherWings daemon uninstalled successfully."
@@ -2929,23 +3271,680 @@ uninstall_wings() {
 update_wings() {
 	log_step "Updating FeatherWings daemon..."
 
-	if [ ! -f /usr/local/bin/featherwings ]; then
+	if ! wings_is_installed; then
 		log_error "FeatherWings is not installed. Please install it first."
 		return 1
 	fi
 
-	# Stop featherwings service
-	systemctl stop featherwings
+	local apt_pkg
+	apt_pkg="$(wings_apt_package_name)"
 
-	# Download latest FeatherWings binary
+	if [ -n "$apt_pkg" ]; then
+		log_info "Updating via APT package: ${apt_pkg}"
+		if ! setup_mythicalsystems_apt_repo; then
+			return 1
+		fi
+		if ! apt-get install --only-upgrade -y "$apt_pkg" >>"$LOG_FILE" 2>&1; then
+			# Package may already be newest; also allow reinstall of current channel
+			apt-get install -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || {
+				log_error "Failed to upgrade ${apt_pkg}."
+				return 1
+			}
+		fi
+		systemctl restart featherwings >/dev/null 2>&1 || systemctl start featherwings >/dev/null 2>&1 || true
+		log_success "FeatherWings daemon updated successfully (APT: ${apt_pkg})."
+		return 0
+	fi
+
+	systemctl stop featherwings >/dev/null 2>&1 || true
 	log_info "Downloading latest FeatherWings binary..."
 	curl -L -o /usr/local/bin/featherwings "https://github.com/MythicalLTD/FeatherWings/releases/latest/download/wings_linux_$([[ "$(uname -m)" == "x86_64" ]] && echo "amd64" || echo "arm64")"
 	chmod +x /usr/local/bin/featherwings
-
-	# Restart service
 	systemctl start featherwings
 
 	log_success "FeatherWings daemon updated successfully."
+}
+
+wings_is_installed() {
+	[ -x /usr/local/bin/featherwings ] || command -v featherwings >/dev/null 2>&1 || [ -n "$(wings_apt_package_name)" ]
+}
+
+wings_resolve_volumes_dir() {
+	local data_dir=""
+	if [ -f "$WINGS_CONFIG_FILE" ]; then
+		data_dir=$(grep -E '^\s*data:' "$WINGS_CONFIG_FILE" 2>/dev/null | head -1 | sed -E 's/.*data:[[:space:]]*"?([^"#]+)"?.*/\1/' | tr -d '[:space:]')
+	fi
+	if [ -n "$data_dir" ] && [ -d "$data_dir" ]; then
+		echo "$data_dir"
+	else
+		echo "$WINGS_VOLUMES_DEFAULT"
+	fi
+}
+
+wings_resolve_backups_dir() {
+	local backup_dir=""
+	if [ -f "$WINGS_CONFIG_FILE" ]; then
+		backup_dir=$(grep -E '^\s*backup_directory:' "$WINGS_CONFIG_FILE" 2>/dev/null | head -1 | sed -E 's/.*backup_directory:[[:space:]]*"?([^"#]+)"?.*/\1/' | tr -d '[:space:]')
+	fi
+	if [ -n "$backup_dir" ]; then
+		echo "$backup_dir"
+	else
+		echo "$WINGS_BACKUPS_DEFAULT"
+	fi
+}
+
+wings_cli_supports_node_backup() {
+	command -v featherwings >/dev/null 2>&1 && featherwings node-backup --help >/dev/null 2>&1
+}
+
+wings_stop_service() {
+	if systemctl is-active --quiet featherwings 2>/dev/null || systemctl is-active --quiet wings 2>/dev/null; then
+		log_info "Stopping FeatherWings service for consistent backup..."
+		systemctl stop featherwings 2>/dev/null || systemctl stop wings 2>/dev/null || true
+		return 0
+	fi
+	return 1
+}
+
+wings_start_service() {
+	systemctl start featherwings 2>/dev/null || systemctl start wings 2>/dev/null || true
+}
+
+create_wings_backup() {
+	log_step "Creating FeatherWings backup..."
+
+	if ! wings_is_installed && [ ! -d "$(wings_resolve_volumes_dir)" ]; then
+		log_error "FeatherWings does not appear to be installed and no volumes directory was found."
+		return 1
+	fi
+
+	local mode="volumes"
+	local mode_choice=""
+	prompt "${BOLD}Backup mode${NC} ${BLUE}(1=volumes [default], 2=full, 3=user_backups_only)${NC}: " mode_choice
+	case "$mode_choice" in
+	2) mode="full" ;;
+	3) mode="user_backups_only" ;;
+	*) mode="volumes" ;;
+	esac
+
+	local stopped=0
+	local stop_choice="y"
+	prompt "${BOLD}Stop featherwings for consistency?${NC} ${BLUE}(Y/n)${NC}: " stop_choice
+	if [[ ! "$stop_choice" =~ ^[nN]$ ]]; then
+		if wings_stop_service; then
+			stopped=1
+		fi
+	fi
+
+	mkdir -p "$WINGS_BACKUP_DIR"
+
+	if wings_cli_supports_node_backup; then
+		log_info "Using featherwings node-backup CLI..."
+		if featherwings node-backup create --mode "$mode"; then
+			log_success "Wings backup created via CLI in $WINGS_BACKUP_DIR"
+			[ "$stopped" -eq 1 ] && wings_start_service
+			return 0
+		fi
+		log_warn "CLI backup failed; falling back to tar archive..."
+	fi
+
+	local volumes_dir backups_dir
+	volumes_dir=$(wings_resolve_volumes_dir)
+	backups_dir=$(wings_resolve_backups_dir)
+	local ts name path temp
+	ts=$(date +%Y%m%d_%H%M%S)
+	name="featherwings_backup_${ts}.tar.gz"
+	path="${WINGS_BACKUP_DIR}/${name}"
+	temp=$(mktemp -d)
+	# shellcheck disable=SC2064
+	trap "rm -rf '$temp'" RETURN
+
+	mkdir -p "$temp"
+	{
+		echo "FeatherWings Node Backup"
+		echo "Mode: $mode"
+		echo "Created: $(date -Iseconds)"
+		echo "Hostname: $(hostname)"
+		echo "Volumes: $volumes_dir"
+		echo "Backups: $backups_dir"
+		echo "Config: $WINGS_CONFIG_FILE"
+	} >"$temp/backup_info.txt"
+
+	case "$mode" in
+	volumes)
+		if [ ! -d "$volumes_dir" ]; then
+			log_error "Volumes directory not found: $volumes_dir"
+			[ "$stopped" -eq 1 ] && wings_start_service
+			return 1
+		fi
+		mkdir -p "$temp/volumes"
+		log_info "Archiving volumes from $volumes_dir ..."
+		cp -a "$volumes_dir"/. "$temp/volumes/" 2>>"$LOG_FILE" || {
+			log_error "Failed to copy volumes"
+			[ "$stopped" -eq 1 ] && wings_start_service
+			return 1
+		}
+		;;
+	user_backups_only)
+		mkdir -p "$temp/backups"
+		if [ -d "$backups_dir" ]; then
+			cp -a "$backups_dir"/. "$temp/backups/" 2>>"$LOG_FILE" || true
+		fi
+		;;
+	full)
+		mkdir -p "$temp/volumes" "$temp/backups" "$temp/config"
+		if [ -d "$volumes_dir" ]; then
+			cp -a "$volumes_dir"/. "$temp/volumes/" 2>>"$LOG_FILE" || true
+		fi
+		if [ -d "$backups_dir" ]; then
+			cp -a "$backups_dir"/. "$temp/backups/" 2>>"$LOG_FILE" || true
+		fi
+		if [ -f "$WINGS_CONFIG_FILE" ]; then
+			cp -a "$WINGS_CONFIG_FILE" "$temp/config/config.yml" 2>>"$LOG_FILE" || true
+		fi
+		;;
+	esac
+
+	log_info "Compressing backup to $path ..."
+	if tar -czf "$path" -C "$temp" . 2>>"$LOG_FILE"; then
+		chmod 600 "$path"
+		local size
+		size=$(du -h "$path" | cut -f1)
+		log_success "Wings backup created: $name ($size)"
+		echo -e "  ${BLUE}• Location:${NC} $path"
+		[ "$stopped" -eq 1 ] && wings_start_service
+		return 0
+	fi
+
+	log_error "Failed to create Wings backup archive"
+	[ "$stopped" -eq 1 ] && wings_start_service
+	return 1
+}
+
+list_wings_backups() {
+	log_step "Listing FeatherWings backups..."
+	mkdir -p "$WINGS_BACKUP_DIR"
+	local files=()
+	mapfile -t files < <(find "$WINGS_BACKUP_DIR" \( -name 'featherwings_backup_*.tar.gz' -o -name '*.tar.gz' \) -type f 2>/dev/null | sort -r)
+	if [ ${#files[@]} -eq 0 ]; then
+		log_warn "No Wings backups found in $WINGS_BACKUP_DIR"
+		return 0
+	fi
+	local i=1
+	for f in "${files[@]}"; do
+		local size
+		size=$(du -h "$f" | cut -f1)
+		echo -e "  ${CYAN}${BOLD}[$i]${NC} $(basename "$f")  ${BLUE}$size${NC}  ${YELLOW}$(date -r "$f" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || true)${NC}"
+		i=$((i + 1))
+	done
+	if wings_cli_supports_node_backup; then
+		echo ""
+		log_info "CLI metadata listing:"
+		featherwings node-backup list 2>/dev/null || true
+	fi
+}
+
+restore_wings_backup() {
+	log_step "Restoring FeatherWings backup..."
+	mkdir -p "$WINGS_BACKUP_DIR"
+	local files=()
+	mapfile -t files < <(find "$WINGS_BACKUP_DIR" \( -name 'featherwings_backup_*.tar.gz' -o -name '*.tar.gz' \) -type f 2>/dev/null | sort -r)
+	if [ ${#files[@]} -eq 0 ]; then
+		log_error "No Wings backups found in $WINGS_BACKUP_DIR"
+		return 1
+	fi
+	list_wings_backups
+	local idx=""
+	prompt "${BOLD}Select backup number to restore${NC}: " idx
+	if ! [[ "$idx" =~ ^[0-9]+$ ]] || [ "$idx" -lt 1 ] || [ "$idx" -gt ${#files[@]} ]; then
+		log_error "Invalid selection"
+		return 1
+	fi
+	local archive="${files[$((idx - 1))]}"
+	local confirm=""
+	prompt "${BOLD}${RED}This will overwrite Wings data. Type 'yes' to continue${NC}: " confirm
+	if [ "$confirm" != "yes" ]; then
+		log_info "Restore cancelled."
+		return 0
+	fi
+
+	wings_stop_service || true
+	local volumes_dir backups_dir
+	volumes_dir=$(wings_resolve_volumes_dir)
+	backups_dir=$(wings_resolve_backups_dir)
+	mkdir -p "$volumes_dir" "$backups_dir"
+
+	if wings_cli_supports_node_backup; then
+		if featherwings node-backup import --file "$archive"; then
+			log_success "Restore completed via CLI"
+			wings_start_service
+			return 0
+		fi
+		log_warn "CLI import failed; trying tar extract..."
+	fi
+
+	local temp
+	temp=$(mktemp -d)
+	# shellcheck disable=SC2064
+	trap "rm -rf '$temp'" RETURN
+	tar -xzf "$archive" -C "$temp" 2>>"$LOG_FILE" || {
+		log_error "Failed to extract archive"
+		wings_start_service
+		return 1
+	}
+	if [ -d "$temp/volumes" ]; then
+		rm -rf "${volumes_dir:?}/"*
+		cp -a "$temp/volumes"/. "$volumes_dir/" 2>>"$LOG_FILE" || true
+	fi
+	if [ -d "$temp/backups" ]; then
+		mkdir -p "$backups_dir"
+		cp -a "$temp/backups"/. "$backups_dir/" 2>>"$LOG_FILE" || true
+	fi
+	if [ -f "$temp/config/config.yml" ]; then
+		mkdir -p "$(dirname "$WINGS_CONFIG_FILE")"
+		cp -a "$temp/config/config.yml" "$WINGS_CONFIG_FILE"
+	fi
+	wings_start_service
+	log_success "Wings backup restored from $(basename "$archive")"
+	log_info "Verify the node FQDN/IP in FeatherPanel if this host changed."
+}
+
+delete_wings_backup() {
+	log_step "Deleting FeatherWings backup..."
+	mkdir -p "$WINGS_BACKUP_DIR"
+	local files=()
+	mapfile -t files < <(find "$WINGS_BACKUP_DIR" \( -name 'featherwings_backup_*.tar.gz' -o -name '*.tar.gz' \) -type f 2>/dev/null | sort -r)
+	if [ ${#files[@]} -eq 0 ]; then
+		log_error "No Wings backups found"
+		return 1
+	fi
+	list_wings_backups
+	local idx=""
+	prompt "${BOLD}Select backup number to delete${NC}: " idx
+	if ! [[ "$idx" =~ ^[0-9]+$ ]] || [ "$idx" -lt 1 ] || [ "$idx" -gt ${#files[@]} ]; then
+		log_error "Invalid selection"
+		return 1
+	fi
+	local archive="${files[$((idx - 1))]}"
+	local confirm=""
+	prompt "${BOLD}${RED}Delete $(basename "$archive")? Type 'yes'${NC}: " confirm
+	if [ "$confirm" != "yes" ]; then
+		log_info "Delete cancelled."
+		return 0
+	fi
+	rm -f "$archive" "${archive%.tar.gz}.meta.json" 2>/dev/null || true
+	# Also remove UUID-named meta next to CLI archives
+	local base
+	base=$(basename "$archive" .tar.gz)
+	rm -f "${WINGS_BACKUP_DIR}/${base}.meta.json" 2>/dev/null || true
+	log_success "Deleted $(basename "$archive")"
+}
+
+export_wings_migration() {
+	log_step "Exporting FeatherWings migration package..."
+	mkdir -p "$WINGS_MIGRATION_DIR" "$WINGS_BACKUP_DIR"
+
+	local stopped=0
+	if wings_stop_service; then
+		stopped=1
+	fi
+
+	if wings_cli_supports_node_backup; then
+		if featherwings node-backup export --out "$WINGS_MIGRATION_DIR"; then
+			log_success "Migration package exported to $WINGS_MIGRATION_DIR"
+			[ "$stopped" -eq 1 ] && wings_start_service
+			return 0
+		fi
+		log_warn "CLI export failed; using tar fallback..."
+	fi
+
+	local volumes_dir backups_dir ts name path temp
+	volumes_dir=$(wings_resolve_volumes_dir)
+	backups_dir=$(wings_resolve_backups_dir)
+	ts=$(date +%Y%m%d_%H%M%S)
+	name="featherwings_migration_${ts}.tar.gz"
+	path="${WINGS_MIGRATION_DIR}/${name}"
+	temp=$(mktemp -d)
+	# shellcheck disable=SC2064
+	trap "rm -rf '$temp'" RETURN
+
+	mkdir -p "$temp/volumes" "$temp/backups" "$temp/config"
+	if [ -d "$volumes_dir" ]; then
+		cp -a "$volumes_dir"/. "$temp/volumes/" 2>>"$LOG_FILE" || true
+	fi
+	if [ -d "$backups_dir" ]; then
+		cp -a "$backups_dir"/. "$temp/backups/" 2>>"$LOG_FILE" || true
+	fi
+	if [ -f "$WINGS_CONFIG_FILE" ]; then
+		cp -a "$WINGS_CONFIG_FILE" "$temp/config/config.yml" 2>>"$LOG_FILE" || true
+	fi
+
+	cat >"$temp/migration_info.txt" <<EOF
+FeatherWings Migration Package
+Migration Name: $name
+Created: $(date -Iseconds)
+Source Host: $(hostname)
+EOF
+
+	cat >"$temp/README_MIGRATION.txt" <<'EOF'
+FeatherWings Node Migration
+===========================
+
+1. Copy this archive to the destination host (scp, rsync, or SFTP).
+2. Install FeatherWings on the destination (installer: Wings > Install).
+3. Place the archive under /var/lib/featherpanel/wings_migrations/
+4. Run the installer: Wings > Backup Manager > Import Migration
+   or: featherwings node-backup import --file /path/to/archive.tar.gz
+5. Start featherwings and update the node FQDN/IP in FeatherPanel if it changed.
+EOF
+
+	if tar -czf "$path" -C "$temp" . 2>>"$LOG_FILE"; then
+		chmod 600 "$path"
+		local size
+		size=$(du -h "$path" | cut -f1)
+		log_success "Migration package created: $name ($size)"
+		echo -e "  ${BLUE}• Location:${NC} $path"
+		echo -e "  ${CYAN}scp${NC} ${YELLOW}user@$(hostname):$path${NC} ${CYAN}./${NC}"
+		[ "$stopped" -eq 1 ] && wings_start_service
+		return 0
+	fi
+	log_error "Failed to create migration package"
+	[ "$stopped" -eq 1 ] && wings_start_service
+	return 1
+}
+
+import_wings_migration() {
+	log_step "Importing FeatherWings migration package..."
+	mkdir -p "$WINGS_MIGRATION_DIR"
+	local files=()
+	mapfile -t files < <(find "$WINGS_MIGRATION_DIR" /root /home -maxdepth 2 -name 'featherwings_migration_*.tar.gz' -type f 2>/dev/null | sort -r)
+	local custom=""
+	if [ ${#files[@]} -eq 0 ]; then
+		prompt "${BOLD}No packages found. Enter full path to migration archive${NC}: " custom
+		if [ -z "$custom" ] || [ ! -f "$custom" ]; then
+			log_error "Migration archive not found"
+			return 1
+		fi
+		files=("$custom")
+	else
+		local i=1
+		for f in "${files[@]}"; do
+			echo -e "  ${CYAN}${BOLD}[$i]${NC} $f"
+			i=$((i + 1))
+		done
+		local idx=""
+		prompt "${BOLD}Select package number (or 0 to enter path)${NC}: " idx
+		if [ "$idx" = "0" ]; then
+			prompt "${BOLD}Full path${NC}: " custom
+			files=("$custom")
+		elif ! [[ "$idx" =~ ^[0-9]+$ ]] || [ "$idx" -lt 1 ] || [ "$idx" -gt ${#files[@]} ]; then
+			log_error "Invalid selection"
+			return 1
+		else
+			files=("${files[$((idx - 1))]}")
+		fi
+	fi
+
+	local archive="${files[0]}"
+	if [ ! -f "$archive" ]; then
+		log_error "Archive not found: $archive"
+		return 1
+	fi
+
+	local confirm=""
+	prompt "${BOLD}${RED}This replaces Wings data on this host. Type 'yes'${NC}: " confirm
+	if [ "$confirm" != "yes" ]; then
+		log_info "Import cancelled."
+		return 0
+	fi
+
+	if ! wings_is_installed; then
+		log_warn "FeatherWings binary not found. Install Wings first for a complete migration."
+	fi
+
+	wings_stop_service || true
+	if wings_cli_supports_node_backup; then
+		if featherwings node-backup import --file "$archive"; then
+			log_success "Migration imported via CLI"
+			wings_start_service
+			log_info "Update the node FQDN/IP in FeatherPanel if this host changed."
+			return 0
+		fi
+	fi
+
+	local volumes_dir backups_dir temp
+	volumes_dir=$(wings_resolve_volumes_dir)
+	backups_dir=$(wings_resolve_backups_dir)
+	temp=$(mktemp -d)
+	# shellcheck disable=SC2064
+	trap "rm -rf '$temp'" RETURN
+	tar -xzf "$archive" -C "$temp" 2>>"$LOG_FILE" || {
+		log_error "Failed to extract migration archive"
+		wings_start_service
+		return 1
+	}
+	mkdir -p "$volumes_dir" "$backups_dir"
+	if [ -d "$temp/volumes" ]; then
+		rm -rf "${volumes_dir:?}/"*
+		cp -a "$temp/volumes"/. "$volumes_dir/"
+	fi
+	if [ -d "$temp/backups" ]; then
+		cp -a "$temp/backups"/. "$backups_dir/"
+	fi
+	if [ -f "$temp/config/config.yml" ]; then
+		mkdir -p "$(dirname "$WINGS_CONFIG_FILE")"
+		cp -a "$temp/config/config.yml" "$WINGS_CONFIG_FILE"
+	fi
+	wings_start_service
+	log_success "Migration imported from $(basename "$archive")"
+	log_info "Update the node FQDN/IP in FeatherPanel if this host changed."
+}
+
+show_featherquilld_menu() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	print_centered "FeatherQuilld Operations" "$CYAN"
+	draw_hr
+	echo ""
+	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Install FeatherQuilld${NC}"
+	echo -e "     ${GREEN}→ ${BOLD}APT only${NC}${GREEN} via MythicalSystems repo (stable or nightly)${NC}"
+	echo -e "     ${BLUE}→ Web hosting daemon (Docker + reverse proxy)${NC}"
+	echo -e "     ${BLUE}→ Launches ${BOLD}featherquilld configure${NC} / ${BOLD}quilld configure${NC} to finish setup${NC}"
+	echo ""
+	echo -e "  ${RED}${BOLD}[2]${NC} ${BOLD}Uninstall FeatherQuilld${NC}"
+	echo -e "     ${YELLOW}⚠️  WARNING: This will remove FeatherQuilld and its configuration${NC}"
+	echo -e "     ${BLUE}→ Stops and removes the APT package and optional data${NC}"
+	echo ""
+	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Update FeatherQuilld${NC}"
+	echo -e "     ${GREEN}→ ${BOLD}apt upgrade${NC}${GREEN} — clean updates, supports stable ↔ nightly switches${NC}"
+	echo ""
+	draw_hr
+}
+
+create_featherquilld_directories() {
+	log_info "Creating FeatherQuilld directory structure..."
+	mkdir -p /etc/featherquilld
+	mkdir -p /var/lib/featherquilld/volumes
+	mkdir -p /var/lib/featherquilld/websites
+	mkdir -p /var/lib/featherquilld/archives
+	mkdir -p /var/lib/featherquilld/backups
+	mkdir -p /var/lib/featherquilld/proxy
+	mkdir -p /var/log/featherquilld
+}
+
+featherquilld_apt_package_name() {
+	if mythicalsystems_apt_package_installed featherquilld-dev; then
+		echo "featherquilld-dev"
+	elif mythicalsystems_apt_package_installed featherquilld; then
+		echo "featherquilld"
+	else
+		echo ""
+	fi
+}
+
+featherquilld_is_installed() {
+	[ -x /usr/local/bin/featherquilld ] ||
+		command -v featherquilld >/dev/null 2>&1 ||
+		command -v quilld >/dev/null 2>&1 ||
+		[ -n "$(featherquilld_apt_package_name)" ]
+}
+
+install_featherquilld_apt() {
+	local pkg="featherquilld"
+	if [ "${DAEMON_APT_CHANNEL:-stable}" = "nightly" ]; then
+		pkg="featherquilld-dev"
+	fi
+
+	if ! setup_mythicalsystems_apt_repo; then
+		return 1
+	fi
+
+	systemctl stop featherquilld >/dev/null 2>&1 || true
+	rm -f /etc/systemd/system/featherquilld.service
+	systemctl daemon-reload >/dev/null 2>&1 || true
+
+	create_featherquilld_directories
+
+	log_info "Installing APT package: ${pkg}"
+	if ! apt-get install -y "$pkg" >>"$LOG_FILE" 2>&1; then
+		log_error "Failed to install ${pkg} from MythicalSystems APT repository."
+		return 1
+	fi
+
+	systemctl enable featherquilld >/dev/null 2>&1 || true
+	log_success "Installed ${pkg} via APT (quilld is available as a short alias)."
+}
+
+install_featherquilld() {
+	log_step "Installing FeatherQuilld web hosting daemon..."
+
+	# FeatherQuilld is APT-only (no direct GitHub binary installs).
+	if ! prompt_daemon_install_method "FeatherQuilld" "FP_QUILLD_METHOD" "FP_QUILLD_CHANNEL" "apt_only"; then
+		return 1
+	fi
+	ensure_docker_for_daemon "FeatherQuilld"
+
+	if ! install_featherquilld_apt; then
+		return 1
+	fi
+
+	log_success "FeatherQuilld daemon installed successfully."
+	log_info "If the install wizard did not run automatically:"
+	log_info "  featherquilld configure   # or: quilld configure"
+	log_info "  systemctl enable --now featherquilld"
+}
+
+run_featherquilld_configure_wizard() {
+	local quilld_bin=""
+	if command -v featherquilld >/dev/null 2>&1; then
+		quilld_bin="featherquilld"
+	elif command -v quilld >/dev/null 2>&1; then
+		quilld_bin="quilld"
+	else
+		log_error "FeatherQuilld binary not found (featherquilld / quilld)."
+		return 1
+	fi
+
+	if [ ! -t 0 ] || [ ! -t 1 ]; then
+		log_info "FeatherQuilld is installed. Run the setup wizard on this server:"
+		log_info "  ${quilld_bin} configure"
+		return 0
+	fi
+
+	echo ""
+	draw_hr
+	echo -e "${BOLD}${CYAN}FeatherQuilld setup wizard${NC}"
+	draw_hr
+	echo -e "${BLUE}Modes: OAuth quick setup (recommended), paste join-data, or manual credentials.${NC}"
+	echo ""
+	run_configure=""
+	prompt "${BOLD}Run ${quilld_bin} configure now?${NC} ${BLUE}(y/n)${NC}: " run_configure
+	if [[ "$run_configure" =~ ^[yY]$ ]]; then
+		"$quilld_bin" configure
+		systemctl enable --now featherquilld >/dev/null 2>&1 || true
+	else
+		log_info "Skipped. Later run: ${quilld_bin} configure && systemctl enable --now featherquilld"
+	fi
+}
+
+uninstall_featherquilld() {
+	log_step "Uninstalling FeatherQuilld daemon..."
+
+	local apt_pkg
+	apt_pkg="$(featherquilld_apt_package_name)"
+
+	systemctl stop featherquilld >/dev/null 2>&1 || true
+	systemctl disable featherquilld >/dev/null 2>&1 || true
+
+	if [ -n "$apt_pkg" ]; then
+		log_info "Removing APT package: ${apt_pkg}"
+		apt-get remove -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || true
+		apt-get purge -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || true
+	fi
+
+	rm -f /etc/systemd/system/featherquilld.service
+	systemctl daemon-reload
+	rm -f /usr/local/bin/featherquilld /usr/local/bin/quilld
+	rm -rf /usr/local/lib/featherquilld
+
+	remove_config="n"
+	prompt "Remove FeatherQuilld configuration (/etc/featherquilld)? (y/n): " remove_config
+	if [[ "$remove_config" =~ ^[yY]$ ]]; then
+		rm -rf /etc/featherquilld
+	fi
+
+	remove_data="n"
+	prompt "Remove FeatherQuilld data (/var/lib/featherquilld)? (y/n): " remove_data
+	if [[ "$remove_data" =~ ^[yY]$ ]]; then
+		rm -rf /var/lib/featherquilld
+	fi
+
+	log_success "FeatherQuilld daemon uninstalled successfully."
+}
+
+update_featherquilld() {
+	log_step "Updating FeatherQuilld daemon..."
+	if ! featherquilld_is_installed; then
+		log_error "FeatherQuilld is not installed. Please install it first."
+		return 1
+	fi
+
+	if ! mythicalsystems_apt_supported; then
+		log_error "FeatherQuilld updates are APT-only and require Debian/Ubuntu with apt-get."
+		return 1
+	fi
+
+	local apt_pkg
+	apt_pkg="$(featherquilld_apt_package_name)"
+
+	# Legacy direct installs: migrate onto the APT package, then upgrade.
+	if [ -z "$apt_pkg" ]; then
+		log_warn "Direct binary install detected. FeatherQuilld is APT-only — migrating to the APT package..."
+		DAEMON_APT_CHANNEL="stable"
+		if [ "${PREFER_DEV:-no}" = "yes" ]; then
+			DAEMON_APT_CHANNEL="nightly"
+		fi
+		if ! install_featherquilld_apt; then
+			return 1
+		fi
+		systemctl restart featherquilld >/dev/null 2>&1 || systemctl start featherquilld >/dev/null 2>&1 || true
+		log_success "FeatherQuilld migrated to APT and updated successfully."
+		return 0
+	fi
+
+	log_info "Updating via APT package: ${apt_pkg}"
+	if ! setup_mythicalsystems_apt_repo; then
+		return 1
+	fi
+	if ! apt-get install --only-upgrade -y "$apt_pkg" >>"$LOG_FILE" 2>&1; then
+		apt-get install -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || {
+			log_error "Failed to upgrade ${apt_pkg}."
+			return 1
+		}
+	fi
+	systemctl restart featherquilld >/dev/null 2>&1 || systemctl start featherquilld >/dev/null 2>&1 || true
+	log_success "FeatherQuilld daemon updated successfully (APT: ${apt_pkg})."
 }
 
 install_proxmox_vnc_agent() {
@@ -4104,7 +5103,7 @@ create_backup() {
 	# Fallback: Try known volume names if still nothing found
 	if [ ${#ACTUAL_VOLUMES[@]} -eq 0 ]; then
 		log_warn "Could not detect volumes from containers, trying known volume names..."
-		ACTUAL_VOLUMES=("featherpanel_mariadb_data" "featherpanel_redis_data" "featherpanel_featherpanel_attachments" "featherpanel_featherpanel_config" "featherpanel_featherpanel_snapshots")
+		ACTUAL_VOLUMES=("featherpanel_mariadb_data" "featherpanel_redis_data" "featherpanel_featherpanel_attachments" "featherpanel_featherpanel_config" "featherpanel_featherpanel_snapshots" "featherpanel_featherpanel_data")
 	fi
 
 	# Backup each volume that actually exists
@@ -5118,13 +6117,21 @@ modify_compose_for_dev() {
 	sed -i "s|image: .*mythicalltd/featherpanel-backend:latest|image: ${registry_base}/mythicalltd/featherpanel-backend:${backend_tag}|g" "$compose_file"
 	sed -i "s|image: .*mythicalltd/featherpanel-backend:.*|image: ${registry_base}/mythicalltd/featherpanel-backend:${backend_tag}|g" "$compose_file"
 
-	# Replace frontend image
+	# Replace legacy frontend image (pre-frontendv2 compose files)
 	sed -i "s|image: .*mythicalltd/featherpanel-frontend:latest|image: ${registry_base}/mythicalltd/featherpanel-frontend:${frontend_tag}|g" "$compose_file"
 	sed -i "s|image: .*mythicalltd/featherpanel-frontend:.*|image: ${registry_base}/mythicalltd/featherpanel-frontend:${frontend_tag}|g" "$compose_file"
 
-	# Replace frontendv2 image
-	sed -i "s|image: .*mythicalltd/frontendv2:latest|image: ${registry_base}/mythicalltd/frontendv2:${frontend_tag}|g" "$compose_file"
-	sed -i "s|image: .*mythicalltd/frontendv2:.*|image: ${registry_base}/mythicalltd/frontendv2:${frontend_tag}|g" "$compose_file"
+	# Replace frontendv2 image (current 1.4+ compose)
+	sed -i "s|image: .*mythicalltd/featherpanel-frontendv2:latest|image: ${registry_base}/mythicalltd/featherpanel-frontendv2:${frontend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-frontendv2:.*|image: ${registry_base}/mythicalltd/featherpanel-frontendv2:${frontend_tag}|g" "$compose_file"
+
+	# Replace MCP image
+	sed -i "s|image: .*mythicalltd/featherpanel-mcp:latest|image: ${registry_base}/mythicalltd/featherpanel-mcp:${frontend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-mcp:.*|image: ${registry_base}/mythicalltd/featherpanel-mcp:${frontend_tag}|g" "$compose_file"
+
+	# Replace async-runner image
+	sed -i "s|image: .*mythicalltd/featherpanel-async-runner:latest|image: ${registry_base}/mythicalltd/featherpanel-async-runner:${frontend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-async-runner:.*|image: ${registry_base}/mythicalltd/featherpanel-async-runner:${frontend_tag}|g" "$compose_file"
 
 	log_success "docker-compose.yml modified for dev images"
 }
@@ -5264,18 +6271,32 @@ check_eol_status() {
 		esac
 		;;
 	ubuntu | ubuntu-server)
+		# Dates from https://ubuntu.com/project/docs/release-team/list-of-releases/
+		# eol_date = End of Standard Support; eol_extended_date = Ubuntu Pro / ESM
 		case "$version" in
+		20.04)
+			eol_date=$(date -d "2025-05-01" +%s 2>/dev/null || echo "")
+			eol_extended_date=$(date -d "2030-04-01" +%s 2>/dev/null || echo "")
+			;;
 		22.04)
-			eol_date=$(date -d "2027-04-01" +%s 2>/dev/null || echo "")
-			eol_extended_date=$(date -d "2032-04-01" +%s 2>/dev/null || echo "")
+			eol_date=$(date -d "2027-06-01" +%s 2>/dev/null || echo "")
+			eol_extended_date=$(date -d "2032-05-01" +%s 2>/dev/null || echo "")
 			;;
 		24.04)
-			eol_date=$(date -d "2029-04-01" +%s 2>/dev/null || echo "")
-			eol_extended_date=$(date -d "2034-04-01" +%s 2>/dev/null || echo "")
+			eol_date=$(date -d "2029-06-01" +%s 2>/dev/null || echo "")
+			eol_extended_date=$(date -d "2034-05-01" +%s 2>/dev/null || echo "")
 			;;
 		25.04)
-			eol_date=$(date -d "2026-01-01" +%s 2>/dev/null || echo "")
+			eol_date=$(date -d "2026-01-15" +%s 2>/dev/null || echo "")
 			eol_extended_date=""
+			;;
+		25.10)
+			eol_date=$(date -d "2026-07-01" +%s 2>/dev/null || echo "")
+			eol_extended_date=""
+			;;
+		26.04)
+			eol_date=$(date -d "2031-05-01" +%s 2>/dev/null || echo "")
+			eol_extended_date=$(date -d "2036-05-01" +%s 2>/dev/null || echo "")
 			;;
 		esac
 		;;
@@ -5339,8 +6360,8 @@ if [ -f /etc/os-release ]; then
 			SUPPORTED=true
 		fi
 	elif [ "$OS" = "ubuntu" ] || [ "$OS" = "ubuntu-server" ]; then
-		# Support Ubuntu 22.04 LTS (Jammy), 24.04 LTS (Noble), and 25.04
-		if [ "$OS_VERSION" = "22.04" ] || [ "$OS_VERSION" = "24.04" ] || [ "$OS_VERSION" = "25.04" ] || [ "$OS_VERSION" = "25.10" ] || [ "$OS_VERSION" = "20.04" ]; then
+		# Support Ubuntu 22.04/24.04/26.04 LTS, plus recent interim releases
+		if [ "$OS_VERSION" = "22.04" ] || [ "$OS_VERSION" = "24.04" ] || [ "$OS_VERSION" = "26.04" ] || [ "$OS_VERSION" = "25.04" ] || [ "$OS_VERSION" = "25.10" ] || [ "$OS_VERSION" = "20.04" ]; then
 			SUPPORTED=true
 		fi
 	fi
@@ -5361,7 +6382,7 @@ if [ -f /etc/os-release ]; then
 			fi
 			echo -e "${YELLOW}This installer officially supports:${NC}"
 			echo -e "  ${GREEN}•${NC} Debian 11, 12, or 13"
-			echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, or 25.04"
+			echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, 26.04 LTS, or 25.04"
 			echo ""
 			echo -e "${BLUE}Continuing with installation at your own risk...${NC}"
 			echo ""
@@ -5375,7 +6396,7 @@ if [ -f /etc/os-release ]; then
 			log_error "Unsupported OS or version: $OS $OS_VERSION"
 			echo -e "${RED}${BOLD}This installer only supports:${NC}"
 			echo -e "  ${GREEN}•${NC} Debian 11, 12, or 13"
-			echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, or 25.04"
+			echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, 26.04 LTS, or 25.04"
 			echo -e ""
 			if [ "$OS" != "unknown" ] && [ "$OS_VERSION" != "unknown" ]; then
 				echo -e "${YELLOW}Your system: $OS $OS_VERSION${NC}"
@@ -5719,7 +6740,7 @@ if [ -f /etc/os-release ]; then
 	ssl) COMPONENT_TYPE="4" ;;
 	db | databases) COMPONENT_TYPE="5" ;;
 	proxmox) COMPONENT_TYPE="6" ;;
-	featherfly) COMPONENT_TYPE="7" ;;
+	featherquilld) COMPONENT_TYPE="7" ;;
 	config | configuration) COMPONENT_TYPE="8" ;;
 	*) COMPONENT_TYPE="" ;;
 	esac
@@ -5793,7 +6814,7 @@ if [ -f /etc/os-release ]; then
 			if [[ ! "$INST_TYPE" =~ ^[1-4]$ ]]; then
 				echo ""
 				echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
-				echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), ${BOLD}3${NC} (Update), or ${BOLD}4${NC} (SSL)${NC}"
+				echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), ${BOLD}3${NC} (Update), or ${BOLD}4${NC} (Backup Manager)${NC}"
 				echo ""
 				sleep 2
 			fi
@@ -5880,18 +6901,37 @@ if [ -f /etc/os-release ]; then
 			fi
 		done
 	elif [ "$COMPONENT_TYPE" = "7" ]; then
-		# FeatherFly Daemon – Coming Soon
-		if [ -t 1 ]; then clear; fi
-		print_banner
-		draw_hr
-		print_centered "Coming Soon" "$YELLOW"
-		draw_hr
-		echo ""
-		echo -e "  ${BLUE}FeatherFly Daemon (WebHosting Daemon) is currently in development.${NC}"
-		echo -e "  ${YELLOW}This feature is not yet available in this installer build.${NC}"
-		echo ""
-		draw_hr
-		exit 0
+		while [[ ! "$INST_TYPE" =~ ^[1-3]$ ]]; do
+			show_featherquilld_menu
+			echo ""
+			prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3)${NC}: " INST_TYPE
+			if [[ ! "$INST_TYPE" =~ ^[1-3]$ ]]; then
+				echo ""
+				echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
+				echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), or ${BOLD}3${NC} (Update)${NC}"
+				echo ""
+				sleep 2
+			fi
+		done
+
+		if [ "$INST_TYPE" = "2" ]; then
+			echo ""
+			draw_hr
+			echo -e "${RED}${BOLD}⚠️  WARNING: Uninstall Operation${NC}"
+			draw_hr
+			echo -e "${YELLOW}This will permanently delete:${NC}"
+			echo -e "  ${RED}•${NC} FeatherQuilld systemd service"
+			echo -e "  ${RED}•${NC} FeatherQuilld binary"
+			echo -e "  ${RED}•${NC} Configuration and data (optional)"
+			echo ""
+			draw_hr
+			confirm_uninstall=""
+			prompt "${BOLD}${RED}Are you absolutely sure you want to uninstall?${NC} ${BLUE}(type 'yes' to confirm)${NC}: " confirm_uninstall
+			if [ "$confirm_uninstall" != "yes" ]; then
+				echo -e "${GREEN}Uninstallation cancelled.${NC}"
+				exit 0
+			fi
+		fi
 	elif [ "$COMPONENT_TYPE" = "8" ]; then
 		# Configuration Management
 		manage_configuration
@@ -7222,78 +8262,32 @@ if [ -f /etc/os-release ]; then
 		fi
 	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "1" ]; then
 		# Wings Install
-		if [ -f /usr/local/bin/featherwings ]; then
-			read -r -p "FeatherWings appears to be already installed. Do you want to reinstall? (y/n): " reinstall
-			if [ "$reinstall" != "y" ]; then
+		if wings_is_installed; then
+			reinstall=""
+			prompt "FeatherWings appears to be already installed. Do you want to reinstall? (y/n): " reinstall
+			if [[ ! "$reinstall" =~ ^[yY]$ ]]; then
 				echo "Exiting installation."
 				exit 0
 			fi
 		fi
 
-		# SSL is optional for home hosting; inform and let user proceed either way
-		draw_hr
-		echo -e "${BOLD}${CYAN}Wings & SSL (optional for home hosting)${NC}"
-		draw_hr
-		echo ""
-		echo -e "${BLUE}For production or a public node with a domain:${NC}"
-		echo -e "  ${CYAN}•${NC} Create an SSL certificate first (Wings menu option 4), then install Wings."
-		echo ""
-		echo -e "${BLUE}For home hosting or no domain:${NC}"
-		echo -e "  ${CYAN}•${NC} You can install Wings now and use your server IP or a self-signed certificate in ${BOLD}/etc/featherpanel/config.yml${NC}."
-		echo -e "  ${CYAN}•${NC} The Panel can connect to this node by IP (e.g. https://YOUR_IP:443 or with a self-signed cert)."
-		echo ""
-		if [ -d "/etc/letsencrypt/live" ]; then
-			FOUND_CERTS=false
-			for domain_dir in /etc/letsencrypt/live/*; do
-				if [ -d "$domain_dir" ] && [ -f "$domain_dir/fullchain.pem" ] && [ -f "$domain_dir/privkey.pem" ]; then
-					[ "$FOUND_CERTS" = false ] && echo -e "${BLUE}Existing certificates (optional):${NC}"
-					domain=$(basename "$domain_dir")
-					echo "  - $domain"
-					FOUND_CERTS=true
-				fi
-			done
-			[ "$FOUND_CERTS" = true ] && echo ""
-		fi
-		draw_hr
-		continue_without_cert=""
-		prompt "${BOLD}Continue with Wings installation?${NC} ${BLUE}(y/n)${NC}: " continue_without_cert
-
-		if [[ ! "$continue_without_cert" =~ ^[yY]$ ]]; then
-			echo "Installation cancelled. Run the installer again when ready."
-			exit 0
-		fi
-
-		# Check virtualization compatibility before installing Wings (which requires Docker)
 		check_virtualization_compatibility
 
 		install_packages curl jq
-		install_wings
+		if ! install_wings; then
+			log_error "Wings installation failed. See log at $LOG_FILE"
+			exit 1
+		fi
 		log_success "Wings installation finished. See log at $LOG_FILE"
-		log_info "Configure /etc/featherpanel/config.yml with your Panel URL and, if using a domain, SSL certificate paths (or use IP/self-signed for home hosting)."
 
-		# Offer to create an SSL certificate for Wings immediately
-		echo ""
-		draw_hr
-		echo -e "${BOLD}${YELLOW}Wings SSL Certificate (Optional)${NC}"
-		draw_hr
-		echo -e "${BLUE}You can secure your Wings node with a real SSL certificate now.${NC}"
-		echo -e "${BLUE}This is recommended if your node will be accessed over the Internet with a domain.${NC}"
-		echo ""
-		create_wings_ssl_now=""
-		prompt "${BOLD}Create an SSL certificate for Wings now?${NC} ${BLUE}(y/n)${NC}: " create_wings_ssl_now
-		if [[ "$create_wings_ssl_now" =~ ^[yY]$ ]]; then
-			if create_wings_ssl_certificate; then
-				log_success "Wings SSL certificate creation finished. See log at $LOG_FILE"
-			else
-				log_error "Wings SSL certificate creation failed. See log at $LOG_FILE"
-				log_warn "You can run the installer again and choose Wings → Create SSL Certificate (option 4) later."
-			fi
+		if [ "${FP_WINGS_SKIP_CONFIGURE:-}" = "true" ]; then
+			log_info "FeatherWings binary is ready. Run ${BOLD}featherwings configure${NC} on this server to finish setup."
 		else
-			log_info "Skipping automatic Wings SSL certificate creation. You can create it later via Wings → Create SSL Certificate."
+			run_featherwings_configure_wizard "${FP_PANEL_URL:-}"
 		fi
 	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "2" ]; then
 		# Wings Uninstall
-		if [ ! -f /usr/local/bin/featherwings ]; then
+		if ! wings_is_installed; then
 			echo "FeatherWings does not appear to be installed. Nothing to uninstall."
 			exit 0
 		fi
@@ -7306,29 +8300,80 @@ if [ -f /etc/os-release ]; then
 		fi
 	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "3" ]; then
 		# Wings Update
-		if [ ! -f /usr/local/bin/featherwings ]; then
+		if ! wings_is_installed; then
 			echo "FeatherWings does not appear to be installed. Nothing to update."
 			exit 0
 		fi
 		print_banner
-		update_wings
-		log_success "Wings updated successfully."
-		exit 0
-	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "4" ]; then
-		# Wings SSL Certificate
-		if create_wings_ssl_certificate; then
-			log_success "Wings SSL certificate creation finished. See log at $LOG_FILE"
+		if update_wings; then
+			log_success "Wings updated successfully."
 		else
-			log_error "Wings SSL certificate creation failed. See log at $LOG_FILE"
-			draw_hr
-			echo -e "${YELLOW}SSL Certificate Creation Failed${NC}"
-			echo -e "${BLUE}To fix this issue:${NC}"
-			echo -e "1. Go back to main menu and select ${GREEN}SSL Certificates${NC}"
-			echo -e "2. Choose ${GREEN}Install Certbot${NC} first"
-			echo -e "3. Then return here to create the SSL certificate"
-			draw_hr
+			log_error "Wings update failed. See log at $LOG_FILE"
 			exit 1
 		fi
+		exit 0
+	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "4" ]; then
+		# Wings Backup Manager
+		WINGS_BACKUP_ACTION=""
+		while [[ ! "$WINGS_BACKUP_ACTION" =~ ^[1-6]$ ]]; do
+			show_wings_backup_menu
+			echo ""
+			prompt "${BOLD}${CYAN}Select Wings backup operation${NC} ${BLUE}(1/2/3/4/5/6)${NC}: " WINGS_BACKUP_ACTION
+			if [[ ! "$WINGS_BACKUP_ACTION" =~ ^[1-6]$ ]]; then
+				echo ""
+				echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
+				echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Create), ${BOLD}2${NC} (List), ${BOLD}3${NC} (Restore), ${BOLD}4${NC} (Delete), ${BOLD}5${NC} (Export), or ${BOLD}6${NC} (Import)${NC}"
+				echo ""
+				sleep 2
+			fi
+		done
+
+		case $WINGS_BACKUP_ACTION in
+		1)
+			if create_wings_backup; then
+				log_success "Wings backup operation completed. See log at $LOG_FILE"
+			else
+				log_error "Wings backup operation failed. See log at $LOG_FILE"
+				exit 1
+			fi
+			;;
+		2)
+			list_wings_backups
+			log_info "Wings backup listing completed. See log at $LOG_FILE"
+			;;
+		3)
+			if restore_wings_backup; then
+				log_success "Wings backup restore completed. See log at $LOG_FILE"
+			else
+				log_error "Wings backup restore failed. See log at $LOG_FILE"
+				exit 1
+			fi
+			;;
+		4)
+			if delete_wings_backup; then
+				log_success "Wings backup deletion completed. See log at $LOG_FILE"
+			else
+				log_error "Wings backup deletion failed. See log at $LOG_FILE"
+				exit 1
+			fi
+			;;
+		5)
+			if export_wings_migration; then
+				log_success "Wings migration export completed. See log at $LOG_FILE"
+			else
+				log_error "Wings migration export failed. See log at $LOG_FILE"
+				exit 1
+			fi
+			;;
+		6)
+			if import_wings_migration; then
+				log_success "Wings migration import completed. See log at $LOG_FILE"
+			else
+				log_error "Wings migration import failed. See log at $LOG_FILE"
+				exit 1
+			fi
+			;;
+		esac
 	elif [ "$COMPONENT_TYPE" = "3" ] && [ "$INST_TYPE" = "1" ]; then
 		# CLI Install
 		if [ -f /usr/local/bin/feathercli ]; then
@@ -7417,6 +8462,46 @@ if [ -f /etc/os-release ]; then
 			log_error "Proxmox VNC agent install failed. See log at $LOG_FILE"
 			exit 1
 		fi
+	elif [ "$COMPONENT_TYPE" = "7" ] && [ "$INST_TYPE" = "1" ]; then
+		if featherquilld_is_installed; then
+			reinstall=""
+			prompt "FeatherQuilld appears to be already installed. Reinstall? (y/n): " reinstall
+			if [[ ! "$reinstall" =~ ^[yY]$ ]]; then
+				echo "Exiting installation."
+				exit 0
+			fi
+		fi
+		if install_featherquilld; then
+			log_success "FeatherQuilld install finished. See log at $LOG_FILE"
+			if [ "${FP_QUILLD_SKIP_CONFIGURE:-}" != "true" ]; then
+				run_featherquilld_configure_wizard
+			fi
+		else
+			log_error "FeatherQuilld install failed. See log at $LOG_FILE"
+			exit 1
+		fi
+	elif [ "$COMPONENT_TYPE" = "7" ] && [ "$INST_TYPE" = "2" ]; then
+		if ! featherquilld_is_installed; then
+			echo "FeatherQuilld does not appear to be installed. Nothing to uninstall."
+			exit 0
+		fi
+		if uninstall_featherquilld; then
+			log_success "FeatherQuilld uninstall finished. See log at $LOG_FILE"
+		else
+			log_error "FeatherQuilld uninstall failed. See log at $LOG_FILE"
+			exit 1
+		fi
+	elif [ "$COMPONENT_TYPE" = "7" ] && [ "$INST_TYPE" = "3" ]; then
+		if ! featherquilld_is_installed; then
+			echo "FeatherQuilld does not appear to be installed. Nothing to update."
+			exit 0
+		fi
+		if update_featherquilld; then
+			log_success "FeatherQuilld update finished. See log at $LOG_FILE"
+		else
+			log_error "FeatherQuilld update failed. See log at $LOG_FILE"
+			exit 1
+		fi
 	else
 		log_error "Invalid component or operation selected."
 		exit 1
@@ -7432,7 +8517,7 @@ else
 		echo -e "${YELLOW}Cannot determine OS - /etc/os-release not found${NC}"
 		echo -e "${YELLOW}This installer officially supports:${NC}"
 		echo -e "  ${GREEN}•${NC} Debian 11, 12, or 13"
-		echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, or 25.04"
+		echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, 26.04 LTS, or 25.04"
 		echo ""
 		echo -e "${BLUE}Continuing with installation at your own risk...${NC}"
 		echo ""
@@ -7445,7 +8530,7 @@ else
 		log_error "Cannot determine OS - /etc/os-release not found"
 		echo -e "${RED}${BOLD}This installer only supports:${NC}"
 		echo -e "  ${GREEN}•${NC} Debian 11, 12, or 13"
-		echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, or 25.04"
+		echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, 26.04 LTS, or 25.04"
 		echo ""
 		echo -e "${BLUE}To bypass this check, use: ${BOLD}--skip-os-check${NC}"
 		support_hint

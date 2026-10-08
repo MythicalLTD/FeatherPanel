@@ -30,8 +30,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/featherui/Button';
 import { Loader2, ShieldAlert, ShieldCheck } from 'lucide-react';
-import { copyToClipboard, cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { copyToClipboard, cn } from '@/lib/utils';
 
 export interface IntegrityComparison {
     matches: number;
@@ -82,16 +83,11 @@ export function IntegrityCheckDialog({ open, onOpenChange }: IntegrityCheckDialo
                 setData(res.data);
             } else {
                 setData(null);
-                setError(res.message || t('admin.version.integrity_scan_failed'));
+                setError(getApiErrorMessageFromPayload(res, t, 'admin.version.integrity_scan_failed'));
             }
         } catch (e: unknown) {
             setData(null);
-            let msg: string | null = null;
-            if (e && typeof e === 'object' && 'response' in e) {
-                const data = (e as { response?: { data?: { error_message?: string } } }).response?.data;
-                if (data?.error_message) msg = data.error_message;
-            }
-            setError(msg || t('admin.version.integrity_scan_failed'));
+            setError(getApiErrorMessage(e, t, 'admin.version.integrity_scan_failed'));
         } finally {
             setLoading(false);
         }
@@ -110,15 +106,17 @@ export function IntegrityCheckDialog({ open, onOpenChange }: IntegrityCheckDialo
         if (!canSaveBaseline) return;
         setSaving(true);
         try {
-            const { data: res } = await api.post<{ success: boolean; message?: string }>('/admin/integrity/baseline');
+            const { data: res } = await api.post<{ success: boolean; message?: string; error_code?: string }>(
+                '/admin/integrity/baseline',
+            );
             if (res.success) {
                 toast.success(t('admin.version.integrity_baseline_saved'));
                 await runScan();
             } else {
-                toast.error(res.message || t('admin.version.integrity_baseline_failed'));
+                toast.error(getApiErrorMessageFromPayload(res, t, 'admin.version.integrity_baseline_failed'));
             }
-        } catch {
-            toast.error(t('admin.version.integrity_baseline_failed'));
+        } catch (e: unknown) {
+            toast.error(getApiErrorMessage(e, t, 'admin.version.integrity_baseline_failed'));
         } finally {
             setSaving(false);
         }

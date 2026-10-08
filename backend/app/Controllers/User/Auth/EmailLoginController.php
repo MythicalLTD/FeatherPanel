@@ -25,6 +25,7 @@ use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\EmailLoginCode;
 use App\Plugins\Events\Events\AuthEvent;
+use App\Helpers\TwoFactorChallengeHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -336,8 +337,18 @@ class EmailLoginController
             ]);
 
             // Return 2FA required response
+            $challenge = TwoFactorChallengeHelper::issue($userInfo['uuid']);
+            if ($challenge === null) {
+                return ApiResponse::error(
+                    'Two-factor authentication is temporarily unavailable. Please try again shortly.',
+                    '2FA_UNAVAILABLE',
+                    503
+                );
+            }
+
             return ApiResponse::error('2FA required', 'TWO_FACTOR_REQUIRED', 401, [
                 'email' => $userInfo['email'],
+                'challenge' => $challenge,
             ]);
         }
 

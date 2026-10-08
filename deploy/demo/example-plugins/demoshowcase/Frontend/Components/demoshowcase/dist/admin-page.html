@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo Showcase · Admin</title>
+  <style>
+    :root { color-scheme: dark; --ink:#e2e8f0; --muted:#94a3b8; --line:rgba(255,255,255,.1); --panel:hsl(222 18% 12%); --accent:#38bdf8; }
+    html.light { color-scheme: light; --ink:#0f172a; --muted:#64748b; --line:rgba(15,23,42,.1); --panel:#fff; }
+    * { box-sizing: border-box; }
+    body { margin:0; padding:1.25rem; background:transparent; color:var(--ink); font-family: ui-sans-serif, system-ui, sans-serif; }
+    .card { border:1px solid var(--line); border-radius:1rem; background:var(--panel); padding:1.25rem; max-width:52rem; }
+    h1 { margin:0 0 .5rem; font-size:1.25rem; }
+    p, li { color:var(--muted); font-size:.9rem; line-height:1.5; }
+    ul { padding-left:1.2rem; }
+    code { color:var(--accent); font-size:.8rem; }
+    h2 { margin:1.25rem 0 .4rem; font-size:1rem; color:var(--ink); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>DemoShowcase addon</h1>
+    <p>This full admin page is registered in <code>Frontend/sidebar.json</code> and loaded as an iframe component.</p>
+
+    <h2>What this demo shows</h2>
+    <ul>
+      <li><strong>Widgets</strong> on dashboard, admin home, admin servers, server console, and files</li>
+      <li><strong>Hide widgets</strong> via plugin settings (<code>hide_dashboard_banner</code>, <code>hide_admin_card</code>, <code>hide_server_console_card</code>)</li>
+      <li><strong>Spell limits</strong> for the server sidebar page via <code>plugin-sidebar-server-allowedOnlyOnSpells</code></li>
+      <li><strong>Client + admin + server</strong> sidebar pages from one addon</li>
+    </ul>
+
+    <h2>Try it</h2>
+    <ul>
+      <li>Admin → Plugins → DemoShowcase → flip the hide toggles</li>
+      <li>Open a Survival / Creative demo server → look for Demo Showcase in the sidebar (spell-limited)</li>
+      <li>User dashboard → banner + card widgets at the top</li>
+    </ul>
+  </div>
+  <script>
+    if (new URLSearchParams(location.search).get('__theme') === 'light') {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    }
+  </script>
+</body>
+</html>

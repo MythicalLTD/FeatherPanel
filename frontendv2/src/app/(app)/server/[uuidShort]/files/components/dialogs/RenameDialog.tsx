@@ -14,11 +14,13 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { filesApi } from '@/lib/files-api';
+import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface RenameDialogProps {
     open: boolean;
@@ -30,6 +32,7 @@ interface RenameDialogProps {
 }
 
 export function RenameDialog({ open, onOpenChange, uuid, root, fileName, onSuccess }: RenameDialogProps) {
+    const filesApi = useFileManagerApi();
     const { t } = useTranslation();
     const [newName, setNewName] = useState(fileName);
     const [loading, setLoading] = useState(false);
@@ -51,6 +54,7 @@ export function RenameDialog({ open, onOpenChange, uuid, root, fileName, onSucce
             onOpenChange(false);
         } catch (error) {
             console.error(error);
+            toast.error(getApiErrorMessage(error, t, 'files.dialogs.rename.error'));
         } finally {
             setLoading(false);
         }
@@ -62,7 +66,7 @@ export function RenameDialog({ open, onOpenChange, uuid, root, fileName, onSucce
                 <DialogHeader>
                     <DialogTitle>{t('files.dialogs.rename.title')}</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className='space-y-4'>
+                <form onSubmit={handleSubmit} className='space-y-4' data-fp-save-shortcut>
                     <Input value={newName} onChange={(e) => setNewName(e.target.value)} autoFocus />
                     <DialogFooter>
                         <Button type='button' variant='ghost' onClick={() => onOpenChange(false)}>

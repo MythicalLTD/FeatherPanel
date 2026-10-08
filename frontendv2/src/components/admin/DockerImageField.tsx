@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useTranslation } from '@/contexts/TranslationContext';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { Container } from 'lucide-react';
 import { cn } from '@/lib/utils';

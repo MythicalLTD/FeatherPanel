@@ -36,8 +36,11 @@ import {
     type StepFormState,
 } from '../../form-utils';
 import type { LifecycleHookType } from '@/types/server';
-import { parseLifecycleHookType } from '@/types/server';
+import { parseLifecycleHookType, LIFECYCLE_HOOK_TYPES_WITHOUT_CONTAINER } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
+import { buildBackupPayload } from '@/components/server/backup/backup-payload';
+import { useServerDatabases } from '../../useServerDatabases';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 type HooksApi = {
     success: boolean;
@@ -52,6 +55,7 @@ export default function NewLifecycleHookStepPage() {
     const { t } = useTranslation();
 
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
+    const databases = useServerDatabases(uuidShort);
 
     const canRead = hasPermission('schedule.read');
     const canUpdate = hasPermission('schedule.update');
@@ -62,7 +66,11 @@ export default function NewLifecycleHookStepPage() {
     const [checking, setChecking] = React.useState(true);
     const [featureEnabled, setFeatureEnabled] = React.useState(false);
     const [containerShellEnabled, setContainerShellEnabled] = React.useState(false);
-    const [form, setForm] = React.useState<StepFormState>(defaultForm);
+    const [form, setForm] = React.useState<StepFormState>(() =>
+        LIFECYCLE_HOOK_TYPES_WITHOUT_CONTAINER.includes(hookType)
+            ? { ...defaultForm, task_type: 'discord_webhook' }
+            : defaultForm,
+    );
     const [saving, setSaving] = React.useState(false);
 
     const hookLabels: Record<LifecycleHookType, string> = React.useMemo(
@@ -70,6 +78,7 @@ export default function NewLifecycleHookStepPage() {
             pre_start: t('lifecycleHooks.hookTypes.preStart'),
             pre_stop: t('lifecycleHooks.hookTypes.preStop'),
             post_start: t('lifecycleHooks.hookTypes.postStart'),
+            post_stop: t('lifecycleHooks.hookTypes.postStop'),
             server_crash: t('lifecycleHooks.hookTypes.serverCrash'),
         }),
         [t],
@@ -80,7 +89,9 @@ export default function NewLifecycleHookStepPage() {
             ? t('lifecycleHooks.stepNew.descriptionCrash')
             : hookType === 'post_start'
               ? t('lifecycleHooks.stepNew.descriptionPostStart')
-              : t('lifecycleHooks.stepNew.description');
+              : hookType === 'post_stop'
+                ? t('lifecycleHooks.stepNew.descriptionPostStop')
+                : t('lifecycleHooks.stepNew.description');
 
     React.useEffect(() => {
         let cancelled = false;
@@ -92,8 +103,8 @@ export default function NewLifecycleHookStepPage() {
                     setFeatureEnabled(Boolean(data.data.feature_enabled));
                     setContainerShellEnabled(Boolean(data.data.container_shell_enabled));
                 }
-            } catch {
-                if (!cancelled) toast.error(t('lifecycleHooks.messages.fetchFailed'));
+            } catch (error) {
+                if (!cancelled) toast.error(getApiErrorMessage(error, t, 'lifecycleHooks.messages.fetchFailed'));
             } finally {
                 if (!cancelled) setChecking(false);
             }
@@ -142,6 +153,10 @@ export default function NewLifecycleHookStepPage() {
             toast.error(t('lifecycleHooks.messages.discordNeedsContentOrEmbed'));
             return;
         }
+        if (form.task_type === 'backup' && buildBackupPayload(form.backup) === null) {
+            toast.error(t('serverTasks.selectAtLeastOneDatabase'));
+            return;
+        }
         if (form.task_type === 'http_request' && form.http_url.trim() === '') {
             toast.error(t('lifecycleHooks.messages.urlRequired'));
             return;
@@ -159,8 +174,8 @@ export default function NewLifecycleHookStepPage() {
                 if (form.http_headers_json.trim() !== '') JSON.parse(form.http_headers_json);
                 if (form.http_query_json.trim() !== '') JSON.parse(form.http_query_json);
             }
-        } catch {
-            toast.error(t('lifecycleHooks.messages.invalidJson'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'lifecycleHooks.messages.invalidJson'));
             return;
         }
 
@@ -178,7 +193,7 @@ export default function NewLifecycleHookStepPage() {
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message?: string }>;
-            toast.error(axiosError.response?.data?.message || t('lifecycleHooks.messages.stepCreateFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'lifecycleHooks.messages.stepCreateFailed'));
         } finally {
             setSaving(false);
         }
@@ -274,6 +289,8 @@ export default function NewLifecycleHookStepPage() {
                         onCancel={back}
                         submitLabel={t('lifecycleHooks.form.saveStep')}
                         containerShellEnabled={containerShellEnabled}
+                        databases={databases}
+                        allowContainerTasks={!LIFECYCLE_HOOK_TYPES_WITHOUT_CONTAINER.includes(hookType)}
                     />
                 </PageCard>
             </div>

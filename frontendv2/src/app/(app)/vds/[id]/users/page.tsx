@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import axios, { AxiosError } from 'axios';
+import axios, { isAxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -26,11 +26,12 @@ import { Users, Plus, RefreshCw, Trash2, User, Loader2, AlertTriangle, Lock, Shi
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 const VM_PERMISSIONS = ['power', 'console', 'backup', 'reinstall', 'settings', 'activity.read'];
 
@@ -78,14 +79,12 @@ export default function VdsSubusersPage() {
                 setSubusers(data.data.subusers || []);
             }
         } catch (error) {
-            const axiosError = error as AxiosError<{ message: string }>;
-            // 403 means subuser trying to access redirect
-            if (axiosError.response?.status === 403) {
-                toast.error(t('vds.subusers.owner_only'));
+            if (isAxiosError(error) && error.response?.status === 403) {
+                toast.error(getApiErrorMessage(error, t, 'vds.subusers.owner_only'));
                 router.push(`/vds/${id}`);
                 return;
             }
-            toast.error(t('vds.subusers.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'vds.subusers.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -133,11 +132,10 @@ export default function VdsSubusersPage() {
                 setAddPermissions(['power', 'console']);
                 fetchSubusers();
             } else {
-                toast.error(data.message || t('vds.subusers.add_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'vds.subusers.add_failed'));
             }
         } catch (error) {
-            const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('vds.subusers.add_failed'));
+            toast.error(getApiErrorMessage(error, t, 'vds.subusers.add_failed'));
         } finally {
             setAddLoading(false);
         }
@@ -153,11 +151,10 @@ export default function VdsSubusersPage() {
                 setIsDeleteOpen(false);
                 fetchSubusers();
             } else {
-                toast.error(data.message || t('vds.subusers.remove_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'vds.subusers.remove_failed'));
             }
         } catch (error) {
-            const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('vds.subusers.remove_failed'));
+            toast.error(getApiErrorMessage(error, t, 'vds.subusers.remove_failed'));
         } finally {
             setDeleting(false);
         }
@@ -188,11 +185,10 @@ export default function VdsSubusersPage() {
                 setIsPermOpen(false);
                 fetchSubusers();
             } else {
-                toast.error(data.message || t('vds.subusers.permissions_update_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'vds.subusers.permissions_update_failed'));
             }
         } catch (error) {
-            const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('vds.subusers.permissions_update_failed'));
+            toast.error(getApiErrorMessage(error, t, 'vds.subusers.permissions_update_failed'));
         } finally {
             setSavingPerms(false);
         }
@@ -243,7 +239,7 @@ export default function VdsSubusersPage() {
                     <div className='flex items-center gap-3'>
                         <span>{t('vds.subusers.description')}</span>
                         <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
-                            {subusers.length} {t('common.users') || 'users'}
+                            {subusers.length} {t('common.users')}
                         </span>
                     </div>
                 }
@@ -336,12 +332,21 @@ export default function VdsSubusersPage() {
             )}
 
             {/* Add subuser modal */}
-            <HeadlessModal
-                isOpen={isAddOpen}
+            <Dialog
+                open={isAddOpen}
                 onClose={() => setIsAddOpen(false)}
-                title={t('vds.subusers.add')}
-                description='Enter the email address of the user you want to add and select their permissions.'
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsAddOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('vds.subusers.add')}</DialogTitle>
+                    <DialogDescription>
+                        {'Enter the email address of the user you want to add and select their permissions.'}
+                    </DialogDescription>
+                </DialogHeader>
                 <div className='space-y-6 py-4'>
                     <div className='space-y-2'>
                         <label className='text-muted-foreground text-sm font-black tracking-wider uppercase'>
@@ -354,7 +359,7 @@ export default function VdsSubusersPage() {
                                 onChange={(e) => setAddEmail(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
                                 type='email'
-                                placeholder={t('vds.subusers.email_placeholder') || 'e.g. admin@example.com'}
+                                placeholder={t('vds.subusers.email_placeholder')}
                                 className='h-14 rounded-2xl pl-12'
                             />
                         </div>
@@ -431,15 +436,22 @@ export default function VdsSubusersPage() {
                         Add
                     </Button>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
             {/* Delete confirm modal */}
-            <HeadlessModal
-                isOpen={isDeleteOpen}
+            <Dialog
+                open={isDeleteOpen}
                 onClose={() => setIsDeleteOpen(false)}
-                title={t('vds.subusers.remove')}
-                description={`Are you sure you want to remove ${selectedSubuser?.username || `user #${selectedSubuser?.user_id}`} from this VDS instance?`}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsDeleteOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('vds.subusers.remove')}</DialogTitle>
+                    <DialogDescription>{`Are you sure you want to remove ${selectedSubuser?.username || `user #${selectedSubuser?.user_id}`} from this VDS instance?`}</DialogDescription>
+                </DialogHeader>
                 <div className='border-border/5 flex justify-end gap-3 border-t pt-6'>
                     <Button
                         variant='outline'
@@ -465,16 +477,23 @@ export default function VdsSubusersPage() {
                         {t('common.delete')}
                     </Button>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
             {/* Edit permissions modal */}
-            <HeadlessModal
-                isOpen={isPermOpen}
+            <Dialog
+                open={isPermOpen}
                 onClose={() => setIsPermOpen(false)}
-                title={t('vds.subusers.edit_permissions')}
-                description={`Manage permissions for ${permSubuser?.username || `user #${permSubuser?.user_id}`}`}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsPermOpen(false);
+                    }
+                }}
                 className='max-w-lg'
             >
+                <DialogHeader>
+                    <DialogTitle>{t('vds.subusers.edit_permissions')}</DialogTitle>
+                    <DialogDescription>{`Manage permissions for ${permSubuser?.username || `user #${permSubuser?.user_id}`}`}</DialogDescription>
+                </DialogHeader>
                 <div className='space-y-4 py-4'>
                     {VM_PERMISSIONS.map((permKey) => (
                         <label
@@ -538,7 +557,7 @@ export default function VdsSubusersPage() {
                         {t('common.saveChanges')}
                     </Button>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
             <WidgetRenderer widgets={getWidgets('vds-users', 'bottom-of-page')} />
         </div>

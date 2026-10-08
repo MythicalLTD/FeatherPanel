@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
 import type { OnMount } from '@monaco-editor/react';
@@ -132,7 +133,7 @@ export function FileTextEditor({
                 scrollBeyondLastLine: false,
                 automaticLayout: true,
                 padding: { top: 20 },
-                fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                fontFamily: APP_MONO_FONT_STACK,
                 fontLigatures: true,
                 cursorSmoothCaretAnimation: 'on',
                 cursorBlinking: 'expand',

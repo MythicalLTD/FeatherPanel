@@ -22,8 +22,10 @@ export interface NavigationItem {
     url: string;
     icon: LucideIcon | string; // LucideIcon for built-in, string (emoji/url) for plugins
     lucideIcon?: string; // Lucide icon name for dynamic loading (e.g., "camera", "search") - if provided, will be used instead of icon
+    /** Iconify id (`tabler:home`), image URL, emoji, or lucide name - highest priority when set. */
+    panelIcon?: string;
     isActive: boolean;
-    category: 'main' | 'admin' | 'server';
+    category: 'main' | 'admin' | 'server' | 'vds' | 'webspace';
     permission?: string;
     isPlugin?: boolean;
     pluginJs?: string;
@@ -34,6 +36,7 @@ export interface NavigationItem {
     description?: string;
     group?: string;
     priority?: number;
+    sidebarOrderIndex?: number;
     badge?: string;
     children?: NavigationItem[]; // Optional submenu items
     /** Premium custom / external link */
@@ -50,6 +53,8 @@ export interface PluginSidebarItem {
     name: string;
     icon: string;
     lucideIcon?: string; // Lucide icon name (e.g., "camera", "search") - if provided, will be used instead of icon emoji
+    /** Iconify id or bare name - overrides lucideIcon when set. */
+    panelIcon?: string;
     js?: string;
     redirect?: string;
     component?: string;
@@ -58,6 +63,7 @@ export interface PluginSidebarItem {
     plugin: string;
     pluginName?: string;
     permission?: string;
+    hidden?: boolean;
     showBadge?: boolean;
     group?: string;
     priority?: number; // Lower numbers render first within the same sidebar group
@@ -70,6 +76,7 @@ export interface PluginSidebarResponse {
         sidebar: {
             server: Record<string, PluginSidebarItem>;
             vds: Record<string, PluginSidebarItem>;
+            webspace: Record<string, PluginSidebarItem>;
             client: Record<string, PluginSidebarItem>;
             admin: Record<string, PluginSidebarItem>;
         };

@@ -26,7 +26,7 @@ class UserEvent implements PluginEvent
      */
     public static function onUserApiKeyCreated(): string
     {
-        return 'featherpanel:user:api:create';
+        return 'featherpanel:user:api_client:created';
     }
 
     /**
@@ -34,7 +34,7 @@ class UserEvent implements PluginEvent
      */
     public static function onUserApiKeyUpdated(): string
     {
-        return 'featherpanel:user:api:update';
+        return 'featherpanel:user:api_client:updated';
     }
 
     /**
@@ -42,7 +42,7 @@ class UserEvent implements PluginEvent
      */
     public static function onUserApiKeyDeleted(): string
     {
-        return 'featherpanel:user:api:delete';
+        return 'featherpanel:user:api_client:deleted';
     }
 
     /**
@@ -58,7 +58,7 @@ class UserEvent implements PluginEvent
      */
     public static function onUserSshKeyCreated(): string
     {
-        return 'featherpanel:user:ssh:create';
+        return 'featherpanel:user:ssh_key:created';
     }
 
     /**
@@ -66,7 +66,7 @@ class UserEvent implements PluginEvent
      */
     public static function onUserSshKeyUpdated(): string
     {
-        return 'featherpanel:user:ssh:update';
+        return 'featherpanel:user:ssh_key:updated';
     }
 
     /**
@@ -74,7 +74,7 @@ class UserEvent implements PluginEvent
      */
     public static function onUserSshKeyDeleted(): string
     {
-        return 'featherpanel:user:ssh:delete';
+        return 'featherpanel:user:ssh_key:deleted';
     }
 
     /**

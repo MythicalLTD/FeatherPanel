@@ -24,41 +24,31 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Serves Wings configuration to the daemon (or setup scripts) via GET /api/remote/config.
- * Authenticated with Wings token (Bearer token_id.token_secret). Used so nodes can fetch
- * their config from the panel instead of copying YAML manually.
+ * Serves FeatherWings configuration via GET /api/remote/config.
+ *
+ * Game nodes only. Web hosting nodes use /api/quilld-remote/config.
  */
 class WingsConfigController
 {
     /**
-     * GET /api/remote/config return full Wings config.yml as YAML for the authenticated node.
+     * GET /api/remote/config — full Wings config.yml as YAML for the authenticated game node.
      */
     public function getConfig(Request $request): Response
     {
-        $tokenId = $request->attributes->get('wings_token_id');
-        $tokenSecret = $request->attributes->get('wings_token_secret');
-
-        if (!$tokenId || !$tokenSecret) {
+        $node = $request->attributes->get('wings_node');
+        if (!is_array($node)) {
             return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
         }
 
-        $node = Node::getNodeByWingsAuth($tokenId, $tokenSecret);
-        if (!$node) {
-            return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
-        }
-
-        // Prefer WINGS_REMOTE_URL so SFTP/auth callbacks are not blocked by Cloudflare challenges on APP_URL.
         $panelUrl = AppUrlHelper::wingsRemoteUrl();
         $yaml = Node::generateWingsConfigYaml($node, $panelUrl);
 
-        $response = new Response($yaml, 200, [
+        return new Response($yaml, 200, [
             'Content-Type' => 'application/x-yaml',
             'Content-Disposition' => 'inline; filename="config.yml"',
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Methods' => 'GET, OPTIONS',
             'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With',
         ]);
-
-        return $response;
     }
 }

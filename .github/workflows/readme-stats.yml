@@ -1,0 +1,55 @@
+name: README Code Stats
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - "backend/**"
+      - "frontendv2/**"
+      - "runner/**"
+      - "mcp/**"
+      - "installer/**"
+      - ".github/tools/count.js"
+      - ".github/workflows/readme-stats.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: readme-stats-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  update:
+    name: Update README stats
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    # Skip bot commits so a stats push cannot loop
+    if: github.actor != 'github-actions[bot]'
+    steps:
+      - name: Checkout
+        uses: useblacksmith/checkout@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Recount and update README
+        run: node .github/tools/count.js --update-readme
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- .github/README.md; then
+            echo "README stats already up to date"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/README.md
+          git commit -m "chore: update README code stats"
+          git push

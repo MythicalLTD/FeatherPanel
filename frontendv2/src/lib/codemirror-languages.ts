@@ -13,6 +13,7 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 import { css } from '@codemirror/lang-css';
 import { html } from '@codemirror/lang-html';
 import { javascript } from '@codemirror/lang-javascript';
@@ -20,16 +21,18 @@ import { json } from '@codemirror/lang-json';
 import { markdown } from '@codemirror/lang-markdown';
 import { python } from '@codemirror/lang-python';
 import { yaml } from '@codemirror/lang-yaml';
-import { StreamLanguage } from '@codemirror/language';
+import { StreamLanguage, type StreamParser } from '@codemirror/language';
 import { shell } from '@codemirror/legacy-modes/mode/shell';
 import { EditorView } from '@codemirror/view';
 import type { Extension } from '@codemirror/state';
+
+const shellParser = shell as unknown as StreamParser<unknown>;
 
 const editorTheme = EditorView.theme({
     '&': { height: '100%' },
     '.cm-scroller': {
         overflow: 'auto',
-        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+        fontFamily: APP_MONO_FONT_STACK,
         fontSize: '14px',
     },
     '.cm-content': { paddingTop: '20px' },
@@ -69,7 +72,7 @@ export function getCodeMirrorExtensions(fileName: string): Extension[] {
             languageExtensions.push(python());
             break;
         case 'sh':
-            languageExtensions.push(StreamLanguage.define(shell));
+            languageExtensions.push(StreamLanguage.define(shellParser));
             break;
         case 'yml':
         case 'yaml':

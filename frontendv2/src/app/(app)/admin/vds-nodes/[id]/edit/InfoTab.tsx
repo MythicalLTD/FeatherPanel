@@ -19,6 +19,7 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { Button } from '@/components/featherui/Button';
 import {
     Info,
@@ -199,7 +200,7 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
 
     const cpuColor = cpuPct > 80 ? 'text-red-500' : cpuPct > 60 ? 'text-amber-500' : 'text-green-500';
     const memColor = memPct > 80 ? 'text-red-500' : memPct > 60 ? 'text-amber-500' : 'text-blue-500';
-    const diskColor = diskPct > 80 ? 'text-red-500' : diskPct > 60 ? 'text-amber-500' : 'text-purple-500';
+    const diskColor = diskPct > 80 ? 'text-red-500' : diskPct > 60 ? 'text-amber-500' : 'text-primary';
 
     return (
         <div
@@ -299,9 +300,7 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
                                 used={formatBytes(diskUsed)}
                                 max={formatBytes(diskMax)}
                                 pct={diskPct}
-                                colorClass={
-                                    diskPct > 80 ? 'bg-red-500' : diskPct > 60 ? 'bg-amber-500' : 'bg-purple-500'
-                                }
+                                colorClass={diskPct > 80 ? 'bg-red-500' : diskPct > 60 ? 'bg-amber-500' : 'bg-primary'}
                             />
                         )}
                     </div>
@@ -337,11 +336,11 @@ export function InfoTab({ nodeId, nodeName }: InfoTabProps) {
             setInfo(data.data as InfoData);
             setLastFetched(new Date());
         } catch (err) {
-            setError(axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err));
+            setError(getApiErrorMessage(err, t, 'admin.vdsNodes.errors.fetch_failed'));
         } finally {
             setLoading(false);
         }
-    }, [nodeId]);
+    }, [nodeId, t]);
 
     useEffect(() => {
         fetchInfo();

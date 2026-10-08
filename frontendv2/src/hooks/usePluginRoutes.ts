@@ -56,6 +56,7 @@ export function invalidatePluginRoutesCache(): void {
  */
 export function usePluginRoutes() {
     const [pluginData, setPluginData] = useState<PluginSidebarResponse['data']['sidebar'] | null>(cachedPluginData);
+    const [ready, setReady] = useState(() => cachedPluginData !== null);
 
     useEffect(() => {
         const serverContext = getServerSidebarContext();
@@ -63,6 +64,7 @@ export function usePluginRoutes() {
 
         if (cachedPluginData && !hasStaleServerContext) {
             setPluginData(cachedPluginData);
+            setReady(true);
             return;
         }
 
@@ -72,7 +74,10 @@ export function usePluginRoutes() {
 
         // If already loading, wait for that promise
         if (isLoading && loadPromise) {
-            loadPromise.then(() => setPluginData(cachedPluginData));
+            loadPromise.then(() => {
+                setPluginData(cachedPluginData);
+                setReady(true);
+            });
             return;
         }
 
@@ -89,13 +94,17 @@ export function usePluginRoutes() {
             } finally {
                 isLoading = false;
                 loadPromise = null;
+                setReady(true);
             }
         })();
 
-        loadPromise.then(() => setPluginData(cachedPluginData));
+        loadPromise.then(() => {
+            setPluginData(cachedPluginData);
+            setReady(true);
+        });
     }, []);
 
-    return pluginData;
+    return { data: pluginData, ready };
 }
 
 /**
@@ -139,6 +148,16 @@ export function getPluginPaths(pluginData: PluginSidebarResponse['data']['sideba
     // Extract vds plugin paths
     if (pluginData.vds) {
         Object.values(pluginData.vds).forEach((item) => {
+            if (item.redirect) {
+                const redirectPath = item.redirect.startsWith('/') ? item.redirect : `/${item.redirect}`;
+                paths.push(redirectPath);
+            }
+        });
+    }
+
+    // Extract webspace plugin paths
+    if (pluginData.webspace) {
+        Object.values(pluginData.webspace).forEach((item) => {
             if (item.redirect) {
                 const redirectPath = item.redirect.startsWith('/') ? item.redirect : `/${item.redirect}`;
                 paths.push(redirectPath);

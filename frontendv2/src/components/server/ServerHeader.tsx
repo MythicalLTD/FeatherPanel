@@ -15,21 +15,12 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
 import { Play, Square, RotateCw, Skull, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useState, useEffect } from 'react';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -145,6 +136,8 @@ export default function ServerHeader({
             case 'offline':
             case 'stopped':
                 return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+            case 'unknown':
+                return 'bg-muted/40 text-muted-foreground border-border/40';
             case 'error':
                 return 'bg-red-600/20 text-red-600 border-red-600/40';
             default:
@@ -199,7 +192,7 @@ export default function ServerHeader({
                 <Button
                     variant='outline'
                     size='sm'
-                    disabled={actionLoading === 'start' || (connectionLive ? !isOfflineStatus(serverStatus) : false)}
+                    disabled={actionLoading === 'start' || !connectionLive || !isOfflineStatus(serverStatus)}
                     onClick={() => handleAction('start', onStart)}
                     className='flex items-center gap-2 border-emerald-600/40 bg-emerald-600 text-white hover:bg-emerald-600/90 hover:text-white disabled:border-emerald-600/20 disabled:bg-emerald-600/40 disabled:text-white/70'
                 >
@@ -216,9 +209,9 @@ export default function ServerHeader({
                 <Button
                     variant='outline'
                     size='sm'
-                    disabled={actionLoading === 'restart' || (connectionLive ? serverStatus !== 'running' : false)}
+                    disabled={actionLoading === 'restart' || !connectionLive || serverStatus !== 'running'}
                     onClick={() => handleAction('restart', onRestart)}
-                    className='flex items-center gap-2 border-amber-500/40 bg-amber-500 text-amber-950 hover:bg-amber-500/90 hover:text-amber-950 disabled:border-amber-500/20 disabled:bg-amber-500/40 disabled:text-amber-950/70'
+                    className='flex items-center gap-2 border-sky-600/40 bg-sky-600 text-white hover:bg-sky-600/90 hover:text-white disabled:border-sky-600/20 disabled:bg-sky-600/40 disabled:text-white/70'
                 >
                     {actionLoading === 'restart' ? (
                         <Loader2 className='h-4 w-4 animate-spin' />
@@ -233,7 +226,7 @@ export default function ServerHeader({
                 <Button
                     variant='outline'
                     size='sm'
-                    disabled={actionLoading === 'stop' || (connectionLive ? !isRunningStatus(serverStatus) : false)}
+                    disabled={actionLoading === 'stop' || !connectionLive || !isRunningStatus(serverStatus)}
                     onClick={() => handleAction('stop', onStop)}
                     className='flex items-center gap-2 border-orange-600/40 bg-orange-600 text-white hover:bg-orange-600/90 hover:text-white disabled:border-orange-600/20 disabled:bg-orange-600/40 disabled:text-white/70'
                 >
@@ -250,7 +243,7 @@ export default function ServerHeader({
                 <Button
                     variant='destructive'
                     size='sm'
-                    disabled={actionLoading === 'kill' || (connectionLive ? isOfflineStatus(serverStatus) : false)}
+                    disabled={actionLoading === 'kill' || !connectionLive || isOfflineStatus(serverStatus)}
                     onClick={() => handleAction('kill', onKill)}
                     className='flex items-center gap-2'
                 >
@@ -278,36 +271,29 @@ export default function ServerHeader({
     );
 
     const killDialog = (
-        <AlertDialog open={showKillConfirm} onOpenChange={setShowKillConfirm}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>{t('servers.console.kill_confirm_title')}</AlertDialogTitle>
-                    <AlertDialogDescription>{t('servers.console.kill_confirm_description')}</AlertDialogDescription>
-                </AlertDialogHeader>
-                <div className='flex items-center space-x-2 py-4'>
-                    <Checkbox
-                        id='dont-ask-kill'
-                        checked={dontAskAgain}
-                        onCheckedChange={(checked) => setDontAskAgain(checked === true)}
-                    />
-                    <Label htmlFor='dont-ask-kill' className='cursor-pointer text-sm font-normal'>
-                        {t('servers.console.kill_dont_ask_again')}
-                    </Label>
-                </div>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                    <AlertDialogAction
-                        onClick={handleKillConfirm}
-                        className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                    >
-                        {t('servers.console.kill_confirm')}
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
+        <ConfirmDialog
+            open={showKillConfirm}
+            onOpenChange={setShowKillConfirm}
+            title={t('servers.console.kill_confirm_title')}
+            description={t('servers.console.kill_confirm_description')}
+            confirmLabel={t('servers.console.kill_confirm')}
+            cancelLabel={t('common.cancel')}
+            onConfirm={handleKillConfirm}
+        >
+            <div className='flex items-center space-x-2 py-4'>
+                <Checkbox
+                    id='dont-ask-kill'
+                    checked={dontAskAgain}
+                    onCheckedChange={(checked) => setDontAskAgain(checked === true)}
+                />
+                <Label htmlFor='dont-ask-kill' className='cursor-pointer text-sm font-normal'>
+                    {t('servers.console.kill_dont_ask_again')}
+                </Label>
+            </div>
+        </ConfirmDialog>
     );
 
-    // Style: strip — compact image bar above controls
+    // Style: strip - compact image bar above controls
     if (resolvedBanner && style === 'strip') {
         return (
             <div className='border-border/50 bg-card/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
@@ -328,7 +314,7 @@ export default function ServerHeader({
         );
     }
 
-    // Style: hero — image fills header; frosted control panel on top
+    // Style: hero - image fills header; frosted control panel on top
     if (resolvedBanner && style === 'hero') {
         return (
             <div className='border-border/50 relative overflow-hidden rounded-xl border'>
@@ -348,7 +334,7 @@ export default function ServerHeader({
         );
     }
 
-    // Style: cover — side art (default when enabled) — or plain header when off / no image
+    // Style: cover - side art (default when enabled) - or plain header when off / no image
     return (
         <div className='border-border/50 bg-card/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
             <div className={cn('p-4 sm:p-5', resolvedBanner && style === 'cover' && 'sm:p-4')}>

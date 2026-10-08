@@ -38,13 +38,14 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { PoweredByFeatherPanel } from '@/components/branding/PoweredByFeatherPanel';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { formatMemory, formatDisk } from '@/lib/server-utils';
 import { cn } from '@/lib/utils';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { NodeServersList, type NodeStatusServer } from '@/components/admin/NodeServersList';
 
 interface NodeEntry {
@@ -243,13 +244,10 @@ export default function StatusPage() {
                 if (data && data.success) {
                     setStatusData(data.data);
                 } else {
-                    setError(data?.message || t('dashboard.status.failedToFetchStatus'));
+                    setError(getApiErrorMessageFromPayload(data, t, 'dashboard.status.failedToFetchStatus'));
                 }
             } catch (err: unknown) {
-                let errorMessage = t('dashboard.status.failedToFetchStatus');
-                if (axios.isAxiosError(err)) {
-                    errorMessage = err.response?.data?.message || errorMessage;
-                }
+                const errorMessage = getApiErrorMessage(err, t, 'dashboard.status.failedToFetchStatus');
                 setError(errorMessage);
                 if (errorMessage !== 'Status page is disabled') {
                     toast.error(errorMessage);

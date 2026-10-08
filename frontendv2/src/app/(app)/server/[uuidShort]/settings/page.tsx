@@ -22,6 +22,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { formatBackupLimitLabel } from '@/lib/server-utils';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
+import { Switch } from '@/components/ui/switch';
 import {
     Save,
     Server as ServerIcon,
@@ -40,11 +41,14 @@ import {
     Lock,
     Link as LinkIcon,
     OctagonX,
+    Power,
 } from 'lucide-react';
 import { copyToClipboard } from '@/lib/utils';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import {
     Dialog,
     DialogContent,
@@ -62,6 +66,7 @@ import type { Server } from '@/types/server';
 import { isEnabled } from '@/lib/utils';
 import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 import { filesApi } from '@/lib/files-api';
+import { PageLoading } from '@/components/featherui/PageLoading';
 
 interface SftpDetails {
     host: string;
@@ -107,6 +112,9 @@ export default function ServerSettingsPage() {
         'inherit',
     );
     const [savingBackupPolicy, setSavingBackupPolicy] = React.useState(false);
+    const [autoStart, setAutoStart] = React.useState(false);
+    const [autoStartDelay, setAutoStartDelay] = React.useState(0);
+    const [savingAutoStart, setSavingAutoStart] = React.useState(false);
 
     const [showReinstallDialog, setShowReinstallDialog] = React.useState(false);
     const [confirmReinstallText, setConfirmReinstallText] = React.useState('');
@@ -145,10 +153,12 @@ export default function ServerSettingsPage() {
                 setDescription(data.data.description || '');
                 const br = data.data.backup_retention_mode;
                 setBackupRetentionMode(br === 'fifo_rolling' || br === 'hard_limit' ? br : 'inherit');
+                setAutoStart(Boolean(data.data.auto_start));
+                setAutoStartDelay(Number(data.data.auto_start_delay) || 0);
             }
         } catch (error) {
             console.error(error);
-            toast.error(t('serverSettings.errorTitle'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.errorTitle'));
         } finally {
             setLoading(false);
         }
@@ -177,7 +187,7 @@ export default function ServerSettingsPage() {
             }
         } catch (error) {
             console.error(error);
-            toast.error(t('serverSettings.saveError'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.saveError'));
         } finally {
             setSaving(false);
         }
@@ -196,7 +206,7 @@ export default function ServerSettingsPage() {
             }
         } catch (error) {
             console.error(error);
-            toast.error(t('serverSettings.reinstallError'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.reinstallError'));
         } finally {
             setReinstalling(false);
         }
@@ -216,7 +226,7 @@ export default function ServerSettingsPage() {
             await fetchData();
         } catch (error) {
             console.error(error);
-            toast.error(t('serverSettings.abortInstallError'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.abortInstallError'));
         } finally {
             setAbortingInstall(false);
         }
@@ -230,7 +240,7 @@ export default function ServerSettingsPage() {
             router.push('/dashboard');
         } catch (error) {
             console.error(error);
-            toast.error(t('serverSettings.deleteError'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.deleteError'));
             setDeleting(false);
         }
     };
@@ -238,11 +248,15 @@ export default function ServerSettingsPage() {
     const hasChanges = server?.name !== name || (server?.description || '') !== description;
     const canEditBackupPolicy =
         Boolean(server && !server.is_subuser) && isEnabled(settings?.server_allow_user_backup_policy_edit ?? 'true');
+    const canEditAutoStart = canRename && isEnabled(settings?.server_allow_user_auto_start ?? 'false');
     const hasBackupPolicyChanges =
         server &&
         (server.backup_retention_mode === 'fifo_rolling' || server.backup_retention_mode === 'hard_limit'
             ? server.backup_retention_mode
             : 'inherit') !== backupRetentionMode;
+    const hasAutoStartChanges =
+        server &&
+        (Boolean(server.auto_start) !== autoStart || (Number(server.auto_start_delay) || 0) !== autoStartDelay);
 
     const handleSaveBackupPolicy = async () => {
         if (!canEditBackupPolicy || !server) return;
@@ -257,12 +271,29 @@ export default function ServerSettingsPage() {
             }
         } catch (error) {
             console.error(error);
-            const msg = axios.isAxiosError(error)
-                ? (error.response?.data as { message?: string } | undefined)?.message
-                : undefined;
-            toast.error(msg || t('serverSettings.backupPolicySaveError'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.backupPolicySaveError'));
         } finally {
             setSavingBackupPolicy(false);
+        }
+    };
+
+    const handleSaveAutoStart = async () => {
+        if (!canEditAutoStart || !server) return;
+        setSavingAutoStart(true);
+        try {
+            const { data } = await axios.put(`/api/user/servers/${uuidShort}`, {
+                auto_start: autoStart,
+                auto_start_delay: Math.max(0, Math.min(3600, autoStartDelay)),
+            });
+            if (data.success) {
+                toast.success(t('serverSettings.autoStartSaveSuccess'));
+                await fetchData();
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.autoStartSaveError'));
+        } finally {
+            setSavingAutoStart(false);
         }
     };
     const resolvedSftpHost = server?.node?.sftp_subdomain || server?.sftp?.host || '';
@@ -273,7 +304,9 @@ export default function ServerSettingsPage() {
             ? `sftp://${resolvedSftpUsername}@${resolvedSftpHost}:${resolvedSftpPort}`
             : server?.sftp?.url || '';
 
-    if (permissionsLoading || settingsLoading) return null;
+    if (permissionsLoading || settingsLoading) {
+        return <PageLoading />;
+    }
 
     if (loading && !server) {
         return (
@@ -286,7 +319,7 @@ export default function ServerSettingsPage() {
 
     if (!canRename && !canReinstall && !canViewSftp) {
         return (
-            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-[3rem] border py-24 text-center backdrop-blur-3xl'>
+            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-3xl border py-24 text-center backdrop-blur-3xl'>
                 <div className='relative'>
                     <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
                     <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
@@ -352,6 +385,7 @@ export default function ServerSettingsPage() {
                                         disabled={saving || !hasChanges}
                                         variant='default'
                                         size='sm'
+                                        data-fp-save-shortcut
                                     >
                                         {saving ? (
                                             <Loader2 className='mr-2 h-4 w-4 animate-spin' />
@@ -391,7 +425,7 @@ export default function ServerSettingsPage() {
                                     <div className='border-border/10 bg-muted/40 flex h-12 items-center rounded-xl border px-4 text-sm font-medium'>
                                         {server?.backup_limit != null
                                             ? formatBackupLimitLabel(server.backup_limit, t('common.disabled'))
-                                            : '—'}
+                                            : '-'}
                                     </div>
                                     <p className='text-muted-foreground ml-1 text-xs break-words'>
                                         {t('serverSettings.backupLimitReadOnlyHelp')}
@@ -441,6 +475,7 @@ export default function ServerSettingsPage() {
                                     onClick={handleSaveBackupPolicy}
                                     disabled={savingBackupPolicy || !hasBackupPolicyChanges}
                                     size='sm'
+                                    data-fp-save-shortcut
                                 >
                                     {savingBackupPolicy ? (
                                         <Loader2 className='mr-2 h-4 w-4 animate-spin' />
@@ -449,6 +484,63 @@ export default function ServerSettingsPage() {
                                     )}
                                     {t('serverSettings.backupPolicySave')}
                                 </Button>
+                            </div>
+                        </PageCard>
+                    )}
+
+                    {canEditAutoStart && (
+                        <PageCard
+                            title={t('serverSettings.autoStartTitle')}
+                            description={t('serverSettings.autoStartDescription')}
+                            icon={Power}
+                        >
+                            <div className='space-y-6'>
+                                <div className='bg-muted/20 border-border/50 flex items-center justify-between rounded-xl border p-4'>
+                                    <div className='space-y-0.5 pr-4'>
+                                        <Label>{t('serverSettings.autoStartLabel')}</Label>
+                                    </div>
+                                    <Switch
+                                        checked={autoStart}
+                                        onCheckedChange={setAutoStart}
+                                        disabled={savingAutoStart}
+                                    />
+                                </div>
+                                <div className='space-y-2'>
+                                    <Label className='text-muted-foreground ml-1 text-xs font-bold tracking-wider uppercase'>
+                                        {t('serverSettings.autoStartDelayLabel')}
+                                    </Label>
+                                    <Input
+                                        type='number'
+                                        min={0}
+                                        max={3600}
+                                        value={autoStartDelay}
+                                        disabled={!autoStart || savingAutoStart}
+                                        onChange={(e) =>
+                                            setAutoStartDelay(
+                                                Math.max(0, Math.min(3600, parseInt(e.target.value) || 0)),
+                                            )
+                                        }
+                                        className='h-12'
+                                    />
+                                    <p className='text-muted-foreground ml-1 text-xs'>
+                                        {t('serverSettings.autoStartDelayHelp')}
+                                    </p>
+                                </div>
+                                <div className='flex gap-3'>
+                                    <Button
+                                        onClick={handleSaveAutoStart}
+                                        disabled={savingAutoStart || !hasAutoStartChanges}
+                                        size='sm'
+                                        data-fp-save-shortcut
+                                    >
+                                        {savingAutoStart ? (
+                                            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                        ) : (
+                                            <Save className='mr-2 h-4 w-4' />
+                                        )}
+                                        {t('serverSettings.autoStartSave')}
+                                    </Button>
+                                </div>
                             </div>
                         </PageCard>
                     )}
@@ -669,12 +761,10 @@ export default function ServerSettingsPage() {
                             </p>
                         </div>
                         <div className='flex items-center gap-2 rounded-xl border border-orange-500/20 bg-orange-500/5 p-4'>
-                            <input
-                                type='checkbox'
+                            <Checkbox
                                 id='wipeFiles'
                                 checked={wipeFilesOnReinstall}
-                                onChange={(e) => setWipeFilesOnReinstall(e.target.checked)}
-                                className='h-4 w-4 rounded border-white/20 bg-white/5 checked:bg-orange-500'
+                                onCheckedChange={setWipeFilesOnReinstall}
                             />
                             <Label htmlFor='wipeFiles' className='cursor-pointer text-sm text-orange-200'>
                                 {t('serverSettings.wipeFiles')}
@@ -722,12 +812,10 @@ export default function ServerSettingsPage() {
                                     {t('serverSettings.deleteServerStep2Description')}
                                 </p>
                                 <div className='flex items-center gap-2'>
-                                    <input
-                                        type='checkbox'
+                                    <Checkbox
                                         id='confirmIrreversible'
                                         checked={confirmIrreversible}
-                                        onChange={(e) => setConfirmIrreversible(e.target.checked)}
-                                        className='h-4 w-4 rounded border-white/20 bg-white/5'
+                                        onCheckedChange={setConfirmIrreversible}
                                     />
                                     <Label htmlFor='confirmIrreversible' className='cursor-pointer'>
                                         {t('serverSettings.deleteServerStep2Confirm')}

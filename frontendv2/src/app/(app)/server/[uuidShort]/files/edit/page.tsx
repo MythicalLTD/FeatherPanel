@@ -18,12 +18,13 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useEffect, useState, useRef, useCallback, use, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import type { OnMount } from '@monaco-editor/react';
-import { filesApi } from '@/lib/files-api';
+import { filesApi, isFileNotFoundError } from '@/lib/files-api';
 import { toast } from 'sonner';
 import { Save, Loader2, FileCode, Lock, CheckCircle2, Boxes, Monitor, Smartphone } from 'lucide-react';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { useFileEditorEngine } from '@/hooks/useFileEditorEngine';
+import { useSaveShortcut } from '@/hooks/useSaveShortcut';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/featherui/Button';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -40,6 +41,7 @@ import { BukkitConfigurationEditor } from '@/components/server/files/editors/Buk
 import { CommandsEditor } from '@/components/server/files/editors/CommandsEditor';
 import { isBinaryLikeFileName } from '@/lib/binary-like-file-names';
 import { safeBack } from '@/lib/safe-back';
+import { joinServerFilePath } from '@/lib/server-switch';
 
 export default function FileEditorPage({
     params,
@@ -50,10 +52,11 @@ export default function FileEditorPage({
 }) {
     const { t } = useTranslation();
     const { uuidShort } = use(params);
-    const { file: fileName = 'file.txt', directory = '/' } = use(searchParams);
+    const { file: rawFileName, directory = '/' } = use(searchParams);
+    const fileName = rawFileName?.trim() ?? '';
     const router = useRouter();
     const { theme } = useTheme();
-    const fullPath = directory.endsWith('/') ? `${directory}${fileName}` : `${directory}/${fileName}`;
+    const fullPath = fileName ? joinServerFilePath(directory, fileName) : '';
 
     const [content, setContent] = useState('');
     const [originalContent, setOriginalContent] = useState('');
@@ -226,6 +229,8 @@ export default function FileEditorPage({
     ]);
 
     const fetchContent = useCallback(async () => {
+        if (!fileName || !fullPath) return;
+
         setLoading(true);
         try {
             const controller = new AbortController();
@@ -241,6 +246,10 @@ export default function FileEditorPage({
             setOriginalContent(data);
         } catch (error) {
             console.error(error);
+            if (isFileNotFoundError(error)) {
+                router.replace(`/server/${uuidShort}/files`);
+                return;
+            }
             if (error instanceof Error && error.message === 'Request timeout') {
                 toast.error(t('files.editor.load_timeout'));
             } else {
@@ -249,13 +258,17 @@ export default function FileEditorPage({
         } finally {
             setLoading(false);
         }
-    }, [uuidShort, fullPath, t]);
+    }, [uuidShort, fullPath, fileName, t, router]);
 
     useEffect(() => {
-        if (uuidShort && fileName && directory) {
+        if (!fileName) {
+            router.replace(`/server/${uuidShort}/files`);
+            return;
+        }
+        if (uuidShort && directory) {
             fetchContent();
         }
-    }, [uuidShort, fileName, directory, fetchContent]);
+    }, [uuidShort, fileName, directory, fetchContent, router]);
 
     useEffect(() => {
         fetchWidgets();
@@ -283,21 +296,15 @@ export default function FileEditorPage({
         [canEdit, content, uuidShort, fullPath, t],
     );
 
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            // Check for Ctrl+S (Windows/Linux) or Cmd+S (Mac)
-            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                e.preventDefault();
-                // Only save if we can edit and there are changes
-                if (canEdit && content !== originalContent && !saving) {
-                    handleSave();
-                }
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [canEdit, content, originalContent, saving, handleSave]);
+    useSaveShortcut(
+        () => {
+            void handleSave();
+        },
+        {
+            enabled: canEdit && content !== originalContent,
+            disabled: saving,
+        },
+    );
 
     const handleSwitchToRawEditor = () => {
         setUseMinecraftEditor(false);

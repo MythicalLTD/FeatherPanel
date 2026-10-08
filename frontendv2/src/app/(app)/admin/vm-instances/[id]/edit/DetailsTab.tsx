@@ -63,7 +63,7 @@ export function DetailsTab({
     const { t } = useTranslation();
 
     return (
-        <form onSubmit={onSave}>
+        <form onSubmit={onSave} data-fp-save-shortcut>
             <PageCard title={t('admin.vmInstances.edit_tabs.details') ?? 'Details'} icon={Server}>
                 <div className='space-y-4'>
                     <div>
@@ -155,7 +155,7 @@ export function DetailsTab({
             <div className='mt-4 flex justify-end'>
                 <Button type='submit' loading={saving}>
                     <Save className='mr-2 h-4 w-4' />
-                    {t('common.save_changes')}
+                    {t('common.saveChanges')}
                 </Button>
             </div>
         </form>

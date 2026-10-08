@@ -14,11 +14,11 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import { useState, useEffect } from 'react';
-import { HeadlessModal } from '@/components/ui/headless-modal';
-import { Input } from '@/components/ui/input';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/featherui/Input';
 import { Search, Server as ServerIcon, Check, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 
 interface Server {
     id: number;
@@ -61,12 +61,19 @@ export function ServerSelectionModal({
     }, [searchQuery]);
 
     return (
-        <HeadlessModal
-            isOpen={isOpen}
+        <Dialog
+            open={isOpen}
             onClose={onClose}
-            title={t('tickets.selectServerTitle')}
-            description={t('tickets.selectServerDescription')}
+            onOpenChange={(open) => {
+                if (!open) {
+                    onClose();
+                }
+            }}
         >
+            <DialogHeader>
+                <DialogTitle>{t('tickets.selectServerTitle')}</DialogTitle>
+                <DialogDescription>{t('tickets.selectServerDescription')}</DialogDescription>
+            </DialogHeader>
             <div className='space-y-4'>
                 <div className='relative'>
                     <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
@@ -134,6 +141,6 @@ export function ServerSelectionModal({
                     </Button>
                 </div>
             </div>
-        </HeadlessModal>
+        </Dialog>
     );
 }

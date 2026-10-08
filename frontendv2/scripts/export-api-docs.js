@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { DOCS_BASE, writeJson, writeMarkdown, writeText } from './lib/docs-site.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,37 +29,50 @@ function generateApiDocsPage() {
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>API Reference - FeatherPanel</title>
+  <title>API Reference — FeatherPanel Docs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="${DOCS_BASE}/assets/docs.css" />
   <style>
-    body { margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    .header { position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #1f2937; background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(8px); }
-    .header-content { max-width: 100%; margin: 0 auto; padding: 1rem; display: flex; align-items: center; gap: 1rem; }
-    .back-link { color: #60a5fa; text-decoration: none; padding: 0.5rem 1rem; border-radius: 0.375rem; transition: background 0.2s; }
-    .back-link:hover { background: rgba(96, 165, 250, 0.1); }
-    .header-title { display: flex; align-items: center; gap: 0.5rem; color: #e5e7eb; font-size: 1.125rem; font-weight: 600; }
-    #redoc-container { min-height: calc(100vh - 73px); }
+    body.fp-docs { padding: 0; }
+    .fp-api-shell { max-width: none; padding: 0; }
+    .fp-api-shell .fp-nav { margin: 0.75rem 1rem 0; }
+    .fp-api-bar { display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center; padding:0.75rem 1rem 0.25rem; }
+    #redoc-container { min-height: calc(100vh - 120px); }
+    .fp-api-shell .fp-footer { margin: 0 1rem 1.5rem; }
   </style>
 </head>
-<body>
-  <div class="header">
-    <div class="header-content">
-      <a href="/icanhasfeatherpanel/index.html" class="back-link">&larr; Back to Documentation</a>
-      <a href="/icanhasfeatherpanel/api/oauth2-playground.html" class="back-link">OAuth2 Docs & Playground</a>
-      <div class="header-title">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #60a5fa;">
-          <polyline points="16 18 22 12 16 6"></polyline>
-          <polyline points="8 6 2 12 8 18"></polyline>
-        </svg>
-        API Reference
+<body class="fp-docs">
+  <div class="fp-shell fp-api-shell">
+    <nav class="fp-nav" aria-label="Documentation">
+      <a class="fp-brand" href="${DOCS_BASE}/">
+        <span class="fp-brand-mark" aria-hidden="true"></span>
+        <span>FeatherPanel Docs</span>
+      </a>
+      <div class="fp-nav-links">
+        <a href="${DOCS_BASE}/">Home</a>
+        <a href="${DOCS_BASE}/plugins/">Plugins</a>
+        <a href="${DOCS_BASE}/auth/">Auth</a>
+        <a href="${DOCS_BASE}/widgets/">Widgets</a>
+        <a href="${DOCS_BASE}/events/">Events</a>
+        <a href="${DOCS_BASE}/permissions/">Permissions</a>
+        <a href="${DOCS_BASE}/api/" class="active">API</a>
+        <a href="${DOCS_BASE}/api/oauth2.md">OAuth2</a>
+        <a href="${DOCS_BASE}/rag/">RAG</a>
       </div>
+    </nav>
+    <div class="fp-api-bar">
+      <a class="fp-badge" href="${DOCS_BASE}/api/openapi.json">openapi.json</a>
+      <a class="fp-badge" href="${DOCS_BASE}/api/index.md">index.md</a>
+      <a class="fp-badge" href="${DOCS_BASE}/api/index.json">index.json</a>
+      <a class="fp-badge" href="${DOCS_BASE}/api/oauth2-playground.html">OAuth2 playground</a>
     </div>
-  </div>
   <div id="redoc-container"></div>
+  <footer class="fp-footer">Raw OpenAPI for RAG/tools: <a href="${DOCS_BASE}/api/openapi.json">openapi.json</a></footer>
+  </div>
 
   <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
   <script>
-    Redoc.init('/api/openapi.json', {
+    Redoc.init('./openapi.json', {
       theme: {
         colors: {
           primary: {
@@ -197,13 +211,26 @@ function generateOAuth2DocsAndPlaygroundPage() {
     </div>
 
     <div class="panel panel-muted">
-      <h2>Flow Overview</h2>
+      <h2>Which flow?</h2>
+      <table>
+        <thead><tr><th>Situation</th><th>Flow</th></tr></thead>
+        <tbody>
+          <tr><td>Web app with a redirect URL</td><td><strong>Callback</strong> <code>mode=user</code> (fragment) or <code>mode=server</code> (panel POSTs JSON)</td></tr>
+          <tr><td>CLI / TV / headless — <em>no</em> redirect URL</td><td><strong>Device</strong> — user enters a short code; client polls</td></tr>
+        </tbody>
+      </table>
+      <p>Full guide (RAG): <a href="${DOCS_BASE}/api/oauth2.md">api/oauth2.md</a> · Login SSO is different: <a href="${DOCS_BASE}/auth/oidc-sso.md">auth/oidc-sso.md</a></p>
+    </div>
+
+    <div class="panel panel-muted">
+      <h2>Callback flow overview</h2>
       <ol>
         <li>Build authorize URL to <code>/dashboard/account/oauth2/api/new?...params...</code>.</li>
         <li>User reviews request and approves/denies consent.</li>
         <li><code>mode=user</code>: panel redirects user to <code>callbackurl</code> with result in URL fragment (<code>#...</code>).</li>
         <li><code>mode=server</code>: panel calls <code>callbackurl</code> server-to-server with JSON credentials, then shows success in panel UI.</li>
         <li>Optional: app exchanges one-time <code>authorization_code</code> via <code>POST /api/user/api-clients/oauth2/token</code>.</li>
+        <li>Do <strong>not</strong> pass <code>mode=device</code> on the callback URL — use the device endpoints below.</li>
       </ol>
     </div>
 
@@ -227,8 +254,8 @@ function generateOAuth2DocsAndPlaygroundPage() {
     </div>
 
     <div class="panel">
-      <h2>Playground</h2>
-      <p>Use this form to generate, validate, and open consent URLs.</p>
+      <h2>Playground — callback (with redirect URL)</h2>
+      <p>Generate, validate, and open consent URLs for <code>mode=user</code> / <code>mode=server</code>.</p>
       <div class="grid">
         <div><label>name *</label><input id="name" value="My Integration" /></div>
         <div><label>callbackurl *</label><input id="callbackurl" value="http://localhost:3000/oauth/callback" /></div>
@@ -236,8 +263,8 @@ function generateOAuth2DocsAndPlaygroundPage() {
         <div><label>appLogo</label><input id="appLogo" value="" /></div>
         <div><label>mode</label>
           <select id="mode">
-            <option value="user" selected>user</option>
-            <option value="server">server</option>
+            <option value="user" selected>user (fragment redirect)</option>
+            <option value="server">server (panel POSTs JSON)</option>
           </select>
         </div>
         <div><label>alertCors</label>
@@ -266,6 +293,29 @@ function generateOAuth2DocsAndPlaygroundPage() {
     <div class="panel">
       <label>Metadata Validation Response</label>
       <pre id="metaResult">Not validated yet.</pre>
+    </div>
+
+    <div class="panel">
+      <h2>Playground — device (no redirect URL)</h2>
+      <p>RFC 8628-style. Start a device grant, show the user the verification URI + code, then poll until keys arrive. Live calls need a running panel (same origin).</p>
+      <div class="grid">
+        <div><label>name *</label><input id="deviceName" value="My CLI" /></div>
+        <div><label>appName</label><input id="deviceAppName" value="Feather CLI" /></div>
+        <div class="full"><label>description</label><textarea id="deviceDescription">Issue an API key for the CLI</textarea></div>
+      </div>
+      <div class="actions">
+        <button id="deviceStart">Start device flow</button>
+        <button id="devicePoll" class="secondary" disabled>Poll once</button>
+        <button id="devicePollLoop" class="secondary" disabled>Poll until done</button>
+        <button id="deviceOpenVerify" class="secondary" disabled>Open verification URI</button>
+        <button id="deviceStop" class="secondary" disabled>Stop polling</button>
+      </div>
+      <p class="fp-muted" style="color:#9ca3af;font-size:.9rem;margin:.75rem 0 0;">User page: <code>/dashboard/account/oauth2/api/device</code> · Endpoints: <code>POST …/oauth2/device</code> then <code>POST …/oauth2/device/token</code></p>
+    </div>
+
+    <div class="panel">
+      <label>Device flow state</label>
+      <pre id="deviceOut">Not started.</pre>
     </div>
 
     <div class="panel panel-muted">
@@ -362,6 +412,96 @@ history.replaceState(null, '', location.pathname + location.search);</code></pre
     document.getElementById('validateMeta').addEventListener('click', validateMetadata);
     document.getElementById('open').addEventListener('click', () => window.open(buildUrl(), '_blank'));
     buildUrl();
+
+    let deviceState = { device_code: '', verification_uri: '', verification_uri_complete: '', interval: 5, timer: null };
+    const deviceOut = () => document.getElementById('deviceOut');
+    const setDeviceButtons = (started) => {
+      document.getElementById('devicePoll').disabled = !started;
+      document.getElementById('devicePollLoop').disabled = !started;
+      document.getElementById('deviceOpenVerify').disabled = !started;
+      document.getElementById('deviceStop').disabled = !started;
+    };
+    function stopDevicePoll() {
+      if (deviceState.timer) { clearTimeout(deviceState.timer); deviceState.timer = null; }
+    }
+    async function deviceStart() {
+      stopDevicePoll();
+      const body = {
+        name: String(document.getElementById('deviceName').value || '').trim(),
+        appName: String(document.getElementById('deviceAppName').value || '').trim(),
+        description: String(document.getElementById('deviceDescription').value || '').trim(),
+      };
+      deviceOut().textContent = 'Starting…';
+      try {
+        const response = await fetch('/api/user/api-clients/oauth2/device', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await response.json();
+        deviceOut().className = response.ok ? 'ok' : 'err';
+        deviceOut().textContent = JSON.stringify(data, null, 2);
+        const payload = data.data || data;
+        if (response.ok && payload.device_code) {
+          deviceState.device_code = payload.device_code;
+          deviceState.verification_uri = payload.verification_uri || '/dashboard/account/oauth2/api/device';
+          deviceState.verification_uri_complete = payload.verification_uri_complete || '';
+          deviceState.interval = Number(payload.interval) || 5;
+          setDeviceButtons(true);
+        }
+      } catch (error) {
+        deviceOut().className = 'err';
+        deviceOut().textContent = 'Failed to start device flow: ' + String(error);
+      }
+    }
+    async function devicePollOnce() {
+      if (!deviceState.device_code) return { done: true };
+      try {
+        const response = await fetch('/api/user/api-clients/oauth2/device/token', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ device_code: deviceState.device_code }),
+        });
+        const data = await response.json();
+        const code = data.error_code || data.error || (data.data && data.data.error);
+        deviceOut().className = response.ok ? 'ok' : 'err';
+        deviceOut().textContent = JSON.stringify(data, null, 2);
+        if (response.ok && (data.public_key || (data.data && data.data.public_key))) {
+          stopDevicePoll();
+          return { done: true };
+        }
+        if (code === 'slow_down') deviceState.interval = (deviceState.interval || 5) + 5;
+        if (code === 'expired_token' || code === 'access_denied' || code === 'INVALID_DEVICE_CODE') {
+          stopDevicePoll();
+          return { done: true };
+        }
+        return { done: false };
+      } catch (error) {
+        deviceOut().className = 'err';
+        deviceOut().textContent = 'Poll failed: ' + String(error);
+        return { done: true };
+      }
+    }
+    function devicePollLoop() {
+      stopDevicePoll();
+      const tick = async () => {
+        const result = await devicePollOnce();
+        if (!result.done) {
+          deviceState.timer = setTimeout(tick, (deviceState.interval || 5) * 1000);
+        }
+      };
+      tick();
+    }
+    document.getElementById('deviceStart').addEventListener('click', deviceStart);
+    document.getElementById('devicePoll').addEventListener('click', () => devicePollOnce());
+    document.getElementById('devicePollLoop').addEventListener('click', devicePollLoop);
+    document.getElementById('deviceStop').addEventListener('click', stopDevicePoll);
+    document.getElementById('deviceOpenVerify').addEventListener('click', () => {
+      const uri = deviceState.verification_uri_complete || deviceState.verification_uri;
+      if (uri) window.open(uri, '_blank');
+    });
   </script>
 </body>
 </html>
@@ -388,5 +528,50 @@ const oauth2PlaygroundPage = generateOAuth2DocsAndPlaygroundPage();
 fs.writeFileSync(oauth2PlaygroundPath, oauth2PlaygroundPage);
 console.log(`✓ OAuth2 docs/playground page: ${oauth2PlaygroundPath}`);
 
+writeMarkdown(
+    path.join(API_DOCS_DIR, 'index.md'),
+    `# FeatherPanel HTTP API
+
+Interactive docs: [HTML (Redoc)](./index.html)
+
+## Machine-readable
+
+- [\`openapi.json\`](./openapi.json) — full OpenAPI 3 specification (preferred for RAG / codegen)
+- [\`index.json\`](./index.json) — pointers for this section
+- [OAuth2 API consent guide](./oauth2.md) — callback (\`mode=user|server\`) **and** device flow
+- [OAuth2 playground](./oauth2-playground.html) — browser helper for both flows (live calls need a running panel)
+
+Related auth (login, not API keys): [../auth/README.md](../auth/README.md)
+
+Copy or fetch \`openapi.json\` into your RAG corpus. Do not scrape the Redoc HTML.
+`,
+);
+
+writeJson(path.join(API_DOCS_DIR, 'index.json'), {
+    type: 'featherpanel.api.index',
+    formats: {
+        html: `${DOCS_BASE}/api/`,
+        openapi_json: `${DOCS_BASE}/api/openapi.json`,
+        markdown: `${DOCS_BASE}/api/index.md`,
+        oauth2_md: `${DOCS_BASE}/api/oauth2.md`,
+        oauth2_playground: `${DOCS_BASE}/api/oauth2-playground.html`,
+        auth_index: `${DOCS_BASE}/auth/`,
+    },
+    notes: [
+        'Prefer openapi.json for RAG and tooling.',
+        'oauth2.md covers callback vs device API-key consent (not OIDC login).',
+        'openapi.json is copied into this folder during build:public-docs.',
+    ],
+});
+
+writeText(
+    path.join(API_DOCS_DIR, 'README.md'),
+    `# API docs
+
+See [index.md](./index.md). Raw spec: [openapi.json](./openapi.json).
+`,
+);
+
 console.log(`\n✅ API documentation generated successfully!`);
-console.log(`   - API docs page: /icanhasfeatherpanel/api`);
+console.log(`   - API docs page: ${DOCS_BASE}/api`);
+console.log(`   - Machine-readable: index.md / index.json (+ openapi.json at build time)`);

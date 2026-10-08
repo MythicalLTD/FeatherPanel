@@ -21,6 +21,7 @@ use App\App;
 use App\Chat\User;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Plugins\PluginFrontendVisibility;
 use App\Plugins\Events\Events\PluginUiEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -34,6 +35,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'pluginName', type: 'string', description: 'Plugin display name'),
         new OA\Property(property: 'component', type: 'string', description: 'Component file path'),
         new OA\Property(property: 'enabled', type: 'boolean', description: 'Whether widget is enabled'),
+        new OA\Property(property: 'hidden', type: 'boolean', description: 'Whether widget is hidden by plugin frontend visibility rules'),
         new OA\Property(property: 'priority', type: 'integer', description: 'Display priority (higher = first)'),
         new OA\Property(property: 'page', type: 'string', description: 'Target page identifier'),
         new OA\Property(property: 'location', type: 'string', description: 'Widget placement location'),
@@ -206,7 +208,7 @@ class PluginWidgetController
                                     || !isset($widget['page'])
                                     || !isset($widget['location'])
                                     || !isset($widget['component'])
-                                    || !($widget['enabled'] ?? true)
+                                    || !PluginFrontendVisibility::isVisible($plugin, $widget, 'widget', (string) $widget['id'])
                                 ) {
                                     continue;
                                 }
@@ -241,7 +243,8 @@ class PluginWidgetController
                                     'plugin' => $plugin,
                                     'pluginName' => $widget['pluginName'] ?? ucfirst(str_replace(['-', '_'], ' ', $plugin)),
                                     'component' => $component,
-                                    'enabled' => $widget['enabled'] ?? true,
+                                    'enabled' => true,
+                                    'hidden' => false,
                                     'priority' => $widget['priority'] ?? 100,
                                     'page' => $page,
                                     'location' => $location,
@@ -324,6 +327,7 @@ class PluginWidgetController
             '<userUuid>' => 'testData',
             '<serverUuid>' => 'testData',
             '<vdsId>' => 'testData',
+            '<webspaceUuid>' => 'testData',
             '<realmUuid>' => 'testData',
             '<spellUuid>' => 'testData',
         ];
@@ -354,6 +358,11 @@ class PluginWidgetController
         // Add vdsId if available from cookie
         if (isset($_COOKIE['vdsId']) && strpos($component, 'vdsId=') === false) {
             $queryParams['vdsId'] = $_COOKIE['vdsId'];
+        }
+
+        // Add webspaceUuid if available from cookie
+        if (isset($_COOKIE['webspaceUuid']) && strpos($component, 'webspaceUuid=') === false) {
+            $queryParams['webspaceUuid'] = $_COOKIE['webspaceUuid'];
         }
 
         if (!empty($queryParams)) {

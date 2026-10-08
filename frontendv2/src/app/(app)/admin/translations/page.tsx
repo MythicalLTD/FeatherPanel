@@ -15,10 +15,12 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios, { isAxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -115,7 +117,7 @@ export default function TranslationsPage() {
                 setTranslationFiles(files);
             } catch (error) {
                 console.error('Error fetching translation files:', error);
-                toast.error(t('admin.translations.messages.fetch_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.translations.messages.fetch_failed'));
             } finally {
                 setLoading(false);
             }
@@ -134,7 +136,7 @@ export default function TranslationsPage() {
             setEditOpen(true);
         } catch (error) {
             console.error('Error loading translation content:', error);
-            toast.error(t('admin.translations.messages.fetch_content_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.translations.messages.fetch_content_failed'));
         }
     };
 
@@ -143,7 +145,7 @@ export default function TranslationsPage() {
         try {
             const response = await fetch('/locales/en.json');
             if (!response.ok) {
-                throw new Error('Failed to fetch frontend translations');
+                throw new Error(t('admin.translations.messages.import_failed'));
             }
             const frontendTranslations = await response.json();
             const blob = new Blob([JSON.stringify(frontendTranslations)], { type: 'application/json' });
@@ -160,11 +162,7 @@ export default function TranslationsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error importing translations:', error);
-            let msg = t('admin.translations.messages.import_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.translations.messages.import_failed'));
         } finally {
             setIsImporting(false);
         }
@@ -192,11 +190,7 @@ export default function TranslationsPage() {
             }
         } catch (error) {
             console.error('Error uploading translation file:', error);
-            let msg = t('admin.translations.messages.upload_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.translations.messages.upload_failed'));
         } finally {
             setIsUploading(false);
         }
@@ -238,11 +232,7 @@ export default function TranslationsPage() {
                 setNewLangCode('');
                 return;
             }
-            let msg = t('admin.translations.messages.create_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.translations.messages.create_failed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -254,7 +244,7 @@ export default function TranslationsPage() {
         try {
             JSON.parse(editingContent);
         } catch {
-            toast.error(t('admin.translations.messages.invalid_json'));
+            toast.error(t('errors.codes.INVALID_JSON'));
             return;
         }
 
@@ -274,11 +264,7 @@ export default function TranslationsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error updating translation file:', error);
-            let msg = t('admin.translations.messages.update_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.translations.messages.update_failed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -292,7 +278,7 @@ export default function TranslationsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error deleting translation file:', error);
-            toast.error(t('admin.translations.messages.delete_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.translations.messages.delete_failed'));
         }
     };
 
@@ -311,7 +297,7 @@ export default function TranslationsPage() {
             window.URL.revokeObjectURL(url);
         } catch (error) {
             console.error('Error downloading translation file:', error);
-            toast.error(t('admin.translations.messages.download_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.translations.messages.download_failed'));
         }
     };
 
@@ -510,7 +496,7 @@ export default function TranslationsPage() {
                                 scrollBeyondLastLine: false,
                                 automaticLayout: true,
                                 padding: { top: 20 },
-                                fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                                fontFamily: APP_MONO_FONT_STACK,
                                 fontLigatures: true,
                                 formatOnPaste: true,
                                 formatOnType: true,
@@ -521,7 +507,7 @@ export default function TranslationsPage() {
                         <Button variant='outline' onClick={() => setEditOpen(false)}>
                             {t('common.cancel')}
                         </Button>
-                        <Button onClick={handleUpdate} loading={isSubmitting}>
+                        <Button onClick={handleUpdate} loading={isSubmitting} data-fp-save-shortcut>
                             {t('admin.translations.form.submit_update')}
                         </Button>
                     </SheetFooter>
@@ -534,7 +520,7 @@ export default function TranslationsPage() {
                         <SheetTitle>{t('admin.translations.form.create_title')}</SheetTitle>
                         <SheetDescription>{t('admin.translations.form.create_description')}</SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleCreate} className='space-y-4'>
+                    <form onSubmit={handleCreate} className='space-y-4' data-fp-save-shortcut>
                         <div className='space-y-2'>
                             <Label>{t('admin.translations.form.language_code')}</Label>
                             <Input

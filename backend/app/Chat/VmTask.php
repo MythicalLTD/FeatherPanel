@@ -62,6 +62,19 @@ class VmTask
         return $row ?: null;
     }
 
+    public static function deleteByInstanceId(int $instanceId): int
+    {
+        if ($instanceId <= 0) {
+            return 0;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE instance_id = :instance_id');
+        $stmt->execute(['instance_id' => $instanceId]);
+
+        return (int) $stmt->rowCount();
+    }
+
     public static function update(string $taskId, array $data): bool
     {
         $pdo = Database::getPdoConnection();

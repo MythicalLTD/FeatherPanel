@@ -29,9 +29,11 @@ use App\Config\ConfigInterface;
 use App\Helpers\WebAuthnHelper;
 use App\Helpers\PermissionHelper;
 use Webauthn\PublicKeyCredential;
+use App\Helpers\TwoFactorChallengeHelper;
 use Webauthn\PublicKeyCredentialDescriptor;
 use Webauthn\PublicKeyCredentialParameters;
 use Webauthn\PublicKeyCredentialUserEntity;
+use App\Plugins\Events\Events\PasskeysEvent;
 use Webauthn\AuthenticatorSelectionCriteria;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -229,6 +231,11 @@ class PasskeyController
         } catch (AuthenticatorResponseVerificationException $e) {
             App::getInstance(true)->getLogger()->warning('WebAuthn assertion failed: ' . $e->getMessage());
 
+            self::emitPluginEvent(PasskeysEvent::onPasskeyAuthenticationFailed(), [
+                'error' => 'WEBAUTHN_VERIFICATION_FAILED',
+                'message' => $e->getMessage(),
+            ]);
+
             return ApiResponse::error('Passkey verification failed', 'WEBAUTHN_VERIFICATION_FAILED', 400);
         }
 
@@ -241,10 +248,24 @@ class PasskeyController
         );
 
         if (isset($userInfo['two_fa_enabled']) && $userInfo['two_fa_enabled'] === 'true') {
+            $challenge = TwoFactorChallengeHelper::issue($userInfo['uuid']);
+            if ($challenge === null) {
+                return ApiResponse::error(
+                    'Two-factor authentication is temporarily unavailable. Please try again shortly.',
+                    '2FA_UNAVAILABLE',
+                    503
+                );
+            }
+
             return ApiResponse::error('2FA required', 'TWO_FACTOR_REQUIRED', 401, [
                 'email' => $userInfo['email'],
+                'challenge' => $challenge,
             ]);
         }
+
+        self::emitPluginEvent(PasskeysEvent::onPasskeyAuthenticationSuccess(), [
+            'user' => $userInfo,
+        ]);
 
         return (new LoginController())->completeLogin($userInfo);
     }
@@ -434,6 +455,12 @@ class PasskeyController
             return ApiResponse::error('Failed to save passkey', 'PASSKEY_SAVE_FAILED', 500);
         }
 
+        self::emitPluginEvent(PasskeysEvent::onPasskeyRegistered(), [
+            'user' => $user,
+            'passkey_id' => $id,
+            'label' => $label,
+        ]);
+
         return ApiResponse::success(['id' => $id], 'Passkey registered', 201);
     }
 
@@ -454,6 +481,11 @@ class PasskeyController
         if (!UserPasskey::deleteByIdForUser($id, $user['uuid'])) {
             return ApiResponse::error('Passkey not found', 'PASSKEY_NOT_FOUND', 404);
         }
+
+        self::emitPluginEvent(PasskeysEvent::onPasskeyDeleted(), [
+            'user' => $user,
+            'passkey_id' => $id,
+        ]);
 
         return ApiResponse::success([], 'Passkey removed', 200);
     }
@@ -487,6 +519,12 @@ class PasskeyController
         if (!UserPasskey::updateLabelForUser($id, $user['uuid'], $label === '' ? null : $label)) {
             return ApiResponse::error('Passkey not found', 'PASSKEY_NOT_FOUND', 404);
         }
+
+        self::emitPluginEvent(PasskeysEvent::onPasskeyUpdated(), [
+            'user' => $user,
+            'passkey_id' => $id,
+            'label' => $label,
+        ]);
 
         return ApiResponse::success([], 'Passkey updated', 200);
     }
@@ -539,5 +577,16 @@ class PasskeyController
         }
 
         return null;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private static function emitPluginEvent(string $event, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($event, $payload);
+        }
     }
 }

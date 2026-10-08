@@ -24,6 +24,7 @@ import { Calendar, Plus, ExternalLink, Lock } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
+import { FormSection } from '@/components/featherui/FormSection';
 import { Label } from '@/components/ui/label';
 import { HeadlessSelect } from '@/components/ui/headless-select';
 import { toast } from 'sonner';
@@ -31,11 +32,13 @@ import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-import { isEnabled } from '@/lib/utils';
+import { isEnabledUnlessExplicitlyFalse } from '@/lib/utils';
 import { listSupportedTimezones } from '@/lib/dateUtils';
 import { useUserTimezone } from '@/contexts/PreferencesContext';
 import type { ScheduleCreateRequest } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
+import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function CreateSchedulePage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -91,11 +94,11 @@ export default function CreateSchedulePage() {
                 toast.success(t('serverSchedules.createSuccess'));
                 router.push(`/server/${uuidShort}/schedules`);
             } else {
-                toast.error(data?.message || t('serverSchedules.createFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverSchedules.createFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            const msg = axiosError.response?.data?.message || t('serverSchedules.createFailed');
+            const msg = getApiErrorMessage(axiosError, t, 'serverSchedules.createFailed');
             toast.error(msg);
         } finally {
             setSaving(false);
@@ -103,7 +106,7 @@ export default function CreateSchedulePage() {
     };
 
     React.useEffect(() => {
-        if (!settingsLoading && !isEnabled(settings?.server_allow_schedules)) {
+        if (!settingsLoading && !isEnabledUnlessExplicitlyFalse(settings?.server_allow_schedules)) {
             router.push(`/server/${uuidShort}/schedules`);
             toast.error(t('serverSchedules.disabled'));
         }
@@ -113,7 +116,9 @@ export default function CreateSchedulePage() {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    if (permissionsLoading || settingsLoading) return null;
+    if (permissionsLoading || settingsLoading) {
+        return <PageLoading />;
+    }
 
     if (!canCreate) {
         return (
@@ -153,6 +158,7 @@ export default function CreateSchedulePage() {
                             disabled={saving}
                             loading={saving}
                             className='order-1 w-full sm:order-2 sm:w-auto'
+                            data-fp-save-shortcut
                         >
                             <Plus className='mr-2 h-4 w-4' />
                             {t('serverSchedules.create')}
@@ -162,8 +168,8 @@ export default function CreateSchedulePage() {
             />
             <WidgetRenderer widgets={getWidgets('server-schedules-new', 'after-header')} />
 
-            <form onSubmit={handleCreate} className='space-y-8'>
-                <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+            <form onSubmit={handleCreate} className='space-y-8' data-fp-save-shortcut>
+                <FormSection>
                     <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                         <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
                             <Calendar className='text-primary h-5 w-5' />
@@ -195,9 +201,9 @@ export default function CreateSchedulePage() {
                         />
                         <p className='text-muted-foreground ml-1 text-xs'>{t('serverSchedules.nameHelp')}</p>
                     </div>
-                </div>
+                </FormSection>
 
-                <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                <FormSection>
                     <div className='border-border/10 flex items-center justify-between border-b pb-6'>
                         <div className='flex items-center gap-4'>
                             <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
@@ -313,9 +319,9 @@ export default function CreateSchedulePage() {
                         />
                         <p className='text-muted-foreground ml-1 text-xs'>{t('serverSchedules.timezoneHelp')}</p>
                     </div>
-                </div>
+                </FormSection>
 
-                <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                <FormSection>
                     <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                         <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
                             <Calendar className='text-primary h-5 w-5' />
@@ -369,7 +375,7 @@ export default function CreateSchedulePage() {
                             </p>
                         </div>
                     </div>
-                </div>
+                </FormSection>
 
                 <div className='flex flex-col gap-3 md:hidden'>
                     <Button

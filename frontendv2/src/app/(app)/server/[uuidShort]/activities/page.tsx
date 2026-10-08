@@ -71,6 +71,7 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 type ActivityMetadata = {
     message?: string;
@@ -200,7 +201,7 @@ export default function ServerActivityPage() {
                 const { data } = await axios.get(`/api/user/servers/${uuidShort}/activities`, { params: queryParams });
 
                 if (!data.success) {
-                    toast.error(data.message || t('serverActivities.failedToFetch'));
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'serverActivities.failedToFetch'));
                     return;
                 }
 
@@ -261,7 +262,7 @@ export default function ServerActivityPage() {
                 });
             } catch (error) {
                 console.error(error);
-                toast.error(t('serverActivities.failedToFetch'));
+                toast.error(getApiErrorMessage(error, t, 'serverActivities.failedToFetch'));
             } finally {
                 setLoading(false);
             }
@@ -303,9 +304,13 @@ export default function ServerActivityPage() {
     }
 
     function formatEvent(event: string) {
+        if (event === 'server:power.autostart') {
+            return 'Automatic Start (Node Reconnect)';
+        }
         return event
             .replace(/_/g, ' ')
             .replace(/:/g, ' ')
+            .replace(/\./g, ' ')
             .split(' ')
             .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ');
@@ -339,8 +344,8 @@ export default function ServerActivityPage() {
         if (eventLower.includes('restart')) return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
         if (eventLower.includes('power')) return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
         if (eventLower.includes('file')) return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
-        if (eventLower.includes('database')) return 'text-indigo-500 bg-indigo-500/10 border-indigo-500/20';
-        if (eventLower.includes('schedule')) return 'text-purple-500 bg-purple-500/10 border-purple-500/20';
+        if (eventLower.includes('database')) return 'text-primary bg-primary/10 border-primary/20';
+        if (eventLower.includes('schedule')) return 'text-primary bg-primary/10 border-primary/20';
         if (eventLower.includes('task')) return 'text-pink-500 bg-pink-500/10 border-pink-500/20';
         if (['subuser', 'user'].some((x) => eventLower.includes(x)))
             return 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20';
@@ -724,7 +729,7 @@ export default function ServerActivityPage() {
                                             <span>
                                                 {selectedItem.timestamp
                                                     ? formatDateTimeInTz(selectedItem.timestamp, dateOpts)
-                                                    : '—'}
+                                                    : '-'}
                                             </span>
                                         </dd>
                                     </div>

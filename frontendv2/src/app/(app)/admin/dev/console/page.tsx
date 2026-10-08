@@ -15,8 +15,10 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -141,11 +143,11 @@ export default function ConsolePage() {
                 addTerminalLine('info', `Connected to ${response.data.data.server_name} (${response.data.data.os})`);
                 addTerminalLine('info', `PHP ${response.data.data.php_version} | User: ${response.data.data.user}`);
             } else {
-                toast.error(response.data.message || t('admin.dev.console.messages.fetch_failed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'admin.dev.console.messages.fetch_failed'));
             }
         } catch (error) {
             console.error('Failed to fetch system info:', error);
-            toast.error(t('admin.dev.console.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.dev.console.messages.fetch_failed'));
         }
     }, [isDeveloperModeEnabled, addTerminalLine, t]);
 
@@ -203,13 +205,19 @@ export default function ConsolePage() {
                     );
                 }
             } else {
-                addTerminalLine('error', `Error: ${response.data.message || 'Unknown error'}`);
-                toast.error(response.data.message || t('admin.dev.console.messages.execute_failed'));
+                const errMsg = getApiErrorMessageFromPayload(
+                    response.data,
+                    t,
+                    'admin.dev.console.messages.execute_failed',
+                );
+                addTerminalLine('error', `Error: ${errMsg}`);
+                toast.error(errMsg);
             }
         } catch (error) {
             console.error('Failed to execute command:', error);
-            addTerminalLine('error', `Network error: ${String(error)}`);
-            toast.error(t('admin.dev.console.messages.execute_failed'));
+            const errMsg = getApiErrorMessage(error, t, 'admin.dev.console.messages.execute_failed');
+            addTerminalLine('error', `Network error: ${errMsg}`);
+            toast.error(errMsg);
         } finally {
             setIsLoading(false);
             scrollToBottom();
@@ -290,10 +298,7 @@ export default function ConsolePage() {
             <div className='space-y-6'>
                 <EmptyState
                     title={t('admin.dev.developerModeRequired')}
-                    description={
-                        t('admin.dev.developerModeDescription') ||
-                        'Developer mode must be enabled in settings to access developer tools.'
-                    }
+                    description={t('admin.dev.developerModeDescription')}
                     icon={Lock}
                     action={
                         <Button variant='outline' onClick={() => router.push('/admin/settings')}>
@@ -407,15 +412,12 @@ export default function ConsolePage() {
 
                 <PageCard title={t('admin.dev.console.terminal')}>
                     <div className='space-y-4'>
-                        <p className='text-muted-foreground text-xs'>
-                            {t('admin.dev.console.terminal_help') ||
-                                'Use Arrow Up/Down for command history, Ctrl+L to clear'}
-                        </p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.dev.console.terminal_help')}</p>
 
                         <div
                             ref={terminalRef}
                             className='border-border/50 h-96 overflow-auto rounded-xl border bg-black p-4 font-mono text-sm text-green-400'
-                            style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace" }}
+                            style={{ fontFamily: APP_MONO_FONT_STACK }}
                         >
                             {terminalLines.map((line) => (
                                 <div key={line.id} className='mb-1'>

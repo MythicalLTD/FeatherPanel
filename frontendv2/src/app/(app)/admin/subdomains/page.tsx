@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -50,7 +51,7 @@ import {
     History,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -249,7 +250,7 @@ export default function AdminSubdomainsPage() {
             });
         } catch (error) {
             console.error('Error fetching domains:', error);
-            toast.error(t('admin.subdomains.messages.fetch_domains_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.subdomains.messages.fetch_domains_failed'));
         } finally {
             setLoading(false);
         }
@@ -276,7 +277,7 @@ export default function AdminSubdomainsPage() {
             setSpells(spellsData || []);
         } catch (error) {
             console.error('Error fetching initial data:', error);
-            toast.error(t('admin.subdomains.messages.load_settings_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.subdomains.messages.load_settings_failed'));
         }
     }, [t]);
 
@@ -300,11 +301,7 @@ export default function AdminSubdomainsPage() {
                     : t('admin.subdomains.userSubdomainsDisabledToast'),
             );
         } catch (error: unknown) {
-            let msg = t('admin.subdomains.userSubdomainsToggleFailed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = String(error.response.data.message);
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.subdomains.userSubdomainsToggleFailed'));
         } finally {
             setTogglingUserSubdomains(false);
         }
@@ -330,7 +327,7 @@ export default function AdminSubdomainsPage() {
             fetchInitialData();
         } catch (error) {
             console.error('Error saving settings:', error);
-            toast.error(t('admin.subdomains.messages.save_settings_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.subdomains.messages.save_settings_failed'));
         } finally {
             setSavingSettings(false);
         }
@@ -360,11 +357,7 @@ export default function AdminSubdomainsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error: unknown) {
             console.error('Error saving domain:', error);
-            let msg = t('admin.subdomains.messages.domain_save_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.subdomains.messages.domain_save_failed'));
         } finally {
             setProcessing(false);
         }
@@ -383,7 +376,7 @@ export default function AdminSubdomainsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error deleting domain:', error);
-            toast.error(t('admin.subdomains.messages.domain_delete_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.subdomains.messages.domain_delete_failed'));
         }
     };
 
@@ -422,7 +415,7 @@ export default function AdminSubdomainsPage() {
             setManageOpen(true);
         } catch (error) {
             console.error('Error fetching domain details:', error);
-            toast.error(t('admin.subdomains.messages.domain_details_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.subdomains.messages.domain_details_failed'));
         }
     };
 
@@ -438,7 +431,7 @@ export default function AdminSubdomainsPage() {
             setDomainEntries(entries || []);
         } catch (error) {
             console.error('Error fetching subdomain list:', error);
-            toast.error(t('admin.subdomains.messages.subdomain_list_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.subdomains.messages.subdomain_list_failed'));
         }
     };
 
@@ -802,7 +795,7 @@ export default function AdminSubdomainsPage() {
                                 <p className='text-muted-foreground text-xs'>{t('admin.subdomains.cloudflareHint')}</p>
                             </div>
                             <div className='flex justify-end'>
-                                <Button onClick={handleSaveSettings} loading={savingSettings}>
+                                <Button onClick={handleSaveSettings} loading={savingSettings} data-fp-save-shortcut>
                                     {t('admin.subdomains.save')}
                                 </Button>
                             </div>
@@ -872,7 +865,7 @@ export default function AdminSubdomainsPage() {
                         </SheetTitle>
                         <SheetDescription>{t('admin.subdomains.drawerDescription')}</SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleCreateEdit} className='space-y-6 pt-4'>
+                    <form onSubmit={handleCreateEdit} className='space-y-6 pt-4' data-fp-save-shortcut>
                         <div className='space-y-4'>
                             <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                                 <div className='space-y-2'>
@@ -955,8 +948,7 @@ export default function AdminSubdomainsPage() {
                                             {t('admin.subdomains.mappingsTitle')}
                                         </Label>
                                         <p className='text-muted-foreground/60 text-[10px]'>
-                                            {t('admin.subdomains.mappingsDescription') ||
-                                                'Configure spell routing rules.'}
+                                            {t('admin.subdomains.mappingsDescription')}
                                         </p>
                                     </div>
                                     <Button

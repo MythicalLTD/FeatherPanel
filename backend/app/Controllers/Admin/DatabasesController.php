@@ -370,6 +370,19 @@ class DatabasesController
             unset($data['node_id']);
         }
 
+        // Optional web_node_id (NULL = global / all web nodes)
+        if (array_key_exists('web_node_id', $data)) {
+            if ($data['web_node_id'] === null || $data['web_node_id'] === '' || $data['web_node_id'] === '0' || $data['web_node_id'] === 0) {
+                $data['web_node_id'] = null;
+            } elseif (!is_numeric($data['web_node_id']) || (int) $data['web_node_id'] <= 0) {
+                return ApiResponse::error('Web node ID must be a positive number', 'INVALID_WEB_NODE_ID');
+            } elseif (!\App\Chat\WebNode::getWebNodeById((int) $data['web_node_id'])) {
+                return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+            } else {
+                $data['web_node_id'] = (int) $data['web_node_id'];
+            }
+        }
+
         // Set default port if not provided or is 0
         if (!isset($data['database_port']) || (int) $data['database_port'] === 0) {
             $data['database_port'] = $this->getDefaultPort($data['database_type']);
@@ -544,6 +557,19 @@ class DatabasesController
                 return ApiResponse::error('Node ID must be a positive number or null', 'INVALID_NODE_ID');
             } elseif (!Node::getNodeById((int) $data['node_id'])) {
                 return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+            }
+        }
+
+        // Optional web_node_id (NULL = global / all web nodes)
+        if (array_key_exists('web_node_id', $data)) {
+            if ($data['web_node_id'] === null || $data['web_node_id'] === '' || $data['web_node_id'] === '0' || $data['web_node_id'] === 0) {
+                $data['web_node_id'] = null;
+            } elseif (!is_numeric($data['web_node_id']) || (int) $data['web_node_id'] <= 0) {
+                return ApiResponse::error('Web node ID must be a positive number or null', 'INVALID_WEB_NODE_ID');
+            } elseif (!\App\Chat\WebNode::getWebNodeById((int) $data['web_node_id'])) {
+                return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+            } else {
+                $data['web_node_id'] = (int) $data['web_node_id'];
             }
         }
 

@@ -14,13 +14,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 export function formatBytes(bytes: number, decimals = 2) {
-    if (!+bytes) return '0 Bytes';
+    if (!Number.isFinite(bytes) || !+bytes) return '0 Bytes';
 
     const k = 1024;
     const dm = decimals < 0 ? 0 : decimals;
     const sizes = ['Bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
 
     const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const safeIndex = Math.max(0, Math.min(i, sizes.length - 1));
 
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+    return `${parseFloat((bytes / Math.pow(k, safeIndex)).toFixed(dm))} ${sizes[safeIndex]}`;
 }

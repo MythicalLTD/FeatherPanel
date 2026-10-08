@@ -18,13 +18,13 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import axios from 'axios';
-import { getFeatherpanelApiErrorCode, getFeatherpanelApiErrorMessage } from '@/lib/api';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorCode, getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from '@/components/ui/sheet';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { toast } from 'sonner';
 import {
     Server,
@@ -200,6 +200,7 @@ export default function EditNodePage() {
                     }
                 } catch (error) {
                     console.error('Error fetching location:', error);
+                    toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.fetch_failed'));
                 }
             }
 
@@ -229,7 +230,7 @@ export default function EditNodePage() {
             });
         } catch (error) {
             console.error('Error fetching node data:', error);
-            toast.error(t('admin.node.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -242,20 +243,20 @@ export default function EditNodePage() {
             if (data.success) {
                 setSystemInfo({ data: data.data, loading: false, error: null });
             } else {
-                setSystemInfo({ data: null, loading: false, error: data.message });
+                setSystemInfo({
+                    data: null,
+                    loading: false,
+                    error: getApiErrorMessageFromPayload(data, t, 'common.error'),
+                });
             }
         } catch (e: unknown) {
-            let error = 'Failed to fetch system info';
-            if (axios.isAxiosError(e)) {
-                error = e.response?.data?.message || e.message;
-            }
             setSystemInfo({
                 data: null,
                 loading: false,
-                error,
+                error: getApiErrorMessage(e, t, 'common.error'),
             });
         }
-    }, [nodeId]);
+    }, [nodeId, t]);
 
     const fetchUtilization = useCallback(async () => {
         setUtilization((prev) => ({ ...prev, loading: true, error: null }));
@@ -264,20 +265,20 @@ export default function EditNodePage() {
             if (data.success) {
                 setUtilization({ data: data.data, loading: false, error: null });
             } else {
-                setUtilization({ data: null, loading: false, error: data.message });
+                setUtilization({
+                    data: null,
+                    loading: false,
+                    error: getApiErrorMessageFromPayload(data, t, 'common.error'),
+                });
             }
         } catch (e: unknown) {
-            let error = 'Failed to fetch utilization';
-            if (axios.isAxiosError(e)) {
-                error = e.response?.data?.message || e.message;
-            }
             setUtilization({
                 data: null,
                 loading: false,
-                error,
+                error: getApiErrorMessage(e, t, 'common.error'),
             });
         }
-    }, [nodeId]);
+    }, [nodeId, t]);
 
     const fetchDockerUsage = useCallback(async () => {
         setDockerUsage((prev) => ({ ...prev, loading: true, error: null }));
@@ -286,20 +287,20 @@ export default function EditNodePage() {
             if (data.success) {
                 setDockerUsage({ data: data.data, loading: false, error: null });
             } else {
-                setDockerUsage({ data: null, loading: false, error: data.message });
+                setDockerUsage({
+                    data: null,
+                    loading: false,
+                    error: getApiErrorMessageFromPayload(data, t, 'common.error'),
+                });
             }
         } catch (e: unknown) {
-            let error = 'Failed to fetch docker usage';
-            if (axios.isAxiosError(e)) {
-                error = e.response?.data?.message || e.message;
-            }
             setDockerUsage({
                 data: null,
                 loading: false,
-                error,
+                error: getApiErrorMessage(e, t, 'common.error'),
             });
         }
-    }, [nodeId]);
+    }, [nodeId, t]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -350,11 +351,12 @@ export default function EditNodePage() {
                     }
                 } catch (error) {
                     console.error('Error fetching current location:', error);
+                    toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.fetch_failed'));
                 }
             };
             fetchCurrentLocation();
         }
-    }, [form.location_id, selectedLocationName, locations.length]);
+    }, [form.location_id, selectedLocationName, locations.length, t]);
 
     useEffect(() => {
         fetchInitialData();
@@ -421,7 +423,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
             fetchInitialData();
         } catch (error) {
             console.error('Error resetting key:', error);
-            toast.error(t('admin.node.wings.reset_key_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node.wings.reset_key_failed'));
         } finally {
             setResetting(false);
         }
@@ -492,7 +494,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                 public_ip_v6: trimmedIPv6 === '' ? null : trimmedIPv6,
                 sftp_subdomain: trimmedSftpSubdomain === '' ? null : trimmedSftpSubdomain,
             };
-            // Daemon type is immutable after create — never send changes on edit.
+            // Daemon type is immutable after create - never send changes on edit.
             delete (submitData as { daemon_type?: string }).daemon_type;
 
             await axios.patch(`/api/admin/nodes/${nodeId}`, submitData);
@@ -500,16 +502,17 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
             fetchInitialData();
         } catch (error: unknown) {
             console.error('Error updating node:', error);
-            const apiMsg = getFeatherpanelApiErrorMessage(error);
-            const code = getFeatherpanelApiErrorCode(error);
+            const code = getApiErrorCode(error);
             if (code === 'INVALID_LOCATION_TYPE') {
-                const detail = apiMsg ?? t('admin.node.form.location_invalid_type');
-                setErrors((prev) => ({ ...prev, location_id: detail }));
+                setErrors((prev) => ({
+                    ...prev,
+                    location_id: getApiErrorMessage(error, t, 'admin.node.form.location_invalid_type'),
+                }));
             }
             if (code === 'DAEMON_TYPE_IMMUTABLE' || code === 'DAEMON_TYPE_MIGRATION_FORBIDDEN') {
-                toast.error(apiMsg ?? t('admin.node.form.daemon_type_immutable'));
+                toast.error(getApiErrorMessage(error, t, 'admin.node.form.daemon_type_immutable'));
             } else {
-                toast.error(apiMsg ?? t('admin.node.messages.update_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.node.messages.update_failed'));
             }
         } finally {
             setSaving(false);
@@ -589,7 +592,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                                 {t('admin.node.mass_transfer.button')}
                             </Button>
                         ) : null}
-                        <Button onClick={() => handleSubmit()} loading={saving}>
+                        <Button onClick={() => handleSubmit()} loading={saving} data-fp-save-shortcut>
                             <Save className='mr-2 h-4 w-4' />
                             {t('admin.node.form.submit_save')}
                         </Button>
@@ -770,7 +773,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                             'self-update',
                         ].includes(activeTab) && (
                             <div className='flex justify-end'>
-                                <Button onClick={() => handleSubmit()} loading={saving}>
+                                <Button onClick={() => handleSubmit()} loading={saving} data-fp-save-shortcut>
                                     <Save className='mr-2 h-4 w-4' />
                                     {t('admin.node.form.submit_save')}
                                 </Button>

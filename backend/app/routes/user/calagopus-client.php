@@ -21,10 +21,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\User\CalagopusClientCompatController;
 
-/**
- * Calagopus VS Code extension compatibility routes (/api/client/... and /api/settings).
- */
-
 return function (RouteCollection $routes): void {
     $app = App::getInstance(true);
     $ctrl = static fn (): CalagopusClientCompatController => new CalagopusClientCompatController();

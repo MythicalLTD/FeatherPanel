@@ -29,7 +29,7 @@ export function ChangelogSection({ title, items, color, icon }: ChangelogSection
     const colorClasses = {
         emerald: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20',
         blue: 'text-blue-500 bg-blue-500/10 border-blue-500/20',
-        purple: 'text-purple-500 bg-purple-500/10 border-purple-500/20',
+        purple: 'text-primary bg-primary/10 border-primary/20',
         amber: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
         red: 'text-red-500 bg-red-500/10 border-red-500/20',
     };
@@ -37,7 +37,7 @@ export function ChangelogSection({ title, items, color, icon }: ChangelogSection
     const dotClasses = {
         emerald: 'bg-emerald-500',
         blue: 'bg-blue-500',
-        purple: 'bg-purple-500',
+        purple: 'bg-primary',
         amber: 'bg-amber-500',
         red: 'bg-red-500',
     };

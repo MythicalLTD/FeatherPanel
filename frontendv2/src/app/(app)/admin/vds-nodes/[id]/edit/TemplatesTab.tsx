@@ -28,6 +28,7 @@ import { Select } from '@/components/ui/select-native';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Plus, Trash2, RefreshCw, Layers, Loader2, Monitor, Cpu, ShieldAlert } from 'lucide-react';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { TutorialVM } from './TutorialVM';
 import { TutorialLXC } from './TutorialLXC';
@@ -84,8 +85,8 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
         try {
             const { data } = await axios.get(`/api/admin/vm-nodes/${nodeId}/templates`);
             setTemplates(Array.isArray(data.data?.templates) ? data.data.templates : []);
-        } catch {
-            toast.error(t('admin.vdsNodes.ips.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.ips.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -105,12 +106,11 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                 setProxmoxVms(Array.isArray(res.data.data?.vms) ? res.data.data.vms : []);
             })
             .catch((err) => {
-                const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-                setProxmoxVmsError(msg || 'Failed to load VMs from Proxmox');
+                setProxmoxVmsError(getApiErrorMessage(err, t, 'common.error'));
                 setProxmoxVms([]);
             })
             .finally(() => setLoadingProxmoxVms(false));
-    }, [createOpen, nodeId]);
+    }, [createOpen, nodeId, t]);
 
     const handleProxmoxVmSelect = (vmidStr: string) => {
         const vmid = vmidStr ? Number(vmidStr) : 0;
@@ -135,11 +135,11 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
         const name = createForm.name.trim();
         const vmid = createForm.template_file.trim();
         if (!name) {
-            toast.error(t('admin.vdsNodes.templates.field_name_required') || 'Template name is required');
+            toast.error(t('admin.vdsNodes.templates.field_name_required'));
             return;
         }
         if (!vmid || !/^\d+$/.test(vmid)) {
-            toast.error(t('admin.vdsNodes.templates.select_vm_first') || 'Select a VM from Proxmox first');
+            toast.error(t('admin.vdsNodes.templates.select_vm_first'));
             return;
         }
         setCreating(true);
@@ -159,8 +159,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
             setCreateForm({ name: '', template_file: '', guest_type: 'qemu', description: '', lxc_root_password: '' });
             loadTemplates();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg || t('admin.vdsNodes.templates.create_failed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.vdsNodes.templates.create_failed'));
         } finally {
             setCreating(false);
         }
@@ -174,8 +173,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
             setDeleteConfirmId(null);
             loadTemplates();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg || t('admin.vdsNodes.templates.delete_failed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.vdsNodes.templates.delete_failed'));
         } finally {
             setDeletingId(null);
         }
@@ -236,7 +234,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                     <tr key={tpl.id} className='hover:bg-muted/20 transition-colors'>
                                         <td className='p-3 font-medium'>{tpl.name}</td>
                                         <td className='text-muted-foreground p-3 font-mono'>
-                                            {tpl.template_file ?? '—'}
+                                            {tpl.template_file ?? '-'}
                                         </td>
                                         <td className='text-muted-foreground p-3'>
                                             {tpl.guest_type === 'qemu' ? 'QEMU/KVM' : 'LXC'}
@@ -311,19 +309,16 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                     <SheetHeader>
                         <SheetTitle>{t('admin.vdsNodes.templates.create_title')}</SheetTitle>
                         <p className='text-muted-foreground text-sm'>
-                            {t('admin.vdsNodes.templates.create_desc_select') ||
-                                'Select a VM from Proxmox name and VMID will be filled. Use a VM you converted to template in Proxmox.'}
+                            {t('admin.vdsNodes.templates.create_desc_select')}
                         </p>
                     </SheetHeader>
-                    <form onSubmit={handleCreate} className='mt-6 space-y-4'>
+                    <form onSubmit={handleCreate} className='mt-6 space-y-4' data-fp-save-shortcut>
                         <div>
-                            <Label className='mb-2 block'>
-                                {t('admin.vdsNodes.templates.field_select_vm') || 'Select VM from Proxmox'}
-                            </Label>
+                            <Label className='mb-2 block'>{t('admin.vdsNodes.templates.field_select_vm')}</Label>
                             {loadingProxmoxVms ? (
                                 <p className='text-muted-foreground flex items-center gap-2 py-2 text-sm'>
                                     <Loader2 className='h-4 w-4 animate-spin' />
-                                    {t('admin.vdsNodes.templates.loading_vms') || 'Loading VMs…'}
+                                    {t('admin.vdsNodes.templates.loading_vms')}
                                 </p>
                             ) : proxmoxVmsError ? (
                                 <p className='text-destructive text-sm'>{proxmoxVmsError}</p>
@@ -332,9 +327,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                     value={createForm.template_file || ''}
                                     onChange={(e) => handleProxmoxVmSelect(e.target.value)}
                                 >
-                                    <option value=''>
-                                        {t('admin.vdsNodes.templates.select_vm_placeholder') || 'Select a VM —'}
-                                    </option>
+                                    <option value=''>{t('admin.vdsNodes.templates.select_vm_placeholder')}</option>
                                     {proxmoxVms.map((vm) => (
                                         <option key={vm.vmid} value={vm.vmid}>
                                             {vm.name} (VMID {vm.vmid}){vm.template ? ' Template' : ''}
@@ -344,8 +337,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                             )}
                             {proxmoxVms.length === 0 && !loadingProxmoxVms && !proxmoxVmsError && (
                                 <p className='text-muted-foreground mt-1 text-xs'>
-                                    {t('admin.vdsNodes.templates.no_vms') ||
-                                        'No VMs found. Create and convert to template in Proxmox first.'}
+                                    {t('admin.vdsNodes.templates.no_vms')}
                                 </p>
                             )}
                         </div>
@@ -357,8 +349,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                 placeholder={t('admin.vdsNodes.templates.field_name_placeholder')}
                             />
                             <p className='text-muted-foreground mt-1 text-xs'>
-                                {t('admin.vdsNodes.templates.field_name_help') ||
-                                    'Editable; used as the template name in the panel.'}
+                                {t('admin.vdsNodes.templates.field_name_help')}
                             </p>
                         </div>
                         <div>
@@ -394,7 +385,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                         {createForm.guest_type === 'lxc' && (
                             <div>
                                 <Label className='mb-2 block'>
-                                    {t('admin.vdsNodes.templates.field_lxc_root_password') || 'Default root password'}
+                                    {t('admin.vdsNodes.templates.field_lxc_root_password')}
                                 </Label>
                                 <Input
                                     type='text'
@@ -402,14 +393,10 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                     onChange={(e) =>
                                         setCreateForm((f) => ({ ...f, lxc_root_password: e.target.value }))
                                     }
-                                    placeholder={
-                                        t('admin.vdsNodes.templates.field_lxc_root_password_placeholder') ||
-                                        'e.g. P@ssw0rd (shown to users after deploy)'
-                                    }
+                                    placeholder={t('admin.vdsNodes.templates.field_lxc_root_password_placeholder')}
                                 />
                                 <p className='text-muted-foreground mt-1 text-xs'>
-                                    {t('admin.vdsNodes.templates.field_lxc_root_password_help') ||
-                                        'Optional. Informational only FeatherPanel does not change the root password on the container; this is just shown to users as the default password for this template.'}
+                                    {t('admin.vdsNodes.templates.field_lxc_root_password_help')}
                                 </p>
                             </div>
                         )}

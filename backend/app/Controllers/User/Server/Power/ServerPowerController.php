@@ -29,6 +29,7 @@ use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Server\LifecycleHookPowerGate;
+use App\Services\Server\ServerAutoStartService;
 use App\Services\Server\LifecycleHookExecutorService;
 use App\Controllers\User\Server\CheckSubuserPermissionsTrait;
 
@@ -187,6 +188,8 @@ class ServerPowerController
 
             return ApiResponse::error('Failed to send power action to Wings: ' . $e->getMessage(), 'FAILED_TO_SEND_POWER_ACTION_TO_WINGS', 500);
         }
+
+        ServerAutoStartService::markPowerIntent((int) $server['id'], $action);
 
         // Emit event
         global $eventManager;

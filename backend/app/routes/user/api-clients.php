@@ -231,4 +231,40 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(30),
         'user-api-clients-oauth2'
     );
+
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'user-api-client-oauth2-device',
+        '/api/user/api-clients/oauth2/device',
+        function (Request $request) {
+            return (new ApiClientController())->oauth2DeviceStart($request);
+        },
+        ['POST'],
+        Rate::perMinute(10),
+        'user-api-clients-oauth2-device'
+    );
+
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'user-api-client-oauth2-device-token',
+        '/api/user/api-clients/oauth2/device/token',
+        function (Request $request) {
+            return (new ApiClientController())->oauth2DeviceToken($request);
+        },
+        ['POST'],
+        Rate::perMinute(20),
+        'user-api-clients-oauth2-device'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-api-client-oauth2-device-claim',
+        '/api/user/api-clients/oauth2/device/claim',
+        function (Request $request) {
+            return (new ApiClientController())->oauth2DeviceClaim($request);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-api-clients-oauth2-device'
+    );
 };

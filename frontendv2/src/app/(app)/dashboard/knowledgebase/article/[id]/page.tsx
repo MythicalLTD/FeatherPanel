@@ -24,12 +24,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 type MarkdownCodeProps = ComponentPropsWithoutRef<'code'> & {
     inline?: boolean;
@@ -72,6 +74,7 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
     const knowledgebaseBasePath = isPublicKnowledgebasePage ? '/knowledgebase' : '/dashboard/knowledgebase';
     const [article, setArticle] = useState<Article | null>(null);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
 
     const { getWidgets, fetchWidgets } = usePluginWidgets('dashboard-knowledgebase-article');
 
@@ -82,17 +85,22 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
     useEffect(() => {
         const fetchArticle = async () => {
             setLoading(true);
+            setLoadError('');
             try {
                 const { data } = await axios.get(`/api/knowledgebase/articles/${id}`);
                 setArticle(data.data.article);
             } catch (err) {
                 console.error('Failed to fetch article:', err);
+                const message = getApiErrorMessage(err, t, 'dashboard.knowledgebase.articleLoadFailed');
+                setLoadError(message);
+                toast.error(message);
+                setArticle(null);
             } finally {
                 setLoading(false);
             }
         };
         fetchArticle();
-    }, [id]);
+    }, [id, t]);
 
     const formatFileSize = (bytes: number) => {
         if (bytes === 0) return '0 Bytes';
@@ -113,7 +121,16 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
         );
     }
 
-    if (!article) return null;
+    if (!article) {
+        return (
+            <div className='flex h-[50vh] flex-col items-center justify-center gap-3 text-center'>
+                <p className='text-muted-foreground'>{loadError || t('dashboard.knowledgebase.articleLoadFailed')}</p>
+                <Link href={knowledgebaseBasePath}>
+                    <Button variant='secondary'>{t('common.goBack')}</Button>
+                </Link>
+            </div>
+        );
+    }
 
     return (
         <div

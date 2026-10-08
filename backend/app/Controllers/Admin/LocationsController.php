@@ -19,6 +19,7 @@ namespace App\Controllers\Admin;
 
 use App\Chat\Node;
 use App\Chat\VmNode;
+use App\Chat\WebNode;
 use App\Chat\Activity;
 use App\Chat\Location;
 use App\Helpers\ApiResponse;
@@ -64,6 +65,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Location description'),
         new OA\Property(property: 'flag_code', type: 'string', nullable: true, description: 'ISO 3166-1 alpha-2 country code (e.g., "us", "ua") for flag display'),
         new OA\Property(property: 'type', type: 'string', enum: ['game', 'vps', 'web'], description: 'Location purpose: game hosting, VPS/VDS, or web hosting (immutable after creation)'),
+        new OA\Property(property: 'webhosting_alpha_accepted', type: 'boolean', description: 'Required to be true when creating a Web Hosting location'),
         new OA\Property(property: 'id', type: 'integer', nullable: true, description: 'Optional location ID (useful for migrations from other platforms)'),
     ]
 )]
@@ -285,6 +287,9 @@ class LocationsController
         if (!in_array($data['type'], $validTypes, true)) {
             return ApiResponse::error('Invalid location type. Must be one of: ' . implode(', ', $validTypes), 'INVALID_DATA_TYPE');
         }
+        if ($data['type'] === 'web' && ($data['webhosting_alpha_accepted'] ?? null) !== true) {
+            return ApiResponse::error('You must accept the WebHosting alpha notice before creating a Web Hosting location', 'WEBHOSTING_ALPHA_ACCEPTANCE_REQUIRED', 400);
+        }
         if (isset($data['id'])) {
             if (!is_int($data['id']) && !ctype_digit((string) $data['id'])) {
                 return ApiResponse::error('ID must be an integer', 'INVALID_DATA_TYPE');
@@ -308,7 +313,7 @@ class LocationsController
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'create_location',
-            'context' => 'Created location: ' . $location['name'],
+            'context' => 'Created location: ' . $location['name'] . ($data['type'] === 'web' ? ' (accepted WebHosting alpha notice 2026-10-08)' : ''),
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
@@ -497,6 +502,10 @@ class LocationsController
 
         if (count(VmNode::getByLocationId($id)) > 0) {
             return ApiResponse::error('Cannot delete location: there are VM nodes assigned to this location. Please remove or reassign all VM nodes before deleting the location.', 'LOCATION_HAS_VM_NODES', 400);
+        }
+
+        if (count(WebNode::getByLocationId($id)) > 0) {
+            return ApiResponse::error('Cannot delete location: there are web nodes assigned to this location. Please remove or reassign all web nodes before deleting the location.', 'LOCATION_HAS_WEB_NODES', 400);
         }
 
         $success = Location::delete($id);

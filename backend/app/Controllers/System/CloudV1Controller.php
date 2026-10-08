@@ -22,6 +22,7 @@ use App\Cache\Cache;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Helpers\DemoCloudHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\FeatherCloud\FeatherCloudClient;
@@ -42,6 +43,24 @@ class CloudV1Controller
     )]
     public function status(Request $request): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return ApiResponse::success([
+                'linked' => false,
+                'demo_mode' => true,
+                'cloud_disabled' => true,
+                'has_identity_keys' => false,
+                'has_access_keys' => false,
+                'team_uuid' => null,
+                'team_name' => null,
+                'mythic_user_id' => null,
+                'cloud_id' => null,
+                'cloud_name' => null,
+                'linked_at' => null,
+                'last_sync_at' => null,
+                'panel_version' => defined('APP_VERSION') ? (string) APP_VERSION : null,
+            ], 'Cloud is disabled on demo instances', 200);
+        }
+
         $config = App::getInstance(true)->getConfig();
 
         $teamUuid = trim((string) ($config->getSetting(ConfigInterface::FEATHERCLOUD_TEAM_UUID, '') ?? ''));
@@ -105,6 +124,8 @@ class CloudV1Controller
      */
     public static function runSync(): array
     {
+        DemoCloudHelper::assertAllowed();
+
         $config = App::getInstance(true)->getConfig();
         $client = new FeatherCloudClient();
 

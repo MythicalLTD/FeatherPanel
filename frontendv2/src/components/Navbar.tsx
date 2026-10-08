@@ -15,20 +15,24 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useContext, useState } from 'react';
-import { CircleUser } from 'lucide-react';
+import { useContext, useEffect, useState } from 'react';
+import { CircleUser, Smartphone } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession } from '@/contexts/SessionContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { ServerContext } from '@/contexts/ServerContext';
 import { VmInstanceContext } from '@/contexts/VmInstanceContext';
+import { WebSpaceContext } from '@/contexts/WebSpaceContext';
 import Permissions from '@/lib/permissions';
 import { LocalStorageManagerDialog } from '@/components/layout/LocalStorageManagerDialog';
 import { useNavbarHoverReveal } from '@/hooks/useNavbarHoverReveal';
 import { useNavbarSticky } from '@/hooks/useNavbarSticky';
 import { useChromeLayout } from '@/hooks/useChromeLayout';
+import { readSidebarCollapsed, subscribeSidebarCollapsed } from '@/lib/sidebarChrome';
+import { useSidebarPreferences } from '@/hooks/useSidebarPreferences';
 import { NavbarClassicChrome, NavbarModernChrome } from '@/components/NavbarChromeVariants';
 import { ServerSwitcher } from '@/components/server/ServerSwitcher';
+import { WebSpaceSwitcher } from '@/components/webspace/WebSpaceSwitcher';
 
 interface NavbarProps {
     onMenuClick: () => void;
@@ -37,19 +41,30 @@ interface NavbarProps {
 export default function Navbar({ onMenuClick }: NavbarProps) {
     const router = useRouter();
     const pathname = usePathname();
-    const { user, logout, hasPermission } = useSession();
+    const { user, logout, hasPermission, isLoading: sessionLoading } = useSession();
     const { t } = useTranslation();
+    const userLoading = sessionLoading && !user;
     const serverContext = useContext(ServerContext);
     const vmInstanceContext = useContext(VmInstanceContext);
+    const webSpaceContext = useContext(WebSpaceContext);
     const isOnServerPage = pathname?.startsWith('/server/');
     const isOnVdsPage = pathname?.startsWith('/vds/');
+    const isOnWebSpacePage = pathname?.startsWith('/webspace/');
     const isOnAdminPage = pathname?.startsWith('/admin');
     const serverName = isOnServerPage ? serverContext?.server?.name : null;
+    const webSpaceName = isOnWebSpacePage ? webSpaceContext?.webspace?.name : null;
     const isKnowledgeBaseSection = pathname?.startsWith('/dashboard/knowledgebase');
     const headerTitle = isKnowledgeBaseSection ? t('dashboard.knowledgebase.title') : t('dashboard.title');
-    const headerContent = isOnServerPage ? <ServerSwitcher fallbackTitle={serverName ?? undefined} /> : undefined;
+    const headerContent = isOnServerPage ? (
+        <ServerSwitcher fallbackTitle={serverName ?? undefined} />
+    ) : isOnWebSpacePage ? (
+        <WebSpaceSwitcher fallbackTitle={webSpaceName ?? undefined} />
+    ) : undefined;
 
-    const userNavigation = [{ name: t('navbar.profile'), href: '/dashboard/account', icon: CircleUser }];
+    const userNavigation = [
+        { name: t('navbar.profile'), href: '/dashboard/account', icon: CircleUser },
+        { name: t('account.loginDevice.menuLabel'), href: '/dashboard/account/login-device', icon: Smartphone },
+    ];
 
     const handleLogout = async () => {
         await logout();
@@ -76,9 +91,17 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
     const [emailRevealed, setEmailRevealed] = useState(false);
     const [localStorageOpen, setLocalStorageOpen] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+    useEffect(() => {
+        setSidebarCollapsed(readSidebarCollapsed());
+        return subscribeSidebarCollapsed(setSidebarCollapsed);
+    }, []);
+
     const { navbarHoverReveal } = useNavbarHoverReveal();
     const { navbarSticky } = useNavbarSticky();
     const { chromeLayout } = useChromeLayout();
+    const { sidebarPosition, sidebarTogglePlacement, sidebarGlow } = useSidebarPreferences();
 
     const canAccessAdmin = hasPermission(Permissions.ADMIN_DASHBOARD_VIEW);
     const showAdminAreaButton = canAccessAdmin && !isOnAdminPage;
@@ -87,15 +110,19 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             ? `/admin/servers/${serverContext.server.id}/edit`
             : isOnVdsPage && vmInstanceContext?.instance?.id
               ? `/admin/vm-instances/${vmInstanceContext.instance.id}/edit`
-              : '/admin';
+              : isOnWebSpacePage && webSpaceContext?.webspace?.uuid
+                ? `/admin/webspaces/${webSpaceContext.webspace.uuid}/edit`
+                : '/admin';
 
     const chromeProps = {
         onMenuClick,
+        sidebarCollapsed,
         headerTitle,
         headerContent,
         showAdminAreaButton,
         adminAreaHref,
         user,
+        userLoading,
         router,
         userNavigation,
         t,
@@ -108,6 +135,9 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         handleLogout,
         desktopHoverDock: navbarHoverReveal,
         navbarSticky,
+        sidebarPosition,
+        sidebarTogglePlacement,
+        sidebarGlow,
     };
 
     const Chrome = chromeLayout === 'classic' ? NavbarClassicChrome : NavbarModernChrome;

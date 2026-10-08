@@ -21,15 +21,14 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Description, Field, Fieldset, Label } from '@headlessui/react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Captcha } from '@/components/Captcha';
-import { Switch } from '@/components/ui/switch';
 import { cn, isEnabled } from '@/lib/utils';
-import { getAnalyticsCookie, setAnalyticsCookie } from '@/lib/analytics-cookie';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface FormData {
     username: string;
@@ -62,7 +61,6 @@ export default function ProfileTab() {
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
     const [turnstileToken, setTurnstileToken] = useState('');
     const [turnstileKey, setTurnstileKey] = useState(0);
-    const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
 
     const allowAvatarChange = settings?.user_allow_avatar_change ?? true;
     const allowUsernameChange = settings?.user_allow_username_change ?? true;
@@ -84,10 +82,6 @@ export default function ProfileTab() {
             setLoading(false);
         }
     }, [user]);
-
-    useEffect(() => {
-        setAnalyticsEnabled(getAnalyticsCookie());
-    }, []);
 
     const resetForm = () => {
         if (user) {
@@ -122,12 +116,6 @@ export default function ProfileTab() {
             };
             reader.readAsDataURL(file);
         }
-    };
-
-    const handleAnalyticsChange = (enabled: boolean) => {
-        setAnalyticsCookie(enabled);
-        setAnalyticsEnabled(enabled);
-        window.location.reload();
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -172,7 +160,9 @@ export default function ProfileTab() {
                     if (uploadResponse.data.success) {
                         submitData.avatar = uploadResponse.data.data.avatar_url;
                     } else {
-                        toast.error(uploadResponse.data.message || t('account.avatarUploadFailed'));
+                        toast.error(
+                            getApiErrorMessageFromPayload(uploadResponse.data, t, 'account.avatarUploadFailed'),
+                        );
                         resetTurnstile();
                         return;
                     }
@@ -208,13 +198,12 @@ export default function ProfileTab() {
                 setFormData((prev) => ({ ...prev, password: '' }));
                 setAvatarFile(null);
             } else {
-                toast.error(response.data.message || t('account.updateFailed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'account.updateFailed'));
                 resetTurnstile();
             }
         } catch (error) {
             console.error('Error updating profile:', error);
-            const axiosError = error as { response?: { data?: { message?: string } } };
-            toast.error(axiosError.response?.data?.message || t('account.unexpectedError'));
+            toast.error(getApiErrorMessage(error, t, 'account.unexpectedError'));
             resetTurnstile();
         } finally {
             setIsSubmitting(false);
@@ -239,7 +228,7 @@ export default function ProfileTab() {
                 <p className='text-muted-foreground mt-1 text-sm'>{t('account.editProfileDescription')}</p>
             </div>
 
-            <form onSubmit={handleSubmit} className='space-y-6'>
+            <form onSubmit={handleSubmit} className='space-y-6' data-fp-save-shortcut>
                 <Fieldset className='space-y-6'>
                     <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                         {allowUsernameChange && (
@@ -366,14 +355,6 @@ export default function ProfileTab() {
                         <div>
                             <Label className='text-foreground text-sm font-medium'>{t('account.analytics')}</Label>
                             <p className='text-muted-foreground mt-0.5 text-xs'>{t('account.analyticsDescription')}</p>
-                        </div>
-                        <div className='flex items-center justify-between gap-4'>
-                            <span className='text-foreground text-sm'>{t('account.analyticsEnabled')}</span>
-                            <Switch
-                                checked={analyticsEnabled}
-                                onCheckedChange={handleAnalyticsChange}
-                                aria-label={t('account.analyticsEnabled')}
-                            />
                         </div>
                     </div>
                 </Fieldset>

@@ -29,6 +29,7 @@ use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use App\Plugins\Events\Events\ServerTaskEvent;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Server\ScheduleContainerShellService;
 
 #[OA\Schema(
     schema: 'Task',
@@ -392,6 +393,24 @@ class TaskController
             $payload = is_string($rawPayload) ? $payload : '';
         }
 
+        if (in_array($action, ['backup', 'database_backup'], true)) {
+            try {
+                if ($action === 'database_backup' && $payload === '') {
+                    return ApiResponse::error('Missing required field: payload', 'MISSING_REQUIRED_FIELD', 400);
+                }
+                \App\Services\Database\ServerDatabaseDumpService::parseBackupPayload($payload);
+            } catch (\InvalidArgumentException $e) {
+                return ApiResponse::error($e->getMessage(), 'INVALID_PAYLOAD', 400);
+            }
+        }
+
+        if ($action === ScheduleContainerShellService::ACTION) {
+            $shellError = $this->validateContainerShellTask($request, $server, $payload);
+            if ($shellError !== null) {
+                return $shellError;
+            }
+        }
+
         // Get next sequence ID for this schedule
         $nextSequenceId = Task::getNextSequenceId($scheduleId);
 
@@ -557,6 +576,29 @@ class TaskController
             $effectivePayload = array_key_exists('payload', $body) ? $body['payload'] : ($task['payload'] ?? '');
             if (trim((string) $effectivePayload) === '') {
                 return ApiResponse::error('Missing required field: payload', 'MISSING_REQUIRED_FIELD', 400);
+            }
+        }
+
+        if (in_array($finalAction, ['backup', 'database_backup'], true)) {
+            $effectivePayload = array_key_exists('payload', $body) ? $body['payload'] : ($task['payload'] ?? '');
+            try {
+                if ($finalAction === 'database_backup' && trim((string) $effectivePayload) === '') {
+                    return ApiResponse::error('Missing required field: payload', 'MISSING_REQUIRED_FIELD', 400);
+                }
+                \App\Services\Database\ServerDatabaseDumpService::parseBackupPayload((string) $effectivePayload);
+            } catch (\InvalidArgumentException $e) {
+                return ApiResponse::error($e->getMessage(), 'INVALID_PAYLOAD', 400);
+            }
+        }
+
+        if ($finalAction === ScheduleContainerShellService::ACTION) {
+            $shellError = $this->validateContainerShellTask(
+                $request,
+                $server,
+                (string) (array_key_exists('payload', $body) ? $body['payload'] : ($task['payload'] ?? ''))
+            );
+            if ($shellError !== null) {
+                return $shellError;
             }
         }
 
@@ -1216,5 +1258,24 @@ class TaskController
             'event' => $event,
             'metadata' => json_encode($metadata),
         ]);
+    }
+
+    /**
+     * Container Shell tasks run arbitrary commands inside the container, so besides the admin
+     * switch and a valid payload the user also needs console access (control.console).
+     */
+    private function validateContainerShellTask(Request $request, array $server, string $payload): ?Response
+    {
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::CONTROL_CONSOLE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
+        $error = (new ScheduleContainerShellService())->validateTaskInput($payload);
+        if ($error !== null) {
+            return ApiResponse::error($error, 'INVALID_PAYLOAD', 400);
+        }
+
+        return null;
     }
 }

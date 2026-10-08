@@ -23,7 +23,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { filesApi } from '@/lib/files-api';
+import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { filterFeatherTrashNames } from '@/lib/feather-trash';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -58,6 +58,7 @@ function DeleteFileList({ files }: { files: string[] }) {
 }
 
 export function DeleteDialog({ open, onOpenChange, uuid, root, files, onSuccess }: DeleteDialogProps) {
+    const filesApi = useFileManagerApi();
     const { t } = useTranslation();
     const { settings } = useSettings();
     const { server } = useServerPermissions(uuid);

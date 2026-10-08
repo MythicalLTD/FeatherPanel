@@ -2,14 +2,14 @@ dockerfiles/mariadb/data
 .installed
 ./package.json
 ./yarn.lock
-./count-results/
 /frontend/.vite
 *.fpa
 *.backup.*
 installer.log
 devlogs.log
 mysql/
-docs/
+# Root docs folder only (not frontendv2/docs or similar)
+/docs/
 nginx.conf
 backend/public/addons/*
 backend/public/components/*
@@ -31,6 +31,13 @@ package-lock.json
 pnpm-lock.yaml
 package.json
 tests
+!backend/tests/
+backend/tests/*
+!backend/tests/SpellEggCompatibilityTest.php
+!backend/tests/Backup/
+!backend/tests/Backup/*.php
+!backend/tests/Telemetry/
+!backend/tests/Telemetry/SentryTelemetryTest.php
 runner/async-runner.out
 todokutzu.md
 TODO.txt
@@ -40,3 +47,8 @@ backend/storage/config/panel_integrity_baseline.json
 build.log
 crack/backend/storage/data/
 wings/
+.pnpm-store
+docs-site/
+backend/openapi.json
+Untitled
+.featherpanel.conf

@@ -18,12 +18,15 @@
  *
  * Transparent iframe canvases only work when the iframe's used color-scheme
  * matches the embedding document. A mismatch forces an opaque UA Canvas
- * (white for light, near-black for dark) — see CSS Color Adjustment §3.1.
+ * (white for light, near-black for dark) - see CSS Color Adjustment §3.1.
  * The panel sets `html.style.colorScheme` from ThemeContext; we must mirror
  * that on the iframe document (and the <iframe> element) or dark mode shows
  * a white slab behind plugin widgets.
  */
-export function getPluginIframeThemeOverrideCss(theme: 'light' | 'dark'): string {
+export function getPluginIframeThemeOverrideCss(
+    theme: 'light' | 'dark',
+    tokens?: Record<string, string> | null,
+): string {
     // Match the parent document's color-scheme so the iframe canvas stays
     // transparent and the panel backdrop (gradients / gold glow) shows through.
     const colorSchemeBlock = `
@@ -32,36 +35,50 @@ export function getPluginIframeThemeOverrideCss(theme: 'light' | 'dark'): string
                 }
             `;
 
-    // Dark: strip only the outer shell (direct children of body). Inner routes
-    // and cards keep `bg-card` / etc. so typography matches dark theme without
-    // a second opaque slab hiding the panel's custom backdrop.
-    const darkShellTransparency =
-        theme === 'dark'
+    const tokenLines: string[] = [];
+    if (tokens) {
+        for (const [key, value] of Object.entries(tokens)) {
+            if (!value) continue;
+            if (key === 'radius') {
+                tokenLines.push(`--radius: ${value};`);
+                continue;
+            }
+            tokenLines.push(`--${key}: ${value};`);
+            tokenLines.push(`--fp-${key}: hsl(${value});`);
+            tokenLines.push(`--color-${key}: hsl(${value});`);
+        }
+    }
+    const tokenBlock =
+        tokenLines.length > 0
             ? `
-                html.dark > body > * {
-                    background: transparent !important;
-                    background-color: transparent !important;
-                    background-image: none !important;
+                :root, html[data-fp-theme="${theme}"], html.${theme} {
+                    ${tokenLines.join('\n                    ')}
                 }
             `
             : '';
 
+    // Do NOT strip `body > *` backgrounds. Borderless HTML widgets (e.g. Discord
+    // Plus link banner) put their card chrome on a direct body child - wiping it
+    // leaves muted text on the panel backdrop with unreadable contrast.
+    // Framework shells are cleared via the #__next / #app / #__nuxt / #root
+    // selectors below instead.
+
     return `
                 ${colorSchemeBlock}
-                ${darkShellTransparency}
+                ${tokenBlock}
                 [data-fp-theme="light"] {
-                    --fp-bg: #ffffff;
-                    --fp-fg: #0a0a0a;
-                    --fp-card: #ffffff;
-                    --fp-card-fg: #0a0a0a;
-                    --fp-muted: #f5f5f5;
+                    --fp-bg: ${tokens?.background ? `hsl(${tokens.background})` : '#ffffff'};
+                    --fp-fg: ${tokens?.foreground ? `hsl(${tokens.foreground})` : '#0a0a0a'};
+                    --fp-card: ${tokens?.card ? `hsl(${tokens.card})` : '#ffffff'};
+                    --fp-card-fg: ${tokens?.['card-foreground'] ? `hsl(${tokens['card-foreground']})` : '#0a0a0a'};
+                    --fp-muted: ${tokens?.muted ? `hsl(${tokens.muted})` : '#f5f5f5'};
                 }
                 [data-fp-theme="dark"] {
-                    --fp-bg: #0a0a0a;
-                    --fp-fg: #fafafa;
-                    --fp-card: #171717;
-                    --fp-card-fg: #fafafa;
-                    --fp-muted: #262626;
+                    --fp-bg: ${tokens?.background ? `hsl(${tokens.background})` : '#0a0a0a'};
+                    --fp-fg: ${tokens?.foreground ? `hsl(${tokens.foreground})` : '#fafafa'};
+                    --fp-card: ${tokens?.card ? `hsl(${tokens.card})` : '#171717'};
+                    --fp-card-fg: ${tokens?.['card-foreground'] ? `hsl(${tokens['card-foreground']})` : '#fafafa'};
+                    --fp-muted: ${tokens?.muted ? `hsl(${tokens.muted})` : '#262626'};
                 }
                 /* Strip the iframe's own page-level background so the panel's
                    custom backdrop (gradients, glass, etc.) shows through.

@@ -18,11 +18,16 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ShieldCheck, Loader2, ExternalLink, Globe, KeyRound, TriangleAlert } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
-import Image from 'next/image';
+import { useSession } from '@/contexts/SessionContext';
+import {
+    OAuthConsentButton,
+    OAuthConsentCard,
+    OAuthConsentMessage,
+    OAuthConsentShell,
+} from '@/components/auth/OAuthConsentCard';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 type OAuthRequestPayload = {
     request_token: string;
@@ -41,6 +46,7 @@ type OAuthRequestPayload = {
 
 export default function OAuth2ApiAuthorizePage() {
     const { t } = useTranslation();
+    const { user } = useSession();
     const router = useRouter();
     const searchParams = useSearchParams();
     const [loading, setLoading] = useState(false);
@@ -65,7 +71,7 @@ export default function OAuth2ApiAuthorizePage() {
                     setPayload(response.data.data as OAuthRequestPayload);
                     return;
                 }
-                setError(response.data?.message || t('account.apiKeys.oauth2.initFailedDefault'));
+                setError(getApiErrorMessageFromPayload(response.data, t, 'account.apiKeys.oauth2.initFailedDefault'));
             })
             .catch((err) => {
                 if (axios.isAxiosError(err) && err.response?.data?.error_code === 'INVALID_ACCOUNT_TOKEN') {
@@ -73,8 +79,7 @@ export default function OAuth2ApiAuthorizePage() {
                     router.push(`/auth/login?redirect=${encodeURIComponent(redirect)}`);
                     return;
                 }
-                const message = axios.isAxiosError(err) ? err.response?.data?.message : null;
-                setError(message || t('account.apiKeys.oauth2.initFailedDefault'));
+                setError(getApiErrorMessage(err, t, 'account.apiKeys.oauth2.initFailedDefault'));
             })
             .finally(() => setLoading(false));
     }, [queryString, payload, loading, error, searchParams, router, t]);
@@ -88,7 +93,9 @@ export default function OAuth2ApiAuthorizePage() {
             params: requestQueryParams,
         });
         if (!response.data?.success || !response.data?.data?.request_token) {
-            throw new Error(response.data?.message || t('account.apiKeys.oauth2.initFailedDefault'));
+            throw new Error(
+                getApiErrorMessageFromPayload(response.data, t, 'account.apiKeys.oauth2.initFailedDefault'),
+            );
         }
         const freshPayload = response.data.data as OAuthRequestPayload;
         setPayload(freshPayload);
@@ -99,7 +106,6 @@ export default function OAuth2ApiAuthorizePage() {
         if (!payload && !hasRequestParams) return;
         setSubmitting(true);
         try {
-            // Always use a fresh token to avoid stale/prefetched request state.
             let activePayload = payload;
             if (hasRequestParams) {
                 activePayload = await refreshRequestToken();
@@ -109,21 +115,28 @@ export default function OAuth2ApiAuthorizePage() {
                 request_token: activePayload?.request_token,
             });
             if (!response.data?.success) {
-                throw new Error(response.data?.message || 'Approval failed');
+                throw new Error(
+                    getApiErrorMessageFromPayload(response.data, t, 'account.apiKeys.oauth2.approveFailed'),
+                );
             }
             if (response.data?.data?.mode === 'server') {
                 setServerModeAuthorized(true);
                 return;
             }
+            if (response.data?.data?.mode === 'device' && response.data?.data?.public_key) {
+                setServerModeAuthorized(true);
+                return;
+            }
             if (!response.data?.data?.redirect_url) {
-                throw new Error(response.data?.message || 'Approval failed');
+                throw new Error(
+                    getApiErrorMessageFromPayload(response.data, t, 'account.apiKeys.oauth2.approveFailed'),
+                );
             }
             redirectToTarget(String(response.data.data.redirect_url));
         } catch (err) {
             const isPendingStateError =
                 axios.isAxiosError(err) && err.response?.data?.error_code === 'AUTHORIZATION_NOT_PENDING';
 
-            // One automatic retry with a newly minted token.
             if (isPendingStateError && hasRequestParams) {
                 try {
                     const freshPayload = await refreshRequestToken();
@@ -141,12 +154,15 @@ export default function OAuth2ApiAuthorizePage() {
                         }
                     }
                 } catch {
-                    // Fall through to standard error toast below.
+                    // Fall through
                 }
             }
 
-            const message = axios.isAxiosError(err) ? err.response?.data?.message : null;
-            toast.error(message || t('account.apiKeys.oauth2.approveFailed'));
+            toast.error(
+                err instanceof Error && !axios.isAxiosError(err)
+                    ? err.message
+                    : getApiErrorMessage(err, t, 'account.apiKeys.oauth2.approveFailed'),
+            );
             setSubmitting(false);
         }
     };
@@ -164,7 +180,7 @@ export default function OAuth2ApiAuthorizePage() {
                 request_token: activePayload?.request_token,
             });
             if (!response.data?.success) {
-                throw new Error(response.data?.message || 'Deny failed');
+                throw new Error(getApiErrorMessageFromPayload(response.data, t, 'account.apiKeys.oauth2.denyFailed'));
             }
             if (response.data?.data?.mode === 'server') {
                 toast.success(t('account.apiKeys.oauth2.serverDenied'));
@@ -172,212 +188,136 @@ export default function OAuth2ApiAuthorizePage() {
                 return;
             }
             if (!response.data?.data?.redirect_url) {
-                throw new Error(response.data?.message || 'Deny failed');
+                throw new Error(getApiErrorMessageFromPayload(response.data, t, 'account.apiKeys.oauth2.denyFailed'));
             }
             redirectToTarget(String(response.data.data.redirect_url));
         } catch (err) {
-            const message = axios.isAxiosError(err) ? err.response?.data?.message : null;
-            toast.error(message || t('account.apiKeys.oauth2.denyFailed'));
+            toast.error(
+                err instanceof Error && !axios.isAxiosError(err)
+                    ? err.message
+                    : getApiErrorMessage(err, t, 'account.apiKeys.oauth2.denyFailed'),
+            );
             setSubmitting(false);
         }
     };
 
     if (serverModeAuthorized) {
         return (
-            <div className='flex min-h-[70vh] items-center justify-center p-6'>
-                <div className='bg-card/80 w-full max-w-2xl space-y-5 rounded-2xl border border-emerald-500/30 p-7 backdrop-blur-xl'>
-                    <div className='flex items-start gap-3'>
-                        <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400'>
-                            <ShieldCheck className='h-5 w-5' />
-                        </div>
-                        <div>
-                            <h1 className='text-foreground text-xl font-semibold'>
-                                {t('account.apiKeys.oauth2.serverAuthorizedTitle')}
-                            </h1>
-                            <p className='text-muted-foreground mt-1 text-sm'>
-                                {t('account.apiKeys.oauth2.serverAuthorizedDescription')}
-                            </p>
-                        </div>
-                    </div>
-                    <div className='flex flex-wrap gap-3'>
-                        <Button onClick={() => router.push('/dashboard/account?tab=api-keys')}>
-                            {t('account.apiKeys.oauth2.returnToApiKeys')}
-                        </Button>
-                    </div>
-                </div>
-            </div>
+            <OAuthConsentShell>
+                <OAuthConsentMessage
+                    title={t('account.apiKeys.oauth2.serverAuthorizedTitle')}
+                    body={t('account.apiKeys.oauth2.serverAuthorizedDescription')}
+                >
+                    <OAuthConsentButton primary onClick={() => router.push('/dashboard/account?tab=api-keys')}>
+                        {t('account.apiKeys.oauth2.returnToApiKeys')}
+                    </OAuthConsentButton>
+                </OAuthConsentMessage>
+            </OAuthConsentShell>
         );
     }
 
-    if (loading) {
+    if (loading || (hasRequestParams && !payload && !error)) {
         return (
-            <div className='flex min-h-[70vh] items-center justify-center p-6'>
-                <div className='border-border/60 bg-card/60 text-muted-foreground flex items-center gap-3 rounded-xl border px-6 py-5 backdrop-blur-xl'>
-                    <Loader2 className='text-primary h-5 w-5 animate-spin' />
-                    <span>{t('account.apiKeys.oauth2.prepareLoading')}</span>
-                </div>
-            </div>
+            <OAuthConsentShell>
+                <OAuthConsentMessage title={t('account.apiKeys.oauth2.prepareLoading')} body='Please wait.' />
+            </OAuthConsentShell>
         );
     }
 
     if (!hasRequestParams) {
         return (
-            <div className='flex min-h-[70vh] items-center justify-center p-6'>
-                <div className='border-border/60 bg-card/70 w-full max-w-2xl space-y-5 rounded-2xl border p-7 backdrop-blur-xl'>
-                    <div className='flex items-start gap-3'>
-                        <div className='bg-primary/15 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-lg'>
-                            <KeyRound className='h-5 w-5' />
-                        </div>
-                        <div>
-                            <h1 className='text-foreground text-xl font-semibold'>
-                                {t('account.apiKeys.oauth2.noRequestTitle')}
-                            </h1>
-                            <p className='text-muted-foreground mt-1 text-sm'>
-                                {t('account.apiKeys.oauth2.noRequestDescription')}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className='rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100'>
-                        <p className='font-medium'>{t('account.apiKeys.oauth2.noRequestWarningTitle')}</p>
-                        <p className='mt-1 opacity-90'>{t('account.apiKeys.oauth2.noRequestWarningBody')}</p>
-                    </div>
-
-                    <div className='flex flex-wrap gap-3'>
-                        <Button onClick={() => router.push('/dashboard/account?tab=api-keys')}>
+            <OAuthConsentShell>
+                <OAuthConsentMessage
+                    title={t('account.apiKeys.oauth2.noRequestTitle')}
+                    body={t('account.apiKeys.oauth2.noRequestDescription')}
+                >
+                    <p className='border-border/60 bg-background/40 text-muted-foreground mb-4 rounded-xl border px-3.5 py-3 text-sm leading-relaxed'>
+                        <strong className='text-foreground'>{t('account.apiKeys.oauth2.noRequestWarningTitle')}</strong>
+                        <br />
+                        {t('account.apiKeys.oauth2.noRequestWarningBody')}
+                    </p>
+                    <div className='flex flex-wrap gap-2'>
+                        <OAuthConsentButton primary onClick={() => router.push('/dashboard/account?tab=api-keys')}>
                             {t('account.apiKeys.oauth2.returnToApiKeys')}
-                        </Button>
-                        <Button
-                            variant='outline'
+                        </OAuthConsentButton>
+                        <OAuthConsentButton
                             onClick={() => window.open('/icanhasfeatherpanel/api/oauth2-playground.html', '_blank')}
                         >
                             {t('account.apiKeys.oauth2.openPlayground')}
-                        </Button>
+                        </OAuthConsentButton>
                     </div>
-                </div>
-            </div>
+                </OAuthConsentMessage>
+            </OAuthConsentShell>
         );
     }
 
     if (error || !payload) {
         return (
-            <div className='flex min-h-[70vh] items-center justify-center p-6'>
-                <div className='bg-card/80 w-full max-w-xl space-y-4 rounded-2xl border border-red-500/30 p-6 backdrop-blur-xl'>
-                    <div className='flex items-center gap-3 text-red-400'>
-                        <TriangleAlert className='h-5 w-5' />
-                        <h1 className='text-lg font-semibold'>{t('account.apiKeys.oauth2.initFailedTitle')}</h1>
-                    </div>
-                    <p className='text-muted-foreground text-sm'>
-                        {error || t('account.apiKeys.oauth2.initFailedDefault')}
-                    </p>
-                    <div className='flex gap-3'>
-                        <Button variant='outline' onClick={() => router.push('/dashboard/account?tab=api-keys')}>
+            <OAuthConsentShell>
+                <OAuthConsentMessage
+                    error
+                    title={t('account.apiKeys.oauth2.initFailedTitle')}
+                    body={error || t('account.apiKeys.oauth2.initFailedDefault')}
+                >
+                    <div className='flex flex-wrap gap-2'>
+                        <OAuthConsentButton onClick={() => router.push('/dashboard/account?tab=api-keys')}>
                             {t('account.apiKeys.oauth2.returnToApiKeys')}
-                        </Button>
-                        <Button variant='ghost' onClick={() => window.location.reload()}>
+                        </OAuthConsentButton>
+                        <OAuthConsentButton primary onClick={() => window.location.reload()}>
                             {t('account.apiKeys.oauth2.retry')}
-                        </Button>
+                        </OAuthConsentButton>
                     </div>
-                </div>
-            </div>
+                </OAuthConsentMessage>
+            </OAuthConsentShell>
         );
     }
 
     const appTitle = payload.request.appName || payload.request.name;
 
     return (
-        <div className='flex min-h-[70vh] items-center justify-center p-6'>
-            <div className='border-border/60 bg-card/70 w-full max-w-3xl space-y-6 rounded-2xl border p-6 shadow-sm backdrop-blur-xl md:p-8'>
-                <div className='flex items-center justify-between gap-4'>
-                    <div className='flex min-w-0 items-center gap-4'>
-                        {payload.request.appLogo ? (
-                            <Image
-                                src={payload.request.appLogo}
-                                alt={appTitle}
-                                width={56}
-                                height={56}
-                                className='h-14 w-14 shrink-0 rounded-xl border object-cover'
-                            />
-                        ) : (
-                            <div className='bg-muted flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border'>
-                                <ShieldCheck className='text-muted-foreground h-6 w-6' />
-                            </div>
-                        )}
-                        <div className='min-w-0'>
-                            <h1 className='truncate text-xl font-semibold md:text-2xl'>
-                                {t('account.apiKeys.oauth2.authorizeTitle', { app: appTitle })}
-                            </h1>
-                            <p className='text-muted-foreground truncate text-sm'>
-                                {t('account.apiKeys.oauth2.authorizeSubtitle')}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className='rounded-xl border border-amber-500/30 bg-amber-500/10 p-4'>
-                    <p className='text-sm font-medium text-amber-900 dark:text-amber-100'>
-                        {t('account.apiKeys.oauth2.warning')}
-                    </p>
-                </div>
-
-                <div className='grid gap-3 text-sm md:grid-cols-2'>
-                    <div className='border-border/60 bg-background/40 rounded-lg border p-3'>
-                        <p className='text-muted-foreground'>{t('account.apiKeys.oauth2.requestName')}</p>
-                        <p className='font-medium break-all'>{payload.request.name}</p>
-                    </div>
-                    {payload.request.description ? (
-                        <div className='border-border/60 bg-background/40 rounded-lg border p-3'>
-                            <p className='text-muted-foreground'>{t('account.apiKeys.oauth2.description')}</p>
-                            <p className='font-medium break-all'>{payload.request.description}</p>
-                        </div>
-                    ) : null}
-                    <div className='border-border/60 bg-background/40 rounded-lg border p-3 md:col-span-2'>
-                        <p className='text-muted-foreground inline-flex items-center gap-2'>
-                            <Globe className='h-3.5 w-3.5' />
-                            {t('account.apiKeys.oauth2.callbackUrl')}
-                        </p>
-                        <a
-                            href={payload.request.callbackurl}
-                            target='_blank'
-                            rel='noreferrer'
-                            className='inline-flex items-center gap-2 font-medium break-all hover:underline'
-                        >
-                            {payload.request.callbackurl}
-                            <ExternalLink className='h-3 w-3' />
-                        </a>
-                    </div>
-                    <div className='border-border/60 bg-background/40 rounded-lg border p-3'>
-                        <p className='text-muted-foreground'>{t('account.apiKeys.oauth2.allowedIps')}</p>
-                        <p className='font-medium break-all whitespace-pre-wrap'>
-                            {payload.request.allowedips || t('account.apiKeys.oauth2.allowedIpsAny')}
-                        </p>
-                    </div>
-                    <div className='border-border/60 bg-background/40 rounded-lg border p-3'>
-                        <p className='text-muted-foreground'>{t('account.apiKeys.oauth2.foreignIpAlert')}</p>
-                        <p className='font-medium'>
-                            {payload.request.alertCors
-                                ? t('account.apiKeys.oauth2.enabled')
-                                : t('account.apiKeys.oauth2.disabled')}
-                        </p>
-                    </div>
-                </div>
-
-                <div className='flex flex-col-reverse gap-3 pt-2 sm:flex-row'>
-                    <Button variant='outline' className='sm:flex-1' disabled={submitting} onClick={handleDeny}>
-                        {t('account.apiKeys.oauth2.deny')}
-                    </Button>
-                    <Button className='sm:flex-1' disabled={submitting} onClick={handleApprove}>
-                        {submitting ? (
-                            <span className='inline-flex items-center gap-2'>
-                                <Loader2 className='h-4 w-4 animate-spin' />
-                                {t('account.apiKeys.oauth2.processing')}
-                            </span>
-                        ) : (
-                            t('account.apiKeys.oauth2.authorize')
-                        )}
-                    </Button>
-                </div>
-            </div>
-        </div>
+        <OAuthConsentShell>
+            <OAuthConsentCard
+                appName={appTitle}
+                appLogo={payload.request.appLogo}
+                subtitle={t('account.apiKeys.oauth2.authorizeSubtitle')}
+                signedInAs={user?.username}
+                permissions={[
+                    { label: t('account.apiKeys.oauth2.permissionAccount') },
+                    { label: t('account.apiKeys.oauth2.permissionServers') },
+                    { label: t('account.apiKeys.oauth2.permissionApi') },
+                ]}
+                meta={[
+                    {
+                        text: (
+                            <>
+                                {t('account.apiKeys.oauth2.callbackUrl')}:{' '}
+                                <span className='text-foreground break-all'>{payload.request.callbackurl}</span>
+                            </>
+                        ),
+                    },
+                    {
+                        text: (
+                            <>
+                                {t('account.apiKeys.oauth2.allowedIps')}:{' '}
+                                {payload.request.allowedips || t('account.apiKeys.oauth2.allowedIpsAny')}
+                            </>
+                        ),
+                    },
+                    {
+                        text: t('account.apiKeys.oauth2.cannotReadMessages'),
+                    },
+                    {
+                        text: t('account.apiKeys.oauth2.privacyNote'),
+                    },
+                ]}
+                cancelLabel={t('account.apiKeys.oauth2.deny')}
+                authorizeLabel={
+                    submitting ? t('account.apiKeys.oauth2.processing') : t('account.apiKeys.oauth2.authorize')
+                }
+                submitting={submitting}
+                onCancel={() => void handleDeny()}
+                onAuthorize={() => void handleApprove()}
+            />
+        </OAuthConsentShell>
     );
 }

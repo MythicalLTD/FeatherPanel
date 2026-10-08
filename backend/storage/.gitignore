@@ -10,3 +10,6 @@
 .env-copy
 config/ratelimit.json
 mcversionmanager/
+/telemetry/
+# phpMyAdmin / phpPgAdmin single-use signon tokens (runtime, contain credentials briefly)
+/db_signon_tokens/

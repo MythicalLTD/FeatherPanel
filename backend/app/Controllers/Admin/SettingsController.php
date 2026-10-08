@@ -19,10 +19,14 @@ namespace App\Controllers\Admin;
 
 use App\App;
 use App\Chat\Activity;
+use App\Chat\Database;
+use App\Helpers\DemoGuard;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Telemetry\UmamiTelemetry;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Telemetry\UmamiTelemetryState;
 use App\Plugins\Events\Events\SettingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -187,6 +191,10 @@ class SettingsController
                 ConfigInterface::APP_ACCENT_COLOR_LOCK,
                 ConfigInterface::APP_THEME_DEFAULT,
                 ConfigInterface::APP_THEME_LOCK,
+                ConfigInterface::APP_THEME_PACK_DEFAULT,
+                ConfigInterface::APP_THEME_PACK_LOCK,
+                ConfigInterface::APP_UI_PACK_DEFAULT,
+                ConfigInterface::APP_UI_PACK_LOCK,
                 ConfigInterface::APP_BACKGROUND_TYPE_DEFAULT,
                 ConfigInterface::APP_BACKGROUND_TYPE_LOCK,
                 ConfigInterface::APP_BACKDROP_BLUR_DEFAULT,
@@ -218,15 +226,43 @@ class SettingsController
                 ConfigInterface::LEGAL_PRIVACY,
             ],
         ],
+        'auth_page' => [
+            'name' => 'Auth Page',
+            'description' => 'Customize the login and register experience, marketing panel, QR sign-in, and method layout',
+            'icon' => 'lock',
+            'settings' => [
+                ConfigInterface::AUTH_SHELL_TAGLINE,
+                ConfigInterface::AUTH_ASIDE_TITLE,
+                ConfigInterface::AUTH_LOGIN_HEADLINE,
+                ConfigInterface::AUTH_LOGIN_SUBHEADLINE,
+                ConfigInterface::AUTH_REGISTER_HEADLINE,
+                ConfigInterface::AUTH_REGISTER_SUBHEADLINE,
+                ConfigInterface::AUTH_SSO_HEADLINE,
+                ConfigInterface::AUTH_SSO_SUBHEADLINE,
+                ConfigInterface::AUTH_SHOW_MARKETING_PANEL,
+                ConfigInterface::AUTH_ASIDE_IMAGE_URL,
+                ConfigInterface::AUTH_SHOW_QR_LOGIN,
+                ConfigInterface::AUTH_FORM_DENSITY,
+                ConfigInterface::AUTH_SECONDARY_LAYOUT,
+                ConfigInterface::AUTH_SHOW_THEME_CUSTOMIZER,
+                ConfigInterface::AUTH_FOOTER_STYLE,
+                ConfigInterface::LOGIN_DEFAULT_METHOD,
+                ConfigInterface::LOGIN_METHODS_ORDER,
+                ConfigInterface::LOGIN_HIDDEN_METHODS,
+            ],
+        ],
+        'telemetry' => [
+            'name' => 'Telemetry',
+            'description' => 'Enable or disable installation reports, browser analytics, heatmaps, and session recordings to FeatherPanel.',
+            'icon' => 'activity',
+            'settings' => [ConfigInterface::TELEMETRY],
+        ],
         'security' => [
             'name' => 'Security',
             'description' => 'Security and authentication settings',
             'icon' => 'shield',
             'settings' => [
                 ConfigInterface::EMAIL_LOGIN_ENABLED,
-                ConfigInterface::LOGIN_DEFAULT_METHOD,
-                ConfigInterface::LOGIN_METHODS_ORDER,
-                ConfigInterface::LOGIN_HIDDEN_METHODS,
                 ConfigInterface::CAPTCHA_PROVIDER,
                 ConfigInterface::TURNSTILE_ENABLED,
                 ConfigInterface::TURNSTILE_KEY_PUB,
@@ -259,7 +295,6 @@ class SettingsController
                 ConfigInterface::ABUSEIPDB_MIN_CONFIDENCE_SCORE,
                 ConfigInterface::ABUSEIPDB_MAX_AGE_DAYS,
                 ConfigInterface::ABUSEIPDB_REGISTER_ACTION,
-                ConfigInterface::TELEMETRY,
                 ConfigInterface::REQUIRE_TWO_FA_ADMINS,
                 ConfigInterface::AVATAR_PROVIDER,
                 ConfigInterface::AVATAR_CUSTOM_URL,
@@ -304,6 +339,7 @@ class SettingsController
                 ConfigInterface::STATUS_PAGE_ALLOW_IFRAME,
                 ConfigInterface::STATUS_PAGE_SHOW_RAW_VALUES,
                 ConfigInterface::STATUS_PAGE_SHOW_PLAYER_COUNT,
+                ConfigInterface::STATUS_PAGE_SERVERS_VISIBLE_BY_DEFAULT,
             ],
         ],
         'knowledgebase' => [
@@ -353,6 +389,10 @@ class SettingsController
                 ConfigInterface::SERVER_ALLOW_USER_MADE_IMPORT,
                 ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL,
                 ConfigInterface::SERVER_ALLOW_USER_MADE_SUBDOMAINS,
+                ConfigInterface::SERVER_AUTO_START_ON_NODE_RECONNECT,
+                ConfigInterface::SERVER_AUTO_START_STAGGER_SECONDS,
+                ConfigInterface::SERVER_AUTO_START_INITIAL_DELAY_SECONDS,
+                ConfigInterface::SERVER_ALLOW_USER_AUTO_START,
                 ConfigInterface::SERVER_HIDE_IPS,
                 ConfigInterface::FILE_TRASH_ENABLED,
                 ConfigInterface::FILE_TRASH_MAX_SIZE_MB,
@@ -549,13 +589,13 @@ class SettingsController
                 'value' => $this->app
                     ->getConfig()
                     ->getSetting(ConfigInterface::TELEMETRY, 'true'),
-                'description' => 'Should the application send telemetry data to the telemetry service?',
+                'description' => 'Send daily aggregate counts to Umami: resource totals, backup outcomes, scheduling, databases, shared access, API keys, SSH keys, mounts, tickets, mailboxes, and feature usage over the last 30 days. No installation identifiers or individual activity records are sent. Browser tracking, recordings, and external error reporting remain disabled. The collector receives the server connection IP. Disable to stop reports.',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'true',
-                'validation' => 'required|string|max:255',
+                'validation' => 'required|string|in:true,false',
                 'options' => ['true', 'false'],
-                'category' => 'security',
+                'category' => 'telemetry',
             ],
             ConfigInterface::APP_LOGO_DARK => [
                 'name' => ConfigInterface::APP_LOGO_DARK,
@@ -734,6 +774,56 @@ class SettingsController
                     ->getConfig()
                     ->getSetting(ConfigInterface::APP_THEME_LOCK, 'false'),
                 'description' => 'Force the configured theme (light/dark) for all users (disables per-user theme toggle)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'app',
+            ],
+            ConfigInterface::APP_THEME_PACK_DEFAULT => [
+                'name' => ConfigInterface::APP_THEME_PACK_DEFAULT,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_THEME_PACK_DEFAULT, 'default'),
+                'description' => 'Default plugin theme pack id (default or pluginId:themeId)',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'default',
+                'validation' => 'nullable|string|max:255',
+                'category' => 'app',
+            ],
+            ConfigInterface::APP_THEME_PACK_LOCK => [
+                'name' => ConfigInterface::APP_THEME_PACK_LOCK,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_THEME_PACK_LOCK, 'false'),
+                'description' => 'Force the configured theme pack for all users',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'app',
+            ],
+            ConfigInterface::APP_UI_PACK_DEFAULT => [
+                'name' => ConfigInterface::APP_UI_PACK_DEFAULT,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_UI_PACK_DEFAULT, ''),
+                'description' => 'Active UI pack id for layout takeovers (empty = none, or pluginId:packId)',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => '',
+                'validation' => 'nullable|string|max:255',
+                'category' => 'app',
+            ],
+            ConfigInterface::APP_UI_PACK_LOCK => [
+                'name' => ConfigInterface::APP_UI_PACK_LOCK,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_UI_PACK_LOCK, 'false'),
+                'description' => 'Force the configured UI pack for all users',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',
@@ -1099,12 +1189,12 @@ class SettingsController
                 'value' => $this->app
                     ->getConfig()
                     ->getSetting(ConfigInterface::SMTP_ENCRYPTION, 'tls'),
-                'description' => 'The SMTP encryption of the application',
+                'description' => 'SMTP encryption: starttls/tls for port 587 (e.g. Brevo), ssl for port 465 SMTPS, none for plain SMTP',
                 'type' => 'select',
                 'required' => true,
-                'placeholder' => 'tls',
-                'validation' => 'required|string|max:255',
-                'options' => ['tls', 'ssl'],
+                'placeholder' => 'starttls',
+                'validation' => 'required|string|in:starttls,tls,ssl,none',
+                'options' => ['starttls', 'tls', 'ssl', 'none'],
                 'category' => 'email',
             ],
             ConfigInterface::CAPTCHA_PROVIDER => [
@@ -1407,7 +1497,7 @@ class SettingsController
                 'placeholder' => 'local',
                 'validation' => 'required|string|max:64',
                 'options' => ['local', 'ldap', 'email_code', 'discord', 'oidc'],
-                'category' => 'security',
+                'category' => 'auth_page',
             ],
             ConfigInterface::LOGIN_METHODS_ORDER => [
                 'name' => ConfigInterface::LOGIN_METHODS_ORDER,
@@ -1420,7 +1510,7 @@ class SettingsController
                 'placeholder' => 'local,passkey,ldap,email_code,discord,oidc',
                 'validation' => 'required|string|max:255',
                 'options' => [],
-                'category' => 'security',
+                'category' => 'auth_page',
             ],
             ConfigInterface::LOGIN_HIDDEN_METHODS => [
                 'name' => ConfigInterface::LOGIN_HIDDEN_METHODS,
@@ -1433,7 +1523,202 @@ class SettingsController
                 'placeholder' => 'passkey',
                 'validation' => 'nullable|string|max:255',
                 'options' => [],
-                'category' => 'security',
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_SHELL_TAGLINE => [
+                'name' => ConfigInterface::AUTH_SHELL_TAGLINE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_SHELL_TAGLINE, ''),
+                'description' => 'Short marketing line under the brand on the auth left panel. This is auth-only copy — it does NOT use SEO description. Leave empty for the default translated tagline.',
+                'type' => 'textarea',
+                'required' => false,
+                'placeholder' => 'Manage your game servers from anywhere.',
+                'validation' => 'nullable|string|max:500',
+                'options' => [],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_ASIDE_TITLE => [
+                'name' => ConfigInterface::AUTH_ASIDE_TITLE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_ASIDE_TITLE, ''),
+                'description' => 'Optional bold heading under the brand name on the marketing panel (e.g. “Welcome to our panel”). Leave empty to hide.',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'Welcome',
+                'validation' => 'nullable|string|max:120',
+                'options' => [],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_LOGIN_HEADLINE => [
+                'name' => ConfigInterface::AUTH_LOGIN_HEADLINE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_LOGIN_HEADLINE, ''),
+                'description' => 'Override the login form title (default: Welcome back). Leave empty for the translated default.',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'Welcome back',
+                'validation' => 'nullable|string|max:120',
+                'options' => [],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_LOGIN_SUBHEADLINE => [
+                'name' => ConfigInterface::AUTH_LOGIN_SUBHEADLINE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_LOGIN_SUBHEADLINE, ''),
+                'description' => 'Override the login form subtitle. Leave empty for the translated default.',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'Enter your credentials to access your account',
+                'validation' => 'nullable|string|max:240',
+                'options' => [],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_REGISTER_HEADLINE => [
+                'name' => ConfigInterface::AUTH_REGISTER_HEADLINE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_REGISTER_HEADLINE, ''),
+                'description' => 'Override the register page title. Leave empty for the translated default.',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'Create an account',
+                'validation' => 'nullable|string|max:120',
+                'options' => [],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_REGISTER_SUBHEADLINE => [
+                'name' => ConfigInterface::AUTH_REGISTER_SUBHEADLINE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_REGISTER_SUBHEADLINE, ''),
+                'description' => 'Override the register page subtitle. Leave empty for the translated default.',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'Get started with us today',
+                'validation' => 'nullable|string|max:240',
+                'options' => [],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_SSO_HEADLINE => [
+                'name' => ConfigInterface::AUTH_SSO_HEADLINE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_SSO_HEADLINE, ''),
+                'description' => 'Headline when Discord/OIDC is the primary login panel (third-party SSO portal). Leave empty for the default “Continue with SSO” style copy.',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'Sign in with your organization',
+                'validation' => 'nullable|string|max:120',
+                'options' => [],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_SSO_SUBHEADLINE => [
+                'name' => ConfigInterface::AUTH_SSO_SUBHEADLINE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_SSO_SUBHEADLINE, ''),
+                'description' => 'Supporting text under the SSO portal headline. Leave empty for the translated default.',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'Use your company or Discord account to continue.',
+                'validation' => 'nullable|string|max:240',
+                'options' => [],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_SHOW_MARKETING_PANEL => [
+                'name' => ConfigInterface::AUTH_SHOW_MARKETING_PANEL,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_SHOW_MARKETING_PANEL, 'true'),
+                'description' => 'Show the full-bleed left marketing column on large screens (brand, tagline, QR). When false, auth pages use a centered form column only.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:16',
+                'options' => ['true', 'false'],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_ASIDE_IMAGE_URL => [
+                'name' => ConfigInterface::AUTH_ASIDE_IMAGE_URL,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_ASIDE_IMAGE_URL, ''),
+                'description' => 'Optional hero image for the auth marketing panel (shown behind brand/QR). Leave empty for gradient atmosphere only.',
+                'type' => 'image',
+                'required' => false,
+                'placeholder' => 'https://example.com/auth-hero.jpg',
+                'validation' => 'nullable|string|max:2048',
+                'options' => [],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_SHOW_QR_LOGIN => [
+                'name' => ConfigInterface::AUTH_SHOW_QR_LOGIN,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_SHOW_QR_LOGIN, 'true'),
+                'description' => 'Enable Discord-style QR code login (phone already signed in approves the desktop session).',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:16',
+                'options' => ['true', 'false'],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_FORM_DENSITY => [
+                'name' => ConfigInterface::AUTH_FORM_DENSITY,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_FORM_DENSITY, 'compact'),
+                'description' => 'Vertical spacing on auth forms: comfortable (roomy), compact (default), or dense (minimal scroll).',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'compact',
+                'validation' => 'required|string|max:32',
+                'options' => ['comfortable', 'compact', 'dense'],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_SECONDARY_LAYOUT => [
+                'name' => ConfigInterface::AUTH_SECONDARY_LAYOUT,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_SECONDARY_LAYOUT, 'chips'),
+                'description' => 'How alternate login methods appear: chips (compact wrap), stack (full-width rows), or collapsed (hidden behind “More ways to sign in”).',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'chips',
+                'validation' => 'required|string|max:32',
+                'options' => ['chips', 'stack', 'collapsed'],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_SHOW_THEME_CUSTOMIZER => [
+                'name' => ConfigInterface::AUTH_SHOW_THEME_CUSTOMIZER,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_SHOW_THEME_CUSTOMIZER, 'true'),
+                'description' => 'Show the theme/appearance button on auth pages (top-right).',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:16',
+                'options' => ['true', 'false'],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_FOOTER_STYLE => [
+                'name' => ConfigInterface::AUTH_FOOTER_STYLE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_FOOTER_STYLE, 'full'),
+                'description' => 'Auth footer under the form: full (links + powered-by), minimal (links only), or hidden.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'full',
+                'validation' => 'required|string|max:32',
+                'options' => ['full', 'minimal', 'hidden'],
+                'category' => 'auth_page',
             ],
             ConfigInterface::LEGAL_TOS => [
                 'name' => ConfigInterface::LEGAL_TOS,
@@ -2034,7 +2319,7 @@ class SettingsController
                         ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED,
                         'false',
                     ),
-                'description' => 'Allow the Container Shell lifecycle step (docker exec /bin/sh -c inside the server container). This is a security-sensitive capability: users with schedule.update can run arbitrary shell commands in running containers when lifecycle hooks fire. Default off. Requires Lifecycle Hooks Enabled. Existing Container Shell steps will not execute while this is disabled.',
+                'description' => 'Allow Container Shell lifecycle hook steps and Container Shell schedule tasks (docker exec /bin/sh -c inside the server container). This is a security-sensitive capability: users with schedule.update (and control.console for schedule tasks) can run arbitrary shell commands in running containers when hooks fire or schedules run. Default off. Lifecycle hook steps additionally require Lifecycle Hooks Enabled; schedule tasks additionally require Schedules to be allowed. Existing Container Shell steps and tasks will not execute while this is disabled.',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',
@@ -2205,6 +2490,70 @@ class SettingsController
                 'options' => ['true', 'false'],
                 'category' => 'servers',
             ],
+            ConfigInterface::SERVER_AUTO_START_ON_NODE_RECONNECT => [
+                'name' => ConfigInterface::SERVER_AUTO_START_ON_NODE_RECONNECT,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_AUTO_START_ON_NODE_RECONNECT,
+                        'true',
+                    ),
+                'description' => 'When a game node reconnects after reboot or downtime, automatically start servers that have Auto Start enabled (skips manually stopped and suspended servers). Configure stagger delays below instead of Wings YAML.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'servers',
+            ],
+            ConfigInterface::SERVER_AUTO_START_STAGGER_SECONDS => [
+                'name' => ConfigInterface::SERVER_AUTO_START_STAGGER_SECONDS,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_AUTO_START_STAGGER_SECONDS,
+                        '5',
+                    ),
+                'description' => 'Seconds between each auto-started server on the same node after reconnect. Prevents starting every server at once.',
+                'type' => 'number',
+                'required' => true,
+                'placeholder' => '5',
+                'validation' => 'required|integer|min:0|max:300',
+                'options' => [],
+                'category' => 'servers',
+            ],
+            ConfigInterface::SERVER_AUTO_START_INITIAL_DELAY_SECONDS => [
+                'name' => ConfigInterface::SERVER_AUTO_START_INITIAL_DELAY_SECONDS,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_AUTO_START_INITIAL_DELAY_SECONDS,
+                        '15',
+                    ),
+                'description' => 'Seconds to wait after Wings reconnects before starting the first auto-start server (gives Docker time to settle).',
+                'type' => 'number',
+                'required' => true,
+                'placeholder' => '15',
+                'validation' => 'required|integer|min:0|max:600',
+                'options' => [],
+                'category' => 'servers',
+            ],
+            ConfigInterface::SERVER_ALLOW_USER_AUTO_START => [
+                'name' => ConfigInterface::SERVER_ALLOW_USER_AUTO_START,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_ALLOW_USER_AUTO_START,
+                        'false',
+                    ),
+                'description' => 'Allow server owners to toggle Auto Start after node reboot from the server settings page. Admins can always configure this per server.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'servers',
+            ],
             ConfigInterface::SERVER_HIDE_IPS => [
                 'name' => ConfigInterface::SERVER_HIDE_IPS,
                 'value' => $this->app
@@ -2336,7 +2685,7 @@ class SettingsController
                 'value' => $this->app
                     ->getConfig()
                     ->getSetting(ConfigInterface::APP_PWA_ENABLED, 'false'),
-                'description' => 'Enable Progressive Web App features',
+                'description' => 'Allow users to install the panel as an app on desktop, Android, and iOS',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',
@@ -2350,13 +2699,13 @@ class SettingsController
                     ->getConfig()
                     ->getSetting(
                         ConfigInterface::APP_PWA_SHORT_NAME,
-                        'FeatherPanel',
+                        '',
                     ),
-                'description' => 'Short name for the PWA (used in app launcher)',
+                'description' => 'Short name under the home-screen icon (falls back to app name)',
                 'type' => 'text',
-                'required' => true,
-                'placeholder' => 'FeatherPanel',
-                'validation' => 'required|string|max:50',
+                'required' => false,
+                'placeholder' => 'My Panel',
+                'validation' => 'nullable|string|max:12',
                 'options' => [],
                 'category' => 'pwa',
             ],
@@ -2366,13 +2715,13 @@ class SettingsController
                     ->getConfig()
                     ->getSetting(
                         ConfigInterface::APP_PWA_DESCRIPTION,
-                        'Manage your game servers on the go.',
+                        '',
                     ),
-                'description' => 'Description for the PWA',
+                'description' => 'PWA description (falls back to SEO description, then app name)',
                 'type' => 'textarea',
-                'required' => true,
-                'placeholder' => 'Manage your game servers on the go.',
-                'validation' => 'required|string|max:500',
+                'required' => false,
+                'placeholder' => 'Manage your servers on the go.',
+                'validation' => 'nullable|string|max:500',
                 'options' => [],
                 'category' => 'pwa',
             ],
@@ -2847,6 +3196,22 @@ class SettingsController
                 'options' => ['true', 'false'],
                 'category' => 'status_page',
             ],
+            ConfigInterface::STATUS_PAGE_SERVERS_VISIBLE_BY_DEFAULT => [
+                'name' => ConfigInterface::STATUS_PAGE_SERVERS_VISIBLE_BY_DEFAULT,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::STATUS_PAGE_SERVERS_VISIBLE_BY_DEFAULT,
+                        'true',
+                    ),
+                'description' => 'Default "Show on Status Page" value for newly created servers. Existing servers are unchanged; set false to hide new servers from the public status page unless explicitly opted in.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'status_page',
+            ],
             ConfigInterface::KNOWLEDGEBASE_ENABLED => [
                 'name' => ConfigInterface::KNOWLEDGEBASE_ENABLED,
                 'value' => $this->app
@@ -3037,6 +3402,24 @@ class SettingsController
                 'category' => 'other',
             ],
         ];
+    }
+
+    public function telemetryStatus(Request $request): Response
+    {
+        $options = UmamiTelemetry::configuration($this->app->getConfig());
+        try {
+            $state = (new UmamiTelemetryState(Database::getPdoConnection()))->status();
+            $ready = true;
+        } catch (\Throwable) {
+            $state = ['last_attempt' => null, 'last_success' => null, 'last_result' => null, 'next_attempt' => null];
+            $ready = false;
+        }
+
+        return ApiResponse::success([
+            ...$state,
+            'enabled' => $options['enabled'], 'configured' => $options['configured'],
+            'environment_disabled' => $options['environment_disabled'], 'storage_ready' => $ready,
+        ]);
     }
 
     #[OA\Get(
@@ -3381,10 +3764,19 @@ class SettingsController
     ),]
     public function update(Request $request): Response
     {
+        // Demo panels may change settings — periodic wipe / reset restores defaults.
+
         $raw = $request->getContent();
         $data = json_decode($raw ?? '', true);
         if (!is_array($data)) {
             return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
+        }
+
+        // The collector destination is fixed; reject legacy overrides before saving anything.
+        foreach (['umami_endpoint', 'umami_website_id'] as $key) {
+            if (array_key_exists($key, $data)) {
+                return ApiResponse::error('The telemetry destination cannot be changed', 'INVALID_SETTING', 400);
+            }
         }
 
         $app = App::getInstance(true);
@@ -3417,6 +3809,10 @@ class SettingsController
                 $settingConfig,
                 $value,
             );
+
+            if ($setting === ConfigInterface::TELEMETRY && !in_array($stringValue, ['true', 'false'], true)) {
+                return ApiResponse::error('Telemetry must be enabled or disabled', 'INVALID_SETTING_VALUE', 400);
+            }
 
             // Basic validation (use normalized string so 0 / "false" are handled correctly)
             if ($settingConfig['required'] && $stringValue === '') {
@@ -3709,6 +4105,10 @@ class SettingsController
     ),]
     public function sendTestEmail(Request $request): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $user = $request->attributes->get('user');
         if (!$user || empty($user['email'])) {
             return ApiResponse::error(

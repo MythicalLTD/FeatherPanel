@@ -64,6 +64,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn, formatFileSize, copyToClipboard } from '@/lib/utils';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface StorageCategory {
     id: string;
@@ -150,10 +151,10 @@ export default function StorageSensePage() {
                     setDisk(data.data.disk ?? null);
                     setSelected(new Set());
                 } else {
-                    toast.error(data.message || t('admin.storage_sense.load_failed'));
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'admin.storage_sense.load_failed'));
                 }
-            } catch {
-                toast.error(t('admin.storage_sense.load_failed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'admin.storage_sense.load_failed'));
             } finally {
                 setLoading(false);
             }
@@ -241,10 +242,10 @@ export default function StorageSensePage() {
                 }
                 await fetchSummary();
             } else {
-                toast.error(data.message || t('admin.storage_sense.purge_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.storage_sense.purge_failed'));
             }
-        } catch {
-            toast.error(t('admin.storage_sense.purge_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.storage_sense.purge_failed'));
         } finally {
             setPurging(false);
             setPurgeTarget(null);
@@ -277,10 +278,10 @@ export default function StorageSensePage() {
                 }
                 await fetchSummary();
             } else {
-                toast.error(data.message || t('admin.storage_sense.purge_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.storage_sense.purge_failed'));
             }
-        } catch {
-            toast.error(t('admin.storage_sense.purge_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.storage_sense.purge_failed'));
         } finally {
             setPurging(false);
             setBatchOpen(false);
@@ -561,7 +562,7 @@ export default function StorageSensePage() {
                                                 </div>
                                             </td>
                                             <td className='p-3 text-right align-middle tabular-nums'>
-                                                {row.available ? row.row_count.toLocaleString() : '—'}
+                                                {row.available ? row.row_count.toLocaleString() : '-'}
                                             </td>
                                             <td className='p-3 text-right align-middle font-medium tabular-nums'>
                                                 {!row.available
@@ -581,7 +582,7 @@ export default function StorageSensePage() {
                                                         ) : null}
                                                     </div>
                                                 ) : (
-                                                    '—'
+                                                    '-'
                                                 )}
                                             </td>
                                             <td className='hidden p-3 align-middle lg:table-cell'>
@@ -600,7 +601,7 @@ export default function StorageSensePage() {
                                                         </span>
                                                     </div>
                                                 ) : (
-                                                    <span className='text-muted-foreground'>—</span>
+                                                    <span className='text-muted-foreground'>-</span>
                                                 )}
                                             </td>
                                             <td className='p-3 text-right align-middle'>

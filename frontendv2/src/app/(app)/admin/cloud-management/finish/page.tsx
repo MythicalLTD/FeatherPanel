@@ -18,10 +18,12 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { AlertCircle, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 
 function param(searchParams: URLSearchParams, ...keys: string[]): string | null {
     for (const key of keys) {
@@ -35,6 +37,7 @@ function param(searchParams: URLSearchParams, ...keys: string[]): string | null 
 
 export default function CloudManagementFinishPage() {
     const { t } = useTranslation();
+    const { settings } = useSettings();
     const router = useRouter();
     const searchParams = useSearchParams();
     const ran = useRef(false);
@@ -43,6 +46,12 @@ export default function CloudManagementFinishPage() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        if (settings?.app_demo_yes === 'true') {
+            setPhase('error');
+            setError(t('errors.codes.CLOUD_DISABLED_IN_DEMO'));
+            return;
+        }
+
         if (ran.current) return;
         ran.current = true;
 
@@ -110,7 +119,9 @@ export default function CloudManagementFinishPage() {
             try {
                 const response = await axios.post('/api/admin/cloud/oauth2/callback', body);
                 if (!response.data?.success) {
-                    throw new Error(response.data?.message || t('admin.cloud_management.finish.save_failed'));
+                    throw new Error(
+                        getApiErrorMessageFromPayload(response.data, t, 'admin.cloud_management.finish.save_failed'),
+                    );
                 }
                 setPhase('success');
                 if (!cloudApiKey || !cloudApiSecret) {
@@ -122,18 +133,15 @@ export default function CloudManagementFinishPage() {
                 }
                 setTimeout(() => router.push('/admin/cloud-management'), 2000);
             } catch (err) {
-                const message =
-                    axios.isAxiosError(err) && err.response?.data?.message
-                        ? err.response.data.message
-                        : t('admin.cloud_management.finish.save_failed');
+                const message = getApiErrorMessage(err, t, 'admin.cloud_management.finish.save_failed');
                 setPhase('error');
                 setError(message);
-                toast.error(t('admin.cloud_management.finish.save_failed'));
+                toast.error(message);
             }
         };
 
         void finish();
-    }, [searchParams, router, t]);
+    }, [searchParams, router, t, settings?.app_demo_yes]);
 
     return (
         <div className='flex min-h-[60vh] items-center justify-center p-6'>

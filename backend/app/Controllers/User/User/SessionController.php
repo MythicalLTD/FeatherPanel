@@ -42,6 +42,7 @@ use App\Helpers\PermissionHelper;
 use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\EmailDomainValidator;
+use App\Plugins\Events\Events\AuthEvent;
 use App\Plugins\Events\Events\UserEvent;
 use App\Plugins\Events\Events\TicketEvent;
 use Symfony\Component\HttpFoundation\Request;
@@ -273,8 +274,11 @@ class SessionController
                 }
             }
         }
+        $passwordChanging = isset($data['password']);
+        $emailChanging = isset($data['email']) && $data['email'] !== ($user['email'] ?? null);
+
         // Hash password if provided
-        if (isset($data['password'])) {
+        if ($passwordChanging) {
             $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
             $data['remember_token'] = User::generateAccountToken();
         }
@@ -301,6 +305,27 @@ class SessionController
                 UserEvent::onUserUpdate(),
                 ['user_uuid' => $user['uuid']]
             );
+            if ($passwordChanging) {
+                $eventManager->emit(
+                    AuthEvent::onAuthPasswordChanged(),
+                    [
+                        'user_uuid' => $user['uuid'],
+                        'user' => $user,
+                        'ip_address' => CloudFlareRealIP::getRealIP(),
+                    ]
+                );
+            }
+            if ($emailChanging) {
+                $eventManager->emit(
+                    AuthEvent::onAuthEmailChanged(),
+                    [
+                        'user_uuid' => $user['uuid'],
+                        'old_email' => $user['email'] ?? null,
+                        'new_email' => $data['email'],
+                        'ip_address' => CloudFlareRealIP::getRealIP(),
+                    ]
+                );
+            }
         }
 
         return ApiResponse::success($data, 'Session created', 200);

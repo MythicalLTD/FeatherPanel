@@ -1,4 +1,3 @@
-
 /*
 This file is part of FeatherPanel.
 
@@ -17,6 +16,16 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import {
+    DOCS_BASE,
+    escapeHtml,
+    ensureDir,
+    hero,
+    renderDocsPage,
+    writeJson,
+    writeMarkdown,
+    writeText,
+} from './lib/docs-site.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,47 +39,38 @@ function parsePermissionsFile() {
     const lines = content.split('\n');
     const permissions = [];
     const categories = new Set();
-    
+
     for (const line of lines) {
         const trimmed = line.trim();
-        
-        // Skip empty lines and comments
-        if (!trimmed || trimmed.startsWith('#')) {
-            continue;
-        }
-        
-        // Parse format: KEY=value | category | description
+        if (!trimmed || trimmed.startsWith('#')) continue;
+
         const match = trimmed.match(/^([A-Z_]+)=([^|]+)\s*\|\s*([^|]+)\s*\|\s*(.+)$/);
-        if (match) {
-            const [, constant, node, category, description] = match;
-            permissions.push({
-                constant: constant.trim(),
-                node: node.trim(),
-                category: category.trim(),
-                description: description.trim()
-            });
-            categories.add(category.trim());
-        }
+        if (!match) continue;
+
+        const [, constant, node, category, description] = match;
+        permissions.push({
+            constant: constant.trim(),
+            node: node.trim(),
+            category: category.trim(),
+            description: description.trim(),
+        });
+        categories.add(category.trim());
     }
-    
-    // Group by category
+
     const grouped = {};
-    permissions.forEach(perm => {
-        if (!grouped[perm.category]) {
-            grouped[perm.category] = [];
-        }
+    permissions.forEach((perm) => {
+        if (!grouped[perm.category]) grouped[perm.category] = [];
         grouped[perm.category].push(perm);
     });
-    
-    // Sort permissions within each category by node
-    Object.keys(grouped).forEach(category => {
+
+    Object.keys(grouped).forEach((category) => {
         grouped[category].sort((a, b) => a.node.localeCompare(b.node));
     });
-    
+
     return {
         permissions,
         categories: Array.from(categories).sort(),
-        grouped
+        grouped,
     };
 }
 
@@ -81,180 +81,198 @@ function sanitizeCategory(category) {
         .replace(/^-+|-+$/g, '');
 }
 
-function generateMainPermissionsPage(categories, totalPermissions) {
-    const categoryItems = categories
+function generateMainPage(categories, grouped, totalPermissions) {
+    const items = categories
         .map((category) => {
             const sanitized = sanitizeCategory(category);
-            return `<li>
-    <a href="/icanhasfeatherpanel/permissions/${sanitized}.html">${category}</a>
+            const count = grouped[category]?.length || 0;
+            return `<li class="fp-item" data-fp-search-item data-fp-search-text="${escapeHtml(`${category} ${sanitized}`)}">
+  <a href="${DOCS_BASE}/permissions/${sanitized}.html"><h2>${escapeHtml(category)}</h2></a>
+  <p class="fp-muted">${count} permission${count === 1 ? '' : 's'}</p>
+  <div class="fp-formats">
+    <a href="${DOCS_BASE}/permissions/${sanitized}.md">Markdown</a>
+    <a href="${DOCS_BASE}/permissions/${sanitized}.json">JSON</a>
+    <a href="${DOCS_BASE}/view.html?doc=permissions/${sanitized}.md">View MD</a>
+  </div>
 </li>`;
         })
         .join('\n');
 
-    return `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>FeatherPanel Permission Nodes</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
-    a { color: #60a5fa; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .container { max-width: 960px; margin: 0 auto; }
-    h1 { font-size: 2.25rem; margin-bottom: 0.5rem; }
-    h2 { font-size: 1.5rem; margin-top: 2rem; }
-    h3 { font-size: 1.125rem; margin-top: 1.5rem; }
-    .muted { color: #9ca3af; }
-    .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-right: 0.5rem; }
-    ul { padding-left: 1.25rem; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
-    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
-    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.5rem; margin-top: 2rem; }
-  </style>
-</head>
-<body>
-  <main class="container">
-    <header>
-      <h1>Permission Nodes</h1>
-      <p class="muted">
-        Complete reference of all permission nodes available in FeatherPanel for role-based access control.
-      </p>
-      <div style="margin-top: 0.75rem;">
-        <span class="badge">${categories.length} categories</span>
-        <span class="badge">${totalPermissions} permissions</span>
-      </div>
-    </header>
+    const body = `${hero({
+        title: 'Permission Nodes',
+        subtitle:
+            'Complete role-based access control reference. Available as HTML for browsing and as Markdown/JSON for RAG pipelines.',
+        badges: [`${categories.length} categories`, `${totalPermissions} permissions`],
+        formats: [
+            { href: `${DOCS_BASE}/permissions/index.md`, label: 'index.md' },
+            { href: `${DOCS_BASE}/permissions/index.json`, label: 'index.json' },
+            { href: `${DOCS_BASE}/permissions/all.json`, label: 'all.json' },
+            { href: `${DOCS_BASE}/view.html?doc=permissions/index.md`, label: 'View Markdown' },
+        ],
+    })}
 
-    <section>
-      <h2>Permission Categories</h2>
-      <p class="muted">Click a category to see all permissions in that category.</p>
-      <ul>
-${categoryItems}
-      </ul>
-    </section>
+<section class="fp-section">
+  <h2>Categories</h2>
+  <input class="fp-search" type="search" placeholder="Filter categories…" data-fp-search />
+  <p class="fp-muted fp-hidden" data-fp-search-empty>No categories match.</p>
+  <ul class="fp-list">
+${items}
+  </ul>
+</section>
 
-    <section class="card">
-      <h2>About Permissions</h2>
-      <p class="muted">
-        FeatherPanel uses a role-based permission system where permissions are assigned to roles, and users are assigned roles.
-        Each permission node controls access to specific features or actions.
-      </p>
+<section class="fp-section fp-card">
+  <h2>About permissions</h2>
+  <p class="fp-muted">Permissions use hierarchical dot notation (<code>admin.users.view</code>). <code>admin.root</code> grants full access.</p>
+  <pre><code>use App\\Helpers\\PermissionHelper;
+use App\\Permissions;
 
-      <h3>Permission Format</h3>
-      <p class="muted">Permissions follow a hierarchical dot notation format:</p>
-      <pre><code>admin.users.view
-admin.servers.create
-admin.settings.edit</code></pre>
+if (PermissionHelper::hasPermission($userUuid, Permissions::ADMIN_USERS_VIEW)) {
+    // allowed
+}</code></pre>
+</section>`;
 
-      <h3>Root Permission</h3>
-      <p class="muted">
-        The <code>admin.root</code> permission grants full access to everything in the panel. Users with this permission
-        bypass all other permission checks.
-      </p>
-    </section>
-  </main>
-</body>
-</html>
-`;
+    return renderDocsPage({
+        title: 'Permissions',
+        description: 'FeatherPanel permission nodes reference',
+        active: 'permissions',
+        body,
+        includeSearchScript: true,
+    });
 }
 
 function generateCategoryPage(category, permissions) {
-    const exampleNode = permissions.length > 0 ? permissions[0].node : 'admin.example.view';
-    const exampleConstant = permissions.length > 0 ? permissions[0].constant : 'ADMIN_EXAMPLE_VIEW';
+    const example = permissions[0] || { node: 'admin.example.view', constant: 'ADMIN_EXAMPLE_VIEW' };
+    const sanitized = sanitizeCategory(category);
 
-    const permissionItems = permissions
+    const items = permissions
         .map((perm) => {
-            return `<article class="card">
-  <h2><code>${perm.node}</code></h2>
-  <p class="muted"><strong>Constant:</strong> <code>${perm.constant}</code></p>
-  <p class="muted">${perm.description}</p>
+            return `<article class="fp-item" data-fp-search-item data-fp-search-text="${escapeHtml(
+                `${perm.node} ${perm.constant} ${perm.description}`,
+            )}">
+  <h2><code>${escapeHtml(perm.node)}</code></h2>
+  <p class="fp-muted"><strong>Constant:</strong> <code>${escapeHtml(perm.constant)}</code></p>
+  <p class="fp-muted">${escapeHtml(perm.description)}</p>
 </article>`;
         })
-        .join('\n\n');
+        .join('\n');
 
-    return `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>Permissions: ${category}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
-    a { color: #60a5fa; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .container { max-width: 960px; margin: 0 auto; }
-    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
-    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
-    h3 { font-size: 1rem; margin-top: 1.25rem; }
-    .muted { color: #9ca3af; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
-    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
-    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
-    .back-link { margin-bottom: 1.5rem; display: inline-block; }
-  </style>
-</head>
-<body>
-  <main class="container">
-    <a href="/icanhasfeatherpanel/permissions/index.html" class="back-link">&larr; Back to all permission categories</a>
-    <header>
-      <h1>${category}</h1>
-      <p class="muted">${permissions.length} permission${permissions.length !== 1 ? 's' : ''} in this category.</p>
-    </header>
+    const body = `<a class="fp-back" href="${DOCS_BASE}/permissions/">&larr; All permission categories</a>
+${hero({
+        title: escapeHtml(category),
+        subtitle: `${permissions.length} permission${permissions.length === 1 ? '' : 's'} in this category.`,
+        formats: [
+            { href: `${DOCS_BASE}/permissions/${sanitized}.md`, label: 'Markdown' },
+            { href: `${DOCS_BASE}/permissions/${sanitized}.json`, label: 'JSON' },
+        ],
+    })}
+<input class="fp-search" type="search" placeholder="Filter permissions…" data-fp-search />
+<p class="fp-muted fp-hidden" data-fp-search-empty>No permissions match.</p>
+<div class="fp-list">
+${items}
+</div>
+<section class="fp-section fp-card">
+  <h2>Usage</h2>
+  <pre><code>use App\\Permissions;
+use App\\Helpers\\PermissionHelper;
 
-${permissionItems}
-
-    <section class="card">
-      <h2>Usage in Code</h2>
-      <h3>PHP Backend</h3>
-      <pre><code>use App\\Helpers\\PermissionHelper;
-
-// Check if user has permission
-if (PermissionHelper::hasPermission($userUuid, '${exampleNode}')) {
-    // User has permission
+if (PermissionHelper::hasPermission($userUuid, Permissions::${escapeHtml(example.constant)})) {
+    // ${escapeHtml(example.node)}
 }</code></pre>
+</section>`;
 
-      <h3>Using Permission Constants</h3>
-      <pre><code>use App\\Permissions;
+    return renderDocsPage({
+        title: `Permissions: ${category}`,
+        active: 'permissions',
+        body,
+        includeSearchScript: true,
+    });
+}
 
-// Use constant instead of string
-if (PermissionHelper::hasPermission($userUuid, Permissions::${exampleConstant})) {
-    // User has permission
-}</code></pre>
-    </section>
-  </main>
-</body>
-</html>
+function categoryMarkdown(category, permissions) {
+    const rows = permissions
+        .map((p) => `| \`${p.node}\` | \`${p.constant}\` | ${p.description.replace(/\|/g, '\\|')} |`)
+        .join('\n');
+
+    return `# Permissions: ${category}
+
+${permissions.length} permission nodes in this category.
+
+| Node | Constant | Description |
+| --- | --- | --- |
+${rows}
 `;
 }
 
-// Ensure docs directories exist
-if (!fs.existsSync(PUBLIC_DOCS_DIR)) {
-    fs.mkdirSync(PUBLIC_DOCS_DIR, { recursive: true });
+function indexMarkdown(categories, grouped, permissions) {
+    const links = categories
+        .map((category) => {
+            const sanitized = sanitizeCategory(category);
+            const count = grouped[category]?.length || 0;
+            return `- [${category}](./${sanitized}.md) (${count}) — also [\`${sanitized}.json\`](./${sanitized}.json)`;
+        })
+        .join('\n');
+
+    return `# FeatherPanel Permission Nodes
+
+Total: **${permissions.length}** permissions across **${categories.length}** categories.
+
+Machine-readable dumps:
+
+- [index.json](./index.json) — catalog of categories
+- [all.json](./all.json) — flat list of every permission
+
+## Categories
+
+${links}
+`;
 }
-if (!fs.existsSync(PERMISSIONS_DOCS_DIR)) {
-    fs.mkdirSync(PERMISSIONS_DOCS_DIR, { recursive: true });
-}
+
+ensureDir(PERMISSIONS_DOCS_DIR);
 
 console.log('Parsing permissions file...');
 const { permissions, categories, grouped } = parsePermissionsFile();
 
-// Generate main permissions page
-const mainPagePath = path.join(PERMISSIONS_DOCS_DIR, 'index.html');
-const mainPage = generateMainPermissionsPage(categories, permissions.length);
-fs.writeFileSync(mainPagePath, mainPage);
-console.log(`✓ Main permissions page: ${mainPagePath}`);
+writeText(path.join(PERMISSIONS_DOCS_DIR, 'index.html'), generateMainPage(categories, grouped, permissions.length));
+console.log('✓ permissions/index.html');
 
-// Generate category pages
-categories.forEach(category => {
-    const sanitized = sanitizeCategory(category);
-    const categoryPagePath = path.join(PERMISSIONS_DOCS_DIR, `${sanitized}.html`);
-    const categoryPage = generateCategoryPage(category, grouped[category]);
-    fs.writeFileSync(categoryPagePath, categoryPage);
-    console.log(`✓ Category page: ${categoryPagePath} (${grouped[category].length} permissions)`);
+writeJson(path.join(PERMISSIONS_DOCS_DIR, 'index.json'), {
+    type: 'featherpanel.permissions.index',
+    total: permissions.length,
+    categories: categories.map((category) => ({
+        name: category,
+        slug: sanitizeCategory(category),
+        count: grouped[category]?.length || 0,
+        html: `${DOCS_BASE}/permissions/${sanitizeCategory(category)}.html`,
+        markdown: `${DOCS_BASE}/permissions/${sanitizeCategory(category)}.md`,
+        json: `${DOCS_BASE}/permissions/${sanitizeCategory(category)}.json`,
+    })),
+    files: {
+        all_json: `${DOCS_BASE}/permissions/all.json`,
+        index_md: `${DOCS_BASE}/permissions/index.md`,
+    },
 });
 
-console.log(`\n✅ Permissions documentation generated successfully!`);
-console.log(`   - Main page: /icanhasfeatherpanel/permissions`);
-console.log(`   - ${categories.length} category pages`);
-console.log(`   - ${permissions.length} total permissions`);
+writeJson(path.join(PERMISSIONS_DOCS_DIR, 'all.json'), {
+    type: 'featherpanel.permissions.all',
+    total: permissions.length,
+    permissions,
+});
+
+writeMarkdown(path.join(PERMISSIONS_DOCS_DIR, 'index.md'), indexMarkdown(categories, grouped, permissions));
+
+categories.forEach((category) => {
+    const sanitized = sanitizeCategory(category);
+    const list = grouped[category];
+    writeText(path.join(PERMISSIONS_DOCS_DIR, `${sanitized}.html`), generateCategoryPage(category, list));
+    writeJson(path.join(PERMISSIONS_DOCS_DIR, `${sanitized}.json`), {
+        type: 'featherpanel.permissions.category',
+        category,
+        slug: sanitized,
+        total: list.length,
+        permissions: list,
+    });
+    writeMarkdown(path.join(PERMISSIONS_DOCS_DIR, `${sanitized}.md`), categoryMarkdown(category, list));
+    console.log(`✓ permissions/${sanitized}.{html,md,json} (${list.length})`);
+});
+
+console.log(`\n✅ Permissions docs ready (${permissions.length} nodes, HTML + Markdown + JSON)`);

@@ -16,11 +16,12 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { ArrowLeftRight, ChevronRight, Loader2, Search } from 'lucide-react';
@@ -108,8 +109,8 @@ export function MassTransferServersDialog({
             });
             const list = (data?.data?.nodes || []) as ApiNode[];
             setNodes(list.filter((n) => n.id !== sourceNodeId));
-        } catch {
-            toast.error(t('admin.node.mass_transfer.fetch_nodes_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.node.mass_transfer.fetch_nodes_failed'));
         } finally {
             setLoadingNodes(false);
         }
@@ -127,11 +128,7 @@ export function MassTransferServersDialog({
             setMoveAll(false);
         } catch (error) {
             console.error('Mass transfer preview failed:', error);
-            const message =
-                isAxiosError(error) && error.response?.data?.message
-                    ? String(error.response.data.message)
-                    : t('admin.node.mass_transfer.preview_failed');
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.node.mass_transfer.preview_failed'));
             setPreview(null);
         } finally {
             setLoadingPreview(false);
@@ -212,11 +209,7 @@ export function MassTransferServersDialog({
             onCompleted?.();
         } catch (error) {
             console.error('Mass transfer failed:', error);
-            const message =
-                isAxiosError(error) && error.response?.data?.message
-                    ? String(error.response.data.message)
-                    : t('admin.node.mass_transfer.failed');
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.node.mass_transfer.failed'));
         } finally {
             setSubmitting(false);
         }
@@ -224,12 +217,21 @@ export function MassTransferServersDialog({
 
     return (
         <>
-            <HeadlessModal
-                isOpen={open}
+            <Dialog
+                open={open}
                 onClose={() => onOpenChange(false)}
-                title={t('admin.node.mass_transfer.title')}
-                description={t('admin.node.mass_transfer.description', { node: sourceNodeName })}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        onOpenChange(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('admin.node.mass_transfer.title')}</DialogTitle>
+                    <DialogDescription>
+                        {t('admin.node.mass_transfer.description', { node: sourceNodeName })}
+                    </DialogDescription>
+                </DialogHeader>
                 <div className='space-y-6'>
                     <div className='space-y-2'>
                         <label className='text-sm font-bold'>{t('admin.node.mass_transfer.destination_node')}</label>
@@ -371,13 +373,20 @@ export function MassTransferServersDialog({
                         </Button>
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={nodeModalOpen}
+            <Dialog
+                open={nodeModalOpen}
                 onClose={() => setNodeModalOpen(false)}
-                title={t('admin.node.mass_transfer.destination_node')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setNodeModalOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('admin.node.mass_transfer.destination_node')}</DialogTitle>
+                </DialogHeader>
                 <div className='space-y-4'>
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
@@ -413,7 +422,7 @@ export function MassTransferServersDialog({
                         )}
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
             <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
                 <AlertDialogContent>

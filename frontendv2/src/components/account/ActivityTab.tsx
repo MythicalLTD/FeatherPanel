@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Clock, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from 'axios';

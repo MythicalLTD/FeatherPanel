@@ -13,10 +13,13 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+import { isAnalyticsPreferenceCookie } from '@/lib/analytics-cookie';
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { getClientSyncHeaders } from '@/lib/clientIdentity';
 import { isCloudflareChallengeAxios } from '@/lib/cloudflare-challenge';
 import { acquireWingsSlot, isWingsAdminNodeRequest, releaseWingsSlot } from '@/lib/wingsRequestQueue';
+import { attachPanelApiHistoryInterceptor } from '@/lib/panel-api-history';
+import { attachPanelAnalyticsInterceptor } from '@/lib/panel-analytics';
 
 type WingsQueuedAxiosRequestConfig = InternalAxiosRequestConfig & {
     _wingsQueued?: boolean;
@@ -51,7 +54,7 @@ const handleAuthStateFailure = () => {
     document.cookie.split(';').forEach((cookie) => {
         const eqPos = cookie.indexOf('=');
         const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
-        if (name === '_fp_ui_sid') {
+        if (name === '_fp_ui_sid' || isAnalyticsPreferenceCookie(name)) {
             return;
         }
         document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
@@ -66,7 +69,7 @@ const handleAuthStateFailure = () => {
 
 const attachClientSyncRequestInterceptor = (client: AxiosInstance) => {
     client.interceptors.request.use((config) => {
-        // Never attach panel identity headers to cross-origin Wings/node URLs —
+        // Never attach panel identity headers to cross-origin Wings/node URLs -
         // those hosts do not allow X-FP-UI-* in Access-Control-Allow-Headers.
         const absoluteUrl = (() => {
             const url = String(config.url || '');
@@ -149,10 +152,15 @@ const attachCommonResponseInterceptor = (client: AxiosInstance) => {
             // for external credential issues and should not clear the user's panel session.
             const isSessionEndpoint = requestUrl.includes('/api/user/session') || requestUrl.includes('/user/session');
             const isAuthEndpoint = requestUrl.includes('/api/user/auth/') || requestUrl.includes('/user/auth/');
+            // Guest probes on /auth/* (e.g. GET /user/session while logging in) often 400/401.
+            // Clearing cookies there races with a concurrent successful login Set-Cookie and
+            // leaves the SPA on the dashboard with a null session until a hard refresh.
+            const onAuthPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/auth');
             const shouldForceLogout =
-                errorCode === 'INVALID_ACCOUNT_TOKEN' ||
-                errorCode === 'USER_BANNED' ||
-                (status === 401 && (isSessionEndpoint || isAuthEndpoint) && errorCode !== 'TWO_FACTOR_REQUIRED');
+                !onAuthPage &&
+                (errorCode === 'INVALID_ACCOUNT_TOKEN' ||
+                    errorCode === 'USER_BANNED' ||
+                    (status === 401 && (isSessionEndpoint || isAuthEndpoint) && errorCode !== 'TWO_FACTOR_REQUIRED'));
 
             if (shouldForceLogout) {
                 handleAuthStateFailure();
@@ -169,6 +177,10 @@ attachWingsQueueInterceptor(api);
 attachWingsQueueInterceptor(axios);
 attachCommonResponseInterceptor(api);
 attachCommonResponseInterceptor(axios);
+attachPanelApiHistoryInterceptor(api);
+attachPanelApiHistoryInterceptor(axios);
+attachPanelAnalyticsInterceptor(api);
+attachPanelAnalyticsInterceptor(axios);
 
 export type FeatherpanelApiErrorBody = {
     success?: boolean;
@@ -186,9 +198,18 @@ export function getFeatherpanelApiErrorMessage(error: unknown): string | null {
     if (!d || typeof d !== 'object') {
         return null;
     }
-    const body = d as FeatherpanelApiErrorBody;
+    const body = d as FeatherpanelApiErrorBody & {
+        errors?: Array<{ detail?: string | null; code?: string | null } | null> | null;
+    };
     const msg = body.message ?? body.error_message;
-    return typeof msg === 'string' && msg.trim() !== '' ? msg : null;
+    if (typeof msg === 'string' && msg.trim() !== '') {
+        return msg.trim();
+    }
+    const detail = body.errors?.[0]?.detail;
+    if (typeof detail === 'string' && detail.trim() !== '') {
+        return detail.trim();
+    }
+    return null;
 }
 
 export function getFeatherpanelApiErrorCode(error: unknown): string | null {

@@ -64,6 +64,14 @@ interface ConfigInterface
     public const APP_ACCENT_COLOR_LOCK = 'app_accent_color_lock';
     public const APP_THEME_DEFAULT = 'app_theme_default';
     public const APP_THEME_LOCK = 'app_theme_lock';
+    /** Active plugin theme pack id (`pluginId:themeId` or `default`). */
+    public const APP_THEME_PACK_DEFAULT = 'app_theme_pack_default';
+    /** When true, force the configured theme pack for all users. */
+    public const APP_THEME_PACK_LOCK = 'app_theme_pack_lock';
+    /** Active UI pack id (`pluginId:packId` or empty for none). */
+    public const APP_UI_PACK_DEFAULT = 'app_ui_pack_default';
+    /** When true, force the configured UI pack for all users. */
+    public const APP_UI_PACK_LOCK = 'app_ui_pack_lock';
     public const APP_BACKGROUND_TYPE_DEFAULT = 'app_background_type_default';
     public const APP_BACKGROUND_TYPE_LOCK = 'app_background_type_lock';
     /** When false, hide FeatherPanel "powered by" branding (FeatherPanel Premium / Mythic entitlement). */
@@ -178,6 +186,25 @@ interface ConfigInterface
     public const LOGIN_HIDDEN_METHODS = 'login_hidden_methods';
 
     /**
+     * Auth page chrome / marketing shell (public).
+     */
+    public const AUTH_SHELL_TAGLINE = 'auth_shell_tagline';
+    public const AUTH_ASIDE_TITLE = 'auth_aside_title';
+    public const AUTH_LOGIN_HEADLINE = 'auth_login_headline';
+    public const AUTH_LOGIN_SUBHEADLINE = 'auth_login_subheadline';
+    public const AUTH_REGISTER_HEADLINE = 'auth_register_headline';
+    public const AUTH_REGISTER_SUBHEADLINE = 'auth_register_subheadline';
+    public const AUTH_SSO_HEADLINE = 'auth_sso_headline';
+    public const AUTH_SSO_SUBHEADLINE = 'auth_sso_subheadline';
+    public const AUTH_SHOW_QR_LOGIN = 'auth_show_qr_login';
+    public const AUTH_SHOW_MARKETING_PANEL = 'auth_show_marketing_panel';
+    public const AUTH_ASIDE_IMAGE_URL = 'auth_aside_image_url';
+    public const AUTH_FORM_DENSITY = 'auth_form_density';
+    public const AUTH_SECONDARY_LAYOUT = 'auth_secondary_layout';
+    public const AUTH_SHOW_THEME_CUSTOMIZER = 'auth_show_theme_customizer';
+    public const AUTH_FOOTER_STYLE = 'auth_footer_style';
+
+    /**
      * Telemetry.
      */
     public const TELEMETRY = 'telemetry';
@@ -251,12 +278,21 @@ interface ConfigInterface
     public const SERVER_ALLOW_USER_MADE_IMPORT = 'server_allow_user_made_import';
     public const SERVER_ALLOW_USER_MADE_FASTDL = 'server_allow_user_made_fastdl';
     public const SERVER_ALLOW_USER_MADE_SUBDOMAINS = 'server_allow_user_made_subdomains';
+    /** When true, panel queues auto-start for servers with auto_start enabled after a node reconnect. */
+    public const SERVER_AUTO_START_ON_NODE_RECONNECT = 'server_auto_start_on_node_reconnect';
+    /** Seconds between each queued auto-start on the same node (stagger). */
+    public const SERVER_AUTO_START_STAGGER_SECONDS = 'server_auto_start_stagger_seconds';
+    /** Extra delay before the first auto-start after Wings reconnects (lets Docker settle). */
+    public const SERVER_AUTO_START_INITIAL_DELAY_SECONDS = 'server_auto_start_initial_delay_seconds';
+    /** When true, server owners/subusers may toggle auto_start from server settings. */
+    public const SERVER_ALLOW_USER_AUTO_START = 'server_allow_user_auto_start';
     public const SERVER_HIDE_IPS = 'server_hide_ips';
     /** When false, lifecycle hook UI and execution are disabled (default off until enabled by an administrator). */
     public const SERVER_LIFECYCLE_HOOKS_ENABLED = 'server_lifecycle_hooks_enabled';
     /**
-     * When false, the lifecycle Container Shell (docker exec) step type cannot be created/updated
-     * and will not execute. Default off docker exec is a security-sensitive capability.
+     * When false, the Container Shell (docker exec) lifecycle step type and schedule task action
+     * cannot be created/updated and will not execute. Default off: docker exec is a
+     * security-sensitive capability.
      */
     public const SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED = 'server_lifecycle_hooks_container_shell_enabled';
     /**
@@ -420,6 +456,7 @@ interface ConfigInterface
     public const STATUS_PAGE_ALLOW_IFRAME = 'status_page_allow_iframe';
     public const STATUS_PAGE_SHOW_RAW_VALUES = 'status_page_show_raw_values';
     public const STATUS_PAGE_SHOW_PLAYER_COUNT = 'status_page_show_player_count';
+    public const STATUS_PAGE_SERVERS_VISIBLE_BY_DEFAULT = 'status_page_servers_visible_by_default';
 
     /**
      * Knowledgebase Settings.

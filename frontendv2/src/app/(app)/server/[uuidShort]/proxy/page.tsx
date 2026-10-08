@@ -22,7 +22,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { ArrowRightLeft, CheckCircle, Plus, Trash2, RefreshCw, Network, Globe, Info, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/featherui/Button';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -35,6 +35,8 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { safeBack } from '@/lib/safe-back';
 import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
+import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 export default function ServerProxyPage() {
     const { uuidShort } = useParams();
@@ -72,7 +74,7 @@ export default function ServerProxyPage() {
             }
         } catch (error) {
             console.error('Failed to fetch proxy data:', error);
-            toast.error(t('common.error'));
+            toast.error(getApiErrorMessage(error, t, 'common.error'));
         } finally {
             setLoading(false);
         }
@@ -97,7 +99,7 @@ export default function ServerProxyPage() {
             fetchData();
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || 'Failed to delete proxy');
+            toast.error(getApiErrorMessage(axiosError, t, 'common.error'));
         } finally {
             setSaving(false);
             setSelectedProxy(null);
@@ -109,7 +111,9 @@ export default function ServerProxyPage() {
         setIsDeleteOpen(true);
     };
 
-    if (permissionsLoading) return null;
+    if (permissionsLoading) {
+        return <PageLoading />;
+    }
 
     if (!canRead) {
         return (
@@ -295,12 +299,21 @@ export default function ServerProxyPage() {
             <WidgetRenderer widgets={getWidgets('server-proxy', 'after-proxies-list')} />
             <WidgetRenderer widgets={getWidgets('server-proxy', 'bottom-of-page')} />
 
-            <HeadlessModal
-                isOpen={isDeleteOpen}
+            <Dialog
+                open={isDeleteOpen}
                 onClose={() => setIsDeleteOpen(false)}
-                title={t('serverProxy.deleteModalTitle')}
-                description={t('serverProxy.deleteModalDescription', { domain: selectedProxy?.domain || '' })}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsDeleteOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('serverProxy.deleteModalTitle')}</DialogTitle>
+                    <DialogDescription>
+                        {t('serverProxy.deleteModalDescription', { domain: selectedProxy?.domain || '' })}
+                    </DialogDescription>
+                </DialogHeader>
                 <div className='mt-6 flex justify-end gap-2'>
                     <Button variant='ghost' onClick={() => setIsDeleteOpen(false)} disabled={saving}>
                         {t('common.cancel')}
@@ -310,7 +323,7 @@ export default function ServerProxyPage() {
                         {saving ? t('serverProxy.deleting') : t('serverProxy.deleteProxy')}
                     </Button>
                 </div>
-            </HeadlessModal>
+            </Dialog>
         </div>
     );
 }

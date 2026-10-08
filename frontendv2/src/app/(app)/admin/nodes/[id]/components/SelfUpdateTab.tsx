@@ -15,13 +15,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { RefreshCw, ArrowUpCircle, Shield, Info, GitBranch, Globe, Settings2, Terminal } from 'lucide-react';
 import axios from 'axios';
 import { SystemInfoResponse, VersionStatus } from '../types';
 import { toast } from 'sonner';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 
@@ -41,7 +42,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
     const { t } = useTranslation();
     const [updating, setUpdating] = useState(false);
     const [versionStatus, setVersionStatus] = useState<VersionStatus | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const [options, setOptions] = useState({
         source: 'github' as 'github' | 'url',
@@ -64,6 +65,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
             }
         } catch (e) {
             console.error('Failed to fetch version status', e);
+            toast.error(getApiErrorMessage(e, t, 'common.error'));
         } finally {
             setLoading(false);
         }
@@ -118,14 +120,10 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                 onRefresh();
                 fetchVersionStatus();
             } else {
-                toast.error(data.message || t('admin.node.view.self_update.failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.node.view.self_update.failed'));
             }
         } catch (e: unknown) {
-            let msg = t('admin.node.view.self_update.failed');
-            if (axios.isAxiosError(e)) {
-                msg = e.response?.data?.message || e.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(e, t, 'admin.node.view.self_update.failed'));
         } finally {
             setUpdating(false);
         }
@@ -141,7 +139,11 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                     className='h-full'
                 >
                     <h3 className='text-primary font-mono text-3xl font-bold'>
-                        {systemData?.wings?.version || t('common.unknown')}
+                        {!systemData ? (
+                            <RefreshCw className='text-primary h-8 w-8 animate-spin' />
+                        ) : (
+                            systemData?.wings?.version || t('common.unknown')
+                        )}
                     </h3>
                 </PageCard>
 

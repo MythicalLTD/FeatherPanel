@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -22,7 +23,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { RefreshCw, AlertTriangle, ArrowLeft, Home, FileQuestion } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { cn, isEnabled } from '@/lib/utils';
 import type { PluginSidebarItem } from '@/types/navigation';
 import { usePluginRoutes } from '@/hooks/usePluginRoutes';
@@ -32,15 +33,16 @@ import { getPluginIframeThemeOverrideCss } from '@/lib/pluginIframeThemeCss';
 import { safeBack } from '@/lib/safe-back';
 
 interface PluginPageProps {
-    context: 'admin' | 'client' | 'server' | 'vds';
+    context: 'admin' | 'client' | 'server' | 'vds' | 'webspace';
     serverUuid?: string;
     vdsId?: string;
+    webspaceUuid?: string;
 }
 
-export default function PluginPage({ context, serverUuid, vdsId }: PluginPageProps) {
+export default function PluginPage({ context, serverUuid, vdsId, webspaceUuid }: PluginPageProps) {
     const { t } = useTranslation();
     const { settings } = useSettings();
-    const { theme } = useTheme();
+    const { theme, themePack } = useTheme();
     const pathname = usePathname();
     const router = useRouter();
     const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -48,7 +50,7 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
     const challengeRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const iframeReadyRef = useRef(false);
 
-    const pluginData = usePluginRoutes();
+    const { data: pluginData } = usePluginRoutes();
 
     const injectThemeStyles = () => {
         if (!iframeRef.current) return;
@@ -84,7 +86,10 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
 
             const style = iframeDoc.createElement('style');
             style.id = 'featherpanel-theme-override';
-            style.textContent = getPluginIframeThemeOverrideCss(theme);
+            style.textContent = getPluginIframeThemeOverrideCss(
+                theme,
+                theme === 'dark' ? themePack?.tokens.dark : themePack?.tokens.light,
+            );
             if (iframeDoc.head) {
                 iframeDoc.head.appendChild(style);
             }
@@ -96,11 +101,11 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
     // Send theme to iframe via postMessage when it changes and inject styles
     useEffect(() => {
         if (iframeRef.current?.contentWindow && iframeReadyRef.current) {
-            iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+            iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, window.location.origin);
             injectThemeStyles();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [theme]);
+    }, [theme, themePack]);
 
     // Also listen for plugin ready signal
     useEffect(() => {
@@ -109,14 +114,17 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
                 iframeReadyRef.current = true;
                 // Send current theme when plugin signals it's ready
                 if (iframeRef.current?.contentWindow) {
-                    iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+                    iframeRef.current.contentWindow.postMessage(
+                        { type: 'featherpanel-theme', theme },
+                        window.location.origin,
+                    );
                 }
             }
         };
 
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
-    }, [theme]);
+    }, [theme, themePack]);
 
     const { server } = useServerPermissions(serverUuid || '');
     const serverSpellId = server?.spell_id || null;
@@ -152,10 +160,13 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
             setError(null);
 
             if (context === 'server' && serverUuid) {
-                document.cookie = `serverUuid=${serverUuid}; path=/; max-age=3600; SameSite=Lax`;
+                document.cookie = `serverUuid=${serverUuid}; path=/; max-age=3600; SameSite=Lax; Secure`;
             }
             if (context === 'vds' && vdsId) {
-                document.cookie = `vdsId=${vdsId}; path=/; max-age=3600; SameSite=Lax`;
+                document.cookie = `vdsId=${vdsId}; path=/; max-age=3600; SameSite=Lax; Secure`;
+            }
+            if (context === 'webspace' && webspaceUuid) {
+                document.cookie = `webspaceUuid=${webspaceUuid}; path=/; max-age=3600; SameSite=Lax; Secure`;
             }
 
             try {
@@ -169,6 +180,8 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
                     sidebarSection = pluginData.admin || {};
                 } else if (context === 'vds') {
                     sidebarSection = pluginData.vds || {};
+                } else if (context === 'webspace') {
+                    sidebarSection = pluginData.webspace || {};
                 } else if (context === 'server') {
                     sidebarSection = pluginData.server || {};
                 } else {
@@ -181,6 +194,9 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
                 } else if (context === 'vds' && vdsId) {
                     const vdsPrefix = `/vds/${vdsId}`;
                     pluginPath = pathname.replace(vdsPrefix, '');
+                } else if (context === 'webspace' && webspaceUuid) {
+                    const webspacePrefix = `/webspace/${webspaceUuid}`;
+                    pluginPath = pathname.replace(webspacePrefix, '');
                 } else if (context === 'server' && serverUuid) {
                     const serverPrefix = `/server/${serverUuid}`;
                     pluginPath = pathname.replace(serverPrefix, '');
@@ -248,6 +264,18 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
                         }
                     }
 
+                    if (context === 'webspace' && webspaceUuid) {
+                        if (componentUrl.includes('webspaceUuid=notFound')) {
+                            componentUrl = componentUrl.replace(
+                                'webspaceUuid=notFound',
+                                `webspaceUuid=${webspaceUuid}`,
+                            );
+                        } else if (!componentUrl.includes('webspaceUuid=')) {
+                            const separator = componentUrl.includes('?') ? '&' : '?';
+                            componentUrl += `${separator}webspaceUuid=${webspaceUuid}`;
+                        }
+                    }
+
                     // Add theme as URL parameter for immediate access on load
                     const themeSeparator = componentUrl.includes('?') ? '&' : '?';
                     const urlWithTheme = `${componentUrl}${themeSeparator}__theme=${theme}`;
@@ -257,14 +285,14 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
                 }
             } catch (err) {
                 console.error('Error processing plugin data:', err);
-                setError(t('errors.plugin.load_failed'));
+                setError(getApiErrorMessage(err, t, 'errors.plugin.load_failed'));
             } finally {
                 setLoading(false);
             }
         };
 
         processPluginData();
-    }, [pathname, context, serverUuid, vdsId, t, pluginData, serverSpellId, theme]);
+    }, [pathname, context, serverUuid, vdsId, webspaceUuid, t, pluginData, serverSpellId, theme]);
 
     const injectScrollbarStyles = () => {
         if (!iframeRef.current) return;
@@ -323,7 +351,7 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
                         return;
                     }
 
-                    setIframeError('Cloudflare verification is still in progress. Please wait a moment and try again.');
+                    setIframeError(t('errors.plugin.cloudflare_challenge'));
                     setIframeLoading(false);
                     return;
                 }
@@ -339,7 +367,7 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
 
         // Send current theme to iframe on load
         if (iframeRef.current?.contentWindow) {
-            iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+            iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, window.location.origin);
         }
 
         // Inject theme styles directly
@@ -350,7 +378,7 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
     };
 
     const onIframeError = () => {
-        setIframeError('Failed to load content');
+        setIframeError(t('errors.plugin.failed_to_load'));
         setIframeLoading(false);
     };
 
@@ -380,7 +408,7 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
     if (error) {
         const isSpellRestriction =
             error.includes('not available for this server type') || error === t('errors.plugin.spell_restriction');
-        const isPluginNotFound = error === t('errors.plugin.not_found') || error === 'Plugin page not found';
+        const isPluginNotFound = error === t('errors.plugin.not_found');
 
         if (isPluginNotFound) {
             return (

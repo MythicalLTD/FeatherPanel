@@ -120,6 +120,29 @@ class ResetPasswordController
                 return ApiResponse::error('Looks like the token is invalid or expired or already used', 'INVALID_TOKEN');
             }
 
+            // Password reset tokens embed an expiry as "<hex>.<unix_ts>" (see
+            // ForgotPasswordController). Older/foreign tokens without that
+            // suffix (e.g. an email-verification token that happens to be
+            // looked up here) are treated as expired/invalid rather than
+            // accepted indefinitely.
+            if (!self::isResetTokenValid($data['token'])) {
+                global $eventManager;
+                if (isset($eventManager) && $eventManager !== null) {
+                    $eventManager->emit(
+                        AuthEvent::onAuthPasswordResetFailed(),
+                        [
+                            'token' => $data['token'],
+                            'reason' => 'TOKEN_EXPIRED',
+                            'ip_address' => CloudFlareRealIP::getRealIP(),
+                        ]
+                    );
+                }
+                // Invalidate the stale token so it can't be retried later.
+                User::updateUser($userInfo['uuid'], ['mail_verify' => null]);
+
+                return ApiResponse::error('Looks like the token is invalid or expired or already used', 'INVALID_TOKEN');
+            }
+
             if (User::updateUser($userInfo['uuid'], ['password' => password_hash($data['password'], PASSWORD_BCRYPT), 'remember_token' => User::generateAccountToken()]) && User::updateUser($userInfo['uuid'], ['mail_verify' => null])) {
                 Activity::createActivity([
                     'user_uuid' => $userInfo['uuid'],
@@ -187,10 +210,37 @@ class ResetPasswordController
                     'token' => $token,
                 ]);
             }
+            if (!self::isResetTokenValid($token)) {
+                return ApiResponse::error('Looks like the token is invalid or expired', 'INVALID_TOKEN', 400, [
+                    'token' => $token,
+                ]);
+            }
 
             return ApiResponse::success(null, 'Token is valid', 200);
         } catch (\Exception $e) {
             return ApiResponse::exception('An error occurred: ' . $e->getMessage(), $e->getCode());
         }
+    }
+
+    /**
+     * Reset tokens are generated as "<64 hex chars>.<unix_timestamp>" (see
+     * ForgotPasswordController::put()). Validate both the shape and that the
+     * embedded expiry has not passed yet.
+     */
+    private static function isResetTokenValid(string $token): bool
+    {
+        $parts = explode('.', $token, 2);
+        if (count($parts) !== 2) {
+            return false;
+        }
+        [$hex, $expiresAt] = $parts;
+        if (!ctype_xdigit($hex) || strlen($hex) !== 64) {
+            return false;
+        }
+        if (!ctype_digit($expiresAt)) {
+            return false;
+        }
+
+        return (int) $expiresAt >= time();
     }
 }

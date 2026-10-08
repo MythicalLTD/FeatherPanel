@@ -18,7 +18,7 @@ import axios from 'axios';
 import { filterFeatherTrashFiles } from '@/lib/feather-trash';
 import { FileObject, FilesResponse } from '@/types/server';
 
-/** Bare client for signed Wings URLs — no panel cookies / X-FP-UI-* headers (CORS). */
+/** Bare client for signed Wings URLs - no panel cookies / X-FP-UI-* headers (CORS). */
 const wingsUploadClient = axios.create({
     withCredentials: false,
 });
@@ -186,7 +186,7 @@ export const filesApi = {
         });
 
         const payload = response.data.data;
-        // Map fields for UI consistency; never expose the internal trash directory in the UI
+        // Map fields for UI consistency; never expose panel-managed dirs (trash, database dumps)
         const mapped = (payload.contents ?? []).map((f) => {
             const isFile = f.file !== undefined ? f.file : f.isFile !== undefined ? f.isFile : !f.directory;
             return {
@@ -260,12 +260,29 @@ export const filesApi = {
     },
 
     saveFileContent: async (uuid: string, path: string, content: string): Promise<void> => {
-        await api.post(`/user/servers/${uuid}/write-file`, content, {
-            params: { path: normalizePath(path) },
+        const { pluginActionHooks } = await import('@/lib/plugin-sdk/action-hooks');
+        const { pluginEventBus } = await import('@/lib/plugin-sdk/event-bus');
+        const { FP_ACTIONS, FP_EVENTS } = await import('@/lib/plugin-sdk/ids');
+
+        const ctx = await pluginActionHooks.run(FP_ACTIONS.FILES_SAVE, {
+            uuid,
+            path: normalizePath(path),
+            content,
+        });
+        if (ctx.cancelled) {
+            throw new Error(ctx.cancelReason || 'File save cancelled by plugin');
+        }
+        const finalPath = typeof ctx.path === 'string' ? normalizePath(ctx.path) : normalizePath(path);
+        const finalContent = typeof ctx.content === 'string' ? ctx.content : content;
+
+        await api.post(`/user/servers/${uuid}/write-file`, finalContent, {
+            params: { path: finalPath },
             headers: {
                 'Content-Type': 'text/plain',
             },
         });
+
+        pluginEventBus.emit(FP_EVENTS.FILES_SAVED, { uuid, path: finalPath });
     },
 
     createFolder: async (uuid: string, root: string, name: string): Promise<void> => {
@@ -540,7 +557,8 @@ export const filesApi = {
         );
         const uploadUrl = signed.data.data?.upload_url;
         if (!uploadUrl) {
-            throw new Error('Failed to get upload URL');
+            const payloadMessage = (typeof signed.data.message === 'string' && signed.data.message.trim()) || '';
+            throw new Error(payloadMessage || 'Failed to get upload URL');
         }
 
         const formData = new FormData();
@@ -586,4 +604,49 @@ export const filesApi = {
         );
         return res.data.data.upload_url;
     },
+
+    /**
+     * Lightweight existence check via parent directory listing.
+     * Returns null when the check could not be completed (e.g. listing failed / truncated miss).
+     */
+    fileExists: async (uuid: string, path: string): Promise<boolean | null> => {
+        const normalized = normalizePath(path || '/');
+        if (!normalized || normalized === '/') return false;
+
+        const lastSlash = normalized.lastIndexOf('/');
+        const directory = lastSlash <= 0 ? '/' : normalized.slice(0, lastSlash) || '/';
+        const name = lastSlash < 0 ? normalized.replace(/^\//, '') : normalized.slice(lastSlash + 1);
+        if (!name) return false;
+
+        try {
+            const { contents, limited } = await filesApi.getFiles(uuid, directory);
+            const found = contents.some((f) => f.name === name && (f.isFile ?? !f.directory));
+            if (found) return true;
+            // Listing may be capped - unknown rather than definite miss
+            if (limited) return null;
+            return false;
+        } catch {
+            return null;
+        }
+    },
 };
+
+/** True when an API error indicates the file/path does not exist on the server. */
+export function isFileNotFoundError(error: unknown): boolean {
+    if (!axios.isAxiosError(error)) return false;
+    if (error.response?.status === 404) return true;
+
+    let message = getFeatherpanelApiErrorMessage(error) ?? '';
+    const data = error.response?.data;
+    if (!message && typeof data === 'string') {
+        try {
+            const parsed = JSON.parse(data) as { message?: string; error_message?: string };
+            message = parsed.message ?? parsed.error_message ?? data;
+        } catch {
+            message = data;
+        }
+    }
+
+    const lower = message.toLowerCase();
+    return lower.includes('not found') || lower.includes('no such file');
+}

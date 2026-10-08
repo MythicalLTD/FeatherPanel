@@ -11,6 +11,19 @@ RUNNER_DIR="${RUNNER_DIR:-${PANEL_DIR}/runner}"
 
 NEXT_SERVICE_NAME="${NEXT_SERVICE_NAME:-featherpanel-next}"
 RUNNER_SERVICE_NAME="${RUNNER_SERVICE_NAME:-featherpanel-async-runner}"
+NGINX_SITE_NAME="${NGINX_SITE_NAME:-FeatherPanel.conf}"
+NGINX_SITE_FILE="${NGINX_SITE_FILE:-/etc/nginx/sites-available/${NGINX_SITE_NAME}}"
+
+GIT_CLEAN_EXCLUDES=(
+    -e 'backend/public/pma'
+    -e 'backend/public/webmail'
+    -e 'backend/public/attachments'
+    -e 'backend/public/addons'
+    -e 'backend/public/components'
+    -e 'backend/storage/addons'
+    -e 'backend/storage/data'
+    -e 'backend/storage/config'
+)
 
 step() {
     echo ""
@@ -67,24 +80,25 @@ handle_local_changes_before_update() {
     step "Discarding local changes..."
     preserve_runtime_dirs
     git -C "$PANEL_DIR" reset --hard HEAD
-    # Keep runtime installs (phpMyAdmin, attachments, addons, components)
-    git -C "$PANEL_DIR" clean -fd \
-        -e 'backend/public/pma' \
-        -e 'backend/public/attachments' \
-        -e 'backend/public/addons' \
-        -e 'backend/public/components' \
-        -e 'backend/storage/addons' \
-        -e 'backend/storage/config'
+    # Keep runtime installs (phpMyAdmin, webmail, attachments, addons, components)
+    git -C "$PANEL_DIR" clean -fd "${GIT_CLEAN_EXCLUDES[@]}"
     restore_runtime_dirs
 }
 
 preserve_runtime_dirs() {
     PMA_UPDATE_BACKUP=""
+    WEBMAIL_UPDATE_BACKUP=""
     if [ -f "${BACKEND_DIR}/public/pma/index.php" ]; then
         PMA_UPDATE_BACKUP="$(mktemp -d /tmp/featherpanel-pma-XXXXXX)"
         cp -a "${BACKEND_DIR}/public/pma/." "${PMA_UPDATE_BACKUP}/"
         mkdir -p "${BACKEND_DIR}/storage/config"
         printf '%s\n' 'preserved' > "${BACKEND_DIR}/storage/config/phpmyadmin.installed"
+    fi
+    if [ -f "${BACKEND_DIR}/public/webmail/index.php" ]; then
+        WEBMAIL_UPDATE_BACKUP="$(mktemp -d /tmp/featherpanel-webmail-XXXXXX)"
+        cp -a "${BACKEND_DIR}/public/webmail/." "${WEBMAIL_UPDATE_BACKUP}/"
+        mkdir -p "${BACKEND_DIR}/storage/config"
+        printf '%s\n' 'preserved' > "${BACKEND_DIR}/storage/config/roundcube.installed"
     fi
 }
 
@@ -97,6 +111,14 @@ restore_runtime_dirs() {
         rm -rf "${PMA_UPDATE_BACKUP}"
         PMA_UPDATE_BACKUP=""
     fi
+    if [ -n "${WEBMAIL_UPDATE_BACKUP:-}" ] && [ -d "${WEBMAIL_UPDATE_BACKUP}" ] && [ -f "${WEBMAIL_UPDATE_BACKUP}/index.php" ]; then
+        mkdir -p "${BACKEND_DIR}/public/webmail"
+        if [ ! -f "${BACKEND_DIR}/public/webmail/index.php" ]; then
+            cp -a "${WEBMAIL_UPDATE_BACKUP}/." "${BACKEND_DIR}/public/webmail/"
+        fi
+        rm -rf "${WEBMAIL_UPDATE_BACKUP}"
+        WEBMAIL_UPDATE_BACKUP=""
+    fi
 }
 
 require_root() {
@@ -108,12 +130,19 @@ require_root() {
 
 run_as_www_data() {
     local cmd="$1"
-    bash -lc "$cmd"
+    if command -v runuser >/dev/null 2>&1; then
+        runuser -u www-data -- bash -lc "$cmd"
+    elif command -v sudo >/dev/null 2>&1; then
+        sudo -u www-data bash -lc "$cmd"
+    else
+        su -s /bin/bash www-data -c "$cmd"
+    fi
 }
 
 run_frontend_with_nvm() {
     local cmd="$1"
-    run_as_www_data "export NVM_DIR=\"/root/.nvm\" && [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\" && ${cmd}"
+    # NVM lives under /root — frontend build must run as root.
+    bash -lc "export NVM_DIR=\"/root/.nvm\" && [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\" && ${cmd}"
 }
 
 set_runtime_permissions() {
@@ -125,14 +154,16 @@ set_runtime_permissions() {
         "${BACKEND_DIR}/public/attachments" \
         "${BACKEND_DIR}/public/addons" \
         "${BACKEND_DIR}/public/components" \
-        "${BACKEND_DIR}/public/pma"
+        "${BACKEND_DIR}/public/pma" \
+        "${BACKEND_DIR}/public/webmail"
 
     chown -R www-data:www-data \
         "${BACKEND_DIR}/storage" \
         "${BACKEND_DIR}/public/attachments" \
         "${BACKEND_DIR}/public/addons" \
         "${BACKEND_DIR}/public/components" \
-        "${BACKEND_DIR}/public/pma"
+        "${BACKEND_DIR}/public/pma" \
+        "${BACKEND_DIR}/public/webmail"
 
     chmod -R u+rwX,g+rwX,o-rwx "${BACKEND_DIR}/storage"
     chown -R www-data:www-data /var/www/featherpanel/*
@@ -152,13 +183,7 @@ update_repo() {
     else
         git -C "$PANEL_DIR" checkout -f "$PANEL_GIT_REF" || git -C "$PANEL_DIR" checkout -f -B "$PANEL_GIT_REF" "origin/$PANEL_GIT_REF"
         git -C "$PANEL_DIR" reset --hard "origin/$PANEL_GIT_REF"
-        git -C "$PANEL_DIR" clean -fd \
-            -e 'backend/public/pma' \
-            -e 'backend/public/attachments' \
-            -e 'backend/public/addons' \
-            -e 'backend/public/components' \
-            -e 'backend/storage/addons' \
-            -e 'backend/storage/config'
+        git -C "$PANEL_DIR" clean -fd "${GIT_CLEAN_EXCLUDES[@]}"
     fi
     restore_runtime_dirs
 }
@@ -187,10 +212,83 @@ update_runner() {
     fi
 }
 
+ensure_nginx_webmail_location() {
+    step "Ensuring nginx proxies /webmail to the panel backend..."
+    local site_file=""
+    for candidate in \
+        "$NGINX_SITE_FILE" \
+        /etc/nginx/sites-available/FeatherPanel.conf \
+        /etc/nginx/sites-available/featherpanel.conf \
+        /etc/nginx/sites-available/featherpanel
+    do
+        if [ -f "$candidate" ]; then
+            site_file="$candidate"
+            break
+        fi
+    done
+
+    if [ -z "$site_file" ]; then
+        echo "No FeatherPanel nginx site found; skipping /webmail location patch." >&2
+        return 0
+    fi
+
+    if grep -Eq 'location[[:space:]]+/webmail' "$site_file"; then
+        echo "nginx already has a /webmail location in ${site_file}"
+        return 0
+    fi
+
+    if ! grep -Eq 'location[[:space:]]+/pma' "$site_file"; then
+        echo "Could not locate /pma block in ${site_file}; skipping /webmail insert." >&2
+        return 0
+    fi
+
+    local tmp
+    tmp="$(mktemp)"
+    # Dollar signs must be split so awk does not treat $host as a field var.
+    awk '
+        BEGIN { inserted = 0; in_pma = 0; depth = 0 }
+        {
+            print
+            if (!inserted && $0 ~ /location[[:space:]]+\/pma/) {
+                in_pma = 1
+                depth = 0
+            }
+            if (in_pma) {
+                nopen = gsub(/\{/, "{")
+                nclose = gsub(/\}/, "}")
+                depth += nopen - nclose
+                if (depth <= 0 && $0 ~ /\}/) {
+                    print ""
+                    print "    location /webmail {"
+                    print "        proxy_pass http://127.0.0.1:8721;"
+                    print "        proxy_set_header Host $" "host;"
+                    print "        proxy_set_header X-Real-IP $" "remote_addr;"
+                    print "        proxy_set_header X-Forwarded-For $" "proxy_add_x_forwarded_for;"
+                    print "        proxy_set_header X-Forwarded-Proto $" "scheme;"
+                    print "    }"
+                    inserted = 1
+                    in_pma = 0
+                }
+            }
+        }
+    ' "$site_file" >"$tmp"
+
+    if ! grep -Eq 'location[[:space:]]+/webmail' "$tmp"; then
+        echo "Failed to insert /webmail location into ${site_file}" >&2
+        rm -f "$tmp"
+        return 1
+    fi
+
+    cp "$site_file" "${site_file}.bak.pre-webmail"
+    mv "$tmp" "$site_file"
+    echo "Inserted /webmail location into ${site_file}"
+}
+
 restart_services() {
     step "Restarting services (runner, frontend, nginx)..."
     systemctl restart "$RUNNER_SERVICE_NAME" || true
     systemctl restart "$NEXT_SERVICE_NAME" || true
+    ensure_nginx_webmail_location
     nginx -t && systemctl restart nginx
 }
 

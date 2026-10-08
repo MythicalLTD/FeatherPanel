@@ -71,7 +71,7 @@ export function VmInstanceProvider({ children, instanceId, initialInstance }: Vm
     const [instance, setInstance] = useState<VmInstance | null>(initialInstance || null);
     const [loading, setLoading] = useState(!initialInstance);
     const [error, setError] = useState<Error | null>(null);
-    const { hasPermission: hasGlobalPermission } = useSession();
+    const { hasPermission: hasGlobalPermission, isLoading: sessionLoading, isSessionChecked } = useSession();
 
     const fetchInstance = useCallback(async () => {
         if (!instanceId) return;
@@ -149,7 +149,8 @@ export function VmInstanceProvider({ children, instanceId, initialInstance }: Vm
         <VmInstanceContext.Provider
             value={{
                 instance,
-                loading,
+                // Admin grants need session permissions; keep consumers spinning until session is ready.
+                loading: loading || sessionLoading || !isSessionChecked,
                 error,
                 refreshInstance: fetchInstance,
                 hasPermission,

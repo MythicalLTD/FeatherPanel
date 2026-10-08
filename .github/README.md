@@ -1,119 +1,357 @@
-# FeatherPanel
+<div align="center">
 
-[![Frontend Build](https://img.shields.io/github/actions/workflow/status/mythicalltd/featherpanel/frontend.yml?branch=main&label=Frontend&style=for-the-badge&logo=react&logoColor=white)](https://github.com/mythicalltd/featherpanel/actions/workflows/frontend.yml)
-[![Backend Build](https://img.shields.io/github/actions/workflow/status/mythicalltd/featherpanel/backend.yml?branch=main&label=Backend&style=for-the-badge&logo=php&logoColor=white)](https://github.com/mythicalltd/featherpanel/actions/workflows/backend.yml)
+# 🪶 FeatherPanel
 
+**Open-source game server management fast, secure, and built for operators.**
 
-[![License](https://img.shields.io/github/license/mythicalltd/featherpanel?style=for-the-badge&color=blue)](https://github.com/mythicalltd/featherpanel/blob/develop/LICENSE)
-[![Stars](https://img.shields.io/github/stars/mythicalltd/featherpanel?style=for-the-badge&color=yellow)](https://github.com/mythicalltd/featherpanel/stargazers)
-[![Forks](https://img.shields.io/github/forks/mythicalltd/featherpanel?style=for-the-badge&color=green)](https://github.com/mythicalltd/featherpanel/network/members)
-[![Issues](https://img.shields.io/github/issues/mythicalltd/featherpanel?style=for-the-badge&color=red)](https://github.com/mythicalltd/featherpanel/issues)
+<br />
 
+[![Frontend](https://img.shields.io/github/actions/workflow/status/mythicalltd/featherpanel/frontend.yml?branch=develop&label=Frontend&style=for-the-badge&logo=react&logoColor=white)](https://github.com/mythicalltd/featherpanel/actions/workflows/frontend.yml)
+[![Backend](https://img.shields.io/github/actions/workflow/status/mythicalltd/featherpanel/backend.yml?branch=develop&label=Backend&style=for-the-badge&logo=php&logoColor=white)](https://github.com/mythicalltd/featherpanel/actions/workflows/backend.yml)
+[![Async Runner](https://img.shields.io/github/actions/workflow/status/mythicalltd/featherpanel/runner.yml?branch=develop&label=Async%20Runner&style=for-the-badge&logo=rust&logoColor=white)](https://github.com/mythicalltd/featherpanel/actions/workflows/runner.yml)
+[![Installer](https://img.shields.io/github/actions/workflow/status/mythicalltd/featherpanel/shell-lint.yml?branch=develop&label=Installer&style=for-the-badge&logo=gnubash&logoColor=white)](https://github.com/mythicalltd/featherpanel/actions/workflows/shell-lint.yml)
+[![Developer Docs](https://img.shields.io/github/actions/workflow/status/mythicalltd/featherpanel/docs-pages.yml?branch=develop&label=Developer%20Docs&style=for-the-badge&logo=readthedocs&logoColor=white)](https://github.com/mythicalltd/featherpanel/actions/workflows/docs-pages.yml)
+
+<br />
+
+[![License](https://img.shields.io/github/license/mythicalltd/featherpanel?style=for-the-badge&color=2563eb)](https://github.com/mythicalltd/featherpanel/blob/develop/LICENSE)
+[![Release](https://img.shields.io/github/v/release/mythicalltd/featherpanel?style=for-the-badge&color=f97316)](https://github.com/mythicalltd/featherpanel/releases)
+[![Stars](https://img.shields.io/github/stars/mythicalltd/featherpanel?style=for-the-badge&color=eab308)](https://github.com/mythicalltd/featherpanel/stargazers)
+[![Issues](https://img.shields.io/github/issues/mythicalltd/featherpanel?style=for-the-badge&color=ef4444)](https://github.com/mythicalltd/featherpanel/issues)
 [![Discord](https://img.shields.io/discord/1399372922480492608?style=for-the-badge&logo=discord&logoColor=white&label=Discord&color=5865F2)](https://discord.mythical.systems)
-[![Release](https://img.shields.io/github/v/release/mythicalltd/featherpanel?style=for-the-badge&color=orange)](https://github.com/mythicalltd/featherpanel/releases)
-[![Last Commit](https://img.shields.io/github/last-commit/mythicalltd/featherpanel/main?style=for-the-badge&color=purple)](https://github.com/mythicalltd/featherpanel/commits/main)
+[![Last Commit](https://img.shields.io/github/last-commit/mythicalltd/featherpanel/develop?style=for-the-badge&color=a855f7)](https://github.com/mythicalltd/featherpanel/commits/develop)
 
-**FeatherPanel** is a powerful, open-source game server management solution built with modern technologies for speed, security, and simplicity.
-
----
-
-## ⚠️ **DEVELOPMENT BRANCH WARNING** ⚠️
-
-> **🚨 DO NOT USE THIS BRANCH FOR PRODUCTION 🚨**
->
-> This is the **develop** branch and contains experimental, untested features.
-> Installing from this branch may result in data loss, security vulnerabilities, or system instability.
+</div>
 
 ---
 
-## 📚 Documentation & Installation
+## ⚠️ Development branch
 
-[![Read Documentation](https://img.shields.io/badge/📖_Read_Documentation-4A90E2?style=for-the-badge&logoColor=white)](https://docs.mythical.systems/docs)
+<table>
+<tr>
+<td width="56">🚨</td>
+<td>
 
-For installation instructions, system requirements, and complete guides, please visit our **[Official Documentation](https://docs.mythical.systems/docs)**
+**Do not run `develop` in production.**
+
+This branch ships experimental features that may be unstable, incomplete, or unsafe. For live environments, install a [stable release](https://github.com/mythicalltd/featherpanel/releases) and follow the [official docs](https://docs.mythical.systems/docs).
+
+</td>
+</tr>
+</table>
 
 ---
 
-## 🚀 Quick Links
+## 🧭 Quick navigation
 
-|                                                 📘 Documentation                                                 |                                                                   💬 Discord Support                                                                   |                                                                             🔌 API Documentation                                                                             |
-| :--------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-| [![Visit Docs](https://img.shields.io/badge/Visit_Docs-blue?style=for-the-badge)](https://docs.mythical.systems/docs) | [![Join Discord](https://img.shields.io/badge/Join_Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.mythical.systems) | [![View API](https://img.shields.io/badge/View_API-FF6C37?style=for-the-badge&logo=postman&logoColor=white)](https://www.postman.com/mythicalsystems/workspace/featherpanel) |
-|                         Installation guides, API reference, and configuration tutorials                          |                                                    Get help from the community and development team                                                    |                                                                    Complete API reference for developers                                                                     |
+<table>
+<tr>
+<th align="left">📖 Documentation</th>
+<th align="left">🧩 Developer reference</th>
+<th align="left">💬 Community</th>
+</tr>
+<tr>
+<td valign="top">
+
+- [Installation guides](https://docs.mythical.systems/docs)
+- [Configuration](https://docs.mythical.systems/docs)
+- [Releases](https://github.com/mythicalltd/featherpanel/releases)
+
+</td>
+<td valign="top">
+
+- [icanhasfeatherpanel](https://mythicalltd.github.io/FeatherPanel/icanhasfeatherpanel/) widgets, permissions, events
+- [OpenAPI / Redoc](https://mythicalltd.github.io/FeatherPanel/icanhasfeatherpanel/api/) full API reference
+
+</td>
+<td valign="top">
+
+- [Discord](https://discord.mythical.systems)
+- [GitHub Issues](https://github.com/mythicalltd/featherpanel/issues)
+- [Contributors graph](https://github.com/mythicalltd/featherpanel/graphs/contributors)
+
+</td>
+</tr>
+</table>
 
 ---
 
-## 📊 Code Statistics
+## 🏗️ Stack
+
+<table>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Path</th>
+</tr>
+<tr>
+<td>🐘 Panel API</td>
+<td>PHP 8.5</td>
+<td><code>backend/</code></td>
+</tr>
+<tr>
+<td>⚛️ Web UI</td>
+<td>Next.js · React · TypeScript</td>
+<td><code>frontendv2/</code></td>
+</tr>
+<tr>
+<td>🦀 Async jobs</td>
+<td>Rust (<code>async-runner</code>)</td>
+<td><code>runner/</code></td>
+</tr>
+<tr>
+<td>📦 Installer</td>
+<td>Bash</td>
+<td><code>installer/</code></td>
+</tr>
+</table>
+
+Docker images for the backend, frontend, and async runner are published through the release workflows listed below.
+
+---
+
+## 📚 icanhasfeatherpanel public developer docs
+
+**icanhasfeatherpanel** is FeatherPanel’s static developer reference. No running panel is required to browse it.
+
+<details open>
+<summary><strong>What’s included</strong></summary>
+
+<br />
+
+| Section                  | Contents                                                                                             |
+| ------------------------ | ---------------------------------------------------------------------------------------------------- |
+| 🧩 **Plugins**           | Full Markdown guides for building addons (`conf.yml`, backend, frontend, SDK, packaging, AI recipes) |
+| 🧭 **Pages**             | Every frontend Next.js route/slug (`pages/all.json`) for UI navigation guidance                      |
+| 🧩 **Widgets**           | Injection points as HTML + `.md` + `.json`                                                           |
+| ⌨️ **CLI**               | All `featherpanel` / `php cli` commands + production usage (`cli/usage.md`, `cli/all.json`)          |
+| ⚙️ **Settings**          | Admin settings keys, types, options, categories from `SettingsController` (`settings/all.json`)      |
+| 🧰 **Installer**         | `install.bash` flags, menus, automation env vars (`installer/guide.md`)                              |
+| 🔐 **Permissions**       | Every permission node as HTML + `.md` + `.json` (`all.json`)                                         |
+| 📡 **Events**            | Plugin hooks as HTML + `.md` + `.json` (`all.json`)                                                  |
+| 🔌 **API reference**     | Redoc UI + raw `openapi.json`                                                                        |
+| 🧠 **RAG index**         | `catalog.json` + `llms.txt` listing every machine-readable doc                                       |
+| 🔑 **OAuth2 playground** | OAuth2 docs (live API calls still need a panel)                                                      |
+
+</details>
+
+<details>
+<summary><strong>🌐 Live site (GitHub Pages)</strong></summary>
+
+<br />
+
+**https://mythicalltd.github.io/FeatherPanel/icanhasfeatherpanel/**
+
+Plugin authoring (Markdown + AI index):
+
+**https://mythicalltd.github.io/FeatherPanel/icanhasfeatherpanel/plugins/**
+
+RAG / machine-readable index:
+
+- **https://mythicalltd.github.io/FeatherPanel/icanhasfeatherpanel/rag/**
+- **https://mythicalltd.github.io/FeatherPanel/catalog.json**
+- **https://mythicalltd.github.io/FeatherPanel/llms.txt**
+
+Examples for crawlers: `…/pages/all.json`, `…/cli/all.json`, `…/cli/usage.md`, `…/settings/all.json`, `…/installer/guide.md`, `…/permissions/all.json`, `…/events/all.json`, `…/widgets/index.json`, `…/api/openapi.json`, `…/plugins/ai-guide.md`.
+
+</details>
+
+<details>
+
+<summary><strong>🛠️ Build locally</strong></summary>
+
+<br />
+
+Hand-authored inputs live in `frontendv2/icanhas/` (plugin Markdown, auth guides, assets, schemas). One command — `pnpm export:docs` — builds the **entire** `public/icanhasfeatherpanel/` tree (widgets, pages, permissions, events, API + OpenAPI, CLI, settings, installer, plugins/auth indexes, RAG). That output is gitignored and produced at ship time for **both** GitHub Pages (`pnpm build:public-docs`) and Docker/panel images (host `export:docs` then `frontendv2` image build, or `pnpm build:with-docs` / `make frontend`).
+
+```bash
+# 1. Generate OpenAPI from PHP controller annotations
+cd backend
+COMPOSER_ALLOW_SUPERUSER=1 composer openapi
+
+# 2. Export docs + assemble static GitHub Pages site
+cd ../frontendv2
+pnpm install
+pnpm build:public-docs
+
+# Output lands in ../docs-site/
+# Serve it with any static file server, e.g.:
+python3 -m http.server 8080 --directory ../docs-site
+```
+
+For a normal panel image / local Next build that should include `/icanhasfeatherpanel/`:
+
+```bash
+cd frontendv2
+pnpm build:with-docs   # export:docs then pnpm build
+```
+
+Optional environment variables for `build:public-docs`:
+
+| Variable          | Purpose                                                                                |
+| ----------------- | -------------------------------------------------------------------------------------- |
+| `DOCS_OUTPUT_DIR` | Output directory (default: `docs-site/`)                                               |
+| `DOCS_BASE_PATH`  | URL prefix for GitHub Pages project sites (CI sets `/FeatherPanel` from the repo name) |
+| `OPENAPI_JSON`    | Path to the generated OpenAPI file                                                     |
+
+</details>
+
+---
+
+## 🔄 CI & workflows
+
+<table>
+<tr>
+<th>Workflow</th>
+<th>Purpose</th>
+</tr>
+<tr>
+<td><a href="workflows/frontend.yml">frontend.yml</a></td>
+<td>Builds the Next.js panel UI</td>
+</tr>
+<tr>
+<td><a href="workflows/backend.yml">backend.yml</a></td>
+<td>PHP lint, migrations, and backend tests</td>
+</tr>
+<tr>
+<td><a href="workflows/runner.yml">runner.yml</a></td>
+<td>Builds and tests the Rust async runner</td>
+</tr>
+<tr>
+<td><a href="workflows/shell-lint.yml">shell-lint.yml</a></td>
+<td>ShellCheck + syntax validation for the installer</td>
+</tr>
+<tr>
+<td><a href="workflows/docs-pages.yml">docs-pages.yml</a></td>
+<td>Generates icanhasfeatherpanel (not committed) + OpenAPI and deploys the static site to GitHub Pages</td>
+</tr>
+<tr>
+<td><a href="workflows/docker-dev.yml">docker-dev.yml</a></td>
+<td>Dev Docker images → GHCR (<code>develop</code>)</td>
+</tr>
+<tr>
+<td><a href="workflows/docker-release.yml">docker-release.yml</a></td>
+<td>Release Docker images on version tags</td>
+</tr>
+<tr>
+<td><a href="workflows/docker-oci-release.yml">docker-oci-release.yml</a></td>
+<td>OCI release artifacts</td>
+</tr>
+<tr>
+<td><a href="workflows/codeql.yml">codeql.yml</a></td>
+<td>Security analysis (JS/TS)</td>
+</tr>
+<tr>
+<td><a href="workflows/dependency-review.yml">dependency-review.yml</a></td>
+<td>Flags vulnerable dependency changes in PRs</td>
+</tr>
+</table>
+
+---
+
+## 📊 Code statistics
 
 <!-- COUNT-STATS:START -->
 
-_Last updated: 2026-08-16T16:40:47.033Z_
+_Last updated: 2026-10-08T23:48:06.857Z_
 
 | Extension | Files | Lines |
 | --- | ---: | ---: |
-| `.php` | 564 | 148,221 |
-| `.tsx` | 405 | 127,978 |
-| `.ts` | 98 | 11,701 |
-| `.yaml` | 3 | 6,496 |
-| `.rs` | 16 | 3,529 |
-| `.sql` | 155 | 2,651 |
-| `.yml` | 18 | 1,987 |
-| `.css` | 7 | 460 |
-| **Total** | 1,266 | 303,023 |
+| `.php` | 743 | 188,558 |
+| `.tsx` | 580 | 169,239 |
+| `.ts` | 195 | 24,660 |
+| `.json` | 19 | 16,057 |
+| `.yaml` | 5 | 7,755 |
+| `.sql` | 211 | 3,428 |
+| `.rs` | 16 | 3,363 |
+| `.yml` | 26 | 2,909 |
+| `.css` | 6 | 657 |
+| **Total** | 1,801 | 416,626 |
 
 <!-- COUNT-STATS:END -->
 
 ---
 
-## 🧪 Installing FeatherPanel
+## 🚀 Try it (stable installer)
 
-**Curious to try it out? This build is for testers and adventurous users:**
+These commands install the latest **stable** build ideal for evaluation, not for running `develop` in production.
 
-### Linux
+<table>
+<tr>
+<th align="left">🐧 Linux</th>
+<th align="left">🪟 Windows</th>
+</tr>
+<tr>
+<td valign="top">
 
 ```bash
-# Install stable Build!
 curl -sSL https://get.featherpanel.com/stable.sh | bash
 ```
 
-### Windows
+</td>
+<td valign="top">
 
-**PowerShell:**
+**PowerShell**
 
 ```powershell
 iwr https://get.featherpanel.com/stable.ps1 | iex
 ```
 
-**Command Prompt (CMD):**
+**CMD**
 
 ```cmd
 powershell -ExecutionPolicy Bypass -Command "iwr https://get.featherpanel.com/stable.ps1 | iex"
 ```
 
-**Note:** The installer will automatically request Administrator privileges via UAC when needed.
+</td>
+</tr>
+</table>
 
-**⚡ After installation:**
+<details>
+<summary><strong>After installation</strong></summary>
 
-- Register a new admin account when prompted
-- Check the [documentation](https://docs.mythical.systems/docs) for configuration
-- Report issues on [GitHub Issues](https://github.com/mythicalltd/featherpanel/issues)
+<br />
+
+1. Register the first account it becomes the admin automatically.
+2. Follow the [configuration docs](https://docs.mythical.systems/docs).
+3. Report bugs on [GitHub Issues](https://github.com/mythicalltd/featherpanel/issues).
+
+</details>
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please check our [Contributing Guidelines](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before getting started.
+Contributions are welcome. Please read the [contributing guide](CONTRIBUTING.md) and [code of conduct](CODE_OF_CONDUCT.md) before opening a pull request.
+
+<div align="center">
 
 [![Contributors](https://contrib.rocks/image?repo=mythicalltd/featherpanel)](https://github.com/mythicalltd/featherpanel/graphs/contributors)
+
+</div>
 
 ---
 
 ## 📄 License
 
-FeatherPanel is open-source software licensed under the [GNU License](LICENSE).
+FeatherPanel is licensed under the **[GNU Affero General Public License v3.0](../LICENSE)**.
 
 ---
 
-**Made with ❤️ by the Mythical Systems Team**
+<div align="center">
 
-[Documentation](https://docs.mythical.systems/docs) • [Discord](https://discord.mythical.systems) • [Issues](https://github.com/mythicalltd/featherpanel/issues) • [Releases](https://github.com/mythicalltd/featherpanel/releases)
+<sub>Made with ❤️ by <a href="https://mythical.systems"><strong>Mythical Systems</strong></a></sub>
+
+<br /><br />
+
+<a href="https://docs.mythical.systems/docs">Documentation</a>
+&nbsp;·&nbsp;
+<a href="https://mythicalltd.github.io/FeatherPanel/icanhasfeatherpanel/">Developer docs</a>
+&nbsp;·&nbsp;
+<a href="https://discord.mythical.systems">Discord</a>
+&nbsp;·&nbsp;
+<a href="https://github.com/mythicalltd/featherpanel/issues">Issues</a>
+&nbsp;·&nbsp;
+<a href="https://github.com/mythicalltd/featherpanel/releases">Releases</a>
+
+</div>

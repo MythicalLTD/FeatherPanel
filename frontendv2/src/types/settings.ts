@@ -15,6 +15,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 export interface AppSettings {
     app_developer_mode: string;
+    /** When 'true', this panel is a public demo instance (wipes, limited features). */
+    app_demo_yes?: string;
     app_name: string;
     app_timezone: string;
     cache_driver: string;
@@ -29,6 +31,10 @@ export interface AppSettings {
     server_allow_user_made_proxy: string;
     server_allow_user_made_fastdl: string;
     server_allow_user_made_subdomains: string;
+    server_auto_start_on_node_reconnect?: string;
+    server_auto_start_stagger_seconds?: string;
+    server_auto_start_initial_delay_seconds?: string;
+    server_allow_user_auto_start?: string;
     server_allow_user_server_deletion: string;
     server_hide_ips: string;
     smtp_enabled: string;
@@ -161,6 +167,14 @@ export interface AppSettings {
     app_theme_default?: string;
     /** When 'true', force the configured theme for all users. */
     app_theme_lock?: string;
+    /** Default plugin theme pack id (`default` or `pluginId:themeId`). */
+    app_theme_pack_default?: string;
+    /** When 'true', force the configured theme pack for all users. */
+    app_theme_pack_lock?: string;
+    /** Active UI pack id (`pluginId:packId` or empty). */
+    app_ui_pack_default?: string;
+    /** When 'true', force the configured UI pack for all users. */
+    app_ui_pack_lock?: string;
     /** Optional default background type (aurora, gradient, solid, image, pattern). */
     app_background_type_default?: string;
     /** When 'true', force the configured background type for all users. */
@@ -186,6 +200,31 @@ export interface AppSettings {
     login_methods_order?: string;
     /** Comma-separated login method ids to hide on the login page */
     login_hidden_methods?: string;
+    /** Auth marketing tagline (auth-only; never falls back to SEO) */
+    auth_shell_tagline?: string;
+    /** Optional heading under brand on the marketing panel */
+    auth_aside_title?: string;
+    auth_login_headline?: string;
+    auth_login_subheadline?: string;
+    auth_register_headline?: string;
+    auth_register_subheadline?: string;
+    /** SSO / OIDC / Discord primary portal copy */
+    auth_sso_headline?: string;
+    auth_sso_subheadline?: string;
+    /** When 'true', show Discord-style QR login */
+    auth_show_qr_login?: string;
+    /** When 'true', show left marketing panel on large screens */
+    auth_show_marketing_panel?: string;
+    /** Optional hero image for the auth marketing panel */
+    auth_aside_image_url?: string;
+    /** comfortable | compact | dense */
+    auth_form_density?: string;
+    /** chips | stack | collapsed */
+    auth_secondary_layout?: string;
+    /** When 'true', show theme customizer on auth pages */
+    auth_show_theme_customizer?: string;
+    /** full | minimal | hidden */
+    auth_footer_style?: string;
 }
 
 export interface CoreInfo {

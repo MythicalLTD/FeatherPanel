@@ -13,6 +13,8 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+import { reportPanelInteraction } from '@/lib/panel-analytics';
+
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { toast } from 'sonner';
@@ -44,9 +46,35 @@ export function resolveAttachmentUrl(url: string | null | undefined): string | n
 }
 
 /**
+ * Allow only schemes safe for <img src> / CSS url().
+ * Rejects javascript:, data:, and protocol-relative URLs so DOM-sourced text
+ * cannot be reinterpreted as executable markup (CodeQL js/xss-through-dom).
+ *
+ * Uses startsWith prefix checks (not URL.protocol) so CodeQL recognizes them
+ * as URL-scheme sanitizer guards and drops the taint flow.
+ */
+export function safeImageSrc(url: string | null | undefined): string | null {
+    if (!url) return null;
+    const trimmed = url.trim();
+    if (trimmed === '') return null;
+
+    // Same-origin path only - not protocol-relative "//evil.example".
+    if (trimmed.startsWith('/') && !trimmed.startsWith('//')) {
+        return trimmed;
+    }
+
+    if (trimmed.startsWith('https://') || trimmed.startsWith('http://')) {
+        return trimmed;
+    }
+
+    return null;
+}
+
+/**
  * Copy text to clipboard with fallback
  */
 export async function copyToClipboard(text: string, t?: (key: string) => string) {
+    reportPanelInteraction('panel.clipboard.copy', 'attempt');
     try {
         if (navigator.clipboard && window.isSecureContext) {
             await navigator.clipboard.writeText(text);
@@ -69,6 +97,7 @@ export async function copyToClipboard(text: string, t?: (key: string) => string)
         }
         toast.success(t ? t('common.copiedToClipboard') : 'Copied to clipboard');
     } catch (err) {
+        reportPanelInteraction('panel.clipboard.copy', 'failure');
         console.error('Failed to copy text: ', err);
         toast.error(t ? t('common.error') : 'Failed to copy');
     }
@@ -81,6 +110,19 @@ export function isEnabled(val?: string | boolean | number | null): boolean {
         return val === 'true' || val === '1';
     }
     return false;
+}
+
+/**
+ * For settings that default to enabled unless explicitly disabled (opt-out).
+ * Matches backend gates like `getSetting($key, 'true') == 'false'`.
+ */
+export function isEnabledUnlessExplicitlyFalse(val?: string | boolean | number | null): boolean {
+    if (val === undefined || val === null) return true;
+    if (typeof val === 'boolean') return val;
+    if (typeof val === 'number') return val !== 0;
+    const normalized = val.trim().toLowerCase();
+    if (normalized === '') return true;
+    return normalized !== 'false' && normalized !== '0';
 }
 
 export function getCookie(name: string): string | null {
@@ -158,9 +200,10 @@ export function formatDate(date: string | null | undefined): string {
  * Format bytes to human-readable string
  */
 export function formatFileSize(bytes: number): string {
-    if (bytes === 0) return '0 B';
+    if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    const safeIndex = Math.max(0, Math.min(i, sizes.length - 1));
+    return parseFloat((bytes / Math.pow(k, safeIndex)).toFixed(2)) + ' ' + sizes[safeIndex];
 }

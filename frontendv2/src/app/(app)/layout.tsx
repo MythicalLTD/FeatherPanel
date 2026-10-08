@@ -14,55 +14,64 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import './globals.css';
-import localFont from 'next/font/local';
+import { panelFontClassName } from '@/lib/panel-fonts';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { TranslationProvider } from '@/contexts/TranslationContext';
 import { SessionProvider } from '@/contexts/SessionContext';
 import { PreferencesProvider } from '@/contexts/PreferencesContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
+import { PluginUiProvider } from '@/contexts/PluginUiContext';
 import AppContent from '@/components/common/AppContent';
+import { FeatherPanelHost } from '@/components/plugins/FeatherPanelHost';
 import { Toaster } from 'sonner';
 
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { settingsApi } from '@/lib/settings-api';
-import { ANALYTICS_COOKIE_NAME } from '@/lib/analytics-cookie';
+import { getServerBootData, ICON_LIBRARY_COOKIE_NAME, LOCALE_COOKIE_NAME } from '@/lib/server-boot';
+import { SidebarPrefsBootstrap } from '@/hooks/useSidebarPreferences';
 
-// Self-hosted (no Google Fonts at build time). Paths are relative to this file.
-const inter = localFont({
-    src: [
-        { path: '../../fonts/Inter-400.woff2', weight: '400', style: 'normal' },
-        { path: '../../fonts/Inter-500.woff2', weight: '500', style: 'normal' },
-        { path: '../../fonts/Inter-600.woff2', weight: '600', style: 'normal' },
-        { path: '../../fonts/Inter-700.woff2', weight: '700', style: 'normal' },
-    ],
-    variable: '--font-inter',
-    display: 'swap',
-    fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
-});
+import { APP_FONT_BOOT_STACKS_JSON } from '@/lib/app-fonts';
+import { ACCENT_COLORS_BOOT_JSON, ACCENT_FOREGROUNDS_BOOT_JSON } from '@/lib/accent-colors';
 
-const nunito = localFont({
-    src: [
-        { path: '../../fonts/Nunito-400.woff2', weight: '400', style: 'normal' },
-        { path: '../../fonts/Nunito-500.woff2', weight: '500', style: 'normal' },
-        { path: '../../fonts/Nunito-600.woff2', weight: '600', style: 'normal' },
-        { path: '../../fonts/Nunito-700.woff2', weight: '700', style: 'normal' },
-    ],
-    variable: '--font-nunito',
-    display: 'swap',
-    fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
-});
+import SystemHealthCheck from '@/components/SystemHealthCheck';
+import PluginAssets from '@/components/common/PluginAssets';
+import ChunkLoadErrorHandler from '@/components/common/ChunkLoadErrorHandler';
+import { PwaInstaller } from '@/components/common/PwaInstaller';
+import AnalyticsScript from '@/components/common/AnalyticsScript';
+
+export async function generateViewport(): Promise<Viewport> {
+    const cookieStore = await cookies();
+    const boot = await getServerBootData(
+        cookieStore.get(LOCALE_COOKIE_NAME)?.value,
+        cookieStore.get(ICON_LIBRARY_COOKIE_NAME)?.value,
+    );
+    const themeColor = boot.settings?.app_pwa_theme_color || '#000000';
+
+    return {
+        themeColor: [
+            { media: '(prefers-color-scheme: light)', color: themeColor },
+            { media: '(prefers-color-scheme: dark)', color: themeColor },
+        ],
+    };
+}
 
 export async function generateMetadata(): Promise<Metadata> {
-    const data = await settingsApi.getPublicSettings();
-    const settings = data?.settings;
+    const cookieStore = await cookies();
+    const boot = await getServerBootData(
+        cookieStore.get(LOCALE_COOKIE_NAME)?.value,
+        cookieStore.get(ICON_LIBRARY_COOKIE_NAME)?.value,
+    );
+    const settings = boot.settings;
 
     const title = settings?.app_seo_title || settings?.app_name || 'FeatherPanel';
     const description = settings?.app_seo_description || 'A powerful game server management panel.';
     const keywords = settings?.app_seo_keywords || 'game, server, management, panel, hosting';
-    const logo = settings?.app_logo_dark || '/assets/logo.png';
+    const logo = settings?.app_logo_dark || settings?.app_logo_white || '/assets/logo.png';
     const indexingEnabled = settings?.app_seo_indexing === 'true';
+    const pwaEnabled = settings?.app_pwa_enabled === 'true';
+    const appName = settings?.app_name || 'FeatherPanel';
 
     return {
         title: {
@@ -71,19 +80,32 @@ export async function generateMetadata(): Promise<Metadata> {
         },
         description: description,
         keywords: keywords.split(',').map((k) => k.trim()),
+        applicationName: appName,
+        appleWebApp: pwaEnabled
+            ? {
+                  capable: true,
+                  title: settings?.app_pwa_short_name?.trim() || appName,
+                  statusBarStyle: 'black-translucent',
+              }
+            : undefined,
+        formatDetection: {
+            telephone: false,
+        },
         icons: {
-            icon: logo,
-            shortcut: logo,
-            apple: logo,
-            other: {
-                rel: 'apple-touch-icon-precomposed',
-                url: logo,
-            },
+            icon: [{ url: logo }],
+            shortcut: [{ url: logo }],
+            apple: [{ url: logo, sizes: '180x180' }],
+            other: [
+                {
+                    rel: 'apple-touch-icon-precomposed',
+                    url: logo,
+                },
+            ],
         },
         openGraph: {
             title: title,
             description: description,
-            siteName: settings?.app_name || 'FeatherPanel',
+            siteName: appName,
             images: [
                 {
                     url: logo,
@@ -100,7 +122,6 @@ export async function generateMetadata(): Promise<Metadata> {
             description: description,
             images: [logo],
         },
-        applicationName: settings?.app_name || 'FeatherPanel',
         robots: indexingEnabled
             ? {
                   index: true,
@@ -112,24 +133,25 @@ export async function generateMetadata(): Promise<Metadata> {
                   nocache: true,
               },
         other: {
-            author: 'FeatherPanel',
+            author: appName,
+            ...(pwaEnabled
+                ? {
+                      'mobile-web-app-capable': 'yes',
+                  }
+                : {}),
         },
     };
 }
 
-import SystemHealthCheck from '@/components/SystemHealthCheck';
-import PluginAssets from '@/components/common/PluginAssets';
-import ChunkLoadErrorHandler from '@/components/common/ChunkLoadErrorHandler';
-import { PwaInstaller } from '@/components/common/PwaInstaller';
-import AnalyticsScript from '@/components/common/AnalyticsScript';
-
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
     const cookieStore = await cookies();
-    const analyticsCookie = cookieStore.get(ANALYTICS_COOKIE_NAME)?.value;
-    const analyticsEnabled = analyticsCookie !== '0';
+    const boot = await getServerBootData(
+        cookieStore.get(LOCALE_COOKIE_NAME)?.value,
+        cookieStore.get(ICON_LIBRARY_COOKIE_NAME)?.value,
+    );
 
     return (
-        <html lang='en' suppressHydrationWarning className={`${inter.variable} ${nunito.variable}`}>
+        <html lang={boot.locale || 'en'} suppressHydrationWarning className={panelFontClassName}>
             <head>
                 <noscript
                     dangerouslySetInnerHTML={{
@@ -144,36 +166,46 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 try {
                   const theme = localStorage.getItem('theme') || 'dark';
                   const accentColor = localStorage.getItem('accentColor') || 'purple';
-                  const colors = {
-                    purple: '262 83% 58%',
-                    blue: '217 91% 60%',
-                    green: '142 71% 45%',
-                    red: '0 84% 60%',
-                    orange: '25 95% 53%',
-                    pink: '330 81% 60%',
-                    teal: '173 80% 40%',
-                    yellow: '48 96% 53%',
-                    white: '210 20% 92%',
-                    violet: '270 75% 55%',
-                    cyan: '188 78% 41%',
-                    lime: '84 69% 35%',
-                    amber: '38 92% 50%',
-                    rose: '347 77% 50%',
-                    slate: '215 20% 45%',
-                  };
-                  var foregrounds = {
-                    orange: '0 0% 9%',
-                    teal: '0 0% 9%',
-                    yellow: '0 0% 9%',
-                    cyan: '0 0% 9%',
-                    lime: '0 0% 9%',
-                    amber: '0 0% 9%'
-                  };
+                  const colors = ${ACCENT_COLORS_BOOT_JSON};
+                  var foregrounds = ${ACCENT_FOREGROUNDS_BOOT_JSON};
+                  function bootHexToHsl(hex) {
+                    var normalized = hex.replace('#', '');
+                    var r = parseInt(normalized.slice(0, 2), 16) / 255;
+                    var g = parseInt(normalized.slice(2, 4), 16) / 255;
+                    var b = parseInt(normalized.slice(4, 6), 16) / 255;
+                    var max = Math.max(r, g, b);
+                    var min = Math.min(r, g, b);
+                    var delta = max - min;
+                    var h = 0;
+                    var l = (max + min) / 2;
+                    var s = 0;
+                    if (delta !== 0) {
+                      s = l > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+                      if (max === r) h = ((g - b) / delta + (g < b ? 6 : 0)) / 6;
+                      else if (max === g) h = ((b - r) / delta + 2) / 6;
+                      else h = ((r - g) / delta + 4) / 6;
+                    }
+                    return {
+                      h: Math.round(h * 360),
+                      s: Math.round(s * 100),
+                      l: Math.round(l * 100)
+                    };
+                  }
+                  var accentHsl = colors[accentColor] || colors.purple;
+                  var accentFg = foregrounds[accentColor] || '0 0% 98%';
+                  if (accentColor.indexOf('custom:') === 0) {
+                    var customHex = accentColor.slice(7);
+                    if (/^#[0-9A-Fa-f]{6}$/.test(customHex)) {
+                      var hsl = bootHexToHsl(customHex);
+                      accentHsl = hsl.h + ' ' + hsl.s + '% ' + hsl.l + '%';
+                      accentFg = hsl.l > 58 ? '0 0% 9%' : '0 0% 98%';
+                    }
+                  }
                   document.documentElement.classList.add(theme);
                   document.documentElement.style.colorScheme = theme;
-                  document.documentElement.style.setProperty('--primary', colors[accentColor] || colors.purple);
-                  document.documentElement.style.setProperty('--ring', colors[accentColor] || colors.purple);
-                  document.documentElement.style.setProperty('--primary-foreground', foregrounds[accentColor] || '0 0% 98%');
+                  document.documentElement.style.setProperty('--primary', accentHsl);
+                  document.documentElement.style.setProperty('--ring', accentHsl);
+                  document.documentElement.style.setProperty('--primary-foreground', accentFg);
                   // Initialize motion preference for app-wide transitions.
                   const savedMotion = localStorage.getItem('motionLevel');
                   const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -185,13 +217,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
                   // Initialize font preference for UI.
                   const savedFont = localStorage.getItem('fontFamily');
-                  var fontStacks = {
-                    inter: "var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-                    system: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-                    rounded: "var(--font-nunito), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-                  };
+                  var fontStacks = ${APP_FONT_BOOT_STACKS_JSON};
                   if (savedFont && fontStacks[savedFont]) {
                     document.documentElement.style.setProperty('--app-font-family', fontStacks[savedFont]);
+                  }
+
+                  // Keep SSR locale cookie aligned with localStorage preference.
+                  var savedLocale = localStorage.getItem('locale');
+                  if (savedLocale) {
+                    document.cookie = '${LOCALE_COOKIE_NAME}=' + encodeURIComponent(savedLocale) + '; path=/; max-age=' + (365*24*60*60) + '; SameSite=Lax';
+                  }
+
+                  // Keep SSR icon library cookie aligned so nav icons do not morph after hydrate.
+                  var savedIconLibrary = localStorage.getItem('featherpanel_icon_library');
+                  if (savedIconLibrary === 'lucide' || savedIconLibrary === 'tabler' || savedIconLibrary === 'mdi' || savedIconLibrary === 'phosphor') {
+                    document.cookie = '${ICON_LIBRARY_COOKIE_NAME}=' + encodeURIComponent(savedIconLibrary) + '; path=/; max-age=' + (365*24*60*60) + '; SameSite=Lax';
                   }
 
                   // UI preference sync id (keeps theme/layout prefs aligned across tabs).
@@ -215,23 +255,31 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </head>
             <body className='bg-background text-foreground'>
                 <div dangerouslySetInnerHTML={{ __html: '<!-- FEATHERPANEL_APP_PLACEHOLDER_START -->' }} />
-                <AnalyticsScript enabled={analyticsEnabled} />
-                <SettingsProvider>
+                <SettingsProvider initialSettings={boot.settings} initialCore={boot.core}>
                     <ThemeProvider>
-                        <TranslationProvider>
-                            <SessionProvider>
-                                <PreferencesProvider>
-                                    <NotificationProvider>
-                                        <PluginAssets />
-                                        <ChunkLoadErrorHandler />
-                                        <SystemHealthCheck />
-                                        <PwaInstaller />
-                                        <AppContent>{children}</AppContent>
-                                        <Toaster richColors position='top-right' />
-                                    </NotificationProvider>
-                                </PreferencesProvider>
-                            </SessionProvider>
-                        </TranslationProvider>
+                        <PluginUiProvider>
+                            <TranslationProvider initialLocale={boot.locale} initialTranslations={boot.translations}>
+                                <Suspense fallback={null}>
+                                    <AnalyticsScript />
+                                </Suspense>
+                                <SessionProvider>
+                                    <PreferencesProvider>
+                                        <SidebarPrefsBootstrap iconLibrary={boot.iconLibrary}>
+                                            <NotificationProvider>
+                                                <FeatherPanelHost>
+                                                    <PluginAssets />
+                                                    <ChunkLoadErrorHandler />
+                                                    <SystemHealthCheck />
+                                                    <PwaInstaller />
+                                                    <AppContent>{children}</AppContent>
+                                                    <Toaster richColors position='top-right' />
+                                                </FeatherPanelHost>
+                                            </NotificationProvider>
+                                        </SidebarPrefsBootstrap>
+                                    </PreferencesProvider>
+                                </SessionProvider>
+                            </TranslationProvider>
+                        </PluginUiProvider>
                     </ThemeProvider>
                 </SettingsProvider>
                 <div dangerouslySetInnerHTML={{ __html: '<!-- FEATHERPANEL_APP_PLACEHOLDER_END -->' }} />

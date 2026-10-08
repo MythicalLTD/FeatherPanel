@@ -22,6 +22,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { Dialog, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
     Activity,
@@ -105,7 +106,7 @@ function getEventIconClass(event: string) {
     if (['stop', 'kill'].some((x) => e.includes(x))) return 'text-red-500 bg-red-500/10 border-red-500/20';
     if (e.includes('reboot') || e.includes('restart')) return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
     if (['subuser', 'user'].some((x) => e.includes(x))) return 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20';
-    if (e.includes('console') || e.includes('vnc')) return 'text-violet-500 bg-violet-500/10 border-violet-500/20';
+    if (e.includes('console') || e.includes('vnc')) return 'text-primary bg-primary/10 border-primary/20';
     if (['delete', 'deleted'].some((x) => e.includes(x))) return 'text-red-500 bg-red-500/10 border-red-500/20';
     if (e.includes('reinstall')) return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
     return 'text-primary bg-primary/10 border-primary/20';
@@ -170,7 +171,7 @@ export default function VdsActivitiesPage() {
 
                 const { data } = await axios.get(`/api/user/vm-instances/${id}/activities`, { params });
                 if (!data.success) {
-                    toast.error(data.message || 'Failed to fetch activities');
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'vds.activities.fetch_failed'));
                     return;
                 }
 
@@ -214,8 +215,8 @@ export default function VdsActivitiesPage() {
                     from: p.from || 0,
                     to: p.to || 0,
                 });
-            } catch {
-                toast.error(t('vds.activities.fetch_failed'));
+            } catch (err) {
+                toast.error(getApiErrorMessage(err, t, 'vds.activities.fetch_failed'));
             } finally {
                 setLoading(false);
             }
@@ -258,8 +259,8 @@ export default function VdsActivitiesPage() {
         { id: 'all', name: t('serverActivities.allEvents') },
         { id: 'power', name: t('serverActivities.filterNames.power') },
         { id: 'subuser', name: t('serverActivities.filterNames.subuser') },
-        { id: 'console', name: t('serverActivities.filterNames.file') || 'Console' },
-        { id: 'reinstall', name: t('vds.activities.filter.reinstall') || 'Reinstall' },
+        { id: 'console', name: t('serverActivities.filterNames.file') },
+        { id: 'reinstall', name: t('vds.activities.filter.reinstall') },
     ] as const;
 
     const selectedFilterLabel =
@@ -306,15 +307,12 @@ export default function VdsActivitiesPage() {
             <WidgetRenderer widgets={getWidgets('vds-activities', 'top-of-page')} />
 
             <PageHeader
-                title={t('navigation.items.activities') || 'VDS Activity Log'}
+                title={t('navigation.items.activities')}
                 description={
                     <div className='flex items-center gap-3'>
-                        <span>
-                            {t('vds.activities.description') ||
-                                'All power, subuser, backup and console actions for this VDS instance.'}
-                        </span>
+                        <span>{t('vds.activities.description')}</span>
                         <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
-                            {pagination.total_records} {t('serverActivities.events') || 'events'}
+                            {pagination.total_records} {t('serverActivities.events')}
                         </span>
                     </div>
                 }
@@ -338,7 +336,7 @@ export default function VdsActivitiesPage() {
                 <div className='group relative flex-1'>
                     <Search className='text-muted-foreground/80 group-focus-within:text-foreground absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transition-colors' />
                     <Input
-                        placeholder={t('serverActivities.searchPlaceholder') || 'Search events…'}
+                        placeholder={t('serverActivities.searchPlaceholder')}
                         className='h-14 pl-12 text-base'
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -349,7 +347,7 @@ export default function VdsActivitiesPage() {
                         variant='glass'
                         size='default'
                         onClick={openFilterDialog}
-                        className='flex h-14 min-w-48 items-center justify-between gap-3 rounded-xl border border-white/5 bg-[#0A0A0A]/20 px-6 text-base font-medium backdrop-blur-md transition-colors hover:bg-[#0A0A0A]/40 md:min-w-56'
+                        className='border-border/50 bg-card/30 hover:bg-card/50 flex h-14 min-w-48 items-center justify-between gap-3 rounded-xl border px-6 text-base font-medium backdrop-blur-md transition-colors md:min-w-56'
                     >
                         <SlidersHorizontal className='text-muted-foreground h-5 w-5 shrink-0' />
                         <span className='truncate'>{selectedFilterLabel}</span>
@@ -404,13 +402,11 @@ export default function VdsActivitiesPage() {
 
             {activities.length === 0 ? (
                 <EmptyState
-                    title={t('serverActivities.noActivitiesFound') || 'No Activity Found'}
+                    title={t('serverActivities.noActivitiesFound')}
                     description={
                         searchQuery || selectedEventFilter !== 'all'
-                            ? t('serverActivities.noActivitiesSearchDescription') ||
-                              'No events match your current filters or search.'
-                            : t('serverActivities.noActivitiesDescription') ||
-                              'No activity has been recorded for this instance yet.'
+                            ? t('serverActivities.noActivitiesSearchDescription')
+                            : t('serverActivities.noActivitiesDescription')
                     }
                     icon={Activity}
                     action={
@@ -463,7 +459,7 @@ export default function VdsActivitiesPage() {
                                             <span className='text-sm font-semibold'>
                                                 {activity.timestamp
                                                     ? formatRelativeTime(activity.timestamp, dateOpts)
-                                                    : '—'}
+                                                    : '-'}
                                             </span>
                                         </div>
                                         {activity.ip && (
@@ -592,10 +588,10 @@ export default function VdsActivitiesPage() {
                                         </span>
                                     </div>
                                     <DialogDescription className='text-xl font-medium opacity-70'>
-                                        VDS Activity —{' '}
+                                        VDS Activity -{' '}
                                         {selectedItem.timestamp
                                             ? formatDateTimeInTz(selectedItem.timestamp, dateOpts)
-                                            : '—'}
+                                            : '-'}
                                     </DialogDescription>
                                 </div>
                             </div>
@@ -625,7 +621,7 @@ export default function VdsActivitiesPage() {
                                         <span className='text-lg font-bold'>
                                             {selectedItem.timestamp
                                                 ? formatDateTimeInTz(selectedItem.timestamp, dateOpts)
-                                                : '—'}
+                                                : '-'}
                                         </span>
                                     </div>
                                     {selectedItem.ip && (

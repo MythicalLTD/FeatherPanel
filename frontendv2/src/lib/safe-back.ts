@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 /**
  * Infer a safe in-panel parent path for Cancel / Go back.
  *
- * Never use browser history for these actions — after visiting an external site
+ * Never use browser history for these actions - after visiting an external site
  * (or opening a bookmarked panel URL), history.back() can leave the panel.
  */
 export function inferParentPath(pathname: string): string {

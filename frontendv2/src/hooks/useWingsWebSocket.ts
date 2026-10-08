@@ -13,9 +13,12 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+import { reportPanelInteraction } from '@/lib/panel-analytics';
+
 import { useEffect, useRef, useState, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface WingsMessage {
     event: string;
@@ -63,6 +66,21 @@ export interface FileOperationEvent {
     args?: unknown[];
 }
 
+export interface CommandSuggestRequest {
+    id: string;
+    line: string;
+    cursor: number;
+}
+
+export interface CommandSuggestResponse {
+    id: string;
+    line: string;
+    cursor: number;
+    start: number;
+    end: number;
+    suggestions: string[];
+}
+
 interface WingsWebSocketOptions {
     serverUuid: string;
     onMessage?: (data: WingsMessage) => void;
@@ -78,6 +96,8 @@ interface WingsWebSocketOptions {
     onTransferStatus?: (status: string) => void;
     /** Calagopus file-op progress/completed/error/aborted events */
     onFileOperation?: (event: FileOperationEvent) => void;
+    /** Wings console Tab-completion replies (`command suggestions`). */
+    onCommandSuggestions?: (response: CommandSuggestResponse) => void;
     connect?: boolean;
 }
 
@@ -87,6 +107,7 @@ interface WingsWebSocketReturn {
     ping: number | null;
     stats: WingsStats | null;
     sendCommand: (command: string) => void;
+    suggestCommand: (request: CommandSuggestRequest) => void;
     sendPowerAction: (action: 'start' | 'stop' | 'restart' | 'kill') => Promise<void>;
     reconnect: () => void;
     requestStats: () => void;
@@ -111,13 +132,20 @@ export function useWingsWebSocket({
     onTransferLogs,
     onTransferStatus,
     onFileOperation,
+    onCommandSuggestions,
     connect: shouldConnect = true,
 }: WingsWebSocketOptions): WingsWebSocketReturn {
+    const { t } = useTranslation();
+    const tRef = useRef(t);
+    useEffect(() => {
+        tRef.current = t;
+    }, [t]);
+
     const wsRef = useRef<WebSocket | null>(null);
     const jwtTokenRef = useRef<string>('');
     const [isConnected, setIsConnected] = useState(false);
     const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>(
-        'disconnected',
+        'connecting',
     );
     const [ping, setPing] = useState<number | null>(null);
     const [stats, setStats] = useState<WingsStats | null>(null);
@@ -145,6 +173,7 @@ export function useWingsWebSocket({
     const onTransferLogsRef = useRef(onTransferLogs);
     const onTransferStatusRef = useRef(onTransferStatus);
     const onFileOperationRef = useRef(onFileOperation);
+    const onCommandSuggestionsRef = useRef(onCommandSuggestions);
     // Tracks toast ids raised for in-flight file operations so they can be dismissed on
     // socket close / unmount instead of being left dangling (e.g. a "progress" toast whose
     // "completed"/"error"/"aborted" event never arrives because the socket dropped).
@@ -165,6 +194,7 @@ export function useWingsWebSocket({
         onTransferLogsRef.current = onTransferLogs;
         onTransferStatusRef.current = onTransferStatus;
         onFileOperationRef.current = onFileOperation;
+        onCommandSuggestionsRef.current = onCommandSuggestions;
     }, [
         onMessage,
         onStats,
@@ -178,6 +208,7 @@ export function useWingsWebSocket({
         onTransferLogs,
         onTransferStatus,
         onFileOperation,
+        onCommandSuggestions,
     ]);
 
     const flushConsoleOutputQueue = useCallback(() => {
@@ -255,6 +286,7 @@ export function useWingsWebSocket({
     const sendCommand = useCallback(
         (command: string) => {
             if (wsRef.current?.readyState === WebSocket.OPEN) {
+                reportPanelInteraction('panel.console.command', 'sent');
                 console.log(`[Wings WS] Sending command: ${command}`);
                 wsRef.current.send(
                     JSON.stringify({
@@ -263,6 +295,7 @@ export function useWingsWebSocket({
                     }),
                 );
             } else {
+                reportPanelInteraction('panel.console.command', 'blocked');
                 console.error('[Wings WS] Cannot send command: WebSocket is not open', {
                     readyState: wsRef.current?.readyState,
                     status: connectionStatus,
@@ -271,6 +304,17 @@ export function useWingsWebSocket({
         },
         [connectionStatus],
     );
+
+    const suggestCommand = useCallback((request: CommandSuggestRequest) => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(
+                JSON.stringify({
+                    event: 'suggest command',
+                    args: [JSON.stringify(request)],
+                }),
+            );
+        }
+    }, []);
 
     const sendPowerAction = useCallback(
         async (action: 'start' | 'stop' | 'restart' | 'kill') => {
@@ -281,7 +325,7 @@ export function useWingsWebSocket({
     );
 
     /**
-     * Do not re-auth on the same socket — close and reconnect with a fresh JWT
+     * Do not re-auth on the same socket - close and reconnect with a fresh JWT
      * (matches useServersWebSocket / CHANGELOG guidance).
      */
     const refreshToken = useCallback(async () => {
@@ -365,7 +409,7 @@ export function useWingsWebSocket({
                 }
 
                 if (!response.data.success) {
-                    throw new Error(response.data.error_message || 'Failed to get JWT token');
+                    throw new Error(response.data.message || response.data.error_message || 'Failed to get JWT token');
                 }
 
                 const { token, connection_string } = response.data.data;
@@ -417,12 +461,14 @@ export function useWingsWebSocket({
                             console.log('[Wings WS] Authenticated successfully');
                             reconnectAttemptsRef.current = 0;
                             setIsConnected(true);
+                            reportPanelInteraction('panel.console.connection', 'connected');
                             setConnectionStatus('connected');
                             return;
                         }
 
                         // Handle auth error
                         if (data.event === 'auth_error' || data.event === 'auth error') {
+                            reportPanelInteraction('panel.console.connection', 'auth-failed');
                             console.error('[Wings WS] Authentication failed');
                             setConnectionStatus('error');
                             intentionalCloseRef.current = false;
@@ -430,7 +476,7 @@ export function useWingsWebSocket({
                             return;
                         }
 
-                        // Handle token expiring — full reconnect with new JWT (not in-place re-auth)
+                        // Handle token expiring - full reconnect with new JWT (not in-place re-auth)
                         if (data.event === 'token expiring') {
                             console.log('[Wings WS] Token expiring, refreshing via reconnect...');
                             if (onTokenExpiringRef.current) {
@@ -449,7 +495,7 @@ export function useWingsWebSocket({
                             return;
                         }
 
-                        // JWT errors are fatal — close and reconnect (do not leave a half-alive session)
+                        // JWT errors are fatal - close and reconnect (do not leave a half-alive session)
                         if (data.event === 'jwt error') {
                             const raw = (data.args?.[0] as string) || 'WebSocket authentication error.';
                             console.error('[Wings WS] JWT error:', raw);
@@ -466,6 +512,32 @@ export function useWingsWebSocket({
                         // Handle console output (batched off the WebSocket thread to avoid UI freezes)
                         if (data.event === 'console output' && onConsoleOutputRef.current) {
                             enqueueConsoleOutput((data.args?.[0] as string) || '');
+                            return;
+                        }
+
+                        // Console Tab-completion replies from Wings
+                        if (data.event === 'command suggestions' && onCommandSuggestionsRef.current) {
+                            try {
+                                const raw = data.args?.[0];
+                                const payload =
+                                    typeof raw === 'string'
+                                        ? (JSON.parse(raw) as CommandSuggestResponse)
+                                        : (raw as CommandSuggestResponse);
+                                if (payload && typeof payload === 'object') {
+                                    onCommandSuggestionsRef.current({
+                                        id: String(payload.id ?? ''),
+                                        line: String(payload.line ?? ''),
+                                        cursor: Number(payload.cursor ?? 0),
+                                        start: Number(payload.start ?? 0),
+                                        end: Number(payload.end ?? 0),
+                                        suggestions: Array.isArray(payload.suggestions)
+                                            ? payload.suggestions.map(String)
+                                            : [],
+                                    });
+                                }
+                            } catch (err) {
+                                console.error('[Wings WS] Failed to parse command suggestions:', err);
+                            }
                             return;
                         }
 
@@ -583,35 +655,44 @@ export function useWingsWebSocket({
                                 const toastId = `file-op-${operationId}`;
                                 if (data.event === 'operation progress') {
                                     trackFileOpToast(toastId);
-                                    toast.loading('File operation in progress…', { id: toastId, duration: 15000 });
+                                    toast.loading(tRef.current('files.messages.file_operation_progress'), {
+                                        id: toastId,
+                                        duration: 15000,
+                                    });
                                 } else if (data.event === 'operation completed') {
                                     untrackFileOpToast(toastId);
-                                    toast.success('File operation completed', { id: toastId });
+                                    toast.success(tRef.current('files.messages.file_operation_completed'), {
+                                        id: toastId,
+                                    });
                                 } else if (data.event === 'operation error') {
                                     untrackFileOpToast(toastId);
                                     const message =
                                         typeof data.args?.[1] === 'string' && data.args[1]
                                             ? data.args[1]
-                                            : 'File operation failed';
+                                            : tRef.current('files.messages.file_operation_failed');
                                     toast.error(message, { id: toastId });
                                 } else if (data.event === 'operation aborted') {
                                     untrackFileOpToast(toastId);
-                                    toast.message('File operation aborted', { id: toastId });
+                                    toast.message(tRef.current('files.messages.file_operation_aborted'), {
+                                        id: toastId,
+                                    });
                                 }
                             } else if (data.event === 'operation progress') {
-                                // No stable operation id — fire an untracked toast so it
+                                // No stable operation id - fire an untracked toast so it
                                 // cannot collide with or be bulk-dismissed by other ops.
-                                toast.loading('File operation in progress…', { duration: 15000 });
+                                toast.loading(tRef.current('files.messages.file_operation_progress'), {
+                                    duration: 15000,
+                                });
                             } else if (data.event === 'operation completed') {
-                                toast.success('File operation completed');
+                                toast.success(tRef.current('files.messages.file_operation_completed'));
                             } else if (data.event === 'operation error') {
                                 const message =
                                     typeof data.args?.[1] === 'string' && data.args[1]
                                         ? data.args[1]
-                                        : 'File operation failed';
+                                        : tRef.current('files.messages.file_operation_failed');
                                 toast.error(message);
                             } else if (data.event === 'operation aborted') {
-                                toast.message('File operation aborted');
+                                toast.message(tRef.current('files.messages.file_operation_aborted'));
                             }
                             return;
                         }
@@ -660,6 +741,7 @@ export function useWingsWebSocket({
                         return;
                     }
 
+                    reportPanelInteraction('panel.console.connection', 'disconnected');
                     setConnectionStatus('disconnected');
                     scheduleReconnect(establishConnection);
                 };
@@ -717,6 +799,7 @@ export function useWingsWebSocket({
     ]);
 
     const reconnect = useCallback(() => {
+        reportPanelInteraction('panel.console.connection', 'reconnect');
         reconnectAttemptsRef.current = 0;
         connectionBlockedRef.current = false;
         closeSocketIntentionally();
@@ -756,6 +839,7 @@ export function useWingsWebSocket({
         ping,
         stats,
         sendCommand,
+        suggestCommand,
         sendPowerAction,
         reconnect,
         requestStats,

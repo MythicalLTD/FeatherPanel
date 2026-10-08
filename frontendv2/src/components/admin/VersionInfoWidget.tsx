@@ -15,6 +15,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminWidgetLoading } from './AdminWidgetLoading';
+
 import { useEffect, useState } from 'react';
 import {
     Package,
@@ -28,6 +30,7 @@ import {
     RefreshCcw,
 } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
+import { Button } from '@/components/featherui/Button';
 import Link from 'next/link';
 import { ReleaseNotesPanel } from './ReleaseNotesPanel';
 import { IntegrityCheckDialog } from './IntegrityCheckDialog';
@@ -35,6 +38,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { adminSettingsApi } from '@/lib/admin-settings-api';
 import { isDockerUpdateTriggerLikelyStartedError } from '@/lib/is-docker-update-connection-loss';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { toast } from 'sonner';
 
 const UPDATE_PROGRESS_STORAGE_KEY = 'featherpanel:update_in_progress';
@@ -154,7 +158,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                 return;
             }
 
-            toast.error(response.message || t('admin.settings.docker_update.failed'));
+            toast.error(getApiErrorMessageFromPayload(response, t, 'admin.settings.docker_update.failed'));
         } catch (error: unknown) {
             if (isDockerUpdateTriggerLikelyStartedError(error)) {
                 if (typeof window !== 'undefined') {
@@ -164,22 +168,39 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                 setShowUpdateModal(true);
                 return;
             }
-            toast.error(t('admin.settings.docker_update.failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.settings.docker_update.failed'));
         } finally {
             setIsUpdatingDocker(false);
         }
     };
 
+    if (loading) {
+        return (
+            <PageCard
+                title={t('admin.version.title')}
+                description={t('admin.version.description')}
+                icon={Package}
+                className='space-y-4 p-4 sm:p-5 [&>div:first-child]:flex-wrap [&>div:first-child]:gap-3 [&>div:first-child]:pb-4'
+            >
+                <AdminWidgetLoading label={t('admin.version.title')} rows={2} />
+            </PageCard>
+        );
+    }
+
     return (
-        <PageCard title={t('admin.version.title')} description={t('admin.version.description')} icon={Package}>
+        <PageCard
+            title={t('admin.version.title')}
+            description={t('admin.version.description')}
+            icon={Package}
+            className='space-y-4 p-4 sm:p-5 [&>div:first-child]:flex-wrap [&>div:first-child]:gap-3 [&>div:first-child]:pb-4'
+        >
             <div className='space-y-4 md:space-y-6'>
                 <div className='grid gap-3 sm:grid-cols-2'>
-                    <div className='bg-secondary/30 border-border/50 relative overflow-hidden rounded-2xl border p-3 md:rounded-3xl md:p-4'>
-                        <div className='bg-primary/5 pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full blur-2xl' />
-                        <p className='text-muted-foreground relative text-[9px] font-black tracking-widest uppercase md:text-[10px]'>
+                    <div className='bg-muted/40 rounded-lg p-4'>
+                        <p className='text-muted-foreground relative text-xs font-medium'>
                             {t('admin.version.current_build')}
                         </p>
-                        <h4 className='relative mt-1 truncate text-lg font-black md:text-xl'>
+                        <h4 className='mt-1 text-xl font-semibold wrap-break-word'>
                             {loading ? '…' : current?.version || 'unknown'}
                         </h4>
                         {current?.release_name ? (
@@ -188,7 +209,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                             </p>
                         ) : null}
                         {current?.published_at ? (
-                            <p className='text-muted-foreground mt-1 text-[9px] font-medium md:text-[10px]'>
+                            <p className='text-muted-foreground mt-1 text-xs font-medium'>
                                 {t('admin.version.published_at', {
                                     date: new Date(
                                         current.published_at.includes('T')
@@ -199,29 +220,20 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                             </p>
                         ) : null}
                         <div className='mt-3 flex flex-wrap items-center gap-2'>
-                            <span className='bg-primary/20 text-primary border-primary/30 inline-block rounded-full border px-2 py-1 text-[9px] font-black tracking-widest uppercase md:px-3 md:text-[10px]'>
-                                {current?.type || 'Stable'}
-                            </span>
+                            <span className='text-muted-foreground text-xs'>{current?.type || 'Stable'}</span>
                             {current?.is_security_release ? (
-                                <span className='inline-block rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-1 text-[9px] font-black tracking-widest text-rose-500 uppercase md:px-3 md:text-[10px]'>
+                                <span className='inline-block rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-1 text-xs font-medium text-rose-500 md:px-3'>
                                     {t('admin.version.security_release')}
                                 </span>
                             ) : null}
                         </div>
                     </div>
 
-                    <div
-                        className={`relative overflow-hidden rounded-2xl border p-3 md:rounded-3xl md:p-4 ${
-                            !isLatest ? 'border-amber-500/30 bg-amber-500/5' : 'bg-secondary/30 border-border/50'
-                        }`}
-                    >
-                        {!isLatest && (
-                            <div className='pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-amber-500/15 blur-2xl' />
-                        )}
-                        <p className='text-muted-foreground relative text-[9px] font-black tracking-widest uppercase md:text-[10px]'>
+                    <div className={`rounded-lg p-4 ${!isLatest ? 'bg-amber-500/10' : 'bg-muted/40'}`}>
+                        <p className='text-muted-foreground relative text-xs font-medium'>
                             {t('admin.version.latest_build')}
                         </p>
-                        <h4 className='relative mt-1 truncate text-lg font-black md:text-xl'>
+                        <h4 className='mt-1 text-xl font-semibold wrap-break-word'>
                             {loading ? '…' : latest?.version || current?.version || t('admin.version.no_releases_yet')}
                         </h4>
                         {latest?.release_name ? (
@@ -230,7 +242,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                             </p>
                         ) : null}
                         {latest?.published_at ? (
-                            <p className='text-muted-foreground mt-1 text-[9px] font-medium md:text-[10px]'>
+                            <p className='text-muted-foreground mt-1 text-xs font-medium'>
                                 {t('admin.version.published_at', {
                                     date: new Date(
                                         latest.published_at.includes('T')
@@ -241,13 +253,9 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                             </p>
                         ) : null}
                         <div className='mt-3 flex flex-wrap items-center gap-2'>
-                            {latest?.type ? (
-                                <span className='bg-primary/20 text-primary border-primary/30 inline-block rounded-full border px-2 py-1 text-[9px] font-black tracking-widest uppercase md:px-3 md:text-[10px]'>
-                                    {latest.type}
-                                </span>
-                            ) : null}
+                            {latest?.type ? <span className='text-muted-foreground text-xs'>{latest.type}</span> : null}
                             {latest?.is_security_release ? (
-                                <span className='inline-block rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-1 text-[9px] font-black tracking-widest text-rose-500 uppercase md:px-3 md:text-[10px]'>
+                                <span className='inline-block rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-1 text-xs font-medium text-rose-500 md:px-3'>
                                     {t('admin.version.security_release')}
                                 </span>
                             ) : null}
@@ -262,9 +270,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                     >
                         <AlertTriangle className='mt-0.5 h-5 w-5 shrink-0' aria-hidden />
                         <div className='min-w-0 space-y-1'>
-                            <p className='text-[10px] font-black tracking-wide uppercase md:text-xs'>
-                                {t('admin.version.unlisted_update_server_badge')}
-                            </p>
+                            <p className='text-xs font-medium'>{t('admin.version.unlisted_update_server_badge')}</p>
                             <p className='text-[10px] leading-relaxed font-medium opacity-90 md:text-xs'>
                                 {t('admin.version.unlisted_update_server_hint')}
                             </p>
@@ -273,26 +279,27 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                 ) : null}
 
                 <div className='flex flex-col gap-3'>
-                    {!showUpdateSection ? (
-                        <div className='flex items-center justify-between gap-3 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 p-4 text-emerald-500'>
+                    {loading || !version ? (
+                        <p role='status' className='text-muted-foreground py-3 text-sm'>
+                            {loading ? t('common.loading') : t('admin.system_health.status.unavailable')}
+                        </p>
+                    ) : !showUpdateSection ? (
+                        <div className='flex items-center justify-between gap-3 rounded-lg bg-emerald-500/5 p-3 text-emerald-700 dark:text-emerald-400'>
                             <div className='flex items-center gap-3'>
                                 <CheckCircle2 className='h-5 w-5' />
                                 <p className='text-sm font-bold'>{t('admin.version.up_to_date')}</p>
                             </div>
-                            <Link
-                                href='/admin/updates'
-                                className='rounded-lg bg-emerald-500/10 px-3 py-1 text-[10px] font-black tracking-widest uppercase transition-colors hover:bg-emerald-500/20'
-                            >
-                                {t('common.view')}
-                            </Link>
+                            <Button variant='ghost' size='sm' asChild>
+                                <Link href='/admin/updates'>{t('common.view')}</Link>
+                            </Button>
                         </div>
                     ) : (
-                        <div className='flex flex-col gap-4 rounded-3xl border border-amber-500/20 bg-amber-500/5 p-5 text-amber-500'>
+                        <div className='flex flex-col gap-4 rounded-lg bg-amber-500/10 p-4 text-amber-800 dark:text-amber-400'>
                             <div className='flex items-center justify-between gap-3'>
                                 <div className='flex items-center gap-3'>
-                                    <Download className='h-5 w-5 animate-bounce' />
+                                    <Download className='h-5 w-5 shrink-0' />
                                     <div className='space-y-0.5'>
-                                        <p className='text-sm font-black tracking-tight uppercase'>
+                                        <p className='text-sm font-medium'>
                                             {useManualPullMessaging
                                                 ? t('admin.version.docker_pull_offer_title')
                                                 : isCurrentVersionUnknown
@@ -303,22 +310,21 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                                         </p>
                                     </div>
                                 </div>
-                                <Link
-                                    href='/admin/updates'
-                                    className='rounded-lg bg-amber-500 px-3 py-1 text-[10px] font-black tracking-widest text-amber-950 uppercase transition-colors hover:bg-amber-400'
-                                >
-                                    {t('admin_updates.title')}
-                                </Link>
+                                <Button size='sm' className='bg-amber-500 text-amber-950 hover:bg-amber-400' asChild>
+                                    <Link href='/admin/updates'>{t('admin_updates.title')}</Link>
+                                </Button>
                             </div>
-                            <button
+                            <Button
+                                variant='warning'
+                                className='w-full'
                                 onClick={() => setShowUpdateModal(true)}
                                 disabled={isUpdatingDocker || updateInProgress}
-                                className='w-full rounded-xl border border-amber-500/20 bg-amber-500/10 py-3 text-[10px] font-black tracking-widest text-amber-500 uppercase transition-colors hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-60'
+                                loading={isUpdatingDocker}
                             >
                                 {isUpdatingDocker
                                     ? t('admin.settings.docker_update.updating')
                                     : t('admin.version.update_now')}
-                            </button>
+                            </Button>
                         </div>
                     )}
 
@@ -333,7 +339,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                                             [version?.project?.min_supported_php, version?.project?.max_supported_php]
                                                 .filter(Boolean)
                                                 .join('–') ||
-                                            '—'}
+                                            '-'}
                                     </span>
                                 </p>
                             </div>
@@ -362,19 +368,20 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                     <div className='mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 md:gap-3'>
                         <Link
                             href='/admin/updates'
-                            className='bg-muted/20 border-border/50 hover:bg-muted/30 group flex items-center justify-center gap-2 rounded-xl border p-2.5 text-[9px] font-black tracking-widest uppercase transition-all md:p-3 md:text-[10px]'
+                            className='bg-muted/20 border-border/50 hover:bg-muted/30 group flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-medium transition-all md:p-3'
                         >
                             <RefreshCcw className='text-primary h-3.5 w-3.5 shrink-0 transition-transform duration-500 group-hover:rotate-180 md:h-4 md:w-4' />
                             <span className='truncate'>{t('admin_updates.title')}</span>
                         </Link>
-                        <button
+                        <Button
                             type='button'
+                            variant='outline'
+                            className='bg-muted/20 border-border/50 hover:bg-muted/30 group h-auto justify-center gap-2 rounded-xl p-2.5 text-xs font-medium md:p-3'
                             onClick={() => setIntegrityOpen(true)}
-                            className='bg-muted/20 border-border/50 hover:bg-muted/30 group flex items-center justify-center gap-2 rounded-xl border p-2.5 text-[9px] font-black tracking-widest uppercase transition-all md:p-3 md:text-[10px]'
                         >
-                            <ShieldCheck className='text-primary h-3.5 w-3.5 shrink-0 transition-transform group-hover:scale-110 md:h-4 md:w-4' />
+                            <ShieldCheck className='text-primary h-3.5 w-3.5 shrink-0 md:h-4 md:w-4' />
                             <span className='truncate'>{t('admin.version.verify_integrity')}</span>
-                        </button>
+                        </Button>
                         {(latest?.github_html_url || current?.github_html_url || version?.project?.github_url) && (
                             <a
                                 href={
@@ -384,7 +391,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                                 }
                                 target='_blank'
                                 rel='noopener noreferrer'
-                                className='bg-muted/20 border-border/50 hover:bg-muted/30 group flex items-center justify-center gap-2 rounded-xl border p-2.5 text-[9px] font-black tracking-widest uppercase transition-all md:p-3 md:text-[10px]'
+                                className='bg-muted/20 border-border/50 hover:bg-muted/30 group flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-medium transition-all md:p-3'
                             >
                                 <ExternalLink className='text-primary h-3.5 w-3.5 shrink-0 transition-transform group-hover:scale-110 md:h-4 md:w-4' />
                                 <span className='truncate'>{t('admin.version.view_on_github')}</span>
@@ -394,7 +401,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                             href='https://featherpanel.com'
                             target='_blank'
                             rel='noopener noreferrer'
-                            className='bg-muted/20 border-border/50 hover:bg-muted/30 group flex items-center justify-center gap-2 rounded-xl border p-2.5 text-[9px] font-black tracking-widest uppercase transition-all md:p-3 md:text-[10px]'
+                            className='bg-muted/20 border-border/50 hover:bg-muted/30 group flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-medium transition-all md:p-3'
                         >
                             <ExternalLink className='text-primary h-3.5 w-3.5 shrink-0 transition-transform group-hover:scale-110 md:h-4 md:w-4' />
                             <span className='truncate'>{t('admin.version.official_site')}</span>
@@ -402,7 +409,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                     </div>
 
                     {version?.last_checked && (
-                        <p className='text-muted-foreground text-center text-[9px] font-bold tracking-widest uppercase opacity-40'>
+                        <p className='text-muted-foreground text-xs'>
                             {t('admin.version.last_checked', { date: new Date(version.last_checked).toLocaleString() })}
                         </p>
                     )}
@@ -413,7 +420,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
 
             {showUpdateModal && !updateInProgress && (
                 <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm'>
-                    <div className='bg-background border-border animate-in fade-in zoom-in-95 w-full max-w-xl rounded-2xl border shadow-2xl duration-300 md:rounded-3xl'>
+                    <div className='bg-background border-border animate-in fade-in zoom-in-95 w-full max-w-xl rounded-2xl border shadow-2xl duration-300 md:rounded-2xl'>
                         <div className='border-border bg-card/50 border-b p-4 backdrop-blur-xl md:p-6'>
                             <h2 className='text-lg font-black md:text-2xl'>
                                 {t('admin.settings.docker_update.confirm_modal.title')}
@@ -423,21 +430,14 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                             </p>
                         </div>
                         <div className='flex justify-end gap-2 p-4 md:p-6'>
-                            <button
-                                onClick={() => setShowUpdateModal(false)}
-                                className='border-border hover:bg-muted rounded-xl border px-4 py-2 text-sm font-semibold transition-colors md:px-6 md:py-3 md:text-base'
-                            >
+                            <Button variant='outline' onClick={() => setShowUpdateModal(false)}>
                                 {t('admin.settings.docker_update.confirm_modal.cancel')}
-                            </button>
-                            <button
-                                onClick={handleUpdateNow}
-                                disabled={isUpdatingDocker}
-                                className='bg-primary text-primary-foreground rounded-xl px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 md:px-6 md:py-3 md:text-base'
-                            >
+                            </Button>
+                            <Button onClick={handleUpdateNow} disabled={isUpdatingDocker} loading={isUpdatingDocker}>
                                 {isUpdatingDocker
                                     ? t('admin.settings.docker_update.updating')
                                     : t('admin.settings.docker_update.confirm_modal.confirm')}
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -445,7 +445,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
 
             {showUpdateModal && updateInProgress && (
                 <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm'>
-                    <div className='bg-background border-border animate-in fade-in zoom-in-95 w-full max-w-xl rounded-2xl border shadow-2xl duration-300 md:rounded-3xl'>
+                    <div className='bg-background border-border animate-in fade-in zoom-in-95 w-full max-w-xl rounded-2xl border shadow-2xl duration-300 md:rounded-2xl'>
                         <div className='border-border bg-card/50 flex items-center justify-between border-b p-4 backdrop-blur-xl md:p-6'>
                             <div>
                                 <h2 className='text-lg font-black md:text-2xl'>

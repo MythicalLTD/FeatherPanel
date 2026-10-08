@@ -26,9 +26,11 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Mail\templates\Welcome;
+use App\Helpers\PanelIpBlockGuard;
 use App\Helpers\UserDeviceTracker;
 use App\Mail\templates\VerifyEmail;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\SessionCookieHelper;
 use App\Helpers\EmailDomainValidator;
 use App\Plugins\Events\Events\AuthEvent;
 use App\Helpers\AbuseIPDBRegistrationGuard;
@@ -226,6 +228,24 @@ class RegisterController
         }
 
         $clientIp = CloudFlareRealIP::getRealIP();
+        $ipBanResponse = PanelIpBlockGuard::assertRegistrationAllowed($clientIp);
+        if ($ipBanResponse !== null) {
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    AuthEvent::onAuthRegistrationFailed(),
+                    [
+                        'email' => $data['email'],
+                        'username' => $data['username'],
+                        'reason' => PanelIpBlockGuard::ERROR_CODE,
+                        'ip_address' => $clientIp,
+                    ]
+                );
+            }
+
+            return $ipBanResponse;
+        }
+
         $abuseDecision = AbuseIPDBRegistrationGuard::evaluate($clientIp);
         if (AbuseIPDBRegistrationGuard::shouldBlock($abuseDecision)) {
             global $eventManager;
@@ -345,7 +365,7 @@ class RegisterController
             // Set session/cookie
             if (isset($createdUser['remember_token'])) {
                 $token = $createdUser['remember_token'];
-                setcookie('remember_token', $token, time() + 60 * 60 * 24 * 30, '/');
+                SessionCookieHelper::set($token, time() + 60 * 60 * 24 * 30);
                 User::updateUser($createdUser['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
 
                 // Create login activity (user is automatically logged in)

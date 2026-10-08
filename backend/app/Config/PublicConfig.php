@@ -71,6 +71,10 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::APP_ACCENT_COLOR_LOCK => 'false',
             ConfigInterface::APP_THEME_DEFAULT => 'dark',
             ConfigInterface::APP_THEME_LOCK => 'false',
+            ConfigInterface::APP_THEME_PACK_DEFAULT => 'default',
+            ConfigInterface::APP_THEME_PACK_LOCK => 'false',
+            ConfigInterface::APP_UI_PACK_DEFAULT => '',
+            ConfigInterface::APP_UI_PACK_LOCK => 'false',
             // background type: aurora, gradient, solid, image, pattern
             ConfigInterface::APP_BACKGROUND_TYPE_DEFAULT => 'pattern',
             ConfigInterface::APP_BACKGROUND_TYPE_LOCK => 'false',
@@ -101,8 +105,8 @@ class PublicConfig extends ConfigFactory
 
             // PWA Settings
             ConfigInterface::APP_PWA_ENABLED => 'false',
-            ConfigInterface::APP_PWA_SHORT_NAME => 'FeatherPanel',
-            ConfigInterface::APP_PWA_DESCRIPTION => 'Manage your game servers on the go.',
+            ConfigInterface::APP_PWA_SHORT_NAME => '',
+            ConfigInterface::APP_PWA_DESCRIPTION => '',
             ConfigInterface::APP_PWA_THEME_COLOR => '#000000',
             ConfigInterface::APP_PWA_BG_COLOR => '#ffffff',
 
@@ -181,6 +185,10 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::SERVER_ALLOW_USER_MADE_IMPORT => 'false',
             ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL => 'false',
             ConfigInterface::SERVER_ALLOW_USER_MADE_SUBDOMAINS => 'false',
+            ConfigInterface::SERVER_AUTO_START_ON_NODE_RECONNECT => 'true',
+            ConfigInterface::SERVER_AUTO_START_STAGGER_SECONDS => '5',
+            ConfigInterface::SERVER_AUTO_START_INITIAL_DELAY_SECONDS => '15',
+            ConfigInterface::SERVER_ALLOW_USER_AUTO_START => 'false',
             ConfigInterface::SERVER_HIDE_IPS => 'false',
             ConfigInterface::FILE_TRASH_ENABLED => 'false',
             ConfigInterface::FILE_TRASH_MAX_SIZE_MB => '512',
@@ -242,6 +250,22 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::LOGIN_DEFAULT_METHOD => 'local',
             ConfigInterface::LOGIN_METHODS_ORDER => 'local,passkey,ldap,email_code,discord,oidc',
             ConfigInterface::LOGIN_HIDDEN_METHODS => '',
+
+            ConfigInterface::AUTH_SHELL_TAGLINE => '',
+            ConfigInterface::AUTH_ASIDE_TITLE => '',
+            ConfigInterface::AUTH_LOGIN_HEADLINE => '',
+            ConfigInterface::AUTH_LOGIN_SUBHEADLINE => '',
+            ConfigInterface::AUTH_REGISTER_HEADLINE => '',
+            ConfigInterface::AUTH_REGISTER_SUBHEADLINE => '',
+            ConfigInterface::AUTH_SSO_HEADLINE => '',
+            ConfigInterface::AUTH_SSO_SUBHEADLINE => '',
+            ConfigInterface::AUTH_SHOW_QR_LOGIN => 'true',
+            ConfigInterface::AUTH_SHOW_MARKETING_PANEL => 'true',
+            ConfigInterface::AUTH_ASIDE_IMAGE_URL => '',
+            ConfigInterface::AUTH_FORM_DENSITY => 'compact',
+            ConfigInterface::AUTH_SECONDARY_LAYOUT => 'chips',
+            ConfigInterface::AUTH_SHOW_THEME_CUSTOMIZER => 'true',
+            ConfigInterface::AUTH_FOOTER_STYLE => 'full',
         ];
     }
 }

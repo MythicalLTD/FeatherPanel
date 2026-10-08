@@ -18,10 +18,10 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { getFeatherpanelApiErrorMessage } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { AlertTriangle, ArrowLeftRight, ChevronRight, Loader2, Search, ShieldCheck } from 'lucide-react';
@@ -99,7 +99,7 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                 setSourceDaemonType((node.daemon_type as DaemonType) ?? null);
                 setSourceCapabilities((node.capabilities as DaemonCapabilitiesMap) ?? null);
             } catch {
-                // Ignore — backups option stays hidden when caps are unknown.
+                // Ignore - backups option stays hidden when caps are unknown.
             }
         })();
         return () => {
@@ -132,8 +132,8 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
             });
             const list = (data?.data?.nodes || []) as ApiNode[];
             setNodes(list.filter((n) => n.id !== server.node_id));
-        } catch {
-            toast.error(t('admin.servers.transfer.fetch_nodes_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.transfer.fetch_nodes_failed'));
         } finally {
             setLoadingNodes(false);
         }
@@ -165,8 +165,8 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                 },
             });
             setAllocations(data.data.allocations || []);
-        } catch {
-            toast.error(t('admin.servers.transfer.fetch_allocations_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.transfer.fetch_allocations_failed'));
         } finally {
             setLoadingAllocations(false);
         }
@@ -224,7 +224,7 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
             onCompleted?.();
         } catch (error) {
             console.error('Error initiating transfer:', error);
-            const message = getFeatherpanelApiErrorMessage(error) ?? t('admin.servers.messages.transfer_failed');
+            const message = getApiErrorMessage(error, t, 'admin.servers.messages.transfer_failed');
             setTransferError(message);
             toast.error(message);
         } finally {
@@ -234,14 +234,21 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
 
     return (
         <>
-            <HeadlessModal
-                isOpen={open}
+            <Dialog
+                open={open}
                 onClose={() => !submitting && onOpenChange(false)}
-                title={t('admin.servers.transfer.title')}
-                description={t('admin.servers.transfer.description')}
+                onOpenChange={(next) => {
+                    if (!next && !submitting) {
+                        onOpenChange(false);
+                    }
+                }}
                 className='max-w-xl'
             >
-                <div className='space-y-6 px-6 pb-6'>
+                <DialogHeader>
+                    <DialogTitle>{t('admin.servers.transfer.title')}</DialogTitle>
+                    <DialogDescription>{t('admin.servers.transfer.description')}</DialogDescription>
+                </DialogHeader>
+                <div className='space-y-6'>
                     {server && (
                         <p className='text-muted-foreground text-sm'>
                             <span className='text-foreground font-medium'>{server.name}</span>
@@ -278,7 +285,7 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                                     {loadingPreview ? (
                                         <Loader2 className='inline h-3.5 w-3.5 animate-spin' />
                                     ) : (
-                                        (freeOnDestination ?? '—')
+                                        (freeOnDestination ?? '-')
                                     )}
                                 </span>
                             </p>
@@ -361,11 +368,10 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                                     />
                                     <div>
                                         <p className='text-sm font-medium'>
-                                            {t('admin.servers.transfer.include_backups') || 'Include backups'}
+                                            {t('admin.servers.transfer.include_backups')}
                                         </p>
                                         <p className='text-muted-foreground mt-0.5 text-xs leading-relaxed'>
-                                            {t('admin.servers.transfer.include_backups_help') ||
-                                                'Transfer successful backups to the destination node (Calagopus).'}
+                                            {t('admin.servers.transfer.include_backups_help')}
                                         </p>
                                     </div>
                                 </label>
@@ -379,12 +385,10 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                                         />
                                         <div>
                                             <p className='text-sm font-medium'>
-                                                {t('admin.servers.transfer.delete_backups') ||
-                                                    'Delete backups on source'}
+                                                {t('admin.servers.transfer.delete_backups')}
                                             </p>
                                             <p className='text-muted-foreground mt-0.5 text-xs leading-relaxed'>
-                                                {t('admin.servers.transfer.delete_backups_help') ||
-                                                    'Remove transferred backups from the source node after a successful transfer.'}
+                                                {t('admin.servers.transfer.delete_backups_help')}
                                             </p>
                                         </div>
                                     </label>
@@ -459,14 +463,21 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                         </Button>
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={nodeModalOpen}
+            <Dialog
+                open={nodeModalOpen}
                 onClose={() => setNodeModalOpen(false)}
-                title={t('admin.servers.transfer.destination_node')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setNodeModalOpen(false);
+                    }
+                }}
             >
-                <div className='space-y-4 px-6 pb-6'>
+                <DialogHeader>
+                    <DialogTitle>{t('admin.servers.transfer.destination_node')}</DialogTitle>
+                </DialogHeader>
+                <div className='space-y-4'>
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
@@ -510,14 +521,21 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                         )}
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={allocationModalOpen}
+            <Dialog
+                open={allocationModalOpen}
                 onClose={() => setAllocationModalOpen(false)}
-                title={t('admin.servers.transfer.destination_allocation')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setAllocationModalOpen(false);
+                    }
+                }}
             >
-                <div className='space-y-4 px-6 pb-6'>
+                <DialogHeader>
+                    <DialogTitle>{t('admin.servers.transfer.destination_allocation')}</DialogTitle>
+                </DialogHeader>
+                <div className='space-y-4'>
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
@@ -571,7 +589,7 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                         )}
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
         </>
     );
 }

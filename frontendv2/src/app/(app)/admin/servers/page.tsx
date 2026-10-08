@@ -18,8 +18,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect, useCallback, type ReactNode, type ElementType } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
@@ -75,7 +76,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select-native';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { TransferServerDialog } from '@/components/admin/TransferServerDialog';
@@ -235,7 +236,7 @@ export default function ServersPage() {
             });
         } catch (error) {
             console.error('Error fetching servers:', error);
-            toast.error(t('admin.servers.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -338,11 +339,7 @@ export default function ServersPage() {
             setConfirmDeleteId(null);
         } catch (error) {
             console.error('Error deleting server:', error);
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.servers.messages.delete_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.messages.delete_failed'));
         } finally {
             setDeleting(false);
         }
@@ -359,7 +356,7 @@ export default function ServersPage() {
             }
         } catch (error) {
             console.error('Error fetching server details:', error);
-            toast.error(t('admin.servers.messages.fetch_details_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.messages.fetch_details_failed'));
         }
     };
 
@@ -371,7 +368,7 @@ export default function ServersPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error cancelling transfer:', error);
-            toast.error(t('admin.servers.messages.transfer_cancel_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.messages.transfer_cancel_failed'));
         } finally {
             setCancellingTransferId(null);
         }
@@ -418,7 +415,7 @@ export default function ServersPage() {
     };
 
     const formatBackupLimit = (limit: number | undefined) => {
-        if (limit === undefined || limit === null) return '—';
+        if (limit === undefined || limit === null) return '-';
         if (limit === 0) return t('admin.servers.form.disabled');
         return String(limit);
     };
@@ -1300,11 +1297,18 @@ export default function ServersPage() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            <HeadlessModal
-                isOpen={isOwnerFilterModalOpen}
+            <Dialog
+                open={isOwnerFilterModalOpen}
                 onClose={() => setIsOwnerFilterModalOpen(false)}
-                title={t('admin.servers.filters.user')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsOwnerFilterModalOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('admin.servers.filters.user')}</DialogTitle>
+                </DialogHeader>
                 <div className='space-y-4'>
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
@@ -1372,13 +1376,20 @@ export default function ServersPage() {
                         </Button>
                     )}
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={isNodeFilterModalOpen}
+            <Dialog
+                open={isNodeFilterModalOpen}
                 onClose={() => setIsNodeFilterModalOpen(false)}
-                title={t('admin.servers.filters.node')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsNodeFilterModalOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('admin.servers.filters.node')}</DialogTitle>
+                </DialogHeader>
                 <div className='space-y-4'>
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
@@ -1443,13 +1454,20 @@ export default function ServersPage() {
                         </Button>
                     )}
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={isRealmFilterModalOpen}
+            <Dialog
+                open={isRealmFilterModalOpen}
                 onClose={() => setIsRealmFilterModalOpen(false)}
-                title={t('admin.servers.filters.realm')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsRealmFilterModalOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('admin.servers.filters.realm')}</DialogTitle>
+                </DialogHeader>
                 <div className='space-y-4'>
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
@@ -1524,13 +1542,20 @@ export default function ServersPage() {
                         </Button>
                     )}
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={isSpellFilterModalOpen}
+            <Dialog
+                open={isSpellFilterModalOpen}
                 onClose={() => setIsSpellFilterModalOpen(false)}
-                title={t('admin.servers.filters.spell')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsSpellFilterModalOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('admin.servers.filters.spell')}</DialogTitle>
+                </DialogHeader>
                 <div className='space-y-4'>
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
@@ -1610,13 +1635,20 @@ export default function ServersPage() {
                         </Button>
                     )}
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={isLocationFilterModalOpen}
+            <Dialog
+                open={isLocationFilterModalOpen}
                 onClose={() => setIsLocationFilterModalOpen(false)}
-                title={t('admin.servers.filters.location')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsLocationFilterModalOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('admin.servers.filters.location')}</DialogTitle>
+                </DialogHeader>
                 <div className='space-y-4'>
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
@@ -1696,7 +1728,7 @@ export default function ServersPage() {
                         </Button>
                     )}
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
             <TransferServerDialog
                 server={transferServer}

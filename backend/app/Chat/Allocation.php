@@ -355,7 +355,6 @@ class Allocation
 
         $pdo = Database::getPdoConnection();
         $sql = 'SELECT id FROM ' . self::$table . ' WHERE node_id = :node_id AND server_id IS NULL';
-        $params = ['node_id' => $nodeId];
 
         $excludeIds = array_values(array_filter(
             array_map('intval', $excludeIds),
@@ -363,8 +362,11 @@ class Allocation
         ));
 
         if (!empty($excludeIds)) {
-            $placeholders = implode(',', array_fill(0, count($excludeIds), '?'));
-            $sql .= ' AND id NOT IN (' . $placeholders . ')';
+            $placeholders = [];
+            foreach ($excludeIds as $i => $excludeId) {
+                $placeholders[] = ':exclude_' . $i;
+            }
+            $sql .= ' AND id NOT IN (' . implode(',', $placeholders) . ')';
         }
 
         $sql .= ' ORDER BY ip ASC, port ASC LIMIT ' . (int) $count;
@@ -372,10 +374,8 @@ class Allocation
         $stmt = $pdo->prepare($sql);
         $stmt->bindValue('node_id', $nodeId, \PDO::PARAM_INT);
 
-        $paramIndex = 1;
-        foreach ($excludeIds as $excludeId) {
-            $stmt->bindValue($paramIndex, $excludeId, \PDO::PARAM_INT);
-            ++$paramIndex;
+        foreach ($excludeIds as $i => $excludeId) {
+            $stmt->bindValue('exclude_' . $i, $excludeId, \PDO::PARAM_INT);
         }
 
         $stmt->execute();

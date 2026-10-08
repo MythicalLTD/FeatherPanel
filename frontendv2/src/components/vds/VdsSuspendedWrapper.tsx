@@ -49,11 +49,10 @@ export function VdsSuspendedWrapper({ children }: VdsSuspendedWrapperProps) {
 
                                 <div className='space-y-3'>
                                     <h2 className='text-2xl font-bold tracking-tight text-amber-500 md:text-3xl'>
-                                        {t('vds.suspended_banner.title') || 'This VDS is suspended'}
+                                        {t('vds.suspended_banner.title')}
                                     </h2>
                                     <p className='text-muted-foreground mx-auto max-w-md text-lg'>
-                                        {t('vds.suspended_banner.message') ||
-                                            'Access to this VDS has been temporarily restricted. Contact support for details.'}
+                                        {t('vds.suspended_banner.message')}
                                     </p>
                                 </div>
 
@@ -65,13 +64,13 @@ export function VdsSuspendedWrapper({ children }: VdsSuspendedWrapperProps) {
                                             onClick={() => window.open(supportUrl, '_blank')}
                                         >
                                             <AlertTriangle className='mr-2 h-4 w-4' />
-                                            {t('servers.suspended_banner.contact_support') || 'Contact support'}
+                                            {t('servers.suspended_banner.contact_support')}
                                         </Button>
                                     )}
                                     <Link href='/dashboard'>
                                         <Button variant='outline' className='w-full sm:w-auto'>
                                             <Home className='mr-2 h-4 w-4' />
-                                            {t('servers.suspended_banner.back_to_dashboard') || 'Back to dashboard'}
+                                            {t('servers.suspended_banner.back_to_dashboard')}
                                         </Button>
                                     </Link>
                                 </div>

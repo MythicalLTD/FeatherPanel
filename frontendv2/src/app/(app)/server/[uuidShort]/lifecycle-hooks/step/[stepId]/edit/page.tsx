@@ -36,8 +36,11 @@ import {
     type StepFormState,
 } from '../../../form-utils';
 import type { LifecycleHookStep, LifecycleHookType } from '@/types/server';
-import { parseLifecycleHookType } from '@/types/server';
+import { parseLifecycleHookType, LIFECYCLE_HOOK_TYPES_WITHOUT_CONTAINER } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
+import { buildBackupPayload } from '@/components/server/backup/backup-payload';
+import { useServerDatabases } from '../../../useServerDatabases';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 type HooksApi = {
     success: boolean;
@@ -59,6 +62,7 @@ export default function EditLifecycleHookStepPage() {
     const { t } = useTranslation();
 
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
+    const databases = useServerDatabases(uuidShort);
 
     const canRead = hasPermission('schedule.read');
     const canUpdate = hasPermission('schedule.update');
@@ -79,6 +83,7 @@ export default function EditLifecycleHookStepPage() {
             pre_start: t('lifecycleHooks.hookTypes.preStart'),
             pre_stop: t('lifecycleHooks.hookTypes.preStop'),
             post_start: t('lifecycleHooks.hookTypes.postStart'),
+            post_stop: t('lifecycleHooks.hookTypes.postStop'),
             server_crash: t('lifecycleHooks.hookTypes.serverCrash'),
         }),
         [t],
@@ -89,7 +94,9 @@ export default function EditLifecycleHookStepPage() {
             ? t('lifecycleHooks.stepEdit.descriptionCrash')
             : hookType === 'post_start'
               ? t('lifecycleHooks.stepEdit.descriptionPostStart')
-              : t('lifecycleHooks.stepEdit.description');
+              : hookType === 'post_stop'
+                ? t('lifecycleHooks.stepEdit.descriptionPostStop')
+                : t('lifecycleHooks.stepEdit.description');
 
     const back = React.useCallback(() => {
         router.push(`/server/${uuidShort}/lifecycle-hooks`);
@@ -112,8 +119,8 @@ export default function EditLifecycleHookStepPage() {
                         setForm(null);
                     }
                 }
-            } catch {
-                if (!cancelled) toast.error(t('lifecycleHooks.messages.fetchFailed'));
+            } catch (error) {
+                if (!cancelled) toast.error(getApiErrorMessage(error, t, 'lifecycleHooks.messages.fetchFailed'));
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -164,6 +171,10 @@ export default function EditLifecycleHookStepPage() {
                 return;
             }
         }
+        if (form.task_type === 'backup' && buildBackupPayload(form.backup) === null) {
+            toast.error(t('serverTasks.selectAtLeastOneDatabase'));
+            return;
+        }
         if (form.task_type === 'http_request' && form.http_url.trim() === '') {
             toast.error(t('lifecycleHooks.messages.urlRequired'));
             return;
@@ -181,8 +192,8 @@ export default function EditLifecycleHookStepPage() {
                 if (form.http_headers_json.trim() !== '') JSON.parse(form.http_headers_json);
                 if (form.http_query_json.trim() !== '') JSON.parse(form.http_query_json);
             }
-        } catch {
-            toast.error(t('lifecycleHooks.messages.invalidJson'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'lifecycleHooks.messages.invalidJson'));
             return;
         }
 
@@ -203,7 +214,7 @@ export default function EditLifecycleHookStepPage() {
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message?: string }>;
-            toast.error(axiosError.response?.data?.message || t('lifecycleHooks.messages.stepUpdateFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'lifecycleHooks.messages.stepUpdateFailed'));
         } finally {
             setSaving(false);
         }
@@ -316,6 +327,8 @@ export default function EditLifecycleHookStepPage() {
                         onCancel={back}
                         submitLabel={t('lifecycleHooks.form.saveStep')}
                         containerShellEnabled={containerShellEnabled}
+                        databases={databases}
+                        allowContainerTasks={!LIFECYCLE_HOOK_TYPES_WITHOUT_CONTAINER.includes(hookType)}
                     />
                 </PageCard>
             </div>

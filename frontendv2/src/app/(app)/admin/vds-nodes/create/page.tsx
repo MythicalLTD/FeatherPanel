@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -43,6 +43,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn } from '@/lib/utils';
 import { safeBack } from '@/lib/safe-back';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface Location {
     id: number;
@@ -161,9 +162,9 @@ export default function CreateVdsNodePage() {
                     a[1].localeCompare(b[1]),
                 );
                 setCountryCodes(Object.fromEntries(sorted));
-            } catch {
+            } catch (error) {
                 if (!cancelled) {
-                    toast.error(t('admin.locations.messages.country_codes_failed'));
+                    toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.country_codes_failed'));
                 }
             }
         };
@@ -245,11 +246,7 @@ export default function CreateVdsNodePage() {
             }
         } catch (error) {
             console.error('Error creating VDS node:', error);
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.vdsNodes.messages.create_failed') || t('admin.vdsNodes.messages.fetch_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.messages.create_failed'));
         } finally {
             setLoading(false);
         }
@@ -283,11 +280,7 @@ export default function CreateVdsNodePage() {
             setLocationModalOpen(false);
             toast.success(t('admin.locations.messages.created'));
         } catch (error: unknown) {
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.locations.messages.create_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.create_failed'));
         } finally {
             setCreatingLocation(false);
         }
@@ -311,7 +304,7 @@ export default function CreateVdsNodePage() {
 
             <WidgetRenderer widgets={getWidgets('admin-vds-nodes-create', 'after-header')} />
 
-            <form onSubmit={handleSubmit} className='mt-8 space-y-8'>
+            <form onSubmit={handleSubmit} className='mt-8 space-y-8' data-fp-save-shortcut>
                 <div className='grid grid-cols-1 gap-8 lg:grid-cols-2'>
                     <div className='space-y-8'>
                         <PageCard title={t('admin.vdsNodes.form.basic_details')} icon={Server}>
@@ -709,7 +702,7 @@ export default function CreateVdsNodePage() {
                         </div>
 
                         {locationPickerMode === 'create' ? (
-                            <form onSubmit={handleCreateLocationInline} className='space-y-4'>
+                            <form onSubmit={handleCreateLocationInline} className='space-y-4' data-fp-save-shortcut>
                                 <div className='space-y-2'>
                                     <Label htmlFor='vds-inline-loc-name'>{t('admin.locations.form.name')} *</Label>
                                     <Input

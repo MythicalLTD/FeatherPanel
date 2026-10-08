@@ -23,7 +23,8 @@ import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Label } from '@/components/ui/label';
 import { HeadlessSelect } from '@/components/ui/headless-select';
-import type { LifecycleTaskType } from '@/types/server';
+import type { Database, LifecycleTaskType } from '@/types/server';
+import { BackupTaskFields } from '@/components/server/backup/BackupTaskFields';
 import { DiscordEmbedBuilder } from './DiscordEmbedBuilder';
 import type { StepFormState } from './form-utils';
 
@@ -36,6 +37,8 @@ export function LifecycleStepForm({
     onCancel,
     submitLabel,
     containerShellEnabled = false,
+    allowContainerTasks = true,
+    databases = [],
 }: {
     form: StepFormState;
     setForm: React.Dispatch<React.SetStateAction<StepFormState>>;
@@ -46,6 +49,10 @@ export function LifecycleStepForm({
     submitLabel: string;
     /** When false, Container Shell is hidden from the task-type picker (admin security flag). */
     containerShellEnabled?: boolean;
+    /** False for hooks that fire after the container stopped (container steps cannot run there). */
+    allowContainerTasks?: boolean;
+    /** Server databases offered by the database / full backup kinds. */
+    databases?: Database[];
 }) {
     const { t } = useTranslation();
 
@@ -53,6 +60,7 @@ export function LifecycleStepForm({
         const options: { id: LifecycleTaskType; name: string }[] = [
             { id: 'container_command', name: t('lifecycleHooks.taskTypes.containerCommand') },
             { id: 'discord_webhook', name: t('lifecycleHooks.taskTypes.discordWebhook') },
+            { id: 'backup', name: t('lifecycleHooks.taskTypes.backup') },
             { id: 'http_request', name: t('lifecycleHooks.taskTypes.httpRequest') },
             { id: 'sleep', name: t('lifecycleHooks.taskTypes.sleep') },
         ];
@@ -62,11 +70,14 @@ export function LifecycleStepForm({
                 name: t('lifecycleHooks.taskTypes.containerShell'),
             });
         }
+        if (!allowContainerTasks) {
+            return options.filter((o) => o.id !== 'container_command' && o.id !== 'container_shell');
+        }
         return options;
-    }, [t, containerShellEnabled, form.task_type]);
+    }, [t, containerShellEnabled, allowContainerTasks, form.task_type]);
 
     return (
-        <form onSubmit={onSubmit} className='space-y-6'>
+        <form onSubmit={onSubmit} className='space-y-6' data-fp-save-shortcut>
             <div className='space-y-2'>
                 <Label>{t('lifecycleHooks.form.taskType')}</Label>
                 <HeadlessSelect
@@ -129,6 +140,23 @@ export function LifecycleStepForm({
                         <p className='text-muted-foreground text-[11px]'>{t('lifecycleHooks.form.shellTimeoutHint')}</p>
                     </div>
                 </>
+            )}
+
+            {form.task_type === 'backup' && (
+                <div className='space-y-3'>
+                    <BackupTaskFields
+                        fields={form.backup}
+                        setFields={(update) =>
+                            setForm((current) => ({
+                                ...current,
+                                backup: typeof update === 'function' ? update(current.backup) : update,
+                            }))
+                        }
+                        databases={databases}
+                        disabled={saving}
+                    />
+                    <p className='text-muted-foreground text-[11px]'>{t('lifecycleHooks.form.backupHint')}</p>
+                </div>
             )}
 
             {form.task_type === 'sleep' && (

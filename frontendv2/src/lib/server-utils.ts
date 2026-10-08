@@ -199,12 +199,14 @@ export function getStatusDotColor(status: string): string {
             return 'bg-gray-500 shadow-gray-500/50 shadow-lg';
         case 'offline':
             return 'bg-red-500 shadow-red-500/50 shadow-lg';
+        case 'unknown':
+            return 'bg-muted-foreground/40';
         case 'installing':
             return 'bg-blue-500 shadow-blue-500/50 shadow-lg animate-pulse';
         case 'transferring':
             return 'bg-amber-500 shadow-amber-500/50 shadow-lg animate-pulse';
         case 'suspended':
-            return 'bg-purple-500 shadow-purple-500/50 shadow-lg';
+            return 'bg-primary shadow-primary/50 shadow-lg';
         case 'error':
             return 'bg-red-600 shadow-red-600/50 shadow-lg animate-pulse';
         default:
@@ -232,7 +234,7 @@ export function displayStatus(server: Server): string {
     if (server.status === 'error') {
         return 'error';
     }
-    return server.stats?.state || server.status;
+    return server.stats?.state || server.status || 'unknown';
 }
 
 /**

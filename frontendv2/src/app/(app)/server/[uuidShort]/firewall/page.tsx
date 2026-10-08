@@ -23,10 +23,10 @@ import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { Button } from '@/components/featherui/Button';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { HeadlessSelect } from '@/components/ui/headless-select';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Info, Shield, RefreshCw, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { cn, isEnabled } from '@/lib/utils';
@@ -43,6 +43,8 @@ import type {
 } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
+import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function ServerFirewallPage() {
     const params = useParams();
@@ -93,8 +95,9 @@ export default function ServerFirewallPage() {
             }
         } catch (error) {
             console.error('Failed to fetch allocations:', error);
+            toast.error(getApiErrorMessage(error, t, 'serverAllocations.failedToFetch'));
         }
-    }, [uuidShort]);
+    }, [uuidShort, t]);
 
     const fetchRules = React.useCallback(async () => {
         if (!uuidShort || !firewallEnabled) return;
@@ -107,7 +110,7 @@ export default function ServerFirewallPage() {
             }
         } catch (error) {
             console.error('Failed to fetch firewall rules:', error);
-            toast.error(t('serverFirewall.fetchError'));
+            toast.error(getApiErrorMessage(error, t, 'serverFirewall.fetchError'));
         } finally {
             setLoading(false);
         }
@@ -208,7 +211,7 @@ export default function ServerFirewallPage() {
                     setRules((prev) => prev.map((r) => (r.id === currentRule.id ? data.data.data : r)));
                     setIsModalOpen(false);
                 } else {
-                    toast.error(data.message || t('serverFirewall.unknownError'));
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'serverFirewall.unknownError'));
                 }
             } else {
                 const { data } = await axios.post<{ success: boolean; data: { data: FirewallRule }; message?: string }>(
@@ -220,12 +223,12 @@ export default function ServerFirewallPage() {
                     setRules((prev) => [...prev, data.data.data]);
                     setIsModalOpen(false);
                 } else {
-                    toast.error(data.message || t('serverFirewall.unknownError'));
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'serverFirewall.unknownError'));
                 }
             }
         } catch (error) {
             console.error('Failed to save rule:', error);
-            toast.error(t('serverFirewall.unknownError'));
+            toast.error(getApiErrorMessage(error, t, 'serverFirewall.unknownError'));
         } finally {
             setSaving(false);
         }
@@ -251,7 +254,7 @@ export default function ServerFirewallPage() {
                 setDeleteDialogOpen(false);
                 setRuleToDelete(null);
             } else {
-                toast.error(data?.message || t('serverFirewall.unknownError'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverFirewall.unknownError'));
             }
         } catch (error) {
             console.error('Failed to delete rule:', error);
@@ -284,7 +287,7 @@ export default function ServerFirewallPage() {
                 return;
             }
 
-            toast.error(t('serverFirewall.unknownError'));
+            toast.error(getApiErrorMessage(error, t, 'serverFirewall.unknownError'));
         } finally {
             setDeleting(false);
         }
@@ -309,7 +312,9 @@ export default function ServerFirewallPage() {
         { id: 'udp', name: 'UDP' },
     ];
 
-    if (permissionsLoading || settingsLoading) return null;
+    if (permissionsLoading || settingsLoading) {
+        return <PageLoading />;
+    }
 
     if (!canRead) {
         return (
@@ -486,12 +491,21 @@ export default function ServerFirewallPage() {
 
             <WidgetRenderer widgets={getWidgets('server-firewall', 'after-rules-list')} />
 
-            <HeadlessModal
-                isOpen={isModalOpen}
+            <Dialog
+                open={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                title={isEditing ? t('serverFirewall.editRule') : t('serverFirewall.createRule')}
-                description={t('serverFirewall.drawerDescription')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsModalOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>
+                        {isEditing ? t('serverFirewall.editRule') : t('serverFirewall.createRule')}
+                    </DialogTitle>
+                    <DialogDescription>{t('serverFirewall.drawerDescription')}</DialogDescription>
+                </DialogHeader>
                 <div className='space-y-6'>
                     <div className='space-y-2'>
                         <Label>{t('serverFirewall.allocation')}</Label>
@@ -556,20 +570,27 @@ export default function ServerFirewallPage() {
                         <Button variant='outline' onClick={() => setIsModalOpen(false)} disabled={saving} type='button'>
                             {t('common.cancel')}
                         </Button>
-                        <Button onClick={handleSave} disabled={saving} type='button'>
+                        <Button onClick={handleSave} disabled={saving} type='button' data-fp-save-shortcut>
                             {saving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                             {t('common.save')}
                         </Button>
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={deleteDialogOpen}
+            <Dialog
+                open={deleteDialogOpen}
                 onClose={() => setDeleteDialogOpen(false)}
-                title={t('serverFirewall.confirmDeleteTitle')}
-                description={t('serverFirewall.confirmDeleteDescription')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeleteDialogOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('serverFirewall.confirmDeleteTitle')}</DialogTitle>
+                    <DialogDescription>{t('serverFirewall.confirmDeleteDescription')}</DialogDescription>
+                </DialogHeader>
                 <div className='mt-4 flex justify-end gap-2'>
                     <Button variant='outline' onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
                         {t('common.cancel')}
@@ -579,7 +600,7 @@ export default function ServerFirewallPage() {
                         {t('serverFirewall.confirmDelete')}
                     </Button>
                 </div>
-            </HeadlessModal>
+            </Dialog>
             <WidgetRenderer widgets={getWidgets('server-firewall', 'bottom-of-page')} />
         </div>
     );

@@ -20,6 +20,7 @@ use Symfony\Component\Routing\Route;
 use App\Controllers\System\WebAppController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\Public\WebSpaceShareController;
 
 return function (RouteCollection $routes): void {
     // GET example
@@ -40,4 +41,17 @@ return function (RouteCollection $routes): void {
         },
         '_middleware' => [],
     ]));
+
+    $routes->add('public-webspace-share', new Route('/api/public/webspace-shares/{publicId}', [
+        '_controller' => function (Request $request) {
+            $publicId = (string) $request->attributes->get('publicId', '');
+            $controller = new WebSpaceShareController();
+            if ($request->getMethod() === 'DELETE') {
+                return $controller->delete($request, $publicId);
+            }
+
+            return $controller->download($request, $publicId);
+        },
+        '_middleware' => [],
+    ], [], [], '', [], ['GET', 'DELETE']));
 };

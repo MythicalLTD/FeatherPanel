@@ -119,4 +119,39 @@ export const authApi = {
         const response = await api.post('/user/auth/passkeys/authentication/verify', data);
         return response.data;
     },
+
+    qrStart: async () => {
+        const response = await api.post('/user/auth/qr/start');
+        return response.data;
+    },
+
+    qrPoll: async (data: { challenge_id: string; desktop_secret: string }) => {
+        const response = await api.post('/user/auth/qr/poll', data);
+        return response.data;
+    },
+
+    qrGet: async (challengeId: string) => {
+        const response = await api.get(`/user/auth/qr/${encodeURIComponent(challengeId)}`);
+        return response.data;
+    },
+
+    qrGetByCode: async (userCode: string) => {
+        const response = await api.get(`/user/auth/qr/code/${encodeURIComponent(userCode)}`);
+        return response.data;
+    },
+
+    qrApprove: async (challengeId: string) => {
+        const response = await api.post(`/user/auth/qr/${encodeURIComponent(challengeId)}/approve`);
+        return response.data;
+    },
+
+    qrDeny: async (challengeId: string) => {
+        const response = await api.post(`/user/auth/qr/${encodeURIComponent(challengeId)}/deny`);
+        return response.data;
+    },
+
+    qrExchange: async (data: { exchange_token: string }) => {
+        const response = await api.post('/user/auth/qr/exchange', data);
+        return response.data;
+    },
 };

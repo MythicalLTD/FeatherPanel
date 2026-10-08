@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useVmInstance } from '@/contexts/VmInstanceContext';

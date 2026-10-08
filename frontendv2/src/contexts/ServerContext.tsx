@@ -30,6 +30,9 @@ interface ServerContextType {
     server: Server | null;
     loading: boolean;
     error: Error | null;
+    /** Live Wings runtime status for the current server (navbar + console stay in sync). */
+    liveStatus: string | null;
+    setLiveStatus: (status: string | null) => void;
     refreshServer: () => Promise<void>;
     hasPermission: (permission: string) => boolean;
 }
@@ -46,7 +49,17 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
     const [server, setServer] = useState<Server | null>(initialServer || null);
     const [loading, setLoading] = useState(!initialServer);
     const [error, setError] = useState<Error | null>(null);
-    const { user: sessionUser, hasPermission: hasGlobalPermission } = useSession();
+    const [liveStatus, setLiveStatus] = useState<string | null>(null);
+    const {
+        user: sessionUser,
+        hasPermission: hasGlobalPermission,
+        isLoading: sessionLoading,
+        isSessionChecked,
+    } = useSession();
+
+    useEffect(() => {
+        setLiveStatus(null);
+    }, [uuidShort]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -159,7 +172,7 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
 
     useEffect(() => {
         if (typeof document === 'undefined' || !uuidShort) return;
-        document.cookie = `serverUuid=${encodeURIComponent(uuidShort)}; path=/; max-age=3600; SameSite=Lax`;
+        document.cookie = `serverUuid=${encodeURIComponent(uuidShort)}; path=/; max-age=3600; SameSite=Lax; Secure`;
     }, [uuidShort]);
 
     const hasPermission = useCallback(
@@ -188,8 +201,11 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
         <ServerContext.Provider
             value={{
                 server,
-                loading,
+                // Permission checks need sessionUser; keep consumers spinning until session is ready.
+                loading: loading || sessionLoading || !isSessionChecked,
                 error,
+                liveStatus,
+                setLiveStatus,
                 refreshServer: fetchServer,
                 hasPermission,
             }}

@@ -32,36 +32,28 @@ class LoggerFactory
     public function info(string $message): void
     {
         $caller = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['class'] ?? 'unknown';
+        \App\Telemetry\SentryTelemetry::log('info', $message, $caller);
         $this->appendLog('[INFO] [' . $caller . '] ' . $message);
     }
 
     public function warning(string $message, bool $sendTelemetry = false): void
     {
         $caller = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['class'] ?? 'unknown';
-        // $eventID = null;
-        if ($sendTelemetry) {
-            // $eventID = \Sentry\captureMessage($message, \Sentry\Severity::warning(), null);
-        }
+        \App\Telemetry\SentryTelemetry::log('warning', $message, $caller, $sendTelemetry);
         $this->appendLog('[WARNING] [' . $caller . '] ' . $message);
     }
 
-    public function error(string $message, bool $sendTelemetry = false): void
+    public function error(string $message, bool $sendTelemetry = true): void
     {
         $caller = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['class'] ?? 'unknown';
-        // $eventID = null;
-        if ($sendTelemetry) {
-            // $eventID = \Sentry\captureMessage($message, \Sentry\Severity::error(), null);
-        }
+        \App\Telemetry\SentryTelemetry::log('error', $message, $caller, $sendTelemetry);
         $this->appendLog('[ERROR]  [' . $caller . '] ' . $message);
     }
 
-    public function critical(string $message, bool $sendTelemetry = false): void
+    public function critical(string $message, bool $sendTelemetry = true): void
     {
         $caller = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['class'] ?? 'unknown';
-        // $eventID = null;
-        if ($sendTelemetry) {
-            // $eventID = \Sentry\captureMessage($message, \Sentry\Severity::fatal(), null);
-        }
+        \App\Telemetry\SentryTelemetry::log('fatal', $message, $caller, $sendTelemetry);
         $this->appendLog('[CRITICAL]  [' . $caller . '] ' . $message);
     }
 
@@ -69,6 +61,7 @@ class LoggerFactory
     {
         if (APP_DEBUG == true) {
             $caller = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['class'] ?? 'unknown';
+            \App\Telemetry\SentryTelemetry::log('debug', $message, $caller);
             $this->appendLog('[DEBUG] [' . $caller . '] ' . $message);
         }
     }

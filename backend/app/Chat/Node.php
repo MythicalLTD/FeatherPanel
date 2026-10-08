@@ -435,7 +435,7 @@ class Node
             $params['exclude_node_id'] = $excludeNodeId;
         }
 
-        $sql .= ' ORDER BY n.' . $sortBy . ' ' . $sortOrder;
+        $sql .= ' ORDER BY n.' . self::sanitizeSortColumn($sortBy) . ' ' . (strtoupper($sortOrder) === 'DESC' ? 'DESC' : 'ASC');
         $sql .= ' LIMIT :limit OFFSET :offset';
 
         $stmt = $pdo->prepare($sql);
@@ -813,8 +813,13 @@ class Node
             $stmt->execute();
             $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             foreach ($rows as $row) {
-                $storedId = App::getInstance(true)->decryptValue($row['daemon_token_id'] ?? '');
-                $storedSecret = App::getInstance(true)->decryptValue($row['daemon_token'] ?? '');
+                try {
+                    $storedId = App::getInstance(true)->decryptValue($row['daemon_token_id'] ?? '');
+                    $storedSecret = App::getInstance(true)->decryptValue($row['daemon_token'] ?? '');
+                } catch (\Throwable) {
+                    continue;
+                }
+
                 if ($storedId === $tokenId && $storedSecret === $tokenSecret) {
                     Cache::put($cacheKey, (int) $row['id'], 5);
 
@@ -836,6 +841,12 @@ class Node
     public static function count(array $conditions = []): int
     {
         $pdo = Database::getPdoConnection();
+        if ($conditions === []) {
+            $stmt = $pdo->query('SELECT COUNT(*) FROM ' . self::$table);
+
+            return (int) $stmt->fetchColumn();
+        }
+
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . implode(' AND ', array_map(fn ($k) => "$k = :$k", array_keys($conditions))));
         $stmt->execute($conditions);
 
@@ -900,6 +911,19 @@ class Node
         $yaml .= "remote: '" . $remote . "'\n";
 
         return $yaml;
+    }
+
+    /**
+     * Allowlist for ORDER BY column names in searchNodes(). $sortBy is not
+     * currently passed through from any route (index() uses the defaults),
+     * but validating it here closes the SQL injection vector defensively in
+     * case that changes later, consistent with Spell::getColumns()/Mount.php.
+     */
+    private static function sanitizeSortColumn(string $sortBy): string
+    {
+        $allowed = ['id', 'uuid', 'name', 'fqdn', 'location_id', 'created_at', 'updated_at'];
+
+        return in_array($sortBy, $allowed, true) ? $sortBy : 'name';
     }
 
     /**

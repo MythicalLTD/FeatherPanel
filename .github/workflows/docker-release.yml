@@ -55,7 +55,9 @@ jobs:
             ${{ runner.os }}-composer-${{ matrix.cache-key }}-
 
       - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: backend/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -105,7 +107,9 @@ jobs:
           fi
 
       - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: backend/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -127,7 +131,6 @@ jobs:
           docker buildx imagetools create --tag ghcr.io/mythicalltd/featherpanel-backend:latest \
             ghcr.io/mythicalltd/featherpanel-backend:${{ steps.version.outputs.tag }}-linux-amd64 \
             ghcr.io/mythicalltd/featherpanel-backend:${{ steps.version.outputs.tag }}-linux-arm64
-
 
   build-frontendv2:
     name: Build & Push Frontend v2 (Release) - ${{ matrix.platform }}
@@ -172,7 +175,9 @@ jobs:
             ${{ runner.os }}-pnpm-v2-${{ matrix.cache-key }}-
 
       - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: frontendv2/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -186,6 +191,42 @@ jobs:
         run: |
           PLATFORM_TAG=$(echo "${{ matrix.platform }}" | sed 's/\//-/g')
           echo "tag=$PLATFORM_TAG" >> $GITHUB_OUTPUT
+
+      - name: Setup PHP (OpenAPI for in-panel docs)
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          tools: composer:v2
+          coverage: none
+
+      - name: Generate OpenAPI specification
+        working-directory: backend
+        run: |
+          composer install --no-interaction --no-progress --prefer-dist
+          COMPOSER_ALLOW_SUPERUSER=1 composer openapi
+          test -s openapi.json
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontendv2/pnpm-lock.yaml
+
+      - name: Generate developer docs (not committed; baked into image)
+        working-directory: frontendv2
+        env:
+          OPENAPI_JSON: ../backend/openapi.json
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm export:docs
+          test -f public/icanhasfeatherpanel/api/openapi.json
+          test -f public/icanhasfeatherpanel/api/oauth2.md
 
       - name: Build & Push Frontend v2
         uses: useblacksmith/build-push-action@v2
@@ -222,7 +263,9 @@ jobs:
           fi
 
       - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: frontendv2/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -280,7 +323,9 @@ jobs:
           fi
 
       - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: runner/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -331,7 +376,9 @@ jobs:
           fi
 
       - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: runner/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -353,3 +400,116 @@ jobs:
           docker buildx imagetools create --tag ghcr.io/mythicalltd/featherpanel-async-runner:latest \
             ghcr.io/mythicalltd/featherpanel-async-runner:${{ steps.version.outputs.tag }}-linux-amd64 \
             ghcr.io/mythicalltd/featherpanel-async-runner:${{ steps.version.outputs.tag }}-linux-arm64
+
+  build-mcp:
+    name: Build & Push MCP (Release) - ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: blacksmith-2vcpu-ubuntu-2404
+            cache-key: amd64
+          - platform: linux/arm64
+            runner: blacksmith-2vcpu-ubuntu-2404-arm
+            cache-key: arm64
+
+    steps:
+      - name: Checkout code
+        uses: useblacksmith/checkout@v1
+        with:
+          ref: ${{ github.event.inputs.version || github.ref }}
+
+      - name: Set version tag
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Docker Buildx
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: mcp/Dockerfile
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set platform tag
+        id: platform-tag
+        run: |
+          PLATFORM_TAG=$(echo "${{ matrix.platform }}" | sed 's/\//-/g')
+          echo "tag=$PLATFORM_TAG" >> $GITHUB_OUTPUT
+
+      - name: Build & Push MCP
+        uses: useblacksmith/build-push-action@v2
+        with:
+          context: ./mcp
+          file: ./mcp/Dockerfile
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: |
+            ghcr.io/mythicalltd/featherpanel-mcp:${{ steps.version.outputs.tag }}-${{ steps.platform-tag.outputs.tag }}
+
+  manifest-mcp:
+    name: Create Multi-Arch Manifest - MCP
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    needs: build-mcp
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: useblacksmith/checkout@v1
+        with:
+          ref: ${{ github.event.inputs.version || github.ref }}
+
+      - name: Set version tag
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Docker Buildx
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: mcp/Dockerfile
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait for platform-specific images
+        run: |
+          echo "Waiting for platform-specific images to be available..."
+          sleep 10
+
+      - name: Create and push manifest
+        run: |
+          docker buildx imagetools create --tag ghcr.io/mythicalltd/featherpanel-mcp:${{ steps.version.outputs.tag }} \
+            ghcr.io/mythicalltd/featherpanel-mcp:${{ steps.version.outputs.tag }}-linux-amd64 \
+            ghcr.io/mythicalltd/featherpanel-mcp:${{ steps.version.outputs.tag }}-linux-arm64
+          docker buildx imagetools create --tag ghcr.io/mythicalltd/featherpanel-mcp:latest \
+            ghcr.io/mythicalltd/featherpanel-mcp:${{ steps.version.outputs.tag }}-linux-amd64 \
+            ghcr.io/mythicalltd/featherpanel-mcp:${{ steps.version.outputs.tag }}-linux-arm64

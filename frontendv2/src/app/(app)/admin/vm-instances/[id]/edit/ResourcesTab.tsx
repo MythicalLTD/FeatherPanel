@@ -19,6 +19,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
+import { SizeInput } from '@/components/featherui/SizeInput';
 import { Label } from '@/components/ui/label';
 import { Cpu, Loader2, Save } from 'lucide-react';
 
@@ -30,6 +31,7 @@ interface ResourcesTabProps {
     config: Record<string, unknown> | null;
     memory: number;
     setMemory: (v: number) => void;
+    onMemoryValidityChange: (valid: boolean) => void;
     cpus: number;
     setCpus: (v: number) => void;
     cores: number;
@@ -62,6 +64,7 @@ export function ResourcesTab({
     config,
     memory,
     setMemory,
+    onMemoryValidityChange,
     cpus,
     setCpus,
     cores,
@@ -86,18 +89,19 @@ export function ResourcesTab({
         vmBackupLimit !== undefined && setVmBackupLimit && vmBackupRetention !== undefined && setVmBackupRetention;
 
     return (
-        <form onSubmit={onSave}>
+        <form onSubmit={onSave} data-fp-save-shortcut>
             <PageCard title={t('admin.vmInstances.edit_tabs.resources') ?? 'Resources'} icon={Cpu}>
                 {config ? (
                     <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                         <div>
                             <Label>{t('admin.vmInstances.memory') ?? 'Memory (MB)'}</Label>
-                            <Input
-                                type='number'
+                            <SizeInput
                                 min={128}
                                 value={memory}
-                                onChange={(e) => setMemory(parseInt(e.target.value, 10) || 512)}
-                                className='bg-muted/30 mt-1 h-11 rounded-xl'
+                                onValueChange={(value) => setMemory(Number(value))}
+                                unit='MB'
+                                ariaLabel={t('admin.vmInstances.memory')}
+                                onValidityChange={onMemoryValidityChange}
                             />
                         </div>
                         <div>
@@ -273,7 +277,7 @@ export function ResourcesTab({
             <div className='mt-4 flex justify-end'>
                 <Button type='submit' loading={saving} disabled={!config}>
                     <Save className='mr-2 h-4 w-4' />
-                    {t('common.save_changes')}
+                    {t('common.saveChanges')}
                 </Button>
             </div>
         </form>

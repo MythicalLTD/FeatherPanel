@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo Showcase · Client</title>
+  <style>
+    :root { color-scheme: dark; --ink:#e2e8f0; --muted:#94a3b8; --line:rgba(255,255,255,.1); --panel:hsl(222 18% 12%); }
+    html.light { color-scheme: light; --ink:#0f172a; --muted:#64748b; --line:rgba(15,23,42,.1); --panel:#fff; }
+    * { box-sizing: border-box; }
+    body { margin:0; padding:1.25rem; background:transparent; color:var(--ink); font-family: ui-sans-serif, system-ui, sans-serif; }
+    .card { border:1px solid var(--line); border-radius:1rem; background:var(--panel); padding:1.25rem; max-width:40rem; }
+    h1 { margin:0 0 .5rem; font-size:1.15rem; }
+    p { color:var(--muted); font-size:.9rem; line-height:1.5; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Client addon page</h1>
+    <p>
+      Registered under <code>sidebar.json → client</code>. End users see this in the dashboard nav
+      as “Demo Showcase”. Same pattern as billing / utility addons.
+    </p>
+  </div>
+  <script>
+    if (new URLSearchParams(location.search).get('__theme') === 'light') {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    }
+  </script>
+</body>
+</html>

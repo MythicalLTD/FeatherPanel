@@ -16,13 +16,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import * as React from 'react';
+import { validateEggVariable } from '@/lib/eggVariableRules';
+import { EggVariableInput } from '@/components/server/EggVariableInput';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Boxes, AlertTriangle, Loader2, Zap, ChevronRight, Check, Lock } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
-import { Input } from '@/components/featherui/Input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
@@ -30,6 +31,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn, isEnabled } from '@/lib/utils';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import type {
     Variable,
     ServerRealm,
@@ -54,7 +56,7 @@ export default function ServerTransferSpellPage() {
     const pathname = usePathname();
     const { t } = useTranslation();
     const { settings, loading: settingsLoading } = useSettings();
-    const { loading: permissionsLoading, hasPermission } = useServerPermissions(uuidShort);
+    const { loading: permissionsLoading } = useServerPermissions(uuidShort);
     const { getWidgets } = usePluginWidgets('server-startup-transfer-spell');
 
     const canChangeSpell = isEnabled(settings?.server_allow_egg_change);
@@ -79,98 +81,9 @@ export default function ServerTransferSpellPage() {
     const [targetVariables, setTargetVariables] = React.useState<Variable[]>([]);
     const [wipeFiles, setWipeFiles] = React.useState(false);
 
-    const parseRules = React.useCallback((rules: string) => {
-        if (!rules) return [];
-        const parts = rules.split('|');
-        const parsed: Array<{ type: string; value?: number | string }> = [];
-        for (const part of parts) {
-            if (['required', 'nullable', 'string', 'numeric', 'integer'].includes(part)) {
-                parsed.push({ type: part });
-                continue;
-            }
-            const maxMatch = part.match(/^max:(\d+)$/);
-            if (maxMatch) {
-                parsed.push({ type: 'max', value: Number(maxMatch[1]) });
-                continue;
-            }
-            const minMatch = part.match(/^min:(\d+)$/);
-            if (minMatch) {
-                parsed.push({ type: 'min', value: Number(minMatch[1]) });
-                continue;
-            }
-            const regexMatch = part.match(/^regex:\/(.*)\/$/);
-            if (regexMatch) {
-                parsed.push({ type: 'regex', value: regexMatch[1] });
-                continue;
-            }
-        }
-        return parsed;
-    }, []);
-
-    const normalizeRegexPattern = React.useCallback((pattern: string) => {
-        try {
-            return pattern.replace(/\\\\/g, '\\');
-        } catch {
-            return pattern;
-        }
-    }, []);
-
     const validateVariableAgainstRules = React.useCallback(
-        (value: string, rules: string): string | '' => {
-            const parsed = parseRules(rules || '');
-            const hasNullable = parsed.some((r) => r.type === 'nullable');
-            const isRequired = parsed.some((r) => r.type === 'required');
-            const isNumeric = parsed.some((r) => r.type === 'numeric' || r.type === 'integer');
-
-            const val = value ?? '';
-            const trimmedForEmptyCheck = val.trim();
-
-            if (!isRequired && hasNullable && trimmedForEmptyCheck === '') return '';
-            if (isRequired && trimmedForEmptyCheck === '') return t('serverStartup.fieldRequired');
-            if (!isRequired && trimmedForEmptyCheck === '') return '';
-
-            if (isNumeric && !/^\d+$/.test(trimmedForEmptyCheck)) return t('serverStartup.fieldMustBeNumeric');
-
-            for (const rule of parsed) {
-                if (rule.type === 'min' && typeof rule.value === 'number') {
-                    if (isNumeric) {
-                        const numValue = Number(trimmedForEmptyCheck);
-                        if (isNaN(numValue) || numValue < rule.value) {
-                            return t('serverStartup.minimumValue', { value: String(rule.value) });
-                        }
-                    } else {
-                        if (trimmedForEmptyCheck.length < rule.value) {
-                            return t('serverStartup.minimumCharacters', { value: String(rule.value) });
-                        }
-                    }
-                }
-                if (rule.type === 'max' && typeof rule.value === 'number') {
-                    if (isNumeric) {
-                        const numValue = Number(trimmedForEmptyCheck);
-                        if (isNaN(numValue) || numValue > rule.value) {
-                            return t('serverStartup.maximumValue', { value: String(rule.value) });
-                        }
-                    } else {
-                        if (trimmedForEmptyCheck.length > rule.value) {
-                            return t('serverStartup.maximumCharacters', { value: String(rule.value) });
-                        }
-                    }
-                }
-                if (rule.type === 'regex' && typeof rule.value === 'string') {
-                    try {
-                        const pattern = normalizeRegexPattern(rule.value);
-                        const re = new RegExp(pattern);
-                        if (!re.test(trimmedForEmptyCheck)) {
-                            return t('serverStartup.valueDoesNotMatchFormat');
-                        }
-                    } catch (err) {
-                        console.error('Invalid regex pattern:', rule.value, err);
-                    }
-                }
-            }
-            return '';
-        },
-        [parseRules, t, normalizeRegexPattern],
+        (value: string, rules: string): string => validateEggVariable(value, rules, t),
+        [t],
     );
 
     const validateOneVariable = React.useCallback(
@@ -206,7 +119,7 @@ export default function ServerTransferSpellPage() {
                 }
             } catch (error) {
                 console.error('Failed to fetch spells:', error);
-                toast.error(t('serverStartup.failedToFetchSpells'));
+                toast.error(getApiErrorMessage(error, t, 'serverStartup.failedToFetchSpells'));
             } finally {
                 setLoadingSpells(false);
             }
@@ -231,7 +144,7 @@ export default function ServerTransferSpellPage() {
                 }
             } catch (error) {
                 console.error('Failed to fetch realms:', error);
-                toast.error(t('serverStartup.failedToFetchRealms'));
+                toast.error(getApiErrorMessage(error, t, 'serverStartup.failedToFetchRealms'));
             } finally {
                 setLoadingRealms(false);
             }
@@ -265,7 +178,7 @@ export default function ServerTransferSpellPage() {
             }
         } catch (error) {
             console.error('Failed to fetch transfer data:', error);
-            toast.error(t('serverStartup.failedToFetchServer'));
+            toast.error(getApiErrorMessage(error, t, 'serverStartup.failedToFetchServer'));
         } finally {
             setLoading(false);
         }
@@ -331,7 +244,7 @@ export default function ServerTransferSpellPage() {
             }
         } catch (error) {
             console.error('Failed to fetch spell details:', error);
-            toast.error(t('serverStartup.failedToFetchSpell'));
+            toast.error(getApiErrorMessage(error, t, 'serverStartup.failedToFetchSpell'));
         } finally {
             setLoadingSpells(false);
         }
@@ -377,16 +290,12 @@ export default function ServerTransferSpellPage() {
         }
 
         try {
-            const canUpdateStartup = hasPermission('startup.update');
             const payload = {
                 spell_id: targetSpell.id,
                 wipe_files: wipeFiles,
+                // Only user-editable variables may be written; non-editable use spell defaults server-side
                 variables: targetVariables
-                    .filter(
-                        (v) =>
-                            v.user_editable === 1 ||
-                            (canUpdateStartup && isEnabled(settings?.server_allow_startup_change)),
-                    )
+                    .filter((v) => isEnabled(v.user_editable))
                     .map((v) => ({
                         variable_id: v.variable_id,
                         variable_value: variableValues[v.variable_id] || '',
@@ -401,11 +310,11 @@ export default function ServerTransferSpellPage() {
                 toast.success(t('serverStartup.spellChanged'));
                 router.push(`/server/${uuidShort}/startup`);
             } else {
-                toast.error(data.message || t('serverStartup.saveError'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverStartup.saveError'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message?: string }>;
-            const msg = axiosError.response?.data?.message || t('serverStartup.saveError');
+            const msg = getApiErrorMessage(axiosError, t, 'serverStartup.saveError');
             toast.error(msg);
             console.error('Transfer failed:', error);
         } finally {
@@ -424,7 +333,7 @@ export default function ServerTransferSpellPage() {
 
     if (!canChangeSpell) {
         return (
-            <div className='flex flex-col items-center justify-center space-y-8 rounded-[3rem] border border-white/5 bg-[#0A0A0A]/40 py-24 text-center backdrop-blur-3xl'>
+            <div className='bg-card/40 border-border/50 flex flex-col items-center justify-center space-y-8 rounded-3xl border py-24 text-center backdrop-blur-xl'>
                 <div className='relative'>
                     <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
                     <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
@@ -474,6 +383,7 @@ export default function ServerTransferSpellPage() {
                             variant='default'
                             onClick={handleSave}
                             disabled={currentStep !== 3 || saving || Object.keys(variableErrors).length > 0}
+                            data-fp-save-shortcut
                             loading={saving}
                             className='order-1 w-full sm:order-2 sm:w-auto'
                         >
@@ -732,14 +642,15 @@ export default function ServerTransferSpellPage() {
                                         </div>
 
                                         <div className='relative'>
-                                            <Input
+                                            <EggVariableInput
+                                                fieldType={v.field_type}
                                                 value={variableValues[v.variable_id] ?? ''}
                                                 onChange={(e) => {
                                                     const val = e.target.value;
                                                     setVariableValues((prev) => ({ ...prev, [v.variable_id]: val }));
                                                     validateOneVariable(v, val);
                                                 }}
-                                                disabled={saving}
+                                                disabled={saving || !isEnabled(v.user_editable)}
                                                 error={!!variableErrors[v.variable_id]}
                                                 placeholder={v.default_value || t('serverStartup.enterValue')}
                                             />
@@ -772,6 +683,7 @@ export default function ServerTransferSpellPage() {
                                 disabled={saving}
                                 className='h-14 px-16 text-lg'
                                 loading={saving}
+                                data-fp-save-shortcut
                             >
                                 {saving ? (
                                     t('common.processing')

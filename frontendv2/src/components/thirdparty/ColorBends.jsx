@@ -139,6 +139,8 @@ export default function ColorBends({
 
     useEffect(() => {
         const container = containerRef.current;
+        if (!container) return;
+
         const scene = new THREE.Scene();
         const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
@@ -185,7 +187,7 @@ export default function ColorBends({
         renderer.domElement.style.display = 'block';
         container.appendChild(renderer.domElement);
 
-        const clock = new THREE.Clock();
+        const timer = new THREE.Timer();
 
         const handleResize = () => {
             const w = container.clientWidth || 1;
@@ -204,9 +206,10 @@ export default function ColorBends({
             window.addEventListener('resize', handleResize);
         }
 
-        const loop = () => {
-            const dt = clock.getDelta();
-            const elapsed = clock.elapsedTime;
+        const loop = (timestamp) => {
+            timer.update(timestamp);
+            const dt = timer.getDelta();
+            const elapsed = timer.getElapsed();
             material.uniforms.uTime.value = elapsed;
 
             const deg = (rotationRef.current % 360) + autoRotateRef.current * elapsed;
@@ -229,6 +232,7 @@ export default function ColorBends({
             if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
             if (resizeObserverRef.current) resizeObserverRef.current.disconnect();
             else window.removeEventListener('resize', handleResize);
+            timer.dispose();
             geometry.dispose();
             material.dispose();
             renderer.dispose();

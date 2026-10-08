@@ -13,6 +13,8 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+import { getAnalyticsConsent } from '@/lib/analytics-cookie';
+import { reportPanelInteraction, analyticsListChanges } from '@/lib/panel-analytics';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 function mergeFilters<T extends Record<string, unknown>>(defaults: T, stored: Partial<T> | null): T {
@@ -65,9 +67,12 @@ export function usePersistedListFilters<T extends Record<string, unknown>>(stora
 
     const [filters, setFilters] = useState<T>(() => loadPersistedListFilters(storageKey, defaults));
     const [hydrated, setHydrated] = useState(false);
+    const restoredFilters = useRef<T | null>(null);
 
     useEffect(() => {
-        setFilters(loadPersistedListFilters(storageKey, defaultsRef.current));
+        const restored = loadPersistedListFilters(storageKey, defaultsRef.current);
+        restoredFilters.current = restored;
+        setFilters(restored);
         setHydrated(true);
     }, [storageKey]);
 
@@ -79,11 +84,39 @@ export function usePersistedListFilters<T extends Record<string, unknown>>(stora
         savePersistedListFilters(storageKey, filters);
     }, [filters, hydrated, storageKey]);
 
+    // Ignore hydration; debounce actual changes, including callers using setFilters.
+    const pendingCategories = useRef(new Set<string>());
+    const previous = useRef<{ storageKey: string; filters: T } | null>(null);
+    useEffect(() => {
+        const before = previous.current;
+        previous.current = hydrated ? { storageKey, filters } : null;
+        if (
+            !hydrated ||
+            filters === restoredFilters.current ||
+            !before ||
+            before.storageKey !== storageKey ||
+            getAnalyticsConsent() !== true
+        ) {
+            pendingCategories.current.clear();
+            return;
+        }
+        const keys = Object.keys(filters).filter((key) => filters[key] !== before.filters[key]);
+        const categories = analyticsListChanges(keys);
+        for (const category of categories) pendingCategories.current.add(category);
+        if (!pendingCategories.current.size) return;
+        const timer = window.setTimeout(() => {
+            for (const category of pendingCategories.current) reportPanelInteraction('panel.list.change', category);
+            pendingCategories.current.clear();
+        }, 500);
+        return () => window.clearTimeout(timer);
+    }, [filters, hydrated, storageKey]);
+
     const patchFilters = useCallback((partial: Partial<T>) => {
         setFilters((prev) => ({ ...prev, ...partial }));
     }, []);
 
     const resetFilters = useCallback(() => {
+        reportPanelInteraction('panel.list.reset', 'filter');
         setFilters({ ...defaultsRef.current });
     }, []);
 

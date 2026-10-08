@@ -20,7 +20,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Send, Loader2, X, Bot, MessageSquare, Clock, Trash2, Plus, AlertTriangle, Menu } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -173,7 +173,7 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
     const router = useRouter();
     const serverCtx = useContext(ServerContext);
     const server = serverCtx?.server ?? null;
-    const { user } = useSession();
+    const { user, isLoading: sessionLoading, isSessionChecked } = useSession();
     const { settings } = useSettings();
     const { theme } = useTheme();
     const lastConversationStorageKey = `featherpanel_chatbot_last_conversation_${mode}`;
@@ -263,38 +263,52 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
         return t('chatbot.welcome', { name: userName });
     };
 
+    const sessionUserName = user?.first_name || user?.username || null;
+
     useEffect(() => {
-        if (open) {
-            loadConversationsList().then((convs) => {
-                if (currentConversationId || messages.length > 0) return;
+        if (!open) return;
+        if (!isSessionChecked || sessionLoading) return;
 
-                const storedConversationId =
-                    typeof window !== 'undefined' ? window.localStorage.getItem(lastConversationStorageKey) : null;
-                const conversationToRestore =
-                    (storedConversationId && convs.find((conv) => conv.id === Number(storedConversationId))) ||
-                    convs[0];
+        loadConversationsList().then((convs) => {
+            if (currentConversationId || messages.length > 0) return;
 
-                if (conversationToRestore) {
-                    loadConversation(conversationToRestore.id);
-                    return;
-                }
+            const storedConversationId =
+                typeof window !== 'undefined' ? window.localStorage.getItem(lastConversationStorageKey) : null;
+            const conversationToRestore =
+                (storedConversationId && convs.find((conv) => conv.id === Number(storedConversationId))) || convs[0];
 
-                const userName = user?.first_name || user?.username || 'there';
-                setMessages([
-                    {
-                        id: 'welcome',
-                        role: 'assistant',
-                        content: getWelcomeMessage(userName),
-                        timestamp: new Date(),
-                    },
-                ]);
-            });
-            setTimeout(() => {
-                textareaRef.current?.focus();
-            }, 100);
-        }
+            if (conversationToRestore) {
+                loadConversation(conversationToRestore.id);
+                return;
+            }
+
+            const userName = sessionUserName || 'there';
+            setMessages([
+                {
+                    id: 'welcome',
+                    role: 'assistant',
+                    content: getWelcomeMessage(userName),
+                    timestamp: new Date(),
+                },
+            ]);
+        });
+        setTimeout(() => {
+            textareaRef.current?.focus();
+        }, 100);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open]);
+    }, [open, isSessionChecked, sessionLoading]);
+
+    useEffect(() => {
+        if (!sessionUserName) return;
+        setMessages((prev) => {
+            const welcome = prev.find((message) => message.id === 'welcome');
+            if (!welcome) return prev;
+            const nextContent = getWelcomeMessage(sessionUserName);
+            if (welcome.content === nextContent) return prev;
+            return prev.map((message) => (message.id === 'welcome' ? { ...message, content: nextContent } : message));
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sessionUserName, mode]);
 
     const loadConversationsList = async () => {
         setLoadingConversations(true);
@@ -316,7 +330,7 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
         if (typeof window !== 'undefined') {
             window.localStorage.removeItem(lastConversationStorageKey);
         }
-        const userName = user?.first_name || user?.username || 'there';
+        const userName = sessionUserName || 'there';
         setMessages([
             {
                 id: 'welcome',
@@ -552,7 +566,7 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
                             'destructive',
                             async () => {
                                 try {
-                                    const result = await executeServerPowerAction(command.action!, serverUuid!);
+                                    const result = await executeServerPowerAction(command.action!, serverUuid!, t);
                                     if (result.success) {
                                         const actionKey = `${command.action}edServer`;
                                         showActionNotification(
@@ -574,7 +588,7 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
                             'pending',
                         );
                         try {
-                            const result = await executeServerPowerAction(command.action, serverUuid);
+                            const result = await executeServerPowerAction(command.action, serverUuid, t);
                             if (result.success) {
                                 showActionNotification(
                                     t('chatbot.startedServer', { server: serverName || serverUuid }),
@@ -628,7 +642,7 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
                                 'pending',
                             );
                             try {
-                                const result = await executeServerCommand(serverUuid!, command.command!);
+                                const result = await executeServerCommand(serverUuid!, command.command!, t);
                                 if (result.success) {
                                     showActionNotification(
                                         t('chatbot.sentCommand', { server: serverName || serverUuid }),

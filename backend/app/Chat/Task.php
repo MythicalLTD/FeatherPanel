@@ -541,7 +541,19 @@ class Task
      */
     public static function validateAction(string $action): bool
     {
-        $validActions = ['power', 'backup', 'command', 'restart', 'kill', 'install', 'update', 'start', 'stop'];
+        $validActions = [
+            'power',
+            'backup',
+            'command',
+            'restart',
+            'kill',
+            'install',
+            'update',
+            'start',
+            'stop',
+            'database_backup', // legacy; prefer backup payload type=database
+            'container_shell', // docker exec `sh -c` inside the server container (admin gated)
+        ];
 
         return in_array($action, $validActions);
     }

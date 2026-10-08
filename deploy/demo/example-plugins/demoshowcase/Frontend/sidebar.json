@@ -1,0 +1,37 @@
+{
+  "client": {
+    "/demoshowcase": {
+      "name": "Demo Showcase",
+      "lucideIcon": "sparkles",
+      "showBadge": true,
+      "redirect": "/demoshowcase",
+      "component": "/demoshowcase/dist/client-page.html",
+      "description": "Example client addon page from DemoShowcase",
+      "category": "client",
+      "group": "Demo"
+    }
+  },
+  "admin": {
+    "/demoshowcase": {
+      "name": "Demo Showcase",
+      "lucideIcon": "puzzle",
+      "showBadge": false,
+      "redirect": "/demoshowcase",
+      "component": "/demoshowcase/dist/admin-page.html",
+      "description": "How demo addons register admin pages, widgets, and spell limits",
+      "category": "admin",
+      "group": "Demo"
+    }
+  },
+  "server": {
+    "/demoshowcase": {
+      "name": "Demo Showcase",
+      "lucideIcon": "sparkles",
+      "redirect": "/demoshowcase",
+      "component": "/demoshowcase/dist/server-page.html",
+      "description": "Spell-limited server addon page (only on allowed demo spells)",
+      "category": "server",
+      "group": "Demo"
+    }
+  }
+}

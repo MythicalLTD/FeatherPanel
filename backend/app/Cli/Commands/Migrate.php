@@ -24,6 +24,7 @@ use App\App as MainApp;
 use App\Helpers\XChaCha20;
 use App\Cli\CommandBuilder;
 use App\Config\ConfigInterface;
+use App\Plugins\ObsoleteAddons;
 
 class Migrate extends App implements CommandBuilder
 {
@@ -50,7 +51,7 @@ class Migrate extends App implements CommandBuilder
         if (!file_exists(__DIR__ . '/../../../storage/config/.env')) {
             MainApp::getInstance(true)->getLogger()->warning('Executed a command without a .env file');
             $cliApp->send('&c&l❌ Error: &rThe .env file does not exist. Please create one before running this command');
-            exit;
+            exit(1);
         }
 
         $sqlScript = self::getMigrationSQL();
@@ -78,7 +79,7 @@ class Migrate extends App implements CommandBuilder
             // --- End fix ---
         } catch (\Exception $e) {
             $cliApp->send('&c&l❌ Database Connection Failed: &r' . $e->getMessage());
-            exit;
+            exit(1);
         }
 
         $connectionTime = round((microtime(true) - $startTime) * 1000, 2);
@@ -98,7 +99,7 @@ class Migrate extends App implements CommandBuilder
             }
         } catch (\Exception $e) {
             $cliApp->send('&c&l❌ Failed to create migrations table: &r' . $e->getMessage());
-            exit;
+            exit(1);
         }
 
         self::cleanupObsoleteAddonDirectories($cliApp);
@@ -156,7 +157,7 @@ class Migrate extends App implements CommandBuilder
             if ($migrationContent === false) {
                 $cliApp->send('&c&l❌ Failed to read migration file: &r&f' . $displayName);
                 ++$failedMigrations;
-                exit;
+                exit(1);
             }
 
             /**
@@ -182,7 +183,7 @@ class Migrate extends App implements CommandBuilder
                 $cliApp->send('&c&l❌ Failed: &r&f' . $displayName);
                 $cliApp->send('&c&l   Error: &r' . $e->getMessage());
                 ++$failedMigrations;
-                exit;
+                exit(1);
             }
 
             /**
@@ -196,11 +197,12 @@ class Migrate extends App implements CommandBuilder
                 ]);
             } catch (\Exception $e) {
                 $cliApp->send('&c&l❌ Failed to save migration record: &r' . $e->getMessage());
-                exit;
+                exit(1);
             }
         }
 
         self::clearCache();
+        self::seedSystemWebPlates($cliApp);
 
         $totalTime = round((microtime(true) - $startTime) * 1000, 2);
 
@@ -253,6 +255,27 @@ class Migrate extends App implements CommandBuilder
         return [];
     }
 
+    /**
+     * Refresh bundled WebPlate templates (static / PHP / Node / Python).
+     */
+    private static function seedSystemWebPlates(App $cliApp): void
+    {
+        $cliApp->send('&7' . str_repeat('─', 50));
+        $cliApp->send($cliApp->color3 . '&l🌱 Seeding system WebPlates...');
+
+        try {
+            $result = \App\Chat\WebPlate::seedSystemDefaults();
+            $cliApp->send(
+                '&a&l✅ WebPlates: &r&f'
+                . $result['created'] . '&r&a created, &r&f'
+                . $result['updated'] . '&r&a updated, &r&f'
+                . $result['skipped'] . '&r&a skipped',
+            );
+        } catch (\Throwable $e) {
+            $cliApp->send('&c&l⚠️  WebPlate seed failed: &r' . $e->getMessage());
+        }
+    }
+
     private static function getMigrationSQL(): string
     {
         return "CREATE TABLE IF NOT EXISTS `featherpanel_migrations` (
@@ -279,6 +302,10 @@ class Migrate extends App implements CommandBuilder
         if (is_dir($addonsRoot)) {
             $addons = array_filter(scandir($addonsRoot) ?: [], static function (string $entry) use ($addonsRoot): bool {
                 if ($entry === '.' || $entry === '..') {
+                    return false;
+                }
+
+                if (ObsoleteAddons::isObsolete($entry)) {
                     return false;
                 }
 
@@ -392,15 +419,8 @@ class Migrate extends App implements CommandBuilder
 
     private static function cleanupObsoleteAddonDirectories(App $cliApp): void
     {
-        $obsoleteAddons = [
-            'yetanotherbadupdate',
-            'whitelabel',
-            'navlayout',
-            'notsofeatherai',
-        ];
-
         $addonsRoot = __DIR__ . '/../../../storage/addons/';
-        foreach ($obsoleteAddons as $addon) {
+        foreach (ObsoleteAddons::identifiers() as $addon) {
             $path = $addonsRoot . $addon;
             if (!is_dir($path)) {
                 continue;
@@ -422,8 +442,30 @@ class Migrate extends App implements CommandBuilder
         }
     }
 
+    /**
+     * Recursively delete a directory, unlinking symlinks instead of following them.
+     *
+     * pnpm/npm trees under obsolete addons use directory symlinks; is_dir() follows
+     * those links, so rmdir() later fails with "Not a directory".
+     */
     private static function deleteDirectoryRecursive(string $path): void
     {
+        if (is_link($path)) {
+            if (!unlink($path)) {
+                throw new \RuntimeException('Unable to delete symlink: ' . $path);
+            }
+
+            return;
+        }
+
+        if (!is_dir($path)) {
+            if (file_exists($path) && !unlink($path)) {
+                throw new \RuntimeException('Unable to delete file: ' . $path);
+            }
+
+            return;
+        }
+
         $entries = scandir($path);
         if ($entries === false) {
             throw new \RuntimeException('Unable to read directory: ' . $path);
@@ -435,14 +477,17 @@ class Migrate extends App implements CommandBuilder
             }
 
             $child = $path . '/' . $entry;
-            if (is_dir($child)) {
-                self::deleteDirectoryRecursive($child);
+
+            // Symlinks (including dir links from package managers) must be unlinked,
+            // never descended into or passed to rmdir().
+            if (is_link($child) || !is_dir($child)) {
+                if (!unlink($child)) {
+                    throw new \RuntimeException('Unable to delete file: ' . $child);
+                }
                 continue;
             }
 
-            if (!unlink($child)) {
-                throw new \RuntimeException('Unable to delete file: ' . $child);
-            }
+            self::deleteDirectoryRecursive($child);
         }
 
         if (!rmdir($path)) {

@@ -20,6 +20,7 @@ namespace App\Middleware;
 use App\App;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
+use App\Helpers\DemoCloudHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -32,6 +33,10 @@ class CloudAccessMiddleware implements MiddlewareInterface
 
     public function handle(Request $request, callable $next): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
         $config = App::getInstance(true)->getConfig();
 
         $panelPublic = $config->getSetting(ConfigInterface::FEATHERCLOUD_ACCESS_PUBLIC_KEY, '');

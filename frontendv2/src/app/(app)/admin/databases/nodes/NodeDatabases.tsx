@@ -16,8 +16,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -50,6 +51,7 @@ interface Database {
     name: string;
     node_id: number | null;
     node_name?: string | null;
+    web_node_id?: number | null;
     database_type: string;
     database_port: number;
     database_username: string;
@@ -62,6 +64,11 @@ interface Database {
 }
 
 interface Node {
+    id: number;
+    name: string;
+}
+
+interface WebNodeOption {
     id: number;
     name: string;
 }
@@ -121,6 +128,8 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
     const [hostScope, setHostScope] = useState<'all' | 'single'>('all');
     const [scopeNodeId, setScopeNodeId] = useState('');
     const [adminNodes, setAdminNodes] = useState<Node[]>([]);
+    const [webNodes, setWebNodes] = useState<WebNodeOption[]>([]);
+    const [webNodeId, setWebNodeId] = useState('');
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -158,6 +167,30 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
         };
     }, []);
 
+    useEffect(() => {
+        let cancelled = false;
+        const loadWebNodes = async () => {
+            try {
+                const { data } = await axios.get('/api/admin/web-nodes', { params: { page: 1, limit: 500 } });
+                const raw = data?.data?.web_nodes ?? [];
+                if (!cancelled) {
+                    setWebNodes(
+                        raw.map((n: { id: number; name: string }) => ({
+                            id: n.id,
+                            name: n.name,
+                        })),
+                    );
+                }
+            } catch {
+                if (!cancelled) setWebNodes([]);
+            }
+        };
+        void loadWebNodes();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     const fetchNode = useCallback(async () => {
         if (!nodeId) return;
         try {
@@ -165,7 +198,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             setNode(data.data.node);
         } catch (error) {
             console.error('Error fetching node:', error);
-            toast.error(t('admin.node_databases.messages.fetch_node_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node_databases.messages.fetch_node_failed'));
         }
     }, [nodeId, t]);
 
@@ -207,7 +240,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             }));
         } catch (error) {
             console.error('Error fetching databases:', error);
-            toast.error(t('admin.node_databases.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node_databases.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -249,9 +282,11 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             await axios.put('/api/admin/databases', {
                 ...formData,
                 node_id: payloadNodeId,
+                web_node_id: webNodeId ? Number(webNodeId) : null,
             });
             toast.success(t('admin.node_databases.messages.created'));
             setCreateOpen(false);
+            setWebNodeId('');
             setFormData({
                 name: '',
                 database_type: 'mysql',
@@ -264,11 +299,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error creating database:', error);
-            let msg = t('admin.node_databases.messages.create_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.node_databases.messages.create_failed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -288,6 +319,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             const patchBody: Record<string, unknown> = {
                 ...restForm,
                 node_id: payloadNodeId,
+                web_node_id: webNodeId ? Number(webNodeId) : null,
             };
             if (pwd.trim() !== '') {
                 patchBody.database_password = pwd;
@@ -299,11 +331,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error updating database:', error);
-            let msg = t('admin.node_databases.messages.update_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.node_databases.messages.update_failed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -317,7 +345,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error deleting database:', error);
-            toast.error(t('admin.node_databases.messages.delete_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node_databases.messages.delete_failed'));
         }
     };
 
@@ -334,7 +362,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                 }
             } catch (error) {
                 console.error('Error checking health:', error);
-                toast.error(t('admin.node_databases.messages.health_unhealthy'));
+                toast.error(getApiErrorMessage(error, t, 'admin.node_databases.messages.health_unhealthy'));
                 setDatabases((prev) => prev.map((d) => (d.id === db.id ? { ...d, healthy: false } : d)));
             }
         },
@@ -523,6 +551,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                             setEditingDatabase(db);
                                             setHostScope(db.node_id == null ? 'all' : 'single');
                                             setScopeNodeId(db.node_id != null ? String(db.node_id) : '');
+                                            setWebNodeId(db.web_node_id != null ? String(db.web_node_id) : '');
                                             setFormData({
                                                 name: db.name,
                                                 database_type: db.database_type,
@@ -592,7 +621,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                         <SheetTitle>{t('admin.node_databases.form.create_title')}</SheetTitle>
                         <SheetDescription>{t('admin.node_databases.form.create_description')}</SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleCreate} className='space-y-4 text-left'>
+                    <form onSubmit={handleCreate} className='space-y-4 text-left' data-fp-save-shortcut>
                         <div className='space-y-2'>
                             <Label>{t('admin.node_databases.form.name')}</Label>
                             <Input
@@ -717,6 +746,20 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 </Select>
                             )}
                         </div>
+                        <div className='space-y-2'>
+                            <Label>Web node (optional)</Label>
+                            <Select value={webNodeId} onChange={(e) => setWebNodeId(e.target.value)}>
+                                <option value=''>All web nodes (global)</option>
+                                {webNodes.map((n) => (
+                                    <option key={n.id} value={String(n.id)}>
+                                        {n.name}
+                                    </option>
+                                ))}
+                            </Select>
+                            <p className='text-muted-foreground text-xs'>
+                                Scope this host to a FeatherQuilld web node, or leave global.
+                            </p>
+                        </div>
                         <SheetFooter>
                             <Button type='submit' loading={isSubmitting}>
                                 {t('admin.node_databases.form.submit_create')}
@@ -733,7 +776,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                         <SheetDescription>{t('admin.node_databases.form.edit_description')}</SheetDescription>
                     </SheetHeader>
                     {editingDatabase && (
-                        <form onSubmit={handleUpdate} className='space-y-4 text-left'>
+                        <form onSubmit={handleUpdate} className='space-y-4 text-left' data-fp-save-shortcut>
                             <div className='space-y-2'>
                                 <Label>{t('admin.node_databases.form.name')}</Label>
                                 <Input
@@ -849,6 +892,20 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                         ))}
                                     </Select>
                                 )}
+                            </div>
+                            <div className='space-y-2'>
+                                <Label>Web node (optional)</Label>
+                                <Select value={webNodeId} onChange={(e) => setWebNodeId(e.target.value)}>
+                                    <option value=''>All web nodes (global)</option>
+                                    {webNodes.map((n) => (
+                                        <option key={n.id} value={String(n.id)}>
+                                            {n.name}
+                                        </option>
+                                    ))}
+                                </Select>
+                                <p className='text-muted-foreground text-xs'>
+                                    Scope this host to a FeatherQuilld web node, or leave global.
+                                </p>
                             </div>
                             <SheetFooter>
                                 <Button type='submit' loading={isSubmitting}>

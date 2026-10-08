@@ -180,6 +180,8 @@ use App\Services\Subdomain\SubdomainCleanupService;
         new OA\Property(property: 'image', type: 'string', nullable: true, description: 'Docker image'),
         new OA\Property(property: 'spell_id', type: 'integer', nullable: true, description: 'Spell ID to change server spell'),
         new OA\Property(property: 'wipe_files', type: 'boolean', nullable: true, description: 'Whether to delete all server files before reinstalling (only applies when changing spell_id)', default: false),
+        new OA\Property(property: 'auto_start', type: 'boolean', nullable: true, description: 'Start automatically after node reboot/reconnect'),
+        new OA\Property(property: 'auto_start_delay', type: 'integer', nullable: true, description: 'Extra delay in seconds before auto-start'),
         new OA\Property(property: 'variables', type: 'array', items: new OA\Items(type: 'object', properties: [
             new OA\Property(property: 'variable_id', type: 'integer'),
             new OA\Property(property: 'variable_value', type: 'string'),
@@ -764,6 +766,9 @@ class ServerUserController
         // Include all spell fields required by the frontend, especially "features"
         // which are used for console feature detection (EULA, java_version, pid_limit, etc.)
         $spellData = Spell::getSpellById($server['spell_id']);
+        if ($spellData) {
+            $spellData = Spell::resolveConfiguration($spellData);
+        }
         $server['spell'] = $spellData ? [
             'id' => $spellData['id'] ?? null,
             'name' => $spellData['name'] ?? null,
@@ -828,7 +833,7 @@ class ServerUserController
             }
         }
 
-        $server['variables'] = $mergedVariables;
+        $server['variables'] = SpellVariable::filterUserViewable($mergedVariables);
         $server['custom_variables'] = ServerCustomVariable::getCustomVariablesByServerId((int) $server['id']);
 
         // Start flatten specific fields if they are valid JSON, else leave as is (do not json_decode, just keep string if not)
@@ -1104,6 +1109,38 @@ class ServerUserController
                     return $permissionCheck;
                 }
             }
+
+            $requestedSpellId = isset($data['spell_id']) ? (int) $data['spell_id'] : 0;
+            $spellChangeRequested = $requestedSpellId > 0 && $requestedSpellId !== (int) $server['spell_id'];
+
+            // Spell/egg change requires settings.change-egg; the forced reinstall also needs settings.reinstall
+            if ($spellChangeRequested) {
+                $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SETTINGS_CHANGE_EGG);
+                if ($permissionCheck !== null) {
+                    return $permissionCheck;
+                }
+
+                $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SETTINGS_REINSTALL);
+                if ($permissionCheck !== null) {
+                    return $permissionCheck;
+                }
+            }
+
+            // wipe_files forces a destructive delete; require the same gate as reinstallServer()
+            if ($wipeFilesRequested) {
+                $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SETTINGS_REINSTALL);
+                if ($permissionCheck !== null) {
+                    return $permissionCheck;
+                }
+            }
+
+            // Standalone variable edits use the same gate as other startup mutations
+            if (isset($data['variables']) && !$spellChangeRequested) {
+                $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::STARTUP_UPDATE);
+                if ($permissionCheck !== null) {
+                    return $permissionCheck;
+                }
+            }
         }
 
         // Validate and sanitize input
@@ -1298,6 +1335,25 @@ class ServerUserController
             }
         }
 
+        if (array_key_exists('auto_start', $data) || array_key_exists('auto_start_delay', $data)) {
+            $appCfg = App::getInstance(true)->getConfig();
+            $allowAutoStart = $appCfg->getSetting(ConfigInterface::SERVER_ALLOW_USER_AUTO_START, 'false');
+            $allowAutoStart = ($allowAutoStart === 'true' || $allowAutoStart === true || $allowAutoStart === '1' || $allowAutoStart === 1);
+            if (!$allowAutoStart) {
+                return ApiResponse::error('Auto start settings are disabled by the administrator', 'AUTO_START_EDIT_DISABLED', 403);
+            }
+
+            if (array_key_exists('auto_start', $data)) {
+                $updateData['auto_start'] = (int) (bool) $data['auto_start'];
+            }
+            if (array_key_exists('auto_start_delay', $data)) {
+                if (!is_numeric($data['auto_start_delay']) || (int) $data['auto_start_delay'] < 0 || (int) $data['auto_start_delay'] > 3600) {
+                    return ApiResponse::error('Auto start delay must be between 0 and 3600 seconds', 'INVALID_AUTO_START_DELAY', 400);
+                }
+                $updateData['auto_start_delay'] = (int) $data['auto_start_delay'];
+            }
+        }
+
         // Normalize variables payload if provided
         $variablesPayload = null;
         if (isset($data['variables'])) {
@@ -1328,7 +1384,7 @@ class ServerUserController
         }
 
         // Additional security check: only allow specific fields
-        $allowedFields = ['name', 'description', 'startup', 'image', 'spell_id', 'realms_id', 'backup_retention_mode'];
+        $allowedFields = ['name', 'description', 'startup', 'image', 'spell_id', 'realms_id', 'backup_retention_mode', 'auto_start', 'auto_start_delay'];
         $updateData = array_intersect_key($updateData, array_flip($allowedFields));
 
         // Double check that we only have allowed fields
@@ -1339,6 +1395,17 @@ class ServerUserController
         }
 
         // Handle spell change: delete old variables and create new ones with user-provided values
+        if ($variablesPayload !== null) {
+            $targetSpellId = (int) ($updateData['spell_id'] ?? $server['spell_id']);
+            $error = \App\Services\Spells\VariableValidator::validatePayload(
+                $variablesPayload,
+                SpellVariable::getVariablesBySpellId($targetSpellId)
+            );
+            if ($error !== null) {
+                return ApiResponse::error($error['message'], $error['code'], $error['status']);
+            }
+        }
+
         if ($spellChanged) {
             // Delete all old server variables
             $deleted = ServerVariable::deleteServerVariablesByServerId((int) $server['id']);
@@ -1360,7 +1427,7 @@ class ServerUserController
                     $spellVarMap[(int) $sv['id']] = $sv;
                 }
 
-                $validatedVariables = [];
+                $providedValues = [];
                 foreach ($variablesPayload as $item) {
                     $varId = (int) $item['variable_id'];
                     $val = (string) $item['variable_value'];
@@ -1371,15 +1438,29 @@ class ServerUserController
 
                     $sv = $spellVarMap[$varId];
 
+                    // Same editability gate as non-spell variable updates
+                    if ((int) $sv['user_editable'] !== 1 || (int) $sv['user_viewable'] !== 1) {
+                        return ApiResponse::error('Variable is not editable: ' . $sv['env_variable'], 'VARIABLE_NOT_EDITABLE', 403);
+                    }
+
                     // Validate variable value
                     $error = $this->validateVariableValue($val, (string) ($sv['rules'] ?? ''), (string) ($sv['field_type'] ?? ''));
                     if ($error !== null) {
                         return ApiResponse::error('Validation failed for ' . $sv['env_variable'] . ': ' . $error, 'INVALID_VARIABLE_VALUE', 422);
                     }
 
+                    $providedValues[$varId] = $val;
+                }
+
+                // Full variable set for the new spell: user-provided editable values + defaults for the rest
+                $validatedVariables = [];
+                foreach ($newSpellVariables as $sv) {
+                    $varId = (int) $sv['id'];
                     $validatedVariables[] = [
                         'variable_id' => $varId,
-                        'variable_value' => $val,
+                        'variable_value' => array_key_exists($varId, $providedValues)
+                            ? $providedValues[$varId]
+                            : (string) ($sv['default_value'] ?? ''),
                     ];
                 }
 
@@ -1447,7 +1528,7 @@ class ServerUserController
                 if ((int) $sv['spell_id'] !== $activeSpellId) {
                     return ApiResponse::error('Variable does not belong to this server spell: ' . $sv['env_variable'], 'INVALID_VARIABLE_SCOPE', 422);
                 }
-                if ((int) $sv['user_editable'] !== 1) {
+                if ((int) $sv['user_editable'] !== 1 || (int) $sv['user_viewable'] !== 1) {
                     return ApiResponse::error('Variable is not editable: ' . $sv['env_variable'], 'VARIABLE_NOT_EDITABLE', 403);
                 }
 
@@ -2435,123 +2516,11 @@ class ServerUserController
     }
 
     /**
-     * Validate a variable value against a rules string (e.g., "required|string|max:20", "required|regex:/^foo$/").
-     * Returns an error message string if invalid, or null if valid.
-     */
-    private function validateVariableValue(string $value, string $rules, string $fieldType = ''): ?string
-    {
-        $rules = trim($rules);
-        if ($rules === '') {
-            return null;
-        }
-        $parts = explode('|', $rules);
-        $required = in_array('required', $parts, true);
-        $nullable = in_array('nullable', $parts, true);
-        $isNumeric = in_array('numeric', $parts, true) || in_array('integer', $parts, true) || in_array('int', $parts, true);
-        // string rule is informational for our basic validator
-
-        if ($value === '') {
-            if ($required) {
-                return 'This field is required';
-            }
-            if ($nullable) {
-                return null;
-            }
-
-            // Not required and not nullable but empty -> treat as valid to avoid breaking existing behavior
-            return null;
-        }
-
-        // Numeric check
-        if ($isNumeric) {
-            if (!preg_match('/^\d+$/', $value)) {
-                return 'Must be numeric';
-            }
-        }
-
-        foreach ($parts as $part) {
-            if (preg_match('/^max:(\d+)$/', $part, $m)) {
-                $limit = (int) $m[1];
-                if ($isNumeric) {
-                    if ((int) $value > $limit) {
-                        return 'Must be less than or equal to ' . $limit;
-                    }
-                } else {
-                    if (strlen($value) > $limit) {
-                        return 'Must be at most ' . $limit . ' characters';
-                    }
-                }
-                continue;
-            }
-            if (preg_match('/^min:(\d+)$/', $part, $m)) {
-                $limit = (int) $m[1];
-                if ($isNumeric) {
-                    if ((int) $value < $limit) {
-                        return 'Must be at least ' . $limit;
-                    }
-                } else {
-                    if (strlen($value) < $limit) {
-                        return 'Must be at least ' . $limit . ' characters';
-                    }
-                }
-                continue;
-            }
-            if (str_starts_with($part, 'regex:')) {
-                $pattern = substr($part, strlen('regex:'));
-
-                if (empty($pattern)) {
-                    return 'Invalid regex rule: pattern is empty';
-                }
-
-                // Normalize the pattern: add delimiters if missing
-                // Check if pattern already has delimiters (common delimiters: /, #, ~, `)
-                $hasDelimiters = false;
-                $firstChar = $pattern[0];
-                if (in_array($firstChar, ['/', '#', '~', '`'], true)) {
-                    // Check if there's a matching closing delimiter
-                    $lastDelimiterPos = strrpos($pattern, $firstChar);
-                    if ($lastDelimiterPos !== false && $lastDelimiterPos > 0) {
-                        // Check if there are flags after the closing delimiter
-                        $afterDelimiter = substr($pattern, $lastDelimiterPos + 1);
-                        if (empty($afterDelimiter) || preg_match('/^[gimsuxADSUX]*$/', $afterDelimiter)) {
-                            $hasDelimiters = true;
-                        }
-                    }
-                }
-
-                $normalizedPattern = $hasDelimiters ? $pattern : '/' . $pattern . '/';
-
-                // Validate the regex pattern is syntactically correct
-                $lastError = null;
-                set_error_handler(function ($errno, $errstr) use (&$lastError) {
-                    $lastError = $errstr;
-
-                    return true;
-                }, E_WARNING);
-
-                $isValid = @preg_match($normalizedPattern, '') !== false;
-                restore_error_handler();
-
-                if (!$isValid) {
-                    $errorMsg = $lastError ?? 'malformed pattern';
-                    // Clean up the error message
-                    $errorMsg = preg_replace('/.*: /', '', $errorMsg);
-
-                    return 'Invalid regex rule: ' . $errorMsg;
-                }
-
-                // Test the value against the pattern
-                if (preg_match($normalizedPattern, $value) !== 1) {
-                    return 'Value does not match required format';
-                }
-                continue;
-            }
-        }
-
-        return null;
-    }
-
-    /**
+     * private function validateVariableValue(string $value, string $rules, string $fieldType = ''): ?string
+     * {
+     * return \App\Services\Spells\VariableValidator::validate($value, $rules);
+     * }.
+     * /**
      * Get user permissions for a specific server.
      * Returns full permissions for server owners, or subuser permissions for subusers.
      *

@@ -17,6 +17,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface AdminDashboardData {
     count: {
@@ -91,12 +93,14 @@ interface AdminDashboardData {
 }
 
 export function useAdminDashboard() {
+    const { t } = useTranslation();
     const [data, setData] = useState<AdminDashboardData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const fetchDashboard = useCallback(async () => {
         setLoading(true);
+        setError(null);
         try {
             const response = await axios.get('/api/admin/dashboard', {
                 withCredentials: true,
@@ -104,18 +108,14 @@ export function useAdminDashboard() {
             if (response.data.success) {
                 setData(response.data.data);
             } else {
-                setError(response.data.message || 'Failed to fetch dashboard data');
+                setError(getApiErrorMessageFromPayload(response.data, t, 'common.error'));
             }
         } catch (err: unknown) {
-            if (axios.isAxiosError(err)) {
-                setError(err.response?.data?.message || err.message);
-            } else {
-                setError('An unexpected error occurred');
-            }
+            setError(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         fetchDashboard();

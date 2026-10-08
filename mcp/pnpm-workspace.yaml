@@ -1,0 +1,5 @@
+allowBuilds:
+  esbuild: true
+minimumReleaseAgeExclude:
+  - '@types/node@26.5.0'
+  - '@modelcontextprotocol/sdk@1.30.1'

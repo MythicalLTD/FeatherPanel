@@ -27,7 +27,7 @@ import {
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { toast } from 'sonner';
-import { filesApi } from '@/lib/files-api';
+import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { Move, Copy } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 
@@ -42,6 +42,7 @@ interface MoveCopyDialogProps {
 }
 
 export function MoveCopyDialog({ open, onOpenChange, uuid, root, files, action, onSuccess }: MoveCopyDialogProps) {
+    const filesApi = useFileManagerApi();
     const { t } = useTranslation();
     const [destination, setDestination] = useState(root);
     const [newName, setNewName] = useState('');

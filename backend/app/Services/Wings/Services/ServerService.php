@@ -942,9 +942,21 @@ class ServerService
 
             $response = $this->connection->post("/api/servers/{$serverUuid}/files/pull", $data);
 
-            return new WingsResponse($response, $foreground ? 200 : 204);
+            // Background pulls return 202; foreground success is 200.
+            return new WingsResponse(is_array($response) ? $response : [], $foreground ? 200 : 202);
+        } catch (WingsRequestException $e) {
+            $payload = [
+                'error' => $e->getMessage(),
+            ];
+            if ($e->getRequestId()) {
+                $payload['request_id'] = $e->getRequestId();
+            }
+
+            return new WingsResponse($payload, $e->getCode() > 0 ? (int) $e->getCode() : 500);
         } catch (\Exception $e) {
-            return new WingsResponse(['error' => $e->getMessage()], 500);
+            $code = $e->getCode() > 0 ? (int) $e->getCode() : 500;
+
+            return new WingsResponse(['error' => $e->getMessage()], $code);
         }
     }
 
@@ -1074,10 +1086,15 @@ class ServerService
     /**
      * Delete backup.
      */
-    public function deleteBackup(string $serverUuid, string $backupId): WingsResponse
+    public function deleteBackup(string $serverUuid, string $backupId, ?string $snapshot = null): WingsResponse
     {
         try {
-            $response = $this->connection->delete("/api/servers/{$serverUuid}/backup/{$backupId}");
+            $path = "/api/servers/{$serverUuid}/backup/{$backupId}";
+            $snapshot = is_string($snapshot) ? trim($snapshot) : '';
+            if ($snapshot !== '') {
+                $path .= '?' . http_build_query(['snapshot' => $snapshot]);
+            }
+            $response = $this->connection->delete($path);
 
             return new WingsResponse($response, 204);
         } catch (WingsAuthenticationException | WingsRequestException $e) {

@@ -42,7 +42,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { formatDateTimeInTz } from '@/lib/dateUtils';
@@ -50,9 +50,11 @@ import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-import { cn, isEnabled } from '@/lib/utils';
+import { cn, isEnabledUnlessExplicitlyFalse } from '@/lib/utils';
 import type { Schedule, SchedulePagination } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
+import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function ServerSchedulesPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -95,7 +97,7 @@ export default function ServerSchedulesPage() {
 
     const fetchData = React.useCallback(
         async (page = 1) => {
-            if (!uuidShort || !isEnabled(settings?.server_allow_schedules)) return;
+            if (!uuidShort || !isEnabledUnlessExplicitlyFalse(settings?.server_allow_schedules)) return;
             setLoading(true);
             try {
                 const { data } = await axios.get<{
@@ -110,7 +112,7 @@ export default function ServerSchedulesPage() {
                 }
             } catch (error) {
                 console.error('Failed to fetch schedules:', error);
-                toast.error(t('serverSchedules.failedToFetch'));
+                toast.error(getApiErrorMessage(error, t, 'serverSchedules.failedToFetch'));
             } finally {
                 setLoading(false);
             }
@@ -119,7 +121,7 @@ export default function ServerSchedulesPage() {
     );
 
     React.useEffect(() => {
-        const schedulesEnabled = isEnabled(settings?.server_allow_schedules);
+        const schedulesEnabled = isEnabledUnlessExplicitlyFalse(settings?.server_allow_schedules);
         if (canRead && schedulesEnabled) {
             fetchData();
             fetchWidgets();
@@ -141,11 +143,11 @@ export default function ServerSchedulesPage() {
                 setIsDeleteOpen(false);
                 fetchData(pagination.current_page);
             } else {
-                toast.error(data?.message || t('serverSchedules.deleteFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverSchedules.deleteFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            const msg = axiosError.response?.data?.message || t('serverSchedules.deleteFailed');
+            const msg = getApiErrorMessage(axiosError, t, 'serverSchedules.deleteFailed');
             toast.error(msg);
         } finally {
             setDeleting(false);
@@ -159,11 +161,11 @@ export default function ServerSchedulesPage() {
                 toast.success(t('serverSchedules.toggleSuccess'));
                 fetchData(pagination.current_page);
             } else {
-                toast.error(data?.message || t('serverSchedules.toggleFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverSchedules.toggleFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            const msg = axiosError.response?.data?.message || t('serverSchedules.toggleFailed');
+            const msg = getApiErrorMessage(axiosError, t, 'serverSchedules.toggleFailed');
             toast.error(msg);
         }
     };
@@ -176,11 +178,11 @@ export default function ServerSchedulesPage() {
                 toast.success(t('serverSchedules.runQueued'));
                 fetchData(pagination.current_page);
             } else {
-                toast.error(data?.message || t('serverSchedules.runFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverSchedules.runFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('serverSchedules.runFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'serverSchedules.runFailed'));
         } finally {
             setRunningNow(null);
         }
@@ -200,11 +202,11 @@ export default function ServerSchedulesPage() {
                 URL.revokeObjectURL(url);
                 toast.success(t('serverSchedules.exportSuccess'));
             } else {
-                toast.error(data?.message || t('serverSchedules.exportFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverSchedules.exportFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('serverSchedules.exportFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'serverSchedules.exportFailed'));
         } finally {
             setExporting(null);
         }
@@ -227,7 +229,7 @@ export default function ServerSchedulesPage() {
         try {
             parsed = JSON.parse(importJson);
         } catch {
-            toast.error(t('serverSchedules.importInvalidJson'));
+            toast.error(t('errors.codes.INVALID_JSON'));
             return;
         }
         setImporting(true);
@@ -239,11 +241,11 @@ export default function ServerSchedulesPage() {
                 setImportJson('');
                 fetchData(1);
             } else {
-                toast.error(data?.message || t('serverSchedules.importFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverSchedules.importFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('serverSchedules.importFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'serverSchedules.importFailed'));
         } finally {
             setImporting(false);
         }
@@ -260,11 +262,13 @@ export default function ServerSchedulesPage() {
     };
     const showHeaderCreateAction = canCreate && schedules.length > 0;
 
-    if (permissionsLoading || settingsLoading) return null;
+    if (permissionsLoading || settingsLoading) {
+        return <PageLoading />;
+    }
 
-    if (!isEnabled(settings?.server_allow_schedules)) {
+    if (!isEnabledUnlessExplicitlyFalse(settings?.server_allow_schedules)) {
         return (
-            <div className='flex flex-col items-center justify-center space-y-8 rounded-[3rem] border border-white/5 bg-[#0A0A0A]/40 py-24 text-center backdrop-blur-3xl'>
+            <div className='bg-card/40 border-border/50 flex flex-col items-center justify-center space-y-8 rounded-3xl border py-24 text-center backdrop-blur-xl'>
                 <div className='relative'>
                     <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
                     <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
@@ -580,14 +584,23 @@ export default function ServerSchedulesPage() {
             <WidgetRenderer widgets={getWidgets('server-schedules', 'after-schedules-list')} />
             <WidgetRenderer widgets={getWidgets('server-schedules', 'bottom-of-page')} />
 
-            <HeadlessModal
-                isOpen={isDeleteOpen}
+            <Dialog
+                open={isDeleteOpen}
                 onClose={() => setIsDeleteOpen(false)}
-                title={t('serverSchedules.confirmDeleteTitle')}
-                description={t('serverSchedules.confirmDeleteDescription', {
-                    scheduleName: selectedSchedule?.name || '',
-                })}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsDeleteOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('serverSchedules.confirmDeleteTitle')}</DialogTitle>
+                    <DialogDescription>
+                        {t('serverSchedules.confirmDeleteDescription', {
+                            scheduleName: selectedSchedule?.name || '',
+                        })}
+                    </DialogDescription>
+                </DialogHeader>
                 <div className='flex justify-end gap-2 pt-4'>
                     <Button variant='outline' onClick={() => setIsDeleteOpen(false)} disabled={deleting}>
                         {t('common.cancel')}
@@ -601,19 +614,29 @@ export default function ServerSchedulesPage() {
                         {t('common.delete')}
                     </Button>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={isImportOpen}
+            <Dialog
+                open={isImportOpen}
                 onClose={() => {
                     if (!importing) {
                         setIsImportOpen(false);
                         setImportJson('');
                     }
                 }}
-                title={t('serverSchedules.importScheduleTitle')}
-                description={t('serverSchedules.importScheduleDescription')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        if (!importing) {
+                            setIsImportOpen(false);
+                            setImportJson('');
+                        }
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('serverSchedules.importScheduleTitle')}</DialogTitle>
+                    <DialogDescription>{t('serverSchedules.importScheduleDescription')}</DialogDescription>
+                </DialogHeader>
                 <div className='flex flex-col gap-4 pt-2'>
                     <div
                         className='flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/10 bg-white/5 p-6 transition-colors hover:border-white/20'
@@ -662,7 +685,7 @@ export default function ServerSchedulesPage() {
                         </Button>
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
         </div>
     );
 }

@@ -37,11 +37,11 @@ use Symfony\Component\HttpFoundation\Response;
 #[OA\Schema(
     schema: 'BackupCompletion',
     type: 'object',
-    required: ['checksum', 'checksum_type', 'size', 'successful'],
+    required: ['successful'],
     properties: [
-        new OA\Property(property: 'checksum', type: 'string', description: 'Backup file checksum'),
-        new OA\Property(property: 'checksum_type', type: 'string', description: 'Type of checksum algorithm'),
-        new OA\Property(property: 'size', type: 'integer', description: 'Backup file size in bytes'),
+        new OA\Property(property: 'checksum', type: 'string', description: 'Backup file checksum, required on success', nullable: true),
+        new OA\Property(property: 'checksum_type', type: 'string', description: 'Type of checksum algorithm, required on success', nullable: true),
+        new OA\Property(property: 'size', type: 'integer', description: 'Backup file size in bytes, required on success', nullable: true),
         new OA\Property(property: 'successful', type: 'boolean', description: 'Whether backup was successful'),
         new OA\Property(property: 'upload_id', type: 'string', description: 'Upload ID for multipart uploads'),
     ]
@@ -229,22 +229,10 @@ class WingsBackupController
             return ApiResponse::error('Invalid request body', 'INVALID_REQUEST_BODY', 400);
         }
 
-        // Validate required fields
-        $required = ['checksum', 'checksum_type', 'size', 'successful'];
-        foreach ($required as $field) {
-            if (!isset($body[$field])) {
-                return ApiResponse::error("Missing required field: {$field}", 'MISSING_REQUIRED_FIELD', 400);
-            }
+        $updateData = \App\Services\Backup\BackupCompletionPayload::parse($body);
+        if ($updateData === null) {
+            return ApiResponse::error('Invalid backup completion payload', 'INVALID_REQUEST_BODY', 400);
         }
-
-        // Update backup with completion data
-        $updateData = [
-            'checksum' => $body['checksum'],
-            'bytes' => (int) $body['size'],
-            'is_successful' => $body['successful'] ? 1 : 0,
-            'is_locked' => 0,
-            'completed_at' => date('Y-m-d H:i:s'),
-        ];
 
         // Add upload_id if provided
         if (!empty($body['upload_id'])) {

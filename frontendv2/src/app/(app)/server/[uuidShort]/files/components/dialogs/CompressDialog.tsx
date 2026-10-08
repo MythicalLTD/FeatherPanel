@@ -25,12 +25,12 @@ import {
     DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/featherui/Button';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { HeadlessSelect } from '@/components/ui/headless-select';
 import { Archive } from 'lucide-react';
 import { toast } from 'sonner';
-import { filesApi } from '@/lib/files-api';
+import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { supportsDaemonFeature, type DaemonCapabilitiesMap } from '@/lib/daemonCapabilities';
 import { useTranslation } from '@/contexts/TranslationContext';
 
@@ -55,6 +55,7 @@ export function CompressDialog({
     capabilities,
     daemonType,
 }: CompressDialogProps) {
+    const filesApi = useFileManagerApi();
     const { t } = useTranslation();
     const [name, setName] = useState('');
     const [extension, setExtension] = useState('tar.gz');

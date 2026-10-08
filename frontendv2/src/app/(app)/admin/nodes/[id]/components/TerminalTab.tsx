@@ -21,6 +21,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import '@xterm/xterm/css/xterm.css';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -28,6 +29,7 @@ import { Terminal as TerminalIcon, Zap, Trash2, AlertTriangle } from 'lucide-rea
 import { NodeData, CommandExecutionResponse } from '../types';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 
 interface TerminalTabProps {
     node: NodeData;
@@ -47,7 +49,7 @@ export function TerminalTab({ node }: TerminalTabProps) {
         const terminal = new Terminal({
             cursorBlink: true,
             fontSize: 14,
-            fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+            fontFamily: APP_MONO_FONT_STACK,
             theme: {
                 background: '#000000',
                 foreground: '#d1d5db',
@@ -133,7 +135,7 @@ export function TerminalTab({ node }: TerminalTabProps) {
             });
 
             if (!data.success) {
-                throw new Error(data.message || 'Command execution failed');
+                throw new Error(getApiErrorMessageFromPayload(data, t, 'common.error'));
             }
 
             if (terminal) {
@@ -159,12 +161,7 @@ export function TerminalTab({ node }: TerminalTabProps) {
                 );
             }
         } catch (err: unknown) {
-            let msg = 'Failed to execute command';
-            if (axios.isAxiosError(err)) {
-                msg = err.response?.data?.message || err.message;
-            } else if (err instanceof Error) {
-                msg = err.message;
-            }
+            const msg = getApiErrorMessage(err, t, 'common.error');
             if (terminal) {
                 terminal.write('\x1b[31m✗ Error: ' + msg + '\x1b[0m\r\n');
             }

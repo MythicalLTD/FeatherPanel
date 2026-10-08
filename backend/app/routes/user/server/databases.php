@@ -71,6 +71,30 @@ return function (RouteCollection $routes): void {
         'user-server-databases'
     );
 
+    // Bulk delete databases for a server (must be registered before {databaseId} routes)
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-databases-bulk-delete',
+        '/api/user/servers/{uuidShort}/databases/bulk-delete',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new ServerDatabaseController())->bulkDeleteServerDatabases($request, $server['uuid']);
+        },
+        'uuidShort',
+        ['DELETE'],
+        Rate::perMinute(5),
+        'user-server-databases'
+    );
+
     // Get available database hosts for a server (MUST be before {databaseId} routes)
     App::getInstance(true)->registerServerRoute(
         $routes,

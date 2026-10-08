@@ -22,6 +22,7 @@ use Symfony\Component\HttpFoundation\Request;
 use App\Controllers\User\Auth\LoginController;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\User\Auth\DiscordController;
+use App\Controllers\User\Auth\QrLoginController;
 use App\Controllers\User\Auth\RegisterController;
 use App\Controllers\User\Auth\TwoFactorController;
 use App\Controllers\User\Auth\AuthLogoutController;
@@ -313,5 +314,90 @@ return function (RouteCollection $routes): void {
         ['POST'],
         Rate::perMinute(10), // Allow more attempts for code verification
         'user-auth-email'
+    );
+
+    // Discord-style QR login (desktop challenge + phone approve + exchange)
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'qr-login-start',
+        '/api/user/auth/qr/start',
+        function (Request $request) {
+            return (new QrLoginController())->start($request);
+        },
+        ['POST'],
+        Rate::perMinute(10),
+        'user-auth-qr'
+    );
+
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'qr-login-poll',
+        '/api/user/auth/qr/poll',
+        function (Request $request) {
+            return (new QrLoginController())->poll($request);
+        },
+        ['POST'],
+        Rate::perMinute(60),
+        'user-auth-qr'
+    );
+
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'qr-login-exchange',
+        '/api/user/auth/qr/exchange',
+        function (Request $request) {
+            return (new QrLoginController())->exchange($request);
+        },
+        ['POST'],
+        Rate::perMinute(20),
+        'user-auth-qr'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'qr-login-show-by-code',
+        '/api/user/auth/qr/code/{user_code}',
+        function (Request $request, array $args) {
+            return (new QrLoginController())->showByCode($request, $args);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-auth-qr'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'qr-login-show',
+        '/api/user/auth/qr/{challenge_id}',
+        function (Request $request, array $args) {
+            return (new QrLoginController())->show($request, $args);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-auth-qr'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'qr-login-approve',
+        '/api/user/auth/qr/{challenge_id}/approve',
+        function (Request $request, array $args) {
+            return (new QrLoginController())->approve($request, $args);
+        },
+        ['POST'],
+        Rate::perMinute(20),
+        'user-auth-qr'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'qr-login-deny',
+        '/api/user/auth/qr/{challenge_id}/deny',
+        function (Request $request, array $args) {
+            return (new QrLoginController())->deny($request, $args);
+        },
+        ['POST'],
+        Rate::perMinute(20),
+        'user-auth-qr'
     );
 };

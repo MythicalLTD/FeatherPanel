@@ -78,7 +78,7 @@ export function WhitelistEditor({
     };
 
     return (
-        <Card className='bg-card/50 border-border/50 flex flex-col overflow-hidden rounded-3xl border shadow-sm backdrop-blur-3xl'>
+        <Card className='bg-card/50 border-border/50 flex flex-col overflow-hidden rounded-2xl border shadow-sm backdrop-blur-sm'>
             <CardHeader className='border-border/10 shrink-0 border-b pb-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
@@ -92,7 +92,7 @@ export function WhitelistEditor({
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('files.editors.whitelistConfig.actions.switchToRaw')}
                         </Button>
-                        <Button size='sm' disabled={readonly || saving} onClick={handleSave}>
+                        <Button size='sm' disabled={readonly || saving} onClick={handleSave} data-fp-save-shortcut>
                             <Save className='mr-2 h-4 w-4' />
                             {saving
                                 ? t('files.editors.whitelistConfig.actions.saving')
@@ -129,9 +129,7 @@ export function WhitelistEditor({
                                         value={entry}
                                         onChange={(e) => updateEntry(index, e.target.value)}
                                         readOnly={readonly}
-                                        placeholder={
-                                            t('files.editors.whitelistConfig.fields.playerName') || 'PlayerName'
-                                        }
+                                        placeholder={t('files.editors.whitelistConfig.fields.playerName')}
                                     />
                                 </div>
                                 <Button

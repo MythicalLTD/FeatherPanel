@@ -22,6 +22,7 @@ import Link from 'next/link';
 import { VmInstance } from '@/lib/vms-api';
 import { HardDrive, Cpu, MemoryStick, Globe, Server, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { OverflowText } from '@/components/featherui/OverflowText';
 
 interface VmCardProps {
     vm: VmInstance;
@@ -31,6 +32,7 @@ interface VmCardProps {
 function StatusDot({ status, suspended }: { status?: string; suspended?: number }) {
     const isSuspended = suspended === 1 || status === 'suspended';
     const isRunning = status === 'running' && !isSuspended;
+    const isUnknown = !status || status === 'unknown';
     return (
         <span
             className={cn(
@@ -39,16 +41,24 @@ function StatusDot({ status, suspended }: { status?: string; suspended?: number 
                     ? 'bg-amber-500/15 text-amber-400'
                     : isRunning
                       ? 'bg-green-500/15 text-green-400'
-                      : 'bg-red-500/15 text-red-400',
+                      : isUnknown
+                        ? 'bg-muted/40 text-muted-foreground'
+                        : 'bg-red-500/15 text-red-400',
             )}
         >
-            <span
-                className={cn(
-                    'h-1.5 w-1.5 rounded-full',
-                    isSuspended ? 'bg-amber-400' : isRunning ? 'animate-pulse bg-green-400' : 'bg-red-400',
-                )}
-            />
-            {isSuspended ? 'suspended' : (status ?? 'unknown')}
+            {isUnknown ? (
+                <span className='bg-muted-foreground/40 h-2.5 w-12 animate-pulse rounded-md' aria-busy='true' />
+            ) : (
+                <>
+                    <span
+                        className={cn(
+                            'h-1.5 w-1.5 rounded-full',
+                            isSuspended ? 'bg-amber-400' : isRunning ? 'animate-pulse bg-green-400' : 'bg-red-400',
+                        )}
+                    />
+                    {isSuspended ? 'suspended' : status}
+                </>
+            )}
         </span>
     );
 }
@@ -87,7 +97,7 @@ export function VmCard({ vm, layout }: VmCardProps) {
                     {/* Name + IP */}
                     <div className='min-w-0 flex-1'>
                         <div className='flex flex-wrap items-center gap-2'>
-                            <span className='text-foreground truncate font-semibold'>{vm.hostname}</span>
+                            <OverflowText className='text-foreground font-semibold'>{vm.hostname}</OverflowText>
                             <StatusDot status={vm.status} suspended={vm.suspended} />
                         </div>
                         <div className='text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs'>
@@ -122,11 +132,11 @@ export function VmCard({ vm, layout }: VmCardProps) {
             <div className='border-border/40 bg-card/40 hover:bg-card/70 hover:border-primary/30 group flex h-full flex-col rounded-xl border p-4 backdrop-blur-sm transition-all duration-200'>
                 {/* Header */}
                 <div className='mb-3 flex items-start justify-between gap-2'>
-                    <div className='flex min-w-0 items-center gap-2.5'>
+                    <div className='flex min-w-0 flex-1 items-center gap-2.5'>
                         <div className='bg-primary/10 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
                             <Server className='text-primary h-4.5 w-4.5' />
                         </div>
-                        <span className='text-foreground truncate font-semibold'>{vm.hostname}</span>
+                        <OverflowText className='text-foreground font-semibold'>{vm.hostname}</OverflowText>
                     </div>
                     <StatusDot status={vm.status} suspended={vm.suspended} />
                 </div>
@@ -151,12 +161,12 @@ export function VmCard({ vm, layout }: VmCardProps) {
                     </div>
                     <div className='bg-background/60 flex flex-col items-center rounded-lg px-2 py-2.5'>
                         <MemoryStick className='text-primary mb-1 h-4 w-4' />
-                        <span className='text-foreground text-sm font-bold'>{memoryGb ?? '—'}</span>
+                        <span className='text-foreground text-sm font-bold'>{memoryGb ?? '-'}</span>
                         <span className='text-muted-foreground text-[10px] tracking-wide uppercase'>GB RAM</span>
                     </div>
                     <div className='bg-background/60 flex flex-col items-center rounded-lg px-2 py-2.5'>
                         <HardDrive className='text-primary mb-1 h-4 w-4' />
-                        <span className='text-foreground text-sm font-bold'>{vm.disk_gb ?? '—'}</span>
+                        <span className='text-foreground text-sm font-bold'>{vm.disk_gb ?? '-'}</span>
                         <span className='text-muted-foreground text-[10px] tracking-wide uppercase'>GB Disk</span>
                     </div>
                 </div>

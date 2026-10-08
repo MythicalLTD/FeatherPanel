@@ -66,8 +66,8 @@ export function DhcpAgentTab() {
 
                     <div className='border-border/20 from-card/30 space-y-3 rounded-xl border bg-linear-to-b to-transparent p-4 md:col-span-2'>
                         <div className='flex items-start gap-3'>
-                            <div className='mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-purple-500/20 bg-purple-500/10'>
-                                <Zap className='h-4 w-4 text-purple-600' />
+                            <div className='border-primary/20 bg-primary/10 mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border'>
+                                <Zap className='text-primary h-4 w-4' />
                             </div>
                             <div>
                                 <h3 className='text-sm font-medium'>

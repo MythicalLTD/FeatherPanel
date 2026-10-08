@@ -23,10 +23,12 @@ use App\Chat\Subuser;
 use App\Chat\Activity;
 use App\Chat\Database;
 use App\Chat\MailList;
+use App\Chat\WebSpace;
 use App\Chat\ApiClient;
 use App\Chat\MailQueue;
 use App\Chat\UserDevice;
 use App\Chat\VmInstance;
+use App\Chat\WebSpaceSubuser;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\AccountDeleted;
@@ -42,7 +44,7 @@ class UserDeletionService
     public const MODE_AFTER_SERVICES = 'after_services';
 
     /**
-     * @return array{servers: int, vms: int, subscriptions: int, has_any: bool}
+     * @return array{servers: int, vms: int, webspaces: int, subscriptions: int, has_any: bool}
      */
     public static function getActiveServicesSummary(array $user): array
     {
@@ -52,6 +54,7 @@ class UserDeletionService
         $serversCount = (int) $stmt->fetchColumn();
 
         $vmsCount = VmInstance::countByUserUuid((string) $user['uuid']);
+        $webspacesCount = WebSpace::countByOwnerId((int) $user['id']);
 
         $subscriptionsCount = 0;
         if (class_exists(\App\Addons\billingplans\Chat\Subscription::class)) {
@@ -68,8 +71,9 @@ class UserDeletionService
         return [
             'servers' => $serversCount,
             'vms' => $vmsCount,
+            'webspaces' => $webspacesCount,
             'subscriptions' => $subscriptionsCount,
-            'has_any' => ($serversCount + $vmsCount + $subscriptionsCount) > 0,
+            'has_any' => ($serversCount + $vmsCount + $webspacesCount + $subscriptionsCount) > 0,
         ];
     }
 
@@ -143,6 +147,13 @@ class UserDeletionService
                 'code' => 'USER_HAS_VM_INSTANCES',
             ];
         }
+        if ($services['webspaces'] > 0) {
+            return [
+                'success' => false,
+                'error' => 'Cannot delete user with active WebSpaces. Please transfer or delete all WebSpaces first.',
+                'code' => 'USER_HAS_WEBSPACES',
+            ];
+        }
         if ($services['subscriptions'] > 0) {
             return [
                 'success' => false,
@@ -200,6 +211,7 @@ class UserDeletionService
         MailList::deleteAllMailListsByUserId($user['uuid']);
         ApiClient::deleteAllApiClientsByUserId($user['uuid']);
         Subuser::deleteAllSubusersByUserId((int) $user['id']);
+        WebSpaceSubuser::deleteAllByUserId((int) $user['id']);
         MailQueue::deleteAllMailQueueByUserId($user['uuid']);
 
         $deleted = User::hardDeleteUser((int) $user['id']);

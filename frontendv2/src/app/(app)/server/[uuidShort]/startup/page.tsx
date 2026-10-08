@@ -16,6 +16,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import * as React from 'react';
+import { validateEggVariable } from '@/lib/eggVariableRules';
+import { EggVariableInput } from '@/components/server/EggVariableInput';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -37,6 +39,7 @@ import {
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
+import { FormSection } from '@/components/featherui/FormSection';
 import { toast } from 'sonner';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -45,6 +48,8 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn, isEnabled } from '@/lib/utils';
 import { buildSpellDockerImageOptions, resolveSpellDefaultDockerImage } from '@/lib/spellDockerImages';
 import type { Variable, Server, CustomVariable } from '@/types/server';
+import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface ServerResponse {
     success: boolean;
@@ -95,98 +100,9 @@ export default function ServerStartupPage() {
         is_encrypted: false,
     });
 
-    const parseRules = React.useCallback((rules: string) => {
-        if (!rules) return [];
-        const parts = rules.split('|');
-        const parsed: Array<{ type: string; value?: number | string }> = [];
-        for (const part of parts) {
-            if (['required', 'nullable', 'string', 'numeric', 'integer', 'int'].includes(part)) {
-                parsed.push({ type: part });
-                continue;
-            }
-            const maxMatch = part.match(/^max:(\d+)$/);
-            if (maxMatch) {
-                parsed.push({ type: 'max', value: Number(maxMatch[1]) });
-                continue;
-            }
-            const minMatch = part.match(/^min:(\d+)$/);
-            if (minMatch) {
-                parsed.push({ type: 'min', value: Number(minMatch[1]) });
-                continue;
-            }
-            const regexMatch = part.match(/^regex:\/(.*)\/$/);
-            if (regexMatch) {
-                parsed.push({ type: 'regex', value: regexMatch[1] });
-                continue;
-            }
-        }
-        return parsed;
-    }, []);
-
-    const normalizeRegexPattern = React.useCallback((pattern: string) => {
-        try {
-            return pattern.replace(/\\\\/g, '\\');
-        } catch {
-            return pattern;
-        }
-    }, []);
-
     const validateVariableAgainstRules = React.useCallback(
-        (value: string, rules: string): string | '' => {
-            const parsed = parseRules(rules || '');
-            const hasNullable = parsed.some((r) => r.type === 'nullable');
-            const isRequired = parsed.some((r) => r.type === 'required');
-            const isNumeric = parsed.some((r) => r.type === 'numeric' || r.type === 'integer' || r.type === 'int');
-
-            const val = value ?? '';
-            const trimmedForEmptyCheck = val.trim();
-
-            if (!isRequired && hasNullable && trimmedForEmptyCheck === '') return '';
-            if (isRequired && trimmedForEmptyCheck === '') return t('serverStartup.fieldRequired');
-            if (!isRequired && trimmedForEmptyCheck === '') return '';
-
-            if (isNumeric && !/^\d+$/.test(trimmedForEmptyCheck)) return t('serverStartup.fieldMustBeNumeric');
-
-            for (const rule of parsed) {
-                if (rule.type === 'min' && typeof rule.value === 'number') {
-                    if (isNumeric) {
-                        const numValue = Number(trimmedForEmptyCheck);
-                        if (isNaN(numValue) || numValue < rule.value) {
-                            return t('serverStartup.minimumValue', { value: String(rule.value) });
-                        }
-                    } else {
-                        if (trimmedForEmptyCheck.length < rule.value) {
-                            return t('serverStartup.minimumCharacters', { value: String(rule.value) });
-                        }
-                    }
-                }
-                if (rule.type === 'max' && typeof rule.value === 'number') {
-                    if (isNumeric) {
-                        const numValue = Number(trimmedForEmptyCheck);
-                        if (isNaN(numValue) || numValue > rule.value) {
-                            return t('serverStartup.maximumValue', { value: String(rule.value) });
-                        }
-                    } else {
-                        if (trimmedForEmptyCheck.length > rule.value) {
-                            return t('serverStartup.maximumCharacters', { value: String(rule.value) });
-                        }
-                    }
-                }
-                if (rule.type === 'regex' && typeof rule.value === 'string') {
-                    try {
-                        const pattern = normalizeRegexPattern(rule.value);
-                        const re = new RegExp(pattern);
-                        if (!re.test(trimmedForEmptyCheck)) {
-                            return t('serverStartup.valueDoesNotMatchFormat');
-                        }
-                    } catch (err) {
-                        console.error('Invalid regex pattern:', rule.value, err);
-                    }
-                }
-            }
-            return '';
-        },
-        [parseRules, normalizeRegexPattern, t],
+        (value: string, rules: string): string => validateEggVariable(value, rules, t),
+        [t],
     );
 
     const validateOneVariable = React.useCallback(
@@ -267,11 +183,11 @@ export default function ServerStartupPage() {
         } catch (error) {
             console.error('Failed to fetch startup data:', error);
             if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
-                toast.error(t('serverStartup.loadTimeout'));
+                toast.error(getApiErrorMessage(error, t, 'serverStartup.loadTimeout'));
             } else if (error instanceof Error && error.message === 'Request timeout') {
                 toast.error(t('serverStartup.loadTimeout'));
             } else {
-                toast.error(t('serverStartup.failedToFetchServer'));
+                toast.error(getApiErrorMessage(error, t, 'serverStartup.failedToFetchServer'));
             }
         } finally {
             setLoading(false);
@@ -349,11 +265,11 @@ export default function ServerStartupPage() {
                 toast.success(t('serverStartup.saveSuccess'));
                 await fetchData();
             } else {
-                toast.error(data.message || t('serverStartup.saveError'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverStartup.saveError'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message?: string }>;
-            const msg = axiosError.response?.data?.message || t('serverStartup.saveError');
+            const msg = getApiErrorMessage(axiosError, t, 'serverStartup.saveError');
             toast.error(msg);
             console.error('Save failed:', error);
         } finally {
@@ -366,14 +282,12 @@ export default function ServerStartupPage() {
         const envVariable = customVariableForm.env_variable.trim().toUpperCase();
 
         if (!name || !envVariable) {
-            toast.error('Name and environment variable are required');
+            toast.error(t('serverStartup.customEnv.required'));
             return;
         }
 
         if (!/^[A-Z_][A-Z0-9_]*$/.test(envVariable)) {
-            toast.error(
-                'Env variable must use uppercase letters, numbers, and underscores, and cannot start with a number',
-            );
+            toast.error(t('serverStartup.customEnv.invalidEnv'));
             return;
         }
 
@@ -390,15 +304,15 @@ export default function ServerStartupPage() {
             );
 
             if (data.success) {
-                toast.success('Custom variable added');
+                toast.success(t('serverStartup.customEnv.added'));
                 setCustomVariableForm({ name: '', env_variable: '', variable_value: '', is_encrypted: false });
                 await fetchData();
             } else {
-                toast.error(data.message || 'Failed to add custom variable');
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverStartup.customEnv.addFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message?: string }>;
-            toast.error(axiosError.response?.data?.message || 'Failed to add custom variable');
+            toast.error(getApiErrorMessage(axiosError, t, 'serverStartup.customEnv.addFailed'));
         } finally {
             setCustomVariableSaving(false);
         }
@@ -412,14 +326,14 @@ export default function ServerStartupPage() {
             );
 
             if (data.success) {
-                toast.success('Custom variable deleted');
+                toast.success(t('serverStartup.customEnv.deleted'));
                 await fetchData();
             } else {
-                toast.error(data.message || 'Failed to delete custom variable');
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverStartup.customEnv.deleteFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message?: string }>;
-            toast.error(axiosError.response?.data?.message || 'Failed to delete custom variable');
+            toast.error(getApiErrorMessage(axiosError, t, 'serverStartup.customEnv.deleteFailed'));
         } finally {
             setCustomVariableSaving(false);
         }
@@ -427,7 +341,7 @@ export default function ServerStartupPage() {
 
     const selectedDockerImageLabel = availableDockerImages.find((img) => img.value === form.image)?.name || form.image;
 
-    const viewableVariables = variables.filter((v) => isEnabled(v.user_viewable) || canUpdateStartup);
+    const viewableVariables = variables.filter((v) => isEnabled(v.user_viewable));
     const variableCount = viewableVariables.length + customVariables.length;
     const hasChanges = () => {
         if (!server) return false;
@@ -439,11 +353,13 @@ export default function ServerStartupPage() {
         return startupChanged || imageChanged || variablesChanged;
     };
 
-    if (permissionsLoading || settingsLoading) return null;
+    if (permissionsLoading || settingsLoading) {
+        return <PageLoading />;
+    }
 
     if (!canRead) {
         return (
-            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-[3rem] border py-24 text-center backdrop-blur-3xl'>
+            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-3xl border py-24 text-center backdrop-blur-3xl'>
                 <div className='relative'>
                     <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
                     <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
@@ -504,6 +420,7 @@ export default function ServerStartupPage() {
                             size='default'
                             onClick={handleSave}
                             disabled={saving || !hasChanges() || Object.keys(variableErrors).length > 0}
+                            data-fp-save-shortcut
                             loading={saving}
                             className='order-1 w-full sm:order-2 sm:w-auto'
                         >
@@ -577,7 +494,7 @@ export default function ServerStartupPage() {
                                                         'h-1.5 w-1.5 rounded-full transition-all duration-300',
                                                         variableErrors[v.variable_id]
                                                             ? 'bg-red-500'
-                                                            : 'bg-purple-500/50 group-hover/var:bg-purple-500',
+                                                            : 'bg-primary/50 group-hover/var:bg-primary',
                                                     )}
                                                 />
                                                 <label className='text-muted-foreground group-hover/var:text-foreground text-[9px] font-black tracking-[0.2em] uppercase transition-colors'>
@@ -592,7 +509,8 @@ export default function ServerStartupPage() {
                                         </div>
 
                                         <div className='relative'>
-                                            <Input
+                                            <EggVariableInput
+                                                fieldType={v.field_type}
                                                 value={variableValues[v.variable_id] ?? ''}
                                                 onChange={(e) => {
                                                     const val = e.target.value;
@@ -629,10 +547,10 @@ export default function ServerStartupPage() {
                             <div className='flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between'>
                                 <div>
                                     <h3 className='text-sm font-black tracking-widest uppercase'>
-                                        Custom environment variables
+                                        {t('serverStartup.customEnv.title')}
                                     </h3>
                                     <p className='text-muted-foreground/50 mt-1 text-xs font-medium'>
-                                        Added directly to this server and synced without a transfer.
+                                        {t('serverStartup.customEnv.description')}
                                     </p>
                                 </div>
                             </div>
@@ -661,7 +579,9 @@ export default function ServerStartupPage() {
                                                 onClick={() => handleDeleteCustomVariable(variable)}
                                                 disabled={!canManageCustomVariables || customVariableSaving}
                                                 className='shrink-0'
-                                                aria-label={`Delete ${variable.env_variable}`}
+                                                aria-label={t('serverStartup.customEnv.deleteAria', {
+                                                    name: variable.env_variable,
+                                                })}
                                             >
                                                 <Trash2 className='h-3.5 w-3.5' />
                                             </Button>
@@ -678,7 +598,7 @@ export default function ServerStartupPage() {
                                             setCustomVariableForm((prev) => ({ ...prev, name: e.target.value }))
                                         }
                                         disabled={customVariableSaving}
-                                        placeholder='Display name'
+                                        placeholder={t('serverStartup.customEnv.namePlaceholder')}
                                     />
                                     <Input
                                         value={customVariableForm.env_variable}
@@ -689,7 +609,7 @@ export default function ServerStartupPage() {
                                             }))
                                         }
                                         disabled={customVariableSaving}
-                                        placeholder='ENV_NAME'
+                                        placeholder={t('serverStartup.customEnv.envPlaceholder')}
                                         className='font-mono text-xs'
                                     />
                                     <div className='flex gap-3'>
@@ -702,7 +622,7 @@ export default function ServerStartupPage() {
                                                 }))
                                             }
                                             disabled={customVariableSaving}
-                                            placeholder='Value'
+                                            placeholder={t('serverStartup.customEnv.valuePlaceholder')}
                                             className='font-mono text-xs'
                                         />
                                         <Button
@@ -729,7 +649,7 @@ export default function ServerStartupPage() {
                                             disabled={customVariableSaving}
                                             className='mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5'
                                         />
-                                        <span>Encrypt this value and hide it after save</span>
+                                        <span>{t('serverStartup.customEnv.encrypt')}</span>
                                     </label>
                                 </div>
                             )}
@@ -838,7 +758,7 @@ export default function ServerStartupPage() {
                     <WidgetRenderer widgets={getWidgets('server-startup', 'after-docker-image')} />
 
                     {canChangeSpell && (
-                        <div className='bg-primary/5 border-primary/10 group relative space-y-6 overflow-hidden rounded-3xl border p-8 backdrop-blur-3xl'>
+                        <FormSection className='bg-primary/5 border-primary/10 group relative overflow-hidden'>
                             <div className='bg-primary/10 group-hover:bg-primary/20 pointer-events-none absolute -right-12 -bottom-12 h-48 w-48 blur-3xl transition-all duration-1000' />
                             <div className='relative z-10 flex items-center gap-5'>
                                 <div className='bg-primary/10 border-primary/20 flex h-12 w-12 items-center justify-center rounded-2xl border transition-all duration-500 group-hover:scale-110 group-hover:rotate-3'>
@@ -867,7 +787,7 @@ export default function ServerStartupPage() {
                                 {t('serverStartup.startTransfer')}
                                 <ChevronRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                             </Button>
-                        </div>
+                        </FormSection>
                     )}
                     <WidgetRenderer widgets={getWidgets('server-startup', 'after-spell-selection')} />
                 </div>

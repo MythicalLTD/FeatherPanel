@@ -17,6 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/featherui/Button';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -51,14 +52,15 @@ export function ModulesTab({ node }: ModulesTabProps) {
             if (data.success) {
                 setModules(data.data?.data || data.data || []);
             } else {
-                console.error(data.message || 'Failed to fetch modules');
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.node.view.modules.fetch_failed'));
             }
         } catch (err: unknown) {
             console.error('Failed to fetch modules', err);
+            toast.error(getApiErrorMessage(err, t, 'admin.node.view.modules.fetch_failed'));
         } finally {
             setLoading(false);
         }
-    }, [node.id]);
+    }, [node.id, t]);
 
     useEffect(() => {
         fetchModules();
@@ -73,14 +75,14 @@ export function ModulesTab({ node }: ModulesTabProps) {
                 toast.success(t(`admin.node.view.modules.${action}_success`, { name: module.name }));
                 await fetchModules();
             } else {
-                toast.error(data.message || t(`admin.node.view.modules.${action}_failed`, { name: module.name }));
+                toast.error(
+                    getApiErrorMessageFromPayload(data, t, `admin.node.view.modules.${action}_failed`, {
+                        name: module.name,
+                    }),
+                );
             }
         } catch (err: unknown) {
-            let msg = t(`admin.node.view.modules.${action}_failed`, { name: module.name });
-            if (axios.isAxiosError(err)) {
-                msg = err.response?.data?.message || err.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, `admin.node.view.modules.${action}_failed`, { name: module.name }));
         } finally {
             setToggling(null);
         }
@@ -99,15 +101,11 @@ export function ModulesTab({ node }: ModulesTabProps) {
             if (data.success) {
                 setConfigData(JSON.stringify(data.data.config || {}, null, 4));
             } else {
-                toast.error(data.message || t('admin.node.view.modules.config_fetch_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.node.view.modules.config_fetch_failed'));
                 setConfigModalOpen(false);
             }
         } catch (err: unknown) {
-            let msg = t('admin.node.view.modules.config_fetch_failed');
-            if (axios.isAxiosError(err)) {
-                msg = err.response?.data?.message || err.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'admin.node.view.modules.config_fetch_failed'));
             setConfigModalOpen(false);
         } finally {
             setFetchingConfig(false);
@@ -122,7 +120,7 @@ export function ModulesTab({ node }: ModulesTabProps) {
             try {
                 parsedConfig = JSON.parse(configData);
             } catch {
-                toast.error(t('admin.node.view.modules.invalid_json_config'));
+                toast.error(t('errors.codes.INVALID_JSON'));
                 setSavingConfig(false);
                 return;
             }
@@ -137,15 +135,17 @@ export function ModulesTab({ node }: ModulesTabProps) {
                 await fetchModules();
             } else {
                 toast.error(
-                    data.message || t('admin.node.view.modules.config_save_failed', { name: selectedModule.name }),
+                    getApiErrorMessageFromPayload(data, t, 'admin.node.view.modules.config_save_failed', {
+                        name: selectedModule.name,
+                    }),
                 );
             }
         } catch (err: unknown) {
-            let msg = t('admin.node.view.modules.config_save_failed', { name: selectedModule.name });
-            if (axios.isAxiosError(err)) {
-                msg = err.response?.data?.message || err.message;
-            }
-            toast.error(msg);
+            toast.error(
+                getApiErrorMessage(err, t, 'admin.node.view.modules.config_save_failed', {
+                    name: selectedModule.name,
+                }),
+            );
         } finally {
             setSavingConfig(false);
         }
@@ -309,6 +309,7 @@ export function ModulesTab({ node }: ModulesTabProps) {
                         onClick={handleSaveConfig}
                         loading={savingConfig}
                         disabled={fetchingConfig || selectedModule?.enabled}
+                        data-fp-save-shortcut
                     >
                         {t('common.save')}
                     </Button>

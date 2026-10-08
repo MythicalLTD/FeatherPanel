@@ -15,6 +15,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useState, useEffect, type ReactNode } from 'react';
 import {
     Server,
@@ -42,6 +44,7 @@ import type { VmInstance } from '@/lib/vms-api';
 
 import { ServerCard } from '@/components/servers/ServerCard';
 import { VmCard } from '@/components/vms/VmCard';
+import { WebSpaceCard, type DashboardWebSpace } from '@/components/webspace/WebSpaceCard';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
 import { AnnouncementBanner } from '@/components/dashboard/AnnouncementBanner';
 import { TicketList } from '@/components/dashboard/TicketList';
@@ -67,7 +70,7 @@ import {
 } from '@/hooks/useDashboardLayout';
 import { useFavoriteServerUuids } from '@/hooks/useFavoriteServerUuids';
 
-type ResourceFilter = 'all' | 'servers' | 'vds';
+type ResourceFilter = 'all' | 'servers' | 'vds' | 'webspaces';
 
 type BlockChromeProps = {
     blockId: DashboardBlockId;
@@ -159,15 +162,18 @@ function DashboardBlockChrome({
 
 export default function DashboardPage() {
     const { t } = useTranslation();
-    const { user } = useSession();
+    const { user, isLoading: sessionLoading } = useSession();
     const dateOpts = useDateFormatOptions();
     const [allServers, setAllServers] = useState<ServerData[]>([]);
     const [vms, setVms] = useState<VmInstance[]>([]);
+    const [webspaces, setWebspaces] = useState<DashboardWebSpace[]>([]);
     const [serverTotal, setServerTotal] = useState(0);
     const [vmTotal, setVmTotal] = useState(0);
+    const [webspaceTotal, setWebspaceTotal] = useState(0);
     const [activities, setActivities] = useState<Activity[]>([]);
     const [loadingServers, setLoadingServers] = useState(true);
     const [loadingVms, setLoadingVms] = useState(true);
+    const [loadingWebspaces, setLoadingWebspaces] = useState(true);
     const [loadingActivity, setLoadingActivity] = useState(true);
     const [resourceFilter, setResourceFilter] = useState<ResourceFilter>('all');
     const { settings } = useSettings();
@@ -179,11 +185,13 @@ export default function DashboardPage() {
 
     const {
         hidden,
+        hiddenPluginWidgets,
         leftOrder,
         rightOrder,
         columnsReversed,
         heroAtBottom,
         toggleHidden,
+        toggleHiddenPluginWidget,
         moveInLeft,
         moveInRight,
         removeFromLeft,
@@ -199,6 +207,12 @@ export default function DashboardPage() {
     } = useDashboardLayout();
 
     const [isCustomizing, setIsCustomizing] = useState(false);
+
+    const pluginWidgetProps = {
+        isCustomizing,
+        hiddenWidgets: hiddenPluginWidgets,
+        onToggleHidden: toggleHiddenPluginWidget,
+    };
 
     useEffect(() => {
         fetchWidgets();
@@ -239,6 +253,7 @@ export default function DashboardPage() {
                     }
                 } catch (e) {
                     console.error('Failed to load recent servers ordering', e);
+                    toast.error(getApiErrorMessage(e, t, 'common.error'));
                 }
 
                 if (orderedServers.length === 0) {
@@ -277,6 +292,24 @@ export default function DashboardPage() {
                 setLoadingVms(false);
             }
 
+            try {
+                const { data } = await axios.get('/api/user/webspaces');
+                const list = Array.isArray(data?.data?.webspaces) ? (data.data.webspaces as DashboardWebSpace[]) : [];
+                setWebspaces(list.slice(0, 5));
+                setWebspaceTotal(
+                    typeof data?.data?.pagination?.total === 'number'
+                        ? data.data.pagination.total
+                        : typeof data?.data?.pagination?.total_records === 'number'
+                          ? data.data.pagination.total_records
+                          : list.length,
+                );
+            } catch (err) {
+                console.error('Failed to fetch WebSpaces', err);
+                setWebspaceTotal(0);
+            } finally {
+                setLoadingWebspaces(false);
+            }
+
             // Fetch Activity
             try {
                 const { data } = await axios.get('/api/user/activities?limit=5');
@@ -285,6 +318,7 @@ export default function DashboardPage() {
                 }
             } catch (err) {
                 console.error('Failed to fetch activity', err);
+                toast.error(getApiErrorMessage(err, t, 'common.error'));
             } finally {
                 setLoadingActivity(false);
             }
@@ -336,44 +370,59 @@ export default function DashboardPage() {
     };
 
     useEffect(() => {
-        if (loadingServers || loadingVms) {
+        if (loadingServers || loadingVms || loadingWebspaces) {
             return;
         }
-        if (serverTotal > 0 && vmTotal > 0) {
+        const typeCount = [serverTotal > 0, vmTotal > 0, webspaceTotal > 0].filter(Boolean).length;
+        if (typeCount >= 2) {
             return;
         }
         setResourceFilter('all');
-    }, [loadingServers, loadingVms, serverTotal, vmTotal]);
+    }, [loadingServers, loadingVms, loadingWebspaces, serverTotal, vmTotal, webspaceTotal]);
 
     const blockLabel = (id: DashboardBlockId) => t(BLOCK_LABEL_KEYS[id]);
 
-    const showResourceFilterTabs = !loadingServers && !loadingVms && serverTotal > 0 && vmTotal > 0;
+    const resourceTypeCount = [serverTotal > 0, vmTotal > 0, webspaceTotal > 0].filter(Boolean).length;
+    const showResourceFilterTabs = !loadingServers && !loadingVms && !loadingWebspaces && resourceTypeCount >= 2;
+
+    const resourceFilters = (
+        [
+            { id: 'all' as const, label: t('dashboard.resources.filter_all'), show: true },
+            {
+                id: 'servers' as const,
+                label: t('dashboard.resources.filter_servers'),
+                show: serverTotal > 0,
+            },
+            { id: 'vds' as const, label: t('dashboard.resources.filter_vms'), show: vmTotal > 0 },
+            {
+                id: 'webspaces' as const,
+                label: t('dashboard.resources.filter_webspaces'),
+                show: webspaceTotal > 0,
+            },
+        ] as const
+    ).filter((f) => f.show);
 
     const resourcesSection = (
         <div className='space-y-6'>
-            <WidgetRenderer widgets={getWidgets('dashboard', 'before-server-list')} />
+            <WidgetRenderer widgets={getWidgets('dashboard', 'before-server-list')} {...pluginWidgetProps} />
             <div className='space-y-3'>
                 <h2 className='truncate text-lg font-bold sm:text-xl'>{t('dashboard.resources.title')}</h2>
                 {showResourceFilterTabs ? (
                     <div className='-mx-0.5 w-full min-w-0 overflow-x-auto overscroll-x-contain px-0.5 pb-0.5 sm:mx-0 sm:w-auto sm:overflow-visible sm:px-0'>
                         <div className='bg-background/30 border-border/50 inline-flex w-max max-w-full items-center gap-0.5 rounded-lg border p-1 sm:flex sm:w-auto'>
-                            {(['all', 'servers', 'vds'] as const).map((filter) => (
+                            {resourceFilters.map((filter) => (
                                 <button
-                                    key={filter}
+                                    key={filter.id}
                                     type='button'
-                                    onClick={() => setResourceFilter(filter)}
+                                    onClick={() => setResourceFilter(filter.id)}
                                     className={cn(
                                         'shrink-0 rounded-md px-3 py-2 text-xs font-medium whitespace-nowrap transition-all sm:px-4 sm:text-sm',
-                                        resourceFilter === filter
+                                        resourceFilter === filter.id
                                             ? 'bg-primary text-primary-foreground shadow-md'
                                             : 'text-muted-foreground hover:text-foreground hover:bg-background/50',
                                     )}
                                 >
-                                    {filter === 'all'
-                                        ? t('dashboard.resources.filter_all')
-                                        : filter === 'servers'
-                                          ? t('dashboard.resources.filter_servers')
-                                          : t('dashboard.resources.filter_vms')}
+                                    {filter.label}
                                 </button>
                             ))}
                         </div>
@@ -381,9 +430,15 @@ export default function DashboardPage() {
                 ) : null}
             </div>
 
-            {loadingServers || loadingVms ? (
-                <div className='flex items-center justify-center py-12'>
-                    <Server className='text-muted-foreground h-8 w-8 animate-spin' />
+            {loadingServers || loadingVms || loadingWebspaces ? (
+                <div className='space-y-2.5 py-1' aria-busy='true'>
+                    {[0, 1, 2].map((i) => (
+                        <div
+                            key={i}
+                            className='border-border/40 bg-card/40 h-[3.25rem] rounded-xl border'
+                            style={{ opacity: 1 - i * 0.18 }}
+                        />
+                    ))}
                 </div>
             ) : (
                 <>
@@ -401,9 +456,12 @@ export default function DashboardPage() {
                                 ? allServers.filter((s) => !favSet.has(s.uuid)).slice(0, 5)
                                 : [];
                         const displayVms = resourceFilter === 'all' || resourceFilter === 'vds' ? vms : [];
+                        const displayWebspaces =
+                            resourceFilter === 'all' || resourceFilter === 'webspaces' ? webspaces : [];
                         const otherResources = [
                             ...displayServers.map((s) => ({ type: 'server' as const, data: s })),
                             ...displayVms.map((v) => ({ type: 'vm' as const, data: v })),
+                            ...displayWebspaces.map((w) => ({ type: 'webspace' as const, data: w })),
                         ];
 
                         if (!showFavoriteBlock && otherResources.length === 0) {
@@ -415,7 +473,9 @@ export default function DashboardPage() {
                                             ? t('dashboard.resources.no_resources')
                                             : resourceFilter === 'servers'
                                               ? t('dashboard.resources.no_servers')
-                                              : t('dashboard.resources.no_vms')}
+                                              : resourceFilter === 'vds'
+                                                ? t('dashboard.resources.no_vms')
+                                                : t('dashboard.resources.no_webspaces')}
                                     </p>
                                     <p className='text-muted-foreground/70 mt-1 text-sm'>
                                         {t('dashboard.resources.create_first')}
@@ -460,11 +520,27 @@ export default function DashboardPage() {
                                 {otherResources.length > 0 ? (
                                     <div className='stagger-children space-y-4'>
                                         {otherResources.map((resource, idx) => (
-                                            <div key={`${resource.type}-${idx}`} className='stagger-child'>
+                                            <div
+                                                key={`${resource.type}-${idx}-${
+                                                    resource.type === 'server'
+                                                        ? (resource.data as ServerData).uuid
+                                                        : resource.type === 'vm'
+                                                          ? (resource.data as VmInstance).id
+                                                          : (resource.data as DashboardWebSpace).uuid
+                                                }`}
+                                                className='stagger-child'
+                                            >
                                                 {resource.type === 'server' ? (
                                                     <ServerCard {...serverCardProps(resource.data as ServerData)} />
-                                                ) : (
+                                                ) : resource.type === 'vm' ? (
                                                     <VmCard vm={resource.data as VmInstance} layout='list' />
+                                                ) : (
+                                                    <WebSpaceCard
+                                                        webspace={resource.data as DashboardWebSpace}
+                                                        layout='list'
+                                                        webspaceUrl={`/webspace/${(resource.data as DashboardWebSpace).uuidShort || (resource.data as DashboardWebSpace).uuid.slice(0, 8)}`}
+                                                        t={t}
+                                                    />
                                                 )}
                                             </div>
                                         ))}
@@ -476,7 +552,7 @@ export default function DashboardPage() {
                 </>
             )}
 
-            <WidgetRenderer widgets={getWidgets('dashboard', 'after-server-list')} />
+            <WidgetRenderer widgets={getWidgets('dashboard', 'after-server-list')} {...pluginWidgetProps} />
         </div>
     );
 
@@ -493,8 +569,19 @@ export default function DashboardPage() {
                 <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-6'>
                     <div className='min-w-0 flex-1 space-y-2'>
                         <h1 className='text-foreground text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl'>
-                            {t('dashboard.welcome')}
-                            {user ? `, ${user.first_name}` : ''}
+                            {user ? (
+                                `${t('dashboard.welcome').replace(/!+\s*$/, '')}, ${user.first_name}!`
+                            ) : sessionLoading ? (
+                                <span className='inline-flex items-center gap-2'>
+                                    {t('dashboard.welcome').replace(/!+\s*$/, '')},
+                                    <span
+                                        className='bg-muted/50 inline-block h-7 w-28 animate-pulse rounded-md sm:h-8 sm:w-36'
+                                        aria-busy='true'
+                                    />
+                                </span>
+                            ) : (
+                                t('dashboard.welcome')
+                            )}
                         </h1>
                         <p className='text-muted-foreground max-w-2xl text-sm sm:text-base md:text-lg'>
                             {t('dashboard.subtitle')}
@@ -618,8 +705,16 @@ export default function DashboardPage() {
             </div>
 
             {loadingActivity ? (
-                <div className='flex items-center justify-center py-8'>
-                    <Clock className='text-muted-foreground h-6 w-6 animate-spin' />
+                <div className='space-y-3 py-2' aria-busy='true'>
+                    {[0, 1, 2].map((i) => (
+                        <div key={i} className='flex items-start gap-3' style={{ opacity: 1 - i * 0.2 }}>
+                            <div className='bg-muted/40 mt-0.5 h-8 w-8 shrink-0 rounded-full' />
+                            <div className='min-w-0 flex-1 space-y-2 pt-1'>
+                                <div className='bg-muted/40 h-3 max-w-[12rem] rounded' style={{ width: '75%' }} />
+                                <div className='bg-muted/30 h-2.5 max-w-[8rem] rounded' style={{ width: '50%' }} />
+                            </div>
+                        </div>
+                    ))}
                 </div>
             ) : activities.length > 0 ? (
                 <ActivityFeed activities={activities} formatDate={formatDate} />
@@ -819,7 +914,7 @@ export default function DashboardPage() {
 
     return (
         <div className='space-y-8'>
-            <WidgetRenderer widgets={getWidgets('dashboard', 'top-of-page')} />
+            <WidgetRenderer widgets={getWidgets('dashboard', 'top-of-page')} {...pluginWidgetProps} />
 
             {!heroAtBottom && (
                 <div className={cn('transition-all duration-500', !isVisible('hero', isCustomizing) && 'hidden')}>
@@ -840,7 +935,7 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            <WidgetRenderer widgets={getWidgets('dashboard', 'bottom-of-page')} />
+            <WidgetRenderer widgets={getWidgets('dashboard', 'bottom-of-page')} {...pluginWidgetProps} />
         </div>
     );
 }

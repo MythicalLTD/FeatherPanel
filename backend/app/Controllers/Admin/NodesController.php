@@ -25,6 +25,7 @@ use App\Chat\Activity;
 use App\Chat\Location;
 use GuzzleHttp\Client;
 use App\Chat\Allocation;
+use App\Helpers\DemoGuard;
 use App\Chat\ServerTransfer;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
@@ -33,6 +34,7 @@ use App\Helpers\WingsUrlHelper;
 use App\Helpers\DaemonCapabilities;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\NodesEvent;
+use App\Helpers\FeatherWingsConfigBuilder;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Servers\ServerTransferInitiator;
@@ -256,6 +258,13 @@ class NodesController
         $offset = ($page - 1) * $limit;
         $nodes = Node::searchNodes(page: $page, limit: $limit, search: $search, locationId: $locationId, excludeNodeId: $excludeNodeId);
         $total = Node::getNodesCount(search: $search, locationId: $locationId, excludeNodeId: $excludeNodeId);
+
+        // See enrichNode() for why the daemon token must not appear in list
+        // responses (it grants full API access to the node).
+        foreach ($nodes as &$node) {
+            unset($node['daemon_token'], $node['daemon_token_id']);
+        }
+        unset($node);
 
         $totalPages = ceil($total / $limit);
         $from = ($page - 1) * $limit + 1;
@@ -652,6 +661,10 @@ class NodesController
     )]
     public function delete(Request $request, int $id): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
@@ -1003,6 +1016,10 @@ class NodesController
     )]
     public function triggerSelfUpdate(Request $request, int $id): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
@@ -1140,6 +1157,10 @@ class NodesController
     )]
     public function resetKey(Request $request, int $id): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
@@ -1167,13 +1188,13 @@ class NodesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
-        return ApiResponse::success(['node' => $updatedNode], 'Master daemon reset key generated successfully', 200);
+        return ApiResponse::success(['node' => $this->enrichNode($updatedNode)], 'Master daemon reset key generated successfully', 200);
     }
 
     #[OA\Get(
         path: '/api/admin/nodes/{id}/setup-command',
         summary: 'Get node setup command',
-        description: 'Returns install command (step 1) and setup command (step 2) to configure the node. Step 1 installs FeatherWings; step 2 fetches config from the panel and restarts the daemon.',
+        description: 'Returns install command (step 1) and setup command (step 2) to configure the node. Step 1 installs FeatherWings only; step 2 runs the interactive featherwings configure wizard.',
         tags: ['Admin - Nodes'],
         parameters: [
             new OA\Parameter(
@@ -1192,8 +1213,8 @@ class NodesController
                     properties: [
                         new OA\Property(property: 'panel_url', type: 'string', description: 'Panel base URL'),
                         new OA\Property(property: 'config_url', type: 'string', description: 'Full URL to fetch config (GET with Wings Bearer token)'),
-                        new OA\Property(property: 'install_command', type: 'string', description: 'Step 1: Install FeatherWings on the node (curl get.featherpanel.com/installer.sh)'),
-                        new OA\Property(property: 'setup_command', type: 'string', description: 'Step 2: Fetch config and restart FeatherWings'),
+                        new OA\Property(property: 'install_command', type: 'string', description: 'Step 1: Install FeatherWings on the node (binary + Docker, no SSL)'),
+                        new OA\Property(property: 'setup_command', type: 'string', description: 'Step 2: Run featherwings configure (handles node join, SSL, and systemd)'),
                         new OA\Property(property: 'config_path_hint', type: 'string', description: 'Suggested config path on the node (e.g. /etc/featherpanel/config.yml)'),
                     ]
                 )
@@ -1219,7 +1240,8 @@ class NodesController
 
         $caps = DaemonCapabilities::fromNode($node);
         $configYaml = Node::generateWingsConfigYaml($node, $panelUrl);
-        $commands = $caps->buildSetupCommands($configUrl, $bearer, $configYaml);
+        $joinYaml = FeatherWingsConfigBuilder::buildJoinConfigYaml($node, $panelUrl);
+        $commands = $caps->buildSetupCommands($panelUrl, $configUrl, $bearer, $configYaml, $joinYaml);
         $defaults = $caps->defaults();
 
         $payload = [
@@ -1296,6 +1318,10 @@ class NodesController
     )]
     public function executeTerminalCommand(Request $request, int $id): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
@@ -2226,6 +2252,15 @@ class NodesController
         $caps = DaemonCapabilities::fromNode($node);
         $node['daemon_type'] = $caps->getType();
         $node['capabilities'] = $caps->toArray();
+
+        // The daemon token grants full API access to the node. It must not
+        // be returned from general list/detail responses - only the
+        // dedicated /setup-command endpoint (which requires the same admin
+        // permission but is an explicit, auditable "reveal" action) should
+        // expose it. Leaving it in every index()/show() response meant it
+        // could end up in browser history, proxy/access logs, or dev tools
+        // for any admin who merely views the nodes list.
+        unset($node['daemon_token'], $node['daemon_token_id']);
 
         return $node;
     }

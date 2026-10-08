@@ -17,17 +17,19 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/featherui/Button';
+import { Input } from '@/components/featherui/Input';
 import QRCode from 'react-qr-code';
 import { ShieldCheck, ArrowRight, Clipboard } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Captcha } from '@/components/Captcha';
 import axios from 'axios';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { isCaptchaConfigured, obtainCaptchaResponseToken } from '@/lib/captchaGate';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { AuthAlert, AuthLoadingState, AuthPage, AuthPageHeader, AuthPanel } from '@/components/auth/AuthUi';
 
 export default function SetupTwoFactorForm() {
     const router = useRouter();
@@ -62,7 +64,7 @@ export default function SetupTwoFactorForm() {
                     setQrCodeUrl(response.data.data.qr_code_url);
                     setSecret(response.data.data.secret);
                 } else {
-                    setError(response.data?.message || t('common.error'));
+                    setError(getApiErrorMessageFromPayload(response.data, t, 'common.error'));
                 }
             } catch (err: unknown) {
                 const error = err as {
@@ -83,7 +85,7 @@ export default function SetupTwoFactorForm() {
                     return;
                 }
 
-                setError(error.response?.data?.message || t('common.error'));
+                setError(getApiErrorMessage(error, t, 'common.error'));
             } finally {
                 setLoading(false);
             }
@@ -140,7 +142,7 @@ export default function SetupTwoFactorForm() {
                     router.push('/dashboard');
                 }, 1500);
             } else {
-                setError(response.data?.message || t('common.error'));
+                setError(getApiErrorMessageFromPayload(response.data, t, 'common.error'));
 
                 if (showCaptcha) {
                     setTurnstileToken('');
@@ -149,7 +151,7 @@ export default function SetupTwoFactorForm() {
             }
         } catch (err: unknown) {
             const error = err as { response?: { data?: { message?: string } } };
-            setError(error.response?.data?.message || t('common.error'));
+            setError(getApiErrorMessage(error, t, 'common.error'));
 
             if (showCaptcha) {
                 setTurnstileToken('');
@@ -176,104 +178,96 @@ export default function SetupTwoFactorForm() {
     };
 
     if (loading) {
-        return (
-            <div className='py-12 text-center'>
-                <div className='border-primary inline-block h-8 w-8 animate-spin rounded-full border-2 border-t-transparent' />
-                <p className='text-muted-foreground mt-4 text-sm'>{t('auth.setup_2fa.setting_up')}</p>
-            </div>
-        );
+        return <AuthLoadingState label={t('auth.setup_2fa.setting_up')} />;
     }
 
     return (
-        <div className='space-y-6'>
+        <AuthPage>
             <WidgetRenderer widgets={getWidgets('auth-setup-2fa', 'auth-setup-2fa-top')} />
 
-            <div className='space-y-3 text-center'>
-                <div className='bg-primary/10 mb-2 inline-flex h-16 w-16 items-center justify-center rounded-2xl'>
-                    <ShieldCheck className='text-primary h-8 w-8' />
-                </div>
-                <h2 className='text-2xl font-bold tracking-tight'>{t('auth.setup_2fa.title')}</h2>
-                <p className='text-muted-foreground text-sm'>{t('auth.setup_2fa.subtitle')}</p>
-            </div>
+            <AuthPageHeader
+                icon={<ShieldCheck className='h-6 w-6' />}
+                title={t('auth.setup_2fa.title')}
+                subtitle={t('auth.setup_2fa.subtitle')}
+            />
 
-            <WidgetRenderer widgets={getWidgets('auth-setup-2fa', 'auth-setup-2fa-before-form')} />
-            <form onSubmit={handleSubmit} className='space-y-6'>
-                <div className='dark:bg-muted/20 border-border/50 flex justify-center rounded-2xl border bg-white p-6'>
-                    <QRCode value={qrCodeUrl} size={200} level='M' />
-                </div>
-
-                <div className='space-y-3'>
-                    <p className='text-muted-foreground text-center text-sm'>{t('auth.setup_2fa.manual_entry')}</p>
-                    <div className='flex items-center gap-2'>
-                        <code className='bg-muted flex-1 rounded-xl px-4 py-3 text-center font-mono text-sm'>
-                            {secret}
-                        </code>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            onClick={copySecret}
-                            title={t('common.copy_to_clipboard')}
-                        >
-                            <Clipboard className='h-4 w-4' />
-                        </Button>
+            <AuthPanel>
+                <WidgetRenderer widgets={getWidgets('auth-setup-2fa', 'auth-setup-2fa-before-form')} />
+                <form onSubmit={handleSubmit} className='space-y-5'>
+                    <div className='dark:bg-muted/20 border-border/50 flex justify-center rounded-2xl border bg-white p-5 shadow-sm'>
+                        <QRCode value={qrCodeUrl} size={188} level='M' />
                     </div>
-                    {copied && (
-                        <p className='animate-fade-in text-center text-xs text-green-600 dark:text-green-400'>
-                            {t('auth.setup_2fa.copied')}
-                        </p>
-                    )}
-                </div>
 
-                <div className='border-border space-y-4 border-t pt-4'>
-                    <Input
-                        label={t('auth.setup_2fa.code')}
-                        description={t('auth.setup_2fa.code_description')}
-                        type='text'
-                        value={code}
-                        onChange={handleCodeInput}
-                        placeholder='000000'
-                        required
-                        maxLength={6}
-                        autoComplete='one-time-code'
-                        inputMode='numeric'
-                        className='text-center font-mono text-2xl tracking-widest'
-                    />
-
-                    <Captcha
-                        refreshKey={turnstileKey}
-                        onVerify={handleTurnstileSuccess}
-                        onError={() => {
-                            setTurnstileToken('');
-                        }}
-                        onExpire={() => {
-                            setTurnstileToken('');
-                        }}
-                    />
-
-                    <Button type='submit' className='group w-full' disabled={code.length !== 6} loading={submitting}>
-                        {!submitting && (
-                            <>
-                                {t('auth.setup_2fa.submit')}
-                                <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
-                            </>
+                    <div className='space-y-3'>
+                        <p className='text-muted-foreground text-center text-sm'>{t('auth.setup_2fa.manual_entry')}</p>
+                        <div className='flex items-center gap-2'>
+                            <code className='bg-muted flex-1 rounded-xl px-4 py-3 text-center font-mono text-sm'>
+                                {secret}
+                            </code>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='icon'
+                                onClick={copySecret}
+                                title={t('common.copy_to_clipboard')}
+                            >
+                                <Clipboard className='h-4 w-4' />
+                            </Button>
+                        </div>
+                        {copied && (
+                            <p className='animate-fade-in text-center text-xs text-emerald-600 dark:text-emerald-400'>
+                                {t('auth.setup_2fa.copied')}
+                            </p>
                         )}
-                    </Button>
+                    </div>
 
-                    {error && (
-                        <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
-                            {error}
-                        </div>
-                    )}
-                    {success && (
-                        <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
-                            {success}
-                        </div>
-                    )}
-                </div>
-            </form>
-            <WidgetRenderer widgets={getWidgets('auth-setup-2fa', 'auth-setup-2fa-after-form')} />
+                    <div className='border-border/70 space-y-4 border-t pt-4'>
+                        <Input
+                            label={t('auth.setup_2fa.code')}
+                            description={t('auth.setup_2fa.code_description')}
+                            type='text'
+                            value={code}
+                            onChange={handleCodeInput}
+                            placeholder='000000'
+                            required
+                            maxLength={6}
+                            autoComplete='one-time-code'
+                            inputMode='numeric'
+                            className='text-center font-mono text-2xl tracking-widest'
+                        />
+
+                        <Captcha
+                            refreshKey={turnstileKey}
+                            onVerify={handleTurnstileSuccess}
+                            onError={() => {
+                                setTurnstileToken('');
+                            }}
+                            onExpire={() => {
+                                setTurnstileToken('');
+                            }}
+                        />
+
+                        <Button
+                            type='submit'
+                            className='group w-full'
+                            disabled={code.length !== 6}
+                            loading={submitting}
+                        >
+                            {!submitting && (
+                                <>
+                                    {t('auth.setup_2fa.submit')}
+                                    <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                                </>
+                            )}
+                        </Button>
+
+                        <AuthAlert variant='error'>{error}</AuthAlert>
+                        <AuthAlert variant='success'>{success}</AuthAlert>
+                    </div>
+                </form>
+                <WidgetRenderer widgets={getWidgets('auth-setup-2fa', 'auth-setup-2fa-after-form')} />
+            </AuthPanel>
             <WidgetRenderer widgets={getWidgets('auth-setup-2fa', 'auth-setup-2fa-bottom')} />
-        </div>
+        </AuthPage>
     );
 }

@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Plugin Themes &amp; UI Packs — FeatherPanel</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+            name="description"
+            content="How to make FeatherPanel theme packs and UI packs: theme.json, ui.json, overrides, Dev templates."
+        />
+        <link rel="stylesheet" href="/icanhasfeatherpanel/assets/docs.css" />
+        <style>
+            .fp-prose pre {
+                background: #0f172a;
+                border: 1px solid #1f2937;
+                border-radius: 0.5rem;
+                padding: 1rem;
+                overflow-x: auto;
+            }
+            .fp-prose table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.875rem;
+                margin: 0.75rem 0;
+            }
+            .fp-prose th,
+            .fp-prose td {
+                border: 1px solid #1f2937;
+                padding: 0.5rem 0.75rem;
+                text-align: left;
+            }
+            .fp-prose th {
+                background: #0f172a;
+            }
+            .fp-callout {
+                border: 1px solid #1f2937;
+                border-radius: 0.75rem;
+                padding: 1rem 1.25rem;
+                margin: 1rem 0;
+                background: #0b1220;
+            }
+            .fp-grid-2 {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 1rem;
+                margin: 1rem 0;
+            }
+            .fp-card-mini {
+                border: 1px solid #1f2937;
+                border-radius: 0.75rem;
+                padding: 1rem;
+                background: #020617;
+            }
+        </style>
+    </head>
+    <body class="fp-docs">
+        <div class="fp-shell">
+            <nav class="fp-nav" aria-label="Documentation">
+                <a class="fp-brand" href="/icanhasfeatherpanel/">
+                    <span class="fp-brand-mark" aria-hidden="true"></span>
+                    <span>FeatherPanel Docs</span>
+                </a>
+                <div class="fp-nav-links">
+                    <a href="/icanhasfeatherpanel/">Home</a>
+                    <a href="/icanhasfeatherpanel/plugins/" class="active">Plugins</a>
+                    <a href="/icanhasfeatherpanel/plugin-power.html">Power SDK</a>
+                    <a href="/icanhasfeatherpanel/api/">API</a>
+                    <a href="/icanhasfeatherpanel/rag/">RAG</a>
+                </div>
+            </nav>
+
+            <header class="fp-hero">
+                <h1>Plugin Themes &amp; UI Packs</h1>
+                <p class="fp-muted">
+                    Extend appearance and layout at runtime — no panel <code>pnpm build</code> when installing a pack.
+                </p>
+                <div class="fp-formats">
+                    <a class="fp-badge" href="/icanhasfeatherpanel/view.html?doc=plugins/themes.md"
+                        >How to make themes (MD)</a
+                    >
+                    <a class="fp-badge" href="/icanhasfeatherpanel/view.html?doc=plugins/ui-packs.md">UI packs (MD)</a>
+                    <a class="fp-badge" href="/icanhasfeatherpanel/plugin-power.html">Power SDK</a>
+                </div>
+            </header>
+
+            <main class="fp-prose" style="max-width: 960px; margin: 0 auto; padding: 0 1.25rem 3rem">
+                <div class="fp-callout">
+                    Full guides:
+                    <a href="/icanhasfeatherpanel/plugins/themes.md">themes.md</a> ·
+                    <a href="/icanhasfeatherpanel/plugins/ui-packs.md">ui-packs.md</a>
+                    (raw Markdown is what crawlers should index).
+                </div>
+
+                <h2>Which one do I need?</h2>
+                <div class="fp-grid-2">
+                    <div class="fp-card-mini">
+                        <h3>Theme pack</h3>
+                        <p>Colors, radius, accents, optional CSS. Users pick under Preferences → Appearance.</p>
+                        <p><code>Frontend/theme.json</code> + optional <code>theme.css</code></p>
+                    </div>
+                    <div class="fp-card-mini">
+                        <h3>UI pack</h3>
+                        <p>Replace shell regions, hide slots, swap pages, toolbar actions. One active at a time.</p>
+                        <p><code>Frontend/ui.json</code> (+ optional overrides / <code>index.js</code>)</p>
+                    </div>
+                </div>
+
+                <h2>How to make a theme (short)</h2>
+                <ol>
+                    <li>Admin → Developer → Plugins → Create → template <strong>Theme pack</strong>.</li>
+                    <li>
+                        Edit <code>Frontend/theme.json</code> — HSL <strong>components</strong> like
+                        <code>"199 89% 48%"</code> (no <code>hsl()</code> wrapper).
+                    </li>
+                    <li>Optional <code>theme.css</code> for slot polish while the pack is active.</li>
+                    <li>Preferences → Appearance → Theme packs → select <code>{plugin}:default</code>.</li>
+                </ol>
+                <pre>
+{
+  "id": "default",
+  "name": "Ocean",
+  "tokens": {
+    "light": { "primary": "199 89% 48%", "background": "210 40% 98%", "radius": "0.5rem" },
+    "dark": { "primary": "199 89% 48%", "background": "222 47% 7%", "radius": "0.5rem" }
+  },
+  "accents": ["custom:#0ea5e9"],
+  "defaults": { "backgroundType": "aurora" },
+  "css": "theme.css"
+}</pre>
+                <p>
+                    APIs: <code>GET /api/system/plugin-themes</code> · CSS
+                    <code>GET /api/system/plugin-theme-css?id=plugin:packId</code>
+                </p>
+                <p>
+                    Schema: <a href="/icanhasfeatherpanel/schemas/plugin-theme.schema.json">plugin-theme.schema.json</a>
+                </p>
+                <p>Admin locks: <code>app_theme_pack_default</code> / <code>app_theme_pack_lock</code></p>
+
+                <h2>Token keys</h2>
+                <p class="fp-muted">
+                    <code>background</code>, <code>foreground</code>, <code>card</code>, <code>card-foreground</code>,
+                    <code>popover</code>, <code>popover-foreground</code>, <code>primary</code>,
+                    <code>primary-foreground</code>, <code>secondary</code>, <code>secondary-foreground</code>,
+                    <code>muted</code>, <code>muted-foreground</code>, <code>accent</code>,
+                    <code>accent-foreground</code>, <code>destructive</code>, <code>destructive-foreground</code>,
+                    <code>border</code>, <code>input</code>, <code>ring</code>, <code>radius</code>
+                </p>
+
+                <h2>UI packs</h2>
+                <pre>
+{
+  "id": "glass",
+  "name": "Glass Dashboard",
+  "theme": "default",
+  "shell": {
+    "replace": {
+      "shell.sidebar": { "component": "Components/Sidebar.html" }
+    }
+  },
+  "pages": [
+    { "match": "/dashboard", "replace": { "remote": "dist/Dashboard.js" } }
+  ],
+  "hide": [],
+  "actions": [
+    {
+      "slot": "toolbar.server-console",
+      "label": "My action",
+      "component": "Components/action-panel.html",
+      "priority": 10
+    }
+  ]
+}</pre>
+                <p>
+                    APIs: <code>GET /api/system/plugin-ui-packs</code> · <code>GET /api/system/plugin-overrides</code>
+                </p>
+                <p>
+                    Schemas: <a href="/icanhasfeatherpanel/schemas/plugin-ui-pack.schema.json">ui-pack</a> ·
+                    <a href="/icanhasfeatherpanel/schemas/plugin-overrides.schema.json">overrides</a>
+                </p>
+                <p>Admin: <code>app_ui_pack_default</code> / <code>app_ui_pack_lock</code></p>
+
+                <h2>Overrides (surgical)</h2>
+                <p>
+                    <code>Frontend/overrides.json</code>: hide / replace / actions on named slots without a full UI
+                    pack.
+                </p>
+                <p>
+                    Shell slots: <code>shell.sidebar</code>, <code>shell.navbar</code>, <code>shell.page-header</code>,
+                    <code>shell.main</code>, <code>shell.background</code>
+                </p>
+
+                <h2>Host bridge</h2>
+                <p>
+                    Panel exposes <code>window.FeatherPanel</code> v2 — see
+                    <a href="/icanhasfeatherpanel/plugin-power.html">Power SDK</a>.
+                </p>
+                <ul>
+                    <li><code>featherpanel-ready</code> → host replies with <code>featherpanel-theme</code></li>
+                    <li><code>featherpanel-navigate</code> <code>{ path }</code></li>
+                    <li><code>featherpanel-toast</code> <code>{ message, level }</code></li>
+                    <li><code>featherpanel-bus</code>: event/action bridge for iframes</li>
+                </ul>
+
+                <h2>React remotes</h2>
+                <p>
+                    Point a slot <code>remote</code> at a prebundled ESM that default-exports a React component. React
+                    is provided by the host — no panel rebuild when installing the plugin.
+                </p>
+
+                <h2>Dev templates</h2>
+                <p>
+                    Admin → Developer → Plugins → Create: choose <strong>Theme pack</strong> or
+                    <strong>UI pack</strong>. Full walkthroughs in Markdown linked above.
+                </p>
+            </main>
+
+            <footer class="fp-footer">
+                Guides: <a href="/icanhasfeatherpanel/plugins/themes.md">themes.md</a> ·
+                <a href="/icanhasfeatherpanel/plugins/ui-packs.md">ui-packs.md</a> ·
+                <a href="/icanhasfeatherpanel/plugins/power-sdk.md">power-sdk.md</a>
+            </footer>
+        </div>
+    </body>
+</html>

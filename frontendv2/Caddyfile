@@ -22,7 +22,7 @@
 	header X-XSS-Protection "1; mode=block"
 	header Referrer-Policy "strict-origin-when-cross-origin"
 
-	# Incomplete percent-encoding (/%f, /%, /%zz) — reject before Next.js.
+	# Incomplete percent-encoding (/%f, /%, /%zz): reject before Next.js.
 	# RE2 (no lookaheads): bare %, % + non-hex, or % + one hex then non-hex/end.
 	# Invalid UTF-8 sequences like %ff are handled in frontendv2/src/proxy.ts.
 	@bad_pct path_regexp %([^0-9A-Fa-f]|[0-9A-Fa-f]([^0-9A-Fa-f]|$)|$)
@@ -40,6 +40,11 @@
 		reverse_proxy backend:80
 	}
 
+	@webmail path /webmail*
+	handle @webmail {
+		reverse_proxy backend:80
+	}
+
 	@attachments path /attachments*
 	handle @attachments {
 		reverse_proxy backend:80
@@ -53,6 +58,22 @@
 	@components path /components*
 	handle @components {
 		reverse_proxy backend:80
+	}
+
+	# FeatherPanel MCP (Streamable HTTP + OAuth AS)
+	@mcp path /mcp*
+	handle @mcp {
+		reverse_proxy mcp:3001 {
+			transport http {
+				read_timeout 86400s
+			}
+		}
+	}
+
+	# MCP OAuth discovery + endpoints (must not hit Next login)
+	@mcp_oauth path /.well-known/oauth-protected-resource* /.well-known/oauth-authorization-server* /authorize* /token* /register* /revoke* /oauth*
+	handle @mcp_oauth {
+		reverse_proxy mcp:3001
 	}
 
 	handle {

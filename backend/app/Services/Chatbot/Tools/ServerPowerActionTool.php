@@ -175,6 +175,8 @@ class ServerPowerActionTool implements ToolInterface
                     'is_destructive' => in_array($action, ['stop', 'restart', 'kill']),
                 ];
             }
+
+            \App\Services\Server\ServerAutoStartService::markPowerIntent((int) $server['id'], $action);
         } catch (\Exception $e) {
             $this->app->getLogger()->error("ServerPowerActionTool error ({$action}): " . $e->getMessage());
 

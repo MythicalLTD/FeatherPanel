@@ -25,13 +25,16 @@ use App\Helpers\ApiResponse;
 use App\Config\ConfigFactory;
 use App\Logger\LoggerFactory;
 use App\Config\ConfigInterface;
+use App\Plugins\ObsoleteAddons;
 use App\Helpers\RateLimitConfig;
 use App\Middleware\AuthMiddleware;
+use App\Telemetry\SentryTelemetry;
 use App\Middleware\AdminMiddleware;
 use App\Middleware\WingsMiddleware;
 use App\Middleware\ServerMiddleware;
 use Symfony\Component\Routing\Route;
 use App\Plugins\Events\Events\AppEvent;
+use App\Middleware\FeatherQuilldMiddleware;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\HttpFoundation\Response;
@@ -79,7 +82,13 @@ class App
 
         // If running in test mode, skip Redis and plugin manager, just init DB
         if ($isCli) {
-            $this->db = new Database($_ENV['DATABASE_HOST'], $_ENV['DATABASE_DATABASE'], $_ENV['DATABASE_USER'], $_ENV['DATABASE_PASSWORD'], $_ENV['DATABASE_PORT']);
+            $this->db = new Database(
+                (string) self::env('DATABASE_HOST', '127.0.0.1'),
+                (string) self::env('DATABASE_DATABASE', ''),
+                (string) self::env('DATABASE_USER', ''),
+                (string) self::env('DATABASE_PASSWORD', ''),
+                (int) self::env('DATABASE_PORT', '3306'),
+            );
 
             return;
         }
@@ -128,9 +137,16 @@ class App
          * Database Connection.
          */
         try {
-            $this->db = new Database($_ENV['DATABASE_HOST'], $_ENV['DATABASE_DATABASE'], $_ENV['DATABASE_USER'], $_ENV['DATABASE_PASSWORD'], $_ENV['DATABASE_PORT']);
+            $this->db = new Database(
+                (string) self::env('DATABASE_HOST', '127.0.0.1'),
+                (string) self::env('DATABASE_DATABASE', ''),
+                (string) self::env('DATABASE_USER', ''),
+                (string) self::env('DATABASE_PASSWORD', ''),
+                (int) self::env('DATABASE_PORT', '3306'),
+            );
         } catch (\Exception $e) {
-            self::getLogger()->error('Database connection failed: ' . $e->getMessage());
+            SentryTelemetry::captureException($e);
+            self::getLogger()->error('Database connection failed: ' . $e->getMessage(), false);
             http_response_code(500);
             header('Content-Type: application/json');
             header('Cache-Control: no-cache, private');
@@ -224,6 +240,9 @@ class App
             foreach ($pluginDirs as $pluginDir) {
                 if ($pluginDir->isDir() && !$pluginDir->isDot()) {
                     $currentAddonId = $pluginDir->getBasename();
+                    if (ObsoleteAddons::isObsolete($currentAddonId)) {
+                        continue;
+                    }
                     $pluginRoutesDir = $pluginDir->getPathname() . '/Routes';
                     if (is_dir($pluginRoutesDir)) {
                         $pluginIterator = new \RecursiveIteratorIterator(
@@ -273,6 +292,7 @@ class App
 
         try {
             $parameters = $matcher->match($request->getPathInfo());
+            SentryTelemetry::startRequest($request, $this->routes->get($parameters['_route'])->getPath());
             $controller = $parameters['_controller'];
             unset($parameters['_controller'], $parameters['_route']);
 
@@ -334,17 +354,26 @@ class App
             $response = ApiResponse::error('The api route does not exist! [' . $request->getPathInfo() . ']', 'API_ROUTE_NOT_FOUND', 404, null);
         } catch (MethodNotAllowedException $e) {
             $response = ApiResponse::error('Method not allowed for this route. Allowed: ' . implode(', ', $e->getAllowedMethods()), 'METHOD_NOT_ALLOWED', 405, null);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            $eventId = SentryTelemetry::captureException($e);
             self::getLogger()->error(
                 'Exception in router: [' . get_class($e) . '] ' .
                 'Message: ' . $e->getMessage() .
                 ' Code: ' . $e->getCode() .
                 ' File: ' . $e->getFile() .
                 ' Line: ' . $e->getLine() .
-                ' Trace: ' . $e->getTraceAsString()
+                ' Trace: ' . $e->getTraceAsString(),
+                false
             );
-            $response = ApiResponse::exception('An error occurred: ' . $e->getMessage(), $e->getCode(), $e->getTrace());
+            $response = ApiResponse::error('Internal server error', 'INTERNAL_SERVER_ERROR', 500, [
+                'request_id' => defined('REQUEST_ID') ? REQUEST_ID : null,
+                'event_id' => $eventId,
+            ]);
         }
+        if (defined('REQUEST_ID')) {
+            $response->headers->set('X-Request-ID', REQUEST_ID);
+        }
+        SentryTelemetry::finishRequest($response->getStatusCode());
         $response->send();
     }
 
@@ -668,14 +697,63 @@ class App
     }
 
     /**
+     * Register a FeatherQuilld remote route (web hosting daemons only).
+     *
+     * Uses FeatherQuilldMiddleware — game node (FeatherWings) tokens are rejected.
+     *
+     * @param RouteCollection $routes The Symfony RouteCollection instance to add the route to
+     * @param string $name The name of the route
+     * @param string $path The URL path for the route (e.g. '/api/quilld-remote/config')
+     * @param callable $controller The controller to handle the request
+     * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
+     * @param Rate|null $rateLimit Optional default rate limit for this route
+     * @param string|null $rateLimitNamespace Optional default namespace for rate limiting
+     */
+    public function registerQuilldRoute(
+        RouteCollection $routes,
+        string $name,
+        string $path,
+        callable $controller,
+        array $methods = ['GET'],
+        ?Rate $rateLimit = null,
+        ?string $rateLimitNamespace = null,
+    ): void {
+        $middleware = [FeatherQuilldMiddleware::class];
+
+        $routeAttributes = [
+            '_controller' => $controller,
+            '_middleware' => $middleware,
+        ];
+
+        $rateLimitConfig = $this->getRouteRateLimit($name, $rateLimit, $rateLimitNamespace);
+
+        if ($rateLimitConfig !== null) {
+            $middleware[] = Middleware\RateLimitMiddleware::class;
+            $routeAttributes['_middleware'] = $middleware;
+            $routeAttributes['_rate_limit'] = $rateLimitConfig;
+        }
+
+        $routes->add($name, new Route(
+            $path,
+            $routeAttributes,
+            [], // requirements
+            [], // options
+            '', // host
+            [], // schemes
+            $methods
+        ));
+    }
+
+    /**
      * Load the environment variables.
      */
     public function loadEnv(): void
     {
         try {
             if (file_exists(__DIR__ . '/../storage/config/.env')) {
-                $dotenv = \Dotenv\Dotenv::createImmutable(__DIR__ . '/../storage/config');
-                $dotenv->load();
+                // Unsafe: also populate $_ENV (immutable only writes $_SERVER / putenv).
+                $dotenv = \Dotenv\Dotenv::createUnsafeImmutable(__DIR__ . '/../storage/config');
+                $dotenv->safeLoad();
             } else {
                 echo 'No .env file found';
                 exit;
@@ -684,6 +762,25 @@ class App
             echo $e->getMessage();
             exit;
         }
+    }
+
+    /**
+     * Read an environment variable from $_ENV, $_SERVER, or getenv().
+     */
+    public static function env(string $key, ?string $default = null): ?string
+    {
+        $value = $_ENV[$key] ?? $_SERVER[$key] ?? getenv($key);
+        if ($value === false || $value === null) {
+            return $default;
+        }
+
+        if (!is_string($value)) {
+            return $default;
+        }
+
+        $trimmed = trim($value, " \t\"'");
+
+        return $trimmed === '' ? $default : $trimmed;
     }
 
     /**
@@ -882,7 +979,7 @@ class App
 
     public function encryptValue(string $value): string
     {
-        return XChaCha20::encrypt($value, $_ENV['DATABASE_ENCRYPTION_KEY'], true);
+        return XChaCha20::encrypt($value, $this->getDatabaseEncryptionKey(), true);
     }
 
     public function decryptValue(string $value): string
@@ -895,7 +992,7 @@ class App
             return $value;
         }
 
-        return XChaCha20::decrypt($value, $_ENV['DATABASE_ENCRYPTION_KEY'], true);
+        return XChaCha20::decrypt($value, $this->getDatabaseEncryptionKey(), true);
     }
 
     public function getBaseUrl(): string
@@ -1141,6 +1238,21 @@ class App
             [], // schemes
             $methods
         ));
+    }
+
+    /**
+     * Resolve DATABASE_ENCRYPTION_KEY from $_ENV, $_SERVER, or getenv().
+     *
+     * Dotenv immutable loads into $_SERVER; PHP-FPM may not mirror keys into $_ENV.
+     */
+    private function getDatabaseEncryptionKey(): string
+    {
+        $key = self::env('DATABASE_ENCRYPTION_KEY');
+        if ($key === null || $key === '') {
+            throw new \RuntimeException('DATABASE_ENCRYPTION_KEY is not configured');
+        }
+
+        return $key;
     }
 
     /**

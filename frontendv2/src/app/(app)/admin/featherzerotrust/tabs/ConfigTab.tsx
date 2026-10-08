@@ -18,14 +18,15 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/featherui/Button';
+import { Input } from '@/components/featherui/Input';
+import { Textarea } from '@/components/featherui/Textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Settings, RefreshCw, Save } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface ZeroTrustConfig {
     enabled?: boolean;
@@ -104,7 +105,7 @@ const ConfigTab = () => {
             setMalwareBazaarBlockedTagsText(fetchedConfig.malwarebazaar_blocked_tags?.join(', '));
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
-            toast.error(err.response?.data?.message || t('admin.featherzerotrust.config.messages.loadFailed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.featherzerotrust.config.messages.loadFailed'));
         } finally {
             setLoading(false);
         }
@@ -174,7 +175,7 @@ const ConfigTab = () => {
             fetchConfig();
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
-            toast.error(err.response?.data?.message || t('admin.featherzerotrust.config.messages.saveFailed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.featherzerotrust.config.messages.saveFailed'));
         } finally {
             setSaving(false);
         }
@@ -189,7 +190,7 @@ const ConfigTab = () => {
             fetchConfig();
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
-            toast.error(err.response?.data?.message || t('admin.featherzerotrust.config.messages.resetFailed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.featherzerotrust.config.messages.resetFailed'));
         } finally {
             setSaving(false);
         }

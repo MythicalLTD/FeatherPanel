@@ -1,5 +1,3 @@
-/* eslint-disable react-hooks/unsupported-syntax */
-
 /*
 This file is part of FeatherPanel.
 
@@ -17,15 +15,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { Fragment, useState, useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom';
+import { Fragment, useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Dialog, Transition } from '@headlessui/react';
-import { X, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
-import { DynamicIcon } from 'lucide-react/dynamic';
+import { X, ChevronRight, ChevronDown } from 'lucide-react';
 import NextImage from 'next/image';
 import Link from 'next/link';
 import axios from 'axios';
+import { PanelIcon } from '@/components/icons/PanelIcon';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -34,8 +31,24 @@ import { useNavigation } from '@/hooks/useNavigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import type { NavigationItem } from '@/types/navigation';
 import { type ChromeLayout, useChromeLayout } from '@/hooks/useChromeLayout';
+import {
+    type DockDisplay,
+    type DockSize,
+    type SidebarDensity,
+    type SidebarGlow,
+    type SidebarPosition,
+    type SidebarStyle,
+    type SidebarTogglePlacement,
+    useSidebarPreferences,
+} from '@/hooks/useSidebarPreferences';
+import { readSidebarCollapsed, subscribeSidebarCollapsed } from '@/lib/sidebarChrome';
+import { getDesktopSidebarPanelClass, getDesktopSidebarShellClass, getSidebarSurfaceClass } from '@/lib/sidebarLayout';
+import { runPluginJs } from '@/lib/run-plugin-js';
 import { PoweredByFeatherPanel } from '@/components/branding/PoweredByFeatherPanel';
 import { shouldShowVersion } from '@/lib/branding';
+import { SidebarBottomDock } from '@/components/sidebar/SidebarBottomDock';
+import { SidebarCollapseToggle } from '@/components/sidebar/SidebarCollapseToggle';
+import { SidebarCollapsedTooltipLayer, sidebarTooltipProps } from '@/components/sidebar/SidebarCollapsedTooltipLayer';
 
 interface SidebarProps {
     mobileOpen: boolean;
@@ -44,28 +57,15 @@ interface SidebarProps {
     pluginFullBleed?: boolean;
 }
 
-function renderIcon(item: NavigationItem, className: string, sizeClass: string) {
-    if (item.lucideIcon) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const iconName: any = item.lucideIcon;
-        return (
-            <DynamicIcon
-                name={iconName}
-                className={cn('shrink-0 transition-transform group-hover:scale-110', className, sizeClass)}
-            />
-        );
-    }
+function navIconSize(sizeClass: string): number {
+    if (sizeClass.includes('h-6')) return 24;
+    if (sizeClass.includes('h-5')) return 20;
+    if (sizeClass.includes('h-4')) return 16;
+    return 18;
+}
 
-    const Icon = item.icon;
-    if (typeof Icon === 'string') {
-        return (
-            <span className={cn('flex shrink-0 items-center justify-center text-lg', className, sizeClass)}>
-                {Icon}
-            </span>
-        );
-    }
-
-    return <Icon className={cn('shrink-0 transition-transform group-hover:scale-110', className, sizeClass)} />;
+function NavIcon({ item, sizeClass }: { item: NavigationItem; sizeClass: string }) {
+    return <PanelIcon source={item} size={navIconSize(sizeClass)} label={item.name} className='shrink-0' />;
 }
 
 function SidebarContent({
@@ -75,7 +75,15 @@ function SidebarContent({
     pathname,
     setMobileOpen,
     groupedItems,
+    navLoading = false,
     chromeLayout,
+    sidebarDensity,
+    sidebarStyle,
+    sidebarPosition,
+    dockDisplay,
+    dockSize,
+    sidebarGlow,
+    sidebarTogglePlacement,
 }: {
     mobile?: boolean;
     collapsed: boolean;
@@ -91,7 +99,15 @@ function SidebarContent({
     router: ReturnType<typeof useRouter>;
     setMobileOpen: (open: boolean) => void;
     groupedItems: Record<string, NavigationItem[]>;
+    navLoading?: boolean;
     chromeLayout: ChromeLayout;
+    sidebarDensity: SidebarDensity;
+    sidebarStyle: SidebarStyle;
+    sidebarPosition: SidebarPosition;
+    dockDisplay: DockDisplay;
+    dockSize: DockSize;
+    sidebarGlow: SidebarGlow;
+    sidebarTogglePlacement: SidebarTogglePlacement;
 }) {
     const { theme } = useTheme();
     const { t } = useTranslation();
@@ -104,6 +120,7 @@ function SidebarContent({
     const [unreadTicketCount, setUnreadTicketCount] = useState(0);
     const adminOpenTicketCount = adminTicketStats?.open_count ?? 0;
     const ticketsEnabled = isEnabled(settings?.ticket_system_enabled);
+    const sidebarContentRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const saved = localStorage.getItem('featherpanel_collapsed_groups');
@@ -205,6 +222,11 @@ function SidebarContent({
             return pathname === href;
         }
 
+        const webspaceRootRegex = /^\/webspace\/[^/]+$/;
+        if (webspaceRootRegex.test(href)) {
+            return pathname === href;
+        }
+
         return pathname.startsWith(href + '/');
     };
 
@@ -222,29 +244,65 @@ function SidebarContent({
     const logoUrl = theme === 'dark' ? settings?.app_logo_dark || '/logo.png' : settings?.app_logo_white || '/logo.png';
 
     const isClassicChrome = chromeLayout === 'classic';
+    const isCompact = sidebarDensity === 'compact';
+    const useSolidSidebar = sidebarStyle === 'solid' || isClassicChrome;
+    const isBottomDock = sidebarPosition === 'bottom' && !mobile;
+    const showCollapsedTooltips = collapsed && !mobile && !isBottomDock;
+    const collapsedTooltipSide = sidebarPosition === 'right' ? 'right' : 'left';
+    const collapsedTip = (label: string) => sidebarTooltipProps(showCollapsedTooltips ? label : undefined);
+    const showSidebarToggle =
+        !mobile &&
+        (sidebarTogglePlacement === 'sidebar' || sidebarTogglePlacement === 'both') &&
+        (!isBottomDock || sidebarTogglePlacement === 'both');
+
+    if (isBottomDock) {
+        return (
+            <SidebarBottomDock
+                collapsed={collapsed}
+                dockDisplay={dockDisplay}
+                dockSize={dockSize}
+                sidebarGlow={sidebarGlow}
+                groupedItems={groupedItems}
+                logoUrl={logoUrl}
+                appName={settings?.app_name || 'FeatherPanel'}
+                t={t}
+                isActive={isActive}
+                unreadTicketCount={unreadTicketCount}
+                adminOpenTicketCount={adminOpenTicketCount}
+            />
+        );
+    }
 
     const navItemBase = isClassicChrome
-        ? 'group flex items-center w-full rounded-md text-sm font-medium transition-colors'
-        : 'group flex items-center w-full rounded-xl text-sm font-medium transition-[background-color,box-shadow,color,transform] duration-200';
+        ? 'group relative flex items-center w-full rounded-md text-sm font-medium transition-colors'
+        : 'group relative flex items-center w-full rounded-xl text-sm font-medium transition-[background-color,box-shadow,color,transform] duration-200';
     const navItemIdle = isClassicChrome
         ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
         : 'text-muted-foreground hover:bg-muted/55 hover:text-foreground dark:hover:bg-muted/20';
     const navItemActive = isClassicChrome
-        ? 'bg-accent text-accent-foreground font-semibold ring-1 ring-border/50'
-        : 'bg-primary/12 text-primary font-semibold shadow-sm ring-1 ring-inset ring-primary/15 dark:bg-primary/[0.14] dark:ring-primary/28';
+        ? 'bg-accent/80 text-accent-foreground font-semibold before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-primary'
+        : 'bg-primary/10 text-primary font-medium before:absolute before:top-1/2 before:left-1.5 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-primary';
 
     const badgeClass = isClassicChrome
         ? 'ml-auto inline-flex items-center rounded-full bg-primary/20 px-2 py-0.5 text-xs font-medium'
         : 'ml-auto inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary ring-1 ring-primary/20';
 
     const topLevelItemPad = cn(
-        collapsed && !mobile
-            ? isClassicChrome
-                ? 'justify-center'
-                : 'justify-center px-1.5 py-2'
-            : isClassicChrome
-              ? 'gap-3 px-3 py-2.5'
-              : 'gap-2.5 px-2.5 py-2',
+        isBottomDock
+            ? collapsed
+                ? 'min-w-10 flex-col justify-center px-2 py-1.5'
+                : 'max-w-[5.5rem] min-w-[3.5rem] flex-col justify-center gap-1 px-2 py-2 text-center'
+            : collapsed && !mobile
+              ? isClassicChrome
+                  ? 'justify-center'
+                  : 'justify-center px-1.5 py-2'
+              : isClassicChrome
+                ? isCompact
+                    ? 'gap-2.5 px-3 py-2'
+                    : 'gap-3 px-3 py-2.5'
+                : isCompact
+                  ? 'gap-2 px-2 py-1.5'
+                  : 'gap-2.5 px-2.5 py-2',
     );
 
     const topIconSize =
@@ -274,6 +332,20 @@ function SidebarContent({
     ];
 
     const sortedGroups = Object.keys(groupedItems).sort((a, b) => {
+        const customIndex = (group: string) => {
+            const indexes = groupedItems[group]
+                .map((item) => item.sidebarOrderIndex)
+                .filter((index): index is number => typeof index === 'number');
+            return indexes.length > 0 ? Math.min(...indexes) : null;
+        };
+        const customA = customIndex(a);
+        const customB = customIndex(b);
+        if (customA !== null || customB !== null) {
+            if (customA === null) return 1;
+            if (customB === null) return -1;
+            if (customA !== customB) return customA - customB;
+        }
+
         const indexA = groupOrder.indexOf(a.toLowerCase());
         const indexB = groupOrder.indexOf(b.toLowerCase());
 
@@ -284,32 +356,15 @@ function SidebarContent({
         return a.localeCompare(b);
     });
 
-    const renderCollapsedLabel = (label: string) => {
-        if (!collapsed || mobile) return null;
-        return (
-            <span className='border-border/50 bg-card/95 text-foreground ring-border/30 pointer-events-none absolute top-1/2 left-full z-50 ml-3 flex -translate-x-1 -translate-y-1/2 items-center rounded-xl border px-2.5 py-1.5 text-xs font-medium tracking-tight whitespace-nowrap opacity-0 shadow-xl ring-1 shadow-black/20 backdrop-blur-md transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 motion-reduce:transition-none'>
-                <span
-                    className='border-border/50 bg-card/95 absolute top-1/2 -left-1.5 h-2.5 w-2.5 -translate-y-1/2 rotate-45 border-t border-l'
-                    aria-hidden='true'
-                />
-                {label}
-            </span>
-        );
-    };
-
     const modernBrandInner = (
         <div
             className={cn(
-                'border-border/50 bg-card/40 hover:border-border/70 hover:bg-card/55 flex items-center rounded-2xl border px-3 py-2.5 transition-colors',
-                collapsed && !mobile ? 'justify-center px-1.5 py-2' : 'gap-2.5',
+                'flex items-center rounded-xl border px-3 py-2 transition-colors',
+                useSolidSidebar ? 'border-border/40 bg-muted/15' : 'border-border/25 bg-card/45',
+                collapsed && !mobile ? 'justify-center px-2 py-2' : 'gap-2.5',
             )}
         >
-            <div
-                className={cn(
-                    'bg-muted/30 ring-border/40 flex shrink-0 items-center justify-center rounded-xl ring-1',
-                    collapsed && !mobile ? 'h-8 w-8' : 'h-9 w-9',
-                )}
-            >
+            <div className='bg-background/40 ring-border/30 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1'>
                 <NextImage
                     src={logoUrl}
                     alt={settings?.app_name || 'FeatherPanel'}
@@ -367,13 +422,20 @@ function SidebarContent({
     );
 
     return (
-        <div className='flex h-full min-h-0 flex-col'>
+        <div
+            ref={sidebarContentRef}
+            className={cn(
+                'flex min-h-0',
+                isBottomDock ? 'h-full flex-row items-stretch gap-2 px-2 py-1.5' : 'h-full flex-col',
+            )}
+        >
             {isClassicChrome ? (
                 mobile ? (
                     <Link
                         href='/dashboard'
                         prefetch={true}
                         className='focus-visible:ring-ring shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent'
+                        {...collapsedTip(settings?.app_name || 'FeatherPanel')}
                     >
                         {classicBrandInner}
                     </Link>
@@ -382,6 +444,7 @@ function SidebarContent({
                         href='/dashboard'
                         prefetch={true}
                         className='focus-visible:ring-ring block min-w-0 shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent'
+                        {...collapsedTip(settings?.app_name || 'FeatherPanel')}
                     >
                         {classicBrandInner}
                     </Link>
@@ -394,6 +457,23 @@ function SidebarContent({
                 >
                     {modernBrandInner}
                 </Link>
+            ) : isBottomDock ? (
+                <Link
+                    href='/dashboard'
+                    prefetch={true}
+                    className='focus-visible:ring-ring flex shrink-0 items-center self-center outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent'
+                >
+                    <div className='bg-background/40 ring-primary/15 flex h-9 w-9 items-center justify-center rounded-xl ring-1'>
+                        <NextImage
+                            src={logoUrl}
+                            alt={settings?.app_name || 'FeatherPanel'}
+                            width={32}
+                            height={32}
+                            className='h-6 w-6 object-contain'
+                            unoptimized
+                        />
+                    </div>
+                </Link>
             ) : (
                 <Link
                     href='/dashboard'
@@ -402,6 +482,7 @@ function SidebarContent({
                         'focus-visible:ring-ring mx-2 mt-3 block min-w-0 shrink-0 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
                         collapsed && 'mx-1.5 mt-2',
                     )}
+                    {...collapsedTip(settings?.app_name || 'FeatherPanel')}
                 >
                     {modernBrandInner}
                 </Link>
@@ -409,325 +490,392 @@ function SidebarContent({
 
             <nav
                 className={cn(
-                    isClassicChrome
-                        ? 'custom-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto px-3 py-3'
-                        : 'custom-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto py-3 sm:space-y-5',
-                    !isClassicChrome && (collapsed && !mobile ? 'px-1.5' : 'px-2'),
+                    'custom-scrollbar relative min-h-0',
+                    isBottomDock
+                        ? 'flex min-w-0 flex-1 flex-row items-center gap-1 overflow-x-auto overflow-y-hidden py-0.5'
+                        : cn(
+                              'flex-1 overflow-y-auto',
+                              isClassicChrome
+                                  ? cn('space-y-4 px-3 py-3', isCompact && 'space-y-3 py-2')
+                                  : cn('space-y-4 py-3 sm:space-y-5', isCompact && 'space-y-3 py-2 sm:space-y-3'),
+                              !isClassicChrome && (collapsed && !mobile ? 'px-1.5' : 'px-2'),
+                          ),
                 )}
             >
-                {sortedGroups.map((group) => {
-                    const isCollapsed = collapsedGroups.includes(group);
-
-                    return (
-                        <div key={group}>
-                            {(!collapsed || mobile) && (
-                                <button
-                                    type='button'
-                                    onClick={() => toggleGroup(group)}
-                                    className={cn(
-                                        'group/header mb-2 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs font-semibold tracking-wider uppercase transition-colors',
-                                        isClassicChrome
-                                            ? 'text-muted-foreground hover:text-accent-foreground'
-                                            : 'text-muted-foreground/90 hover:bg-muted/40 hover:text-foreground text-[11px]',
-                                    )}
-                                >
-                                    <span className='truncate'>{renderGroupTitle(group)}</span>
-                                    <ChevronRight
-                                        className={cn(
-                                            'shrink-0 transition-transform duration-200',
-                                            isClassicChrome
-                                                ? 'h-3 w-3'
-                                                : 'text-muted-foreground/70 group-hover/header:text-foreground h-3.5 w-3.5',
-                                            !isClassicChrome && 'text-muted-foreground/70',
-                                            !isCollapsed && 'rotate-90',
-                                        )}
-                                    />
-                                </button>
-                            )}
+                {navLoading ? (
+                    <div
+                        className={cn(
+                            'space-y-2',
+                            collapsed && !mobile ? 'px-1.5' : 'px-2',
+                            isBottomDock && 'flex flex-row items-center gap-2 space-y-0',
+                        )}
+                        aria-busy='true'
+                    >
+                        {Array.from({ length: isBottomDock ? 5 : 8 }).map((_, index) => (
                             <div
+                                key={index}
                                 className={cn(
-                                    'space-y-1 overflow-hidden transition-all duration-200',
-                                    isCollapsed && (!collapsed || mobile)
-                                        ? 'max-h-0 opacity-0'
-                                        : 'max-h-500 opacity-100',
+                                    'bg-muted/40 animate-pulse rounded-xl',
+                                    collapsed && !mobile ? 'mx-auto h-9 w-9' : 'h-9 w-full',
+                                    isBottomDock && 'h-9 w-9 shrink-0',
                                 )}
-                            >
-                                {groupedItems[group].map((item) => {
-                                    const active = isActive(item.url);
-                                    const isPluginAction = !!item.pluginJs;
-                                    const hasChildren = item.children && item.children.length > 0;
-                                    const isSubmenuCollapsed = collapsedSubmenus.includes(item.id);
-                                    const isTicketsItem = item.url === '/dashboard/tickets';
-                                    const isAdminTicketsItem = item.url === '/admin/tickets';
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <>
+                        {sortedGroups.map((group, groupIndex) => {
+                            const isCollapsed = collapsedGroups.includes(group);
 
-                                    if (hasChildren) {
-                                        return (
-                                            <div key={item.id}>
-                                                <button
-                                                    type='button'
-                                                    onClick={() => toggleSubmenu(item.id)}
-                                                    className={cn(
-                                                        navItemBase,
-                                                        navItemIdle,
-                                                        topLevelItemPad,
-                                                        'group relative overflow-visible',
-                                                    )}
+                            return (
+                                <div key={group} className={cn(isBottomDock && 'flex shrink-0 items-center gap-1')}>
+                                    {groupIndex > 0 && !isClassicChrome && (!collapsed || mobile || isBottomDock) && (
+                                        <div
+                                            className={cn(
+                                                'border-border/25 shrink-0',
+                                                isBottomDock ? 'mx-0.5 h-8 w-px' : 'mb-3 border-t',
+                                            )}
+                                            aria-hidden='true'
+                                        />
+                                    )}
+                                    {(!collapsed || mobile) && !isBottomDock && (
+                                        <button
+                                            type='button'
+                                            onClick={() => toggleGroup(group)}
+                                            className={cn(
+                                                'group/header mb-2 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs font-semibold tracking-wider uppercase transition-colors',
+                                                isClassicChrome
+                                                    ? 'text-muted-foreground hover:text-accent-foreground'
+                                                    : 'text-muted-foreground/90 hover:bg-muted/40 hover:text-foreground',
+                                                isCompact ? 'text-[10px]' : 'text-[11px]',
+                                            )}
+                                        >
+                                            <span className='truncate'>{renderGroupTitle(group)}</span>
+                                            <ChevronRight
+                                                className={cn(
+                                                    'shrink-0 transition-transform duration-200',
+                                                    isClassicChrome
+                                                        ? 'h-3 w-3'
+                                                        : 'text-muted-foreground/70 group-hover/header:text-foreground h-3.5 w-3.5',
+                                                    !isClassicChrome && 'text-muted-foreground/70',
+                                                    !isCollapsed && 'rotate-90',
+                                                )}
+                                            />
+                                        </button>
+                                    )}
+                                    <div
+                                        className={cn(
+                                            isBottomDock
+                                                ? 'flex flex-row items-center gap-1'
+                                                : 'space-y-1 overflow-hidden transition-all duration-200',
+                                            !isBottomDock &&
+                                                (isCollapsed && (!collapsed || mobile)
+                                                    ? 'max-h-0 opacity-0'
+                                                    : 'max-h-500 opacity-100'),
+                                        )}
+                                    >
+                                        {groupedItems[group].map((item) => {
+                                            const active = isActive(item.url);
+                                            const isPluginAction = !!item.pluginJs;
+                                            const hasChildren = item.children && item.children.length > 0;
+                                            const isSubmenuCollapsed = collapsedSubmenus.includes(item.id);
+                                            const isTicketsItem = item.url === '/dashboard/tickets';
+                                            const isAdminTicketsItem = item.url === '/admin/tickets';
+
+                                            if (hasChildren) {
+                                                return (
+                                                    <div
+                                                        key={item.id}
+                                                        className={cn(isBottomDock && 'relative shrink-0')}
+                                                    >
+                                                        <button
+                                                            type='button'
+                                                            onClick={() => toggleSubmenu(item.id)}
+                                                            {...collapsedTip(item.name)}
+                                                            className={cn(
+                                                                navItemBase,
+                                                                navItemIdle,
+                                                                topLevelItemPad,
+                                                                'group relative overflow-visible',
+                                                            )}
+                                                            title={collapsed && !mobile ? undefined : item.name}
+                                                            aria-label={item.name}
+                                                        >
+                                                            <NavIcon item={item} sizeClass={topIconSize} />
+
+                                                            {(!collapsed || mobile) && (
+                                                                <span
+                                                                    className={cn(
+                                                                        'truncate',
+                                                                        isBottomDock &&
+                                                                            'w-full text-[10px] leading-tight',
+                                                                        isBottomDock
+                                                                            ? 'text-center'
+                                                                            : 'flex-1 text-left',
+                                                                    )}
+                                                                >
+                                                                    {item.name}
+                                                                </span>
+                                                            )}
+
+                                                            {(!collapsed || mobile) && (
+                                                                <ChevronDown
+                                                                    className={cn(
+                                                                        'h-4 w-4 transition-transform duration-200',
+                                                                        !isSubmenuCollapsed && 'rotate-180',
+                                                                    )}
+                                                                />
+                                                            )}
+                                                        </button>
+
+                                                        <div
+                                                            className={cn(
+                                                                isBottomDock
+                                                                    ? 'border-border/40 bg-popover absolute bottom-full left-1/2 z-50 mb-2 min-w-40 -translate-x-1/2 space-y-0.5 overflow-hidden rounded-xl border p-1 shadow-lg'
+                                                                    : isClassicChrome
+                                                                      ? 'ml-4 space-y-1 overflow-hidden transition-all duration-200'
+                                                                      : 'border-border/30 ml-3 space-y-0.5 overflow-hidden border-l pl-2 transition-all duration-200',
+                                                                !isBottomDock &&
+                                                                    (isSubmenuCollapsed || (collapsed && !mobile)
+                                                                        ? 'max-h-0 opacity-0'
+                                                                        : 'mt-1 max-h-125 opacity-100'),
+                                                                isBottomDock &&
+                                                                    (isSubmenuCollapsed
+                                                                        ? 'pointer-events-none max-h-0 opacity-0'
+                                                                        : 'opacity-100'),
+                                                            )}
+                                                        >
+                                                            {item.children?.map((child) => {
+                                                                const childActive = isActive(child.url);
+
+                                                                return (
+                                                                    <Link
+                                                                        key={child.id}
+                                                                        href={child.url}
+                                                                        prefetch={true}
+                                                                        {...collapsedTip(child.name)}
+                                                                        onClick={() => {
+                                                                            if (mobile) setMobileOpen(false);
+                                                                        }}
+                                                                        className={cn(
+                                                                            navItemBase,
+                                                                            !isClassicChrome &&
+                                                                                'rounded-lg px-3 py-2 text-[13px]',
+                                                                            childActive ? navItemActive : navItemIdle,
+                                                                            'gap-3',
+                                                                        )}
+                                                                    >
+                                                                        <NavIcon item={child} sizeClass='h-4 w-4' />
+                                                                        <span className='truncate'>{child.name}</span>
+                                                                    </Link>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+
+                                            if (isPluginAction) {
+                                                return (
+                                                    <button
+                                                        key={item.id}
+                                                        onClick={() => {
+                                                            try {
+                                                                runPluginJs(item.pluginJs!);
+                                                            } catch (e) {
+                                                                console.error('Failed to execute plugin JS', e);
+                                                            }
+                                                            if (mobile) setMobileOpen(false);
+                                                        }}
+                                                        {...collapsedTip(item.name)}
+                                                        className={cn(
+                                                            navItemBase,
+                                                            active ? navItemActive : navItemIdle,
+                                                            topLevelItemPad,
+                                                            'group relative overflow-visible',
+                                                        )}
+                                                        title={collapsed && !mobile ? undefined : item.name}
+                                                        aria-label={item.name}
+                                                    >
+                                                        <NavIcon item={item} sizeClass={topIconSize} />
+
+                                                        {(!collapsed || mobile) && (
+                                                            <span className='truncate'>{item.name}</span>
+                                                        )}
+
+                                                        {item.badge && (!collapsed || mobile) && (
+                                                            <span className={badgeClass}>{item.badge}</span>
+                                                        )}
+                                                        {isTicketsItem &&
+                                                            unreadTicketCount > 0 &&
+                                                            (!collapsed || mobile) && (
+                                                                <span className='ml-2 inline-flex items-center rounded-full border border-red-500/25 bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-600 dark:text-red-300'>
+                                                                    {unreadTicketCount}
+                                                                </span>
+                                                            )}
+                                                        {isAdminTicketsItem &&
+                                                            adminOpenTicketCount > 0 &&
+                                                            (!collapsed || mobile) && (
+                                                                <span className='ml-2 inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-300'>
+                                                                    {adminOpenTicketCount}
+                                                                </span>
+                                                            )}
+                                                    </button>
+                                                );
+                                            }
+
+                                            const targetUrl = item.pluginRedirect || item.url;
+                                            const openExternal =
+                                                Boolean(item.openInNewTab) || /^https?:\/\//i.test(targetUrl);
+                                            const itemClassName = cn(
+                                                navItemBase,
+                                                active ? navItemActive : navItemIdle,
+                                                topLevelItemPad,
+                                                'group relative overflow-visible',
+                                            );
+
+                                            if (openExternal) {
+                                                return (
+                                                    <a
+                                                        key={item.id}
+                                                        href={targetUrl}
+                                                        target='_blank'
+                                                        rel='noopener noreferrer'
+                                                        {...collapsedTip(item.name)}
+                                                        onClick={() => {
+                                                            if (mobile) setMobileOpen(false);
+                                                        }}
+                                                        className={itemClassName}
+                                                        title={collapsed && !mobile ? undefined : item.name}
+                                                        aria-label={item.name}
+                                                    >
+                                                        <NavIcon item={item} sizeClass={topIconSize} />
+                                                        {(!collapsed || mobile) && (
+                                                            <span className='truncate'>{item.name}</span>
+                                                        )}
+                                                        {item.badge && (!collapsed || mobile) && (
+                                                            <span className={badgeClass}>{item.badge}</span>
+                                                        )}
+                                                    </a>
+                                                );
+                                            }
+
+                                            return (
+                                                <Link
+                                                    key={item.id}
+                                                    href={targetUrl}
+                                                    prefetch={true}
+                                                    {...collapsedTip(item.name)}
+                                                    onClick={() => {
+                                                        if (mobile) setMobileOpen(false);
+                                                    }}
+                                                    className={itemClassName}
                                                     title={collapsed && !mobile ? undefined : item.name}
                                                     aria-label={item.name}
                                                 >
-                                                    {renderIcon(item, '', topIconSize)}
+                                                    <NavIcon item={item} sizeClass={topIconSize} />
 
                                                     {(!collapsed || mobile) && (
-                                                        <span className='flex-1 truncate text-left'>{item.name}</span>
+                                                        <span className='truncate'>{item.name}</span>
                                                     )}
 
-                                                    {(!collapsed || mobile) && (
-                                                        <ChevronDown
-                                                            className={cn(
-                                                                'h-4 w-4 transition-transform duration-200',
-                                                                !isSubmenuCollapsed && 'rotate-180',
-                                                            )}
-                                                        />
+                                                    {item.badge && (!collapsed || mobile) && (
+                                                        <span className={badgeClass}>{item.badge}</span>
                                                     )}
-                                                    {renderCollapsedLabel(item.name)}
-                                                </button>
-
-                                                <div
-                                                    className={cn(
-                                                        isClassicChrome
-                                                            ? 'ml-4 space-y-1 overflow-hidden transition-all duration-200'
-                                                            : 'border-border/30 ml-3 space-y-0.5 overflow-hidden border-l pl-2 transition-all duration-200',
-                                                        isSubmenuCollapsed || (collapsed && !mobile)
-                                                            ? 'max-h-0 opacity-0'
-                                                            : 'mt-1 max-h-125 opacity-100',
-                                                    )}
-                                                >
-                                                    {item.children?.map((child) => {
-                                                        const childActive = isActive(child.url);
-
-                                                        return (
-                                                            <Link
-                                                                key={child.id}
-                                                                href={child.url}
-                                                                prefetch={true}
-                                                                onClick={() => {
-                                                                    if (mobile) setMobileOpen(false);
-                                                                }}
-                                                                className={cn(
-                                                                    navItemBase,
-                                                                    !isClassicChrome &&
-                                                                        'rounded-lg px-3 py-2 text-[13px]',
-                                                                    childActive ? navItemActive : navItemIdle,
-                                                                    'gap-3',
-                                                                )}
-                                                            >
-                                                                {renderIcon(child, '', 'h-4 w-4')}
-                                                                <span className='truncate'>{child.name}</span>
-                                                            </Link>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        );
-                                    }
-
-                                    if (isPluginAction) {
-                                        return (
-                                            <button
-                                                key={item.id}
-                                                onClick={() => {
-                                                    try {
-                                                        eval(item.pluginJs!);
-                                                    } catch (e) {
-                                                        console.error('Failed to execute plugin JS', e);
-                                                    }
-                                                    if (mobile) setMobileOpen(false);
-                                                }}
-                                                className={cn(
-                                                    navItemBase,
-                                                    active ? navItemActive : navItemIdle,
-                                                    topLevelItemPad,
-                                                    'group relative overflow-visible',
-                                                )}
-                                                title={collapsed && !mobile ? undefined : item.name}
-                                                aria-label={item.name}
-                                            >
-                                                {renderIcon(item, '', topIconSize)}
-
-                                                {(!collapsed || mobile) && (
-                                                    <span className='truncate'>{item.name}</span>
-                                                )}
-
-                                                {item.badge && (!collapsed || mobile) && (
-                                                    <span className={badgeClass}>{item.badge}</span>
-                                                )}
-                                                {isTicketsItem && unreadTicketCount > 0 && (!collapsed || mobile) && (
-                                                    <span className='ml-2 inline-flex items-center rounded-full border border-red-500/25 bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-600 dark:text-red-300'>
-                                                        {unreadTicketCount}
-                                                    </span>
-                                                )}
-                                                {isAdminTicketsItem &&
-                                                    adminOpenTicketCount > 0 &&
-                                                    (!collapsed || mobile) && (
-                                                        <span className='ml-2 inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-300'>
-                                                            {adminOpenTicketCount}
-                                                        </span>
-                                                    )}
-                                                {renderCollapsedLabel(item.name)}
-                                            </button>
-                                        );
-                                    }
-
-                                    const targetUrl = item.pluginRedirect || item.url;
-                                    const openExternal = Boolean(item.openInNewTab) || /^https?:\/\//i.test(targetUrl);
-                                    const itemClassName = cn(
-                                        navItemBase,
-                                        active ? navItemActive : navItemIdle,
-                                        topLevelItemPad,
-                                        'group relative overflow-visible',
-                                    );
-
-                                    if (openExternal) {
-                                        return (
-                                            <a
-                                                key={item.id}
-                                                href={targetUrl}
-                                                target='_blank'
-                                                rel='noopener noreferrer'
-                                                onClick={() => {
-                                                    if (mobile) setMobileOpen(false);
-                                                }}
-                                                className={itemClassName}
-                                                title={collapsed && !mobile ? undefined : item.name}
-                                                aria-label={item.name}
-                                            >
-                                                {renderIcon(item, '', topIconSize)}
-                                                {(!collapsed || mobile) && (
-                                                    <span className='truncate'>{item.name}</span>
-                                                )}
-                                                {item.badge && (!collapsed || mobile) && (
-                                                    <span className={badgeClass}>{item.badge}</span>
-                                                )}
-                                                {renderCollapsedLabel(item.name)}
-                                            </a>
-                                        );
-                                    }
-
-                                    return (
-                                        <Link
-                                            key={item.id}
-                                            href={targetUrl}
-                                            prefetch={true}
-                                            onClick={() => {
-                                                if (mobile) setMobileOpen(false);
-                                            }}
-                                            className={itemClassName}
-                                            title={collapsed && !mobile ? undefined : item.name}
-                                            aria-label={item.name}
-                                        >
-                                            {renderIcon(item, '', topIconSize)}
-
-                                            {(!collapsed || mobile) && <span className='truncate'>{item.name}</span>}
-
-                                            {item.badge && (!collapsed || mobile) && (
-                                                <span className={badgeClass}>{item.badge}</span>
-                                            )}
-                                            {isTicketsItem && unreadTicketCount > 0 && (!collapsed || mobile) && (
-                                                <span className='ml-2 inline-flex items-center rounded-full border border-red-500/25 bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-600 dark:text-red-300'>
-                                                    {unreadTicketCount}
-                                                </span>
-                                            )}
-                                            {isAdminTicketsItem &&
-                                                adminOpenTicketCount > 0 &&
-                                                (!collapsed || mobile) && (
-                                                    <span className='ml-2 inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-300'>
-                                                        {adminOpenTicketCount}
-                                                    </span>
-                                                )}
-                                            {renderCollapsedLabel(item.name)}
-                                        </Link>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    );
-                })}
+                                                    {isTicketsItem &&
+                                                        unreadTicketCount > 0 &&
+                                                        (!collapsed || mobile) && (
+                                                            <span className='ml-2 inline-flex items-center rounded-full border border-red-500/25 bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-600 dark:text-red-300'>
+                                                                {unreadTicketCount}
+                                                            </span>
+                                                        )}
+                                                    {isAdminTicketsItem &&
+                                                        adminOpenTicketCount > 0 &&
+                                                        (!collapsed || mobile) && (
+                                                            <span className='ml-2 inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-300'>
+                                                                {adminOpenTicketCount}
+                                                            </span>
+                                                        )}
+                                                </Link>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </>
+                )}
             </nav>
 
             {!mobile && (
                 <div
                     className={cn(
-                        'mt-auto shrink-0',
-                        isClassicChrome
-                            ? 'border-border/50 border-t p-2'
-                            : 'border-border/40 bg-muted/10 border-t p-1.5',
-                        !isClassicChrome && collapsed && 'px-1 pt-1 pb-2',
-                        !isClassicChrome && !collapsed && 'p-2',
+                        'mt-auto shrink-0 border-t',
+                        isClassicChrome ? 'border-border/40' : 'border-border/30',
                     )}
                 >
-                    <button
-                        type='button'
-                        title={collapsed ? t('navbar.expandSidebar') : t('navbar.collapseSidebar')}
-                        onClick={() => {
-                            if (typeof window !== 'undefined') {
-                                const event = new CustomEvent<boolean>('toggle-sidebar', {
-                                    detail: !collapsed,
-                                });
-                                window.dispatchEvent(event);
+                    {showSidebarToggle && (
+                        <SidebarCollapseToggle
+                            position={sidebarPosition}
+                            collapsed={collapsed}
+                            t={t}
+                            variant='rail'
+                            className={cn(isClassicChrome ? 'mx-3 my-2' : 'mx-2 my-1.5')}
+                            tooltipLabel={
+                                showCollapsedTooltips
+                                    ? collapsed
+                                        ? t('navbar.expandSidebar')
+                                        : t('navbar.collapseSidebar')
+                                    : undefined
                             }
-                        }}
-                        className={cn(
-                            'text-muted-foreground flex w-full items-center justify-center rounded-lg text-sm font-medium transition-all',
-                            isClassicChrome
-                                ? 'hover:bg-accent hover:text-accent-foreground px-3 py-2'
-                                : 'border-border/50 bg-muted/15 hover:border-border/70 hover:bg-muted/30 hover:text-foreground gap-2 rounded-xl border border-dashed transition-colors',
-                            !isClassicChrome && collapsed && 'px-1 py-2',
-                            !isClassicChrome && !collapsed && 'px-3 py-2.5',
-                        )}
-                    >
-                        {collapsed ? (
-                            <ChevronRight className='h-5 w-5' />
-                        ) : (
-                            <>
-                                <ChevronLeft className={cn('h-5 w-5', isClassicChrome && 'mr-2')} />
-                                <span className='truncate'>{t('navbar.collapseSidebar')}</span>
-                            </>
-                        )}
-                    </button>
-                    {!collapsed && <PoweredByFeatherPanel variant='sidebar' className='mt-2 px-1' />}
+                        />
+                    )}
+                    {!collapsed && (
+                        <div className={cn(isClassicChrome ? 'p-3 pt-0' : 'p-2 pt-0')}>
+                            <PoweredByFeatherPanel variant='sidebar' className='px-1' />
+                        </div>
+                    )}
                 </div>
             )}
+            <SidebarCollapsedTooltipLayer
+                containerRef={sidebarContentRef}
+                enabled={showCollapsedTooltips}
+                side={collapsedTooltipSide}
+            />
         </div>
     );
 }
-
-const SIDEBAR_COLLAPSED_KEY = 'featherpanel_sidebar_collapsed';
 
 export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = false }: SidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
     const { settings } = useSettings();
-    const { navigationItems } = useNavigation();
+    const { navigationItems, navReady, entityLoading } = useNavigation();
     const { chromeLayout } = useChromeLayout();
+    const {
+        sidebarDensity,
+        sidebarStyle,
+        sidebarPosition,
+        dockDisplay,
+        dockSize,
+        sidebarGlow,
+        sidebarTogglePlacement,
+    } = useSidebarPreferences();
     const { t } = useTranslation();
-    const [collapsed, setCollapsed] = useState(() => {
-        if (typeof window !== 'undefined') {
-            try {
-                return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
-            } catch {
-                return false;
-            }
-        }
-        return false;
-    });
-    const [portalReady, setPortalReady] = useState(false);
+    const [collapsed, setCollapsed] = useState(() => (typeof window === 'undefined' ? false : readSidebarCollapsed()));
+    // Prefer the last settled list (session + plugins). Until then, show the live
+    // base items so the sidebar is never an empty chrome shell.
+    const [settledItems, setSettledItems] = useState<NavigationItem[] | null>(null);
 
-    useEffect(() => {
-        setPortalReady(true);
-    }, []);
+    useLayoutEffect(() => {
+        if (!navReady) return;
+        setSettledItems(navigationItems);
+    }, [navReady, navigationItems]);
+
+    const displayItems = settledItems ?? navigationItems;
 
     const groupedItems = useMemo(() => {
-        const grouped = navigationItems.reduce(
+        const grouped = displayItems.reduce(
             (acc, item) => {
                 const group = item.group || 'Other';
                 if (!acc[group]) acc[group] = [];
@@ -742,21 +890,9 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
         });
 
         return grouped;
-    }, [navigationItems]);
+    }, [displayItems]);
 
-    useEffect(() => {
-        try {
-            localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
-        } catch {
-            // ignore
-        }
-    }, [collapsed]);
-
-    useEffect(() => {
-        const handleToggle = () => setCollapsed((prev) => !prev);
-        window.addEventListener('toggle-sidebar', handleToggle);
-        return () => window.removeEventListener('toggle-sidebar', handleToggle);
-    }, []);
+    useEffect(() => subscribeSidebarCollapsed(setCollapsed), []);
 
     return (
         <>
@@ -789,7 +925,10 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
                                     'relative mr-16 flex w-full max-w-xs flex-1',
                                     chromeLayout === 'classic'
                                         ? 'overflow-hidden'
-                                        : 'border-border/50 bg-card/45 overflow-hidden rounded-r-2xl border border-l-0 shadow-sm backdrop-blur-2xl',
+                                        : cn(
+                                              'overflow-hidden rounded-r-2xl border border-l-0',
+                                              getSidebarSurfaceClass(sidebarStyle, sidebarGlow),
+                                          ),
                                 )}
                             >
                                 <Transition.Child
@@ -827,7 +966,15 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
                                         router={router}
                                         setMobileOpen={setMobileOpen}
                                         groupedItems={groupedItems}
+                                        navLoading={Boolean(entityLoading)}
                                         chromeLayout={chromeLayout}
+                                        sidebarDensity={sidebarDensity}
+                                        sidebarStyle={sidebarStyle}
+                                        sidebarPosition={sidebarPosition}
+                                        dockDisplay={dockDisplay}
+                                        dockSize={dockSize}
+                                        sidebarGlow={sidebarGlow}
+                                        sidebarTogglePlacement={sidebarTogglePlacement}
                                     />
                                 </div>
                             </Dialog.Panel>
@@ -836,35 +983,43 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
                 </Dialog>
             </Transition.Root>
 
-            {portalReady
-                ? createPortal(
-                      <div className='fp-desktop-sidebar hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:h-svh lg:max-h-svh lg:flex-col'>
-                          <div
-                              className={cn(
-                                  'flex h-full min-h-0 flex-col overflow-hidden transition-[width] duration-300 ease-out',
-                                  chromeLayout === 'classic'
-                                      ? cn('bg-card lg:border-border/80 lg:border-r', collapsed ? 'w-16' : 'w-64')
-                                      : cn(
-                                            'lg:border-border/50 lg:bg-card/45 lg:rounded-tr-2xl lg:border-r lg:shadow-sm lg:backdrop-blur-2xl',
-                                            collapsed ? 'w-14' : 'w-56',
-                                        ),
-                              )}
-                              data-fp-plugin-sidebar-dock={pluginFullBleed ? '' : undefined}
-                          >
-                              <SidebarContent
-                                  collapsed={collapsed}
-                                  settings={settings}
-                                  pathname={pathname}
-                                  router={router}
-                                  setMobileOpen={setMobileOpen}
-                                  groupedItems={groupedItems}
-                                  chromeLayout={chromeLayout}
-                              />
-                          </div>
-                      </div>,
-                      document.body,
-                  )
-                : null}
+            {/*
+              Render fixed desktop chrome in-tree (not a post-hydrate body portal).
+              Parent must not use overflow:hidden or the rail gets clipped - DashboardShell
+              mounts this outside BackgroundWrapper's overflow shell.
+            */}
+            <div className={getDesktopSidebarShellClass(sidebarPosition, chromeLayout)}>
+                <div
+                    className={getDesktopSidebarPanelClass({
+                        chromeLayout,
+                        sidebarPosition,
+                        sidebarStyle,
+                        sidebarGlow,
+                        collapsed,
+                        dockDisplay,
+                        dockSize,
+                    })}
+                    data-fp-plugin-sidebar-dock={pluginFullBleed ? '' : undefined}
+                >
+                    <SidebarContent
+                        collapsed={collapsed}
+                        settings={settings}
+                        pathname={pathname}
+                        router={router}
+                        setMobileOpen={setMobileOpen}
+                        groupedItems={groupedItems}
+                        navLoading={Boolean(entityLoading)}
+                        chromeLayout={chromeLayout}
+                        sidebarDensity={sidebarDensity}
+                        sidebarStyle={sidebarStyle}
+                        sidebarPosition={sidebarPosition}
+                        dockDisplay={dockDisplay}
+                        dockSize={dockSize}
+                        sidebarGlow={sidebarGlow}
+                        sidebarTogglePlacement={sidebarTogglePlacement}
+                    />
+                </div>
+            </div>
         </>
     );
 }

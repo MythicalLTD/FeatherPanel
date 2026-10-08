@@ -74,14 +74,14 @@ export default function MarketplacePage() {
                     badges={[
                         {
                             label: t('admin.marketplace.index.spells.available'),
-                            className: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+                            className: 'bg-primary/10 text-primary border-primary/20',
                         },
                     ]}
                     onClick={() => router.push('/admin/feathercloud/spells')}
-                    className='border-purple-500/20 hover:border-purple-500/40'
-                    highlightClassName='bg-linear-to-br from-purple-500/10 via-transparent to-transparent'
-                    iconClassName='text-purple-500'
-                    iconWrapperClassName='bg-purple-500/10 border-purple-500/20'
+                    className='border-primary/20 hover:border-purple-500/40'
+                    highlightClassName='bg-linear-to-br from-primary/10 via-transparent to-transparent'
+                    iconClassName='text-primary'
+                    iconWrapperClassName='bg-primary/10 border-primary/20'
                 />
 
                 <ResourceCard

@@ -360,7 +360,7 @@ export default function TicketPrioritiesPage() {
                             <SheetTitle>{t('admin.tickets.priorities.create')}</SheetTitle>
                             <SheetDescription>{t('admin.tickets.priorities.subtitle')}</SheetDescription>
                         </SheetHeader>
-                        <form onSubmit={handleCreate} className='space-y-4'>
+                        <form onSubmit={handleCreate} className='space-y-4' data-fp-save-shortcut>
                             {renderPriorityFormFields('create')}
                             <SheetFooter>
                                 <Button type='submit' loading={isSubmitting}>
@@ -378,7 +378,7 @@ export default function TicketPrioritiesPage() {
                             <SheetDescription>{t('admin.tickets.priorities.subtitle')}</SheetDescription>
                         </SheetHeader>
                         {editingPriority && (
-                            <form onSubmit={handleUpdate} className='space-y-4'>
+                            <form onSubmit={handleUpdate} className='space-y-4' data-fp-save-shortcut>
                                 {renderPriorityFormFields('edit')}
                                 <SheetFooter>
                                     <Button type='submit' loading={isSubmitting}>

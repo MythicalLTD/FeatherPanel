@@ -38,6 +38,7 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
+import { PageLoading } from '@/components/featherui/PageLoading';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import {
     DropdownMenu,
@@ -63,6 +64,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { Server, AllocationItem, AllocationsResponse, AvailableAllocationsResponse } from '@/types/server';
 import { copyToClipboard, cn, isEnabled } from '@/lib/utils';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function ServerAllocationsPage() {
     const { t } = useTranslation();
@@ -117,7 +119,7 @@ export default function ServerAllocationsPage() {
             }
         } catch (error) {
             console.error('Error fetching allocations:', error);
-            toast.error(t('serverAllocations.failedToFetch'));
+            toast.error(getApiErrorMessage(error, t, 'serverAllocations.failedToFetch'));
         } finally {
             setLoading(false);
         }
@@ -170,11 +172,11 @@ export default function ServerAllocationsPage() {
                 toast.success(t('serverAllocations.autoAllocationCompleted'));
                 fetchAllocations();
             } else {
-                toast.error(data.message || t('serverAllocations.failedToAutoAllocate'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverAllocations.failedToAutoAllocate'));
             }
         } catch (error) {
             console.error('Error auto-allocating:', error);
-            toast.error(t('serverAllocations.failedToAutoAllocate'));
+            toast.error(getApiErrorMessage(error, t, 'serverAllocations.failedToAutoAllocate'));
         } finally {
             setIsAutoAllocating(false);
         }
@@ -195,11 +197,11 @@ export default function ServerAllocationsPage() {
                 setAssignDialogOpen(false);
                 setSelectedAssignId(null);
             } else {
-                toast.error(data.message || t('serverAllocations.failedToCreate'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverAllocations.failedToCreate'));
             }
         } catch (error) {
             console.error('Error assigning allocation:', error);
-            toast.error(t('serverAllocations.failedToCreate'));
+            toast.error(getApiErrorMessage(error, t, 'serverAllocations.failedToCreate'));
         } finally {
             setIsAssigning(false);
         }
@@ -221,11 +223,11 @@ export default function ServerAllocationsPage() {
                     setServer({ ...server, current_allocations: Math.max(0, (server.current_allocations || 1) - 1) });
                 }
             } else {
-                toast.error(data.message || t('serverAllocations.failedToDelete'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverAllocations.failedToDelete'));
             }
         } catch (error) {
             console.error('Error deleting allocation:', error);
-            toast.error(t('serverAllocations.failedToDelete'));
+            toast.error(getApiErrorMessage(error, t, 'serverAllocations.failedToDelete'));
         } finally {
             setIsDeleting(false);
         }
@@ -254,11 +256,11 @@ export default function ServerAllocationsPage() {
                 setPrimaryDialogOpen(false);
                 setSelectedAllocation(null);
             } else {
-                toast.error(data.message || t('serverAllocations.failedToSetPrimary'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverAllocations.failedToSetPrimary'));
             }
         } catch (error) {
             console.error('Error setting primary allocation:', error);
-            toast.error(t('serverAllocations.failedToSetPrimary'));
+            toast.error(getApiErrorMessage(error, t, 'serverAllocations.failedToSetPrimary'));
         } finally {
             setIsSettingPrimary(false);
         }
@@ -279,7 +281,11 @@ export default function ServerAllocationsPage() {
         );
     });
 
-    if (!permissionsLoading && !canRead) {
+    if (permissionsLoading) {
+        return <PageLoading />;
+    }
+
+    if (!canRead) {
         return (
             <div className='flex min-h-[400px] flex-col items-center justify-center p-4 text-center'>
                 <div className='mb-4 rounded-full bg-red-500/10 p-4'>

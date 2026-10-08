@@ -82,7 +82,9 @@ services:
       - featherpanel_logs:/var/www/html/storage/logs
       - featherpanel_translations:/var/www/html/public/translations
       - featherpanel_addons:/var/www/html/storage/addons
+      - featherpanel_data:/var/www/html/storage/data
       - featherpanel_pma:/var/www/html/public/pma
+      - featherpanel_webmail:/var/www/html/public/webmail
     networks:
       - featherpanel_network
 
@@ -114,6 +116,35 @@ services:
       retries: 10
     ports:
       - "${FEATHERPANEL_PANEL_PORT:-4831}:80"
+    networks:
+      - featherpanel_network
+
+  mcp:
+    image: ghcr.io/mythicalltd/featherpanel-mcp:dev
+    container_name: featherpanel_mcp
+    restart: unless-stopped
+    environment:
+      - FEATHERPANEL_URL=http://backend:80
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=3001
+      - MCP_OAUTH_STORE_PATH=/data/oauth-store.json
+      - MCP_DANGEROUSLY_ALLOW_INSECURE_ISSUER_URL=true
+    volumes:
+      - mcp_oauth_data:/data
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      timeout: 10s
+      retries: 5
+      start_period: 10s
     networks:
       - featherpanel_network
 
@@ -166,7 +197,13 @@ volumes:
     driver: local
   featherpanel_addons:
     driver: local
+  featherpanel_data:
+    driver: local
   featherpanel_pma:
+    driver: local
+  featherpanel_webmail:
+    driver: local
+  mcp_oauth_data:
     driver: local
 
 networks:

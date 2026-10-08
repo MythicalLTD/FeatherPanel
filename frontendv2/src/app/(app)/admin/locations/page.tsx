@@ -17,8 +17,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -29,6 +30,7 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
+import { WebHostingAlphaNotice } from '@/components/admin/WebHostingAlphaNotice';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -75,8 +77,8 @@ interface Pagination {
     hasPrev: boolean;
 }
 
-/** Set to false to allow selecting VPS and Web hosting (Proxmox / FeatherFly). */
-const NO_WEBHOSTING = true;
+/** Set to false to allow selecting Web hosting (FeatherQuilld). */
+const NO_WEBHOSTING = false;
 
 const LOCATIONS_LIST_FILTERS_KEY = 'featherpanel_admin_locations_filters_v1';
 const LOCATIONS_LIST_FILTERS_DEFAULTS = {
@@ -115,10 +117,10 @@ const LOCATION_TYPES: {
     {
         value: 'web',
         icon: LayoutTemplate,
-        colorClass: 'text-violet-500',
+        colorClass: 'text-primary',
         selectedBorderClass: 'border-violet-500/60',
-        selectedBgClass: 'bg-violet-500/10',
-        badgeClass: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+        selectedBgClass: 'bg-primary/10',
+        badgeClass: 'bg-primary/10 text-primary border-primary/20',
         comingSoon: NO_WEBHOSTING,
     },
 ];
@@ -275,6 +277,7 @@ export default function LocationsPage() {
         flag_code: string;
         type: LocationType;
     }>({ name: '', description: '', flag_code: '', type: 'game' });
+    const [webHostingAccepted, setWebHostingAccepted] = useState(false);
 
     const [refreshKey, setRefreshKey] = useState(0);
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
@@ -307,8 +310,8 @@ export default function LocationsPage() {
                     );
                     setCountryCodes(Object.fromEntries(sorted) as Record<string, string>);
                 }
-            } catch {
-                toast.error(t('admin.locations.messages.country_codes_failed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.country_codes_failed'));
             }
         };
         fetchCountryCodes();
@@ -337,8 +340,8 @@ export default function LocationsPage() {
                     hasNext: p.has_next,
                     hasPrev: p.has_prev,
                 });
-            } catch {
-                toast.error(t('admin.locations.messages.fetch_failed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.fetch_failed'));
             } finally {
                 setLoading(false);
             }
@@ -358,8 +361,8 @@ export default function LocationsPage() {
                 type: (loc.type as LocationType) || 'game',
             });
             setEditOpen(true);
-        } catch {
-            toast.error(t('admin.locations.messages.fetch_details_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.fetch_details_failed'));
         }
     };
 
@@ -373,11 +376,7 @@ export default function LocationsPage() {
             setRefreshKey((prev) => prev + 1);
             setConfirmDeleteId(null);
         } catch (error) {
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.locations.messages.delete_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.delete_failed'));
         } finally {
             setDeleting(false);
         }
@@ -385,11 +384,16 @@ export default function LocationsPage() {
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (createForm.type === 'web' && !webHostingAccepted) {
+            toast.error(t('admin.locations.form.webhosting_alpha_required'));
+            return;
+        }
         setIsSubmitting(true);
         try {
             const payload = {
                 name: createForm.name,
                 type: createForm.type,
+                ...(createForm.type === 'web' ? { webhosting_alpha_accepted: true } : {}),
                 ...(createForm.description ? { description: createForm.description } : {}),
                 flag_code: createForm.flag_code === '__NONE__' ? null : createForm.flag_code || null,
             };
@@ -397,13 +401,10 @@ export default function LocationsPage() {
             toast.success(t('admin.locations.messages.created'));
             setCreateOpen(false);
             setCreateForm({ name: '', description: '', flag_code: '', type: 'game' });
+            setWebHostingAccepted(false);
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.locations.messages.create_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.create_failed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -424,11 +425,7 @@ export default function LocationsPage() {
             setEditOpen(false);
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.locations.messages.update_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.update_failed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -437,6 +434,10 @@ export default function LocationsPage() {
     const handleViewNodes = (location: Location) => {
         if (location.type === 'vps') {
             router.push(`/admin/vds-nodes?location_id=${location.id}`);
+            return;
+        }
+        if (location.type === 'web') {
+            router.push(`/admin/web-nodes?location_id=${location.id}`);
             return;
         }
         router.push(`/admin/nodes?location_id=${location.id}`);
@@ -664,7 +665,7 @@ export default function LocationsPage() {
                                 : ''}
                         </SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleUpdate} className='mt-6 space-y-5'>
+                    <form onSubmit={handleUpdate} className='mt-6 space-y-5' data-fp-save-shortcut>
                         <div className='space-y-2'>
                             <Label htmlFor='edit-name'>{t('admin.locations.form.name')} *</Label>
                             <Input
@@ -718,13 +719,19 @@ export default function LocationsPage() {
             </Sheet>
 
             {/* Create Sheet */}
-            <Sheet open={createOpen} onOpenChange={setCreateOpen}>
+            <Sheet
+                open={createOpen}
+                onOpenChange={(open) => {
+                    setCreateOpen(open);
+                    if (!open) setWebHostingAccepted(false);
+                }}
+            >
                 <SheetContent>
                     <SheetHeader>
                         <SheetTitle>{t('admin.locations.form.create_title')}</SheetTitle>
                         <SheetDescription>{t('admin.locations.form.create_description')}</SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleCreate} className='mt-6 space-y-5'>
+                    <form onSubmit={handleCreate} className='mt-6 space-y-5' data-fp-save-shortcut>
                         <div className='space-y-2'>
                             <Label htmlFor='create-name'>{t('admin.locations.form.name')} *</Label>
                             <Input
@@ -764,14 +771,34 @@ export default function LocationsPage() {
                             </p>
                             <TypeSelector
                                 value={createForm.type}
-                                onChange={(v) => setCreateForm({ ...createForm, type: v })}
+                                onChange={(v) => {
+                                    setCreateForm({ ...createForm, type: v });
+                                    setWebHostingAccepted(false);
+                                }}
                             />
                         </div>
+                        {createForm.type === 'web' && (
+                            <WebHostingAlphaNotice
+                                accepted={webHostingAccepted}
+                                onAcceptedChange={setWebHostingAccepted}
+                            />
+                        )}
                         <SheetFooter>
-                            <Button type='button' variant='outline' onClick={() => setCreateOpen(false)}>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                onClick={() => {
+                                    setCreateOpen(false);
+                                    setWebHostingAccepted(false);
+                                }}
+                            >
                                 {t('common.cancel')}
                             </Button>
-                            <Button type='submit' loading={isSubmitting}>
+                            <Button
+                                type='submit'
+                                loading={isSubmitting}
+                                disabled={createForm.type === 'web' && !webHostingAccepted}
+                            >
                                 {t('common.create')}
                             </Button>
                         </SheetFooter>

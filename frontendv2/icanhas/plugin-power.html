@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Frontend Plugin Power SDK — FeatherPanel</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+            name="description"
+            content="window.FeatherPanel v2: events, cancelable actions, modals, search, shortcuts, iframe bus."
+        />
+        <link rel="stylesheet" href="/icanhasfeatherpanel/assets/docs.css" />
+        <style>
+            .fp-prose pre {
+                background: #0f172a;
+                border: 1px solid #1f2937;
+                border-radius: 0.5rem;
+                padding: 1rem;
+                overflow-x: auto;
+            }
+            .fp-prose table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.875rem;
+                margin: 0.75rem 0;
+            }
+            .fp-prose th,
+            .fp-prose td {
+                border: 1px solid #1f2937;
+                padding: 0.5rem 0.75rem;
+                text-align: left;
+            }
+            .fp-prose th {
+                background: #0f172a;
+            }
+            .fp-callout {
+                border: 1px solid #1f2937;
+                border-radius: 0.75rem;
+                padding: 1rem 1.25rem;
+                margin: 1rem 0;
+                background: #0b1220;
+            }
+        </style>
+    </head>
+    <body class="fp-docs">
+        <div class="fp-shell">
+            <nav class="fp-nav" aria-label="Documentation">
+                <a class="fp-brand" href="/icanhasfeatherpanel/">
+                    <span class="fp-brand-mark" aria-hidden="true"></span>
+                    <span>FeatherPanel Docs</span>
+                </a>
+                <div class="fp-nav-links">
+                    <a href="/icanhasfeatherpanel/">Home</a>
+                    <a href="/icanhasfeatherpanel/plugins/" class="active">Plugins</a>
+                    <a href="/icanhasfeatherpanel/plugin-themes.html">Themes</a>
+                    <a href="/icanhasfeatherpanel/api/">API</a>
+                    <a href="/icanhasfeatherpanel/rag/">RAG</a>
+                </div>
+            </nav>
+
+            <header class="fp-hero">
+                <h1>Frontend Plugin Power SDK</h1>
+                <p class="fp-muted">
+                    <code>window.FeatherPanel</code> v2 — events, cancelable actions, modals, search, shortcuts. No
+                    panel rebuild per plugin.
+                </p>
+                <div class="fp-formats">
+                    <a class="fp-badge" href="/icanhasfeatherpanel/view.html?doc=plugins/power-sdk.md"
+                        >Full Markdown guide</a
+                    >
+                    <a class="fp-badge" href="/icanhasfeatherpanel/plugins/power-sdk.md">Raw power-sdk.md</a>
+                    <a class="fp-badge" href="/icanhasfeatherpanel/plugin-themes.html">Themes &amp; UI packs</a>
+                </div>
+            </header>
+
+            <main class="fp-prose" style="max-width: 960px; margin: 0 auto; padding: 0 1.25rem 3rem">
+                <div class="fp-callout">
+                    Full API write-up: <a href="/icanhasfeatherpanel/plugins/power-sdk.md">power-sdk.md</a>.
+                </div>
+
+                <h2>Boot (Frontend/index.js)</h2>
+                <pre>
+(function () {
+  function boot() {
+    var FP = window.FeatherPanel;
+    if (!FP || !FP.events) return setTimeout(boot, 50);
+
+    FP.events.on('fp:route:change', function (p) { console.log('route', p); });
+
+    FP.actions.register('fp:server:power', {
+      id: 'myplugin.guard-kill',
+      priority: 100,
+      handler: async function (ctx, next) {
+        if (ctx.action === 'kill' &amp;&amp; !confirm('Kill?')) {
+          ctx.cancel('aborted');
+          return;
+        }
+        await next();
+      },
+    });
+
+    FP.search.contribute({
+      id: 'myplugin',
+      search: function (q) {
+        return q ? [{ id: '1', title: 'My plugin', href: '/dashboard' }] : [];
+      },
+    });
+
+    FP.shortcuts.register({
+      id: 'myplugin-toast',
+      combo: 'ctrl+shift+m',
+      handler: function () { FP.toast.info('Hello from plugin'); },
+    });
+  }
+  boot();
+})();</pre>
+
+                <h2>Namespaces</h2>
+                <table>
+                    <tr>
+                        <th>API</th>
+                        <th>Role</th>
+                    </tr>
+                    <tr>
+                        <td><code>events</code></td>
+                        <td>on / once / off / emit</td>
+                    </tr>
+                    <tr>
+                        <td><code>actions</code></td>
+                        <td>Cancellable middleware (<code>register</code> / <code>run</code>)</td>
+                    </tr>
+                    <tr>
+                        <td><code>theme</code></td>
+                        <td>getMode / getPackId / subscribe</td>
+                    </tr>
+                    <tr>
+                        <td><code>api</code> · <code>toast</code> · <code>navigate</code></td>
+                        <td>HTTP, notifications, client nav</td>
+                    </tr>
+                    <tr>
+                        <td><code>context</code></td>
+                        <td>pathname / user / UI pack</td>
+                    </tr>
+                    <tr>
+                        <td><code>ui.modal</code> · <code>search</code> · <code>shortcuts</code></td>
+                        <td>Registries</td>
+                    </tr>
+                </table>
+
+                <h2>Events</h2>
+                <table>
+                    <tr>
+                        <th>ID</th>
+                        <th>When</th>
+                    </tr>
+                    <tr>
+                        <td><code>fp:host:ready</code></td>
+                        <td>Host API installed</td>
+                    </tr>
+                    <tr>
+                        <td><code>fp:route:change</code></td>
+                        <td>Pathname changes</td>
+                    </tr>
+                    <tr>
+                        <td><code>fp:page:mount</code> / <code>unmount</code></td>
+                        <td>Route settle</td>
+                    </tr>
+                    <tr>
+                        <td><code>fp:theme:change</code> / <code>fp:uipack:change</code></td>
+                        <td>Appearance packs</td>
+                    </tr>
+                    <tr>
+                        <td><code>fp:session:change</code></td>
+                        <td>Login / user</td>
+                    </tr>
+                    <tr>
+                        <td><code>fp:server:context</code> · <code>power:result</code> · <code>console:ready</code></td>
+                        <td>Server UI</td>
+                    </tr>
+                    <tr>
+                        <td><code>fp:files:saved</code> · <code>fp:api:error</code></td>
+                        <td>Editor / API</td>
+                    </tr>
+                </table>
+
+                <h2>Cancelable actions</h2>
+                <table>
+                    <tr>
+                        <th>ID</th>
+                        <th>Call site</th>
+                    </tr>
+                    <tr>
+                        <td><code>fp:server:power</code></td>
+                        <td>Start / stop / restart / kill</td>
+                    </tr>
+                    <tr>
+                        <td><code>fp:files:save</code> · <code>upload</code></td>
+                        <td>File editor</td>
+                    </tr>
+                    <tr>
+                        <td><code>fp:nav:push</code></td>
+                        <td><code>FeatherPanel.navigate</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>fp:form:submit</code> · <code>fp:data:action</code></td>
+                        <td>Opt-in forms &amp; <code>data-fp-action</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>fp:ui:confirm</code></td>
+                        <td>Destructive confirms</td>
+                    </tr>
+                    <tr>
+                        <td><code>fp:api:request</code></td>
+                        <td><code>FeatherPanel.api.*</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>fp:search:query</code> · <code>fp:shortcut:invoke</code></td>
+                        <td>Search / hotkeys</td>
+                    </tr>
+                </table>
+                <p class="fp-muted">
+                    Opt-in: <code>&lt;button data-fp-action="fp:data:action" data-fp-payload='{"x":1}'&gt;</code>
+                </p>
+
+                <h2>Iframe bus</h2>
+                <div class="fp-callout">
+                    <p>Same-origin: <code>{ type: 'featherpanel-bus', op: 'emit'|'on'|'off'|'runAction', … }</code></p>
+                    <p>Replies: <code>featherpanel-bus-reply</code> · events: <code>featherpanel-bus-event</code></p>
+                    <p>
+                        Also: <code>featherpanel-ready</code>, <code>featherpanel-navigate</code>,
+                        <code>featherpanel-toast</code>
+                    </p>
+                </div>
+
+                <h2>Slots</h2>
+                <p>
+                    <code>shell.*</code>, <code>toolbar.server-header</code>, <code>toolbar.server-console</code>,
+                    <code>drawer.global</code>, <code>modal.global</code>
+                </p>
+
+                <h2>Choose the right surface</h2>
+                <table>
+                    <tr>
+                        <th>Need</th>
+                        <th>Use</th>
+                    </tr>
+                    <tr>
+                        <td>HTML card on a page</td>
+                        <td><a href="/icanhasfeatherpanel/view.html?doc=plugins/frontend.md">widgets.json</a></td>
+                    </tr>
+                    <tr>
+                        <td>Nav + page</td>
+                        <td>sidebar.json</td>
+                    </tr>
+                    <tr>
+                        <td>Colors only</td>
+                        <td><a href="/icanhasfeatherpanel/view.html?doc=plugins/themes.md">theme.json</a></td>
+                    </tr>
+                    <tr>
+                        <td>Replace chrome</td>
+                        <td><a href="/icanhasfeatherpanel/view.html?doc=plugins/ui-packs.md">ui.json</a></td>
+                    </tr>
+                    <tr>
+                        <td>Intercept power / files</td>
+                        <td>This SDK (<code>actions</code>)</td>
+                    </tr>
+                </table>
+            </main>
+
+            <footer class="fp-footer">
+                Canonical guide: <a href="/icanhasfeatherpanel/plugins/power-sdk.md">power-sdk.md</a> · Source:
+                <code>frontendv2/src/lib/plugin-sdk/</code>
+            </footer>
+        </div>
+    </body>
+</html>

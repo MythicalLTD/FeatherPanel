@@ -1,4 +1,3 @@
-
 /*
 This file is part of FeatherPanel.
 
@@ -17,6 +16,16 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import {
+    DOCS_BASE,
+    escapeHtml,
+    ensureDir,
+    hero,
+    renderDocsPage,
+    writeJson,
+    writeMarkdown,
+    writeText,
+} from './lib/docs-site.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,97 +34,102 @@ const EVENTS_DIR = path.join(__dirname, '../../backend/app/Plugins/Events/Events
 const CONTROLLERS_DIR = path.join(__dirname, '../../backend/app/Controllers');
 const PUBLIC_DOCS_DIR = path.join(__dirname, '../public/icanhasfeatherpanel');
 const EVENTS_DOCS_DIR = path.join(PUBLIC_DOCS_DIR, 'events');
+const APP_DIR = path.join(__dirname, '../../backend/app');
+const EMIT_SCAN_DIRS = [
+    CONTROLLERS_DIR,
+    path.join(APP_DIR, 'Helpers'),
+    path.join(APP_DIR, 'Services'),
+    path.join(APP_DIR, 'Middleware'),
+    path.join(APP_DIR, 'Chat'),
+];
 
 function getControllerFiles(dir, files = []) {
     if (!fs.existsSync(dir)) return files;
-    const fileList = fs.readdirSync(dir);
-    for (const file of fileList) {
+    for (const file of fs.readdirSync(dir)) {
         const name = path.join(dir, file);
-        if (fs.statSync(name).isDirectory()) {
-            getControllerFiles(name, files);
-        } else if (name.endsWith('.php')) {
-            files.push(name);
-        }
+        if (fs.statSync(name).isDirectory()) getControllerFiles(name, files);
+        else if (name.endsWith('.php')) files.push(name);
     }
     return files;
 }
 
 function parseEventEmissions() {
-    const files = getControllerFiles(CONTROLLERS_DIR);
-    const eventDataMap = new Map(); // Map: "Category::method" -> data keys
-    
-    files.forEach(filePath => {
+    const files = [];
+    EMIT_SCAN_DIRS.forEach((dir) => getControllerFiles(dir, files));
+    const eventDataMap = new Map();
+
+    files.forEach((filePath) => {
         try {
             const content = fs.readFileSync(filePath, 'utf8');
-            
-            // Match: $eventManager->emit(EventClass::method(), [array]);
-            // More flexible pattern to handle various formatting
             const emitPatterns = [
-                /eventManager\s*->\s*emit\s*\(\s*([A-Za-z0-9_\\]+)::(\w+)\(\)\s*,\s*\[(.*?)\]\s*\)/gs,
-                /\$eventManager\s*->\s*emit\s*\(\s*([A-Za-z0-9_\\]+)::(\w+)\(\)\s*,\s*\[(.*?)\]\s*\)/gs
+                /(?:eventManager|EventManager)\s*->\s*emit\s*\(\s*([A-Za-z0-9_\\]+)::(\w+)\(\)\s*,\s*\[(.*?)\]\s*\)/gs,
+                /(?:emitPluginEvent|emitVdsEvent|emitWebEvent|emitEvent|emitHookEvent|emitAuthEvent|emitWings)\s*\(\s*([A-Za-z0-9_\\]+)::(\w+)\(\)\s*,\s*\[(.*?)\]\s*\)/gs,
+                /WebSpacePluginEvents\s*::\s*emit\s*\(\s*([A-Za-z0-9_\\]+)::(\w+)\(\)\s*,/gs,
             ];
-            
-            emitPatterns.forEach(pattern => {
+
+            emitPatterns.forEach((pattern) => {
                 let match;
                 while ((match = pattern.exec(content)) !== null) {
-                    const [, eventClass, method, dataArray] = match;
-                    
-                    // Extract category from class name
+                    const eventClass = match[1];
+                    const method = match[2];
+                    const dataArray = match[3] || '';
                     const categoryMatch = eventClass.match(/([A-Za-z]+)Event$/);
                     if (!categoryMatch) continue;
                     const category = categoryMatch[1];
-                    
-                    // Extract data keys from the array
                     const dataKeys = [];
-                    // Match: 'key' => or "key" =>
                     const keyPattern = /['"]([^'"]+)['"]\s*=>/g;
                     let keyMatch;
-                    while ((keyMatch = keyPattern.exec(dataArray)) !== null) {
-                        dataKeys.push(keyMatch[1]);
-                    }
-                    
+                    while ((keyMatch = keyPattern.exec(dataArray)) !== null) dataKeys.push(keyMatch[1]);
                     const key = `${category}::${method}`;
-                    if (!eventDataMap.has(key)) {
-                        eventDataMap.set(key, []);
-                    }
+                    if (!eventDataMap.has(key)) eventDataMap.set(key, []);
                     eventDataMap.get(key).push({
                         keys: dataKeys,
-                        file: path.relative(path.join(__dirname, '../..'), filePath)
+                        file: path.relative(path.join(__dirname, '../..'), filePath).replace(/\\/g, '/'),
                     });
                 }
             });
+
+            const refPattern = /([A-Za-z0-9_\\]+)::(on\w+)\(\s*\)/g;
+            let refMatch;
+            while ((refMatch = refPattern.exec(content)) !== null) {
+                if (!/emit/i.test(content)) continue;
+                const eventClass = refMatch[1].split('\\').pop();
+                const method = refMatch[2];
+                const categoryMatch = eventClass.match(/([A-Za-z]+)Event$/);
+                if (!categoryMatch) continue;
+                const category = categoryMatch[1];
+                const key = `${category}::${method}`;
+                if (!eventDataMap.has(key)) eventDataMap.set(key, []);
+                eventDataMap.get(key).push({
+                    keys: [],
+                    file: path.relative(path.join(__dirname, '../..'), filePath).replace(/\\/g, '/'),
+                });
+            }
         } catch {
-            // Skip files that can't be read
+            // skip unreadable files
         }
     });
-    
-    // Merge data keys for same events (some events are emitted from multiple places)
+
     const merged = new Map();
     eventDataMap.forEach((occurrences, key) => {
         const allKeys = new Set();
-        occurrences.forEach(occ => {
-            occ.keys.forEach(k => allKeys.add(k));
-        });
+        occurrences.forEach((occ) => occ.keys.forEach((k) => allKeys.add(k)));
         merged.set(key, {
             keys: Array.from(allKeys).sort(),
-            files: [...new Set(occurrences.map(o => o.file))]
+            files: [...new Set(occurrences.map((o) => o.file))],
         });
     });
-    
     return merged;
 }
 
 function parseEventFile(filePath) {
     const content = fs.readFileSync(filePath, 'utf8');
     const className = path.basename(filePath, '.php');
-    const events = [];
-    
-    // Extract class name without "Event" suffix for category
     const category = className.replace(/Event$/, '');
-    
-    // Match static methods with optional PHPDoc comments
-    const methodRegex = /(?:\/\*\*\s*\n\s*\*\s*Callback:\s*(.+?)\s*\n\s*\*\/\s*\n)?\s*public\s+static\s+function\s+(\w+)\(\):\s*string\s*\n\s*\{\s*\n\s*return\s+['"](.+?)['"];?\s*\n\s*\}/gs;
-    
+    const events = [];
+    const methodRegex =
+        /(?:\/\*\*\s*\n\s*\*\s*Callback:\s*(.+?)\s*\n\s*\*\/\s*\n)?\s*public\s+static\s+function\s+(\w+)\(\):\s*string\s*\n\s*\{\s*\n\s*return\s+['"](.+?)['"];?\s*\n\s*\}/gs;
+
     let match;
     while ((match = methodRegex.exec(content)) !== null) {
         const [, callbackParams, methodName, eventName] = match;
@@ -123,56 +137,45 @@ function parseEventFile(filePath) {
             method: methodName,
             name: eventName,
             callback: callbackParams ? callbackParams.trim() : 'No parameters',
-            category: category
+            category,
         });
     }
-    
     return { category, events, className };
 }
 
 function parseAllEvents() {
-    const files = fs.readdirSync(EVENTS_DIR).filter(f => f.endsWith('.php') && f !== 'PluginEvent.php');
+    const files = fs.readdirSync(EVENTS_DIR).filter((f) => f.endsWith('.php') && f !== 'PluginEvent.php');
     const allEvents = [];
     const categories = new Set();
     const grouped = {};
-    
-    // Parse actual event emissions from controllers
     const eventDataMap = parseEventEmissions();
-    
-    files.forEach(file => {
-        const filePath = path.join(EVENTS_DIR, file);
-        const { category, events } = parseEventFile(filePath);
-        
+
+    files.forEach((file) => {
+        const { category, events } = parseEventFile(path.join(EVENTS_DIR, file));
         categories.add(category);
-        
-        if (!grouped[category]) {
-            grouped[category] = [];
-        }
-        
-        events.forEach(event => {
-            // Try to find actual data being sent for this event
-            const dataKey = `${category}::${event.method}`;
-            const eventData = eventDataMap.get(dataKey);
-            
+        if (!grouped[category]) grouped[category] = [];
+        events.forEach((event) => {
+            const eventData = eventDataMap.get(`${category}::${event.method}`);
             if (eventData) {
                 event.actualData = eventData.keys;
                 event.sourceFiles = eventData.files;
+                event.emitted = true;
+            } else {
+                event.emitted = false;
             }
-            
             allEvents.push(event);
             grouped[category].push(event);
         });
     });
-    
-    // Sort events within each category by method name
-    Object.keys(grouped).forEach(category => {
+
+    Object.keys(grouped).forEach((category) => {
         grouped[category].sort((a, b) => a.method.localeCompare(b.method));
     });
-    
+
     return {
         events: allEvents,
         categories: Array.from(categories).sort(),
-        grouped
+        grouped,
     };
 }
 
@@ -186,224 +189,235 @@ function sanitizeCategory(category) {
         .replace(/^-+|-+$/g, '');
 }
 
-function generateMainEventsPage(categories, totalEvents) {
-    const categoryItems = categories
+function serializeEvent(event) {
+    return {
+        name: event.name,
+        method: event.method,
+        category: event.category,
+        callback: event.callback,
+        emitted: Boolean(event.emitted),
+        data_keys: event.actualData || [],
+        source_files: event.sourceFiles || [],
+    };
+}
+
+function generateMainPage(categories, grouped, totalEvents, emittedCount, definedOnlyCount) {
+    const items = categories
         .map((category) => {
             const sanitized = sanitizeCategory(category);
-            return `<li>
-    <a href="/icanhasfeatherpanel/events/${sanitized}.html">${category}</a>
+            const list = grouped[category] || [];
+            const emitted = list.filter((e) => e.emitted).length;
+            const definedOnly = list.length - emitted;
+            return `<li class="fp-item" data-fp-search-item data-fp-search-text="${escapeHtml(category)}">
+  <a href="${DOCS_BASE}/events/${sanitized}.html"><h2>${escapeHtml(category)}</h2></a>
+  <div class="fp-meta">
+    <span class="fp-badge ok">${emitted} emitted</span>
+    ${definedOnly > 0 ? `<span class="fp-badge warn">${definedOnly} defined only</span>` : ''}
+  </div>
+  <div class="fp-formats">
+    <a href="${DOCS_BASE}/events/${sanitized}.md">Markdown</a>
+    <a href="${DOCS_BASE}/events/${sanitized}.json">JSON</a>
+  </div>
 </li>`;
         })
         .join('\n');
 
-    const exampleCode = [
-        'public static function processEvents(PluginEvents $event): void',
-        '{',
-        "    $event->on('featherpanel:user:created', function ($user) {",
-        '        // Handle user creation',
-        '    });',
-        '}',
-    ].join('\n');
+    const body = `${hero({
+        title: 'Plugin Events &amp; Hooks',
+        subtitle:
+            'Event catalog for FeatherPanel plugins. Emitted events have at least one runtime emit site; defined-only events exist in the catalog but are not currently fired.',
+        badges: [
+            `${categories.length} categories`,
+            `${totalEvents} events`,
+            { label: `${emittedCount} emitted`, className: 'ok' },
+            { label: `${definedOnlyCount} defined only`, className: 'warn' },
+        ],
+        formats: [
+            { href: `${DOCS_BASE}/events/index.md`, label: 'index.md' },
+            { href: `${DOCS_BASE}/events/index.json`, label: 'index.json' },
+            { href: `${DOCS_BASE}/events/all.json`, label: 'all.json' },
+            { href: `${DOCS_BASE}/view.html?doc=events/index.md`, label: 'View Markdown' },
+        ],
+    })}
+<section class="fp-section">
+  <h2>Categories</h2>
+  <input class="fp-search" type="search" placeholder="Filter event categories…" data-fp-search />
+  <p class="fp-muted fp-hidden" data-fp-search-empty>No categories match.</p>
+  <ul class="fp-list">${items}</ul>
+</section>
+<section class="fp-section fp-card">
+  <h2>Registering listeners</h2>
+  <pre><code>public static function processEvents(PluginEvents $event): void
+{
+    $event->on('featherpanel:user:created', function ($user) {
+        // Handle user creation
+    });
+}</code></pre>
+</section>`;
 
-    return `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>FeatherPanel Plugin Events & Hooks</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
-    a { color: #60a5fa; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .container { max-width: 960px; margin: 0 auto; }
-    h1 { font-size: 2.25rem; margin-bottom: 0.5rem; }
-    h2 { font-size: 1.5rem; margin-top: 2rem; }
-    h3 { font-size: 1.125rem; margin-top: 1.5rem; }
-    .muted { color: #9ca3af; }
-    .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; background: #0f172a; border: 1px solid #1f2937; margin-right: 0.5rem; }
-    ul { padding-left: 1.25rem; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
-    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
-    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.5rem; margin-top: 2rem; }
-  </style>
-</head>
-<body>
-  <main class="container">
-    <header>
-      <h1>Plugin Events &amp; Hooks</h1>
-      <p class="muted">
-        Complete reference of all plugin events and hooks available in FeatherPanel for extending functionality.
-      </p>
-      <div style="margin-top: 0.75rem;">
-        <span class="badge">${categories.length} event categories</span>
-        <span class="badge">${totalEvents} total events</span>
-      </div>
-    </header>
-
-    <section>
-      <h2>Event Categories</h2>
-      <p class="muted">Click a category to see all events and their payloads.</p>
-      <ul>
-${categoryItems}
-      </ul>
-    </section>
-
-    <section class="card">
-      <h2>About Plugin Events</h2>
-      <p class="muted">
-        FeatherPanel uses an event-driven architecture that allows plugins to hook into system events and extend
-        functionality without modifying core code. Events are emitted at key points in the application lifecycle and
-        can be listened to by plugins.
-      </p>
-
-      <h3>Registering Event Listeners</h3>
-      <p class="muted">
-        In your plugin's main class, implement the <code>processEvents</code> method:
-      </p>
-      <pre><code>${exampleCode}</code></pre>
-
-      <h3>Event Naming</h3>
-      <p class="muted">
-        Events follow a consistent naming pattern:
-        <code>featherpanel:category:action</code>. Each event includes callback parameter information to help you
-        understand what data is available.
-      </p>
-    </section>
-  </main>
-</body>
-</html>
-`;
+    return renderDocsPage({
+        title: 'Events',
+        active: 'events',
+        body,
+        includeSearchScript: true,
+    });
 }
 
 function generateCategoryPage(category, events) {
-    const headerTitle = `Events: ${category}`;
-
-    const eventItems = events
+    const sanitized = sanitizeCategory(category);
+    const items = events
         .map((event) => {
-            const dataKeys =
-                event.actualData && event.actualData.length > 0
-                    ? event.actualData.join(', ')
-                    : 'N/A';
-
-            const sourceFiles =
-                event.sourceFiles && event.sourceFiles.length > 0
-                    ? event.sourceFiles.map((f) => `<li><code>${f}</code></li>`).join('\n')
-                    : '<li class="muted">No known emission locations.</li>';
-
-            let params = [];
-            if (event.actualData && event.actualData.length > 0) {
-                params = event.actualData.map((key) => {
-                    const parts = key.split('_');
-                    const camelCase =
-                        parts[0] + parts.slice(1).map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join('');
-                    return '$' + camelCase;
-                });
-            } else {
-                params = event.callback.split(',').map((p) => {
-                    const trimmed = p.trim();
-                    const parts = trimmed.split(' ');
-                    const paramName = parts.length > 0 ? parts[parts.length - 1].replace(/\.$/, '') : 'param';
-                    return '$' + paramName;
-                });
-            }
-
-            const exampleCode = [
-                'use App\\Plugins\\PluginEvents;',
-                `use App\\Plugins\\Events\\Events\\${category}Event;`,
-                '',
-                'public static function processEvents(PluginEvents $evt): void',
-                '{',
-                `    $evt->on(${category}Event::${event.method}(), function (${params.join(', ')}) {`,
-                `        // Handle ${event.name}`,
-                event.actualData && event.actualData.length > 0
-                    ? `        // Data keys: ${event.actualData.join(', ')}`
-                    : `        // Parameters: ${event.callback}`,
-                '    });',
-                '}',
-            ].join('\n');
-
-            return `<article class="card">
-  <h2><code>${event.name}</code></h2>
-  <p class="muted"><strong>Method:</strong> <code>${event.method}</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> ${event.callback}</p>
-
-  <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> ${dataKeys}</p>
-
-  <h3>Emitted From</h3>
-  <ul>
-${sourceFiles}
-  </ul>
-
-  <h3>Usage Example</h3>
-  <pre><code>${exampleCode}</code></pre>
+            const dataKeys = event.actualData?.length ? event.actualData.join(', ') : 'N/A';
+            const sourceFiles = event.sourceFiles?.length
+                ? event.sourceFiles.map((f) => `<li><code>${escapeHtml(f)}</code></li>`).join('\n')
+                : '<li class="fp-muted">No known emission locations.</li>';
+            const status = event.emitted
+                ? '<span class="fp-badge ok">Emitted</span>'
+                : '<span class="fp-badge warn">Defined only</span>';
+            return `<article class="fp-item" data-fp-search-item data-fp-search-text="${escapeHtml(
+                `${event.name} ${event.method} ${dataKeys}`,
+            )}">
+  <h2><code>${escapeHtml(event.name)}</code> ${status}</h2>
+  <p class="fp-muted"><strong>Method:</strong> <code>${escapeHtml(event.method)}</code></p>
+  <p class="fp-muted"><strong>Callback:</strong> ${escapeHtml(event.callback)}</p>
+  <p class="fp-muted"><strong>Data keys:</strong> ${escapeHtml(dataKeys)}</p>
+  <h3>Emitted from</h3>
+  <ul>${sourceFiles}</ul>
 </article>`;
         })
-        .join('\n\n');
+        .join('\n');
 
-    return `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>${headerTitle}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
-    a { color: #60a5fa; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .container { max-width: 960px; margin: 0 auto; }
-    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
-    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
-    h3 { font-size: 1rem; margin-top: 1.25rem; }
-    .muted { color: #9ca3af; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
-    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
-    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
-    .back-link { margin-bottom: 1.5rem; display: inline-block; }
-  </style>
-</head>
-<body>
-  <main class="container">
-    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
-    <header>
-      <h1>${category}</h1>
-      <p class="muted">${events.length} event${events.length !== 1 ? 's' : ''} in this category.</p>
-    </header>
+    const body = `<a class="fp-back" href="${DOCS_BASE}/events/">&larr; All event categories</a>
+${hero({
+        title: escapeHtml(category),
+        subtitle: `${events.length} events · ${events.filter((e) => e.emitted).length} emitted · ${events.filter((e) => !e.emitted).length} defined only`,
+        formats: [
+            { href: `${DOCS_BASE}/events/${sanitized}.md`, label: 'Markdown' },
+            { href: `${DOCS_BASE}/events/${sanitized}.json`, label: 'JSON' },
+        ],
+    })}
+<input class="fp-search" type="search" placeholder="Filter events…" data-fp-search />
+<p class="fp-muted fp-hidden" data-fp-search-empty>No events match.</p>
+<div class="fp-list">${items}</div>`;
 
-${eventItems}
-  </main>
-</body>
-</html>
+    return renderDocsPage({
+        title: `Events: ${category}`,
+        active: 'events',
+        body,
+        includeSearchScript: true,
+    });
+}
+
+function categoryMarkdown(category, events) {
+    const blocks = events
+        .map((event) => {
+            const keys = event.actualData?.length ? event.actualData.map((k) => `\`${k}\``).join(', ') : '_none_';
+            const files = event.sourceFiles?.length
+                ? event.sourceFiles.map((f) => `- \`${f}\``).join('\n')
+                : '- _none_';
+            return `### \`${event.name}\`
+
+- **Method:** \`${event.method}\`
+- **Emitted:** ${event.emitted ? 'yes' : 'no (defined only)'}
+- **Callback docs:** ${event.callback}
+- **Data keys:** ${keys}
+
+**Source files**
+
+${files}
+`;
+        })
+        .join('\n');
+
+    return `# Events: ${category}
+
+${events.length} events in this category.
+
+${blocks}
 `;
 }
 
-// Ensure docs directories exist
-if (!fs.existsSync(PUBLIC_DOCS_DIR)) {
-    fs.mkdirSync(PUBLIC_DOCS_DIR, { recursive: true });
+function indexMarkdown(categories, grouped, events, emittedCount, definedOnlyCount) {
+    const links = categories
+        .map((category) => {
+            const sanitized = sanitizeCategory(category);
+            const list = grouped[category] || [];
+            const emitted = list.filter((e) => e.emitted).length;
+            return `- [${category}](./${sanitized}.md) (${list.length} events, ${emitted} emitted) — [\`${sanitized}.json\`](./${sanitized}.json)`;
+        })
+        .join('\n');
+
+    return `# FeatherPanel Plugin Events
+
+Total: **${events.length}** events (**${emittedCount}** emitted, **${definedOnlyCount}** defined only).
+
+- [index.json](./index.json)
+- [all.json](./all.json)
+
+## Categories
+
+${links}
+`;
 }
-if (!fs.existsSync(EVENTS_DOCS_DIR)) {
-    fs.mkdirSync(EVENTS_DOCS_DIR, { recursive: true });
-}
+
+ensureDir(EVENTS_DOCS_DIR);
 
 console.log('Parsing plugin events...');
 const { events, categories, grouped } = parseAllEvents();
+const emittedCount = events.filter((e) => e.emitted).length;
+const definedOnlyCount = events.length - emittedCount;
+const serialized = events.map(serializeEvent);
 
-// Generate main events page
-const mainPagePath = path.join(EVENTS_DOCS_DIR, 'index.html');
-const mainPage = generateMainEventsPage(categories, events.length);
-fs.writeFileSync(mainPagePath, mainPage);
-console.log(`✓ Main events page: ${mainPagePath}`);
+writeText(
+    path.join(EVENTS_DOCS_DIR, 'index.html'),
+    generateMainPage(categories, grouped, events.length, emittedCount, definedOnlyCount),
+);
+writeJson(path.join(EVENTS_DOCS_DIR, 'index.json'), {
+    type: 'featherpanel.events.index',
+    total: events.length,
+    emitted: emittedCount,
+    defined_only: definedOnlyCount,
+    categories: categories.map((category) => {
+        const sanitized = sanitizeCategory(category);
+        const list = grouped[category] || [];
+        return {
+            name: category,
+            slug: sanitized,
+            total: list.length,
+            emitted: list.filter((e) => e.emitted).length,
+            html: `${DOCS_BASE}/events/${sanitized}.html`,
+            markdown: `${DOCS_BASE}/events/${sanitized}.md`,
+            json: `${DOCS_BASE}/events/${sanitized}.json`,
+        };
+    }),
+});
+writeJson(path.join(EVENTS_DOCS_DIR, 'all.json'), {
+    type: 'featherpanel.events.all',
+    total: events.length,
+    emitted: emittedCount,
+    defined_only: definedOnlyCount,
+    events: serialized,
+});
+writeMarkdown(
+    path.join(EVENTS_DOCS_DIR, 'index.md'),
+    indexMarkdown(categories, grouped, events, emittedCount, definedOnlyCount),
+);
 
-// Generate category pages
-categories.forEach(category => {
+categories.forEach((category) => {
     const sanitized = sanitizeCategory(category);
-    const categoryPagePath = path.join(EVENTS_DOCS_DIR, `${sanitized}.html`);
-    const categoryPage = generateCategoryPage(category, grouped[category]);
-    fs.writeFileSync(categoryPagePath, categoryPage);
-    console.log(`✓ Category page: ${categoryPagePath} (${grouped[category].length} events)`);
+    const list = grouped[category];
+    writeText(path.join(EVENTS_DOCS_DIR, `${sanitized}.html`), generateCategoryPage(category, list));
+    writeJson(path.join(EVENTS_DOCS_DIR, `${sanitized}.json`), {
+        type: 'featherpanel.events.category',
+        category,
+        slug: sanitized,
+        total: list.length,
+        events: list.map(serializeEvent),
+    });
+    writeMarkdown(path.join(EVENTS_DOCS_DIR, `${sanitized}.md`), categoryMarkdown(category, list));
+    console.log(`✓ events/${sanitized}.{html,md,json} (${list.length})`);
 });
 
-console.log(`\n✅ Plugin events documentation generated successfully!`);
-console.log(`   - Main page: /icanhasfeatherpanel/events`);
-console.log(`   - ${categories.length} category pages`);
-console.log(`   - ${events.length} total events`);
+console.log(
+    `\n✅ Events docs ready (${events.length} events, ${emittedCount} emitted, HTML + Markdown + JSON)`,
+);

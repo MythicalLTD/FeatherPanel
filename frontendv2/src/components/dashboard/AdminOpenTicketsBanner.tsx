@@ -88,24 +88,24 @@ export function AdminOpenTicketsBanner({ className }: { className?: string }) {
     return (
         <div
             className={cn(
-                'relative overflow-hidden rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-900 shadow-sm dark:text-amber-200',
+                'relative shrink-0 rounded-xl border border-amber-500/40 bg-amber-500/15 p-4 text-amber-950 shadow-sm backdrop-blur-md dark:bg-amber-500/20 dark:text-amber-50',
                 className,
             )}
         >
-            <div className='flex flex-col justify-between gap-4 sm:flex-row sm:items-center'>
-                <div className='flex items-start gap-3 pr-8 sm:pr-0'>
+            <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4'>
+                <div className='flex min-w-0 flex-1 items-start gap-3 pr-8 sm:pr-0'>
                     <AlertTriangle className='mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-300' />
-                    <div>
+                    <div className='min-w-0'>
                         <h3 className='text-sm font-semibold tracking-wide uppercase'>
                             {t('tickets.adminOpenTicketsTitle')}
                         </h3>
-                        <p className='mt-1 text-sm opacity-90'>
+                        <p className='mt-1 text-sm text-amber-950/80 dark:text-amber-50/85'>
                             {t('tickets.adminOpenTicketsDescription').replace('{count}', String(openCount))}
                         </p>
                     </div>
                 </div>
-                <div className='flex shrink-0 flex-wrap gap-2'>
-                    <Button asChild variant='outline' size='sm' className='bg-background/50 border-amber-500/30'>
+                <div className='flex shrink-0 flex-wrap gap-2 sm:justify-end'>
+                    <Button asChild variant='outline' size='sm' className='bg-background/70 border-amber-500/40'>
                         <Link href='/dashboard/tickets'>{t('tickets.adminViewOpenTickets')}</Link>
                     </Button>
                     <Button asChild size='sm' className='bg-amber-600 text-white hover:bg-amber-600/90'>
@@ -115,7 +115,7 @@ export function AdminOpenTicketsBanner({ className }: { className?: string }) {
                         type='button'
                         variant='ghost'
                         size='sm'
-                        className='text-amber-800 hover:bg-amber-500/15 dark:text-amber-200'
+                        className='hidden text-amber-900 hover:bg-amber-500/20 sm:inline-flex dark:text-amber-100'
                         onClick={handleDismiss}
                     >
                         {t('tickets.adminDismissOpenTicketsBanner')}

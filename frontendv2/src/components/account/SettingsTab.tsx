@@ -17,12 +17,13 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePreferences, useDateFormatOptions } from '@/contexts/PreferencesContext';
-import { Button } from '@/components/ui/button';
-import { ShieldCheck, Check, Fingerprint, Pencil, FileText, Clock, Network, Trash2 } from 'lucide-react';
+import { Button } from '@/components/featherui/Button';
+import { ShieldCheck, Check, Fingerprint, Pencil, FileText, Clock, Network, Trash2, Smartphone } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Captcha } from '@/components/Captcha';
@@ -30,6 +31,7 @@ import { isEnabled } from '@/lib/utils';
 import { isCaptchaConfigured, obtainCaptchaResponseToken } from '@/lib/captchaGate';
 import { startRegistration } from '@simplewebauthn/browser';
 import { passkeysApi } from '@/lib/api/passkeys';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { format } from 'date-fns';
 import {
     formatDateTimeInTz,
@@ -46,7 +48,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { Select } from '@/components/ui/select-native';
 
 type AuthProvider = {
@@ -163,8 +165,8 @@ export default function SettingsTab() {
                 if (res.success && Array.isArray(res.data?.passkeys)) {
                     setPasskeys(res.data.passkeys);
                 }
-            } catch {
-                toast.error(t('auth.passkey.loadFailed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'auth.passkey.loadFailed'));
             } finally {
                 setPasskeysLoading(false);
             }
@@ -279,16 +281,12 @@ export default function SettingsTab() {
                 await fetchSession(true);
                 resetTurnstile();
             } else {
-                toast.error(response.data?.message || t('account.twoFactor.disableFailed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'account.twoFactor.disableFailed'));
                 resetTurnstile();
             }
         } catch (error) {
             console.error('Error disabling 2FA:', error);
-            if (axios.isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('account.twoFactor.disableFailed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'account.twoFactor.disableFailed'));
             resetTurnstile();
         } finally {
             setIsSubmitting(false);
@@ -313,7 +311,7 @@ export default function SettingsTab() {
             }
         } catch (error) {
             console.error('Error unlinking Discord:', error);
-            toast.error(t('account.discordUnlinkFailed'));
+            toast.error(getApiErrorMessage(error, t, 'account.discordUnlinkFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -343,7 +341,7 @@ export default function SettingsTab() {
             }
         } catch (error) {
             console.error('Error unlinking OIDC:', error);
-            toast.error(t('account.oidcUnlinkFailed'));
+            toast.error(getApiErrorMessage(error, t, 'account.oidcUnlinkFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -367,15 +365,11 @@ export default function SettingsTab() {
                 setLdapPassword('');
                 await fetchSession(true);
             } else {
-                toast.error(response.data?.message || t('account.ldapLinkFailed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'account.ldapLinkFailed'));
             }
         } catch (error) {
             console.error('Error linking LDAP:', error);
-            if (axios.isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('account.ldapLinkFailed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'account.ldapLinkFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -393,7 +387,7 @@ export default function SettingsTab() {
             }
         } catch (error) {
             console.error('Error unlinking LDAP:', error);
-            toast.error(t('account.ldapUnlinkFailed'));
+            toast.error(getApiErrorMessage(error, t, 'account.ldapUnlinkFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -430,16 +424,12 @@ export default function SettingsTab() {
                 resetTurnstile();
                 router.push(`/dashboard/tickets/${ticketUuid}`);
             } else {
-                toast.error(response.data?.message || t('account.dataRequest.failed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'account.dataRequest.failed'));
                 resetTurnstile();
             }
         } catch (error) {
             console.error('Error requesting account data:', error);
-            if (axios.isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('account.dataRequest.failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'account.dataRequest.failed'));
             resetTurnstile();
         } finally {
             setIsRequestingData(false);
@@ -499,15 +489,11 @@ export default function SettingsTab() {
                 toast.success(t('account.deleteAccount.otpSent'));
                 resetTurnstile();
             } else {
-                toast.error(response.data?.message || t('account.deleteAccount.otpFailed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'account.deleteAccount.otpFailed'));
                 resetTurnstile();
             }
         } catch (error) {
-            if (axios.isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('account.deleteAccount.otpFailed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'account.deleteAccount.otpFailed'));
             resetTurnstile();
         } finally {
             setIsSendingDeletionOtp(false);
@@ -564,15 +550,11 @@ export default function SettingsTab() {
                     resetTurnstile();
                 }
             } else {
-                toast.error(response.data?.message || t('account.deleteAccount.failed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'account.deleteAccount.failed'));
                 resetTurnstile();
             }
         } catch (error) {
-            if (axios.isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('account.deleteAccount.failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'account.deleteAccount.failed'));
             resetTurnstile();
         } finally {
             setIsDeletingAccount(false);
@@ -587,14 +569,10 @@ export default function SettingsTab() {
                 toast.success(t('account.deleteAccount.cancelSuccess'));
                 await loadDeletionStatus();
             } else {
-                toast.error(response.data?.message || t('account.deleteAccount.cancelFailed'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'account.deleteAccount.cancelFailed'));
             }
         } catch (error) {
-            if (axios.isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('account.deleteAccount.cancelFailed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'account.deleteAccount.cancelFailed'));
         } finally {
             setIsCancellingDeletion(false);
         }
@@ -610,7 +588,7 @@ export default function SettingsTab() {
             setIsSubmitting(true);
             const opt = await passkeysApi.registrationOptions();
             if (!opt.success || !opt.data?.options || !opt.data?.challenge_token) {
-                toast.error(opt.message || t('auth.passkey.registerFailed'));
+                toast.error(getApiErrorMessageFromPayload(opt, t, 'auth.passkey.registerFailed'));
                 return;
             }
             const credential = await startRegistration({
@@ -631,10 +609,10 @@ export default function SettingsTab() {
                     setPasskeys(list.data.passkeys);
                 }
             } else {
-                toast.error(vr.message || t('auth.passkey.registerFailed'));
+                toast.error(getApiErrorMessageFromPayload(vr, t, 'auth.passkey.registerFailed'));
             }
-        } catch {
-            toast.error(t('auth.passkey.registerFailed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'auth.passkey.registerFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -663,10 +641,10 @@ export default function SettingsTab() {
                     prev.map((p) => (p.id === idSaved ? { ...p, label: trimmed === '' ? null : trimmed } : p)),
                 );
             } else {
-                toast.error(res.message || t('auth.passkey.renameFailed'));
+                toast.error(getApiErrorMessageFromPayload(res, t, 'auth.passkey.renameFailed'));
             }
-        } catch {
-            toast.error(t('auth.passkey.renameFailed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'auth.passkey.renameFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -680,10 +658,10 @@ export default function SettingsTab() {
                 toast.success(t('auth.passkey.removed'));
                 setPasskeys((prev) => prev.filter((p) => p.id !== id));
             } else {
-                toast.error(res.message || t('auth.passkey.removeFailed'));
+                toast.error(getApiErrorMessageFromPayload(res, t, 'auth.passkey.removeFailed'));
             }
-        } catch {
-            toast.error(t('auth.passkey.removeFailed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'auth.passkey.removeFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -696,7 +674,7 @@ export default function SettingsTab() {
             router.push('/auth/login');
         } catch (error) {
             console.error('Error during logout:', error);
-            toast.error(t('account.logoutFailed'));
+            toast.error(getApiErrorMessage(error, t, 'account.logoutFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -742,8 +720,8 @@ export default function SettingsTab() {
             } else {
                 toast.error(t('account.timezone.saveFailed'));
             }
-        } catch {
-            toast.error(t('account.timezone.saveFailed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'account.timezone.saveFailed'));
         } finally {
             setSavingTimezone(false);
         }
@@ -802,6 +780,19 @@ export default function SettingsTab() {
                 <h3 className='text-foreground text-lg font-semibold'>{t('account.securitySettings')}</h3>
                 <p className='text-muted-foreground mt-1 text-sm'>{t('account.securitySettingsDescription')}</p>
             </div>
+
+            <Link
+                href='/dashboard/account/login-device'
+                className='border-border/50 bg-card/50 hover:border-primary/30 flex items-start gap-4 rounded-lg border p-5 transition-colors'
+            >
+                <div className='bg-primary/10 flex h-12 w-12 shrink-0 items-center justify-center rounded-lg'>
+                    <Smartphone className='text-primary h-6 w-6' />
+                </div>
+                <div className='min-w-0 flex-1'>
+                    <h4 className='text-foreground text-sm font-medium'>{t('account.loginDevice.title')}</h4>
+                    <p className='text-muted-foreground mt-1 text-sm'>{t('account.loginDevice.subtitle')}</p>
+                </div>
+            </Link>
 
             <div className='border-border/50 bg-card/50 rounded-lg border p-6 backdrop-blur-xl'>
                 <div className='flex items-start gap-4'>
@@ -1333,7 +1324,12 @@ export default function SettingsTab() {
                         >
                             {t('common.cancel')}
                         </Button>
-                        <Button type='button' disabled={isSubmitting} onClick={() => void handleSaveRenamePasskey()}>
+                        <Button
+                            type='button'
+                            disabled={isSubmitting}
+                            onClick={() => void handleSaveRenamePasskey()}
+                            data-fp-save-shortcut
+                        >
                             {isSubmitting ? t('common.saving') : t('common.save')}
                         </Button>
                     </DialogFooter>

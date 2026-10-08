@@ -15,17 +15,50 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { createContext, useContext, useEffect, useLayoutEffect, useState, ReactNode } from 'react';
+import { reportPanelInteraction } from '@/lib/panel-analytics';
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, ReactNode } from 'react';
 import { useSettings } from '@/contexts/SettingsContext';
+import { isBackgroundAnimatedVariant, type BackgroundAnimatedVariant } from '@/lib/background-variants';
+import { APP_FONT_STACKS, isAppFontFamily, type AppFontFamily } from '@/lib/app-fonts';
+import { isPresetAccent, isValidAccentValue, resolveAccentForeground, resolveAccentHsl } from '@/lib/accent-colors';
+import { usePluginThemes } from '@/hooks/usePluginThemes';
+import type { PluginThemePack } from '@/types/plugin-themes';
 
 type Theme = 'light' | 'dark';
 type BackgroundType = 'aurora' | 'gradient' | 'solid' | 'image' | 'pattern';
-export type BackgroundAnimatedVariant = 'aurora' | 'beams' | 'colorBends' | 'floatingLines' | 'silk';
+export type { BackgroundAnimatedVariant };
 export type BackgroundImageFit = 'cover' | 'contain' | 'fill';
 /** Controls animations and transitions app-wide. */
 export type MotionLevel = 'full' | 'reduced' | 'none';
 /** UI font family preference. */
-type FontFamily = 'system' | 'inter' | 'rounded';
+type FontFamily = AppFontFamily;
+
+const THEME_PACK_LS_KEY = 'themePackId';
+const THEME_PACK_OVERRIDE_KEY = 'themePackUserOverride';
+const THEME_PACK_LINK_ID = 'fp-plugin-theme-css';
+
+const TOKEN_KEYS = [
+    'background',
+    'foreground',
+    'card',
+    'card-foreground',
+    'popover',
+    'popover-foreground',
+    'primary',
+    'primary-foreground',
+    'secondary',
+    'secondary-foreground',
+    'muted',
+    'muted-foreground',
+    'accent',
+    'accent-foreground',
+    'destructive',
+    'destructive-foreground',
+    'border',
+    'input',
+    'ring',
+    'radius',
+] as const;
 
 function parseAndClamp(value: string | null, min: number, max: number, defaultValue: number): number {
     if (value == null) {
@@ -36,6 +69,47 @@ function parseAndClamp(value: string | null, min: number, max: number, defaultVa
         return defaultValue;
     }
     return Math.min(max, Math.max(min, parsed));
+}
+
+function applyThemePackTokens(root: HTMLElement, pack: PluginThemePack | null, mode: Theme) {
+    for (const key of TOKEN_KEYS) {
+        root.style.removeProperty(`--${key}`);
+        root.style.removeProperty(`--color-${key}`);
+    }
+    if (!pack || pack.id === 'default') {
+        return;
+    }
+    const tokens = mode === 'dark' ? pack.tokens.dark : pack.tokens.light;
+    for (const key of TOKEN_KEYS) {
+        const value = tokens[key];
+        if (!value) continue;
+        if (key === 'radius') {
+            root.style.setProperty('--radius', value);
+            continue;
+        }
+        root.style.setProperty(`--${key}`, value);
+        root.style.setProperty(`--color-${key}`, `hsl(${value})`);
+    }
+}
+
+function syncThemePackCssLink(pack: PluginThemePack | null) {
+    if (typeof document === 'undefined') return;
+    let link = document.getElementById(THEME_PACK_LINK_ID) as HTMLLinkElement | null;
+    const href = pack?.cssUrl ?? null;
+    if (!href) {
+        link?.remove();
+        return;
+    }
+    if (!link) {
+        link = document.createElement('link');
+        link.id = THEME_PACK_LINK_ID;
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+    }
+    const next = `${href}${href.includes('?') ? '&' : '?'}v=${encodeURIComponent(pack!.id)}`;
+    if (link.href !== new URL(next, window.location.origin).href) {
+        link.href = next;
+    }
 }
 
 interface ThemeContextType {
@@ -54,6 +128,12 @@ interface ThemeContextType {
     motionLevel: MotionLevel;
     /** UI font family preference (system, Inter, rounded). */
     fontFamily: FontFamily;
+    /** Active plugin theme pack id (`default` or `plugin:id`). */
+    themePackId: string;
+    /** Resolved active theme pack (may be default). */
+    themePack: PluginThemePack | null;
+    /** Available theme packs from plugins. */
+    themePacks: PluginThemePack[];
     setTheme: (theme: Theme) => void;
     setAccentColor: (color: string) => void;
     setBackgroundType: (type: BackgroundType) => void;
@@ -64,38 +144,12 @@ interface ThemeContextType {
     setBackgroundImageFit: (fit: BackgroundImageFit) => void;
     setMotionLevel: (level: MotionLevel) => void;
     setFontFamily: (font: FontFamily) => void;
+    setThemePackId: (id: string) => void;
     toggleTheme: () => void;
     mounted: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-
-const ACCENT_COLORS = {
-    purple: '262 83% 58%',
-    blue: '217 91% 60%',
-    green: '142 71% 45%',
-    red: '0 84% 60%',
-    orange: '25 95% 53%',
-    pink: '330 81% 60%',
-    teal: '173 80% 40%',
-    yellow: '48 96% 53%',
-    indigo: '245 58% 51%',
-    violet: '270 75% 55%',
-    cyan: '188 78% 41%',
-    lime: '84 69% 35%',
-    amber: '38 92% 50%',
-    rose: '347 77% 50%',
-    slate: '215 20% 45%',
-};
-
-const ACCENT_FOREGROUNDS: Partial<Record<keyof typeof ACCENT_COLORS, string>> = {
-    orange: '0 0% 9%',
-    teal: '0 0% 9%',
-    yellow: '0 0% 9%',
-    cyan: '0 0% 9%',
-    lime: '0 0% 9%',
-    amber: '0 0% 9%',
-};
 
 const USER_OVERRIDE_KEYS = {
     theme: 'themeUserOverride',
@@ -104,6 +158,7 @@ const USER_OVERRIDE_KEYS = {
     backdropBlur: 'backdropBlurUserOverride',
     backdropDarken: 'backdropDarkenUserOverride',
     backgroundImageFit: 'backgroundImageFitUserOverride',
+    themePack: THEME_PACK_OVERRIDE_KEY,
 };
 
 function hasUserOverride(key: keyof typeof USER_OVERRIDE_KEYS): boolean {
@@ -123,7 +178,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const [backgroundImageFit, setBackgroundImageFitState] = useState<BackgroundImageFit>('cover');
     const [motionLevel, setMotionLevelState] = useState<MotionLevel>('full');
     const [fontFamily, setFontFamilyState] = useState<FontFamily>('inter');
+    const [themePackId, setThemePackIdState] = useState('default');
     const { settings } = useSettings();
+    const { themes: themePacks, getThemeById } = usePluginThemes();
+
+    const themePack = useMemo(() => {
+        if (!themePackId || themePackId === 'default') {
+            return themePacks.find((p) => p.id === 'default') ?? null;
+        }
+        return getThemeById(themePackId) ?? themePacks.find((p) => p.id === 'default') ?? null;
+    }, [themePackId, themePacks, getThemeById]);
 
     useLayoutEffect(() => {
         setMounted(true);
@@ -139,12 +203,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const savedFit = localStorage.getItem('backgroundImageFit') as BackgroundImageFit | null;
         const savedMotion = localStorage.getItem('motionLevel') as MotionLevel | null;
         const savedFontFamily = localStorage.getItem('fontFamily') as FontFamily | null;
+        const savedThemePack = localStorage.getItem(THEME_PACK_LS_KEY);
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         // Load initial values from localStorage until public admin settings are available.
         setThemeState(saved || (prefersDark ? 'dark' : 'light'));
-        setAccentColorState(savedAccent && savedAccent in ACCENT_COLORS ? savedAccent : 'purple');
+        setAccentColorState(savedAccent && isValidAccentValue(savedAccent) ? savedAccent : 'purple');
         setBackgroundTypeState(
             savedBgType === 'aurora' ||
                 savedBgType === 'gradient' ||
@@ -155,13 +220,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 : 'pattern',
         );
         setBackgroundAnimatedVariantState(
-            savedAnimatedVariant === 'aurora' ||
-                savedAnimatedVariant === 'beams' ||
-                savedAnimatedVariant === 'colorBends' ||
-                savedAnimatedVariant === 'floatingLines' ||
-                savedAnimatedVariant === 'silk'
-                ? savedAnimatedVariant
-                : 'aurora',
+            isBackgroundAnimatedVariant(savedAnimatedVariant) ? savedAnimatedVariant : 'aurora',
         );
         setBackgroundImageState(savedBgImage || '');
         setBackdropBlurState(parseAndClamp(savedBlur, 0, 24, 0));
@@ -176,12 +235,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setMotionLevelState(initialMotion);
         localStorage.setItem('motionLevel', initialMotion);
 
-        const initialFont: FontFamily =
-            savedFontFamily === 'system' || savedFontFamily === 'rounded' || savedFontFamily === 'inter'
-                ? savedFontFamily
-                : 'inter';
+        const initialFont: FontFamily = isAppFontFamily(savedFontFamily) ? savedFontFamily : 'inter';
         setFontFamilyState(initialFont);
         localStorage.setItem('fontFamily', initialFont);
+
+        if (savedThemePack) {
+            setThemePackIdState(savedThemePack);
+        }
     }, []);
 
     // Apply admin defaults on load and when settings change.
@@ -211,13 +271,20 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
             settings.app_backdrop_darken_lock === 'true' || !hasUserOverride('backdropDarken');
         const shouldUseFitDefault =
             settings.app_background_image_fit_lock === 'true' || !hasUserOverride('backgroundImageFit');
+        const shouldUseThemePackDefault = settings.app_theme_pack_lock === 'true' || !hasUserOverride('themePack');
 
         if (shouldUseThemeDefault && forcedTheme && validThemes.includes(forcedTheme) && theme !== forcedTheme) {
             setThemeState(forcedTheme);
             localStorage.setItem('theme', forcedTheme);
         }
 
-        if (shouldUseAccentDefault && forcedAccent && forcedAccent in ACCENT_COLORS && accentColor !== forcedAccent) {
+        const forcedThemePack = (settings.app_theme_pack_default ?? 'default').trim() || 'default';
+        if (shouldUseThemePackDefault && themePackId !== forcedThemePack) {
+            setThemePackIdState(forcedThemePack);
+            localStorage.setItem(THEME_PACK_LS_KEY, forcedThemePack);
+        }
+
+        if (shouldUseAccentDefault && forcedAccent && isPresetAccent(forcedAccent) && accentColor !== forcedAccent) {
             setAccentColorState(forcedAccent);
             localStorage.setItem('accentColor', forcedAccent);
         }
@@ -255,7 +322,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
             setBackgroundImageFitState(forcedFit);
             localStorage.setItem('backgroundImageFit', forcedFit);
         }
-    }, [settings, mounted, theme, accentColor, backgroundType, backdropBlur, backdropDarken, backgroundImageFit]);
+    }, [
+        settings,
+        mounted,
+        theme,
+        accentColor,
+        backgroundType,
+        backdropBlur,
+        backdropDarken,
+        backgroundImageFit,
+        themePackId,
+    ]);
 
     useEffect(() => {
         if (!mounted) return;
@@ -266,23 +343,30 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         root.style.colorScheme = theme;
         localStorage.setItem('theme', theme);
 
-        const accentHSL = ACCENT_COLORS[accentColor as keyof typeof ACCENT_COLORS] || ACCENT_COLORS.purple;
-        const primaryForeground = ACCENT_FOREGROUNDS[accentColor as keyof typeof ACCENT_FOREGROUNDS] || '0 0% 98%';
-        root.style.setProperty('--color-primary', `hsl(${accentHSL})`);
-        root.style.setProperty('--primary', accentHSL);
-        root.style.setProperty('--color-primary-foreground', `hsl(${primaryForeground})`);
-        root.style.setProperty('--primary-foreground', primaryForeground);
+        // Apply pack tokens first; accent then overrides --primary when not provided by pack.
+        applyThemePackTokens(root, themePack?.id === 'default' ? null : themePack, theme);
+        syncThemePackCssLink(themePack?.id === 'default' ? null : themePack);
+
+        const packTokens = theme === 'dark' ? themePack?.tokens.dark : themePack?.tokens.light;
+        const packHasPrimary = Boolean(packTokens?.primary);
+
+        if (!packHasPrimary) {
+            const accentHSL = resolveAccentHsl(accentColor);
+            const primaryForeground = resolveAccentForeground(accentColor);
+            root.style.setProperty('--color-primary', `hsl(${accentHSL})`);
+            root.style.setProperty('--primary', accentHSL);
+            root.style.setProperty('--color-primary-foreground', `hsl(${primaryForeground})`);
+            root.style.setProperty('--primary-foreground', primaryForeground);
+        }
         localStorage.setItem('accentColor', accentColor);
 
-        const fontStacks: Record<FontFamily, string> = {
-            inter: "var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-            system: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-            rounded: "var(--font-nunito), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        };
-        const stack = fontStacks[fontFamily] || fontStacks.inter;
+        const stack = APP_FONT_STACKS[fontFamily] || APP_FONT_STACKS.inter;
         root.style.setProperty('--app-font-family', stack);
         localStorage.setItem('fontFamily', fontFamily);
-    }, [theme, accentColor, fontFamily, mounted]);
+
+        root.dataset.themePack = themePackId;
+        localStorage.setItem(THEME_PACK_LS_KEY, themePackId);
+    }, [theme, accentColor, fontFamily, mounted, themePack, themePackId]);
 
     // Locks are still enforced inside setter functions so user controls cannot
     // move away from admin-restricted values between settings refreshes.
@@ -295,6 +379,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const setTheme = (newTheme: Theme) => {
         // If admin locked theme, ignore user changes.
         if (settings?.app_theme_lock === 'true') return;
+        if (newTheme !== theme) reportPanelInteraction('panel.preference.change', 'theme');
         setThemeState(newTheme);
         localStorage.setItem('theme', newTheme);
         localStorage.setItem(USER_OVERRIDE_KEYS.theme, 'true');
@@ -303,6 +388,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const setAccentColor = (color: string) => {
         // If admin locked accent color, ignore user changes.
         if (settings?.app_accent_color_lock === 'true') return;
+        if (color !== accentColor) reportPanelInteraction('panel.preference.change', 'accent');
         setAccentColorState(color);
         localStorage.setItem('accentColor', color);
         localStorage.setItem(USER_OVERRIDE_KEYS.accentColor, 'true');
@@ -324,6 +410,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 }
             }
         }
+        if (type !== backgroundType) reportPanelInteraction('panel.preference.change', 'background');
         setBackgroundTypeState(type);
         localStorage.setItem('backgroundType', type);
         localStorage.setItem(USER_OVERRIDE_KEYS.backgroundType, 'true');
@@ -333,6 +420,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         // If admin locked background type, also prevent changing the animated variant.
         if (settings?.app_background_type_lock === 'true') return;
 
+        if (variant !== backgroundAnimatedVariant) reportPanelInteraction('panel.preference.change', 'background');
         setBackgroundAnimatedVariantState(variant);
         localStorage.setItem('backgroundAnimatedVariant', variant);
     };
@@ -348,6 +436,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 return;
             }
         }
+        if (image !== backgroundImage) reportPanelInteraction('panel.preference.change', 'background');
         setBackgroundImageState(image);
         localStorage.setItem('backgroundImage', image);
     };
@@ -356,6 +445,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         // If admin locked blur, ignore user changes.
         if (settings?.app_backdrop_blur_lock === 'true') return;
         const value = Math.min(24, Math.max(0, px));
+        if (value !== backdropBlur) reportPanelInteraction('panel.preference.change', 'background');
         setBackdropBlurState(value);
         localStorage.setItem('backdropBlur', String(value));
         localStorage.setItem(USER_OVERRIDE_KEYS.backdropBlur, 'true');
@@ -365,6 +455,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         // If admin locked darken, ignore user changes.
         if (settings?.app_backdrop_darken_lock === 'true') return;
         const value = Math.min(100, Math.max(0, percent));
+        if (value !== backdropDarken) reportPanelInteraction('panel.preference.change', 'background');
         setBackdropDarkenState(value);
         localStorage.setItem('backdropDarken', String(value));
         localStorage.setItem(USER_OVERRIDE_KEYS.backdropDarken, 'true');
@@ -377,19 +468,31 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 raw === 'contain' || raw === 'fill' ? (raw as BackgroundImageFit) : 'cover';
             if (fit !== forced) return;
         }
+        if (fit !== backgroundImageFit) reportPanelInteraction('panel.preference.change', 'background');
         setBackgroundImageFitState(fit);
         localStorage.setItem('backgroundImageFit', fit);
         localStorage.setItem(USER_OVERRIDE_KEYS.backgroundImageFit, 'true');
     };
 
     const setMotionLevel = (level: MotionLevel) => {
+        if (level !== motionLevel) reportPanelInteraction('panel.preference.change', 'motion');
         setMotionLevelState(level);
         localStorage.setItem('motionLevel', level);
     };
 
     const setFontFamily = (font: FontFamily) => {
+        if (font !== fontFamily) reportPanelInteraction('panel.preference.change', 'font');
         setFontFamilyState(font);
         localStorage.setItem('fontFamily', font);
+    };
+
+    const setThemePackId = (id: string) => {
+        if (settings?.app_theme_pack_lock === 'true') return;
+        const next = id || 'default';
+        if (next !== themePackId) reportPanelInteraction('panel.preference.change', 'theme-pack');
+        setThemePackIdState(next);
+        localStorage.setItem(THEME_PACK_LS_KEY, next);
+        localStorage.setItem(THEME_PACK_OVERRIDE_KEY, 'true');
     };
 
     const toggleTheme = () => {
@@ -410,6 +513,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 backgroundImageFit,
                 motionLevel,
                 fontFamily,
+                themePackId,
+                themePack,
+                themePacks,
                 setTheme,
                 setAccentColor,
                 setBackgroundType,
@@ -420,6 +526,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 setBackgroundImageFit,
                 setMotionLevel,
                 setFontFamily,
+                setThemePackId,
                 toggleTheme,
                 mounted,
             }}
@@ -437,4 +544,4 @@ export function useTheme() {
     return context;
 }
 
-export { ACCENT_COLORS };
+export { ACCENT_COLORS } from '@/lib/accent-colors';

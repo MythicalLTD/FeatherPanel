@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useState, useEffect } from 'react';
 import {
     Dialog,
@@ -27,7 +28,7 @@ import {
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { toast } from 'sonner';
-import { filesApi } from '@/lib/files-api';
+import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { ShieldCheck, Info } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 
@@ -41,6 +42,7 @@ interface PermissionsDialogProps {
 }
 
 export function PermissionsDialog({ open, onOpenChange, uuid, root, files, onSuccess }: PermissionsDialogProps) {
+    const filesApi = useFileManagerApi();
     const { t } = useTranslation();
     const [mode, setMode] = useState('644');
     const [loading, setLoading] = useState(false);
@@ -60,8 +62,8 @@ export function PermissionsDialog({ open, onOpenChange, uuid, root, files, onSuc
             toast.success(t('files.dialogs.permissions.success'), { id: toastId });
             onSuccess();
             onOpenChange(false);
-        } catch {
-            toast.error(t('files.dialogs.permissions.error'), { id: toastId });
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.dialogs.permissions.error'), { id: toastId });
         } finally {
             setLoading(false);
         }
@@ -110,7 +112,13 @@ export function PermissionsDialog({ open, onOpenChange, uuid, root, files, onSuc
                     <Button variant='ghost' onClick={() => onOpenChange(false)}>
                         {t('files.dialogs.permissions.cancel')}
                     </Button>
-                    <Button variant='default' onClick={handleUpdate} disabled={loading || !mode} className='h-10 px-6'>
+                    <Button
+                        variant='default'
+                        onClick={handleUpdate}
+                        disabled={loading || !mode}
+                        className='h-10 px-6'
+                        data-fp-save-shortcut
+                    >
                         {t('files.dialogs.permissions.update')}
                     </Button>
                 </DialogFooter>

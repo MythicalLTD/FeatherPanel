@@ -69,7 +69,7 @@ export function useSystemHealth(pollMs = 30000) {
             const selftestReq = axios.get('/api/selftest');
             const [statsRes, selftestRes] = await Promise.all([statsReq, selftestReq]);
 
-            // A newer request already resolved while this one was in flight — discard this
+            // A newer request already resolved while this one was in flight - discard this
             // stale response so it can't overwrite fresher state.
             if (requestId !== requestIdRef.current) return;
 

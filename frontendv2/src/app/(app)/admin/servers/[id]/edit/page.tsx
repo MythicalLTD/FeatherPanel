@@ -19,9 +19,10 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { Button } from '@/components/featherui/Button';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import {
     Save,
@@ -84,6 +85,9 @@ const initialFormData: ServerFormData = {
     owner_id: null,
     skip_scripts: false,
     skip_zerotrust: false,
+    show_on_status: true,
+    auto_start: false,
+    auto_start_delay: 0,
     external_id: '',
     expires_at: null,
     realms_id: null,
@@ -139,6 +143,7 @@ export default function EditServerPage() {
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState('details');
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [sizeValidity, setSizeValidity] = useState<Record<string, boolean>>({});
 
     const [form, setForm] = useState<ServerFormData>(initialFormData);
     const [selectedEntities, setSelectedEntities] = useState<SelectedEntities>(initialSelectedEntities);
@@ -394,13 +399,19 @@ export default function EditServerPage() {
                     } else {
                         setAssignableMounts([]);
                         mountIds = [];
-                        toast.error(t('admin.servers.edit.mounts.assignable_load_failed'));
+                        toast.error(
+                            getApiErrorMessageFromPayload(
+                                assignRes.data,
+                                t,
+                                'admin.servers.edit.mounts.assignable_load_failed',
+                            ),
+                        );
                     }
                 } catch (assignErr) {
                     console.error('Error loading assignable mounts:', assignErr);
                     setAssignableMounts([]);
                     mountIds = [];
-                    toast.error(t('admin.servers.edit.mounts.assignable_load_failed'));
+                    toast.error(getApiErrorMessage(assignErr, t, 'admin.servers.edit.mounts.assignable_load_failed'));
                 }
                 spellBaselineForMounts.current = server.spell_id ?? null;
 
@@ -410,6 +421,9 @@ export default function EditServerPage() {
                     owner_id: server.owner_id,
                     skip_scripts: Boolean(server.skip_scripts),
                     skip_zerotrust: Boolean(server.skip_zerotrust),
+                    show_on_status: server.show_on_status === undefined ? true : Boolean(server.show_on_status),
+                    auto_start: Boolean(server.auto_start),
+                    auto_start_delay: Number(server.auto_start_delay) || 0,
                     external_id: server.external_id || '',
                     expires_at: server.expires_at ? server.expires_at.slice(0, 16) : null,
                     realms_id: server.realms_id,
@@ -461,7 +475,7 @@ export default function EditServerPage() {
             }
         } catch (error) {
             console.error('Error fetching server:', error);
-            toast.error(t('admin.servers.edit.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.edit.fetch_failed'));
             router.push('/admin/servers');
         } finally {
             setLoading(false);
@@ -488,14 +502,14 @@ export default function EditServerPage() {
                 setAssignableMounts([]);
                 setForm((prev) => ({ ...prev, mount_ids: [] }));
                 spellBaselineForMounts.current = spellForRequest;
-                toast.error(t('admin.servers.edit.mounts.assignable_load_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.servers.edit.mounts.assignable_load_failed'));
             }
         } catch (e) {
             console.error('Error refreshing assignable mounts:', e);
             setAssignableMounts([]);
             setForm((prev) => ({ ...prev, mount_ids: [] }));
             spellBaselineForMounts.current = spellForRequest;
-            toast.error(t('admin.servers.edit.mounts.assignable_load_failed'));
+            toast.error(getApiErrorMessage(e, t, 'admin.servers.edit.mounts.assignable_load_failed'));
         } finally {
             setAssignableLoading(false);
         }
@@ -516,14 +530,12 @@ export default function EditServerPage() {
         const envVariable = customVariableForm.env_variable.trim().toUpperCase();
 
         if (!name || !envVariable) {
-            toast.error('Name and environment variable are required');
+            toast.error(t('serverStartup.customEnv.required'));
             return;
         }
 
         if (!/^[A-Z_][A-Z0-9_]*$/.test(envVariable)) {
-            toast.error(
-                'Env variable must use uppercase letters, numbers, and underscores, and cannot start with a number',
-            );
+            toast.error(t('serverStartup.customEnv.invalidEnv'));
             return;
         }
 
@@ -540,22 +552,18 @@ export default function EditServerPage() {
             );
 
             if (data.success) {
-                toast.success('Custom variable added');
+                toast.success(t('serverStartup.customEnv.added'));
                 setCustomVariableForm({ name: '', env_variable: '', variable_value: '', is_encrypted: false });
                 await fetchServerData();
             } else {
-                toast.error(data.message || 'Failed to add custom variable');
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverStartup.customEnv.addFailed'));
             }
         } catch (error) {
-            toast.error(
-                axios.isAxiosError(error)
-                    ? error.response?.data?.message || 'Failed to add custom variable'
-                    : 'Failed to add custom variable',
-            );
+            toast.error(getApiErrorMessage(error, t, 'serverStartup.customEnv.addFailed'));
         } finally {
             setCustomVariableSaving(false);
         }
-    }, [customVariableForm, fetchServerData, serverId]);
+    }, [customVariableForm, fetchServerData, serverId, t]);
 
     const handleDeleteCustomVariable = useCallback(
         async (variable: CustomVariable) => {
@@ -566,22 +574,18 @@ export default function EditServerPage() {
                 );
 
                 if (data.success) {
-                    toast.success('Custom variable deleted');
+                    toast.success(t('serverStartup.customEnv.deleted'));
                     await fetchServerData();
                 } else {
-                    toast.error(data.message || 'Failed to delete custom variable');
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'serverStartup.customEnv.deleteFailed'));
                 }
             } catch (error) {
-                toast.error(
-                    axios.isAxiosError(error)
-                        ? error.response?.data?.message || 'Failed to delete custom variable'
-                        : 'Failed to delete custom variable',
-                );
+                toast.error(getApiErrorMessage(error, t, 'serverStartup.customEnv.deleteFailed'));
             } finally {
                 setCustomVariableSaving(false);
             }
         },
-        [fetchServerData, serverId],
+        [fetchServerData, serverId, t],
     );
 
     useEffect(() => {
@@ -876,18 +880,25 @@ export default function EditServerPage() {
                     }
                 } else {
                     toast.error(
-                        data.message ||
-                            (isPrimarySelection
-                                ? t('admin.servers.edit.allocations.primary_failed')
-                                : t('admin.servers.edit.allocations.assign_failed')),
+                        getApiErrorMessageFromPayload(
+                            data,
+                            t,
+                            isPrimarySelection
+                                ? 'admin.servers.edit.allocations.primary_failed'
+                                : 'admin.servers.edit.allocations.assign_failed',
+                        ),
                     );
                 }
             } catch (error) {
                 console.error('Error updating allocation:', error);
                 toast.error(
-                    allocationModalMode === 'primary'
-                        ? t('admin.servers.edit.allocations.primary_failed')
-                        : t('admin.servers.edit.allocations.assign_failed'),
+                    getApiErrorMessage(
+                        error,
+                        t,
+                        allocationModalMode === 'primary'
+                            ? 'admin.servers.edit.allocations.primary_failed'
+                            : 'admin.servers.edit.allocations.assign_failed',
+                    ),
                 );
             }
         } else {
@@ -925,6 +936,9 @@ export default function EditServerPage() {
                 },
             ),
         );
+        for (const field of ['memory', 'swap', 'disk'] as const) {
+            if (sizeValidity[field] === false) newErrors[field] = t('common.sizeInput.invalid');
+        }
 
         spellVariables.forEach((variable) => {
             const value = form.variables[variable.env_variable];
@@ -972,7 +986,7 @@ export default function EditServerPage() {
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
-    }, [form, t, spellVariables]);
+    }, [form, t, spellVariables, sizeValidity]);
 
     const handleSubmit = async () => {
         if (!validate()) {
@@ -988,6 +1002,9 @@ export default function EditServerPage() {
                 owner_id: form.owner_id,
                 skip_scripts: form.skip_scripts,
                 skip_zerotrust: form.skip_zerotrust,
+                show_on_status: form.show_on_status,
+                auto_start: form.auto_start,
+                auto_start_delay: Math.max(0, Math.min(3600, Number(form.auto_start_delay) || 0)),
                 external_id: form.external_id?.trim() || null,
                 expires_at: form.expires_at || null,
                 realms_id: form.realms_id,
@@ -1022,14 +1039,10 @@ export default function EditServerPage() {
                 toast.success(t('admin.servers.edit.update_success'));
                 fetchServerData();
             } else {
-                toast.error(data.message || t('admin.servers.edit.update_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.servers.edit.update_failed'));
             }
         } catch (error) {
-            if (axios.isAxiosError(error)) {
-                toast.error(error.response?.data?.message || t('admin.servers.edit.update_failed'));
-            } else {
-                toast.error(t('admin.servers.edit.update_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.edit.update_failed'));
         } finally {
             setSaving(false);
         }
@@ -1068,7 +1081,7 @@ export default function EditServerPage() {
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>
-                        <Button onClick={handleSubmit} loading={saving}>
+                        <Button onClick={handleSubmit} loading={saving} data-fp-save-shortcut>
                             <Save className='mr-2 h-4 w-4' />
                             {t('admin.servers.edit.save')}
                         </Button>
@@ -1117,7 +1130,14 @@ export default function EditServerPage() {
                     </TabsContent>
 
                     <TabsContent value='resources' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-                        <ResourcesTab form={form} setForm={setForm} errors={errors} />
+                        <ResourcesTab
+                            form={form}
+                            setForm={setForm}
+                            errors={errors}
+                            onSizeValidityChange={(field, valid) =>
+                                setSizeValidity((prev) => ({ ...prev, [field]: valid }))
+                            }
+                        />
                     </TabsContent>
 
                     <TabsContent value='application' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
@@ -1190,7 +1210,7 @@ export default function EditServerPage() {
 
                     {!['actions'].includes(activeTab) && (
                         <div className='flex justify-end'>
-                            <Button onClick={handleSubmit} loading={saving}>
+                            <Button onClick={handleSubmit} loading={saving} data-fp-save-shortcut>
                                 <Save className='mr-2 h-4 w-4' />
                                 {t('admin.servers.edit.save')}
                             </Button>

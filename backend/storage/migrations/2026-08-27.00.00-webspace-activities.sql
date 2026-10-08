@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS `featherpanel_webspace_activities` (
+	`id` int(11) NOT NULL AUTO_INCREMENT,
+	`webspace_id` int(11) NOT NULL,
+	`web_node_id` int(11) NOT NULL,
+	`user_id` int(11) DEFAULT NULL,
+	`ip` varchar(45) DEFAULT NULL,
+	`event` varchar(255) NOT NULL,
+	`metadata` text DEFAULT NULL,
+	`timestamp` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+	`updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	PRIMARY KEY (`id`),
+	KEY `webspace_activities_webspace_id_foreign` (`webspace_id`),
+	KEY `webspace_activities_web_node_id_foreign` (`web_node_id`),
+	KEY `webspace_activities_user_id_foreign` (`user_id`),
+	KEY `webspace_activities_event_index` (`event`),
+	KEY `webspace_activities_timestamp_index` (`timestamp`),
+	CONSTRAINT `webspace_activities_webspace_id_foreign` FOREIGN KEY (`webspace_id`) REFERENCES `featherpanel_webspaces` (`id`) ON DELETE CASCADE,
+	CONSTRAINT `webspace_activities_web_node_id_foreign` FOREIGN KEY (`web_node_id`) REFERENCES `featherpanel_web_nodes` (`id`) ON DELETE CASCADE,
+	CONSTRAINT `webspace_activities_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `featherpanel_users` (`id`) ON DELETE SET NULL
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;

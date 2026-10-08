@@ -21,6 +21,7 @@ use App\App;
 use App\Config\PublicConfig;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Telemetry\UmamiTelemetry;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -52,9 +53,15 @@ class SettingsController
         $appInstance = App::getInstance(true);
         $settingsPublic = PublicConfig::getPublicSettingsWithDefaults();
         $settings = $appInstance->getConfig()->getSettings(array_keys($settingsPublic));
-        // Fill in any missing settings with defaults
+        // Fill in any missing or empty settings with defaults
         foreach ($settingsPublic as $key => $defaultValue) {
-            if (!isset($settings[$key])) {
+            if (!array_key_exists($key, $settings)) {
+                $settings[$key] = $defaultValue;
+                continue;
+            }
+
+            $value = $settings[$key];
+            if ($value === null || (is_string($value) && trim($value) === '')) {
                 $settings[$key] = $defaultValue;
             }
         }
@@ -69,7 +76,7 @@ class SettingsController
             'kernel' => SYSTEM_KERNEL_NAME,
             'os_name' => SYSTEM_OS_NAME,
             'hostname' => gethostname(),
-            'telemetry' => TELEMETRY,
+            'telemetry' => UmamiTelemetry::configuration($appInstance->getConfig())['enabled'],
             'startup' => defined('APP_START') ? number_format((microtime(true) - APP_START) * 1000, 2) . ' ms' : 'N/A',
             'request_id' => defined('REQUEST_ID') ? REQUEST_ID : '',
         ];

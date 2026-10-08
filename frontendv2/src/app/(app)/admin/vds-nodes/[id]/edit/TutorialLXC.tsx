@@ -13,17 +13,22 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+'use client';
+
 import { Info, ShieldAlert } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export function TutorialLXC() {
+    const { t } = useTranslation();
+
     return (
-        <PageCard title='How to create Proxmox LXC templates' icon={Info} className='mt-6'>
+        <PageCard title={t('admin.vdsNodes.tutorial.lxc.title')} icon={Info} className='mt-6'>
             <div className='text-muted-foreground space-y-4 text-sm'>
                 <Alert variant='destructive'>
                     <ShieldAlert className='h-4 w-4' />
-                    <AlertTitle>Security Warning</AlertTitle>
+                    <AlertTitle>{t('admin.vdsNodes.tutorial.lxc.security_warning')}</AlertTitle>
                     <AlertDescription>
                         LXC containers are not recommended if you plan to provide public hosting services. They lack KVM
                         virtualization, which often causes issues with Docker and advanced networking. Additionally,
@@ -33,14 +38,14 @@ export function TutorialLXC() {
                     </AlertDescription>
                 </Alert>
 
-                <p className='font-medium'>1. Download a Container Template</p>
+                <p className='font-medium'>{t('admin.vdsNodes.tutorial.lxc.step1')}</p>
                 <p>
                     In the Proxmox web interface, navigate to your storage (e.g., <code>local</code>), click on
                     <code>CT Templates</code>, and then click <code>Templates</code>. Choose your preferred distribution
                     (e.g., Debian 12, Ubuntu 24.04) and click <code>Download</code>.
                 </p>
 
-                <p className='font-medium'>2. Create the Container</p>
+                <p className='font-medium'>{t('admin.vdsNodes.tutorial.lxc.step2')}</p>
                 <p>Click &quot;Create CT&quot; in the top right corner and follow the wizard:</p>
                 <ul className='list-inside list-disc space-y-1 text-xs'>
                     <li>
@@ -65,7 +70,7 @@ export function TutorialLXC() {
                     </li>
                 </ul>
 
-                <p className='font-medium'>3. Prepare for FeatherPanel (before converting to template)</p>
+                <p className='font-medium'>{t('admin.vdsNodes.tutorial.lxc.step3')}</p>
                 <p className='text-xs'>
                     Before you convert this CT to a template, start it once and configure SSH so deployed clients can
                     actually connect. Open <code>/etc/ssh/sshd_config</code> and make sure
@@ -88,12 +93,12 @@ apt upgrade -y
 `}</code>
                 </pre>
 
-                <p className='font-medium'>4. Convert to Template</p>
+                <p className='font-medium'>{t('admin.vdsNodes.tutorial.lxc.step4')}</p>
                 <p className='text-xs'>
                     Stop the container. Right-click it in the Proxmox tree and select <code>Convert to template</code>.
                 </p>
 
-                <p className='font-medium'>5. Hook into FeatherPanel</p>
+                <p className='font-medium'>{t('admin.vdsNodes.tutorial.lxc.step5')}</p>
                 <p>
                     In the Templates tab of your VDS Node, add a new template using the VMID of the LXC template you
                     just created. Ensure you select <code>LXC</code> as the Guest Type. FeatherPanel will now be able to

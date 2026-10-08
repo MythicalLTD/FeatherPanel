@@ -35,6 +35,7 @@ import type { Server, ServerFolder } from '@/types/server';
 import { StatusBadge } from './StatusBadge';
 import { ResourceBar } from './ResourceBar';
 import { Checkbox } from '@/components/ui/checkbox';
+import { OverflowText } from '@/components/featherui/OverflowText';
 
 interface ServerCardProps {
     server: Server;
@@ -115,8 +116,8 @@ export function ServerCard({
                 <Link href={serverUrl} className='block w-full min-w-0 flex-1 cursor-pointer'>
                     <div className='mb-1 flex flex-col gap-2'>
                         <div className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5'>
-                            <h3 className='w-full min-w-0 flex-1 truncate text-base font-semibold sm:w-auto sm:max-w-[12rem] sm:text-lg md:max-w-none'>
-                                {server.name}
+                            <h3 className='w-full min-w-0 flex-1 text-base font-semibold sm:w-auto sm:max-w-[12rem] sm:text-lg md:max-w-none'>
+                                <OverflowText>{server.name}</OverflowText>
                             </h3>
                             <div className='flex flex-wrap items-center gap-2'>
                                 {isSuspended ? (
@@ -145,16 +146,16 @@ export function ServerCard({
                             <div className='text-muted-foreground text-[10px] tracking-wider uppercase sm:text-xs'>
                                 {t('servers.node')}
                             </div>
-                            <div className='max-w-[10rem] truncate text-xs font-medium sm:max-w-[14rem] sm:text-sm'>
-                                {server.node?.name}
+                            <div className='max-w-[10rem] text-xs font-medium sm:max-w-[14rem] sm:text-sm'>
+                                <OverflowText>{server.node?.name}</OverflowText>
                             </div>
                         </div>
                         <div className='min-w-0'>
                             <div className='text-muted-foreground text-[10px] tracking-wider uppercase sm:text-xs'>
                                 {t('servers.spell')}
                             </div>
-                            <div className='max-w-[10rem] truncate text-xs font-medium sm:max-w-[14rem] sm:text-sm'>
-                                {server.spell?.name}
+                            <div className='max-w-[10rem] text-xs font-medium sm:max-w-[14rem] sm:text-sm'>
+                                <OverflowText>{server.spell?.name}</OverflowText>
                             </div>
                         </div>
                     </Link>
@@ -304,7 +305,9 @@ export function ServerCard({
             <div className='space-y-4 p-4 sm:p-6'>
                 <div className='flex items-start justify-between gap-4'>
                     <Link href={serverUrl} className='block min-w-0 flex-1 cursor-pointer'>
-                        <h3 className='mb-1 truncate text-xl font-bold'>{server.name}</h3>
+                        <h3 className='mb-1 text-xl font-bold'>
+                            <OverflowText>{server.name}</OverflowText>
+                        </h3>
                         <p className='text-muted-foreground line-clamp-2 text-sm'>
                             {server.description || t('servers.noDescription')}
                         </p>
@@ -420,11 +423,11 @@ export function ServerCard({
                 <Link href={serverUrl} className='grid cursor-pointer grid-cols-1 gap-3 pt-2 min-[400px]:grid-cols-2'>
                     <div className='min-w-0 text-sm'>
                         <div className='text-muted-foreground mb-1 text-xs'>{t('servers.node')}</div>
-                        <div className='truncate font-medium'>{server.node?.name || 'N/A'}</div>
+                        <OverflowText className='font-medium'>{server.node?.name || 'N/A'}</OverflowText>
                     </div>
                     <div className='min-w-0 text-sm'>
                         <div className='text-muted-foreground mb-1 text-xs'>{t('servers.spell')}</div>
-                        <div className='truncate font-medium'>{server.spell?.name || 'N/A'}</div>
+                        <OverflowText className='font-medium'>{server.spell?.name || 'N/A'}</OverflowText>
                     </div>
                 </Link>
 

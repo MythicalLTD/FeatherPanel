@@ -38,6 +38,7 @@ import {
     ShieldCheck,
     AlertTriangle,
 } from 'lucide-react';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -81,6 +82,7 @@ export default function VmInstanceEditPage() {
     const [selectedOwner, setSelectedOwner] = useState<OwnerUser | null>(null);
     const [vmIpId, setVmIpId] = useState<number | null>(null);
     const [memory, setMemory] = useState(512);
+    const [memorySizeValid, setMemorySizeValid] = useState(true);
     const [cpus, setCpus] = useState(1);
     const [cores, setCores] = useState(1);
     const [onBoot, setOnBoot] = useState(false);
@@ -106,6 +108,7 @@ export default function VmInstanceEditPage() {
     const [newNetworkRow, setNewNetworkRow] = useState<NetworkRow | null>(null);
     const [newDiskStorage, setNewDiskStorage] = useState('local-lvm');
     const [newDiskSizeGb, setNewDiskSizeGb] = useState(10);
+    const [newDiskSizeValid, setNewDiskSizeValid] = useState(true);
     const [newDiskPath, setNewDiskPath] = useState('');
     const [creatingDisk, setCreatingDisk] = useState(false);
     const [deletingDisk, setDeletingDisk] = useState<string | null>(null);
@@ -248,7 +251,7 @@ export default function VmInstanceEditPage() {
                     }
                 }
             })
-            .catch(() => toast.error(t('admin.vmInstances.errors.fetch_failed')))
+            .catch((error) => toast.error(getApiErrorMessage(error, t, 'admin.vmInstances.errors.fetch_failed')))
             .finally(() => setLoading(false));
     }, [id, router, t]);
 
@@ -350,8 +353,8 @@ export default function VmInstanceEditPage() {
             if (data.data?.pagination) {
                 setOwnerPagination((prev) => ({ ...prev, ...data.data.pagination }));
             }
-        } catch {
-            toast.error(t('admin.vmInstances.errors.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.vmInstances.errors.fetch_failed'));
         }
     }, [ownerSearch, ownerPagination.current_page, ownerPagination.per_page, t]);
 
@@ -414,8 +417,7 @@ export default function VmInstanceEditPage() {
             await fetchInstance();
             if (isLxc) await fetchConfig(instance as Record<string, unknown>);
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setSavingTab(null);
         }
@@ -445,8 +447,7 @@ export default function VmInstanceEditPage() {
             await fetchInstance();
             await fetchConfig();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setSavingTab(null);
         }
@@ -454,6 +455,10 @@ export default function VmInstanceEditPage() {
 
     const handleSaveResources = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!memorySizeValid) {
+            toast.error(t('common.sizeInput.invalid'));
+            return;
+        }
         setSavingTab('resources');
         try {
             const payload: Record<string, unknown> = {
@@ -475,8 +480,7 @@ export default function VmInstanceEditPage() {
             toast.success(t('admin.vmInstances.update_success') ?? 'VM instance updated');
             await fetchConfig();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setSavingTab(null);
         }
@@ -498,8 +502,7 @@ export default function VmInstanceEditPage() {
             setResizeSize('');
             await fetchConfig();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setResizing(false);
         }
@@ -507,6 +510,10 @@ export default function VmInstanceEditPage() {
 
     const handleCreateDisk = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!newDiskSizeValid) {
+            toast.error(t('common.sizeInput.invalid'));
+            return;
+        }
         if (newDiskSizeGb < 1) {
             toast.error(t('admin.vmInstances.disk_size_min') ?? 'Size must be at least 1 GB');
             return;
@@ -522,8 +529,7 @@ export default function VmInstanceEditPage() {
             setNewDiskPath('');
             await fetchConfig();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setCreatingDisk(false);
         }
@@ -542,8 +548,7 @@ export default function VmInstanceEditPage() {
             toast.success(t('admin.vmInstances.disk_removed') ?? 'Disk removed.');
             await fetchConfig();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setDeletingDisk(null);
         }
@@ -563,8 +568,7 @@ export default function VmInstanceEditPage() {
             setSuspendReason({ reason_category: '', reason_details: '' });
             await fetchInstance();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setSuspending(false);
         }
@@ -577,8 +581,7 @@ export default function VmInstanceEditPage() {
             toast.success(t('admin.vmInstances.unsuspend_success') ?? 'VM instance unsuspended');
             await fetchInstance();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'common.error'));
         } finally {
             setSuspending(false);
         }
@@ -784,6 +787,7 @@ export default function VmInstanceEditPage() {
                             config={config}
                             memory={memory}
                             setMemory={setMemory}
+                            onMemoryValidityChange={setMemorySizeValid}
                             cpus={cpus}
                             setCpus={setCpus}
                             cores={cores}
@@ -824,6 +828,7 @@ export default function VmInstanceEditPage() {
                                 setNewDiskStorage={setNewDiskStorage}
                                 newDiskSizeGb={newDiskSizeGb}
                                 setNewDiskSizeGb={setNewDiskSizeGb}
+                                onNewDiskSizeValidityChange={setNewDiskSizeValid}
                                 newDiskPath={newDiskPath}
                                 setNewDiskPath={setNewDiskPath}
                                 resizeDisk={resizeDisk}

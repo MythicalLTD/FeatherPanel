@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useEffect, useState } from 'react';
 import {
     Dialog,
@@ -26,7 +27,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { filesApi, FileHashesResponse } from '@/lib/files-api';
+import { type FileHashesResponse } from '@/lib/files-api';
+import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { toast } from 'sonner';
 
@@ -38,6 +40,7 @@ interface FileHashDialogProps {
 }
 
 export function FileHashDialog({ open, onOpenChange, uuid, path }: FileHashDialogProps) {
+    const filesApi = useFileManagerApi();
     const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [hashes, setHashes] = useState<FileHashesResponse | null>(null);
@@ -70,9 +73,9 @@ export function FileHashDialog({ open, onOpenChange, uuid, path }: FileHashDialo
                     } else if (!cancelled) {
                         toast.error(t('files.dialogs.hash.error'));
                     }
-                } catch {
+                } catch (error) {
                     if (!cancelled) {
-                        toast.error(t('files.dialogs.hash.error'));
+                        toast.error(getApiErrorMessage(error, t, 'files.dialogs.hash.error'));
                     }
                 }
             } finally {
@@ -87,14 +90,14 @@ export function FileHashDialog({ open, onOpenChange, uuid, path }: FileHashDialo
         return () => {
             cancelled = true;
         };
-    }, [open, path, t, uuid]);
+    }, [filesApi, open, path, t, uuid]);
 
     const copyValue = async (value: string) => {
         try {
             await navigator.clipboard.writeText(value);
             toast.success(t('files.dialogs.hash.copied'));
-        } catch {
-            toast.error(t('files.dialogs.hash.copy_error'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.dialogs.hash.copy_error'));
         }
     };
 

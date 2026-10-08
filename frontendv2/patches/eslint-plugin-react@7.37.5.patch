@@ -1,0 +1,56 @@
+diff --git a/lib/rules/forward-ref-uses-ref.js b/lib/rules/forward-ref-uses-ref.js
+index 3a0b7de4c951e7ea92a9de7bac924ba95d643342..23553d62a4e283cc57881e92dc511ee7a314dd91 100644
+--- a/lib/rules/forward-ref-uses-ref.js
++++ b/lib/rules/forward-ref-uses-ref.js
+@@ -57,7 +57,7 @@ module.exports = {
+   },
+ 
+   create(context) {
+-    const sourceCode = context.getSourceCode();
++    const sourceCode = context.sourceCode || (typeof context.getSourceCode === 'function' && context.getSourceCode());
+ 
+     return {
+       'FunctionExpression, ArrowFunctionExpression'(node) {
+diff --git a/lib/rules/jsx-filename-extension.js b/lib/rules/jsx-filename-extension.js
+index 4a2cfeede66b68255ca48bc38c0eb2f1537a785a..3221757f328413e80603877d4470a3896568db6d 100644
+--- a/lib/rules/jsx-filename-extension.js
++++ b/lib/rules/jsx-filename-extension.js
+@@ -61,7 +61,7 @@ module.exports = {
+   },
+ 
+   create(context) {
+-    const filename = context.getFilename();
++    const filename = context.filename || (typeof context.getFilename === 'function' && context.getFilename()) || '';
+ 
+     let jsxNode;
+ 
+diff --git a/lib/util/eslint.js b/lib/util/eslint.js
+index 79a0537f3b4f52b04b29d46e89ce00f6da8fe579..c7347e2cb4e955f8a44069ef485e5c8a6026b94b 100644
+--- a/lib/util/eslint.js
++++ b/lib/util/eslint.js
+@@ -1,7 +1,7 @@
+ 'use strict';
+ 
+ function getSourceCode(context) {
+-  return context.getSourceCode ? context.getSourceCode() : context.sourceCode;
++  return context.sourceCode || (typeof context.getSourceCode === 'function' ? context.getSourceCode() : undefined);
+ }
+ 
+ function getAncestors(context, node) {
+diff --git a/lib/util/version.js b/lib/util/version.js
+index c9dc683b7d149c5a3a941bdcbd32f657facdfbf6..e41e05affde5a893029b040430edb7f37bebcb18 100644
+--- a/lib/util/version.js
++++ b/lib/util/version.js
+@@ -28,7 +28,11 @@ function resetDetectedVersion() {
+ 
+ function resolveBasedir(contextOrFilename) {
+   if (contextOrFilename) {
+-    const filename = typeof contextOrFilename === 'string' ? contextOrFilename : contextOrFilename.getFilename();
++    const filename = typeof contextOrFilename === 'string'
++      ? contextOrFilename
++      : (contextOrFilename.filename
++        || (typeof contextOrFilename.getFilename === 'function' && contextOrFilename.getFilename())
++        || process.cwd() + '/unknown.js');
+     const dirname = path.dirname(filename);
+     try {
+       if (fs.statSync(filename).isFile()) {

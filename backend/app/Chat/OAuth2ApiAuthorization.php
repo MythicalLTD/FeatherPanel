@@ -48,6 +48,36 @@ class OAuth2ApiAuthorization
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
 
+    public static function getByDeviceCode(string $deviceCode): ?array
+    {
+        if ($deviceCode === '') {
+            return null;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE device_code = :device_code LIMIT 1');
+        $stmt->execute(['device_code' => $deviceCode]);
+
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+    }
+
+    public static function getByUserCode(string $userCode): ?array
+    {
+        $normalized = self::normalizeUserCode($userCode);
+        if ($normalized === '') {
+            return null;
+        }
+
+        $pdo = Database::getPdoConnection();
+        // Match stored codes regardless of hyphenation / case.
+        $stmt = $pdo->prepare(
+            'SELECT * FROM ' . self::$table . ' WHERE REPLACE(UPPER(user_code), \'-\', \'\') = :user_code LIMIT 1'
+        );
+        $stmt->execute(['user_code' => $normalized]);
+
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+    }
+
     public static function getByAuthCode(string $authCode): ?array
     {
         if ($authCode === '') {
@@ -85,5 +115,26 @@ class OAuth2ApiAuthorization
         );
 
         return $stmt->execute();
+    }
+
+    /**
+     * Normalize a user-facing device code to an uppercase alphanumeric string (no hyphens).
+     */
+    public static function normalizeUserCode(string $userCode): string
+    {
+        return strtoupper(preg_replace('/[^A-Za-z0-9]/', '', trim($userCode)) ?? '');
+    }
+
+    /**
+     * Format a normalized 8-character code as XXXX-XXXX for display.
+     */
+    public static function formatUserCode(string $normalized): string
+    {
+        $normalized = self::normalizeUserCode($normalized);
+        if (strlen($normalized) !== 8) {
+            return $normalized;
+        }
+
+        return substr($normalized, 0, 4) . '-' . substr($normalized, 4, 4);
     }
 }

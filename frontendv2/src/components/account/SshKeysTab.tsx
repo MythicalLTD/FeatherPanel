@@ -17,21 +17,16 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import {
-    Dialog,
-    DialogPanel,
-    DialogTitle,
-    Description as DialogDescription,
-    Field,
-    Label,
-    Input as HeadlessInput,
-} from '@headlessui/react';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
+import { Textarea } from '@/components/featherui/Textarea';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Key, Plus, Trash2, Eye, Pencil, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface SshKey {
     id: number;
@@ -66,12 +61,7 @@ export default function SshKeysTab() {
             }
         } catch (error) {
             console.error('Error fetching SSH keys:', error);
-            const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } };
-            toast.error(
-                axiosError.response?.data?.error_message ||
-                    axiosError.response?.data?.message ||
-                    t('account.sshKeys.loadError'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'account.sshKeys.loadError'));
         } finally {
             setLoading(false);
         }
@@ -102,12 +92,7 @@ export default function SshKeysTab() {
             }
         } catch (error) {
             console.error('Error adding SSH key:', error);
-            const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } };
-            toast.error(
-                axiosError.response?.data?.error_message ||
-                    axiosError.response?.data?.message ||
-                    t('account.sshKeys.addFailed'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'account.sshKeys.addFailed'));
         }
     };
 
@@ -128,12 +113,7 @@ export default function SshKeysTab() {
             }
         } catch (error) {
             console.error('Error updating SSH key:', error);
-            const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } };
-            toast.error(
-                axiosError.response?.data?.error_message ||
-                    axiosError.response?.data?.message ||
-                    t('account.sshKeys.updateFailed'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'account.sshKeys.updateFailed'));
         }
     };
 
@@ -146,12 +126,7 @@ export default function SshKeysTab() {
             }
         } catch (error) {
             console.error('Error loading SSH key:', error);
-            const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } };
-            toast.error(
-                axiosError.response?.data?.error_message ||
-                    axiosError.response?.data?.message ||
-                    t('account.sshKeys.loadSingleError'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'account.sshKeys.loadSingleError'));
         }
     };
 
@@ -166,7 +141,7 @@ export default function SshKeysTab() {
             }
         } catch (error) {
             console.error('Error loading SSH key:', error);
-            toast.error(t('account.sshKeys.loadSingleError'));
+            toast.error(getApiErrorMessage(error, t, 'account.sshKeys.loadSingleError'));
         }
     };
 
@@ -189,12 +164,7 @@ export default function SshKeysTab() {
             }
         } catch (error) {
             console.error('Error deleting SSH key:', error);
-            const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } };
-            toast.error(
-                axiosError.response?.data?.error_message ||
-                    axiosError.response?.data?.message ||
-                    t('account.sshKeys.deleteFailed'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'account.sshKeys.deleteFailed'));
         }
     };
 
@@ -207,12 +177,7 @@ export default function SshKeysTab() {
             }
         } catch (error) {
             console.error('Error restoring SSH key:', error);
-            const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } };
-            toast.error(
-                axiosError.response?.data?.error_message ||
-                    axiosError.response?.data?.message ||
-                    t('account.sshKeys.loadSingleError'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'account.sshKeys.loadSingleError'));
         }
     };
 
@@ -340,125 +305,100 @@ export default function SshKeysTab() {
                     setNewKeyName('');
                     setNewKeyPublic('');
                 }}
-                className='relative z-50'
+                className='max-w-2xl'
             >
-                <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
-                <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='bg-card/50 border-border/50 w-full max-w-2xl rounded-xl border p-6 backdrop-blur-xl'>
-                        <DialogTitle className='text-foreground mb-2 text-lg font-semibold'>
-                            {editModal ? t('account.sshKeys.editKey') : t('account.sshKeys.addKey')}
-                        </DialogTitle>
-                        <DialogDescription className='text-muted-foreground mb-6 text-sm'>
-                            {t('account.sshKeys.modalDescription')}
-                        </DialogDescription>
+                <DialogHeader>
+                    <DialogTitle>{editModal ? t('account.sshKeys.editKey') : t('account.sshKeys.addKey')}</DialogTitle>
+                    <DialogDescription>{t('account.sshKeys.modalDescription')}</DialogDescription>
+                </DialogHeader>
 
-                        <div className='space-y-4'>
-                            <Field>
-                                <Label className='text-foreground text-sm font-medium'>
-                                    {t('account.sshKeys.keyName')}
-                                </Label>
-                                <HeadlessInput
-                                    value={newKeyName}
-                                    onChange={(e) => setNewKeyName(e.target.value)}
-                                    placeholder={t('account.sshKeys.keyNamePlaceholder')}
-                                    className={cn(
-                                        'border-border bg-background mt-2 block w-full rounded-lg border px-3 py-2',
-                                        'text-foreground placeholder:text-muted-foreground text-sm',
-                                        'focus:ring-primary focus:border-transparent focus:ring-2 focus:outline-none',
-                                    )}
-                                />
-                            </Field>
+                <div className='space-y-4'>
+                    <div>
+                        <Label htmlFor='ssh-keys-modal-name' className='text-foreground'>
+                            {t('account.sshKeys.keyName')}
+                        </Label>
+                        <Input
+                            id='ssh-keys-modal-name'
+                            value={newKeyName}
+                            onChange={(e) => setNewKeyName(e.target.value)}
+                            placeholder={t('account.sshKeys.keyNamePlaceholder')}
+                            className='mt-2'
+                        />
+                    </div>
 
-                            <Field>
-                                <Label className='text-foreground text-sm font-medium'>
-                                    {t('account.sshKeys.publicKey')}
-                                </Label>
-                                <textarea
-                                    value={newKeyPublic}
-                                    onChange={(e) => setNewKeyPublic(e.target.value)}
-                                    placeholder={t('account.sshKeys.publicKeyHint')}
-                                    rows={8}
-                                    className={cn(
-                                        'border-border bg-background mt-2 block w-full rounded-lg border px-3 py-2',
-                                        'text-foreground placeholder:text-muted-foreground font-mono text-sm',
-                                        'focus:ring-primary custom-scrollbar resize-none focus:border-transparent focus:ring-2 focus:outline-none',
-                                    )}
-                                />
-                            </Field>
-                        </div>
-
-                        <div className='mt-6 flex gap-3'>
-                            <Button onClick={editModal ? handleEditKey : handleAddKey} className='flex-1'>
-                                {editModal ? t('account.sshKeys.updateKey') : t('account.sshKeys.addKey')}
-                            </Button>
-                            <Button
-                                onClick={() => {
-                                    setIsOpen(false);
-                                    setEditModal(false);
-                                    setNewKeyName('');
-                                    setNewKeyPublic('');
-                                }}
-                                variant='outline'
-                                className='flex-1'
-                            >
-                                {t('common.cancel')}
-                            </Button>
-                        </div>
-                    </DialogPanel>
+                    <div>
+                        <Label htmlFor='ssh-keys-modal-public-key' className='text-foreground'>
+                            {t('account.sshKeys.publicKey')}
+                        </Label>
+                        <Textarea
+                            id='ssh-keys-modal-public-key'
+                            value={newKeyPublic}
+                            onChange={(e) => setNewKeyPublic(e.target.value)}
+                            placeholder={t('account.sshKeys.publicKeyHint')}
+                            rows={8}
+                            className='mt-2 font-mono text-sm font-normal'
+                        />
+                    </div>
                 </div>
+
+                <DialogFooter>
+                    <Button onClick={editModal ? handleEditKey : handleAddKey} className='flex-1'>
+                        {editModal ? t('account.sshKeys.updateKey') : t('account.sshKeys.addKey')}
+                    </Button>
+                    <Button
+                        onClick={() => {
+                            setIsOpen(false);
+                            setEditModal(false);
+                            setNewKeyName('');
+                            setNewKeyPublic('');
+                        }}
+                        variant='outline'
+                        className='flex-1'
+                    >
+                        {t('common.cancel')}
+                    </Button>
+                </DialogFooter>
             </Dialog>
 
-            <Dialog open={viewModal} onClose={() => setViewModal(false)} className='relative z-50'>
-                <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
-                <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='bg-card/50 border-border/50 w-full max-w-2xl rounded-xl border p-6 backdrop-blur-xl'>
-                        <DialogTitle className='text-foreground mb-4 text-lg font-semibold'>
-                            {selectedKey?.name}
-                        </DialogTitle>
-                        {selectedKey && (
-                            <div className='space-y-4'>
-                                <div>
-                                    <span className='text-muted-foreground text-sm font-medium'>
-                                        {t('account.sshKeys.fingerprint')}:
-                                    </span>
-                                    <p className='mt-1 font-mono text-sm break-all'>{selectedKey.fingerprint}</p>
-                                </div>
-                                <div>
-                                    <span className='text-muted-foreground text-sm font-medium'>
-                                        {t('account.sshKeys.publicKey')}:
-                                    </span>
-                                    <div className='bg-muted custom-scrollbar mt-2 max-h-64 overflow-auto rounded-md p-3'>
-                                        <pre className='font-mono text-xs break-all whitespace-pre-wrap'>
-                                            {selectedKey.public_key}
-                                        </pre>
-                                    </div>
-                                </div>
+            <Dialog open={viewModal} onClose={() => setViewModal(false)} className='max-w-2xl'>
+                <DialogHeader>
+                    <DialogTitle>{selectedKey?.name}</DialogTitle>
+                </DialogHeader>
+                {selectedKey && (
+                    <div className='space-y-4'>
+                        <div>
+                            <span className='text-muted-foreground text-sm font-medium'>
+                                {t('account.sshKeys.fingerprint')}:
+                            </span>
+                            <p className='mt-1 font-mono text-sm break-all'>{selectedKey.fingerprint}</p>
+                        </div>
+                        <div>
+                            <span className='text-muted-foreground text-sm font-medium'>
+                                {t('account.sshKeys.publicKey')}:
+                            </span>
+                            <div className='bg-muted custom-scrollbar mt-2 max-h-64 overflow-auto rounded-md p-3'>
+                                <pre className='font-mono text-xs break-all whitespace-pre-wrap'>
+                                    {selectedKey.public_key}
+                                </pre>
                             </div>
-                        )}
-                    </DialogPanel>
-                </div>
+                        </div>
+                    </div>
+                )}
             </Dialog>
 
-            <Dialog open={deleteModal} onClose={() => setDeleteModal(false)} className='relative z-50'>
-                <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
-                <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='bg-card/50 border-border/50 w-full max-w-md rounded-xl border p-6 backdrop-blur-xl'>
-                        <DialogTitle className='text-foreground mb-2 text-lg font-semibold'>
-                            {t('account.sshKeys.confirmDelete')}
-                        </DialogTitle>
-                        <DialogDescription className='text-muted-foreground mb-6 text-sm'>
-                            {t('account.sshKeys.deleteWarning')}
-                        </DialogDescription>
-                        <div className='flex gap-3'>
-                            <Button onClick={deleteKey} variant='destructive' className='flex-1'>
-                                {t('account.sshKeys.confirmDelete')}
-                            </Button>
-                            <Button onClick={() => setDeleteModal(false)} variant='outline' className='flex-1'>
-                                {t('common.cancel')}
-                            </Button>
-                        </div>
-                    </DialogPanel>
-                </div>
+            <Dialog open={deleteModal} onClose={() => setDeleteModal(false)}>
+                <DialogHeader>
+                    <DialogTitle>{t('account.sshKeys.confirmDelete')}</DialogTitle>
+                    <DialogDescription>{t('account.sshKeys.deleteWarning')}</DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button onClick={deleteKey} variant='destructive' className='flex-1'>
+                        {t('account.sshKeys.confirmDelete')}
+                    </Button>
+                    <Button onClick={() => setDeleteModal(false)} variant='outline' className='flex-1'>
+                        {t('common.cancel')}
+                    </Button>
+                </DialogFooter>
             </Dialog>
         </div>
     );

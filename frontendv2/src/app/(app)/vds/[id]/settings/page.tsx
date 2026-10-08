@@ -26,10 +26,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/featherui/Input';
 import { toast } from 'sonner';
 import { RefreshCw, AlertTriangle, Loader2, RotateCcw, Lock, Server, Eye, EyeOff } from 'lucide-react';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface ReinstallTemplate {
     id: number;
@@ -193,7 +194,9 @@ export default function VdsSettingsPage() {
             }
             const { data } = await axios.post(`/api/user/vm-instances/${id}/reinstall`, payload);
             if (!data.success) {
-                toast.error(data.message || t('vds.settings.reinstall.start_failed'), { id: toastId });
+                toast.error(getApiErrorMessageFromPayload(data, t, 'vds.settings.reinstall.start_failed'), {
+                    id: toastId,
+                });
                 setReinstalling(false);
                 return;
             }
@@ -230,7 +233,14 @@ export default function VdsSettingsPage() {
                     }
 
                     if (s?.status === 'failed') {
-                        toast.error(s?.error ?? t('vds.settings.reinstall.failed'), { id: toastId });
+                        toast.error(
+                            getApiErrorMessageFromPayload(
+                                { message: s?.error, error_code: s?.error_code },
+                                t,
+                                'vds.settings.reinstall.failed',
+                            ),
+                            { id: toastId },
+                        );
                         setReinstalling(false);
                         return;
                     }
@@ -247,8 +257,7 @@ export default function VdsSettingsPage() {
             };
             void poll();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg, { id: toastId });
+            toast.error(getApiErrorMessage(err, t, 'vds.settings.reinstall.start_failed'), { id: toastId });
             setReinstalling(false);
         }
     };
@@ -267,8 +276,7 @@ export default function VdsSettingsPage() {
             await refreshInstance();
             await fetchQemuHardware();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg || t('vds.settings.hardware.apply_failed'));
+            toast.error(getApiErrorMessage(err, t, 'vds.settings.hardware.apply_failed'));
         } finally {
             setQemuHardwareSaving(false);
         }
@@ -281,7 +289,7 @@ export default function VdsSettingsPage() {
         try {
             const { data } = await axios.post(`/api/user/vm-instances/${id}/iso-unmount`);
             if (!data?.success) {
-                toast.error(data?.message ?? t('vds.settings.iso.toast_unmount_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'vds.settings.iso.toast_unmount_failed'));
                 return;
             }
 
@@ -289,8 +297,7 @@ export default function VdsSettingsPage() {
             await fetchIsoCurrent();
             await refreshInstance();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg || t('vds.settings.iso.toast_unmount_failed'));
+            toast.error(getApiErrorMessage(err, t, 'vds.settings.iso.toast_unmount_failed'));
         } finally {
             setIsoUninstalling(false);
         }
@@ -312,13 +319,13 @@ export default function VdsSettingsPage() {
             const payload = { storage: isoStorage, url };
             const { data } = await axios.post(`/api/user/vm-instances/${id}/iso-fetch-and-mount`, payload);
             if (!data?.success) {
-                toast.error(data?.message ?? t('vds.settings.iso.toast_fetch_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'vds.settings.iso.toast_fetch_failed'));
                 return;
             }
 
             const taskId = data?.data?.task_id as string | undefined;
             if (!taskId) {
-                toast.error(data?.message ?? t('vds.settings.iso.toast_queue_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'vds.settings.iso.toast_queue_failed'));
                 return;
             }
 
@@ -352,7 +359,13 @@ export default function VdsSettingsPage() {
                     }
 
                     if (s?.status === 'failed') {
-                        toast.error(s?.error ?? t('vds.settings.iso.toast_fetch_failed'));
+                        toast.error(
+                            getApiErrorMessageFromPayload(
+                                { message: s?.error, error_code: s?.error_code },
+                                t,
+                                'vds.settings.iso.toast_fetch_failed',
+                            ),
+                        );
                         setIsoFetchingFromUrl(false);
                         return;
                     }
@@ -367,8 +380,7 @@ export default function VdsSettingsPage() {
 
             void poll();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg || t('vds.settings.iso.toast_fetch_failed'));
+            toast.error(getApiErrorMessage(err, t, 'vds.settings.iso.toast_fetch_failed'));
             setIsoFetchingFromUrl(false);
         }
     };
@@ -455,7 +467,7 @@ export default function VdsSettingsPage() {
                 </CardHeader>
                 <CardContent className='grid grid-cols-2 gap-4 md:grid-cols-4'>
                     {[
-                        { label: t('vds.settings.instance_info.hostname'), value: instance.hostname ?? '—' },
+                        { label: t('vds.settings.instance_info.hostname'), value: instance.hostname ?? '-' },
                         { label: t('vds.settings.instance_info.vmid'), value: String(instance.vmid) },
                         {
                             label: t('vds.settings.instance_info.type'),
@@ -463,7 +475,7 @@ export default function VdsSettingsPage() {
                         },
                         {
                             label: t('vds.settings.instance_info.node'),
-                            value: instance.node_name ?? instance.pve_node ?? '—',
+                            value: instance.node_name ?? instance.pve_node ?? '-',
                         },
                     ].map(({ label, value }) => (
                         <div key={label} className='flex flex-col gap-1'>
@@ -746,12 +758,19 @@ export default function VdsSettingsPage() {
             )}
 
             {/* Reinstall confirm modal */}
-            <HeadlessModal
-                isOpen={reinstallOpen}
+            <Dialog
+                open={reinstallOpen}
                 onClose={() => setReinstallOpen(false)}
-                title={t('vds.settings.reinstall.confirm_title')}
-                description={t('vds.settings.reinstall.confirm_desc')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setReinstallOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('vds.settings.reinstall.confirm_title')}</DialogTitle>
+                    <DialogDescription>{t('vds.settings.reinstall.confirm_desc')}</DialogDescription>
+                </DialogHeader>
                 <div className='space-y-6 py-4'>
                     <div className='flex items-start gap-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4'>
                         <AlertTriangle className='mt-0.5 h-5 w-5 shrink-0 text-red-400' />
@@ -853,7 +872,7 @@ export default function VdsSettingsPage() {
                         {t('vds.settings.reinstall.confirm_button')}
                     </Button>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
             <WidgetRenderer widgets={getWidgets('vds-settings', 'bottom-of-page')} />
         </div>

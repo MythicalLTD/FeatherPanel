@@ -25,7 +25,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { filesApi } from '@/lib/files-api';
+import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 
 interface CreateFolderDialogProps {
@@ -37,6 +37,7 @@ interface CreateFolderDialogProps {
 }
 
 export function CreateFolderDialog({ open, onOpenChange, uuid, root, onSuccess }: CreateFolderDialogProps) {
+    const filesApi = useFileManagerApi();
     const { t } = useTranslation();
     const [name, setName] = useState('');
     const [loading, setLoading] = useState(false);
@@ -69,7 +70,7 @@ export function CreateFolderDialog({ open, onOpenChange, uuid, root, onSuccess }
                         {t('files.dialogs.create_folder.description', { root: root })}
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className='space-y-4'>
+                <form onSubmit={handleSubmit} className='space-y-4' data-fp-save-shortcut>
                     <Input
                         placeholder={t('files.dialogs.create_folder.name_placeholder')}
                         value={name}

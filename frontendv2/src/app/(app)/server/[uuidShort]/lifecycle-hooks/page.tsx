@@ -47,12 +47,14 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import type { LifecycleHook, LifecycleHookStep, LifecycleHookType, LifecycleTaskType } from '@/types/server';
-import { LIFECYCLE_HOOK_TYPES } from '@/types/server';
+import { formatBackupPayloadDisplay } from '@/components/server/backup/backup-payload';
+import { LIFECYCLE_HOOK_TYPES, LIFECYCLE_HOOK_TYPES_WITHOUT_CONTAINER } from '@/types/server';
 import { computeMovedSequence } from './form-utils';
 import { LifecycleHookCard } from './LifecycleHookCard';
 import { safeBack } from '@/lib/safe-back';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 type LifecycleHookResponse = {
     success: boolean;
@@ -82,6 +84,7 @@ const EMPTY_HOOKS: Record<LifecycleHookType, LifecycleHook> = {
     pre_start: { id: null, server_id: 0, hook_type: 'pre_start', is_active: 0, steps: [] },
     pre_stop: { id: null, server_id: 0, hook_type: 'pre_stop', is_active: 0, steps: [] },
     post_start: { id: null, server_id: 0, hook_type: 'post_start', is_active: 0, steps: [] },
+    post_stop: { id: null, server_id: 0, hook_type: 'post_stop', is_active: 0, steps: [] },
     server_crash: { id: null, server_id: 0, hook_type: 'server_crash', is_active: 0, steps: [] },
 };
 
@@ -89,6 +92,7 @@ const HOOK_ICONS: Record<LifecycleHookType, typeof Power> = {
     pre_start: Play,
     pre_stop: Square,
     post_start: Power,
+    post_stop: Square,
     server_crash: AlertTriangle,
 };
 
@@ -121,6 +125,7 @@ export default function ServerLifecycleHooksPage() {
             pre_start: t('lifecycleHooks.hookTypes.preStart'),
             pre_stop: t('lifecycleHooks.hookTypes.preStop'),
             post_start: t('lifecycleHooks.hookTypes.postStart'),
+            post_stop: t('lifecycleHooks.hookTypes.postStop'),
             server_crash: t('lifecycleHooks.hookTypes.serverCrash'),
         }),
         [t],
@@ -130,6 +135,7 @@ export default function ServerLifecycleHooksPage() {
             pre_start: t('lifecycleHooks.hookSummaries.preStart'),
             pre_stop: t('lifecycleHooks.hookSummaries.preStop'),
             post_start: t('lifecycleHooks.hookSummaries.postStart'),
+            post_stop: t('lifecycleHooks.hookSummaries.postStop'),
             server_crash: t('lifecycleHooks.hookSummaries.serverCrash'),
         }),
         [t],
@@ -138,6 +144,7 @@ export default function ServerLifecycleHooksPage() {
         () => ({
             container_command: t('lifecycleHooks.taskTypes.containerCommand'),
             container_shell: t('lifecycleHooks.taskTypes.containerShell'),
+            backup: t('lifecycleHooks.taskTypes.backup'),
             discord_webhook: t('lifecycleHooks.taskTypes.discordWebhook'),
             http_request: t('lifecycleHooks.taskTypes.httpRequest'),
             sleep: t('lifecycleHooks.taskTypes.sleep'),
@@ -161,7 +168,7 @@ export default function ServerLifecycleHooksPage() {
             }
         } catch (error) {
             console.error(error);
-            toast.error(t('lifecycleHooks.messages.fetchFailed'));
+            toast.error(getApiErrorMessage(error, t, 'lifecycleHooks.messages.fetchFailed'));
         } finally {
             setLoading(false);
             setHasLoaded(true);
@@ -213,7 +220,7 @@ export default function ServerLifecycleHooksPage() {
                 },
             }));
             const axiosError = error as AxiosError<{ message?: string }>;
-            toast.error(axiosError.response?.data?.message || t('lifecycleHooks.messages.updateHookFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'lifecycleHooks.messages.updateHookFailed'));
         } finally {
             setTogglingHookType(null);
         }
@@ -234,7 +241,7 @@ export default function ServerLifecycleHooksPage() {
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message?: string }>;
-            toast.error(axiosError.response?.data?.message || t('lifecycleHooks.messages.stepDeleteFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'lifecycleHooks.messages.stepDeleteFailed'));
         } finally {
             setDeleting(false);
         }
@@ -256,7 +263,7 @@ export default function ServerLifecycleHooksPage() {
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message?: string }>;
-            toast.error(axiosError.response?.data?.message || t('lifecycleHooks.messages.reorderFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'lifecycleHooks.messages.reorderFailed'));
         }
     };
 
@@ -319,6 +326,7 @@ export default function ServerLifecycleHooksPage() {
             const validTaskTypes: LifecycleTaskType[] = [
                 'container_command',
                 'discord_webhook',
+                'backup',
                 'http_request',
                 'sleep',
             ];
@@ -343,6 +351,12 @@ export default function ServerLifecycleHooksPage() {
                 );
                 for (const step of sortedImportedSteps) {
                     if (!step || !validTaskTypes.includes(step.task_type as LifecycleTaskType)) continue;
+                    if (
+                        LIFECYCLE_HOOK_TYPES_WITHOUT_CONTAINER.includes(hookType) &&
+                        (step.task_type === 'container_command' || step.task_type === 'container_shell')
+                    ) {
+                        continue;
+                    }
                     await axios.post(`/api/user/servers/${uuidShort}/lifecycle-hooks/${hookType}/steps`, {
                         task_type: step.task_type,
                         continue_on_failure: step.continue_on_failure ? 1 : 0,
@@ -355,7 +369,7 @@ export default function ServerLifecycleHooksPage() {
             toast.success(t('lifecycleHooks.messages.importSuccess'));
         } catch (error) {
             const axiosError = error as AxiosError<{ message?: string }>;
-            toast.error(axiosError.response?.data?.message || t('lifecycleHooks.messages.importFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'lifecycleHooks.messages.importFailed'));
         } finally {
             setImporting(false);
         }
@@ -439,6 +453,21 @@ export default function ServerLifecycleHooksPage() {
                             </p>
                         )}
                     </div>
+                );
+            }
+
+            if (step.task_type === 'backup') {
+                return (
+                    <p className='text-muted-foreground text-xs break-all'>
+                        {formatBackupPayloadDisplay('backup', step.payload, [], {
+                            files: t('serverTasks.backupTypeFiles'),
+                            databases: t('serverTasks.backupTypeDatabases'),
+                            full: t('serverTasks.backupTypeFull'),
+                            all: t('serverTasks.databaseScopeAll'),
+                            specific: t('serverTasks.databaseScopeSpecific'),
+                            noPayload: t('lifecycleHooks.payloadUnavailable'),
+                        })}
+                    </p>
                 );
             }
 
@@ -695,12 +724,19 @@ export default function ServerLifecycleHooksPage() {
                     </div>
                 )}
 
-                <HeadlessModal
-                    isOpen={isDeleteOpen}
+                <Dialog
+                    open={isDeleteOpen}
                     onClose={() => setIsDeleteOpen(false)}
-                    title={t('lifecycleHooks.deleteModalTitle')}
-                    description={t('lifecycleHooks.deleteModalDescription')}
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            setIsDeleteOpen(false);
+                        }
+                    }}
                 >
+                    <DialogHeader>
+                        <DialogTitle>{t('lifecycleHooks.deleteModalTitle')}</DialogTitle>
+                        <DialogDescription>{t('lifecycleHooks.deleteModalDescription')}</DialogDescription>
+                    </DialogHeader>
                     <div className='flex justify-end gap-2 pt-4'>
                         <Button variant='glass' onClick={() => setIsDeleteOpen(false)} disabled={deleting}>
                             {t('common.cancel')}
@@ -709,7 +745,7 @@ export default function ServerLifecycleHooksPage() {
                             {t('common.delete')}
                         </Button>
                     </div>
-                </HeadlessModal>
+                </Dialog>
             </div>
             <WidgetRenderer widgets={getWidgets('server-lifecycle-hooks', 'bottom-of-page')} />
         </>

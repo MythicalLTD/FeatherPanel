@@ -17,8 +17,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -33,6 +34,9 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { ImageAttachmentField } from '@/components/featherui/ImageAttachmentField';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { SpellInheritanceField } from '@/components/admin/SpellInheritanceField';
+import { SpellConfigField } from '@/components/admin/SpellConfigField';
+import { spellConfigPayload } from '@/lib/spellConfig';
 
 interface Realm {
     id: number;
@@ -54,6 +58,8 @@ export default function CreateSpellPage() {
         author: '',
         description: '',
         realm_id: realmIdParam || '',
+        config_from: '',
+        copy_script_from: '',
         update_url: '',
         banner: '',
         docker_images: '{}',
@@ -74,6 +80,7 @@ export default function CreateSpellPage() {
     const [dockerImages, setDockerImages] = useState<{ name: string; value: string }[]>([]);
     const [defaultDockerImage, setDefaultDockerImage] = useState('');
     const [features, setFeatures] = useState<string[]>([]);
+    const [inheritFeatures, setInheritFeatures] = useState(false);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-spells-create');
 
@@ -88,10 +95,11 @@ export default function CreateSpellPage() {
                 setRealms(data.data.realms || []);
             } catch (error) {
                 console.error('Error fetching realms:', error);
+                toast.error(getApiErrorMessage(error, t, 'admin.realms.messages.fetch_failed'));
             }
         };
         fetchRealms();
-    }, []);
+    }, [t]);
 
     const handleCreate = async () => {
         if (!form.name || !form.realm_id) {
@@ -111,20 +119,23 @@ export default function CreateSpellPage() {
 
             await axios.put('/api/admin/spells', {
                 ...form,
+                ...spellConfigPayload(form),
+                config_from: form.config_from ? Number(form.config_from) : null,
+                copy_script_from: form.copy_script_from ? Number(form.copy_script_from) : null,
                 docker_images: JSON.stringify(dockerImagesObj),
                 default_docker_image: defaultDockerImage || null,
-                features: JSON.stringify(features),
+                features: form.config_from && inheritFeatures ? null : JSON.stringify(features),
             });
 
             toast.success(t('admin.spells.messages.created'));
             router.push('/admin/spells');
         } catch (error) {
             console.error('Error creating spell:', error);
-            let msg = t('admin.spells.messages.create_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(
+                axios.isAxiosError(error)
+                    ? getApiErrorMessage(error, t, 'admin.spells.messages.create_failed')
+                    : t('admin.spells.messages.invalid_config'),
+            );
         } finally {
             setSaving(false);
         }
@@ -185,7 +196,7 @@ export default function CreateSpellPage() {
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>
-                        <Button onClick={handleCreate} loading={saving}>
+                        <Button onClick={handleCreate} loading={saving} data-fp-save-shortcut>
                             {t('admin.spells.form.submit_create')}
                         </Button>
                     </div>
@@ -321,6 +332,7 @@ export default function CreateSpellPage() {
                                     <Label>{t('admin.spells.form.script_container')}</Label>
                                     <Input
                                         value={form.script_container}
+                                        disabled={!!form.copy_script_from}
                                         onChange={(e) => setForm({ ...form, script_container: e.target.value })}
                                         placeholder='alpine:3.4'
                                     />
@@ -329,6 +341,7 @@ export default function CreateSpellPage() {
                                     <Label>{t('admin.spells.form.script_entry')}</Label>
                                     <Input
                                         value={form.script_entry}
+                                        disabled={!!form.copy_script_from}
                                         onChange={(e) => setForm({ ...form, script_entry: e.target.value })}
                                         placeholder='ash'
                                     />
@@ -352,6 +365,15 @@ export default function CreateSpellPage() {
 
                 <TabsContent value='features' className='space-y-4'>
                     <PageCard title={t('admin.spells.form.server_features')} icon={Zap}>
+                        {form.config_from && (
+                            <label className='mb-4 flex items-center gap-2'>
+                                <Checkbox
+                                    checked={inheritFeatures}
+                                    onCheckedChange={(checked) => setInheritFeatures(checked === true)}
+                                />
+                                {t('admin.spells.form.inherit_features')}
+                            </label>
+                        )}
                         <div className='space-y-2'>
                             <Label>{t('admin.spells.form.features')}</Label>
                             <div className='space-y-2'>
@@ -384,64 +406,67 @@ export default function CreateSpellPage() {
 
                 <TabsContent value='config' className='space-y-4'>
                     <PageCard title={t('admin.spells.form.server_configuration')} icon={FileCode}>
+                        <SpellInheritanceField
+                            realmId={form.realm_id}
+                            kind='config_from'
+                            value={form.config_from}
+                            onChange={(value) => setForm({ ...form, config_from: value })}
+                        />
                         <div className='space-y-4'>
                             <div className='space-y-2'>
                                 <Label>{t('admin.spells.form.file_denylist')}</Label>
                                 <Textarea
                                     value={form.file_denylist}
+                                    disabled={!!form.config_from}
                                     onChange={(e) => setForm({ ...form, file_denylist: e.target.value })}
                                     placeholder='["file1", "file2"]'
                                     rows={3}
                                 />
                             </div>
-                            <div className='space-y-2'>
-                                <Label>{t('admin.spells.form.config_files')}</Label>
-                                <Textarea
-                                    value={form.config_files}
-                                    onChange={(e) => setForm({ ...form, config_files: e.target.value })}
-                                    placeholder='{"file.properties": {...}}'
-                                    rows={4}
+                            <SpellConfigField
+                                field='config_files'
+                                value={form.config_files}
+                                inheritable={!!form.config_from}
+                                onChange={(value) => setForm({ ...form, config_files: value })}
+                            />
+                            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+                                <SpellConfigField
+                                    field='config_startup'
+                                    value={form.config_startup}
+                                    inheritable={!!form.config_from}
+                                    onChange={(value) => setForm({ ...form, config_startup: value })}
+                                />
+                                <SpellConfigField
+                                    field='config_logs'
+                                    value={form.config_logs}
+                                    inheritable={!!form.config_from}
+                                    onChange={(value) => setForm({ ...form, config_logs: value })}
                                 />
                             </div>
-                            <div className='grid grid-cols-2 gap-4'>
-                                <div className='space-y-2'>
-                                    <Label>{t('admin.spells.form.config_startup')}</Label>
-                                    <Textarea
-                                        value={form.config_startup}
-                                        onChange={(e) => setForm({ ...form, config_startup: e.target.value })}
-                                        placeholder='{"done": "text"}'
-                                        rows={3}
-                                    />
-                                </div>
-                                <div className='space-y-2'>
-                                    <Label>{t('admin.spells.form.config_logs')}</Label>
-                                    <Textarea
-                                        value={form.config_logs}
-                                        onChange={(e) => setForm({ ...form, config_logs: e.target.value })}
-                                        placeholder='{}'
-                                        rows={3}
-                                    />
-                                </div>
-                            </div>
-                            <div className='space-y-2'>
-                                <Label>{t('admin.spells.form.config_stop')}</Label>
-                                <Input
-                                    value={form.config_stop}
-                                    onChange={(e) => setForm({ ...form, config_stop: e.target.value })}
-                                    placeholder='stop'
-                                />
-                            </div>
+                            <SpellConfigField
+                                field='config_stop'
+                                value={form.config_stop}
+                                inheritable={!!form.config_from}
+                                onChange={(value) => setForm({ ...form, config_stop: value })}
+                            />
                         </div>
                     </PageCard>
                 </TabsContent>
 
                 <TabsContent value='script' className='space-y-4'>
                     <PageCard title={t('admin.spells.form.installation_startup_scripts')} icon={Terminal}>
+                        <SpellInheritanceField
+                            realmId={form.realm_id}
+                            kind='copy_script_from'
+                            value={form.copy_script_from}
+                            onChange={(value) => setForm({ ...form, copy_script_from: value })}
+                        />
                         <div className='space-y-4'>
                             <div className='space-y-2'>
                                 <Label>{t('admin.spells.form.script_install')}</Label>
                                 <Textarea
                                     value={form.script_install}
+                                    disabled={!!form.copy_script_from}
                                     onChange={(e) => setForm({ ...form, script_install: e.target.value })}
                                     placeholder='#!/bin/bash...'
                                     rows={8}

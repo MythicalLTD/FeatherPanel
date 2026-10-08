@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
 import { ReactNode, ComponentType } from 'react';
+import { OverflowText } from './OverflowText';
 
 export interface ResourceBadge {
     label: string;
@@ -120,6 +121,7 @@ export function ResourceCard({
             <div
                 className={cn(
                     'relative z-10 flex flex-col gap-6 p-6',
+                    href && 'pointer-events-none [&_a]:pointer-events-auto [&_button]:pointer-events-auto',
                     layout === 'horizontal' ? 'md:flex-row md:items-center' : 'sm:flex-row sm:items-start',
                 )}
             >
@@ -142,11 +144,11 @@ export function ResourceCard({
                     <div className='flex flex-wrap items-center gap-3'>
                         <h3
                             className={cn(
-                                'text-foreground group-hover:text-primary text-xl font-bold tracking-tight transition-colors',
-                                titleClassName ?? 'truncate',
+                                'text-foreground group-hover:text-primary max-w-full min-w-0 text-xl font-bold tracking-tight transition-colors',
+                                titleClassName,
                             )}
                         >
-                            {title}
+                            {titleClassName ? title : <OverflowText>{title}</OverflowText>}
                         </h3>
                         {renderBadges()}
                     </div>
@@ -163,6 +165,7 @@ export function ResourceCard({
                     <div
                         className={cn(
                             'flex items-center gap-2',
+                            href && 'pointer-events-auto',
                             layout === 'stacked' ? 'w-full sm:w-auto sm:self-center' : 'md:self-center',
                         )}
                     >
@@ -175,14 +178,23 @@ export function ResourceCard({
 
     if (href) {
         return (
-            <Link href={href} style={style} className={cardClassName} onClick={onClick}>
+            <div style={style} className={cardClassName}>
+                <Link href={href} aria-label={title} className='absolute inset-0 z-[5]' onClick={onClick} />
                 {cardBody}
-            </Link>
+            </div>
+        );
+    }
+
+    if (onClick) {
+        return (
+            <button type='button' onClick={onClick} style={style} className={cn(cardClassName, 'w-full text-left')}>
+                {cardBody}
+            </button>
         );
     }
 
     return (
-        <div onClick={onClick} style={style} className={cardClassName}>
+        <div style={style} className={cardClassName}>
             {cardBody}
         </div>
     );
