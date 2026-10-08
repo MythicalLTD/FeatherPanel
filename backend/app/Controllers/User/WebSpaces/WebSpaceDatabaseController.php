@@ -388,13 +388,20 @@ class WebSpaceDatabaseController
                 . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
         }
 
-        $databaseHostname = DatabaseInstance::getDatabaseHostname($databaseHost);
+        try {
+            $token = \App\Helpers\DatabaseSignonToken::mint([
+                'db' => $record['database'],
+                'host' => \App\Helpers\DatabaseSignonToken::backendHost($databaseHost),
+                'port' => (int) ($record['database_port'] ?? $databaseHost['database_port'] ?? 3306),
+                'user' => $record['username'],
+                'pass' => $record['password'],
+            ]);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Failed to prepare phpMyAdmin session', 'PHPMYADMIN_TOKEN_FAILED', 500);
+        }
+
         $pmaUrl = rtrim($appUrl, '/') . '/pma/token.php?' . http_build_query([
-            'db' => $record['database'],
-            'host' => $databaseHostname,
-            'port' => $record['database_port'] ?? $databaseHost['database_port'] ?? 3306,
-            'user' => $record['username'],
-            'pass' => $record['password'],
+            'token' => $token,
         ]);
 
         return ApiResponse::success(['url' => $pmaUrl], 'OK', 200);
@@ -457,13 +464,20 @@ class WebSpaceDatabaseController
                 . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
         }
 
-        $databaseHostname = DatabaseInstance::getDatabaseHostname($databaseHost);
+        try {
+            $token = \App\Helpers\DatabaseSignonToken::mint([
+                'db' => $record['database'],
+                'host' => \App\Helpers\DatabaseSignonToken::backendHost($databaseHost),
+                'port' => (int) ($record['database_port'] ?? $databaseHost['database_port'] ?? 5432),
+                'user' => $record['username'],
+                'pass' => $record['password'],
+            ]);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Failed to prepare phpPgAdmin session', 'PHPPGADMIN_TOKEN_FAILED', 500);
+        }
+
         $ppaUrl = rtrim($appUrl, '/') . '/ppa/token.php?' . http_build_query([
-            'db' => $record['database'],
-            'host' => $databaseHostname,
-            'port' => $record['database_port'] ?? $databaseHost['database_port'] ?? 5432,
-            'user' => $record['username'],
-            'pass' => $record['password'],
+            'token' => $token,
         ]);
 
         return ApiResponse::success(['url' => $ppaUrl], 'OK', 200);

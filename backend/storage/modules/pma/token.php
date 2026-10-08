@@ -27,27 +27,63 @@ $session_name = 'TokenSession';
 session_name($session_name);
 @session_start();
 
-// Check if database credentials are provided as query parameters (for automatic login from panel)
-if (isset($_GET['db']) && isset($_GET['host']) && isset($_GET['user']) && isset($_GET['pass'])) {
-    // Set phpMyAdmin signon session variables with database connection details directly from query parameters
-    $_SESSION['PMA_single_signon_user'] = $_GET['user'];
-    $_SESSION['PMA_single_signon_password'] = $_GET['pass'];
-    $_SESSION['PMA_single_signon_host'] = $_GET['host'];
-    $_SESSION['PMA_single_signon_port'] = isset($_GET['port']) ? (string) $_GET['port'] : '3306';
-    $_SESSION['PMA_single_signon_HMAC_secret'] = hash('sha1', uniqid(strval(random_int(0, mt_getrandmax())), true));
+/**
+ * Exchange a panel-issued single-use token for signon credentials.
+ * Never accept raw db/host/user/pass from the request.
+ *
+ * When deployed, this file lives at public/pma/token.php, so
+ * dirname(__DIR__, 2) resolves to the backend root.
+ */
+if (isset($_GET['token']) && preg_match('/^[a-f0-9]{64}$/D', (string) $_GET['token'])) {
+    $token = (string) $_GET['token'];
+    $tokenDir = dirname(__DIR__, 2) . '/storage/db_signon_tokens';
+    $tokenFile = $tokenDir . '/' . $token . '.json';
+    $consumed = $tokenDir . '/' . $token . '.used.' . getmypid();
 
-    // Set database name
-    $_SESSION['PMA_single_signon_database'] = $_GET['db'];
+    $data = null;
+    // Atomic consume: only the process that successfully renames wins.
+    if (is_file($tokenFile) && @rename($tokenFile, $consumed)) {
+        $raw = @file_get_contents($consumed);
+        @unlink($consumed);
+        if ($raw !== false) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)
+                && isset($decoded['db'], $decoded['host'], $decoded['user'], $decoded['pass'], $decoded['expires'])
+                && (int) $decoded['expires'] >= time()) {
+                $data = $decoded;
+            }
+        }
+    }
 
-    @session_write_close();
+    if ($data !== null) {
+        $_SESSION['PMA_single_signon_user'] = (string) $data['user'];
+        $_SESSION['PMA_single_signon_password'] = (string) $data['pass'];
+        $_SESSION['PMA_single_signon_host'] = (string) $data['host'];
+        $_SESSION['PMA_single_signon_port'] = (string) ($data['port'] ?? 3306);
+        $_SESSION['PMA_single_signon_HMAC_secret'] = hash('sha1', uniqid(strval(random_int(0, mt_getrandmax())), true));
+        $_SESSION['PMA_single_signon_database'] = (string) $data['db'];
 
-    $pmaPageMode = 'connect';
-    $pmaErrorMessage = null;
-    $pmaRedirectUrl = 'index.php?server=1&db=' . urlencode($_GET['db']);
+        @session_write_close();
+
+        $pmaPageMode = 'connect';
+        $pmaErrorMessage = null;
+        $pmaRedirectUrl = 'index.php?server=1&db=' . urlencode((string) $data['db']);
+        $pmaRedirectDelay = 500;
+        $pmaPostLoadScript = '';
+
+        header('Content-Type: text/html; charset=utf-8');
+        require __DIR__ . '/auth-page.php';
+        exit;
+    }
+
+    $pmaPageMode = 'error';
+    $pmaErrorMessage = 'This phpMyAdmin link is invalid or has expired. Open phpMyAdmin again from the panel.';
+    $pmaRedirectUrl = null;
     $pmaRedirectDelay = 500;
     $pmaPostLoadScript = '';
 
     header('Content-Type: text/html; charset=utf-8');
+    http_response_code(403);
     require __DIR__ . '/auth-page.php';
     exit;
 }
