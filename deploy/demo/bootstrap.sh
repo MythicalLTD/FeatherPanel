@@ -9,7 +9,7 @@ BACKUPS_DIR="${APP_ROOT}/storage/backups"
 GOLDEN_NAME="${DEMO_GOLDEN_SNAPSHOT:-demo-golden.fpb}"
 GOLDEN_PATH="${BACKUPS_DIR}/${GOLDEN_NAME}"
 MARKER="${BACKUPS_DIR}/.demo-bootstrapped"
-SEED_VERSION="10"
+SEED_VERSION="15"
 VERSION_MARKER="${BACKUPS_DIR}/.demo-seed-version"
 
 log() {

@@ -27,15 +27,21 @@ use App\Chat\BlockedEmailDomain;
 use App\Chat\BlockedIp;
 use App\Chat\CommandSnippet;
 use App\Chat\DatabaseInstance;
+use App\Chat\DnsHost;
 use App\Chat\FeatherZeroTrustCronLog;
 use App\Chat\FeatherZeroTrustScanLog;
+use App\Chat\HostingPackage;
+use App\Chat\Image;
 use App\Chat\InstalledPlugin;
+use App\Chat\LdapProvider;
 use App\Chat\MailHost;
+use App\Chat\MailTemplate;
 use App\Chat\Node;
 use App\Chat\OidcProvider;
 use App\Chat\Proxy;
 use App\Chat\Realm;
 use App\Chat\RedirectLink;
+use App\Chat\TimedTask;
 use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Chat\ServerCustomVariable;
@@ -45,6 +51,7 @@ use App\Chat\ServerSchedule;
 use App\Chat\ServerVariable;
 use App\Chat\Spell;
 use App\Chat\SpellVariable;
+use App\Chat\SubdomainDomain;
 use App\Chat\Subuser;
 use App\Chat\Task;
 use App\Chat\User;
@@ -61,6 +68,7 @@ use App\Chat\WebSpaceMailbox;
 use App\Chat\WebSpaceSftpAccount;
 use App\Chat\WebSpaceSubuser;
 use App\Plugins\PluginDB;
+use App\Plugins\PluginSettings;
 use App\SubuserPermissions;
 
 new App(false, false, true);
@@ -195,9 +203,9 @@ function ensure_real_server_database(array $server, array $host, string $suffix,
 function ensure_server_limits(array $server): void
 {
     Server::updateServerById((int) $server['id'], [
-        'database_limit' => 5,
-        'backup_limit' => 8,
-        'allocation_limit' => 4,
+        'database_limit' => 8,
+        'backup_limit' => 10,
+        'allocation_limit' => 6,
         'description' => trim((string) ($server['description'] ?? '')) !== ''
             ? (string) $server['description']
             : 'Demo server packed with databases, backups, schedules, subusers, and env vars',
@@ -1021,7 +1029,7 @@ function ensure_ghost_and_web_bloat(): void
 
 function ensure_blocked_ips(): void
 {
-    if (BlockedIp::countSearch('', false) >= 8) {
+    if (BlockedIp::countSearch('', false) >= 14) {
         bloat_log('Blocked IPs already seeded');
 
         return;
@@ -1036,10 +1044,15 @@ function ensure_blocked_ips(): void
         ['203.0.113.50', 'Brute-force SSH against Wings', date('Y-m-d H:i:s', time() + 86400 * 14)],
         ['198.51.100.77', 'Credential stuffing on login', date('Y-m-d H:i:s', time() + 86400 * 7)],
         ['104.244.42.0/24', 'Spam registration attempts', null],
-        ['192.0.2.222', 'Demo sample — permanent block', null],
+        ['192.0.2.222', 'Demo sample permanent block', null],
         ['10.255.255.200', 'Internal red-team honeypot hit', date('Y-m-d H:i:s', time() + 3600 * 12)],
         ['172.16.99.1', 'Rate-limit evasion', null],
         ['8.8.8.8', 'FALSE POSITIVE example (expired)', date('Y-m-d H:i:s', time() - 3600)],
+        ['91.203.5.0/24', 'Bulletproof hosting ASN sample', null],
+        ['5.188.206.0/24', 'Known botnet C2 range (demo)', null],
+        ['193.32.162.88', 'Ticket spam bot', date('Y-m-d H:i:s', time() + 86400 * 3)],
+        ['2001:db8::1', 'IPv6 demo block', null],
+        ['100.64.0.50', 'CGNAT abuser sample', null],
     ];
 
     $n = 0;
@@ -1057,7 +1070,7 @@ function ensure_blocked_ips(): void
 
 function ensure_blocked_email_domains(): void
 {
-    if (BlockedEmailDomain::countSearch('') >= 12) {
+    if (BlockedEmailDomain::countSearch('') >= 20) {
         bloat_log('Blocked email domains already seeded');
 
         return;
@@ -1078,6 +1091,14 @@ function ensure_blocked_email_domains(): void
         'spam4.me',
         'demo-abuse.invalid',
         'banned-signup.example',
+        'temp-mail.org',
+        'emailondeck.com',
+        'maildrop.cc',
+        'discard.email',
+        'mailnesia.com',
+        'guerrillamailblock.com',
+        'mintemail.com',
+        'spamgourmet.com',
     ];
 
     $n = 0;
@@ -1260,49 +1281,54 @@ function ensure_zero_trust_logs(array $servers): void
     }
 }
 
-function ensure_installed_plugins(): void
+function ensure_installed_plugins(?array $spell = null): void
 {
     $plugins = [
+        [
+            'name' => 'Demo Showcase',
+            'identifier' => 'demoshowcase',
+            'version' => '1.1.0',
+            'uninstalled' => false,
+        ],
         [
             'name' => 'Demo Welcome',
             'identifier' => 'demowelcome',
             'version' => '1.0.0',
-            'description' => 'Free example plugin shipped with the public demo',
-            'author' => 'FeatherPanel Demo',
             'uninstalled' => false,
         ],
         [
             'name' => 'Demo Status',
             'identifier' => 'demostatus',
             'version' => '1.0.0',
-            'description' => 'Free example status plugin for the public demo',
-            'author' => 'FeatherPanel Demo',
             'uninstalled' => false,
         ],
         [
             'name' => 'Demo Tools',
             'identifier' => 'demotools',
             'version' => '1.0.1',
-            'description' => 'Free example utilities plugin for the public demo',
-            'author' => 'FeatherPanel Demo',
             'uninstalled' => false,
         ],
         [
             'name' => 'Legacy Demo Widget',
             'identifier' => 'demolegacywidget',
             'version' => '0.9.0',
-            'description' => 'Previously installed demo plugin (history row)',
-            'author' => 'FeatherPanel Demo',
             'uninstalled' => true,
         ],
     ];
 
-    // Also register filesystem example plugins when present.
-    foreach (['demowelcome' => 'Demo Welcome', 'demostatus' => 'Demo Status', 'demotools' => 'Demo Tools'] as $ident => $display) {
+    $register = [
+        'demoshowcase' => 'Demo Showcase',
+        'demowelcome' => 'Demo Welcome',
+        'demostatus' => 'Demo Status',
+        'demotools' => 'Demo Tools',
+    ];
+
+    foreach ($register as $ident => $display) {
         try {
             if (!PluginDB::isPluginRegistered($ident)) {
                 PluginDB::registerPlugin($ident, $display);
             }
+            PluginDB::setPluginEnabled($ident, true);
         } catch (Throwable $e) {
             bloat_log('WARNING: PluginDB register ' . $ident . ': ' . $e->getMessage());
         }
@@ -1329,6 +1355,38 @@ function ensure_installed_plugins(): void
             bloat_log("InstalledPlugin record: {$p['identifier']}" . ($p['uninstalled'] ? ' (uninstalled)' : ''));
         }
     }
+
+    // DemoShowcase: defaults + limit server sidebar to the demo sleep spell only.
+    try {
+        PluginSettings::setSetting('demoshowcase', 'hide_dashboard_banner', 'false');
+        PluginSettings::setSetting('demoshowcase', 'hide_admin_card', 'false');
+        PluginSettings::setSetting('demoshowcase', 'hide_server_console_card', 'false');
+        PluginSettings::setSetting(
+            'demoshowcase',
+            'tip_text',
+            'This widget comes from the DemoShowcase addon. Toggle visibility under Admin → Plugins → DemoShowcase.'
+        );
+
+        $spellIds = [];
+        if ($spell !== null && isset($spell['id'])) {
+            $spellIds[] = (int) $spell['id'];
+        }
+        // Also allow any spell that shares the demo sleep name across realms.
+        foreach (Spell::getAllSpells() as $s) {
+            if (($s['name'] ?? '') === env_str('DEMO_SPELL_NAME', 'Demo Sleep Server')) {
+                $spellIds[] = (int) $s['id'];
+            }
+        }
+        $spellIds = array_values(array_unique(array_filter($spellIds)));
+        PluginSettings::setSetting(
+            'demoshowcase',
+            'plugin-sidebar-server-allowedOnlyOnSpells',
+            json_encode($spellIds, JSON_THROW_ON_ERROR)
+        );
+        bloat_log('DemoShowcase spell allow-list: [' . implode(',', $spellIds) . ']');
+    } catch (Throwable $e) {
+        bloat_log('WARNING: DemoShowcase settings: ' . $e->getMessage());
+    }
 }
 
 function ensure_redirect_links(): void
@@ -1339,6 +1397,11 @@ function ensure_redirect_links(): void
         ['Status', 'status', '/status'],
         ['Knowledgebase', 'kb', '/knowledgebase'],
         ['GitHub', 'github', 'https://github.com/mythicalltd/featherpanel'],
+        ['Billing FAQ', 'billing', '/knowledgebase'],
+        ['Support', 'support', '/tickets'],
+        ['API', 'api', 'https://featherpanel.com/docs/api'],
+        ['Changelog', 'changelog', 'https://featherpanel.com/changelog'],
+        ['Careers', 'jobs', 'https://mythical.systems'],
     ];
     $now = date('Y-m-d H:i:s');
     foreach ($links as [$name, $slug, $url]) {
@@ -1422,28 +1485,314 @@ function ensure_demo_proxies(array $servers): void
     }
 }
 
-function ensure_oidc_demo_provider(): void
+function ensure_subdomain_domains(): void
 {
-    foreach (OidcProvider::getAllProviders() as $row) {
-        if (($row['name'] ?? '') === 'Demo OIDC (disabled)') {
+    foreach (SubdomainDomain::getDomains(1, 50) as $row) {
+        if (($row['domain'] ?? '') === 'demo.featherpanel.local') {
+            bloat_log('Subdomain domain already seeded');
+
             return;
         }
     }
 
+    $id = SubdomainDomain::createDomain(
+        [
+            'domain' => 'demo.featherpanel.local',
+            'description' => 'Demo subdomain zone (fake Cloudflare IDs for UI)',
+            'is_active' => 1,
+            'cloudflare_zone_id' => 'demo-zone-not-real',
+            'cloudflare_account_id' => 'demo-cf-account-not-real',
+        ],
+        [],
+    );
+    bloat_log($id ? 'Subdomain domain demo.featherpanel.local' : 'WARNING: subdomain domain create failed');
+}
+
+function ensure_mail_templates(): void
+{
+    $templates = [
+        [
+            'name' => 'demo_welcome',
+            'subject' => 'Welcome to FeatherPanel Demo',
+            'body' => "<p>Hi {{username}},</p><p>Welcome to the public FeatherPanel demo. This environment wipes on a schedule.</p><p>- The FeatherPanel Team</p>",
+        ],
+        [
+            'name' => 'demo_server_ready',
+            'subject' => 'Your demo server is ready',
+            'body' => '<p>Server <strong>{{server_name}}</strong> finished installing. Open the panel to explore console, files, and schedules.</p>',
+        ],
+        [
+            'name' => 'demo_ticket_reply',
+            'subject' => 'New reply on your ticket',
+            'body' => '<p>Support replied to ticket #{{ticket_id}}.</p><p>{{message}}</p>',
+        ],
+        [
+            'name' => 'demo_wipe_notice',
+            'subject' => 'Demo wipe reminder',
+            'body' => '<p>This demo panel resets periodically. Anything you create may disappear.</p>',
+        ],
+    ];
+
+    foreach ($templates as $tpl) {
+        if (MailTemplate::getByName($tpl['name']) !== null) {
+            continue;
+        }
+        if (MailTemplate::create($tpl)) {
+            bloat_log('Mail template ' . $tpl['name']);
+        }
+    }
+}
+
+function ensure_demo_images(): void
+{
+    $images = [
+        ['Demo Logo', 'https://cdn.mythical.systems/featherpanel/logo.png'],
+        ['Demo Banner', 'https://cdn.mythical.systems/featherpanel/logo.png'],
+        ['Spell Placeholder', 'https://cdn.mythical.systems/featherpanel/logo.png'],
+        ['Node Icon', 'https://cdn.mythical.systems/featherpanel/logo.png'],
+        ['Webspace Hero', 'https://cdn.mythical.systems/featherpanel/logo.png'],
+    ];
+    foreach ($images as [$name, $url]) {
+        if (Image::getByName($name) !== null) {
+            continue;
+        }
+        if (Image::create(['name' => $name, 'url' => $url])) {
+            bloat_log("Image library: {$name}");
+        }
+    }
+}
+
+function ensure_timed_tasks(): void
+{
+    $tasks = [
+        ['demo_seed_heartbeat', true, 'Demo seed heartbeat OK'],
+        ['demo_backup_ghost_sync', true, 'Ghosted backup metadata refreshed'],
+        ['demo_zt_scan_tick', true, 'Zero Trust demo scan tick'],
+        ['demo_mail_queue_noop', false, 'Mail queue dry-run (SMTP disabled)'],
+        ['demo_kpi_rollup', true, 'KPI counters rolled up for charts'],
+    ];
+    foreach ($tasks as [$name, $ok, $msg]) {
+        if (TimedTask::getByName($name) !== null) {
+            continue;
+        }
+        if (
+            TimedTask::create([
+                'task_name' => $name,
+                'last_run_at' => date('Y-m-d H:i:s', time() - random_int(60, 86400)),
+                'last_run_success' => $ok ? 1 : 0,
+                'last_run_message' => $msg,
+            ])
+        ) {
+            bloat_log("Timed task {$name}");
+        }
+    }
+}
+
+function ensure_dns_host(): void
+{
+    foreach (DnsHost::listAll() as $row) {
+        if (($row['name'] ?? '') === 'Demo DNS') {
+            return;
+        }
+    }
+    $webNodes = WebNode::getAllWebNodes();
+    $webNodeId = isset($webNodes[0]['id']) ? (int) $webNodes[0]['id'] : null;
+    $id = DnsHost::create([
+        'name' => 'Demo DNS',
+        'provider' => 'node',
+        'web_node_id' => $webNodeId,
+    ]);
+    bloat_log($id ? 'DNS host Demo DNS' : 'WARNING: DNS host create failed');
+}
+
+function ensure_hosting_packages(): void
+{
+    if (count(HostingPackage::listAll()) >= 4) {
+        return;
+    }
+    $plates = WebPlate::listAll(1, 20);
+    $phpPlate = null;
+    $staticPlate = null;
+    foreach ($plates as $p) {
+        if (($p['runtime'] ?? '') === 'php') {
+            $phpPlate = $p;
+        }
+        if (($p['runtime'] ?? '') === 'static') {
+            $staticPlate = $p;
+        }
+    }
+    $pkgs = [
+        ['Starter Web', 'Small demo hosting package', 2048, 0.5, 512, 50, 1, 2, $staticPlate],
+        ['Business PHP', 'PHP showcase package', 10240, 1, 1024, 200, 3, 5, $phpPlate],
+        ['Agency Pro', 'Larger demo package with mail', 51200, 2, 2048, 500, 10, 20, $phpPlate],
+        ['Dev Sandbox', 'Unlimited-feel demo package', 102400, 4, 4096, 1000, 25, 50, $phpPlate],
+    ];
+    foreach ($pkgs as [$name, $desc, $disk, $cpu, $mem, $bw, $dbs, $mail, $plate]) {
+        $exists = false;
+        foreach (HostingPackage::listAll() as $row) {
+            if (($row['name'] ?? '') === $name) {
+                $exists = true;
+                break;
+            }
+        }
+        if ($exists) {
+            continue;
+        }
+        $payload = [
+            'name' => $name,
+            'description' => $desc,
+            'disk' => $disk,
+            'cpu_limit' => $cpu,
+            'memory_limit' => $mem,
+            'bandwidth_limit_gb' => $bw,
+            'database_limit' => $dbs,
+            'mailbox_limit' => $mail,
+        ];
+        if ($plate !== null) {
+            $payload['webplate_id'] = (int) $plate['id'];
+        }
+        if (HostingPackage::create($payload)) {
+            bloat_log("Hosting package {$name}");
+        }
+    }
+}
+
+function ensure_ldap_demo_provider(): void
+{
+    $demoNames = ['Demo LDAP', 'Demo LDAP (disabled)'];
+    foreach (LdapProvider::getAllProviders() as $row) {
+        if (!in_array($row['name'] ?? '', $demoNames, true)) {
+            continue;
+        }
+        // Re-enable + rename so the login LDAP chip appears.
+        LdapProvider::updateProvider((string) $row['uuid'], [
+            'name' => 'Demo LDAP',
+            'enabled' => 'true',
+        ]);
+        bloat_log('LDAP demo provider enabled for login showcase');
+        return;
+    }
+    $id = LdapProvider::createProvider([
+        'uuid' => demo_uuid(),
+        'name' => 'Demo LDAP',
+        'host' => 'ldap.demo.featherpanel.local',
+        'port' => 389,
+        'base_dn' => 'dc=demo,dc=featherpanel,dc=local',
+        'bind_dn' => 'cn=readonly,dc=demo,dc=featherpanel,dc=local',
+        'bind_password' => 'demo-ldap-not-real',
+        'user_filter' => '(uid={username})',
+        'enabled' => 'true',
+    ]);
+    bloat_log($id ? 'LDAP demo provider (enabled, showcase)' : 'WARNING: LDAP provider create failed');
+}
+
+function ensure_even_more_schedules(array $server): void
+{
+    $serverId = (int) $server['id'];
+    $existing = ServerSchedule::getSchedulesByServerId($serverId);
+    if (count($existing) >= 5) {
+        return;
+    }
+    $extra = [
+        [
+            'name' => 'Morning MOTD',
+            'cron_day_of_week' => '*',
+            'cron_month' => '*',
+            'cron_day_of_month' => '*',
+            'cron_hour' => '9',
+            'cron_minute' => '0',
+            'only_when_online' => 1,
+            'tasks' => [
+                ['action' => 'command', 'payload' => 'say Good morning from FeatherPanel Demo!', 'time_offset' => 0],
+            ],
+        ],
+        [
+            'name' => 'Midday autosave',
+            'cron_day_of_week' => '*',
+            'cron_month' => '*',
+            'cron_day_of_month' => '*',
+            'cron_hour' => '12',
+            'cron_minute' => '30',
+            'only_when_online' => 1,
+            'tasks' => [
+                ['action' => 'command', 'payload' => 'save-all', 'time_offset' => 0],
+            ],
+        ],
+    ];
+    $have = array_column($existing, 'name');
+    foreach ($extra as $def) {
+        if (in_array($def['name'], $have, true)) {
+            continue;
+        }
+        $next = ServerSchedule::calculateNextRunTime(
+            $def['cron_day_of_week'],
+            $def['cron_month'],
+            $def['cron_day_of_month'],
+            $def['cron_hour'],
+            $def['cron_minute'],
+        );
+        $scheduleId = ServerSchedule::createSchedule([
+            'server_id' => $serverId,
+            'name' => $def['name'],
+            'cron_day_of_week' => $def['cron_day_of_week'],
+            'cron_month' => $def['cron_month'],
+            'cron_day_of_month' => $def['cron_day_of_month'],
+            'cron_hour' => $def['cron_hour'],
+            'cron_minute' => $def['cron_minute'],
+            'is_active' => 1,
+            'is_processing' => 0,
+            'only_when_online' => $def['only_when_online'],
+            'next_run_at' => $next,
+        ]);
+        if (!$scheduleId) {
+            continue;
+        }
+        $seq = 1;
+        foreach ($def['tasks'] as $task) {
+            Task::createTask([
+                'schedule_id' => (int) $scheduleId,
+                'sequence_id' => $seq++,
+                'action' => $task['action'],
+                'payload' => $task['payload'],
+                'time_offset' => $task['time_offset'],
+                'is_queued' => 0,
+                'continue_on_failure' => 0,
+            ]);
+        }
+        bloat_log("Extra schedule {$def['name']} → {$server['name']}");
+    }
+}
+
+function ensure_oidc_demo_provider(): void
+{
+    $demoNames = ['Demo OIDC', 'Demo OIDC (disabled)'];
+    foreach (OidcProvider::getAllProviders() as $row) {
+        if (!in_array($row['name'] ?? '', $demoNames, true)) {
+            continue;
+        }
+        OidcProvider::updateProvider((string) $row['uuid'], [
+            'name' => 'Demo OIDC',
+            'enabled' => 'true',
+            'auto_provision' => 'true',
+        ]);
+        bloat_log('OIDC demo provider enabled for login showcase');
+        return;
+    }
+
     $id = OidcProvider::createProvider([
         'uuid' => demo_uuid(),
-        'name' => 'Demo OIDC (disabled)',
+        'name' => 'Demo OIDC',
         'issuer_url' => 'https://idp.demo.featherpanel.local',
         'client_id' => 'featherpanel-demo',
         'client_secret' => 'demo-oidc-secret-not-real',
         'scopes' => 'openid email profile',
         'email_claim' => 'email',
         'subject_claim' => 'sub',
-        'auto_provision' => 'false',
+        'auto_provision' => 'true',
         'require_email_verified' => 'false',
-        'enabled' => 'false',
+        'enabled' => 'true',
     ]);
-    bloat_log($id ? 'OIDC demo provider (disabled)' : 'WARNING: OIDC provider create failed');
+    bloat_log($id ? 'OIDC demo provider (enabled, showcase)' : 'WARNING: OIDC provider create failed');
 }
 
 function ensure_more_api_keys(): void
@@ -1520,10 +1869,17 @@ ensure_more_api_keys();
 ensure_blocked_ips();
 ensure_blocked_email_domains();
 ensure_ssh_keys();
-ensure_installed_plugins();
+ensure_installed_plugins($spell);
 ensure_redirect_links();
 ensure_command_snippets();
 ensure_oidc_demo_provider();
+ensure_ldap_demo_provider();
+ensure_subdomain_domains();
+ensure_mail_templates();
+ensure_demo_images();
+ensure_timed_tasks();
+ensure_dns_host();
+ensure_hosting_packages();
 ensure_zero_trust_logs($servers);
 
 foreach ($servers as $server) {
@@ -1536,9 +1892,11 @@ foreach ($servers as $server) {
         ensure_real_server_database($server, $dbHostRow, 'main', 'DemoDbMain!' . (int) $server['id']);
         ensure_real_server_database($server, $dbHostRow, 'plugins', 'DemoDbPlug!' . (int) $server['id']);
         ensure_real_server_database($server, $dbHostRow, 'stats', 'DemoDbStat!' . (int) $server['id']);
+        ensure_real_server_database($server, $dbHostRow, 'logs', 'DemoDbLogs!' . (int) $server['id']);
     }
     ensure_backups($server);
     ensure_schedules($server);
+    ensure_even_more_schedules($server);
     ensure_subusers($server);
     ensure_imports($server);
     ensure_more_server_activity($server);
@@ -1548,5 +1906,5 @@ ensure_demo_proxies($servers);
 ensure_ghost_and_web_bloat();
 ensure_mail_lists_and_forwarders();
 
-bloat_log('Bloat seed complete for ' . count($servers) . ' servers (+ junk lists, ZT, plugins, SSH, mail lists).');
+bloat_log('Bloat seed complete for ' . count($servers) . ' servers (mega junk pack).');
 exit(0);

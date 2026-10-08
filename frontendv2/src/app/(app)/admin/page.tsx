@@ -42,7 +42,6 @@ import { NodesOverviewWidget } from '@/components/admin/NodesOverviewWidget';
 import { RecentServersWidget } from '@/components/admin/RecentServersWidget';
 import { SupportTicketsWidget } from '@/components/admin/SupportTicketsWidget';
 import { CloudHubWidget } from '@/components/admin/CloudHubWidget';
-import { DemoFeatureCallout } from '@/components/common/DemoFeatureCallout';
 import { AdminWidgetFrame } from '@/components/admin/AdminWidgetFrame';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
@@ -227,8 +226,6 @@ export default function AdminDashboardPage() {
             />
 
             <WidgetRenderer widgets={getWidgets('admin-home', 'after-header')} />
-
-            <DemoFeatureCallout />
 
             {showAppUrlWarning && (
                 <div className='animate-in slide-in-from-top-4 group relative overflow-hidden rounded-2xl border border-red-500/20 bg-red-500/10 p-4 backdrop-blur-3xl duration-500 md:rounded-[2.5rem] md:p-6'>

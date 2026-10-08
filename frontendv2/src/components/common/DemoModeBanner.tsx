@@ -15,32 +15,68 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { AlertTriangle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { cn } from '@/lib/utils';
+
+const DISMISS_KEY = 'featherpanel_demo_banner_dismissed';
 
 export function DemoModeBanner() {
     const { settings } = useSettings();
     const { t } = useTranslation();
+    const [dismissed, setDismissed] = useState(true); // hide until we read storage (avoid flash)
 
-    if (settings?.app_demo_yes !== 'true') {
+    const isDemo = settings?.app_demo_yes === 'true';
+
+    useEffect(() => {
+        if (!isDemo) {
+            return;
+        }
+        try {
+            setDismissed(localStorage.getItem(DISMISS_KEY) === '1');
+        } catch {
+            setDismissed(false);
+        }
+    }, [isDemo]);
+
+    if (!isDemo || dismissed) {
         return null;
     }
+
+    const dismiss = () => {
+        try {
+            localStorage.setItem(DISMISS_KEY, '1');
+        } catch {
+            // ignore
+        }
+        setDismissed(true);
+    };
 
     return (
         <div
             role='status'
-            className='sticky top-0 z-[100] border-b border-amber-600/50 bg-amber-500 px-3 py-2.5 text-amber-950 shadow-sm dark:border-amber-400/40 dark:bg-amber-500 dark:text-amber-950'
+            className={cn(
+                'border-border/60 bg-muted/80 text-muted-foreground z-40 border-b px-3 py-1.5 backdrop-blur-sm',
+            )}
         >
-            <div className='mx-auto flex max-w-7xl items-start gap-2.5 sm:items-center'>
-                <AlertTriangle className='mt-0.5 h-4 w-4 shrink-0 sm:mt-0' aria-hidden />
-                <div className='min-w-0 text-xs leading-relaxed sm:text-sm'>
-                    <span className='font-semibold tracking-wide uppercase'>{t('demo.banner.title')}</span>
-                    <span className='mx-1.5 hidden text-amber-900/70 sm:inline' aria-hidden>
-                        —
+            <div className='mx-auto flex max-w-7xl items-center gap-2'>
+                <p className='min-w-0 flex-1 truncate text-xs sm:text-sm'>
+                    <span className='text-foreground/80 font-medium'>{t('demo.banner.title')}</span>
+                    <span className='mx-1.5 opacity-40' aria-hidden>
+                        ·
                     </span>
-                    <span className='mt-0.5 block font-medium sm:mt-0 sm:inline'>{t('demo.banner.body')}</span>
-                </div>
+                    <span>{t('demo.banner.body')}</span>
+                </p>
+                <button
+                    type='button'
+                    onClick={dismiss}
+                    className='text-muted-foreground hover:bg-background/60 hover:text-foreground inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors'
+                    aria-label={t('demo.banner.dismiss')}
+                >
+                    <X className='h-3.5 w-3.5' aria-hidden />
+                </button>
             </div>
         </div>
     );

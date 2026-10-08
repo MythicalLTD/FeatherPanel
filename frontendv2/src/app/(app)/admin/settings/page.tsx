@@ -20,7 +20,6 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { adminSettingsApi, OrganizedSettings, Setting } from '@/lib/admin-settings-api';
 import { useDemoMode } from '@/hooks/useDemoMode';
-import { DemoFeatureCallout } from '@/components/common/DemoFeatureCallout';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -565,8 +564,6 @@ export default function SettingsPage() {
                     </div>
                 }
             />
-
-            {isDemo ? <DemoFeatureCallout /> : null}
 
             <WidgetRenderer widgets={getWidgets('admin-settings', 'after-header')} />
 

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo Showcase Card</title>
+  <style>
+    :root { color-scheme: dark; --ink:#e2e8f0; --muted:#94a3b8; --ok:#34d399; }
+    html.light { color-scheme: light; --ink:#0f172a; --muted:#64748b; }
+    * { box-sizing: border-box; }
+    html, body { margin:0; background:transparent; color:var(--ink); font-family: ui-sans-serif, system-ui, sans-serif; }
+    ul { margin:.5rem 0 0; padding-left:1.1rem; color:var(--muted); font-size:.8rem; line-height:1.5; }
+    strong { color: var(--ok); font-weight:600; }
+    p { margin:0; font-size:.85rem; }
+  </style>
+</head>
+<body>
+  <p>This half-width card is injected on the <strong>dashboard</strong> via <code>widgets.json</code>.</p>
+  <ul>
+    <li>page: <code>dashboard</code></li>
+    <li>location: <code>after-header</code></li>
+    <li>size: <code>half</code></li>
+    <li>Can be hidden with plugin setting <code>hide_dashboard_banner</code></li>
+  </ul>
+  <script>
+    if (new URLSearchParams(location.search).get('__theme') === 'light') {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    }
+  </script>
+</body>
+</html>

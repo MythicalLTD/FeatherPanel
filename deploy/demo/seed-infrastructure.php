@@ -148,6 +148,7 @@ function ensure_wings_node(array $location): array
             'daemonListen' => $daemonListen,
             'daemonSFTP' => $daemonSftp,
             'daemonBase' => env_str('DEMO_WINGS_ROOT_PATH', '/var/lib/featherpanel-demo') . '/volumes',
+            'daemon_type' => 'featherwings',
             'public' => 1,
             'behind_proxy' => $edge['behind_proxy'],
             'maintenance_mode' => 0,
@@ -178,6 +179,7 @@ function ensure_wings_node(array $location): array
         'daemonListen' => $daemonListen,
         'daemonSFTP' => $daemonSftp,
         'daemonBase' => env_str('DEMO_WINGS_ROOT_PATH', '/var/lib/featherpanel-demo') . '/volumes',
+        'daemon_type' => 'featherwings',
     ]);
 
     if (!$nodeId) {
@@ -403,9 +405,9 @@ function ensure_game_servers(array $node, array $realm, array $spell): void
             'startup' => $startup,
             'image' => $image,
             'skip_scripts' => 0,
-            'database_limit' => 5,
-            'backup_limit' => 8,
-            'allocation_limit' => 4,
+            'database_limit' => 8,
+            'backup_limit' => 10,
+            'allocation_limit' => 6,
             'show_on_status' => 1,
             'status' => 'installing',
         ]);
@@ -771,7 +773,26 @@ function apply_demo_settings(): void
     $config = App::getInstance(false, false, true)->getConfig();
     $config->setSetting(ConfigInterface::APP_DEMO_YES, 'true');
     $config->setSetting(ConfigInterface::APP_NAME, 'FeatherPanel Demo');
-    $config->setSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false');
+    // Developer mode unlocks admin tooling (DB snapshots, debug surfaces).
+    $config->setSetting(ConfigInterface::APP_DEVELOPER_MODE, 'true');
+    $config->setSetting(ConfigInterface::APP_SERVER_SPELL_BANNER_ENABLED, 'true');
+    // Stock default is style/background "off" — turn the visual banners on.
+    $config->setSetting(ConfigInterface::APP_SERVER_SPELL_BANNER_STYLE, 'hero');
+    $config->setSetting(ConfigInterface::APP_SERVER_SPELL_BANNER_BACKGROUND, 'blend');
+    $config->setSetting(ConfigInterface::APP_PWA_ENABLED, 'true');
+    $config->setSetting(ConfigInterface::APP_SEO_INDEXING, 'true');
+    $config->setSetting(ConfigInterface::BRANDING_SHOW_POWERED_BY, 'true');
+    $config->setSetting(ConfigInterface::BRANDING_SHOW_VERSION, 'true');
+    $config->setSetting(ConfigInterface::VNC_PROXY_VIA_PANEL, 'true');
+    $config->setSetting(ConfigInterface::TEMP_FILES_ENABLED, 'true');
+
+    // Showcase social / status links on auth + footer.
+    $config->setSetting(ConfigInterface::DISCORD_URL, 'https://discord.mythical.systems');
+    $config->setSetting(ConfigInterface::WEBSITE_URL, 'https://featherpanel.com');
+    $config->setSetting(ConfigInterface::TWITTER_URL, 'https://x.com/mythicalsystems');
+    $config->setSetting(ConfigInterface::YOUTUBE_URL, 'https://youtube.com/@mythicalsystems');
+    $config->setSetting(ConfigInterface::TELEGRAM_URL, 'https://t.me/mythicalsystems');
+    $config->setSetting(ConfigInterface::STATUS_PAGE_URL, '/status');
 
     $appUrl = env_str('FEATHERPANEL_APP_URL', '');
     if ($appUrl !== '') {
@@ -782,15 +803,40 @@ function apply_demo_settings(): void
     $wingsRemote = env_str('DEMO_WINGS_REMOTE_URL', 'http://backend:80');
     $config->setSetting(ConfigInterface::WINGS_REMOTE_URL, $wingsRemote);
 
-    // Public-demo safety (not production-ready configs).
+    // Keep only a few public-demo safety locks (no open registration / SMTP spam / captcha lockout / telemetry).
+    // Everything else that gates UI/nav is forced ON below so visitors can see every feature surface.
     $config->setSetting(ConfigInterface::REGISTRATION_ENABLED, 'false');
-    $config->setSetting(ConfigInterface::USER_ALLOW_ACCOUNT_DELETION, 'false');
-    $config->setSetting(ConfigInterface::TICKET_SYSTEM_ALLOW_ATTACHMENTS, 'false');
-    $config->setSetting(ConfigInterface::EMAIL_LOGIN_ENABLED, 'false');
+    $config->setSetting(ConfigInterface::REGISTRATION_REQUIRE_EMAIL_VERIFICATION, 'false');
+    $config->setSetting(ConfigInterface::REGISTRATION_DEVICE_LIMIT_ENABLED, 'true');
+    $config->setSetting(ConfigInterface::REGISTRATION_DEVICE_MAX_ACCOUNTS, '3');
+    // Email-code login chip on the auth page (send will fail without real SMTP — intentional).
+    $config->setSetting(ConfigInterface::EMAIL_LOGIN_ENABLED, 'true');
     $config->setSetting(ConfigInterface::SMTP_ENABLED, 'false');
     $config->setSetting(ConfigInterface::TELEMETRY, 'false');
+    // Captcha/AbuseIPDB stay off: fake keys would brick login.
+    $config->setSetting(ConfigInterface::TURNSTILE_ENABLED, 'false');
+    $config->setSetting(ConfigInterface::REQUIRE_TWO_FA_ADMINS, 'false');
+    $config->setSetting(ConfigInterface::ABUSEIPDB_ENABLED, 'false');
+    $config->setSetting(ConfigInterface::ABUSEIPDB_CHECK_ON_REGISTER, 'false');
+    // Show blocked-domain admin UI working with seeded domains.
+    $config->setSetting(ConfigInterface::EMAIL_DOMAIN_BLOCKING_ENABLED, 'true');
 
-    // Showcase features visitors should be able to click through.
+    // Auth providers: Discord button + OIDC global flag (providers seeded enabled in seed-bloat).
+    $config->setSetting(ConfigInterface::DISCORD_OAUTH_ENABLED, 'true');
+    $config->setSetting(ConfigInterface::OIDC_ENABLED, 'true');
+    $config->setSetting(ConfigInterface::OIDC_PROVIDER_NAME, 'Demo SSO');
+    $config->setSetting(ConfigInterface::OIDC_DISABLE_LOCAL_LOGIN, 'false');
+    $config->setSetting(ConfigInterface::LOGIN_HIDDEN_METHODS, '');
+    $config->setSetting(ConfigInterface::LOGIN_METHODS_ORDER, 'local,passkey,ldap,email_code,discord,oidc');
+    $config->setSetting(ConfigInterface::LOGIN_DEFAULT_METHOD, 'local');
+
+    // FeatherCloud modules (UI visible; live Mythic calls still need a linked panel).
+    $config->setSetting(ConfigInterface::FEATHERCLOUD_MARKETPLACE_ENABLED, 'true');
+    $config->setSetting(ConfigInterface::FEATHERCLOUD_EGGS_ENABLED, 'true');
+    $config->setSetting(ConfigInterface::FEATHERCLOUD_PASTES_ENABLED, 'true');
+    $config->setSetting(ConfigInterface::FEATHERCLOUD_ISSUES_ENABLED, 'true');
+
+    // Status page: turn everything on.
     $config->setSetting(ConfigInterface::STATUS_PAGE_ENABLED, 'true');
     $config->setSetting(ConfigInterface::STATUS_PAGE_PUBLIC_ENABLED, 'true');
     $config->setSetting(ConfigInterface::STATUS_PAGE_SHOW_NODE_STATUS, 'true');
@@ -799,48 +845,80 @@ function apply_demo_settings(): void
     $config->setSetting(ConfigInterface::STATUS_PAGE_SHOW_INDIVIDUAL_NODES, 'true');
     $config->setSetting(ConfigInterface::STATUS_PAGE_SHOW_PLAYER_COUNT, 'true');
     $config->setSetting(ConfigInterface::STATUS_PAGE_SERVERS_VISIBLE_BY_DEFAULT, 'true');
+    $config->setSetting(ConfigInterface::STATUS_PAGE_ALLOW_IFRAME, 'true');
+    $config->setSetting(ConfigInterface::STATUS_PAGE_SHOW_RAW_VALUES, 'true');
 
+    // Files / trash.
     $config->setSetting(ConfigInterface::FILE_TRASH_ENABLED, 'true');
-    $config->setSetting(ConfigInterface::FILE_TRASH_MAX_SIZE_MB, '512');
-    $config->setSetting(ConfigInterface::FILE_TRASH_RETENTION_DAYS, '7');
+    $config->setSetting(ConfigInterface::FILE_TRASH_MAX_SIZE_MB, '1024');
+    $config->setSetting(ConfigInterface::FILE_TRASH_RETENTION_DAYS, '14');
 
+    // Chatbot.
     $config->setSetting(ConfigInterface::CHATBOT_ENABLED, 'true');
     $config->setSetting(ConfigInterface::CHATBOT_AI_PROVIDER, 'basic');
     $config->setSetting(ConfigInterface::CHATBOT_DISPLAY_NAME, 'Feather Demo AI');
     $config->setSetting(
         ConfigInterface::CHATBOT_SYSTEM_PROMPT,
-        'You are FeatherPanel Demo AI. This is a public demo — some actions are limited, spoofed, or wiped on a schedule.'
+        'You are FeatherPanel Demo AI. This is a public demo; some actions are limited, spoofed, or wiped on a schedule.'
     );
 
+    // Knowledgebase + tickets.
     $config->setSetting(ConfigInterface::KNOWLEDGEBASE_ENABLED, 'true');
     $config->setSetting(ConfigInterface::KNOWLEDGEBASE_PUBLIC_ENABLED, 'true');
     $config->setSetting(ConfigInterface::KNOWLEDGEBASE_SHOW_CATEGORIES, 'true');
     $config->setSetting(ConfigInterface::KNOWLEDGEBASE_SHOW_ARTICLES, 'true');
     $config->setSetting(ConfigInterface::KNOWLEDGEBASE_SHOW_TAGS, 'true');
-
+    $config->setSetting(ConfigInterface::KNOWLEDGEBASE_SHOW_ATTACHMENTS, 'true');
     $config->setSetting(ConfigInterface::TICKET_SYSTEM_ENABLED, 'true');
-    $config->setSetting(ConfigInterface::TICKET_SYSTEM_MAX_OPEN_TICKETS, '5');
+    $config->setSetting(ConfigInterface::TICKET_SYSTEM_ALLOW_ATTACHMENTS, 'true');
+    $config->setSetting(ConfigInterface::TICKET_SYSTEM_MAX_OPEN_TICKETS, '20');
 
+    // Server feature gates: ENABLE ALL showcase toggles (import, firewall, proxy, etc.).
     $config->setSetting(ConfigInterface::SERVER_ALLOW_SCHEDULES, 'true');
     $config->setSetting(ConfigInterface::SERVER_ALLOW_SUBUSERS, 'true');
     $config->setSetting(ConfigInterface::SERVER_ALLOW_ALLOCATION_SELECT, 'true');
     $config->setSetting(ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE, 'true');
     $config->setSetting(ConfigInterface::SERVER_ALLOW_EGG_CHANGE, 'true');
+    $config->setSetting(ConfigInterface::SERVER_ALLOW_CUSTOM_DOCKER_IMAGE, 'true');
+    $config->setSetting(ConfigInterface::SERVER_ALLOW_CROSS_REALM_SPELL_CHANGE, 'true');
     $config->setSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_FIREWALL, 'true');
     $config->setSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_PROXY, 'true');
     $config->setSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL, 'true');
     $config->setSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_IMPORT, 'true');
-    // Subdomains need real Cloudflare credentials — keep off on the public demo.
-    $config->setSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_SUBDOMAINS, 'false');
-    $config->setSetting(ConfigInterface::SERVER_ALLOW_USER_SERVER_DELETION, 'false');
+    $config->setSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_SUBDOMAINS, 'true');
+    $config->setSetting(ConfigInterface::SERVER_ALLOW_USER_SERVER_DELETION, 'true');
+    $config->setSetting(ConfigInterface::SERVER_ALLOW_USER_BACKUP_POLICY_EDIT, 'true');
+    $config->setSetting(ConfigInterface::SERVER_ALLOW_USER_AUTO_START, 'true');
+    $config->setSetting(ConfigInterface::SERVER_AUTO_START_ON_NODE_RECONNECT, 'true');
+    $config->setSetting(ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED, 'true');
+    $config->setSetting(ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED, 'true');
+    $config->setSetting(ConfigInterface::SERVER_RUN_SCRIPT_ENABLED, 'true');
+    $config->setSetting(ConfigInterface::SERVER_HIDE_IPS, 'false');
+    $config->setSetting(ConfigInterface::SERVER_PROXY_MAX_PER_SERVER, '10');
+    $config->setSetting(ConfigInterface::SUBDOMAIN_MAX_PER_SERVER, '5');
 
-    // FeatherZeroTrust malware scanner UI — enabled with fake history from seed-bloat.
+    // Account / profile gates: let demo users edit everything except permanent wipe of seeded accounts.
+    $config->setSetting(ConfigInterface::USER_ALLOW_AVATAR_CHANGE, 'true');
+    $config->setSetting(ConfigInterface::USER_ALLOW_USERNAME_CHANGE, 'true');
+    $config->setSetting(ConfigInterface::USER_ALLOW_EMAIL_CHANGE, 'true');
+    $config->setSetting(ConfigInterface::USER_ALLOW_FIRST_NAME_CHANGE, 'true');
+    $config->setSetting(ConfigInterface::USER_ALLOW_LAST_NAME_CHANGE, 'true');
+    $config->setSetting(ConfigInterface::USER_ALLOW_API_KEYS_CREATE, 'true');
+    $config->setSetting(ConfigInterface::USER_ALLOW_ACCOUNT_DELETION, 'true');
+    $config->setSetting(ConfigInterface::USER_ACCOUNT_DELETION_MODE, 'immediate');
+    $config->setSetting(ConfigInterface::USER_ACCOUNT_DELETION_VERIFY_2FA, 'false');
+    $config->setSetting(ConfigInterface::USER_ACCOUNT_DELETION_VERIFY_EMAIL_OTP, 'false');
+    $config->setSetting(ConfigInterface::AUTH_SHOW_QR_LOGIN, 'true');
+    $config->setSetting(ConfigInterface::AUTH_SHOW_MARKETING_PANEL, 'true');
+    $config->setSetting(ConfigInterface::AUTH_SHOW_THEME_CUSTOMIZER, 'true');
+
+    // FeatherZeroTrust malware scanner UI (history seeded in seed-bloat).
     $config->setSetting('featherzerotrust.enabled', 'true');
     $config->setSetting('featherzerotrust.scan_interval', '30');
     $config->setSetting('featherzerotrust.auto_suspend', 'false');
     $config->setSetting('featherzerotrust.webhook_enabled', 'false');
 
-    demo_log('Demo settings applied (rich feature flags + demo safety locks, wings_remote_url=' . $wingsRemote . ')');
+    demo_log('Demo settings applied (showcase features ON + auth providers + spell banners, wings_remote_url=' . $wingsRemote . ')');
 }
 
 function ensure_knowledgebase(): void

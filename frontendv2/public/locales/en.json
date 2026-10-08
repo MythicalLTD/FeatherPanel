@@ -1469,36 +1469,37 @@
 	},
 	"demo": {
 		"banner": {
-			"title": "FeatherPanel DEMO version",
-			"body": "This environment periodically wipes. Some features may be limited, disabled, or spoofed. It is only meant to show what FeatherPanel has to offer — not a full working panel. Demo configs are not suitable for production."
+			"title": "Demo",
+			"body": "Wipes on a schedule. Explore freely.",
+			"dismiss": "Dismiss demo notice"
 		},
 		"cloud": {
 			"title": "Cloud unavailable on demo",
-			"description": "FeatherPanel Cloud / Mythic Cloud cannot be linked or used on DEMO instances. Install your own panel to use marketplace, premium, issues, and other cloud features."
+			"description": "FeatherPanel Cloud / Mythic Cloud cannot be linked on DEMO instances. Install your own panel for marketplace, premium, and cloud features."
 		},
 		"features": {
-			"title": "Demo feature status",
-			"intro": "This showcase turns on many panel features so you can click around. Others are locked for security on the shared public demo.",
-			"enabled_title": "Enabled for showcase",
-			"disabled_title": "Disabled / locked",
+			"title": "Demo notes",
+			"intro": "Most panel features are on for clicking around. A few host-level tools stay locked.",
+			"enabled_title": "Try these",
+			"disabled_title": "Still locked",
 			"enabled": {
-				"trash": "File trash bin",
-				"chatbot": "AI chatbot (basic provider, no API key)",
+				"trash": "File trash, schedules, subusers, import, subdomains UI",
+				"chatbot": "AI chatbot (basic provider)",
 				"status": "Public status page",
-				"tickets": "Tickets & knowledgebase",
-				"schedules": "Schedules, subusers, firewall/proxy UI",
+				"tickets": "Tickets and knowledgebase",
+				"schedules": "Firewall, proxy, FastDL, databases, backups",
 				"settings": "Admin settings (reset restores defaults)",
-				"databases": "Real MariaDB DBs, backups, mail lists, Zero Trust logs"
+				"databases": "Mail lists, Zero Trust logs, example plugins"
 			},
 			"disabled": {
 				"cloud": "FeatherPanel Cloud / marketplace / premium",
-				"plugins": "Plugin upload / uninstall (example plugins are preinstalled)",
-				"console": "Developer console & node token reset",
-				"snapshots": "Database snapshots restore / purge tools"
+				"plugins": "Plugin upload / uninstall",
+				"console": "Dev console and node token reset",
+				"snapshots": "DB snapshot restore / storage purge"
 			},
-			"not_production": "These demo settings are not suitable for production hosting. The environment wipes periodically."
+			"not_production": "Not for production hosting."
 		},
-		"settings_locked": "Settings can be changed on the demo — the periodic wipe resets them. Avoid putting real secrets here."
+		"settings_locked": "Settings can be changed here. The wipe resets them. Do not put real secrets in the demo."
 	},
 	"common": {
 		"loading": "Loading...",
