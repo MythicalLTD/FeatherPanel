@@ -100,6 +100,7 @@ export function useAdminDashboard() {
 
     const fetchDashboard = useCallback(async () => {
         setLoading(true);
+        setError(null);
         try {
             const response = await axios.get('/api/admin/dashboard', {
                 withCredentials: true,

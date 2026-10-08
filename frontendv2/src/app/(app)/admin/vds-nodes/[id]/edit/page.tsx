@@ -328,7 +328,7 @@ export default function EditVdsNodePage() {
                             <Wifi className='mr-2 h-4 w-4' />
                             {t('admin.vdsNodes.connection.test_button')}
                         </Button>
-                        <Button size='sm' onClick={handleSave} loading={saving}>
+                        <Button size='sm' onClick={handleSave} loading={saving} data-fp-save-shortcut>
                             <Save className='mr-2 h-4 w-4' />
                             {t('common.save')}
                         </Button>

@@ -279,7 +279,7 @@ export default function CreateWebNodePage() {
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>
-                        <Button onClick={() => handleSubmit()} loading={loading}>
+                        <Button onClick={() => handleSubmit()} loading={loading} data-fp-save-shortcut>
                             <Save className='mr-2 h-4 w-4' />
                             {t('admin.webNodes.form.submit_create')}
                         </Button>
@@ -489,7 +489,7 @@ export default function CreateWebNodePage() {
                             )}
                         </div>
                     ) : (
-                        <form onSubmit={handleCreateLocationInline} className='mt-4 space-y-4'>
+                        <form onSubmit={handleCreateLocationInline} className='mt-4 space-y-4' data-fp-save-shortcut>
                             <p className='text-muted-foreground text-xs'>
                                 {t('admin.webNodes.form.create_location_hint')}
                             </p>

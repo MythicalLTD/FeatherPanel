@@ -228,7 +228,7 @@ export default function ProfileTab() {
                 <p className='text-muted-foreground mt-1 text-sm'>{t('account.editProfileDescription')}</p>
             </div>
 
-            <form onSubmit={handleSubmit} className='space-y-6'>
+            <form onSubmit={handleSubmit} className='space-y-6' data-fp-save-shortcut>
                 <Fieldset className='space-y-6'>
                     <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                         {allowUsernameChange && (

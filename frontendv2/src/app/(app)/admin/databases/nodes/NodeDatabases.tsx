@@ -621,7 +621,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                         <SheetTitle>{t('admin.node_databases.form.create_title')}</SheetTitle>
                         <SheetDescription>{t('admin.node_databases.form.create_description')}</SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleCreate} className='space-y-4 text-left'>
+                    <form onSubmit={handleCreate} className='space-y-4 text-left' data-fp-save-shortcut>
                         <div className='space-y-2'>
                             <Label>{t('admin.node_databases.form.name')}</Label>
                             <Input
@@ -776,7 +776,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                         <SheetDescription>{t('admin.node_databases.form.edit_description')}</SheetDescription>
                     </SheetHeader>
                     {editingDatabase && (
-                        <form onSubmit={handleUpdate} className='space-y-4 text-left'>
+                        <form onSubmit={handleUpdate} className='space-y-4 text-left' data-fp-save-shortcut>
                             <div className='space-y-2'>
                                 <Label>{t('admin.node_databases.form.name')}</Label>
                                 <Input

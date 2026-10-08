@@ -553,7 +553,7 @@ export default function SettingsPage() {
                             <UploadCloud className='mr-2 h-4 w-4' />
                             {t('admin.settings.actions.upload_logs')}
                         </Button>
-                        <Button onClick={handleSave} disabled={saving} className='shrink-0'>
+                        <Button onClick={handleSave} disabled={saving} className='shrink-0' data-fp-save-shortcut>
                             {saving ? (
                                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                             ) : (
@@ -673,7 +673,7 @@ export default function SettingsPage() {
                                                 ) : (
                                                     <span />
                                                 )}
-                                                <Button onClick={handleSave} disabled={saving} className='shrink-0'>
+                                                <Button onClick={handleSave} disabled={saving} className='shrink-0' data-fp-save-shortcut>
                                                     {saving ? (
                                                         <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                                     ) : (

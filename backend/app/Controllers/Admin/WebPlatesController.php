@@ -214,12 +214,16 @@ use Symfony\Component\HttpFoundation\Response;
             return ApiResponse::error('WebPlate not found', 'WEBPLATE_NOT_FOUND', 404);
         }
 
-        if (!WebPlate::delete($id)) {
+        if (WebPlate::countWebSpacesUsing($id) > 0) {
             return ApiResponse::error(
-                'Failed to delete WebPlate (it may still be used by WebSpaces)',
-                'DELETE_FAILED',
+                'Cannot delete WebPlate that is in use by one or more WebSpaces',
+                'WEBPLATE_IN_USE',
                 409,
             );
+        }
+
+        if (!WebPlate::delete($id)) {
+            return ApiResponse::error('Failed to delete WebPlate', 'WEBPLATE_DELETE_FAILED', 500);
         }
 
         self::emitPluginEvent(WebPlatesEvent::onWebPlateDeleted(), [

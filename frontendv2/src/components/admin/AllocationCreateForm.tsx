@@ -298,7 +298,7 @@ export function AllocationCreateForm({ nodeId, onCreated, onCancel, showFooter =
                             {t('common.cancel')}
                         </Button>
                     )}
-                    <Button type='button' onClick={() => void handleCreate()} loading={submitting}>
+                    <Button type='button' onClick={() => void handleCreate()} loading={submitting} data-fp-save-shortcut>
                         {t('common.create')}
                     </Button>
                 </SheetFooter>

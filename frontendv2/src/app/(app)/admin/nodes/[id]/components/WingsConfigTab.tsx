@@ -114,8 +114,7 @@ export function WingsConfigTab({ node }: WingsConfigTabProps) {
                             size='sm'
                             onClick={handleSave}
                             disabled={loading || saving || !isDirty}
-                            className='h-10 rounded-xl'
-                        >
+                            className='h-10 rounded-xl' data-fp-save-shortcut>
                             {saving ? (
                                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                             ) : (

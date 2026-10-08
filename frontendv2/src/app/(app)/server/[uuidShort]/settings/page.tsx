@@ -384,8 +384,7 @@ export default function ServerSettingsPage() {
                                         onClick={handleSave}
                                         disabled={saving || !hasChanges}
                                         variant='default'
-                                        size='sm'
-                                    >
+                                        size='sm' data-fp-save-shortcut>
                                         {saving ? (
                                             <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                         ) : (
@@ -473,8 +472,7 @@ export default function ServerSettingsPage() {
                                 <Button
                                     onClick={handleSaveBackupPolicy}
                                     disabled={savingBackupPolicy || !hasBackupPolicyChanges}
-                                    size='sm'
-                                >
+                                    size='sm' data-fp-save-shortcut>
                                     {savingBackupPolicy ? (
                                         <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                     ) : (
@@ -528,8 +526,7 @@ export default function ServerSettingsPage() {
                                     <Button
                                         onClick={handleSaveAutoStart}
                                         disabled={savingAutoStart || !hasAutoStartChanges}
-                                        size='sm'
-                                    >
+                                        size='sm' data-fp-save-shortcut>
                                         {savingAutoStart ? (
                                             <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                         ) : (

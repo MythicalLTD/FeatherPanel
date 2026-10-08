@@ -801,7 +801,7 @@ export default function VmInstancesCreatePage() {
                 )}
             </div>
 
-            <form onSubmit={handleFormSubmit} className='min-h-[400px]'>
+            <form onSubmit={handleFormSubmit} className='min-h-[400px]' data-fp-save-shortcut>
                 {currentStep === 1 && (
                     <div className='space-y-8'>
                         <PageCard
@@ -1405,8 +1405,7 @@ export default function VmInstancesCreatePage() {
                             onClick={handleCreate}
                             disabled={!canCreate || submitting || wizardBlockedByInfra || wizardNavWaitingInfra}
                             loading={submitting}
-                            className='gap-2'
-                        >
+                            className='gap-2' data-fp-save-shortcut>
                             {submitting ? (
                                 <>{t('admin.vmInstances.creating_clone') ?? 'Creating…'}</>
                             ) : (

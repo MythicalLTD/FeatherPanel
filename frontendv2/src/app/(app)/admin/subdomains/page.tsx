@@ -795,7 +795,7 @@ export default function AdminSubdomainsPage() {
                                 <p className='text-muted-foreground text-xs'>{t('admin.subdomains.cloudflareHint')}</p>
                             </div>
                             <div className='flex justify-end'>
-                                <Button onClick={handleSaveSettings} loading={savingSettings}>
+                                <Button onClick={handleSaveSettings} loading={savingSettings} data-fp-save-shortcut>
                                     {t('admin.subdomains.save')}
                                 </Button>
                             </div>
@@ -865,7 +865,7 @@ export default function AdminSubdomainsPage() {
                         </SheetTitle>
                         <SheetDescription>{t('admin.subdomains.drawerDescription')}</SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleCreateEdit} className='space-y-6 pt-4'>
+                    <form onSubmit={handleCreateEdit} className='space-y-6 pt-4' data-fp-save-shortcut>
                         <div className='space-y-4'>
                             <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                                 <div className='space-y-2'>

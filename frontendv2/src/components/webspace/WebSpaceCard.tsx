@@ -22,6 +22,7 @@ import { formatDisk } from '@/lib/server-utils';
 import { StatusBadge } from '@/components/servers/StatusBadge';
 import { ResourceBar } from '@/components/servers/ResourceBar';
 import { Checkbox } from '@/components/ui/checkbox';
+import { OverflowText } from '@/components/featherui/OverflowText';
 import { displayWebSpaceStatus, isWebSpaceAccessible } from '@/lib/webspace-utils';
 import type { WebSpace } from '@/types/webspace';
 
@@ -101,8 +102,8 @@ export function WebSpaceCard({
                 <Link href={webspaceUrl} className='block w-full min-w-0 flex-1 cursor-pointer'>
                     <div className='mb-1 flex flex-col gap-2'>
                         <div className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5'>
-                            <h3 className='w-full min-w-0 flex-1 truncate text-base font-semibold sm:w-auto sm:max-w-[12rem] sm:text-lg md:max-w-none'>
-                                {webspace.name}
+                            <h3 className='w-full min-w-0 flex-1 text-base font-semibold sm:w-auto sm:max-w-[12rem] sm:text-lg md:max-w-none'>
+                                <OverflowText>{webspace.name}</OverflowText>
                             </h3>
                             <div className='flex flex-wrap items-center gap-2'>
                                 {isSuspended ? (
@@ -131,16 +132,16 @@ export function WebSpaceCard({
                             <div className='text-muted-foreground text-[10px] tracking-wider uppercase sm:text-xs'>
                                 {t('webSpaces.webNode')}
                             </div>
-                            <div className='max-w-[10rem] truncate text-xs font-medium sm:max-w-[14rem] sm:text-sm'>
-                                {webspace.web_node_name || '-'}
+                            <div className='max-w-[10rem] text-xs font-medium sm:max-w-[14rem] sm:text-sm'>
+                                <OverflowText>{webspace.web_node_name || '-'}</OverflowText>
                             </div>
                         </div>
                         <div className='min-w-0'>
                             <div className='text-muted-foreground text-[10px] tracking-wider uppercase sm:text-xs'>
                                 {t('webSpaces.webPlate')}
                             </div>
-                            <div className='max-w-[10rem] truncate text-xs font-medium sm:max-w-[14rem] sm:text-sm'>
-                                {webspace.webplate_name || '-'}
+                            <div className='max-w-[10rem] text-xs font-medium sm:max-w-[14rem] sm:text-sm'>
+                                <OverflowText>{webspace.webplate_name || '-'}</OverflowText>
                             </div>
                         </div>
                     </Link>
@@ -172,7 +173,9 @@ export function WebSpaceCard({
 
             <div className='space-y-4 p-4 sm:p-6'>
                 <Link href={webspaceUrl} className='block min-w-0 cursor-pointer'>
-                    <h3 className='mb-1 truncate text-xl font-bold'>{webspace.name}</h3>
+                    <h3 className='mb-1 text-xl font-bold'>
+                        <OverflowText>{webspace.name}</OverflowText>
+                    </h3>
                     <p className='text-muted-foreground line-clamp-2 text-sm'>
                         {webspace.description || t('webSpaces.noDescription')}
                     </p>
@@ -191,11 +194,11 @@ export function WebSpaceCard({
                 <Link href={webspaceUrl} className='grid cursor-pointer grid-cols-1 gap-3 pt-2 min-[400px]:grid-cols-2'>
                     <div className='min-w-0 text-sm'>
                         <div className='text-muted-foreground mb-1 text-xs'>{t('webSpaces.webNode')}</div>
-                        <div className='truncate font-medium'>{webspace.web_node_name || '-'}</div>
+                        <OverflowText className='font-medium'>{webspace.web_node_name || '-'}</OverflowText>
                     </div>
                     <div className='min-w-0 text-sm'>
                         <div className='text-muted-foreground mb-1 text-xs'>{t('webSpaces.webPlate')}</div>
-                        <div className='truncate font-medium'>{webspace.webplate_name || '-'}</div>
+                        <OverflowText className='font-medium'>{webspace.webplate_name || '-'}</OverflowText>
                     </div>
                 </Link>
 

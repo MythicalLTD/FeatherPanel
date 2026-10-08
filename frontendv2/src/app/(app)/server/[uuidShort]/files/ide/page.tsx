@@ -36,6 +36,7 @@ import { isHiddenServerEntry } from '@/lib/feather-trash';
 import type { FileObject } from '@/types/server';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { useSaveShortcut } from '@/hooks/useSaveShortcut';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -248,22 +249,6 @@ export default function ServerFilesIDEPage({
         fetchWidgets();
     }, [fetchWidgets]);
 
-    // Ctrl/Cmd+S save
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                e.preventDefault();
-                if (canEdit && hasUnsavedChanges && !saving) {
-                    void handleSave();
-                }
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [canEdit, hasUnsavedChanges, saving, content, fullPath]);
-
     // Warn on browser/tab close
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -291,6 +276,16 @@ export default function ServerFilesIDEPage({
             setSaving(false);
         }
     }, [canEdit, uuidShort, fullPath, content, t]);
+
+    useSaveShortcut(
+        () => {
+            void handleSave();
+        },
+        {
+            enabled: canEdit && hasUnsavedChanges,
+            disabled: saving,
+        },
+    );
 
     const handleEditorMount: OnMount = (editor) => {
         editorRef.current = editor;

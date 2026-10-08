@@ -278,7 +278,7 @@ export default function CreateTicketPage() {
             <WidgetRenderer widgets={getWidgets('dashboard-tickets-create', 'after-header')} />
 
             <div className='bg-card/50 border-border/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
-                <form onSubmit={handleSubmit} className='space-y-8 p-8'>
+                <form onSubmit={handleSubmit} className='space-y-8 p-8' data-fp-save-shortcut>
                     <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                         <div className='md:col-span-2'>
                             <Input

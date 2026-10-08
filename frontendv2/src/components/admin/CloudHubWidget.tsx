@@ -16,11 +16,10 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import Link from 'next/link';
-import { ArrowUpRight, Bug, Cloud, Lightbulb, Package, Sparkles, Store } from 'lucide-react';
+import { Bug, Cloud, Lightbulb, Package, Store } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 
 interface HubItem {
@@ -46,7 +45,7 @@ export function CloudHubWidget() {
             name: t('admin.cloud_hub.premium'),
             description: t('admin.cloud_hub.premium_desc'),
             href: '/admin/featherpanel-premium',
-            icon: Sparkles,
+            icon: Package,
             color: 'text-primary',
             bg: 'bg-primary/10',
             border: 'border-primary/20',
@@ -103,34 +102,22 @@ export function CloudHubWidget() {
             title={t('admin.cloud_hub.title')}
             description={t('admin.cloud_hub.description')}
             icon={Cloud}
-            className='h-full'
+            className='space-y-4 p-4 sm:p-5 [&>div:first-child]:flex-wrap [&>div:first-child]:gap-3 [&>div:first-child]:pb-4'
         >
-            <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'>
+            <div className='grid grid-cols-1 gap-x-6 sm:grid-cols-2 xl:grid-cols-3'>
                 {items.map((item) => (
                     <Link
                         key={item.href}
                         href={item.href}
-                        className='bg-muted/10 border-border/50 hover:border-primary/30 hover:bg-muted/20 group relative flex min-h-[6rem] items-start gap-4 rounded-2xl border p-4 transition-all hover:scale-[1.01] active:scale-[0.99] md:rounded-3xl md:p-5'
+                        className='hover:bg-accent flex min-h-11 items-start gap-3 rounded-lg px-2 py-3 transition-colors'
                     >
-                        <div
-                            className={cn(
-                                'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-transform group-hover:scale-105 md:h-12 md:w-12 md:rounded-2xl',
-                                item.bg,
-                                item.color,
-                                item.border,
-                            )}
-                        >
-                            <item.icon className='h-5 w-5' />
+                        <div className='text-muted-foreground flex h-6 w-5 shrink-0 items-center justify-center'>
+                            <item.icon className='h-4 w-4' aria-hidden />
                         </div>
-                        <div className='min-w-0 flex-1 space-y-1 pr-4'>
-                            <p className='text-[11px] leading-snug font-black tracking-widest uppercase md:text-xs'>
-                                {item.name}
-                            </p>
-                            <p className='text-muted-foreground text-[11px] leading-relaxed font-medium tracking-normal normal-case md:text-xs'>
-                                {item.description}
-                            </p>
+                        <div className='min-w-0 flex-1 space-y-1'>
+                            <p className='text-sm font-medium'>{item.name}</p>
+                            <p className='text-muted-foreground text-xs leading-relaxed'>{item.description}</p>
                         </div>
-                        <ArrowUpRight className='text-muted-foreground absolute top-4 right-4 h-3.5 w-3.5 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-60' />
                     </Link>
                 ))}
             </div>

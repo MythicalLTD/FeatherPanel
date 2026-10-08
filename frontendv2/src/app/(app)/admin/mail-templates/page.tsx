@@ -463,7 +463,7 @@ export default function MailTemplatesPage() {
                         <SheetTitle>{t('admin.mail_templates.form.create_title')}</SheetTitle>
                         <SheetDescription>{t('admin.mail_templates.form.create_description')}</SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleCreate} className='flex flex-1 flex-col gap-6 overflow-hidden'>
+                    <form onSubmit={handleCreate} className='flex flex-1 flex-col gap-6 overflow-hidden' data-fp-save-shortcut>
                         <div className='grid grid-cols-1 gap-6 lg:grid-cols-2 lg:overflow-hidden'>
                             <div className='space-y-6 lg:overflow-y-auto lg:pr-2'>
                                 <div className='space-y-2'>
@@ -528,7 +528,7 @@ export default function MailTemplatesPage() {
                         <SheetTitle>{t('admin.mail_templates.form.edit_title')}</SheetTitle>
                         <SheetDescription>{t('admin.mail_templates.form.edit_description')}</SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleUpdate} className='flex flex-1 flex-col gap-6 overflow-hidden'>
+                    <form onSubmit={handleUpdate} className='flex flex-1 flex-col gap-6 overflow-hidden' data-fp-save-shortcut>
                         <div className='grid grid-cols-1 gap-6 lg:grid-cols-2 lg:overflow-hidden'>
                             <div className='space-y-6 lg:overflow-y-auto lg:pr-2'>
                                 <div className='space-y-2'>
@@ -636,7 +636,7 @@ export default function MailTemplatesPage() {
                         <SheetTitle>{t('admin.mail_templates.form.mass_email_title')}</SheetTitle>
                         <SheetDescription>{t('admin.mail_templates.form.mass_email_description')}</SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleSendMassEmail} className='space-y-4 pt-6'>
+                    <form onSubmit={handleSendMassEmail} className='space-y-4 pt-6' data-fp-save-shortcut>
                         <div className='space-y-4'>
                             <Alert variant='destructive' className='bg-destructive/5 border-destructive/20'>
                                 <AlertTriangle className='h-4 w-4' />
@@ -682,7 +682,7 @@ export default function MailTemplatesPage() {
                         <SheetTitle>{t('admin.mail_templates.form.test_email_title')}</SheetTitle>
                         <SheetDescription>{t('admin.mail_templates.form.test_email_description')}</SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleSendTestEmail} className='space-y-4 pt-6'>
+                    <form onSubmit={handleSendTestEmail} className='space-y-4 pt-6' data-fp-save-shortcut>
                         <div className='space-y-4'>
                             <Alert className='bg-primary/5 border-primary/20'>
                                 <Mail className='h-4 w-4' />

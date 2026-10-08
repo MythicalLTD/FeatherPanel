@@ -65,6 +65,18 @@ class WarningService
             return false;
         }
 
+        if (strlen($title) > Notification::TITLE_MAX_LENGTH) {
+            App::getInstance(true)->getLogger()->error('WarningService: title exceeds maximum length');
+
+            return false;
+        }
+
+        if (strlen($message) > Notification::MESSAGE_MAX_LENGTH) {
+            App::getInstance(true)->getLogger()->error('WarningService: message_markdown exceeds maximum length');
+
+            return false;
+        }
+
         $validTypes = ['info', 'warning', 'danger', 'success', 'error'];
         if (!in_array($type, $validTypes, true)) {
             App::getInstance(true)->getLogger()->error('WarningService: invalid type ' . $type);

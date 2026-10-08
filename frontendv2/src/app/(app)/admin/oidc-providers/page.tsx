@@ -207,7 +207,7 @@ export default function OidcProvidersPage() {
                     title={t('admin.oidcProviders.configuredProviders')}
                     icon={ShieldCheck}
                     action={
-                        <Button onClick={handleCreateNew} size='sm'>
+                        <Button onClick={handleCreateNew} size='sm' data-fp-save-shortcut>
                             {t('admin.oidcProviders.addProvider')}
                         </Button>
                     }
@@ -524,7 +524,7 @@ export default function OidcProvidersPage() {
                                 <Button variant='outline' onClick={() => setEditing(null)} disabled={saving}>
                                     {t('admin.oidcProviders.cancel')}
                                 </Button>
-                                <Button onClick={handleSave} loading={saving}>
+                                <Button onClick={handleSave} loading={saving} data-fp-save-shortcut>
                                     {t('admin.oidcProviders.save')}
                                 </Button>
                             </div>

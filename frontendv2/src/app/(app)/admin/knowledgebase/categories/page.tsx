@@ -512,7 +512,7 @@ export default function KnowledgeBaseCategoriesPage() {
                         </SheetDescription>
                     </SheetHeader>
 
-                    <form onSubmit={handleCreate} className='mt-6 flex-1 space-y-4'>
+                    <form onSubmit={handleCreate} className='mt-6 flex-1 space-y-4' data-fp-save-shortcut>
                         <div className='space-y-2'>
                             <Label htmlFor='create-name'>{t('admin.knowledgebase.categories.form.name')}</Label>
                             <Input
@@ -602,7 +602,7 @@ export default function KnowledgeBaseCategoriesPage() {
                         </SheetDescription>
                     </SheetHeader>
 
-                    <form onSubmit={handleEdit} className='mt-6 flex-1 space-y-4'>
+                    <form onSubmit={handleEdit} className='mt-6 flex-1 space-y-4' data-fp-save-shortcut>
                         <div className='space-y-2'>
                             <Label htmlFor='edit-name'>{t('admin.knowledgebase.categories.form.name')}</Label>
                             <Input

@@ -191,7 +191,7 @@ export default function HostingPackagesPage() {
                         />
                     </div>
                 </div>
-                <Button className='mt-4' loading={saving} onClick={() => void create()}>
+                <Button className='mt-4' loading={saving} onClick={() => void create()} data-fp-save-shortcut>
                     {t('admin.hostingPackages.create')}
                 </Button>
             </PageCard>

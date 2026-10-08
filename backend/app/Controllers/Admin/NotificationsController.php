@@ -62,8 +62,8 @@ use App\Plugins\Events\Events\NotificationsEvent;
     type: 'object',
     required: ['title', 'message_markdown', 'type'],
     properties: [
-        new OA\Property(property: 'title', type: 'string', description: 'Notification title', minLength: 1, maxLength: 255),
-        new OA\Property(property: 'message_markdown', type: 'string', description: 'Notification message in Markdown format', minLength: 1),
+        new OA\Property(property: 'title', type: 'string', description: 'Notification title', minLength: 1, maxLength: Notification::TITLE_MAX_LENGTH),
+        new OA\Property(property: 'message_markdown', type: 'string', description: 'Notification message in Markdown format', minLength: 1, maxLength: Notification::MESSAGE_MAX_LENGTH),
         new OA\Property(property: 'type', type: 'string', enum: ['info', 'warning', 'danger', 'success', 'error'], description: 'Notification type'),
         new OA\Property(property: 'user_id', type: 'integer', nullable: true, description: 'Target user ID (null = all users)'),
         new OA\Property(property: 'server_id', type: 'integer', nullable: true, description: 'Target server ID (optional; implies owner)'),
@@ -76,8 +76,8 @@ use App\Plugins\Events\Events\NotificationsEvent;
     schema: 'NotificationUpdate',
     type: 'object',
     properties: [
-        new OA\Property(property: 'title', type: 'string', description: 'Notification title', minLength: 1, maxLength: 255),
-        new OA\Property(property: 'message_markdown', type: 'string', description: 'Notification message in Markdown format', minLength: 1),
+        new OA\Property(property: 'title', type: 'string', description: 'Notification title', minLength: 1, maxLength: Notification::TITLE_MAX_LENGTH),
+        new OA\Property(property: 'message_markdown', type: 'string', description: 'Notification message in Markdown format', minLength: 1, maxLength: Notification::MESSAGE_MAX_LENGTH),
         new OA\Property(property: 'type', type: 'string', enum: ['info', 'warning', 'danger', 'success', 'error'], description: 'Notification type'),
         new OA\Property(property: 'user_id', type: 'integer', nullable: true, description: 'Target user ID (null = all users)'),
         new OA\Property(property: 'server_id', type: 'integer', nullable: true, description: 'Target server ID'),
@@ -376,23 +376,32 @@ class NotificationsController
         }
 
         // Validate data types and length
-        $validationRules = [
-            'title' => ['string', 1, 255],
-            'message_markdown' => ['string', 1, null],
-        ];
+        if (!is_string($data['title'])) {
+            return ApiResponse::error('Title must be a string', 'INVALID_DATA_TYPE', 400);
+        }
+        if (strlen($data['title']) < 1) {
+            return ApiResponse::error('Title must be at least 1 character long', 'INVALID_DATA_LENGTH', 400);
+        }
+        if (strlen($data['title']) > Notification::TITLE_MAX_LENGTH) {
+            return ApiResponse::error(
+                'Title must be at most ' . Notification::TITLE_MAX_LENGTH . ' characters long',
+                'NOTIFICATION_TITLE_TOO_LONG',
+                400,
+            );
+        }
 
-        foreach ($validationRules as $field => [$type, $minLength, $maxLength]) {
-            if (!is_string($data[$field])) {
-                return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a string', 'INVALID_DATA_TYPE', 400);
-            }
-
-            $length = strlen($data[$field]);
-            if ($length < $minLength) {
-                return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . " must be at least $minLength characters long", 'INVALID_DATA_LENGTH', 400);
-            }
-            if ($maxLength !== null && $length > $maxLength) {
-                return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . " must be less than $maxLength characters long", 'INVALID_DATA_LENGTH', 400);
-            }
+        if (!is_string($data['message_markdown'])) {
+            return ApiResponse::error('Message must be a string', 'INVALID_DATA_TYPE', 400);
+        }
+        if (strlen($data['message_markdown']) < 1) {
+            return ApiResponse::error('Message must be at least 1 character long', 'INVALID_DATA_LENGTH', 400);
+        }
+        if (strlen($data['message_markdown']) > Notification::MESSAGE_MAX_LENGTH) {
+            return ApiResponse::error(
+                'Notification message is too long (maximum ' . Notification::MESSAGE_MAX_LENGTH . ' characters)',
+                'NOTIFICATION_MESSAGE_TOO_LONG',
+                400,
+            );
         }
 
         // Validate type
@@ -536,14 +545,25 @@ class NotificationsController
             if (!is_string($data['title']) || trim($data['title']) === '') {
                 return ApiResponse::error('Title must be a non-empty string', 'INVALID_DATA_TYPE', 400);
             }
-            if (strlen($data['title']) > 255) {
-                return ApiResponse::error('Title must be less than 255 characters long', 'INVALID_DATA_LENGTH', 400);
+            if (strlen($data['title']) > Notification::TITLE_MAX_LENGTH) {
+                return ApiResponse::error(
+                    'Title must be at most ' . Notification::TITLE_MAX_LENGTH . ' characters long',
+                    'NOTIFICATION_TITLE_TOO_LONG',
+                    400,
+                );
             }
         }
 
         if (isset($data['message_markdown'])) {
             if (!is_string($data['message_markdown']) || trim($data['message_markdown']) === '') {
                 return ApiResponse::error('Message markdown must be a non-empty string', 'INVALID_DATA_TYPE', 400);
+            }
+            if (strlen($data['message_markdown']) > Notification::MESSAGE_MAX_LENGTH) {
+                return ApiResponse::error(
+                    'Notification message is too long (maximum ' . Notification::MESSAGE_MAX_LENGTH . ' characters)',
+                    'NOTIFICATION_MESSAGE_TOO_LONG',
+                    400,
+                );
             }
         }
 

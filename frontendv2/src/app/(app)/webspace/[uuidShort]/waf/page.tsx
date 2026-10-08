@@ -142,7 +142,7 @@ export default function WebSpaceWafPage() {
                                 className='bg-secondary/50 border-border/10 focus:border-primary/50 w-full rounded-xl border p-3 font-mono text-sm'
                             />
                         </div>
-                        <Button loading={saving} onClick={() => void saveWaf()} size='sm'>
+                        <Button loading={saving} onClick={() => void saveWaf()} size='sm' data-fp-save-shortcut>
                             <Save className='mr-2 h-4 w-4' />
                             {t('webSpaces.settings.saveSettings')}
                         </Button>

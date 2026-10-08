@@ -22,6 +22,7 @@ import Link from 'next/link';
 import { VmInstance } from '@/lib/vms-api';
 import { HardDrive, Cpu, MemoryStick, Globe, Server, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { OverflowText } from '@/components/featherui/OverflowText';
 
 interface VmCardProps {
     vm: VmInstance;
@@ -96,7 +97,7 @@ export function VmCard({ vm, layout }: VmCardProps) {
                     {/* Name + IP */}
                     <div className='min-w-0 flex-1'>
                         <div className='flex flex-wrap items-center gap-2'>
-                            <span className='text-foreground truncate font-semibold'>{vm.hostname}</span>
+                            <OverflowText className='text-foreground font-semibold'>{vm.hostname}</OverflowText>
                             <StatusDot status={vm.status} suspended={vm.suspended} />
                         </div>
                         <div className='text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs'>
@@ -131,11 +132,11 @@ export function VmCard({ vm, layout }: VmCardProps) {
             <div className='border-border/40 bg-card/40 hover:bg-card/70 hover:border-primary/30 group flex h-full flex-col rounded-xl border p-4 backdrop-blur-sm transition-all duration-200'>
                 {/* Header */}
                 <div className='mb-3 flex items-start justify-between gap-2'>
-                    <div className='flex min-w-0 items-center gap-2.5'>
+                    <div className='flex min-w-0 flex-1 items-center gap-2.5'>
                         <div className='bg-primary/10 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
                             <Server className='text-primary h-4.5 w-4.5' />
                         </div>
-                        <span className='text-foreground truncate font-semibold'>{vm.hostname}</span>
+                        <OverflowText className='text-foreground font-semibold'>{vm.hostname}</OverflowText>
                     </div>
                     <StatusDot status={vm.status} suspended={vm.suspended} />
                 </div>

@@ -698,7 +698,7 @@ export default function AdminMountsPage() {
                         <Button variant='outline' onClick={() => setSheetOpen(false)} disabled={saving}>
                             {t('common.cancel')}
                         </Button>
-                        <Button onClick={() => void handleSave()} loading={saving}>
+                        <Button onClick={() => void handleSave()} loading={saving} data-fp-save-shortcut>
                             {t('common.save')}
                         </Button>
                     </SheetFooter>

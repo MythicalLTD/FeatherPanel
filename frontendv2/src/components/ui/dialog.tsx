@@ -26,6 +26,7 @@ import {
 } from '@headlessui/react';
 import { cn } from '@/lib/utils';
 import { reportPanelInteraction } from '@/lib/panel-analytics';
+import { triggerSaveShortcutTarget, useSaveShortcut } from '@/hooks/useSaveShortcut';
 
 interface DialogProps {
     open: boolean;
@@ -35,10 +36,24 @@ interface DialogProps {
     className?: string;
     /** Full viewport sheet - for settings-style panels. */
     fullscreen?: boolean;
+    /**
+     * When true (default), Ctrl/Cmd+S submits a child form marked with
+     * `data-fp-save-shortcut` while the dialog is open.
+     */
+    enableSaveShortcut?: boolean;
 }
 
-export function Dialog({ open, onClose, onOpenChange, children, className, fullscreen = false }: DialogProps) {
+export function Dialog({
+    open,
+    onClose,
+    onOpenChange,
+    children,
+    className,
+    fullscreen = false,
+    enableSaveShortcut = true,
+}: DialogProps) {
     const wasOpen = React.useRef(false);
+    const panelRef = React.useRef<HTMLDivElement>(null);
     React.useEffect(() => {
         if (open !== wasOpen.current) reportPanelInteraction(open ? 'panel.dialog.open' : 'panel.dialog.close');
         wasOpen.current = open;
@@ -47,6 +62,18 @@ export function Dialog({ open, onClose, onOpenChange, children, className, fulls
         onClose?.();
         onOpenChange?.(false);
     };
+
+    useSaveShortcut(
+        () => {
+            // Always claim while open so we don't save a page form behind the dialog.
+            triggerSaveShortcutTarget(panelRef.current ?? undefined);
+            return true;
+        },
+        {
+            enabled: open && enableSaveShortcut,
+            capture: true,
+        },
+    );
 
     return (
         <Transition show={open} as={React.Fragment}>
@@ -89,7 +116,12 @@ export function Dialog({ open, onClose, onOpenChange, children, className, fulls
                                     className,
                                 )}
                             >
-                                {children}
+                                <div
+                                    ref={panelRef}
+                                    className={cn(fullscreen && 'flex min-h-0 flex-1 flex-col overflow-hidden')}
+                                >
+                                    {children}
+                                </div>
                             </DialogPanel>
                         </TransitionChild>
                     </div>

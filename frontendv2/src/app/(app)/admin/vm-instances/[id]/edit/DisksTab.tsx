@@ -141,8 +141,7 @@ export function DisksTab({
                 )}
                 <form
                     onSubmit={onCreateDisk}
-                    className='border-border/50 bg-muted/10 flex flex-wrap items-end gap-3 rounded-xl border p-4'
-                >
+                    className='border-border/50 bg-muted/10 flex flex-wrap items-end gap-3 rounded-xl border p-4' data-fp-save-shortcut>
                     <div className='min-w-[160px]'>
                         <Label className='text-xs'>{t('admin.vmInstances.disk_storage') ?? 'Storage'}</Label>
                         <HeadlessSelect
@@ -183,7 +182,7 @@ export function DisksTab({
                 </form>
                 <div>
                     <Label className='mb-2 block'>{t('admin.vmInstances.resize_disk') ?? 'Expand disk'}</Label>
-                    <form onSubmit={onResizeDisk} className='flex flex-wrap items-end gap-3'>
+                    <form onSubmit={onResizeDisk} className='flex flex-wrap items-end gap-3' data-fp-save-shortcut>
                         <div className='min-w-[160px]'>
                             <Label className='text-xs'>{t('admin.vmInstances.resize_disk_label')}</Label>
                             <HeadlessSelect

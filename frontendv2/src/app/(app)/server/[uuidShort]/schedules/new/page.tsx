@@ -157,8 +157,7 @@ export default function CreateSchedulePage() {
                             onClick={handleCreate}
                             disabled={saving}
                             loading={saving}
-                            className='order-1 w-full sm:order-2 sm:w-auto'
-                        >
+                            className='order-1 w-full sm:order-2 sm:w-auto' data-fp-save-shortcut>
                             <Plus className='mr-2 h-4 w-4' />
                             {t('serverSchedules.create')}
                         </Button>
@@ -167,7 +166,7 @@ export default function CreateSchedulePage() {
             />
             <WidgetRenderer widgets={getWidgets('server-schedules-new', 'after-header')} />
 
-            <form onSubmit={handleCreate} className='space-y-8'>
+            <form onSubmit={handleCreate} className='space-y-8' data-fp-save-shortcut>
                 <FormSection>
                     <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                         <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>

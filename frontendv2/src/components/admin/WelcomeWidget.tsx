@@ -16,10 +16,13 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import Link from 'next/link';
-import { Sparkles, PlusCircle, UserPlus, HardDrive, CheckCircle2, AlertTriangle, Download, Server } from 'lucide-react';
+import { UserPlus, HardDrive, CheckCircle2, AlertTriangle, Download, Server } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/featherui/Button';
+import { FormSection } from '@/components/featherui/FormSection';
+import { CreateServerAction } from './CreateServerAction';
 
 export interface WelcomeChip {
     id: string;
@@ -36,13 +39,13 @@ interface WelcomeWidgetProps {
 }
 
 const chipStyles = {
-    ok: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-500',
-    warn: 'border-amber-500/25 bg-amber-500/10 text-amber-500',
-    info: 'border-primary/25 bg-primary/10 text-primary',
-    neutral: 'border-border/50 bg-secondary/40 text-muted-foreground',
+    ok: 'text-emerald-700 dark:text-emerald-400',
+    warn: 'text-amber-800 dark:text-amber-400',
+    info: 'text-foreground',
+    neutral: 'text-muted-foreground',
 };
 
-export function WelcomeWidget({ version, chips = [], updateAvailable, latestVersion }: WelcomeWidgetProps) {
+export function WelcomeWidget({ version, chips = [], updateAvailable }: WelcomeWidgetProps) {
     const { user, isLoading: sessionLoading } = useSession();
     const { t } = useTranslation();
 
@@ -51,101 +54,73 @@ export function WelcomeWidget({ version, chips = [], updateAvailable, latestVers
     const userName = user ? `${user.first_name} ${user.last_name}` : 'Admin';
 
     return (
-        <div className='bg-card/30 border-border/50 relative overflow-hidden rounded-2xl border p-5 md:p-8 lg:p-10'>
-            <div className='via-primary/10 pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent to-transparent' />
+        <FormSection className='space-y-3 p-4 sm:p-4'>
+            <div className='flex flex-col justify-between gap-4 xl:flex-row xl:items-center'>
+                <div className='max-w-2xl min-w-0 space-y-1.5'>
+                    <h2 className='text-sm font-semibold wrap-break-word'>
+                        {t('admin.welcome.welcome_back')}{' '}
+                        {userLoading ? (
+                            <span
+                                className='bg-primary/20 inline-block h-[0.85em] w-36 animate-pulse rounded-md align-middle sm:w-44'
+                                aria-busy='true'
+                            />
+                        ) : (
+                            <span className='wrap-break-word'>{userName}</span>
+                        )}
+                    </h2>
+                </div>
 
-            <div className='relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between lg:gap-10'>
-                <div className='min-w-0 flex-1 space-y-5'>
-                    <div className='flex flex-wrap items-center gap-2'>
-                        <div className='bg-primary/10 border-primary/20 flex w-fit items-center gap-2 rounded-full border px-2.5 py-1 md:px-3'>
-                            <Sparkles className='text-primary h-3 w-3 shrink-0 md:h-3.5 md:w-3.5' />
-                            {versionLoading ? (
-                                <span className='bg-primary/20 h-3 w-28 animate-pulse rounded-md' aria-busy='true' />
-                            ) : (
-                                <span className='text-primary/80 text-xs font-medium whitespace-nowrap'>
-                                    {t('admin.welcome.running_version', {
-                                        version: version || t('common.unknown'),
-                                    })}
-                                </span>
-                            )}
-                        </div>
-                        {chips.map((chip) => {
-                            const Icon =
-                                chip.icon === 'warn'
-                                    ? AlertTriangle
-                                    : chip.icon === 'info'
-                                      ? Download
-                                      : chip.icon === 'nodes'
-                                        ? Server
-                                        : CheckCircle2;
-                            return (
-                                <div
-                                    key={chip.id}
-                                    className={cn(
-                                        'flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium',
-                                        chipStyles[chip.tone || 'neutral'],
-                                    )}
-                                >
-                                    <Icon className='h-3 w-3 shrink-0' />
-                                    <span className='truncate'>{chip.label}</span>
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                    <div className='space-y-2'>
-                        <h1 className='wrap-break-words text-2xl font-black tracking-tight uppercase sm:text-3xl md:text-4xl lg:text-5xl'>
-                            {t('admin.welcome.welcome_back')}{' '}
-                            {userLoading ? (
-                                <span
-                                    className='bg-primary/20 inline-block h-[0.85em] w-36 animate-pulse rounded-md align-middle sm:w-44'
-                                    aria-busy='true'
-                                />
-                            ) : (
-                                <span className='text-primary wrap-break-words'>{userName}</span>
-                            )}
-                        </h1>
-                        <p className='text-muted-foreground max-w-2xl text-sm font-medium opacity-70'>
-                            {updateAvailable && latestVersion
-                                ? t('admin.welcome.subtitle_update', { version: latestVersion })
-                                : t('admin.welcome.subtitle')}
-                        </p>
-                    </div>
-
-                    <div className='flex flex-wrap items-center gap-2 md:gap-3'>
-                        <Link
-                            href='/admin/servers/create'
-                            className='bg-primary text-primary-foreground flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-medium whitespace-nowrap transition-colors hover:opacity-90 active:opacity-80 md:rounded-xl md:px-5'
-                        >
-                            <PlusCircle className='h-3.5 w-3.5 shrink-0 md:h-4 md:w-4' />
-                            <span className='truncate'>{t('admin.welcome.create_server')}</span>
-                        </Link>
-                        <Link
-                            href='/admin/users/create'
-                            className='bg-secondary text-secondary-foreground border-border/50 hover:bg-secondary/80 flex items-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-medium whitespace-nowrap transition-colors active:opacity-80 md:rounded-xl md:px-5'
-                        >
+                <div className='flex flex-wrap items-center gap-2'>
+                    <CreateServerAction />
+                    <Button asChild variant='secondary' className='gap-2'>
+                        <Link href='/admin/users/create'>
                             <UserPlus className='h-3.5 w-3.5 shrink-0 md:h-4 md:w-4' />
                             <span className='truncate'>{t('admin.welcome.add_user')}</span>
                         </Link>
-                        <Link
-                            href='/admin/nodes'
-                            className='bg-secondary text-secondary-foreground border-border/50 hover:bg-secondary/80 flex items-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-medium whitespace-nowrap transition-colors active:opacity-80 md:rounded-xl md:px-5'
-                        >
+                    </Button>
+                    <Button asChild variant='ghost' className='text-muted-foreground gap-2'>
+                        <Link href='/admin/nodes'>
                             <HardDrive className='h-3.5 w-3.5 shrink-0 md:h-4 md:w-4' />
                             <span className='truncate'>{t('admin.welcome.manage_nodes')}</span>
                         </Link>
-                        {updateAvailable && (
-                            <Link
-                                href='/admin/updates'
-                                className='flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs font-medium whitespace-nowrap text-amber-500 transition-colors hover:bg-amber-500/15 active:opacity-80 md:rounded-xl md:px-5'
-                            >
-                                <Download className='h-3.5 w-3.5 shrink-0 md:h-4 md:w-4' />
-                                <span className='truncate'>{t('admin.welcome.view_updates')}</span>
-                            </Link>
-                        )}
-                    </div>
+                    </Button>
+                    {updateAvailable && (
+                        <Link
+                            href='/admin/updates'
+                            className='inline-flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-amber-800 transition-colors hover:bg-amber-500/10 dark:text-amber-400'
+                        >
+                            <Download className='h-3.5 w-3.5 shrink-0 md:h-4 md:w-4' />
+                            <span className='truncate'>{t('admin.welcome.view_updates')}</span>
+                        </Link>
+                    )}
                 </div>
             </div>
-        </div>
+            <div className='flex flex-wrap items-center gap-x-5 gap-y-2 text-xs'>
+                <span className='text-muted-foreground'>
+                    {t('admin.welcome.running_version', {
+                        version: versionLoading ? t('common.loading') : version || t('common.unknown'),
+                    })}
+                </span>
+                {chips.map((chip) => {
+                    const Icon =
+                        chip.icon === 'warn'
+                            ? AlertTriangle
+                            : chip.icon === 'info'
+                              ? Download
+                              : chip.icon === 'nodes'
+                                ? Server
+                                : CheckCircle2;
+                    return (
+                        <span
+                            key={chip.id}
+                            className={cn('inline-flex items-center gap-1.5', chipStyles[chip.tone || 'neutral'])}
+                        >
+                            <Icon className='h-3.5 w-3.5 shrink-0' aria-hidden />
+                            <span>{chip.label}</span>
+                        </span>
+                    );
+                })}
+            </div>
+        </FormSection>
     );
 }

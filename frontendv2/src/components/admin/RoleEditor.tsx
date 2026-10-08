@@ -268,7 +268,7 @@ export function RoleEditor({
                                 {t('common.delete')}
                             </Button>
                         )}
-                        <Button loading={isSubmitting} onClick={(e) => onSave(e as unknown as React.FormEvent)}>
+                        <Button loading={isSubmitting} onClick={(e) => onSave(e as unknown as React.FormEvent)} data-fp-save-shortcut>
                             <Save className='mr-2 h-4 w-4' />
                             {mode === 'create'
                                 ? t('admin.roles.form.submit_create')
@@ -349,7 +349,7 @@ export function RoleEditor({
 
                 <TabsContent value='details' className='mt-6 space-y-6'>
                     <PageCard title={t('admin.roles.tabs.details')} icon={Settings2}>
-                        <form onSubmit={onSave} className='space-y-5'>
+                        <form onSubmit={onSave} className='space-y-5' data-fp-save-shortcut>
                             <div className='grid gap-5 lg:grid-cols-2'>
                                 <div className='space-y-2'>
                                     <Label htmlFor='editor-display-name'>{t('admin.roles.form.display_name')}</Label>

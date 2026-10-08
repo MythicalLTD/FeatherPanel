@@ -62,7 +62,7 @@ export function FolderDialog({ isOpen, onClose, onSave, editingFolder, formData,
             </div>
 
             <DialogFooter className='gap-3'>
-                <Button onClick={onSave} disabled={!formData.name.trim()} className='flex-1'>
+                <Button onClick={onSave} disabled={!formData.name.trim()} className='flex-1' data-fp-save-shortcut>
                     {editingFolder ? t('servers.saveChanges') : t('servers.createFolder')}
                 </Button>
                 <Button variant='secondary' onClick={onClose}>

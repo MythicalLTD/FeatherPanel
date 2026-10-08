@@ -196,7 +196,7 @@ export default function OAuth2DeviceAuthorizePage() {
                 </div>
 
                 <div className='border-border/60 bg-card/60 overflow-hidden rounded-2xl border p-5 backdrop-blur-xl sm:p-6'>
-                    <form
+                    <form data-fp-save-shortcut
                         className='space-y-5'
                         onSubmit={(event) => {
                             event.preventDefault();

@@ -66,7 +66,7 @@ export function RenameDialog({ open, onOpenChange, uuid, root, fileName, onSucce
                 <DialogHeader>
                     <DialogTitle>{t('files.dialogs.rename.title')}</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className='space-y-4'>
+                <form onSubmit={handleSubmit} className='space-y-4' data-fp-save-shortcut>
                     <Input value={newName} onChange={(e) => setNewName(e.target.value)} autoFocus />
                     <DialogFooter>
                         <Button type='button' variant='ghost' onClick={() => onOpenChange(false)}>

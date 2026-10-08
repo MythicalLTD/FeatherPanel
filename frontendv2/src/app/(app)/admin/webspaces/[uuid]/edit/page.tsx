@@ -301,7 +301,7 @@ export default function AdminWebSpaceEditPage() {
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>
-                        <Button size='sm' onClick={() => void save()} loading={saving}>
+                        <Button size='sm' onClick={() => void save()} loading={saving} data-fp-save-shortcut>
                             {t('common.save_changes')}
                         </Button>
                     </div>

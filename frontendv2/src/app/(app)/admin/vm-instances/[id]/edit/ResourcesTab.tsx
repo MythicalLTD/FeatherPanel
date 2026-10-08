@@ -89,7 +89,7 @@ export function ResourcesTab({
         vmBackupLimit !== undefined && setVmBackupLimit && vmBackupRetention !== undefined && setVmBackupRetention;
 
     return (
-        <form onSubmit={onSave}>
+        <form onSubmit={onSave} data-fp-save-shortcut>
             <PageCard title={t('admin.vmInstances.edit_tabs.resources') ?? 'Resources'} icon={Cpu}>
                 {config ? (
                     <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>

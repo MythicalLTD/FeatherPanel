@@ -665,7 +665,7 @@ export default function LocationsPage() {
                                 : ''}
                         </SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleUpdate} className='mt-6 space-y-5'>
+                    <form onSubmit={handleUpdate} className='mt-6 space-y-5' data-fp-save-shortcut>
                         <div className='space-y-2'>
                             <Label htmlFor='edit-name'>{t('admin.locations.form.name')} *</Label>
                             <Input
@@ -731,7 +731,7 @@ export default function LocationsPage() {
                         <SheetTitle>{t('admin.locations.form.create_title')}</SheetTitle>
                         <SheetDescription>{t('admin.locations.form.create_description')}</SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleCreate} className='mt-6 space-y-5'>
+                    <form onSubmit={handleCreate} className='mt-6 space-y-5' data-fp-save-shortcut>
                         <div className='space-y-2'>
                             <Label htmlFor='create-name'>{t('admin.locations.form.name')} *</Label>
                             <Input

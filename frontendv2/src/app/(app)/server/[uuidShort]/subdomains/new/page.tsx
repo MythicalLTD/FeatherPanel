@@ -183,8 +183,7 @@ export default function CreateSubdomainPage() {
                             onClick={handleCreate}
                             disabled={saving || limitReached}
                             loading={saving}
-                            className='order-1 w-full sm:order-2 sm:w-auto'
-                        >
+                            className='order-1 w-full sm:order-2 sm:w-auto' data-fp-save-shortcut>
                             {saving ? (
                                 t('common.saving')
                             ) : (
@@ -324,8 +323,7 @@ export default function CreateSubdomainPage() {
                             onClick={handleCreate}
                             disabled={saving || limitReached}
                             loading={saving}
-                            className='h-12 w-full text-[10px]'
-                        >
+                            className='h-12 w-full text-[10px]' data-fp-save-shortcut>
                             {saving ? (
                                 t('common.saving')
                             ) : (

@@ -29,6 +29,12 @@ class Notification
      */
     private static string $table = 'featherpanel_notifications';
 
+    /** Max bytes for title (VARCHAR). */
+    public const TITLE_MAX_LENGTH = 255;
+
+    /** Max bytes for message_markdown (MySQL TEXT). */
+    public const MESSAGE_MAX_LENGTH = 65535;
+
     /**
      * Create a new notification.
      *
@@ -38,84 +44,103 @@ class Notification
      */
     public static function createNotification(array $data): int | false
     {
-        // Required fields
-        $required = ['title', 'message_markdown', 'type'];
+        try {
+            // Required fields
+            $required = ['title', 'message_markdown', 'type'];
 
-        // Validate all required fields are present
-        foreach ($required as $field) {
-            if (!isset($data[$field]) || (!is_string($data[$field]) && !is_null($data[$field]))) {
-                $sanitizedData = self::sanitizeDataForLogging($data);
-                App::getInstance(true)->getLogger()->error("Missing required field: $field");
+            // Validate all required fields are present
+            foreach ($required as $field) {
+                if (!isset($data[$field]) || (!is_string($data[$field]) && !is_null($data[$field]))) {
+                    App::getInstance(true)->getLogger()->error("Missing required field: $field");
+
+                    return false;
+                }
+            }
+
+            // Validate title is not empty
+            if (!is_string($data['title']) || trim($data['title']) === '') {
+                App::getInstance(true)->getLogger()->error('Title must be a non-empty string');
 
                 return false;
             }
-        }
 
-        // Validate title is not empty
-        if (!is_string($data['title']) || trim($data['title']) === '') {
-            App::getInstance(true)->getLogger()->error('Title must be a non-empty string');
+            if (strlen($data['title']) > self::TITLE_MAX_LENGTH) {
+                App::getInstance(true)->getLogger()->error('Title exceeds maximum length of ' . self::TITLE_MAX_LENGTH);
 
-            return false;
-        }
-
-        // Validate message_markdown is not empty
-        if (!is_string($data['message_markdown']) || trim($data['message_markdown']) === '') {
-            App::getInstance(true)->getLogger()->error('Message markdown must be a non-empty string');
-
-            return false;
-        }
-
-        // Validate type
-        $validTypes = ['info', 'warning', 'danger', 'success', 'error'];
-        if (!in_array($data['type'], $validTypes, true)) {
-            App::getInstance(true)->getLogger()->error('Invalid notification type: ' . $data['type']);
-
-            return false;
-        }
-
-        // Normalize targeting
-        if (array_key_exists('user_id', $data)) {
-            if ($data['user_id'] === null || $data['user_id'] === '' || (int) $data['user_id'] <= 0) {
-                $data['user_id'] = null;
-            } else {
-                $data['user_id'] = (int) $data['user_id'];
+                return false;
             }
-        }
 
-        if (array_key_exists('server_id', $data)) {
-            if ($data['server_id'] === null || $data['server_id'] === '' || (int) $data['server_id'] <= 0) {
-                $data['server_id'] = null;
-            } else {
-                $data['server_id'] = (int) $data['server_id'];
+            // Validate message_markdown is not empty
+            if (!is_string($data['message_markdown']) || trim($data['message_markdown']) === '') {
+                App::getInstance(true)->getLogger()->error('Message markdown must be a non-empty string');
+
+                return false;
             }
+
+            if (strlen($data['message_markdown']) > self::MESSAGE_MAX_LENGTH) {
+                App::getInstance(true)->getLogger()->error(
+                    'Message markdown exceeds maximum length of ' . self::MESSAGE_MAX_LENGTH
+                );
+
+                return false;
+            }
+
+            // Validate type
+            $validTypes = ['info', 'warning', 'danger', 'success', 'error'];
+            if (!in_array($data['type'], $validTypes, true)) {
+                App::getInstance(true)->getLogger()->error('Invalid notification type: ' . $data['type']);
+
+                return false;
+            }
+
+            // Normalize targeting
+            if (array_key_exists('user_id', $data)) {
+                if ($data['user_id'] === null || $data['user_id'] === '' || (int) $data['user_id'] <= 0) {
+                    $data['user_id'] = null;
+                } else {
+                    $data['user_id'] = (int) $data['user_id'];
+                }
+            }
+
+            if (array_key_exists('server_id', $data)) {
+                if ($data['server_id'] === null || $data['server_id'] === '' || (int) $data['server_id'] <= 0) {
+                    $data['server_id'] = null;
+                } else {
+                    $data['server_id'] = (int) $data['server_id'];
+                }
+            }
+
+            // Set defaults
+            if (!isset($data['is_dismissible'])) {
+                $data['is_dismissible'] = true;
+            }
+            if (!isset($data['is_sticky'])) {
+                $data['is_sticky'] = false;
+            }
+
+            // Convert boolean to MySQL boolean (0/1)
+            $data['is_dismissible'] = $data['is_dismissible'] ? 1 : 0;
+            $data['is_sticky'] = $data['is_sticky'] ? 1 : 0;
+
+            $pdo = Database::getPdoConnection();
+            $fields = array_keys($data);
+            $placeholders = array_map(fn ($f) => ':' . $f, $fields);
+            $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+            $stmt = $pdo->prepare($sql);
+
+            if ($stmt->execute($data)) {
+                return (int) $pdo->lastInsertId();
+            }
+
+            $sanitizedData = self::sanitizeDataForLogging($data);
+            App::getInstance(true)->getLogger()->error('Failed to create notification: ' . json_encode($sanitizedData));
+
+            return false;
+        } catch (\PDOException $e) {
+            App::getInstance(true)->getLogger()->error('Failed to create notification: ' . $e->getMessage());
+
+            return false;
         }
-
-        // Set defaults
-        if (!isset($data['is_dismissible'])) {
-            $data['is_dismissible'] = true;
-        }
-        if (!isset($data['is_sticky'])) {
-            $data['is_sticky'] = false;
-        }
-
-        // Convert boolean to MySQL boolean (0/1)
-        $data['is_dismissible'] = $data['is_dismissible'] ? 1 : 0;
-        $data['is_sticky'] = $data['is_sticky'] ? 1 : 0;
-
-        $pdo = Database::getPdoConnection();
-        $fields = array_keys($data);
-        $placeholders = array_map(fn ($f) => ':' . $f, $fields);
-        $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
-        $stmt = $pdo->prepare($sql);
-
-        if ($stmt->execute($data)) {
-            return (int) $pdo->lastInsertId();
-        }
-
-        $sanitizedData = self::sanitizeDataForLogging($data);
-        App::getInstance(true)->getLogger()->error('Failed to create notification: ' . json_encode($sanitizedData));
-
-        return false;
     }
 
     /**
@@ -366,6 +391,34 @@ class Notification
 
             // Prevent updating primary key
             unset($data['id']);
+
+            if (isset($data['title'])) {
+                if (!is_string($data['title']) || trim($data['title']) === '') {
+                    App::getInstance(true)->getLogger()->error('Title must be a non-empty string');
+
+                    return false;
+                }
+                if (strlen($data['title']) > self::TITLE_MAX_LENGTH) {
+                    App::getInstance(true)->getLogger()->error('Title exceeds maximum length of ' . self::TITLE_MAX_LENGTH);
+
+                    return false;
+                }
+            }
+
+            if (isset($data['message_markdown'])) {
+                if (!is_string($data['message_markdown']) || trim($data['message_markdown']) === '') {
+                    App::getInstance(true)->getLogger()->error('Message markdown must be a non-empty string');
+
+                    return false;
+                }
+                if (strlen($data['message_markdown']) > self::MESSAGE_MAX_LENGTH) {
+                    App::getInstance(true)->getLogger()->error(
+                        'Message markdown exceeds maximum length of ' . self::MESSAGE_MAX_LENGTH
+                    );
+
+                    return false;
+                }
+            }
 
             // Validate type if provided
             if (isset($data['type'])) {

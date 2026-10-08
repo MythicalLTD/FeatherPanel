@@ -293,7 +293,7 @@ export default function CreateBackupPage() {
             />
             <WidgetRenderer widgets={getWidgets('server-backups-new', 'after-header')} />
 
-            <form onSubmit={handleCreate} className='space-y-8'>
+            <form onSubmit={handleCreate} className='space-y-8' data-fp-save-shortcut>
                 <FormSection>
                     <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                         <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>

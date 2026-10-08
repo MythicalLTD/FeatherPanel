@@ -530,7 +530,7 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                         className='border-border/40 bg-card/45 rounded-lg p-6 shadow-sm ring-1 ring-white/5'
                         action={
                             configFields.length > 0 ? (
-                                <Button size='sm' onClick={saveAllSettings} disabled={savingSettings}>
+                                <Button size='sm' onClick={saveAllSettings} disabled={savingSettings} data-fp-save-shortcut>
                                     {savingSettings ? (
                                         <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                     ) : (
@@ -677,7 +677,7 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                         icon={SlidersHorizontal}
                         className='border-border/40 bg-card/45 rounded-lg p-6 shadow-sm ring-1 ring-white/5'
                         action={
-                            <Button size='sm' onClick={saveSpellRestrictions} disabled={savingSpellRestrictions}>
+                            <Button size='sm' onClick={saveSpellRestrictions} disabled={savingSpellRestrictions} data-fp-save-shortcut>
                                 {savingSpellRestrictions ? (
                                     <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                 ) : (

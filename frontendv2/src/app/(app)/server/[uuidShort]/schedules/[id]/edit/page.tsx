@@ -183,8 +183,7 @@ export default function EditSchedulePage() {
                             onClick={handleUpdate}
                             disabled={saving}
                             loading={saving}
-                            className='order-1 w-full sm:order-2 sm:w-auto'
-                        >
+                            className='order-1 w-full sm:order-2 sm:w-auto' data-fp-save-shortcut>
                             <Save className='mr-2 h-4 w-4' />
                             {t('serverSchedules.update')}
                         </Button>
@@ -193,7 +192,7 @@ export default function EditSchedulePage() {
             />
             <WidgetRenderer widgets={getWidgets('server-schedules-edit', 'after-header')} />
 
-            <form onSubmit={handleUpdate} className='space-y-8'>
+            <form onSubmit={handleUpdate} className='space-y-8' data-fp-save-shortcut>
                 <div className='from-primary/5 pointer-events-none fixed inset-0 -z-10 bg-linear-to-br via-transparent to-blue-500/5' />
 
                 <FormSection>

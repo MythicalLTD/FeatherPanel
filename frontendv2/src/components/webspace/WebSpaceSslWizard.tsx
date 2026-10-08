@@ -258,7 +258,7 @@ export function WebSpaceSslWizard({
                             {sslEnabled && (
                                 <p className='text-sm text-emerald-600'>{t('webSpaces.sslWizard.sslEnabled')}</p>
                             )}
-                            <Button loading={saving} onClick={() => void saveSsl()} size='sm'>
+                            <Button loading={saving} onClick={() => void saveSsl()} size='sm' data-fp-save-shortcut>
                                 {t('webSpaces.sslWizard.saveSsl')}
                             </Button>
                         </div>

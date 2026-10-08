@@ -4,6 +4,7 @@
 
 ### Added
 
+- Forms, sheets, dialogs, and page save actions across the panel support **Ctrl+S** / **⌘S** (mark with `data-fp-save-shortcut` or use `useSaveShortcut`). by @nayskutzu
 - Admin **backup schedules** for game servers: target specific servers, all servers on a node, or the whole panel; cron timing with timezone; run history; manual run; failure notifications. Reuses per-server backup limits/FIFO and each node’s default Wings backup adapter. by @nayskutzu
 - SMTP settings now include a dedicated **STARTTLS** encryption option (plus **None**), so providers like Brevo on port 587 can be configured correctly; the async mail runner maps `starttls`/`tls` to STARTTLS and `ssl` to SMTPS. by @nayskutzu
 - FeatherPanel **MCP OAuth 2.1** (DCR + PKCE + refresh) so Claude.ai custom connectors can **Connect** with panel sign-in / API-key consent; static Bearer / `x-api-key` headers still work. by @nayskutzu
@@ -64,6 +65,7 @@
 - Redesigned the VDS console to look better on more devices. by @nayskutzu
 - The documentation was improved to be more accurate and up to date on how to create plugins, widgets, events, permissions, and more. by @nayskutzu
 - Redesigned the create server experience for vds,servers,webspaces by @nayskutzu
+- Fixed several issues where exceeding form limits would return a generic error, instead of notifying you that the form length is too large. by @nayskutzu
 
 ### Fixed
 

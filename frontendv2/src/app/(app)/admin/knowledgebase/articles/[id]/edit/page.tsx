@@ -411,7 +411,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                             <ChevronLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>
-                        <Button onClick={handleSave} loading={saveLoading}>
+                        <Button onClick={handleSave} loading={saveLoading} data-fp-save-shortcut>
                             <Save className='mr-2 h-4 w-4' />
                             {t('admin.knowledgebase.edit.form.save')}
                         </Button>

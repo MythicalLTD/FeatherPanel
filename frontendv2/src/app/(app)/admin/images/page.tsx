@@ -441,7 +441,7 @@ export default function ImagesPage() {
                         <SheetTitle>{t('admin.images.form.create_title')}</SheetTitle>
                         <SheetDescription>{t('admin.images.form.create_description')}</SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleUpload} className='space-y-6'>
+                    <form onSubmit={handleUpload} className='space-y-6' data-fp-save-shortcut>
                         <div className='space-y-4'>
                             <div className='space-y-2'>
                                 <Label>{t('admin.images.form.name')}</Label>
@@ -482,7 +482,7 @@ export default function ImagesPage() {
                             {t('admin.images.form.edit_description', { name: selectedImage?.name || '' })}
                         </SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleUpdate} className='space-y-6'>
+                    <form onSubmit={handleUpdate} className='space-y-6' data-fp-save-shortcut>
                         <div className='space-y-4'>
                             <div className='space-y-2'>
                                 <Label>{t('admin.images.form.name')}</Label>

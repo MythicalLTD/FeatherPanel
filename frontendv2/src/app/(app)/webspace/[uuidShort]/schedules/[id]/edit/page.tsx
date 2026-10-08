@@ -174,7 +174,7 @@ export default function WebSpaceScheduleEditPage() {
                 }
             />
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} data-fp-save-shortcut>
                 <FormSection>
                     <div className='space-y-2'>
                         <Label

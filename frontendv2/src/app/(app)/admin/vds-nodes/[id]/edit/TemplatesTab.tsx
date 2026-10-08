@@ -312,7 +312,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                             {t('admin.vdsNodes.templates.create_desc_select')}
                         </p>
                     </SheetHeader>
-                    <form onSubmit={handleCreate} className='mt-6 space-y-4'>
+                    <form onSubmit={handleCreate} className='mt-6 space-y-4' data-fp-save-shortcut>
                         <div>
                             <Label className='mb-2 block'>{t('admin.vdsNodes.templates.field_select_vm')}</Label>
                             {loadingProxmoxVms ? (

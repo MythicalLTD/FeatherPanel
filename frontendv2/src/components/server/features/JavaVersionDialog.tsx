@@ -139,7 +139,7 @@ export function JavaVersionDialog({ isOpen, onClose, server, detectedIssue, onUp
                 <Button variant='outline' onClick={onClose} disabled={updating}>
                     {t('common.cancel')}
                 </Button>
-                <Button disabled={!selectedImage || updating} onClick={handleUpdate}>
+                <Button disabled={!selectedImage || updating} onClick={handleUpdate} data-fp-save-shortcut>
                     {updating ? t('common.saving') : t('features.javaVersion.updateImage')}
                 </Button>
             </DialogFooter>

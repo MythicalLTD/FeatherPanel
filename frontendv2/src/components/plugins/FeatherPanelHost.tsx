@@ -33,6 +33,7 @@ import {
 import type { FeatherPanelHostApi } from '@/lib/plugin-sdk/types';
 import { PluginModalHost } from '@/components/plugins/PluginModalHost';
 import { PluginShortcutHost } from '@/components/plugins/PluginShortcutHost';
+import { SaveShortcutHost } from '@/components/featherui/SaveShortcutHost';
 import { PluginSlot } from '@/components/plugins/PluginSlot';
 
 export { FEATHERPANEL_HOST_VERSION };
@@ -229,6 +230,7 @@ export function FeatherPanelHost({ children }: { children: ReactNode }) {
             <PluginSlot id='modal.global' className='contents' showActions={false} />
             <PluginModalHost />
             <PluginShortcutHost />
+            <SaveShortcutHost />
         </>
     );
 }

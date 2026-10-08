@@ -570,7 +570,7 @@ export default function ServerFirewallPage() {
                         <Button variant='outline' onClick={() => setIsModalOpen(false)} disabled={saving} type='button'>
                             {t('common.cancel')}
                         </Button>
-                        <Button onClick={handleSave} disabled={saving} type='button'>
+                        <Button onClick={handleSave} disabled={saving} type='button' data-fp-save-shortcut>
                             {saving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                             {t('common.save')}
                         </Button>

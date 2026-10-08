@@ -285,7 +285,7 @@ export default function CreatePluginPage() {
                     }
                 />
 
-                <form
+                <form data-fp-save-shortcut
                     onSubmit={(e) => {
                         e.preventDefault();
                         createPlugin();

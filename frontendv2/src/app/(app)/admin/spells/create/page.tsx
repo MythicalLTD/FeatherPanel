@@ -196,7 +196,7 @@ export default function CreateSpellPage() {
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>
-                        <Button onClick={handleCreate} loading={saving}>
+                        <Button onClick={handleCreate} loading={saving} data-fp-save-shortcut>
                             {t('admin.spells.form.submit_create')}
                         </Button>
                     </div>

@@ -648,7 +648,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                     <Button variant='outline' onClick={() => setCreateOpen(false)}>
                         {t('common.cancel')}
                     </Button>
-                    <Button onClick={createMode === 'bulk' ? handleCreateBulk : handleCreate} loading={creating}>
+                    <Button onClick={createMode === 'bulk' ? handleCreateBulk : handleCreate} loading={creating} data-fp-save-shortcut>
                         {t('common.create')}
                     </Button>
                 </SheetFooter>

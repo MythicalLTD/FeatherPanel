@@ -394,7 +394,7 @@ export default function EditWebNodePage() {
                             <Terminal className='mr-2 h-4 w-4' />
                             {t('admin.webNodes.form.quilld_config')}
                         </Button>
-                        <Button onClick={() => handleSave()} loading={saving}>
+                        <Button onClick={() => handleSave()} loading={saving} data-fp-save-shortcut>
                             <Save className='mr-2 h-4 w-4' />
                             {t('admin.webNodes.form.submit_save')}
                         </Button>
@@ -499,7 +499,7 @@ export default function EditWebNodePage() {
                             activeTab !== 'packages' &&
                             activeTab !== 'hosting' && (
                                 <div className='flex justify-end'>
-                                    <Button onClick={() => handleSave()} loading={saving}>
+                                    <Button onClick={() => handleSave()} loading={saving} data-fp-save-shortcut>
                                         <Save className='mr-2 h-4 w-4' />
                                         {t('admin.webNodes.form.submit_save')}
                                     </Button>

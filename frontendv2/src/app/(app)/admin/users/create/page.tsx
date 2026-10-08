@@ -136,7 +136,7 @@ export default function CreateUserPage() {
             <div className='grid grid-cols-1 gap-6 lg:grid-cols-3'>
                 <div className='lg:col-span-2'>
                     <PageCard title={t('admin.users.create.form.title')} icon={UserPlus}>
-                        <form onSubmit={handleCreateUser} className='space-y-6'>
+                        <form onSubmit={handleCreateUser} className='space-y-6' data-fp-save-shortcut>
                             <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                                 <div>
                                     <Label htmlFor='create-username'>{t('admin.users.create.form.username')}</Label>

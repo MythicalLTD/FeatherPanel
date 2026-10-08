@@ -77,7 +77,7 @@ export function LifecycleStepForm({
     }, [t, containerShellEnabled, allowContainerTasks, form.task_type]);
 
     return (
-        <form onSubmit={onSubmit} className='space-y-6'>
+        <form onSubmit={onSubmit} className='space-y-6' data-fp-save-shortcut>
             <div className='space-y-2'>
                 <Label>{t('lifecycleHooks.form.taskType')}</Label>
                 <HeadlessSelect

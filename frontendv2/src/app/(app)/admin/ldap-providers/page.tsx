@@ -229,7 +229,7 @@ export default function LdapProvidersPage() {
                     title={t('admin.ldapProviders.configuredProviders')}
                     icon={Server}
                     action={
-                        <Button onClick={handleCreateNew} size='sm'>
+                        <Button onClick={handleCreateNew} size='sm' data-fp-save-shortcut>
                             {t('admin.ldapProviders.addProvider')}
                         </Button>
                     }
@@ -763,7 +763,7 @@ export default function LdapProvidersPage() {
                                 <Button variant='outline' onClick={() => setEditing(null)} disabled={saving}>
                                     {t('admin.ldapProviders.cancel')}
                                 </Button>
-                                <Button onClick={handleSave} loading={saving}>
+                                <Button onClick={handleSave} loading={saving} data-fp-save-shortcut>
                                     {t('admin.ldapProviders.save')}
                                 </Button>
                             </div>

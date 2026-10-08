@@ -342,7 +342,7 @@ export default function RealmsPage() {
                         <SheetTitle>{t('admin.realms.form.create_title')}</SheetTitle>
                         <SheetDescription>{t('admin.realms.form.create_description')}</SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleCreate} className='space-y-4'>
+                    <form onSubmit={handleCreate} className='space-y-4' data-fp-save-shortcut>
                         <div className='space-y-2'>
                             <Label>{t('admin.realms.form.name')}</Label>
                             <Input
@@ -375,7 +375,7 @@ export default function RealmsPage() {
                         <SheetDescription>{t('admin.realms.form.edit_description')}</SheetDescription>
                     </SheetHeader>
                     {editingRealm && (
-                        <form onSubmit={handleUpdate} className='space-y-4'>
+                        <form onSubmit={handleUpdate} className='space-y-4' data-fp-save-shortcut>
                             <div className='space-y-2'>
                                 <Label>{t('admin.realms.form.name')}</Label>
                                 <Input

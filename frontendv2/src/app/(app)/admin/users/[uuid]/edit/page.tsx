@@ -683,7 +683,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             <div className='grid grid-cols-1 gap-6 lg:grid-cols-3'>
                 <div className='space-y-6 lg:col-span-2'>
                     <PageCard title={t('admin.users.edit.form.title')} icon={User} className='h-full'>
-                        <form onSubmit={handleSubmit} className='space-y-6'>
+                        <form onSubmit={handleSubmit} className='space-y-6' data-fp-save-shortcut>
                             <div>
                                 <Label htmlFor='edit-username'>{t('admin.users.edit.form.username')}</Label>
                                 <Input
@@ -1646,7 +1646,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         </DialogDescription>
                     </DialogHeader>
 
-                    <form onSubmit={handleSendEmail} className='mt-2 space-y-4'>
+                    <form onSubmit={handleSendEmail} className='mt-2 space-y-4' data-fp-save-shortcut>
                         <div>
                             <Label htmlFor='send-email-recipient'>
                                 {t('admin.users.edit.actions.email.to', { defaultValue: 'To' })}

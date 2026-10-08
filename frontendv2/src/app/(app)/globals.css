@@ -663,6 +663,49 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
     box-shadow: 0 0 0 1px hsl(var(--border) / 0.7);
 }
 
+.fp-overflow-text {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fp-overflow-text-content {
+    display: inline;
+}
+
+@media (max-width: 767px) {
+    .fp-overflow-text[data-overflow='true'] {
+        overflow-x: auto;
+        text-overflow: clip;
+        scrollbar-width: none;
+    }
+
+    .fp-overflow-text[data-overflow='true']::-webkit-scrollbar {
+        display: none;
+    }
+
+    .fp-overflow-text-content {
+        display: block;
+        width: max-content;
+    }
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+    .fp-overflow-text {
+        overflow: visible;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .fp-overflow-text-content {
+        display: inline;
+        width: auto;
+    }
+}
+
 .fp-sidebar-rail-tooltip {
     padding: 0.4rem 0.7rem;
     font-size: 0.8125rem;

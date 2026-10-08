@@ -1081,7 +1081,7 @@ export default function EditServerPage() {
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>
-                        <Button onClick={handleSubmit} loading={saving}>
+                        <Button onClick={handleSubmit} loading={saving} data-fp-save-shortcut>
                             <Save className='mr-2 h-4 w-4' />
                             {t('admin.servers.edit.save')}
                         </Button>
@@ -1210,7 +1210,7 @@ export default function EditServerPage() {
 
                     {!['actions'].includes(activeTab) && (
                         <div className='flex justify-end'>
-                            <Button onClick={handleSubmit} loading={saving}>
+                            <Button onClick={handleSubmit} loading={saving} data-fp-save-shortcut>
                                 <Save className='mr-2 h-4 w-4' />
                                 {t('admin.servers.edit.save')}
                             </Button>

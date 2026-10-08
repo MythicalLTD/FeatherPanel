@@ -351,8 +351,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                         <Button
                             className='bg-primary hover:bg-primary/90 h-12 rounded-2xl px-10 text-white'
                             loading={updating}
-                            onClick={handleUpdate}
-                        >
+                            onClick={handleUpdate}>
                             <ArrowUpCircle className='mr-2 h-4 w-4' />
                             {t('admin.node.view.self_update.trigger')}
                         </Button>

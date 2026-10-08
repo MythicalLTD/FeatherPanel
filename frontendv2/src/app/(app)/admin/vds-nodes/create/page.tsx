@@ -304,7 +304,7 @@ export default function CreateVdsNodePage() {
 
             <WidgetRenderer widgets={getWidgets('admin-vds-nodes-create', 'after-header')} />
 
-            <form onSubmit={handleSubmit} className='mt-8 space-y-8'>
+            <form onSubmit={handleSubmit} className='mt-8 space-y-8' data-fp-save-shortcut>
                 <div className='grid grid-cols-1 gap-8 lg:grid-cols-2'>
                     <div className='space-y-8'>
                         <PageCard title={t('admin.vdsNodes.form.basic_details')} icon={Server}>
@@ -702,7 +702,7 @@ export default function CreateVdsNodePage() {
                         </div>
 
                         {locationPickerMode === 'create' ? (
-                            <form onSubmit={handleCreateLocationInline} className='space-y-4'>
+                            <form onSubmit={handleCreateLocationInline} className='space-y-4' data-fp-save-shortcut>
                                 <div className='space-y-2'>
                                     <Label htmlFor='vds-inline-loc-name'>{t('admin.locations.form.name')} *</Label>
                                     <Input

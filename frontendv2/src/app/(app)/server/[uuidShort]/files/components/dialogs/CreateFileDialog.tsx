@@ -73,7 +73,7 @@ export function CreateFileDialog({ open, onOpenChange, uuid, root, onSuccess }: 
                     <DialogTitle>{t('files.dialogs.create_file.title')}</DialogTitle>
                     <DialogDescription>{t('files.dialogs.create_file.description', { root: root })}</DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className='space-y-4'>
+                <form onSubmit={handleSubmit} className='space-y-4' data-fp-save-shortcut>
                     <div className='space-y-2'>
                         <label className='text-sm font-medium'>{t('files.dialogs.create_file.name_label')}</label>
                         <Input

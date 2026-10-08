@@ -24,6 +24,7 @@ import { Save, Loader2, FileCode, Lock, CheckCircle2, Boxes, Monitor, Smartphone
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { useFileEditorEngine } from '@/hooks/useFileEditorEngine';
+import { useSaveShortcut } from '@/hooks/useSaveShortcut';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/featherui/Button';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -295,21 +296,15 @@ export default function FileEditorPage({
         [canEdit, content, uuidShort, fullPath, t],
     );
 
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            // Check for Ctrl+S (Windows/Linux) or Cmd+S (Mac)
-            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                e.preventDefault();
-                // Only save if we can edit and there are changes
-                if (canEdit && content !== originalContent && !saving) {
-                    handleSave();
-                }
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [canEdit, content, originalContent, saving, handleSave]);
+    useSaveShortcut(
+        () => {
+            void handleSave();
+        },
+        {
+            enabled: canEdit && content !== originalContent,
+            disabled: saving,
+        },
+    );
 
     const handleSwitchToRawEditor = () => {
         setUseMinecraftEditor(false);

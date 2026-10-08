@@ -507,7 +507,7 @@ export default function TranslationsPage() {
                         <Button variant='outline' onClick={() => setEditOpen(false)}>
                             {t('common.cancel')}
                         </Button>
-                        <Button onClick={handleUpdate} loading={isSubmitting}>
+                        <Button onClick={handleUpdate} loading={isSubmitting} data-fp-save-shortcut>
                             {t('admin.translations.form.submit_update')}
                         </Button>
                     </SheetFooter>
@@ -520,7 +520,7 @@ export default function TranslationsPage() {
                         <SheetTitle>{t('admin.translations.form.create_title')}</SheetTitle>
                         <SheetDescription>{t('admin.translations.form.create_description')}</SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleCreate} className='space-y-4'>
+                    <form onSubmit={handleCreate} className='space-y-4' data-fp-save-shortcut>
                         <div className='space-y-2'>
                             <Label>{t('admin.translations.form.language_code')}</Label>
                             <Input

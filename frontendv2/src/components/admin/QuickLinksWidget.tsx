@@ -22,7 +22,6 @@ import {
     BookOpen,
     MessageSquare,
     Settings,
-    Zap,
     Trash2,
     LayoutDashboard,
     Package,
@@ -34,11 +33,9 @@ import {
     MapPin,
     Languages,
     HardDrive,
-    ArrowUpRight,
 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
-import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 
 interface QuickLinksWidgetProps {
@@ -191,29 +188,16 @@ export function QuickLinksWidget({ onClearCache, isClearingCache }: QuickLinksWi
             href={link.href}
             target={link.external ? '_blank' : undefined}
             rel={link.external ? 'noopener noreferrer' : undefined}
-            className='bg-muted/10 border-border/50 hover:border-primary/30 hover:bg-muted/20 group relative flex min-h-[5.5rem] items-start gap-4 rounded-2xl border p-4 transition-all hover:scale-[1.01] active:scale-[0.99] md:rounded-3xl md:p-5'
+            className='group hover:bg-accent flex min-h-11 items-start gap-3 rounded-lg px-2 py-3 transition-colors'
         >
-            <div
-                className={cn(
-                    'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-transform group-hover:scale-105 md:h-12 md:w-12 md:rounded-2xl',
-                    link.bg,
-                    link.color,
-                    link.border,
-                )}
-            >
-                <link.icon className='h-5 w-5' />
+            <div className='text-muted-foreground flex h-6 w-5 shrink-0 items-center justify-center'>
+                <link.icon className='h-4 w-4' aria-hidden />
             </div>
-            <div className='min-w-0 flex-1 space-y-1 pr-5'>
-                <p className='text-[11px] leading-snug font-black tracking-widest uppercase md:text-xs'>{link.name}</p>
-                <p className='text-muted-foreground text-[11px] leading-relaxed font-medium tracking-normal normal-case md:text-xs'>
-                    {link.description}
-                </p>
+            <div className='min-w-0 flex-1 space-y-1'>
+                <p className='text-sm font-medium'>{link.name}</p>
+                <p className='text-muted-foreground text-xs leading-relaxed'>{link.description}</p>
             </div>
-            {link.external ? (
-                <ExternalLink className='text-muted-foreground absolute top-4 right-4 h-3.5 w-3.5 opacity-40' />
-            ) : (
-                <ArrowUpRight className='text-muted-foreground absolute top-4 right-4 h-3.5 w-3.5 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-60' />
-            )}
+            {link.external && <ExternalLink className='text-muted-foreground mt-1 h-3.5 w-3.5 shrink-0' aria-hidden />}
         </Link>
     );
 
@@ -221,36 +205,30 @@ export function QuickLinksWidget({ onClearCache, isClearingCache }: QuickLinksWi
         <PageCard
             title={t('admin.quick_links.title')}
             description={t('admin.quick_links.description')}
-            icon={Zap}
-            className='h-full'
+            icon={BookOpen}
+            className='space-y-4 p-4 sm:p-5 [&>div:first-child]:flex-wrap [&>div:first-child]:gap-3 [&>div:first-child]:pb-4'
             action={
                 <button
                     type='button'
                     onClick={onClearCache}
                     disabled={isClearingCache}
-                    className='flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-[9px] font-black tracking-widest text-red-500 uppercase transition-all hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-50 md:px-4 md:text-[10px]'
+                    className='hover:bg-accent flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
                 >
-                    <Trash2 className={cn('h-3.5 w-3.5', isClearingCache && 'animate-spin')} />
+                    <Trash2 className='h-3.5 w-3.5' aria-hidden />
                     <span className='hidden sm:inline'>{t('admin.quick_links.clear_system_cache')}</span>
                     <span className='sm:hidden'>{t('admin.quick_links.clear_cache_short')}</span>
                 </button>
             }
         >
-            <div className='space-y-6'>
+            <div className='space-y-4'>
                 <div className='space-y-3'>
-                    <p className='text-muted-foreground text-[9px] font-black tracking-[0.2em] uppercase md:text-[10px]'>
-                        {t('admin.quick_links.group_manage')}
-                    </p>
-                    <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'>{manage.map(renderLink)}</div>
+                    <h3 className='text-muted-foreground text-sm font-medium'>{t('admin.quick_links.group_manage')}</h3>
+                    <div className='grid grid-cols-1 gap-x-5 sm:grid-cols-2'>{manage.map(renderLink)}</div>
                 </div>
 
                 <div className='space-y-3'>
-                    <p className='text-muted-foreground text-[9px] font-black tracking-[0.2em] uppercase md:text-[10px]'>
-                        {t('admin.quick_links.group_system')}
-                    </p>
-                    <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
-                        {system.map(renderLink)}
-                    </div>
+                    <h3 className='text-muted-foreground text-sm font-medium'>{t('admin.quick_links.group_system')}</h3>
+                    <div className='grid grid-cols-1 gap-x-5 sm:grid-cols-2'>{system.map(renderLink)}</div>
                 </div>
             </div>
         </PageCard>

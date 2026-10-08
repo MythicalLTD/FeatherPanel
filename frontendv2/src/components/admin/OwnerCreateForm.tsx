@@ -199,7 +199,7 @@ export function OwnerCreateForm({ onCreated, onCancel, showFooter = true }: Owne
                             {t('common.cancel')}
                         </Button>
                     )}
-                    <Button type='button' onClick={() => void handleSubmit()} loading={submitting}>
+                    <Button type='button' onClick={() => void handleSubmit()} loading={submitting} data-fp-save-shortcut>
                         {t('admin.users.create.submit')}
                     </Button>
                 </SheetFooter>

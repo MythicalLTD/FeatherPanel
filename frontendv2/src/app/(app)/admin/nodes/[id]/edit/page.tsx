@@ -592,7 +592,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                                 {t('admin.node.mass_transfer.button')}
                             </Button>
                         ) : null}
-                        <Button onClick={() => handleSubmit()} loading={saving}>
+                        <Button onClick={() => handleSubmit()} loading={saving} data-fp-save-shortcut>
                             <Save className='mr-2 h-4 w-4' />
                             {t('admin.node.form.submit_save')}
                         </Button>
@@ -773,7 +773,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                             'self-update',
                         ].includes(activeTab) && (
                             <div className='flex justify-end'>
-                                <Button onClick={() => handleSubmit()} loading={saving}>
+                                <Button onClick={() => handleSubmit()} loading={saving} data-fp-save-shortcut>
                                     <Save className='mr-2 h-4 w-4' />
                                     {t('admin.node.form.submit_save')}
                                 </Button>

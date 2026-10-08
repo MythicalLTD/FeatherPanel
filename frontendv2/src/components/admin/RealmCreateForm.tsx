@@ -100,7 +100,7 @@ export function RealmCreateForm({ onCreated, onCancel, showFooter = true }: Real
                             {t('common.cancel')}
                         </Button>
                     )}
-                    <Button type='button' onClick={() => void handleSubmit()} loading={submitting}>
+                    <Button type='button' onClick={() => void handleSubmit()} loading={submitting} data-fp-save-shortcut>
                         {t('admin.realms.form.submit_create')}
                     </Button>
                 </SheetFooter>

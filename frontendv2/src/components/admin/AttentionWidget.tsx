@@ -15,9 +15,11 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminWidgetLoading } from './AdminWidgetLoading';
+
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
-import { BellRing, CheckCircle2, Clock, Database, Download, HardDrive, Server, ArrowUpRight } from 'lucide-react';
+import { BellRing, CheckCircle2, Clock, Database, Download, HardDrive, Server } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
@@ -37,6 +39,7 @@ interface AttentionWidgetProps {
     updateAvailable?: boolean;
     latestVersion?: string;
     cronTasks?: CronTask[];
+    onRevealCron?: () => void;
 }
 
 interface AttentionItem {
@@ -55,6 +58,7 @@ export function AttentionWidget({
     updateAvailable,
     latestVersion,
     cronTasks = [],
+    onRevealCron,
 }: AttentionWidgetProps) {
     const { t } = useTranslation();
 
@@ -99,7 +103,7 @@ export function AttentionWidget({
             id: 'cron',
             title: t('admin.attention.cron_title'),
             detail: t('admin.attention.cron_detail', { count: String(failedCron.length) }),
-            href: '/admin',
+            href: '#admin-cron',
             tone: 'warn',
             icon: Clock,
         });
@@ -117,9 +121,9 @@ export function AttentionWidget({
     }
 
     const toneStyles = {
-        danger: 'border-red-500/25 bg-red-500/10 text-red-500',
-        warn: 'border-amber-500/25 bg-amber-500/10 text-amber-500',
-        info: 'border-primary/25 bg-primary/10 text-primary',
+        danger: 'text-red-700 dark:text-red-400',
+        warn: 'text-amber-800 dark:text-amber-400',
+        info: 'text-foreground',
     };
 
     return (
@@ -127,50 +131,53 @@ export function AttentionWidget({
             title={t('admin.attention.title')}
             description={t('admin.attention.description')}
             icon={BellRing}
-            className='h-full'
+            className='space-y-4 p-4 sm:p-5 [&>div:first-child]:flex-wrap [&>div:first-child]:gap-3 [&>div:first-child]:pb-4'
             variant={items.length > 0 ? 'warning' : 'default'}
         >
             {healthLoading && items.length === 0 ? (
-                <div className='space-y-3'>
-                    {Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className='bg-muted/20 h-16 animate-pulse rounded-2xl' />
-                    ))}
+                <AdminWidgetLoading label={t('admin.attention.title')} rows={2} />
+            ) : items.length === 0 && (!stats || !selftest) ? (
+                <div className='space-y-2 py-5'>
+                    <p className='text-muted-foreground text-sm'>{t('admin.system_health.status.unavailable')}</p>
+                    <Link
+                        href='/admin/nodes/status'
+                        className='inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4'
+                    >
+                        {t('admin.system_health.view_nodes')}
+                    </Link>
                 </div>
             ) : items.length === 0 ? (
-                <div className='flex flex-col items-center justify-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-10 text-center'>
-                    <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-500'>
-                        <CheckCircle2 className='h-6 w-6' />
+                <div className='flex items-start gap-3 py-1'>
+                    <CheckCircle2
+                        className='mt-0.5 h-5 w-5 shrink-0 text-emerald-700 dark:text-emerald-400'
+                        aria-hidden
+                    />
+                    <div className='space-y-1.5'>
+                        <p className='text-sm font-medium'>{t('admin.attention.all_clear_title')}</p>
+                        <p className='text-muted-foreground text-xs leading-relaxed'>
+                            {t('admin.attention.all_clear_desc')}
+                        </p>
                     </div>
-                    <p className='text-sm font-black tracking-tight text-emerald-500 uppercase'>
-                        {t('admin.attention.all_clear_title')}
-                    </p>
-                    <p className='text-muted-foreground max-w-xs text-xs font-medium'>
-                        {t('admin.attention.all_clear_desc')}
-                    </p>
                 </div>
             ) : (
-                <div className='space-y-2.5'>
+                <div className='divide-border divide-y'>
                     {items.map((item) => (
                         <Link
                             key={item.id}
                             href={item.href}
+                            onClick={item.id === 'cron' ? onRevealCron : undefined}
                             className={cn(
-                                'group flex items-start gap-3 rounded-2xl border p-3.5 transition-all hover:scale-[1.01] active:scale-[0.99]',
+                                'group hover:bg-accent flex min-h-11 items-start gap-3 rounded-md px-1 py-3 transition-colors',
                                 toneStyles[item.tone],
                             )}
                         >
-                            <div className='bg-background/40 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-current/20'>
+                            <div className='flex h-6 w-5 shrink-0 items-center justify-center'>
                                 <item.icon className='h-4 w-4' />
                             </div>
                             <div className='min-w-0 flex-1 space-y-0.5'>
-                                <p className='truncate text-xs font-black tracking-wide uppercase md:text-[13px]'>
-                                    {item.title}
-                                </p>
-                                <p className='text-[11px] leading-relaxed font-medium opacity-80 md:text-xs'>
-                                    {item.detail}
-                                </p>
+                                <p className='text-sm font-medium'>{item.title}</p>
+                                <p className='text-muted-foreground text-xs leading-relaxed'>{item.detail}</p>
                             </div>
-                            <ArrowUpRight className='mt-1 h-3.5 w-3.5 shrink-0 opacity-50 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5' />
                         </Link>
                     ))}
                 </div>

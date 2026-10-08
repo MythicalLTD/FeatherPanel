@@ -313,7 +313,7 @@ export default function WebSpaceDomainsPage() {
                         {form.sslMode === 'dns01' && (
                             <p className='text-muted-foreground text-xs'>{t('webSpaces.settings.wildcardSslHelp')}</p>
                         )}
-                        <Button loading={saving} onClick={() => void saveDomains()} size='sm'>
+                        <Button loading={saving} onClick={() => void saveDomains()} size='sm' data-fp-save-shortcut>
                             <Save className='mr-2 h-4 w-4' />
                             {t('webSpaces.settings.saveSettings')}
                         </Button>

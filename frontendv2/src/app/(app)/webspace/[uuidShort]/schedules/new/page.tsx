@@ -133,7 +133,7 @@ export default function WebSpaceScheduleNewPage() {
                 }
             />
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} data-fp-save-shortcut>
                 <FormSection>
                     <div className='space-y-2'>
                         <Label className='text-muted-foreground text-xs font-bold tracking-wider uppercase'>

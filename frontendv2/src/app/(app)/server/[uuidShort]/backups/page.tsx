@@ -915,7 +915,7 @@ export default function ServerBackupsPage() {
                         </p>
                     </div>
 
-                    <form onSubmit={handleRestoreBackup} className='space-y-6'>
+                    <form onSubmit={handleRestoreBackup} className='space-y-6' data-fp-save-shortcut>
                         <div
                             className='group mx-1 flex cursor-pointer items-center gap-4 rounded-3xl border border-white/5 bg-black/20 p-5 transition-all hover:bg-black/30'
                             onClick={() => setTruncateDirectory(!truncateDirectory)}

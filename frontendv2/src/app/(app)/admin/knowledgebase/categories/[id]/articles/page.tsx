@@ -738,7 +738,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                         <SheetDescription>{t('admin.knowledgebase.articles.form.create_description')}</SheetDescription>
                     </SheetHeader>
 
-                    <form onSubmit={handleCreate} className='mt-6 flex-1 space-y-4'>
+                    <form onSubmit={handleCreate} className='mt-6 flex-1 space-y-4' data-fp-save-shortcut>
                         <div className='space-y-2'>
                             <Label htmlFor='create-title'>{t('admin.knowledgebase.articles.form.title')}</Label>
                             <Input

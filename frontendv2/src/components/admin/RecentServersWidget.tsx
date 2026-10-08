@@ -15,14 +15,17 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminWidgetLoading } from './AdminWidgetLoading';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
-import { ArrowUpRight, Lock, PlusCircle, Server } from 'lucide-react';
+import { Lock, Server } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { formatRelativeTime } from '@/lib/dateUtils';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { CreateServerAction } from './CreateServerAction';
 
 interface RecentServer {
     id: number;
@@ -88,45 +91,32 @@ export function RecentServersWidget() {
             title={t('admin.recent_servers.title')}
             description={t('admin.recent_servers.description')}
             icon={Server}
-            className='h-full'
+            className='space-y-4 p-4 sm:p-5 [&>div:first-child]:flex-wrap [&>div:first-child]:gap-3 [&>div:first-child]:pb-4'
             action={
                 <div className='flex items-center gap-2'>
-                    <Link
-                        href='/admin/servers/create'
-                        className='bg-primary/10 text-primary border-primary/20 hover:bg-primary/15 flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[9px] font-black tracking-widest uppercase transition-colors'
-                    >
-                        <PlusCircle className='h-3 w-3' />
-                        <span className='hidden sm:inline'>{t('admin.recent_servers.create')}</span>
-                    </Link>
+                    <CreateServerAction compact />
                     {state !== 'forbidden' && (
                         <Link
                             href='/admin/servers'
-                            className='text-muted-foreground hover:text-primary flex items-center gap-1 text-[9px] font-black tracking-widest uppercase transition-colors md:text-[10px]'
+                            className='text-muted-foreground hover:text-foreground hover:bg-accent inline-flex min-h-11 items-center rounded-lg px-2 text-xs font-medium transition-colors'
                         >
                             {t('admin.recent_servers.view_all')}
-                            <ArrowUpRight className='h-3.5 w-3.5' />
                         </Link>
                     )}
                 </div>
             }
         >
-            {state === 'loading' && (
-                <div className='space-y-3'>
-                    {Array.from({ length: 5 }).map((_, i) => (
-                        <div key={i} className='bg-muted/20 h-14 animate-pulse rounded-2xl' />
-                    ))}
-                </div>
-            )}
+            {state === 'loading' && <AdminWidgetLoading label={t('admin.recent_servers.title')} />}
 
             {state === 'forbidden' && (
-                <div className='flex flex-col items-center gap-3 py-10 text-center'>
+                <div className='flex flex-col items-center gap-3 py-3 text-center'>
                     <Lock className='text-muted-foreground h-5 w-5' />
                     <p className='text-sm font-bold'>{t('admin.recent_servers.no_permission')}</p>
                 </div>
             )}
 
             {(state === 'empty' || state === 'error') && (
-                <div className='flex flex-col items-center gap-3 py-10 text-center'>
+                <div className='flex flex-col items-center gap-3 py-3 text-center'>
                     <p className='text-sm font-bold'>
                         {state === 'error' ? t('admin.recent_servers.error') : t('admin.recent_servers.empty')}
                     </p>
@@ -134,7 +124,7 @@ export function RecentServersWidget() {
                         <button
                             type='button'
                             onClick={fetchServers}
-                            className='bg-secondary border-border/50 rounded-xl border px-4 py-2 text-[10px] font-black tracking-widest uppercase'
+                            className='bg-secondary min-h-11 rounded-lg px-4 py-2 text-sm font-medium'
                         >
                             {t('admin.recent_servers.retry')}
                         </button>
@@ -143,21 +133,21 @@ export function RecentServersWidget() {
             )}
 
             {state === 'ready' && (
-                <div className='space-y-2'>
+                <div className='divide-border divide-y'>
                     {servers.map((server) => {
                         const short = server.uuidShort || server.uuid_short || String(server.id);
                         return (
                             <Link
                                 key={server.id}
                                 href={`/admin/servers/${server.id}/edit`}
-                                className='bg-muted/10 border-border/50 hover:border-primary/30 hover:bg-muted/20 group flex items-center gap-3 rounded-2xl border p-3 transition-all'
+                                className='group hover:bg-accent flex min-h-11 items-center gap-3 rounded-md py-3.5 transition-colors'
                             >
-                                <div className='bg-primary/10 text-primary border-primary/20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border'>
-                                    <Server className='h-4 w-4' />
+                                <div className='text-muted-foreground bg-muted flex h-8 w-8 shrink-0 items-center justify-center rounded-md'>
+                                    <Server className='h-4 w-4' aria-hidden />
                                 </div>
                                 <div className='min-w-0 flex-1'>
-                                    <p className='truncate text-sm font-bold'>{server.name}</p>
-                                    <p className='text-muted-foreground truncate text-[10px] font-medium'>
+                                    <p className='text-sm font-medium wrap-break-word'>{server.name}</p>
+                                    <p className='text-muted-foreground mt-1 text-xs leading-relaxed wrap-break-word'>
                                         {server.owner?.username || t('admin.recent_servers.unknown_owner')}
                                         {server.node?.name ? ` · ${server.node.name}` : ''}
                                         {server.created_at
@@ -168,7 +158,9 @@ export function RecentServersWidget() {
                                             : ''}
                                     </p>
                                 </div>
-                                <span className='text-muted-foreground font-mono text-[10px] opacity-60'>{short}</span>
+                                <span className='text-muted-foreground hidden text-xs tabular-nums sm:block'>
+                                    {short}
+                                </span>
                             </Link>
                         );
                     })}

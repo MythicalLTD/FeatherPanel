@@ -504,7 +504,7 @@ export default function TicketViewPage() {
                                 <span className='font-medium'>{t('tickets.ticketClosed')}</span>
                             </div>
                         ) : (
-                            <form onSubmit={handleReply} className='relative flex flex-col gap-2'>
+                            <form onSubmit={handleReply} className='relative flex flex-col gap-2' data-fp-save-shortcut>
                                 {files.length > 0 && (
                                     <div className='bg-card/75 border-border/40 mb-2 flex flex-wrap gap-2 rounded-lg border p-2'>
                                         {files.map((file, idx) => (

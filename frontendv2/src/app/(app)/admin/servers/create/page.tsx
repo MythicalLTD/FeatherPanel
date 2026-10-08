@@ -942,7 +942,7 @@ export default function CreateServerPage() {
                         <ChevronRight className='h-4 w-4' />
                     </Button>
                 ) : (
-                    <Button onClick={handleSubmit} disabled={submitting || navDisabled} className='gap-2'>
+                    <Button onClick={handleSubmit} disabled={submitting || navDisabled} className='gap-2' data-fp-save-shortcut>
                         {submitting ? (
                             <>
                                 <Loader2 className='h-4 w-4 animate-spin' />

@@ -57,7 +57,7 @@ export function NetworkTab({
     const bridgeOptions = (bridges.length ? bridges : ['vmbr0']).map((b) => ({ id: b, name: b }));
 
     return (
-        <form onSubmit={onSave}>
+        <form onSubmit={onSave} data-fp-save-shortcut>
             <PageCard title={t('admin.vmInstances.edit_tabs.network') ?? 'Network'} icon={Wifi}>
                 <div className='space-y-4'>
                     <p className='text-muted-foreground text-sm'>

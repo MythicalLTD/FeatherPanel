@@ -287,7 +287,7 @@ export default function EditPluginPage() {
                     }
                 />
 
-                <form
+                <form data-fp-save-shortcut
                     onSubmit={(e) => {
                         e.preventDefault();
                         updatePlugin();

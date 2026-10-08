@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
 import { ReactNode, ComponentType } from 'react';
+import { OverflowText } from './OverflowText';
 
 export interface ResourceBadge {
     label: string;
@@ -143,11 +144,11 @@ export function ResourceCard({
                     <div className='flex flex-wrap items-center gap-3'>
                         <h3
                             className={cn(
-                                'text-foreground group-hover:text-primary text-xl font-bold tracking-tight transition-colors',
-                                titleClassName ?? 'truncate',
+                                'text-foreground group-hover:text-primary max-w-full min-w-0 text-xl font-bold tracking-tight transition-colors',
+                                titleClassName,
                             )}
                         >
-                            {title}
+                            {titleClassName ? title : <OverflowText>{title}</OverflowText>}
                         </h3>
                         {renderBadges()}
                     </div>

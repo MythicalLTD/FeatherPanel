@@ -15,6 +15,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminWidgetLoading } from './AdminWidgetLoading';
+
 import { useEffect, useState } from 'react';
 import {
     Package,
@@ -172,16 +174,33 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
         }
     };
 
+    if (loading) {
+        return (
+            <PageCard
+                title={t('admin.version.title')}
+                description={t('admin.version.description')}
+                icon={Package}
+                className='space-y-4 p-4 sm:p-5 [&>div:first-child]:flex-wrap [&>div:first-child]:gap-3 [&>div:first-child]:pb-4'
+            >
+                <AdminWidgetLoading label={t('admin.version.title')} rows={2} />
+            </PageCard>
+        );
+    }
+
     return (
-        <PageCard title={t('admin.version.title')} description={t('admin.version.description')} icon={Package}>
+        <PageCard
+            title={t('admin.version.title')}
+            description={t('admin.version.description')}
+            icon={Package}
+            className='space-y-4 p-4 sm:p-5 [&>div:first-child]:flex-wrap [&>div:first-child]:gap-3 [&>div:first-child]:pb-4'
+        >
             <div className='space-y-4 md:space-y-6'>
                 <div className='grid gap-3 sm:grid-cols-2'>
-                    <div className='bg-secondary/30 border-border/50 relative overflow-hidden rounded-2xl border p-3 md:p-4'>
-                        <div className='bg-primary/5 pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full blur-2xl' />
+                    <div className='bg-muted/40 rounded-lg p-4'>
                         <p className='text-muted-foreground relative text-xs font-medium'>
                             {t('admin.version.current_build')}
                         </p>
-                        <h4 className='relative mt-1 truncate text-lg font-black md:text-xl'>
+                        <h4 className='mt-1 text-xl font-semibold wrap-break-word'>
                             {loading ? '…' : current?.version || 'unknown'}
                         </h4>
                         {current?.release_name ? (
@@ -201,9 +220,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                             </p>
                         ) : null}
                         <div className='mt-3 flex flex-wrap items-center gap-2'>
-                            <span className='bg-primary/20 text-primary border-primary/30 inline-block rounded-full border px-2 py-1 text-xs font-medium md:px-3'>
-                                {current?.type || 'Stable'}
-                            </span>
+                            <span className='text-muted-foreground text-xs'>{current?.type || 'Stable'}</span>
                             {current?.is_security_release ? (
                                 <span className='inline-block rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-1 text-xs font-medium text-rose-500 md:px-3'>
                                     {t('admin.version.security_release')}
@@ -212,18 +229,11 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                         </div>
                     </div>
 
-                    <div
-                        className={`relative overflow-hidden rounded-2xl border p-3 md:p-4 ${
-                            !isLatest ? 'border-amber-500/30 bg-amber-500/5' : 'bg-secondary/30 border-border/50'
-                        }`}
-                    >
-                        {!isLatest && (
-                            <div className='pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-amber-500/15 blur-2xl' />
-                        )}
+                    <div className={`rounded-lg p-4 ${!isLatest ? 'bg-amber-500/10' : 'bg-muted/40'}`}>
                         <p className='text-muted-foreground relative text-xs font-medium'>
                             {t('admin.version.latest_build')}
                         </p>
-                        <h4 className='relative mt-1 truncate text-lg font-black md:text-xl'>
+                        <h4 className='mt-1 text-xl font-semibold wrap-break-word'>
                             {loading ? '…' : latest?.version || current?.version || t('admin.version.no_releases_yet')}
                         </h4>
                         {latest?.release_name ? (
@@ -243,11 +253,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                             </p>
                         ) : null}
                         <div className='mt-3 flex flex-wrap items-center gap-2'>
-                            {latest?.type ? (
-                                <span className='bg-primary/20 text-primary border-primary/30 inline-block rounded-full border px-2 py-1 text-xs font-medium md:px-3'>
-                                    {latest.type}
-                                </span>
-                            ) : null}
+                            {latest?.type ? <span className='text-muted-foreground text-xs'>{latest.type}</span> : null}
                             {latest?.is_security_release ? (
                                 <span className='inline-block rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-1 text-xs font-medium text-rose-500 md:px-3'>
                                     {t('admin.version.security_release')}
@@ -273,8 +279,12 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                 ) : null}
 
                 <div className='flex flex-col gap-3'>
-                    {!showUpdateSection ? (
-                        <div className='flex items-center justify-between gap-3 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 p-4 text-emerald-500'>
+                    {loading || !version ? (
+                        <p role='status' className='text-muted-foreground py-3 text-sm'>
+                            {loading ? t('common.loading') : t('admin.system_health.status.unavailable')}
+                        </p>
+                    ) : !showUpdateSection ? (
+                        <div className='flex items-center justify-between gap-3 rounded-lg bg-emerald-500/5 p-3 text-emerald-700 dark:text-emerald-400'>
                             <div className='flex items-center gap-3'>
                                 <CheckCircle2 className='h-5 w-5' />
                                 <p className='text-sm font-bold'>{t('admin.version.up_to_date')}</p>
@@ -284,12 +294,12 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                             </Button>
                         </div>
                     ) : (
-                        <div className='flex flex-col gap-4 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 text-amber-500'>
+                        <div className='flex flex-col gap-4 rounded-lg bg-amber-500/10 p-4 text-amber-800 dark:text-amber-400'>
                             <div className='flex items-center justify-between gap-3'>
                                 <div className='flex items-center gap-3'>
-                                    <Download className='h-5 w-5 animate-bounce' />
+                                    <Download className='h-5 w-5 shrink-0' />
                                     <div className='space-y-0.5'>
-                                        <p className='text-sm font-black tracking-tight uppercase'>
+                                        <p className='text-sm font-medium'>
                                             {useManualPullMessaging
                                                 ? t('admin.version.docker_pull_offer_title')
                                                 : isCurrentVersionUnknown
@@ -399,7 +409,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                     </div>
 
                     {version?.last_checked && (
-                        <p className='text-muted-foreground text-center text-xs font-medium opacity-40'>
+                        <p className='text-muted-foreground text-xs'>
                             {t('admin.version.last_checked', { date: new Date(version.last_checked).toLocaleString() })}
                         </p>
                     )}

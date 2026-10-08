@@ -68,7 +68,7 @@ export default function NewWingsBackupDestinationPage() {
                     </Button>
                 }
             />
-            <form onSubmit={handleSubmit} className='space-y-6'>
+            <form onSubmit={handleSubmit} className='space-y-6' data-fp-save-shortcut>
                 <DestinationFormFields form={form} setForm={setForm} disabled={saving} />
                 <div className='bg-card/40 border-border/50 sticky bottom-4 z-10 flex flex-wrap justify-end gap-2 rounded-2xl border p-4 shadow-sm backdrop-blur-md'>
                     <Button type='button' variant='outline' onClick={() => safeBack(router, '/admin/wings-backups')}>

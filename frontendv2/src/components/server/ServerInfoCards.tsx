@@ -22,6 +22,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { formatMib, formatCpu as formatCpuGlobal, cn, formatFileSize } from '@/lib/utils';
 import { getUsagePercentage, getProgressColor } from '@/lib/server-utils';
 import { Progress } from '@/components/ui/progress';
+import { OverflowText } from '@/components/featherui/OverflowText';
 
 interface ThroughputRowProps {
     icon: LucideIcon;
@@ -34,7 +35,7 @@ function ThroughputRow({ icon: Icon, label, value }: ThroughputRowProps) {
         <div className='flex items-center justify-between gap-2 text-sm'>
             <span className='text-muted-foreground flex min-w-0 items-center gap-2'>
                 <Icon className='h-3 w-3 shrink-0' />
-                <span className='truncate'>{label}</span>
+                <OverflowText>{label}</OverflowText>
             </span>
             <span className='shrink-0 font-medium tabular-nums'>{value}</span>
         </div>
