@@ -56,19 +56,36 @@ Also seeded (password `demoPassword`): `support`, `moderator`, plus banned/junk 
 
 ## Cloudflare Tunnel (public demo)
 
-Install [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/), create a tunnel, then:
+Use **single-level** hostnames under your zone. Cloudflare free Universal SSL covers
+`*.featherpanel.com` only — **not** `*.demo.featherpanel.com`. Nested names like
+`wings.demo.featherpanel.com` cause `ERR_SSL_VERSION_OR_CIPHER_MISMATCH`.
+
+| Role | Hostname |
+|------|----------|
+| Panel | `demo.featherpanel.com` |
+| Wings | `wings-demo.featherpanel.com` |
+| Quilld | `quill-demo.featherpanel.com` |
+
+Install [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/), create a tunnel, publish:
+
+| Public hostname | Service |
+|-----------------|---------|
+| `demo.featherpanel.com` | `http://localhost:8088` |
+| `wings-demo.featherpanel.com` | `http://localhost:8081` |
+| `quill-demo.featherpanel.com` | `http://localhost:8989` |
+
+Or `/etc/cloudflared/config.yml`:
 
 ```yaml
-# /etc/cloudflared/config.yml
 tunnel: <TUNNEL_ID>
 credentials-file: /etc/cloudflared/<TUNNEL_ID>.json
 
 ingress:
   - hostname: demo.featherpanel.com
     service: http://127.0.0.1:8088
-  - hostname: wings.demo.featherpanel.com
+  - hostname: wings-demo.featherpanel.com
     service: http://127.0.0.1:8081
-  - hostname: quill.demo.featherpanel.com
+  - hostname: quill-demo.featherpanel.com
     service: http://127.0.0.1:8989
   - service: http_status:404
 ```
@@ -76,8 +93,8 @@ ingress:
 ```bash
 # deploy/demo/.env
 FEATHERPANEL_APP_URL=https://demo.featherpanel.com
-DEMO_WINGS_FQDN=wings.demo.featherpanel.com
-DEMO_QUILL_FQDN=quill.demo.featherpanel.com
+DEMO_WINGS_FQDN=wings-demo.featherpanel.com
+DEMO_QUILL_FQDN=quill-demo.featherpanel.com
 DEMO_WINGS_REMOTE_URL=http://backend:80   # keep this — daemons use compose DNS
 ```
 
@@ -87,7 +104,7 @@ DEMO_REBUILD_GOLDEN=1 docker compose up -d demo-reset   # once after URL change
 cloudflared service install && systemctl enable --now cloudflared
 ```
 
-DNS CNAMEs → `<tunnel-id>.cfargotunnel.com`.
+DNS: proxied CNAMEs for each hostname → `<tunnel-id>.cfargotunnel.com`.
 
 ## Disk hygiene
 
