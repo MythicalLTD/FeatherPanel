@@ -59,6 +59,36 @@ function env_int(string $key, int $default): int
 }
 
 /**
+ * Public hostnames sit behind Cloudflare Tunnel → browsers must use https/wss
+ * without :daemonPort. Localhost keeps http + explicit port.
+ *
+ * @return array{scheme: string, behind_proxy: int}
+ */
+function demo_public_edge(string $fqdn, string $schemeEnv, string $proxyEnv): array
+{
+    $host = strtolower(trim($fqdn));
+    $isLocal = $host === ''
+        || $host === 'localhost'
+        || $host === '127.0.0.1'
+        || str_ends_with($host, '.local')
+        || str_ends_with($host, '.localhost');
+
+    $schemeOverride = strtolower(env_str($schemeEnv, ''));
+    $scheme = in_array($schemeOverride, ['http', 'https'], true)
+        ? $schemeOverride
+        : ($isLocal ? 'http' : 'https');
+
+    $proxyRaw = env_str($proxyEnv, '');
+    if ($proxyRaw !== '') {
+        $behind = filter_var($proxyRaw, FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+    } else {
+        $behind = $isLocal ? 0 : 1;
+    }
+
+    return ['scheme' => $scheme, 'behind_proxy' => $behind];
+}
+
+/**
  * @param array<string, mixed> $attrs
  *
  * @return array<string, mixed>
@@ -104,22 +134,23 @@ function ensure_wings_node(array $location): array
     $fqdn = env_str('DEMO_WINGS_FQDN', 'localhost');
     $daemonListen = env_int('DEMO_WINGS_DAEMON_PORT', 8081);
     $daemonSftp = env_int('DEMO_WINGS_SFTP_PORT', 2022);
+    $edge = demo_public_edge($fqdn, 'DEMO_WINGS_SCHEME', 'DEMO_WINGS_BEHIND_PROXY');
 
     $node = Node::getNodeByName($nodeName);
     if ($node !== null) {
-        // Keep FQDN/ports in sync so browser → Wings works after env changes.
+        // Keep FQDN/ports/scheme in sync so browser → Wings works after env changes.
         Node::updateNodeById((int) $node['id'], [
             'fqdn' => $fqdn,
-            'scheme' => 'http',
+            'scheme' => $edge['scheme'],
             'daemonListen' => $daemonListen,
             'daemonSFTP' => $daemonSftp,
             'daemonBase' => env_str('DEMO_WINGS_ROOT_PATH', '/var/lib/featherpanel-demo') . '/volumes',
             'public' => 1,
-            'behind_proxy' => 0,
+            'behind_proxy' => $edge['behind_proxy'],
             'maintenance_mode' => 0,
         ]);
         $node = Node::getNodeById((int) $node['id']);
-        demo_log("Node already exists (updated): {$nodeName}");
+        demo_log("Node already exists (updated): {$nodeName} ({$edge['scheme']}://{$fqdn}, behind_proxy={$edge['behind_proxy']})");
 
         return $node ?? [];
     }
@@ -130,9 +161,9 @@ function ensure_wings_node(array $location): array
         'description' => 'Dockerized FeatherWings node for the public demo',
         'location_id' => (int) $location['id'],
         'fqdn' => $fqdn,
-        'scheme' => 'http',
+        'scheme' => $edge['scheme'],
         'public' => 1,
-        'behind_proxy' => 0,
+        'behind_proxy' => $edge['behind_proxy'],
         'maintenance_mode' => 0,
         'memory' => 16384,
         'memory_overallocate' => 0,
@@ -152,7 +183,7 @@ function ensure_wings_node(array $location): array
     }
 
     $node = Node::getNodeById($nodeId);
-    demo_log("Created Wings node: {$nodeName} ({$fqdn}:{$daemonListen})");
+    demo_log("Created Wings node: {$nodeName} ({$edge['scheme']}://{$fqdn}:{$daemonListen}, behind_proxy={$edge['behind_proxy']})");
 
     return $node ?? [];
 }
@@ -424,6 +455,8 @@ function ensure_web_node(array $location): array
 {
     $nodeName = env_str('DEMO_QUILL_NODE_NAME', 'Demo FeatherQuill');
     $fqdn = env_str('DEMO_QUILL_FQDN', 'localhost');
+    $edge = demo_public_edge($fqdn, 'DEMO_QUILL_SCHEME', 'DEMO_QUILL_BEHIND_PROXY');
+    $daemonListen = env_int('DEMO_QUILL_DAEMON_PORT', 8989);
 
     foreach (WebNode::getAllWebNodes() as $row) {
         if (($row['name'] ?? '') === $nodeName) {
@@ -439,16 +472,16 @@ function ensure_web_node(array $location): array
         'description' => 'Demo FeatherQuilld web node (UI + config seeded; daemon optional)',
         'location_id' => (int) $location['id'],
         'fqdn' => $fqdn,
-        'scheme' => 'http',
+        'scheme' => $edge['scheme'],
         'public' => 1,
-        'behind_proxy' => 0,
+        'behind_proxy' => $edge['behind_proxy'],
         'maintenance_mode' => 0,
         'memory' => 4096,
         'disk' => 51200,
         'upload_size' => 256,
         'daemon_token_id' => WebNode::generateDaemonTokenId(),
         'daemon_token' => WebNode::generateDaemonToken(),
-        'daemonListen' => env_int('DEMO_QUILL_DAEMON_PORT', 8989),
+        'daemonListen' => $daemonListen,
         'daemonBase' => env_str('DEMO_QUILL_ROOT_PATH', '/var/lib/featherquilld-demo'),
         'sftpEnabled' => 1,
         'proxyEnabled' => 1,
@@ -461,7 +494,7 @@ function ensure_web_node(array $location): array
     }
 
     $node = WebNode::getWebNodeById($nodeId);
-    demo_log("Created FeatherQuill web node: {$nodeName}");
+    demo_log("Created FeatherQuill web node: {$nodeName} ({$edge['scheme']}://{$fqdn}, behind_proxy={$edge['behind_proxy']})");
 
     return $node ?? [];
 }
@@ -756,10 +789,13 @@ ensure_database_host();
 
 $webNode = ensure_web_node($webLocation);
 if ($webNode !== []) {
-    // Keep FQDN/ports in sync for browser → Quilld
+    // Keep FQDN/ports/scheme in sync for browser → Quilld
+    $quillFqdn = env_str('DEMO_QUILL_FQDN', 'localhost');
+    $quillEdge = demo_public_edge($quillFqdn, 'DEMO_QUILL_SCHEME', 'DEMO_QUILL_BEHIND_PROXY');
     WebNode::updateWebNodeById((int) $webNode['id'], [
-        'fqdn' => env_str('DEMO_QUILL_FQDN', 'localhost'),
-        'scheme' => 'http',
+        'fqdn' => $quillFqdn,
+        'scheme' => $quillEdge['scheme'],
+        'behind_proxy' => $quillEdge['behind_proxy'],
         'daemonListen' => env_int('DEMO_QUILL_DAEMON_PORT', 8989),
         'daemonBase' => env_str('DEMO_QUILL_ROOT_PATH', '/var/lib/featherquilld-demo'),
         'public' => 1,

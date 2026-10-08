@@ -60,7 +60,10 @@ $port = (int) ($node['daemonListen'] ?? 8081);
 $sftpPort = (int) ($node['daemonSFTP'] ?? 2022);
 $fqdn = (string) ($node['fqdn'] ?? 'localhost');
 $uploadLimit = (int) ($node['upload_size'] ?? 512);
-$ssl = (($node['scheme'] ?? 'http') === 'https') ? 'true' : 'false';
+// Cloudflare Tunnel (and local demo) speak plain HTTP to the container.
+// Node scheme may be https for browser wss:// — that must not enable in-daemon TLS.
+$behindProxy = filter_var($node['behind_proxy'] ?? false, FILTER_VALIDATE_BOOLEAN);
+$ssl = (($node['scheme'] ?? 'http') === 'https' && !$behindProxy) ? 'true' : 'false';
 
 // Prefer decrypted tokens if Node model returned them encrypted.
 if ($tokenId === '' || $token === '') {

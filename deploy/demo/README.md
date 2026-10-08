@@ -60,17 +60,17 @@ Use **single-level** hostnames under your zone. Cloudflare free Universal SSL co
 `*.featherpanel.com` only — **not** `*.demo.featherpanel.com`. Nested names like
 `wings.demo.featherpanel.com` cause `ERR_SSL_VERSION_OR_CIPHER_MISMATCH`.
 
-| Role | Hostname |
-|------|----------|
-| Panel | `demo.featherpanel.com` |
-| Wings | `wings-demo.featherpanel.com` |
+| Role   | Hostname                      |
+| ------ | ----------------------------- |
+| Panel  | `demo.featherpanel.com`       |
+| Wings  | `wings-demo.featherpanel.com` |
 | Quilld | `quill-demo.featherpanel.com` |
 
 Install [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/), create a tunnel, publish:
 
-| Public hostname | Service |
-|-----------------|---------|
-| `demo.featherpanel.com` | `http://localhost:8088` |
+| Public hostname               | Service                 |
+| ----------------------------- | ----------------------- |
+| `demo.featherpanel.com`       | `http://localhost:8088` |
 | `wings-demo.featherpanel.com` | `http://localhost:8081` |
 | `quill-demo.featherpanel.com` | `http://localhost:8989` |
 
@@ -98,13 +98,18 @@ DEMO_QUILL_FQDN=quill-demo.featherpanel.com
 DEMO_WINGS_REMOTE_URL=http://backend:80   # keep this — daemons use compose DNS
 ```
 
+Non-localhost FQDNs are seeded as `scheme=https` + `behind_proxy=1` so the panel
+hands the browser `wss://wings-demo…/…/ws` (Cloudflare 443 → tunnel → `:8081`),
+not mixed-content `ws://…:8081`.
+
 ```bash
 docker compose up -d
-DEMO_REBUILD_GOLDEN=1 docker compose up -d demo-reset   # once after URL change
+DEMO_REBUILD_GOLDEN=1 docker compose up -d demo-reset   # once after URL / FQDN change
 cloudflared service install && systemctl enable --now cloudflared
 ```
 
 DNS: proxied CNAMEs for each hostname → `<tunnel-id>.cfargotunnel.com`.
+Cloudflare Tunnel supports WebSockets on those HTTP origins by default.
 
 ## Disk hygiene
 
