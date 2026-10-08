@@ -83,6 +83,7 @@ services:
       - featherpanel_addons:/var/www/html/storage/addons
       - featherpanel_data:/var/www/html/storage/data
       - featherpanel_pma:/var/www/html/public/pma
+      - featherpanel_webmail:/var/www/html/public/webmail
     networks:
       - featherpanel_network
 
@@ -198,6 +199,8 @@ volumes:
   featherpanel_data:
     driver: local
   featherpanel_pma:
+    driver: local
+  featherpanel_webmail:
     driver: local
   mcp_oauth_data:
     driver: local

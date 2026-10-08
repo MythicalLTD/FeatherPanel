@@ -100,6 +100,8 @@ while [[ $# -gt 0 ]]; do
 		echo "  --skip-system-update   Skip apt update and essential package installation"
 		echo "  --refresh-docker-updater-only  Rewrite /etc/featherpanel host updater scripts only (no full install)"
 		echo "  --wings-install-only   Install FeatherWings only (no setup wizard; for panel quick-setup step 1)"
+		echo "  Env for daemons:       FP_WINGS_METHOD = apt|direct  FP_WINGS_CHANNEL = stable|nightly"
+		echo "                         FP_QUILLD_CHANNEL = stable|nightly  (FeatherQuilld is APT-only)"
 		echo "  --dev                  Use latest dev release images"
 		echo "  --dev-branch BRANCH    Use dev images for specific branch (e.g., develop, main)"
 		echo "  --dev-sha SHA          Use dev images for specific commit SHA (requires --dev-branch)"
@@ -1479,7 +1481,11 @@ set_panel_install_mode() {
 }
 
 get_source_scripts_branch() {
-	echo "main"
+	if [ "${USE_DEV:-false}" = "true" ] || [ -n "${FP_DEV:-}" ]; then
+		echo "${DEV_BRANCH:-develop}"
+	else
+		echo "main"
+	fi
 }
 
 get_latest_panel_release_tag() {
@@ -2201,17 +2207,19 @@ show_wings_menu() {
 	draw_hr
 	echo ""
 	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Install Wings${NC}"
-	echo -e "     ${BLUE}→ Install FeatherWings, Docker, and required directories${NC}"
+	echo -e "     ${GREEN}→ Recommended: MythicalSystems ${BOLD}APT repo${NC}${GREEN} (cleaner upgrades & easy migration)${NC}"
+	echo -e "     ${BLUE}→ Direct GitHub binary still available if you prefer${NC}"
+	echo -e "     ${BLUE}→ Installs Docker and required directories${NC}"
 	echo -e "     ${BLUE}→ Launches ${BOLD}featherwings configure${NC} to finish setup (node, SSL, service)${NC}"
 	echo ""
 	echo -e "  ${RED}${BOLD}[2]${NC} ${BOLD}Uninstall Wings${NC}"
 	echo -e "     ${YELLOW}⚠️  WARNING: This will remove Wings and its configuration${NC}"
-	echo -e "     ${BLUE}→ Stops and removes systemd service${NC}"
+	echo -e "     ${BLUE}→ Stops and removes systemd service / APT package${NC}"
 	echo -e "     ${BLUE}→ Removes Wings binary and data (optional)${NC}"
 	echo ""
 	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Update Wings${NC}"
-	echo -e "     ${BLUE}→ Download latest Wings binary${NC}"
-	echo -e "     ${BLUE}→ Restart Wings service with new version${NC}"
+	echo -e "     ${GREEN}→ APT (recommended): ${BOLD}apt upgrade${NC}${GREEN} — clean, supports stable ↔ nightly switches${NC}"
+	echo -e "     ${BLUE}→ Direct installs: download latest binary and restart${NC}"
 	echo ""
 	echo -e "  ${CYAN}${BOLD}[4]${NC} ${BOLD}Backup Manager${NC}"
 	echo -e "     ${BLUE}→ Create, list, restore, and manage Wings backups${NC}"
@@ -2906,22 +2914,174 @@ setup_cloudflare_tunnel_client() {
 	fi
 }
 
-# Wings installation functions
-install_wings() {
-	log_step "Installing FeatherWings daemon..."
+# MythicalSystems APT repository (FeatherWings / FeatherQuilld packages)
+mythicalsystems_apt_supported() {
+	command -v apt-get >/dev/null 2>&1 && command -v dpkg >/dev/null 2>&1
+}
 
-	# Check and install Docker first (Wings requires Docker)
-	if command -v docker &>/dev/null; then
-		log_info "Docker is already installed."
-	else
-		log_step "Installing Docker engine (required for Wings, this may take a minute)..."
-		curl -sSL https://get.docker.com/ | CHANNEL=stable bash >>"$LOG_FILE" 2>&1
-		systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
-		usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
-		log_success "Docker installed. You may need to re-login for group changes to take effect."
+mythicalsystems_apt_package_installed() {
+	local pkg="$1"
+	dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q "install ok installed"
+}
+
+setup_mythicalsystems_apt_repo() {
+	log_step "Configuring MythicalSystems APT repository..."
+
+	if ! mythicalsystems_apt_supported; then
+		log_error "APT repository installs require Debian/Ubuntu (apt-get + dpkg)."
+		return 1
 	fi
 
-	# Check kernel version for swap support
+	apt-get install -y ca-certificates curl gnupg >>"$LOG_FILE" 2>&1
+	install -d -m 0755 /etc/apt/keyrings
+
+	if ! curl -fsSL https://apt.mythicalsystems.org/repository/keys/public.gpg |
+		gpg --dearmor -o /etc/apt/keyrings/mythicalsystems.gpg 2>>"$LOG_FILE"; then
+		log_error "Failed to import MythicalSystems APT GPG key."
+		return 1
+	fi
+	chmod a+r /etc/apt/keyrings/mythicalsystems.gpg
+
+	local arch
+	arch="$(dpkg --print-architecture)"
+	echo "deb [arch=${arch} signed-by=/etc/apt/keyrings/mythicalsystems.gpg] https://apt.mythicalsystems.org/repository/MythicalSystems/ stable main" \
+		>/etc/apt/sources.list.d/mythicalsystems.list
+
+	if ! apt-get update -qq >>"$LOG_FILE" 2>&1; then
+		log_error "Failed to refresh APT after adding MythicalSystems repository."
+		return 1
+	fi
+
+	log_success "MythicalSystems APT repository ready."
+}
+
+# Sets DAEMON_INSTALL_METHOD (apt|direct) and DAEMON_APT_CHANNEL (stable|nightly).
+# Optional 4th arg "apt_only" forces APT (used by FeatherQuilld).
+# Env overrides: FP_DAEMON_METHOD / FP_DAEMON_CHANNEL, or component-specific
+# FP_WINGS_METHOD / FP_WINGS_CHANNEL / FP_QUILLD_CHANNEL.
+prompt_daemon_install_method() {
+	local component_label="$1"
+	local env_method_var="$2"
+	local env_channel_var="$3"
+	local force_apt_only="${4:-}"
+	local method="" channel=""
+	local apt_ok=false
+
+	if mythicalsystems_apt_supported; then
+		apt_ok=true
+	fi
+
+	eval "method=\"\${${env_method_var}:-\${FP_DAEMON_METHOD:-}}\""
+	eval "channel=\"\${${env_channel_var}:-\${FP_DAEMON_CHANNEL:-}}\""
+	method="$(printf '%s' "$method" | tr '[:upper:]' '[:lower:]')"
+	channel="$(printf '%s' "$channel" | tr '[:upper:]' '[:lower:]')"
+
+	case "$method" in
+	apt | repo | package) method="apt" ;;
+	direct | binary | github | manual) method="direct" ;;
+	*) method="" ;;
+	esac
+
+	if [ "$force_apt_only" = "apt_only" ]; then
+		if [ "$method" = "direct" ]; then
+			log_warn "${component_label} only supports APT installs — ignoring direct method override."
+		fi
+		method="apt"
+		if [ "$apt_ok" != true ]; then
+			log_error "${component_label} requires Debian/Ubuntu with apt-get (APT-only install)."
+			return 1
+		fi
+	fi
+
+	if [ "$method" = "apt" ] && [ "$apt_ok" != true ]; then
+		if [ "$force_apt_only" = "apt_only" ]; then
+			log_error "${component_label} requires APT, but apt-get is unavailable on this system."
+			return 1
+		fi
+		log_warn "APT install requested but apt-get is unavailable; falling back to direct binary install."
+		method="direct"
+	fi
+
+	if [ -z "$method" ]; then
+		if [ ! -t 0 ] && [ ! -t 1 ]; then
+			if [ "$apt_ok" = true ]; then
+				method="apt"
+			else
+				method="direct"
+			fi
+		else
+			echo ""
+			echo -e "${BOLD}${CYAN}${component_label} install method${NC}"
+			if [ "$apt_ok" = true ]; then
+				echo -e "  ${GREEN}${BOLD}We strongly recommend APT${NC}${GREEN} — cleaner upgrades, package-managed systemd,${NC}"
+				echo -e "  ${GREEN}and easy migration between stable/nightly (or from a direct install).${NC}"
+				echo ""
+				echo -e "  ${GREEN}[1]${NC} ${BOLD}APT repository${NC} ${GREEN}(recommended)${NC}"
+				echo -e "  ${YELLOW}[2]${NC} ${BOLD}Direct binary${NC} ${CYAN}(GitHub download — manual updates)${NC}"
+				method_choice=""
+				prompt "${BOLD}Select method${NC} ${BLUE}(1 recommended / 2)${NC}: " method_choice
+				case "$method_choice" in
+				2) method="direct" ;;
+				*) method="apt" ;;
+				esac
+			else
+				log_info "APT is not available on this OS — using direct binary install."
+				method="direct"
+			fi
+		fi
+	fi
+
+	if [ "$method" = "apt" ]; then
+		case "$channel" in
+		stable | release) channel="stable" ;;
+		nightly | dev | development) channel="nightly" ;;
+		*)
+			if [ "${PREFER_DEV:-no}" = "yes" ]; then
+				channel="nightly"
+			elif [ ! -t 0 ] && [ ! -t 1 ]; then
+				channel="stable"
+			else
+				echo ""
+				echo -e "${BOLD}${CYAN}APT package channel${NC}"
+				echo -e "  ${GREEN}[1]${NC} ${BOLD}Stable${NC} ${CYAN}(published releases)${NC}"
+				echo -e "  ${GREEN}[2]${NC} ${BOLD}Nightly / Dev${NC} ${CYAN}(latest main builds)${NC}"
+				channel_choice=""
+				prompt "${BOLD}Select channel${NC} ${BLUE}(1/2)${NC}: " channel_choice
+				case "$channel_choice" in
+				2) channel="nightly" ;;
+				*) channel="stable" ;;
+				esac
+			fi
+			;;
+		esac
+	else
+		channel="stable"
+	fi
+
+	DAEMON_INSTALL_METHOD="$method"
+	DAEMON_APT_CHANNEL="$channel"
+	if [ "$DAEMON_INSTALL_METHOD" = "apt" ]; then
+		log_info "${component_label} install method: apt (${DAEMON_APT_CHANNEL})"
+	else
+		log_info "${component_label} install method: direct"
+	fi
+}
+
+ensure_docker_for_daemon() {
+	local label="${1:-daemon}"
+	if command -v docker &>/dev/null; then
+		log_info "Docker is already installed."
+		return 0
+	fi
+	log_step "Installing Docker engine (required for ${label}, this may take a minute)..."
+	curl -sSL https://get.docker.com/ | CHANNEL=stable bash >>"$LOG_FILE" 2>&1
+	systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
+	usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
+	log_success "Docker installed. You may need to re-login for group changes to take effect."
+}
+
+warn_docker_swap_kernel() {
+	local KERNEL_VERSION KERNEL_MAJOR KERNEL_MINOR
 	KERNEL_VERSION=$(uname -r | cut -d. -f1-2)
 	KERNEL_MAJOR=$(echo "$KERNEL_VERSION" | cut -d. -f1)
 	KERNEL_MINOR=$(echo "$KERNEL_VERSION" | cut -d. -f2)
@@ -2934,8 +3094,9 @@ install_wings() {
 	else
 		log_info "Kernel version $KERNEL_VERSION detected (6.1+) - swap enabled by default"
 	fi
+}
 
-	# Create directory structure
+create_wings_directories() {
 	log_info "Creating FeatherWings directory structure..."
 	mkdir -p /etc/featherpanel
 	mkdir -p /var/lib/featherpanel/volumes
@@ -2946,13 +3107,23 @@ install_wings() {
 	mkdir -p /var/log/featherpanel
 	mkdir -p /tmp/featherpanel
 	mkdir -p /var/run/featherwings
+}
 
-	# Download and install featherwings binary
+wings_apt_package_name() {
+	if mythicalsystems_apt_package_installed featherwings-dev; then
+		echo "featherwings-dev"
+	elif mythicalsystems_apt_package_installed featherwings; then
+		echo "featherwings"
+	else
+		echo ""
+	fi
+}
+
+install_wings_direct() {
 	log_info "Downloading FeatherWings binary..."
 	curl -L -o /usr/local/bin/featherwings "https://github.com/MythicalLTD/FeatherWings/releases/latest/download/wings_linux_$([[ "$(uname -m)" == "x86_64" ]] && echo "amd64" || echo "arm64")"
 	chmod +x /usr/local/bin/featherwings
 
-	# Create systemd service
 	cat <<EOF | tee /etc/systemd/system/featherwings.service >/dev/null
 [Unit]
 Description=FeatherWings Daemon
@@ -2975,9 +3146,52 @@ StandardError=journal
 WantedBy=multi-user.target
 EOF
 
-	# Enable but don't start yet (needs configuration)
 	systemctl daemon-reload
 	systemctl enable featherwings
+}
+
+install_wings_apt() {
+	local pkg="featherwings"
+	if [ "${DAEMON_APT_CHANNEL:-stable}" = "nightly" ]; then
+		pkg="featherwings-dev"
+	fi
+
+	if ! setup_mythicalsystems_apt_repo; then
+		return 1
+	fi
+
+	# Prefer package unit over a leftover manual unit from a prior direct install
+	systemctl stop featherwings >/dev/null 2>&1 || true
+	systemctl stop wings >/dev/null 2>&1 || true
+	rm -f /etc/systemd/system/featherwings.service /etc/systemd/system/wings.service
+	systemctl daemon-reload >/dev/null 2>&1 || true
+
+	log_info "Installing APT package: ${pkg}"
+	if ! apt-get install -y "$pkg" >>"$LOG_FILE" 2>&1; then
+		log_error "Failed to install ${pkg} from MythicalSystems APT repository."
+		return 1
+	fi
+
+	systemctl enable featherwings >/dev/null 2>&1 || true
+	log_success "Installed ${pkg} via APT."
+}
+
+# Wings installation functions
+install_wings() {
+	log_step "Installing FeatherWings daemon..."
+
+	prompt_daemon_install_method "FeatherWings" "FP_WINGS_METHOD" "FP_WINGS_CHANNEL"
+	ensure_docker_for_daemon "Wings"
+	warn_docker_swap_kernel
+	create_wings_directories
+
+	if [ "$DAEMON_INSTALL_METHOD" = "apt" ]; then
+		if ! install_wings_apt; then
+			return 1
+		fi
+	else
+		install_wings_direct
+	fi
 
 	log_success "FeatherWings daemon installed successfully."
 }
@@ -3017,36 +3231,38 @@ run_featherwings_configure_wizard() {
 uninstall_wings() {
 	log_step "Uninstalling FeatherWings daemon..."
 
-	# Stop and disable service
+	local apt_pkg
+	apt_pkg="$(wings_apt_package_name)"
+
 	systemctl stop featherwings >/dev/null 2>&1 || true
 	systemctl disable featherwings >/dev/null 2>&1 || true
 
-	# Remove service file
-	rm -f /etc/systemd/system/featherwings.service
+	if [ -n "$apt_pkg" ]; then
+		log_info "Removing APT package: ${apt_pkg}"
+		apt-get remove -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || true
+		apt-get purge -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || true
+	fi
+
+	rm -f /etc/systemd/system/featherwings.service /etc/systemd/system/wings.service
 	systemctl daemon-reload
+	rm -f /usr/local/bin/featherwings /usr/local/bin/wings
 
-	# Remove binary
-	rm -f /usr/local/bin/featherwings
-
-	# Remove configuration (ask first)
 	if [ -d /etc/featherpanel ]; then
-		log_info "Remove FeatherWings configuration directory (/etc/featherpanel)? (y/n): "
-		read -r remove_config
+		remove_config="n"
+		prompt "Remove FeatherWings configuration directory (/etc/featherpanel)? (y/n): " remove_config
 		if [[ "$remove_config" =~ ^[yY]$ ]]; then
 			rm -rf /etc/featherpanel
 		fi
 	fi
 
-	# Remove data directories (ask first)
 	if [ -d /var/lib/featherpanel ]; then
-		log_info "Remove FeatherWings data directory (/var/lib/featherpanel)? (y/n): "
-		read -r remove_data
+		remove_data="n"
+		prompt "Remove FeatherWings data directory (/var/lib/featherpanel)? (y/n): " remove_data
 		if [[ "$remove_data" =~ ^[yY]$ ]]; then
 			rm -rf /var/lib/featherpanel
 		fi
 	fi
 
-	# Remove logs
 	rm -rf /var/log/featherpanel
 
 	log_success "FeatherWings daemon uninstalled successfully."
@@ -3055,27 +3271,42 @@ uninstall_wings() {
 update_wings() {
 	log_step "Updating FeatherWings daemon..."
 
-	if [ ! -f /usr/local/bin/featherwings ]; then
+	if ! wings_is_installed; then
 		log_error "FeatherWings is not installed. Please install it first."
 		return 1
 	fi
 
-	# Stop featherwings service
-	systemctl stop featherwings
+	local apt_pkg
+	apt_pkg="$(wings_apt_package_name)"
 
-	# Download latest FeatherWings binary
+	if [ -n "$apt_pkg" ]; then
+		log_info "Updating via APT package: ${apt_pkg}"
+		if ! setup_mythicalsystems_apt_repo; then
+			return 1
+		fi
+		if ! apt-get install --only-upgrade -y "$apt_pkg" >>"$LOG_FILE" 2>&1; then
+			# Package may already be newest; also allow reinstall of current channel
+			apt-get install -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || {
+				log_error "Failed to upgrade ${apt_pkg}."
+				return 1
+			}
+		fi
+		systemctl restart featherwings >/dev/null 2>&1 || systemctl start featherwings >/dev/null 2>&1 || true
+		log_success "FeatherWings daemon updated successfully (APT: ${apt_pkg})."
+		return 0
+	fi
+
+	systemctl stop featherwings >/dev/null 2>&1 || true
 	log_info "Downloading latest FeatherWings binary..."
 	curl -L -o /usr/local/bin/featherwings "https://github.com/MythicalLTD/FeatherWings/releases/latest/download/wings_linux_$([[ "$(uname -m)" == "x86_64" ]] && echo "amd64" || echo "arm64")"
 	chmod +x /usr/local/bin/featherwings
-
-	# Restart service
 	systemctl start featherwings
 
 	log_success "FeatherWings daemon updated successfully."
 }
 
 wings_is_installed() {
-	[ -x /usr/local/bin/featherwings ] || command -v featherwings >/dev/null 2>&1
+	[ -x /usr/local/bin/featherwings ] || command -v featherwings >/dev/null 2>&1 || [ -n "$(wings_apt_package_name)" ]
 }
 
 wings_resolve_volumes_dir() {
@@ -3517,221 +3748,21 @@ show_featherquilld_menu() {
 	draw_hr
 	echo ""
 	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Install FeatherQuilld${NC}"
+	echo -e "     ${GREEN}→ ${BOLD}APT only${NC}${GREEN} via MythicalSystems repo (stable or nightly)${NC}"
 	echo -e "     ${BLUE}→ Web hosting daemon (Docker + reverse proxy)${NC}"
-	echo -e "     ${BLUE}→ Creates systemd service for automatic startup${NC}"
+	echo -e "     ${BLUE}→ Launches ${BOLD}featherquilld configure${NC} / ${BOLD}quilld configure${NC} to finish setup${NC}"
 	echo ""
 	echo -e "  ${RED}${BOLD}[2]${NC} ${BOLD}Uninstall FeatherQuilld${NC}"
 	echo -e "     ${YELLOW}⚠️  WARNING: This will remove FeatherQuilld and its configuration${NC}"
+	echo -e "     ${BLUE}→ Stops and removes the APT package and optional data${NC}"
 	echo ""
 	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Update FeatherQuilld${NC}"
-	echo -e "     ${BLUE}→ Download latest FeatherQuilld binary${NC}"
-	echo -e "     ${BLUE}→ Restart FeatherQuilld service with new version${NC}"
+	echo -e "     ${GREEN}→ ${BOLD}apt upgrade${NC}${GREEN} — clean updates, supports stable ↔ nightly switches${NC}"
 	echo ""
 	draw_hr
 }
 
-featherquilld_arch_suffix() {
-	case "$(uname -m)" in
-	x86_64) echo "amd64" ;;
-	aarch64 | arm64) echo "arm64" ;;
-	*) echo "amd64" ;;
-	esac
-}
-
-download_featherquilld_binary() {
-	local arch suffix dest tmp
-	arch="$(featherquilld_arch_suffix)"
-	suffix="linux_${arch}"
-	dest="/usr/local/bin/featherquilld"
-	tmp="$(mktemp)"
-
-	local urls=(
-		"https://github.com/MythicalLTD/FeatherQuilld/releases/latest/download/featherquilld_${suffix}"
-		"https://github.com/MythicalLTD/FeatherQuilld/releases/latest/download/featherquilld_${suffix}.tar.gz"
-	)
-
-	for url in "${urls[@]}"; do
-		log_info "Trying download: $url"
-		if curl -fsSL -o "$tmp" "$url" 2>>"$LOG_FILE"; then
-			if file "$tmp" | grep -qi 'gzip compressed'; then
-				tar -xzf "$tmp" -C /tmp featherquilld 2>>"$LOG_FILE" || tar -xzf "$tmp" -C /tmp 2>>"$LOG_FILE"
-				if [ -f /tmp/featherquilld ]; then
-					mv /tmp/featherquilld "$dest"
-					chmod +x "$dest"
-					rm -f "$tmp"
-					return 0
-				fi
-			else
-				mv "$tmp" "$dest"
-				chmod +x "$dest"
-				return 0
-			fi
-		fi
-	done
-	rm -f "$tmp"
-
-	if command -v dotnet &>/dev/null; then
-		log_info "Release binary not found — building FeatherQuilld from source..."
-		local build_dir="/tmp/featherquilld-build-$$"
-		rm -rf "$build_dir"
-		git clone --depth 1 https://github.com/MythicalLTD/FeatherQuilld.git "$build_dir" >>"$LOG_FILE" 2>&1 || return 1
-		(
-			cd "$build_dir" || exit 1
-			dotnet publish FeatherQuilld.csproj -c Release -o /usr/local/lib/featherquilld -r "linux-${arch}" --self-contained true -p:PublishSingleFile=true >>"$LOG_FILE" 2>&1
-		) || return 1
-		ln -sf /usr/local/lib/featherquilld/FeatherQuilld "$dest"
-		chmod +x "$dest"
-		rm -rf "$build_dir"
-		return 0
-	fi
-
-	log_error "Could not download FeatherQuilld and dotnet SDK is not available to build from source."
-	return 1
-}
-
-install_featherquilld_proxy() {
-	local provider="${FEATHERQUILLD_PROXY_PROVIDER:-caddy}"
-	case "$provider" in
-	caddy)
-		if command -v caddy &>/dev/null; then
-			log_info "Caddy is already installed."
-			return 0
-		fi
-		log_info "Installing Caddy reverse proxy..."
-		install_packages debian-keyring debian-archive-keyring apt-transport-https curl
-		curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg 2>>"$LOG_FILE" || true
-		curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list >/dev/null 2>>"$LOG_FILE" || true
-		apt-get update -qq >>"$LOG_FILE" 2>&1 || true
-		apt-get install -y caddy >>"$LOG_FILE" 2>&1 || true
-		;;
-	nginx)
-		if command -v nginx &>/dev/null; then
-			log_info "nginx is already installed."
-			return 0
-		fi
-		log_info "Installing nginx reverse proxy..."
-		install_packages nginx
-		;;
-	traefik)
-		if command -v traefik &>/dev/null; then
-			log_info "Traefik is already installed."
-			return 0
-		fi
-		log_info "Installing Traefik reverse proxy..."
-		local arch suffix
-		arch="$(featherquilld_arch_suffix)"
-		suffix="linux_${arch}"
-		curl -fsSL -o /usr/local/bin/traefik "https://github.com/traefik/traefik/releases/download/v3.3.4/traefik_v3.3.4_${suffix}.tar.gz" 2>>"$LOG_FILE" || true
-		if [ ! -x /usr/local/bin/traefik ]; then
-			local tmp="/tmp/traefik-$$.tar.gz"
-			curl -fsSL -o "$tmp" "https://github.com/traefik/traefik/releases/download/v3.3.4/traefik_v3.3.4_${suffix}.tar.gz" >>"$LOG_FILE" 2>&1
-			tar -xzf "$tmp" -C /usr/local/bin traefik 2>>"$LOG_FILE"
-			chmod +x /usr/local/bin/traefik
-			rm -f "$tmp"
-		fi
-		mkdir -p /etc/featherquilld/traefik
-		if [ ! -f /etc/featherquilld/traefik/traefik.yml ]; then
-			cat <<'EOF' | tee /etc/featherquilld/traefik/traefik.yml >/dev/null
-entryPoints:
-  web:
-    address: ":80"
-  websecure:
-    address: ":443"
-providers:
-  file:
-    filename: /var/lib/featherquilld/proxy/traefik-dynamic.yml
-    watch: true
-certificatesResolvers:
-  featherquilld:
-    acme:
-      email: "ops@example.com"
-      storage: /etc/featherquilld/traefik/acme.json
-      httpChallenge:
-        entryPoint: web
-EOF
-			touch /etc/featherquilld/traefik/acme.json
-			chmod 600 /etc/featherquilld/traefik/acme.json
-		fi
-		;;
-	esac
-}
-
-write_featherquilld_config() {
-	local provider="${FEATHERQUILLD_PROXY_PROVIDER:-caddy}"
-	local acme_email="${FEATHERQUILLD_ACME_EMAIL:-}"
-	local config_file="Caddyfile"
-	case "$provider" in
-	nginx) config_file="nginx.conf" ;;
-	traefik) config_file="traefik-dynamic.yml" ;;
-	esac
-	mkdir -p /etc/featherquilld
-	if [ -f /etc/featherquilld/config.yml ]; then
-		log_info "Keeping existing /etc/featherquilld/config.yml"
-		return 0
-	fi
-	cat <<EOF | tee /etc/featherquilld/config.yml >/dev/null
-debug: false
-app_name: FeatherQuilld
-api:
-  host: 0.0.0.0
-  port: 8080
-system:
-  root_directory: /var/lib/featherquilld
-  data: /var/lib/featherquilld/volumes
-  log_directory: /var/log/featherquilld
-  proxy:
-    enabled: true
-    provider: ${provider}
-    config_path: /var/lib/featherquilld/proxy/${config_file}
-    acme_email: "${acme_email}"
-docker:
-  network:
-    network_mode: featherquilld
-remote:
-  panel: ""
-  token_id: ""
-  token: ""
-sftp:
-  enabled: true
-  port: 2022
-EOF
-	log_success "Created /etc/featherquilld/config.yml"
-}
-
-install_featherquilld() {
-	log_step "Installing FeatherQuilld web hosting daemon..."
-
-	if command -v docker &>/dev/null; then
-		log_info "Docker is already installed."
-	else
-		log_step "Installing Docker engine (required for FeatherQuilld)..."
-		curl -sSL https://get.docker.com/ | CHANNEL=stable bash >>"$LOG_FILE" 2>&1
-		systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
-		usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
-	fi
-
-	FEATHERQUILLD_PROXY_PROVIDER="${FEATHERQUILLD_PROXY_PROVIDER:-}"
-	if [ -z "$FEATHERQUILLD_PROXY_PROVIDER" ]; then
-		echo ""
-		echo -e "${BOLD}${CYAN}Reverse proxy provider${NC}"
-		echo -e "  ${GREEN}[1]${NC} Caddy (recommended)"
-		echo -e "  ${GREEN}[2]${NC} nginx"
-		echo -e "  ${GREEN}[3]${NC} Traefik"
-		proxy_choice=""
-		prompt "${BOLD}Select provider${NC} ${BLUE}(1/2/3)${NC}: " proxy_choice
-		case "$proxy_choice" in
-		2) FEATHERQUILLD_PROXY_PROVIDER="nginx" ;;
-		3) FEATHERQUILLD_PROXY_PROVIDER="traefik" ;;
-		*) FEATHERQUILLD_PROXY_PROVIDER="caddy" ;;
-		esac
-	fi
-
-	if [ -z "${FEATHERQUILLD_ACME_EMAIL:-}" ]; then
-		prompt "${BOLD}ACME email for automatic HTTPS${NC} ${BLUE}(optional, press Enter to skip)${NC}: " FEATHERQUILLD_ACME_EMAIL
-	fi
-
-	install_featherquilld_proxy
-
+create_featherquilld_directories() {
 	log_info "Creating FeatherQuilld directory structure..."
 	mkdir -p /etc/featherquilld
 	mkdir -p /var/lib/featherquilld/volumes
@@ -3740,52 +3771,121 @@ install_featherquilld() {
 	mkdir -p /var/lib/featherquilld/backups
 	mkdir -p /var/lib/featherquilld/proxy
 	mkdir -p /var/log/featherquilld
+}
 
-	if ! download_featherquilld_binary; then
+featherquilld_apt_package_name() {
+	if mythicalsystems_apt_package_installed featherquilld-dev; then
+		echo "featherquilld-dev"
+	elif mythicalsystems_apt_package_installed featherquilld; then
+		echo "featherquilld"
+	else
+		echo ""
+	fi
+}
+
+featherquilld_is_installed() {
+	[ -x /usr/local/bin/featherquilld ] ||
+		command -v featherquilld >/dev/null 2>&1 ||
+		command -v quilld >/dev/null 2>&1 ||
+		[ -n "$(featherquilld_apt_package_name)" ]
+}
+
+install_featherquilld_apt() {
+	local pkg="featherquilld"
+	if [ "${DAEMON_APT_CHANNEL:-stable}" = "nightly" ]; then
+		pkg="featherquilld-dev"
+	fi
+
+	if ! setup_mythicalsystems_apt_repo; then
 		return 1
 	fi
 
-	write_featherquilld_config
+	systemctl stop featherquilld >/dev/null 2>&1 || true
+	rm -f /etc/systemd/system/featherquilld.service
+	systemctl daemon-reload >/dev/null 2>&1 || true
 
-	cat <<EOF | tee /etc/systemd/system/featherquilld.service >/dev/null
-[Unit]
-Description=FeatherQuilld Web Hosting Daemon
-After=network-online.target docker.service
-Wants=network-online.target
-Requires=docker.service
+	create_featherquilld_directories
 
-[Service]
-User=root
-WorkingDirectory=/etc/featherquilld
-ExecStart=/usr/local/bin/featherquilld --config /etc/featherquilld/config.yml
-Restart=on-failure
-RestartSec=5
-StandardOutput=journal
-StandardError=journal
+	log_info "Installing APT package: ${pkg}"
+	if ! apt-get install -y "$pkg" >>"$LOG_FILE" 2>&1; then
+		log_error "Failed to install ${pkg} from MythicalSystems APT repository."
+		return 1
+	fi
 
-[Install]
-WantedBy=multi-user.target
-EOF
+	systemctl enable featherquilld >/dev/null 2>&1 || true
+	log_success "Installed ${pkg} via APT (quilld is available as a short alias)."
+}
 
-	systemctl daemon-reload
-	systemctl enable featherquilld
+install_featherquilld() {
+	log_step "Installing FeatherQuilld web hosting daemon..."
+
+	# FeatherQuilld is APT-only (no direct GitHub binary installs).
+	if ! prompt_daemon_install_method "FeatherQuilld" "FP_QUILLD_METHOD" "FP_QUILLD_CHANNEL" "apt_only"; then
+		return 1
+	fi
+	ensure_docker_for_daemon "FeatherQuilld"
+
+	if ! install_featherquilld_apt; then
+		return 1
+	fi
 
 	log_success "FeatherQuilld daemon installed successfully."
-	log_info "Next steps:"
-	log_info "1. Create a Web Node in FeatherPanel admin and copy its configuration"
-	log_info "2. Merge panel credentials into /etc/featherquilld/config.yml (remote.panel, token_id, token)"
-	log_info "3. Set proxy acme_email in config.yml if using automatic HTTPS"
-	log_info "4. Start FeatherQuilld: systemctl start featherquilld"
-	log_info "5. Or run: featherquilld configure"
+	log_info "If the install wizard did not run automatically:"
+	log_info "  featherquilld configure   # or: quilld configure"
+	log_info "  systemctl enable --now featherquilld"
+}
+
+run_featherquilld_configure_wizard() {
+	local quilld_bin=""
+	if command -v featherquilld >/dev/null 2>&1; then
+		quilld_bin="featherquilld"
+	elif command -v quilld >/dev/null 2>&1; then
+		quilld_bin="quilld"
+	else
+		log_error "FeatherQuilld binary not found (featherquilld / quilld)."
+		return 1
+	fi
+
+	if [ ! -t 0 ] || [ ! -t 1 ]; then
+		log_info "FeatherQuilld is installed. Run the setup wizard on this server:"
+		log_info "  ${quilld_bin} configure"
+		return 0
+	fi
+
+	echo ""
+	draw_hr
+	echo -e "${BOLD}${CYAN}FeatherQuilld setup wizard${NC}"
+	draw_hr
+	echo -e "${BLUE}Modes: OAuth quick setup (recommended), paste join-data, or manual credentials.${NC}"
+	echo ""
+	run_configure=""
+	prompt "${BOLD}Run ${quilld_bin} configure now?${NC} ${BLUE}(y/n)${NC}: " run_configure
+	if [[ "$run_configure" =~ ^[yY]$ ]]; then
+		"$quilld_bin" configure
+		systemctl enable --now featherquilld >/dev/null 2>&1 || true
+	else
+		log_info "Skipped. Later run: ${quilld_bin} configure && systemctl enable --now featherquilld"
+	fi
 }
 
 uninstall_featherquilld() {
 	log_step "Uninstalling FeatherQuilld daemon..."
+
+	local apt_pkg
+	apt_pkg="$(featherquilld_apt_package_name)"
+
 	systemctl stop featherquilld >/dev/null 2>&1 || true
 	systemctl disable featherquilld >/dev/null 2>&1 || true
+
+	if [ -n "$apt_pkg" ]; then
+		log_info "Removing APT package: ${apt_pkg}"
+		apt-get remove -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || true
+		apt-get purge -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || true
+	fi
+
 	rm -f /etc/systemd/system/featherquilld.service
 	systemctl daemon-reload
-	rm -f /usr/local/bin/featherquilld
+	rm -f /usr/local/bin/featherquilld /usr/local/bin/quilld
 	rm -rf /usr/local/lib/featherquilld
 
 	remove_config="n"
@@ -3805,17 +3905,46 @@ uninstall_featherquilld() {
 
 update_featherquilld() {
 	log_step "Updating FeatherQuilld daemon..."
-	if [ ! -x /usr/local/bin/featherquilld ]; then
+	if ! featherquilld_is_installed; then
 		log_error "FeatherQuilld is not installed. Please install it first."
 		return 1
 	fi
-	systemctl stop featherquilld
-	if ! download_featherquilld_binary; then
-		systemctl start featherquilld || true
+
+	if ! mythicalsystems_apt_supported; then
+		log_error "FeatherQuilld updates are APT-only and require Debian/Ubuntu with apt-get."
 		return 1
 	fi
-	systemctl start featherquilld
-	log_success "FeatherQuilld daemon updated successfully."
+
+	local apt_pkg
+	apt_pkg="$(featherquilld_apt_package_name)"
+
+	# Legacy direct installs: migrate onto the APT package, then upgrade.
+	if [ -z "$apt_pkg" ]; then
+		log_warn "Direct binary install detected. FeatherQuilld is APT-only — migrating to the APT package..."
+		DAEMON_APT_CHANNEL="stable"
+		if [ "${PREFER_DEV:-no}" = "yes" ]; then
+			DAEMON_APT_CHANNEL="nightly"
+		fi
+		if ! install_featherquilld_apt; then
+			return 1
+		fi
+		systemctl restart featherquilld >/dev/null 2>&1 || systemctl start featherquilld >/dev/null 2>&1 || true
+		log_success "FeatherQuilld migrated to APT and updated successfully."
+		return 0
+	fi
+
+	log_info "Updating via APT package: ${apt_pkg}"
+	if ! setup_mythicalsystems_apt_repo; then
+		return 1
+	fi
+	if ! apt-get install --only-upgrade -y "$apt_pkg" >>"$LOG_FILE" 2>&1; then
+		apt-get install -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || {
+			log_error "Failed to upgrade ${apt_pkg}."
+			return 1
+		}
+	fi
+	systemctl restart featherquilld >/dev/null 2>&1 || systemctl start featherquilld >/dev/null 2>&1 || true
+	log_success "FeatherQuilld daemon updated successfully (APT: ${apt_pkg})."
 }
 
 install_proxmox_vnc_agent() {
@@ -5988,13 +6117,21 @@ modify_compose_for_dev() {
 	sed -i "s|image: .*mythicalltd/featherpanel-backend:latest|image: ${registry_base}/mythicalltd/featherpanel-backend:${backend_tag}|g" "$compose_file"
 	sed -i "s|image: .*mythicalltd/featherpanel-backend:.*|image: ${registry_base}/mythicalltd/featherpanel-backend:${backend_tag}|g" "$compose_file"
 
-	# Replace frontend image
+	# Replace legacy frontend image (pre-frontendv2 compose files)
 	sed -i "s|image: .*mythicalltd/featherpanel-frontend:latest|image: ${registry_base}/mythicalltd/featherpanel-frontend:${frontend_tag}|g" "$compose_file"
 	sed -i "s|image: .*mythicalltd/featherpanel-frontend:.*|image: ${registry_base}/mythicalltd/featherpanel-frontend:${frontend_tag}|g" "$compose_file"
 
-	# Replace frontendv2 image
-	sed -i "s|image: .*mythicalltd/frontendv2:latest|image: ${registry_base}/mythicalltd/frontendv2:${frontend_tag}|g" "$compose_file"
-	sed -i "s|image: .*mythicalltd/frontendv2:.*|image: ${registry_base}/mythicalltd/frontendv2:${frontend_tag}|g" "$compose_file"
+	# Replace frontendv2 image (current 1.4+ compose)
+	sed -i "s|image: .*mythicalltd/featherpanel-frontendv2:latest|image: ${registry_base}/mythicalltd/featherpanel-frontendv2:${frontend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-frontendv2:.*|image: ${registry_base}/mythicalltd/featherpanel-frontendv2:${frontend_tag}|g" "$compose_file"
+
+	# Replace MCP image
+	sed -i "s|image: .*mythicalltd/featherpanel-mcp:latest|image: ${registry_base}/mythicalltd/featherpanel-mcp:${frontend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-mcp:.*|image: ${registry_base}/mythicalltd/featherpanel-mcp:${frontend_tag}|g" "$compose_file"
+
+	# Replace async-runner image
+	sed -i "s|image: .*mythicalltd/featherpanel-async-runner:latest|image: ${registry_base}/mythicalltd/featherpanel-async-runner:${frontend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-async-runner:.*|image: ${registry_base}/mythicalltd/featherpanel-async-runner:${frontend_tag}|g" "$compose_file"
 
 	log_success "docker-compose.yml modified for dev images"
 }
@@ -8125,9 +8262,10 @@ if [ -f /etc/os-release ]; then
 		fi
 	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "1" ]; then
 		# Wings Install
-		if [ -f /usr/local/bin/featherwings ]; then
-			read -r -p "FeatherWings appears to be already installed. Do you want to reinstall? (y/n): " reinstall
-			if [ "$reinstall" != "y" ]; then
+		if wings_is_installed; then
+			reinstall=""
+			prompt "FeatherWings appears to be already installed. Do you want to reinstall? (y/n): " reinstall
+			if [[ ! "$reinstall" =~ ^[yY]$ ]]; then
 				echo "Exiting installation."
 				exit 0
 			fi
@@ -8136,7 +8274,10 @@ if [ -f /etc/os-release ]; then
 		check_virtualization_compatibility
 
 		install_packages curl jq
-		install_wings
+		if ! install_wings; then
+			log_error "Wings installation failed. See log at $LOG_FILE"
+			exit 1
+		fi
 		log_success "Wings installation finished. See log at $LOG_FILE"
 
 		if [ "${FP_WINGS_SKIP_CONFIGURE:-}" = "true" ]; then
@@ -8146,7 +8287,7 @@ if [ -f /etc/os-release ]; then
 		fi
 	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "2" ]; then
 		# Wings Uninstall
-		if [ ! -f /usr/local/bin/featherwings ]; then
+		if ! wings_is_installed; then
 			echo "FeatherWings does not appear to be installed. Nothing to uninstall."
 			exit 0
 		fi
@@ -8159,13 +8300,17 @@ if [ -f /etc/os-release ]; then
 		fi
 	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "3" ]; then
 		# Wings Update
-		if [ ! -f /usr/local/bin/featherwings ]; then
+		if ! wings_is_installed; then
 			echo "FeatherWings does not appear to be installed. Nothing to update."
 			exit 0
 		fi
 		print_banner
-		update_wings
-		log_success "Wings updated successfully."
+		if update_wings; then
+			log_success "Wings updated successfully."
+		else
+			log_error "Wings update failed. See log at $LOG_FILE"
+			exit 1
+		fi
 		exit 0
 	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "4" ]; then
 		# Wings Backup Manager
@@ -8318,20 +8463,28 @@ if [ -f /etc/os-release ]; then
 			exit 1
 		fi
 	elif [ "$COMPONENT_TYPE" = "7" ] && [ "$INST_TYPE" = "1" ]; then
-		if [ -x /usr/local/bin/featherquilld ]; then
-			read -r -p "FeatherQuilld appears to be already installed. Reinstall? (y/n): " reinstall
-			if [ "$reinstall" != "y" ]; then
+		if featherquilld_is_installed; then
+			reinstall=""
+			prompt "FeatherQuilld appears to be already installed. Reinstall? (y/n): " reinstall
+			if [[ ! "$reinstall" =~ ^[yY]$ ]]; then
 				echo "Exiting installation."
 				exit 0
 			fi
 		fi
 		if install_featherquilld; then
 			log_success "FeatherQuilld install finished. See log at $LOG_FILE"
+			if [ "${FP_QUILLD_SKIP_CONFIGURE:-}" != "true" ]; then
+				run_featherquilld_configure_wizard
+			fi
 		else
 			log_error "FeatherQuilld install failed. See log at $LOG_FILE"
 			exit 1
 		fi
 	elif [ "$COMPONENT_TYPE" = "7" ] && [ "$INST_TYPE" = "2" ]; then
+		if ! featherquilld_is_installed; then
+			echo "FeatherQuilld does not appear to be installed. Nothing to uninstall."
+			exit 0
+		fi
 		if uninstall_featherquilld; then
 			log_success "FeatherQuilld uninstall finished. See log at $LOG_FILE"
 		else
@@ -8339,6 +8492,10 @@ if [ -f /etc/os-release ]; then
 			exit 1
 		fi
 	elif [ "$COMPONENT_TYPE" = "7" ] && [ "$INST_TYPE" = "3" ]; then
+		if ! featherquilld_is_installed; then
+			echo "FeatherQuilld does not appear to be installed. Nothing to update."
+			exit 0
+		fi
 		if update_featherquilld; then
 			log_success "FeatherQuilld update finished. See log at $LOG_FILE"
 		else

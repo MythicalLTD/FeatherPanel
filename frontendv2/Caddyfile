@@ -40,6 +40,11 @@
 		reverse_proxy backend:80
 	}
 
+	@webmail path /webmail*
+	handle @webmail {
+		reverse_proxy backend:80
+	}
+
 	@attachments path /attachments*
 	handle @attachments {
 		reverse_proxy backend:80

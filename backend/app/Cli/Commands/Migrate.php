@@ -51,7 +51,7 @@ class Migrate extends App implements CommandBuilder
         if (!file_exists(__DIR__ . '/../../../storage/config/.env')) {
             MainApp::getInstance(true)->getLogger()->warning('Executed a command without a .env file');
             $cliApp->send('&c&l❌ Error: &rThe .env file does not exist. Please create one before running this command');
-            exit;
+            exit(1);
         }
 
         $sqlScript = self::getMigrationSQL();
@@ -79,7 +79,7 @@ class Migrate extends App implements CommandBuilder
             // --- End fix ---
         } catch (\Exception $e) {
             $cliApp->send('&c&l❌ Database Connection Failed: &r' . $e->getMessage());
-            exit;
+            exit(1);
         }
 
         $connectionTime = round((microtime(true) - $startTime) * 1000, 2);
@@ -99,7 +99,7 @@ class Migrate extends App implements CommandBuilder
             }
         } catch (\Exception $e) {
             $cliApp->send('&c&l❌ Failed to create migrations table: &r' . $e->getMessage());
-            exit;
+            exit(1);
         }
 
         self::cleanupObsoleteAddonDirectories($cliApp);
@@ -157,7 +157,7 @@ class Migrate extends App implements CommandBuilder
             if ($migrationContent === false) {
                 $cliApp->send('&c&l❌ Failed to read migration file: &r&f' . $displayName);
                 ++$failedMigrations;
-                exit;
+                exit(1);
             }
 
             /**
@@ -183,7 +183,7 @@ class Migrate extends App implements CommandBuilder
                 $cliApp->send('&c&l❌ Failed: &r&f' . $displayName);
                 $cliApp->send('&c&l   Error: &r' . $e->getMessage());
                 ++$failedMigrations;
-                exit;
+                exit(1);
             }
 
             /**
@@ -197,7 +197,7 @@ class Migrate extends App implements CommandBuilder
                 ]);
             } catch (\Exception $e) {
                 $cliApp->send('&c&l❌ Failed to save migration record: &r' . $e->getMessage());
-                exit;
+                exit(1);
             }
         }
 
