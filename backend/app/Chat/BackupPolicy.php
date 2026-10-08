@@ -292,6 +292,26 @@ class BackupPolicy
     }
 
     /**
+     * Heartbeat while a policy run is in progress so resetStuckProcessing()
+     * does not clear the lock mid-run on large panel/node scopes.
+     */
+    public static function touchProcessing(int $id): bool
+    {
+        if ($id <= 0) {
+            return false;
+        }
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare(
+            'UPDATE ' . self::$table
+            . ' SET updated_at = UTC_TIMESTAMP()'
+            . ' WHERE id = :id AND is_processing = 1'
+        );
+        $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
+
+        return $stmt->execute() && $stmt->rowCount() > 0;
+    }
+
+    /**
      * @param array<string, mixed> $data
      * @param list<int>|null $serverIds null = leave targets unchanged
      */

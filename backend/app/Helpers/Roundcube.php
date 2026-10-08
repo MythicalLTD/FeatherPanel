@@ -172,7 +172,7 @@ PHP;
             }
         }
 
-        // Keep signed-token verifier secret next to public/webmail/token.php.
+        // Ensure SSO secret under storage/config (not web-served).
         WebmailSso::panelSecretForTokenPhp();
     }
 

@@ -106,19 +106,18 @@ final class WebmailSso
         return dirname(__DIR__, 2) . '/storage/config/webmail.sso.secret';
     }
 
+    /**
+     * Ensure the SSO secret exists under storage/config (never under public/).
+     * Removes any legacy public/webmail/sso.secret that could be web-served.
+     */
     public static function panelSecretForTokenPhp(): string
     {
-        // token.php lives in public/webmail; symlink/copy secret beside it for the verifier.
-        $publicSecret = dirname(__DIR__, 2) . '/public/webmail/sso.secret';
         $secret = self::ensurePanelSecret();
-        if (!is_dir(dirname($publicSecret))) {
-            return $secret;
-        }
 
-        $current = is_readable($publicSecret) ? trim((string) file_get_contents($publicSecret)) : '';
-        if ($current !== $secret) {
-            file_put_contents($publicSecret, $secret . "\n");
-            @chmod($publicSecret, 0600);
+        // Legacy path was web-readable via nginx try_files — delete if present.
+        $legacyPublic = dirname(__DIR__, 2) . '/public/webmail/sso.secret';
+        if (is_file($legacyPublic)) {
+            @unlink($legacyPublic);
         }
 
         return $secret;

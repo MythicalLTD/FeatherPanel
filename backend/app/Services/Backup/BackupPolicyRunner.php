@@ -74,6 +74,8 @@ class BackupPolicyRunner
             if ($chunkIndex > 0) {
                 usleep(250000);
             }
+            // Refresh the processing lock so long runs are not reset as "stuck".
+            BackupPolicy::touchProcessing($policyId);
             foreach ($chunk as $server) {
                 $item = $this->runForServer($runId, $server, $payload, $namePrefix, $onlyWhenOnline);
                 $items[] = $item;

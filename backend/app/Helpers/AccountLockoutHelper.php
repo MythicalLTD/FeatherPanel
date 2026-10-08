@@ -118,7 +118,8 @@ class AccountLockoutHelper
      * caller may proceed; on success call clear(), on failure the counter
      * already reflects this attempt.
      *
-     * Fails open (returns true) if Redis is unavailable.
+     * Fails closed (returns false) if Redis is unavailable — do not allow
+     * unbounded 2FA verification attempts without a working counter store.
      */
     public static function reserveHardLockAttempt(
         string $identifier,
@@ -128,7 +129,7 @@ class AccountLockoutHelper
         try {
             $redis = self::getRedis();
             if ($redis === null) {
-                return true;
+                return false;
             }
 
             $maxAttempts ??= self::MAX_ATTEMPTS;
@@ -181,7 +182,7 @@ LUA;
 
             return $allowed;
         } catch (\Throwable $e) {
-            return true;
+            return false;
         }
     }
 

@@ -93,6 +93,7 @@ class NodeBackupAgentRunner
         $deleteLocal = (int) ($policy['delete_local_after_upload'] ?? 1) === 1;
 
         foreach ($nodes as $node) {
+            NodeBackupPolicy::touchProcessing($policyId);
             $nodeId = (int) ($node['id'] ?? 0);
             $itemId = NodeBackupRun::createItem($runId, $nodeId, ['status' => 'pending']);
             $started = gmdate('Y-m-d H:i:s');

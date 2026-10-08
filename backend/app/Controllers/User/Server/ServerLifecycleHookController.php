@@ -173,6 +173,11 @@ class ServerLifecycleHookController
             return $shellGate;
         }
 
+        $consoleGate = $this->requireConsolePermissionForShellTask($request, $server, $taskType);
+        if ($consoleGate !== null) {
+            return $consoleGate;
+        }
+
         $backupGate = $this->requireBackupPermissionForTask($request, $server, $taskType);
         if ($backupGate !== null) {
             return $backupGate;
@@ -270,6 +275,11 @@ class ServerLifecycleHookController
         $shellGate = $this->requireContainerShellEnabledForTask($taskType);
         if ($shellGate !== null) {
             return $shellGate;
+        }
+
+        $consoleGate = $this->requireConsolePermissionForShellTask($request, $server, $taskType);
+        if ($consoleGate !== null) {
+            return $consoleGate;
         }
 
         $backupGate = $this->requireBackupPermissionForTask($request, $server, $taskType);
@@ -455,6 +465,19 @@ class ServerLifecycleHookController
         }
 
         return null;
+    }
+
+    /**
+     * Container Shell runs arbitrary commands in the container — require control.console
+     * (same gate as schedule/Task container_shell paths).
+     */
+    private function requireConsolePermissionForShellTask(Request $request, array $server, string $taskType): ?Response
+    {
+        if ($taskType !== 'container_shell') {
+            return null;
+        }
+
+        return $this->checkPermission($request, $server, SubuserPermissions::CONTROL_CONSOLE);
     }
 
     /**

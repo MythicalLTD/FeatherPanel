@@ -25,8 +25,21 @@ if ($token === '' || !str_contains($token, '.')) {
     exit;
 }
 
-$secretFile = __DIR__ . '/sso.secret';
-if (!is_readable($secretFile)) {
+// Secret lives under storage/config (outside the web root), never beside this script.
+$secretFile = '';
+foreach ([
+    // Deployed at public/webmail/token.php
+    __DIR__ . '/../../storage/config/webmail.sso.secret',
+    // Source copy at storage/modules/webmail/token.php
+    __DIR__ . '/../../config/webmail.sso.secret',
+] as $candidate) {
+    $resolved = realpath($candidate);
+    if (is_string($resolved) && is_readable($resolved)) {
+        $secretFile = $resolved;
+        break;
+    }
+}
+if ($secretFile === '') {
     http_response_code(503);
     header('Content-Type: text/plain; charset=utf-8');
     echo "Webmail SSO is not configured\n";

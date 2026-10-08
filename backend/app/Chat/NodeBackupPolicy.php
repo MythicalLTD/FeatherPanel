@@ -445,6 +445,25 @@ class NodeBackupPolicy
     }
 
     /**
+     * Heartbeat while a node backup policy run is in progress.
+     */
+    public static function touchProcessing(int $id): bool
+    {
+        if ($id <= 0) {
+            return false;
+        }
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare(
+            'UPDATE ' . self::$table
+            . ' SET updated_at = UTC_TIMESTAMP()'
+            . ' WHERE id = :id AND is_processing = 1'
+        );
+        $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
+
+        return $stmt->execute() && $stmt->rowCount() > 0;
+    }
+
+    /**
      * @param array<string, mixed> $data
      * @param list<int>|null $nodeIds null = leave targets unchanged
      * @param list<int>|null $mirrorDestinationIds null = leave mirrors unchanged
