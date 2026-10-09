@@ -26,7 +26,7 @@ jobs:
             runner: blacksmith-4vcpu-ubuntu-2404
             cache-key: amd64
           - platform: linux/arm64
-            runner: blacksmith-4vcpu-ubuntu-2404-arm
+            runner: blacksmith-8vcpu-ubuntu-2404-arm
             cache-key: arm64
 
     steps:
@@ -320,7 +320,7 @@ jobs:
             runner: blacksmith-4vcpu-ubuntu-2404
             cache-key: amd64
           - platform: linux/arm64
-            runner: blacksmith-4vcpu-ubuntu-2404-arm
+            runner: blacksmith-8vcpu-ubuntu-2404-arm
             cache-key: arm64
 
     steps:
