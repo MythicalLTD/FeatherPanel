@@ -1788,6 +1788,10 @@ show_panel_menu() {
 		echo -e "     ${BLUE}→ Detect ufw/iptables and allow required Panel ports automatically${NC}"
 		echo -e "     ${BLUE}→ Smart port detection based on Panel config and reverse proxy${NC}"
 		echo ""
+		echo -e "  ${BLUE}${BOLD}[7]${NC} ${BOLD}Web Server${NC}"
+		echo -e "     ${BLUE}→ Reapply Nginx/Apache reverse proxy config from latest templates${NC}"
+		echo -e "     ${BLUE}→ Useful after Panel updates (e.g. proxy buffer fixes)${NC}"
+		echo ""
 	fi
 	draw_hr
 }
@@ -2175,6 +2179,283 @@ show_backup_menu() {
 	echo -e "     ${BLUE}→ Restores complete Panel installation from migration package${NC}"
 	echo ""
 	draw_hr
+}
+
+show_webserver_menu() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	print_centered "Web Server Manager" "$CYAN"
+	draw_hr
+	echo ""
+
+	local nginx_status="not configured"
+	local apache_status="not configured"
+	local nginx_site
+	nginx_site="$(find_featherpanel_nginx_site || true)"
+	if [ -n "$nginx_site" ]; then
+		nginx_status="configured (${nginx_site})"
+	elif command -v nginx >/dev/null 2>&1; then
+		nginx_status="installed (no FeatherPanel site)"
+	fi
+	if [ -f /etc/apache2/sites-available/featherpanel.conf ] || [ -f /etc/apache2/sites-enabled/featherpanel.conf ]; then
+		apache_status="configured"
+	elif command -v apache2 >/dev/null 2>&1 || command -v apachectl >/dev/null 2>&1; then
+		apache_status="installed (no FeatherPanel site)"
+	fi
+
+	echo -e "  ${BOLD}Nginx:${NC}  ${CYAN}${nginx_status}${NC}"
+	echo -e "  ${BOLD}Apache:${NC} ${CYAN}${apache_status}${NC}"
+	echo ""
+	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Reapply Nginx Config${NC}"
+	echo -e "     ${BLUE}→ Download latest Nginx reverse proxy template and reload${NC}"
+	echo -e "     ${BLUE}→ Keeps your domain; uses SSL template if a cert exists${NC}"
+	echo -e "     ${YELLOW}→ Overwrites /etc/nginx/sites-available/featherpanel (backup created)${NC}"
+	echo ""
+	echo -e "  ${BLUE}${BOLD}[2]${NC} ${BOLD}Reapply Apache Config${NC}"
+	echo -e "     ${BLUE}→ Download latest Apache reverse proxy template and reload${NC}"
+	echo -e "     ${BLUE}→ Keeps your domain; uses SSL template if a cert exists${NC}"
+	echo -e "     ${YELLOW}→ Overwrites /etc/apache2/sites-available/featherpanel.conf (backup created)${NC}"
+	echo ""
+	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Patch Nginx Proxy Buffers Only${NC}"
+	echo -e "     ${BLUE}→ Safe fix for large Next.js Link headers (502 / too big header)${NC}"
+	echo -e "     ${BLUE}→ Does not replace your full Nginx site config${NC}"
+	echo ""
+	draw_hr
+}
+
+# Detect domain from an existing FeatherPanel reverse-proxy site config.
+detect_reverse_proxy_domain() {
+	local site_file="$1"
+	local domain=""
+
+	if [ -f "$site_file" ]; then
+		domain="$(
+			grep -E '^\s*server_name\s+' "$site_file" 2>/dev/null |
+				awk '{print $2}' |
+				sed 's/;$//' |
+				grep -E '[^[:space:]]' |
+				grep -Ev '^(localhost|_)$' |
+				head -n 1 || true
+		)"
+		# Apache uses ServerName
+		if [ -z "$domain" ]; then
+			domain="$(
+				grep -Ei '^\s*ServerName\s+' "$site_file" 2>/dev/null |
+					awk '{print $2}' |
+					sed 's/;$//' |
+					grep -E '[^[:space:]]' |
+					grep -Ev '^(localhost|_)$' |
+					head -n 1 || true
+			)"
+		fi
+		# Fall back to Let's Encrypt path in the site file
+		if [ -z "$domain" ]; then
+			domain="$(
+				grep -Eo '/etc/letsencrypt/live/[^/]+/' "$site_file" 2>/dev/null |
+					sed -E 's|.*/live/([^/]+)/.*|\1|' |
+					grep -E '[^[:space:]]' |
+					head -n 1 || true
+			)"
+		fi
+	fi
+
+	# Last resort: single cert under /etc/letsencrypt/live
+	if [ -z "$domain" ] && [ -d /etc/letsencrypt/live ]; then
+		local cert_dirs
+		cert_dirs="$(find /etc/letsencrypt/live -mindepth 1 -maxdepth 1 -type d ! -name 'README' 2>/dev/null | wc -l)"
+		if [ "$cert_dirs" = "1" ]; then
+			domain="$(basename "$(find /etc/letsencrypt/live -mindepth 1 -maxdepth 1 -type d ! -name 'README' | head -n 1)")"
+		fi
+	fi
+
+	echo "$domain"
+}
+
+detect_reverse_proxy_has_ssl() {
+	local domain="$1"
+	local site_file="$2"
+
+	if [ -n "$domain" ] && [ -f "/etc/letsencrypt/live/${domain}/fullchain.pem" ]; then
+		echo "true"
+		return 0
+	fi
+	if [ -f "$site_file" ] && grep -Eqi 'ssl_certificate|SSLEngine\s+on|listen\s+443' "$site_file" 2>/dev/null; then
+		echo "true"
+		return 0
+	fi
+	echo "false"
+}
+
+prompt_reverse_proxy_domain() {
+	local detected="$1"
+	local __varname="$2"
+	# IMPORTANT: do not name this local "domain" — printf -v would clobber the wrong scope.
+	local entered=""
+
+	if [ -n "$detected" ]; then
+		echo -e "${BLUE}Detected domain:${NC} ${BOLD}${detected}${NC}"
+		prompt "${BOLD}Domain to use${NC} ${BLUE}(press Enter for ${detected})${NC}: " entered
+		if [ -z "$entered" ]; then
+			entered="$detected"
+		fi
+	else
+		while [ -z "$entered" ]; do
+			prompt "${BOLD}Enter Panel domain name${NC} ${BLUE}(e.g., panel.example.com)${NC}: " entered
+			if [ -z "$entered" ]; then
+				echo -e "${RED}Domain cannot be empty.${NC}"
+			fi
+		done
+	fi
+
+	# Basic sanity: reject values that would produce empty/broken nginx server_name
+	entered="$(printf '%s' "$entered" | tr -d '[:space:]')"
+	if [ -z "$entered" ] || [ "$entered" = "your-domain.com" ]; then
+		echo -e "${RED}Invalid domain.${NC}" >&2
+		return 1
+	fi
+	printf -v "$__varname" '%s' "$entered"
+}
+
+reapply_nginx_reverse_proxy() {
+	local site_file=""
+	local detected_domain has_ssl domain confirm
+
+	log_step "Reapplying Nginx reverse proxy configuration..."
+
+	site_file="$(find_featherpanel_nginx_site || true)"
+	if [ -z "$site_file" ]; then
+		site_file="/etc/nginx/sites-available/featherpanel"
+	fi
+
+	detected_domain="$(detect_reverse_proxy_domain "$site_file")"
+	if [ -z "$detected_domain" ]; then
+		detected_domain="$(detect_reverse_proxy_domain /etc/nginx/sites-available/featherpanel)"
+	fi
+	if [ -z "$detected_domain" ]; then
+		detected_domain="$(detect_reverse_proxy_domain /etc/nginx/sites-enabled/featherpanel.conf)"
+	fi
+
+	domain=""
+	if ! prompt_reverse_proxy_domain "$detected_domain" domain; then
+		return 1
+	fi
+	if [ -z "$domain" ]; then
+		log_error "Domain is empty; refusing to write Nginx config."
+		return 1
+	fi
+	has_ssl="$(detect_reverse_proxy_has_ssl "$domain" "$site_file")"
+
+	echo ""
+	echo -e "${BOLD}Domain:${NC} ${CYAN}${domain}${NC}"
+	echo -e "${BOLD}SSL template:${NC} ${CYAN}${has_ssl}${NC}"
+	echo -e "${YELLOW}This will overwrite the FeatherPanel Nginx site and reload Nginx.${NC}"
+	confirm=""
+	prompt "${BOLD}Continue?${NC} ${BLUE}(y/n)${NC}: " confirm
+	if [[ ! "$confirm" =~ ^[yY]$ ]]; then
+		echo -e "${GREEN}Cancelled.${NC}"
+		return 0
+	fi
+
+	if [ -f "$site_file" ]; then
+		cp "$site_file" "${site_file}.bak.reapply.$(date +%Y%m%d%H%M%S)"
+		log_info "Backed up existing Nginx site to ${site_file}.bak.reapply.*"
+	fi
+
+	if setup_nginx_reverse_proxy "$domain" "$has_ssl"; then
+		log_success "Nginx reverse proxy config reapplied for ${domain}"
+		return 0
+	fi
+	log_error "Failed to reapply Nginx reverse proxy config"
+	return 1
+}
+
+reapply_apache_reverse_proxy() {
+	local site_file="/etc/apache2/sites-available/featherpanel.conf"
+	local detected_domain has_ssl domain confirm
+
+	log_step "Reapplying Apache reverse proxy configuration..."
+
+	detected_domain="$(detect_reverse_proxy_domain "$site_file")"
+	if [ -z "$detected_domain" ] && [ -f /etc/apache2/sites-enabled/featherpanel.conf ]; then
+		detected_domain="$(detect_reverse_proxy_domain /etc/apache2/sites-enabled/featherpanel.conf)"
+	fi
+
+	domain=""
+	if ! prompt_reverse_proxy_domain "$detected_domain" domain; then
+		return 1
+	fi
+	if [ -z "$domain" ]; then
+		log_error "Domain is empty; refusing to write Apache config."
+		return 1
+	fi
+	has_ssl="$(detect_reverse_proxy_has_ssl "$domain" "$site_file")"
+
+	echo ""
+	echo -e "${BOLD}Domain:${NC} ${CYAN}${domain}${NC}"
+	echo -e "${BOLD}SSL template:${NC} ${CYAN}${has_ssl}${NC}"
+	echo -e "${YELLOW}This will overwrite the FeatherPanel Apache site and reload Apache.${NC}"
+	confirm=""
+	prompt "${BOLD}Continue?${NC} ${BLUE}(y/n)${NC}: " confirm
+	if [[ ! "$confirm" =~ ^[yY]$ ]]; then
+		echo -e "${GREEN}Cancelled.${NC}"
+		return 0
+	fi
+
+	if [ -f "$site_file" ]; then
+		cp "$site_file" "${site_file}.bak.reapply.$(date +%Y%m%d%H%M%S)"
+		log_info "Backed up existing Apache site to ${site_file}.bak.reapply.*"
+	fi
+
+	if setup_apache_reverse_proxy "$domain" "$has_ssl"; then
+		log_success "Apache reverse proxy config reapplied for ${domain}"
+		return 0
+	fi
+	log_error "Failed to reapply Apache reverse proxy config"
+	return 1
+}
+
+manage_panel_webserver() {
+	local action=""
+	while [[ ! "$action" =~ ^[1-3]$ ]]; do
+		show_webserver_menu
+		echo ""
+		prompt "${BOLD}${CYAN}Select web server operation${NC} ${BLUE}(1/2/3)${NC}: " action
+		if [[ ! "$action" =~ ^[1-3]$ ]]; then
+			echo ""
+			echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
+			echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Nginx), ${BOLD}2${NC} (Apache), or ${BOLD}3${NC} (Proxy buffers)${NC}"
+			echo ""
+			sleep 2
+		fi
+	done
+
+	case "$action" in
+	1)
+		reapply_nginx_reverse_proxy
+		;;
+	2)
+		reapply_apache_reverse_proxy
+		;;
+	3)
+		log_step "Patching Nginx proxy buffers..."
+		local site_file
+		site_file="$(find_featherpanel_nginx_site || true)"
+		if [ -z "$site_file" ]; then
+			log_error "No FeatherPanel Nginx site found to patch."
+			return 1
+		fi
+		if ! ensure_nginx_proxy_buffers; then
+			return 1
+		fi
+		if [ -f "$site_file" ] && grep -Eq '[[:space:]]proxy_buffer_size[[:space:]]+' "$site_file"; then
+			log_success "Nginx proxy buffer settings are present in ${site_file}"
+			return 0
+		fi
+		log_warn "Proxy buffers were not applied. Use option 1 to reapply the full Nginx config."
+		return 1
+		;;
+	esac
 }
 
 show_release_type_menu() {
@@ -4118,6 +4399,79 @@ update_feathercli() {
 }
 
 # SSL Certificate functions
+# Ensure certbot (+ optional nginx/apache plugin) is present without reinstalling everything.
+ensure_certbot_with_proxy_plugin() {
+	local proxy_type="${1:-}"
+
+	if ! command -v certbot >/dev/null 2>&1; then
+		install_certbot "$proxy_type"
+		return $?
+	fi
+
+	case "$proxy_type" in
+	nginx)
+		if ! dpkg -l 2>/dev/null | grep -q "^ii.*python3-certbot-nginx"; then
+			log_info "Installing missing Certbot Nginx plugin..."
+			install_packages python3-certbot-nginx || true
+		fi
+		;;
+	apache)
+		if ! dpkg -l 2>/dev/null | grep -q "^ii.*python3-certbot-apache"; then
+			log_info "Installing missing Certbot Apache plugin..."
+			install_packages python3-certbot-apache || true
+		fi
+		;;
+	esac
+	return 0
+}
+
+# Restart nginx after standalone certbot. Never abort the installer on a pre-existing bad site.
+restart_nginx_after_standalone() {
+	log_info "Restarting Nginx..."
+	local test_out rc=0
+	test_out="$(nginx -t 2>&1)" || rc=$?
+	if [ -n "${LOG_FILE:-}" ]; then
+		printf '%s\n' "$test_out" >>"$LOG_FILE" || true
+	fi
+
+	if [ "$rc" -ne 0 ]; then
+		log_warn "Nginx config is invalid; temporarily disabling FeatherPanel site so Nginx can start."
+		printf '%s\n' "$test_out" >&2
+		local site
+		for site in \
+			/etc/nginx/sites-enabled/featherpanel \
+			/etc/nginx/sites-enabled/featherpanel.conf \
+			/etc/nginx/sites-enabled/FeatherPanel.conf
+		do
+			if [ -e "$site" ]; then
+				mv "$site" "${site}.bak.invalid.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+				log_warn "Disabled broken site: ${site}"
+			fi
+		done
+		test_out="$(nginx -t 2>&1)" || rc=$?
+		if [ -n "${LOG_FILE:-}" ]; then
+			printf '%s\n' "$test_out" >>"$LOG_FILE" || true
+		fi
+	fi
+
+	if [ "$rc" -eq 0 ]; then
+		systemctl start nginx >/dev/null 2>&1 || systemctl reload nginx >/dev/null 2>&1 || true
+		return 0
+	fi
+
+	log_warn "Nginx still cannot start; continuing. Reverse proxy setup will rewrite the site config next."
+	printf '%s\n' "$test_out" >&2
+	# Must not trip ERR trap — bare failure here previously aborted the whole install.
+	systemctl start nginx >/dev/null 2>&1 || true
+	return 0
+}
+
+restart_apache_after_standalone() {
+	log_info "Restarting Apache..."
+	systemctl start apache2 >/dev/null 2>&1 || true
+	return 0
+}
+
 install_certbot() {
 	local webserver_type="${1:-}" # Optional parameter: "nginx", "apache", or empty for auto-detect
 	log_step "Installing Certbot..."
@@ -4259,14 +4613,13 @@ create_ssl_certificate_http() {
 		else
 			log_warn "Nginx plugin not installed. Falling back to standalone method."
 			log_info "Stopping Nginx temporarily to free port 80..."
-			systemctl stop nginx
+			systemctl stop nginx || true
 			certbot certonly --standalone -d "$domain" --non-interactive --agree-tos --email admin@"$domain" || {
 				log_error "Failed to create certificate with standalone method"
-				systemctl start nginx
+				restart_nginx_after_standalone
 				return 1
 			}
-			log_info "Restarting Nginx..."
-			systemctl start nginx
+			restart_nginx_after_standalone
 		fi
 		;;
 	apache)
@@ -4280,14 +4633,13 @@ create_ssl_certificate_http() {
 		else
 			log_warn "Apache plugin not installed. Falling back to standalone method."
 			log_info "Stopping Apache temporarily to free port 80..."
-			systemctl stop apache2
+			systemctl stop apache2 || true
 			certbot certonly --standalone -d "$domain" --non-interactive --agree-tos --email admin@"$domain" || {
 				log_error "Failed to create certificate with standalone method"
-				systemctl start apache2
+				restart_apache_after_standalone
 				return 1
 			}
-			log_info "Restarting Apache..."
-			systemctl start apache2
+			restart_apache_after_standalone
 		fi
 		;;
 	standalone)
@@ -4307,10 +4659,8 @@ create_ssl_certificate_http() {
 	local config_updated=false
 	if [ -f /etc/nginx/sites-enabled/featherpanel ] && grep -q "$domain" /etc/nginx/sites-enabled/featherpanel 2>/dev/null; then
 		log_info "Updating existing Nginx configuration to use SSL..."
-		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/nginx.conf" |
-			sed "s/your-domain.com/$domain/g" |
-			tee /etc/nginx/sites-available/featherpanel >/dev/null
-		if nginx -t 2>&1 | tee -a "$LOG_FILE" >/dev/null; then
+		if render_reverse_proxy_template ".github/docker/ssl/nginx.conf" "$domain" /etc/nginx/sites-available/featherpanel &&
+			nginx -t >>"$LOG_FILE" 2>&1; then
 			systemctl reload nginx 2>&1 | tee -a "$LOG_FILE" >/dev/null
 			log_success "Nginx SSL configuration updated and reloaded successfully"
 			config_updated=true
@@ -4319,10 +4669,8 @@ create_ssl_certificate_http() {
 		fi
 	elif [ -f /etc/apache2/sites-enabled/featherpanel.conf ] && grep -q "$domain" /etc/apache2/sites-enabled/featherpanel.conf 2>/dev/null; then
 		log_info "Updating existing Apache configuration to use SSL..."
-		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/apache2.conf" |
-			sed "s/your-domain.com/$domain/g" |
-			tee /etc/apache2/sites-available/featherpanel.conf >/dev/null
-		if apache2ctl configtest 2>&1 | tee -a "$LOG_FILE" >/dev/null; then
+		if render_reverse_proxy_template ".github/docker/ssl/apache2.conf" "$domain" /etc/apache2/sites-available/featherpanel.conf &&
+			apache2ctl configtest >>"$LOG_FILE" 2>&1; then
 			systemctl reload apache2 2>&1 | tee -a "$LOG_FILE" >/dev/null
 			log_success "Apache SSL configuration updated and reloaded successfully"
 			config_updated=true
@@ -4427,10 +4775,8 @@ create_ssl_certificate_dns() {
 	local config_updated=false
 	if [ -f /etc/nginx/sites-enabled/featherpanel ] && grep -q "$domain" /etc/nginx/sites-enabled/featherpanel 2>/dev/null; then
 		log_info "Updating existing Nginx configuration to use SSL..."
-		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/nginx.conf" |
-			sed "s/your-domain.com/$domain/g" |
-			tee /etc/nginx/sites-available/featherpanel >/dev/null
-		if nginx -t 2>&1 | tee -a "$LOG_FILE" >/dev/null; then
+		if render_reverse_proxy_template ".github/docker/ssl/nginx.conf" "$domain" /etc/nginx/sites-available/featherpanel &&
+			nginx -t >>"$LOG_FILE" 2>&1; then
 			systemctl reload nginx 2>&1 | tee -a "$LOG_FILE" >/dev/null
 			log_success "Nginx SSL configuration updated and reloaded successfully"
 			config_updated=true
@@ -4439,10 +4785,8 @@ create_ssl_certificate_dns() {
 		fi
 	elif [ -f /etc/apache2/sites-enabled/featherpanel.conf ] && grep -q "$domain" /etc/apache2/sites-enabled/featherpanel.conf 2>/dev/null; then
 		log_info "Updating existing Apache configuration to use SSL..."
-		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/apache2.conf" |
-			sed "s/your-domain.com/$domain/g" |
-			tee /etc/apache2/sites-available/featherpanel.conf >/dev/null
-		if apache2ctl configtest 2>&1 | tee -a "$LOG_FILE" >/dev/null; then
+		if render_reverse_proxy_template ".github/docker/ssl/apache2.conf" "$domain" /etc/apache2/sites-available/featherpanel.conf &&
+			apache2ctl configtest >>"$LOG_FILE" 2>&1; then
 			systemctl reload apache2 2>&1 | tee -a "$LOG_FILE" >/dev/null
 			log_success "Apache SSL configuration updated and reloaded successfully"
 			config_updated=true
@@ -4660,9 +5004,165 @@ setup_ssl_auto_renewal() {
 	log_info "If renewed, the following command will be executed: $restart_command"
 }
 
+find_featherpanel_nginx_site() {
+	local candidate
+	for candidate in \
+		/etc/nginx/sites-available/featherpanel \
+		/etc/nginx/sites-available/featherpanel.conf \
+		/etc/nginx/sites-available/FeatherPanel.conf \
+		/etc/nginx/sites-enabled/featherpanel \
+		/etc/nginx/sites-enabled/featherpanel.conf \
+		/etc/nginx/sites-enabled/FeatherPanel.conf
+	do
+		# Resolve symlinks so we patch the real file nginx loads.
+		if [ -e "$candidate" ]; then
+			readlink -f "$candidate" 2>/dev/null || printf '%s\n' "$candidate"
+			return 0
+		fi
+	done
+	return 1
+}
+
+# Next.js emits large Link preload headers; nginx defaults (4k/8k) cause 502s.
+# Returns 0 when buffers are present, skipped, or newly patched.
+# Returns 1 only when a patch was applied and nginx -t rejected it.
+ensure_nginx_proxy_buffers() {
+	local site_file=""
+	site_file="$(find_featherpanel_nginx_site || true)"
+
+	if [ -z "$site_file" ] || [ ! -f "$site_file" ]; then
+		log_info "No FeatherPanel Nginx site found; skipping proxy buffer patch."
+		return 0
+	fi
+
+	log_info "Using Nginx site: ${site_file}"
+
+	if grep -Eq '[[:space:]]proxy_buffer_size[[:space:]]+' "$site_file"; then
+		log_success "Nginx proxy_buffer_size already present in ${site_file}"
+		return 0
+	fi
+
+	if ! grep -Eq 'proxy_pass[[:space:]]+http://(127\.0\.0\.1|localhost)(:[0-9]+)?/?' "$site_file" &&
+		! grep -Eq 'proxy_buffering[[:space:]]+off' "$site_file"; then
+		log_warn "Nginx site ${site_file} has no panel reverse-proxy location to patch."
+		log_info "Use option 1 to reapply the Docker Nginx reverse proxy template."
+		return 0
+	fi
+
+	local tmp nginx_test_out nginx_test_rc=0
+	tmp="$(mktemp)"
+	# Insert once before the first panel proxy_pass / proxy_buffering off.
+	# Match 127.0.0.1 and localhost on any port (4831, custom panel port, 3000, etc.).
+	awk '
+		BEGIN { done = 0 }
+		!done && $0 ~ /proxy_pass[[:space:]]+http:\/\/(127\.0\.0\.1|localhost)(:[0-9]+)?\/?/ {
+			match($0, /^[[:space:]]*/)
+			indent = substr($0, RSTART, RLENGTH)
+			if (indent == "") indent = "        "
+			print indent "# Next.js Link preload headers exceed default upstream header buffer"
+			print indent "proxy_buffer_size 128k;"
+			print indent "proxy_buffers 4 256k;"
+			print indent "proxy_busy_buffers_size 256k;"
+			done = 1
+		}
+		!done && $0 ~ /proxy_buffering[[:space:]]+off;/ {
+			match($0, /^[[:space:]]*/)
+			indent = substr($0, RSTART, RLENGTH)
+			if (indent == "") indent = "        "
+			print indent "# Next.js Link preload headers exceed default upstream header buffer"
+			print indent "proxy_buffer_size 128k;"
+			print indent "proxy_buffers 4 256k;"
+			print indent "proxy_busy_buffers_size 256k;"
+			done = 1
+		}
+		{ print }
+	' "$site_file" >"$tmp"
+
+	if ! grep -Eq '[[:space:]]proxy_buffer_size[[:space:]]+' "$tmp"; then
+		rm -f "$tmp"
+		log_warn "Could not locate an insertion point in ${site_file}."
+		return 0
+	fi
+
+	cp "$site_file" "${site_file}.bak.pre-proxy-buffers"
+	# Write in-place so symlinks keep pointing at the real site file.
+	cat "$tmp" >"$site_file"
+	rm -f "$tmp"
+
+	# Avoid `nginx -t | tee` under pipefail — tee/log failures must not undo a good patch.
+	nginx_test_out="$(nginx -t 2>&1)" || nginx_test_rc=$?
+	if [ -n "${LOG_FILE:-}" ]; then
+		printf '%s\n' "$nginx_test_out" >>"$LOG_FILE" || true
+	fi
+
+	if [ "$nginx_test_rc" -eq 0 ]; then
+		systemctl reload nginx >/dev/null 2>&1 || true
+		log_success "Nginx proxy buffers updated for large Next.js response headers"
+		return 0
+	fi
+
+	log_warn "Nginx proxy buffer patch failed validation; restoring previous config"
+	printf '%s\n' "$nginx_test_out" >&2
+	mv "${site_file}.bak.pre-proxy-buffers" "$site_file"
+	return 1
+}
+
+# Render a reverse-proxy template, preferring the local panel checkout over GitHub.
+render_reverse_proxy_template() {
+	local relative_path="$1"
+	local domain="$2"
+	local dest="$3"
+	local local_file="/var/www/featherpanel/${relative_path}"
+	local remote_url="https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/${relative_path}"
+	local tmp
+
+	if [ -z "$domain" ]; then
+		log_error "Cannot render reverse proxy template: domain is empty."
+		return 1
+	fi
+
+	tmp="$(mktemp)"
+	if [ -f "$local_file" ]; then
+		log_info "Using local template: ${local_file}"
+		cp "$local_file" "$tmp"
+	else
+		log_info "Downloading template: ${remote_url}"
+		if ! curl -fsSL "$remote_url" -o "$tmp"; then
+			rm -f "$tmp"
+			log_error "Failed to download reverse proxy template."
+			return 1
+		fi
+	fi
+
+	# Escape sed replacement specials in domain (& and \)
+	local domain_escaped
+	domain_escaped="$(printf '%s' "$domain" | sed -e 's/[&\\]/\\&/g')"
+	sed "s/your-domain.com/${domain_escaped}/g" "$tmp" >"$dest"
+	rm -f "$tmp"
+
+	# Drop IPv6 listen lines when the host has no IPv6 stack (nginx -t would fail).
+	if [ ! -f /proc/net/if_inet6 ]; then
+		sed -i '/listen[[:space:]]*\[::\]/d' "$dest"
+		log_info "IPv6 not available on this host; removed [::] listen directives."
+	fi
+
+	if grep -Eq 'server_name[[:space:]]*;|/etc/letsencrypt/live//' "$dest"; then
+		log_error "Rendered reverse proxy config still has an empty domain; aborting."
+		return 1
+	fi
+	return 0
+}
+
 setup_nginx_reverse_proxy() {
 	local domain="$1"
 	local has_ssl="$2"
+	local nginx_test_out nginx_test_rc=0
+
+	domain="$(printf '%s' "$domain" | tr -d '[:space:]')"
+	if [ -z "$domain" ]; then
+		log_error "Nginx reverse proxy setup requires a non-empty domain."
+		return 1
+	fi
 
 	install_packages nginx
 	systemctl enable nginx 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
@@ -4672,30 +5172,51 @@ setup_nginx_reverse_proxy() {
 	mkdir -p /etc/nginx/sites-available
 	mkdir -p /etc/nginx/sites-enabled
 
-	# Download and customize nginx config
+	# Download/customize nginx config
 	if [ "$has_ssl" = "true" ]; then
-		log_info "Downloading SSL-enabled Nginx configuration..."
-		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/nginx.conf" |
-			sed "s/your-domain.com/$domain/g" |
-			tee /etc/nginx/sites-available/featherpanel >/dev/null
-	else
-		log_info "Downloading HTTP-only Nginx configuration..."
-		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/plaintext/nginx.conf" |
-			sed "s/your-domain.com/$domain/g" |
-			tee /etc/nginx/sites-available/featherpanel >/dev/null
-	fi
-
-	# Enable the site
-	ln -sf /etc/nginx/sites-available/featherpanel /etc/nginx/sites-enabled/
-
-	# Test nginx configuration
-	if nginx -t 2>&1 | tee -a "$LOG_FILE" >/dev/null; then
-		log_success "Nginx configuration is valid"
-		if ! run_with_spinner "Reloading Nginx" "Nginx reloaded." systemctl reload nginx; then
+		log_info "Installing SSL-enabled Nginx configuration for ${domain}..."
+		if ! render_reverse_proxy_template ".github/docker/ssl/nginx.conf" "$domain" /etc/nginx/sites-available/featherpanel; then
 			return 1
 		fi
 	else
+		log_info "Installing HTTP-only Nginx configuration for ${domain}..."
+		if ! render_reverse_proxy_template ".github/docker/plaintext/nginx.conf" "$domain" /etc/nginx/sites-available/featherpanel; then
+			return 1
+		fi
+	fi
+
+	# Enable the site
+	ln -sf /etc/nginx/sites-available/featherpanel /etc/nginx/sites-enabled/featherpanel
+	# Remove legacy filename if present so only one FeatherPanel site is active
+	if [ -f /etc/nginx/sites-enabled/featherpanel.conf ] && [ ! -L /etc/nginx/sites-enabled/featherpanel.conf ]; then
+		log_warn "Found legacy /etc/nginx/sites-enabled/featherpanel.conf — disabling it to avoid duplicate servers."
+		mv /etc/nginx/sites-enabled/featherpanel.conf "/etc/nginx/sites-enabled/featherpanel.conf.bak.$(date +%Y%m%d%H%M%S)"
+	elif [ -L /etc/nginx/sites-enabled/featherpanel.conf ]; then
+		rm -f /etc/nginx/sites-enabled/featherpanel.conf
+	fi
+
+	# Older upstream templates may omit this; ensure it's present after install
+	ensure_nginx_proxy_buffers
+
+	nginx_test_out="$(nginx -t 2>&1)" || nginx_test_rc=$?
+	if [ -n "${LOG_FILE:-}" ]; then
+		printf '%s\n' "$nginx_test_out" >>"$LOG_FILE" || true
+	fi
+	if [ "$nginx_test_rc" -eq 0 ]; then
+		log_success "Nginx configuration is valid"
+		# Prefer reload; if nginx was stopped (e.g. standalone certbot), start it.
+		if systemctl is-active --quiet nginx; then
+			if ! run_with_spinner "Reloading Nginx" "Nginx reloaded." systemctl reload nginx; then
+				return 1
+			fi
+		else
+			if ! run_with_spinner "Starting Nginx" "Nginx started." systemctl start nginx; then
+				return 1
+			fi
+		fi
+	else
 		log_error "Nginx configuration test failed"
+		printf '%s\n' "$nginx_test_out" >&2
 		return 1
 	fi
 }
@@ -4703,6 +5224,12 @@ setup_nginx_reverse_proxy() {
 setup_apache_reverse_proxy() {
 	local domain="$1"
 	local has_ssl="$2"
+
+	domain="$(printf '%s' "$domain" | tr -d '[:space:]')"
+	if [ -z "$domain" ]; then
+		log_error "Apache reverse proxy setup requires a non-empty domain."
+		return 1
+	fi
 
 	install_packages apache2
 	systemctl enable apache2 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
@@ -4715,17 +5242,17 @@ setup_apache_reverse_proxy() {
 	# Create config directory if it doesn't exist
 	mkdir -p /etc/apache2/sites-available
 
-	# Download and customize apache config
+	# Download/customize apache config
 	if [ "$has_ssl" = "true" ]; then
-		log_info "Downloading SSL-enabled Apache configuration..."
-		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/apache2.conf" |
-			sed "s/your-domain.com/$domain/g" |
-			tee /etc/apache2/sites-available/featherpanel.conf >/dev/null
+		log_info "Installing SSL-enabled Apache configuration for ${domain}..."
+		if ! render_reverse_proxy_template ".github/docker/ssl/apache2.conf" "$domain" /etc/apache2/sites-available/featherpanel.conf; then
+			return 1
+		fi
 	else
-		log_info "Downloading HTTP-only Apache configuration..."
-		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/plaintext/apache2.conf" |
-			sed "s/your-domain.com/$domain/g" |
-			tee /etc/apache2/sites-available/featherpanel.conf >/dev/null
+		log_info "Installing HTTP-only Apache configuration for ${domain}..."
+		if ! render_reverse_proxy_template ".github/docker/plaintext/apache2.conf" "$domain" /etc/apache2/sites-available/featherpanel.conf; then
+			return 1
+		fi
 	fi
 
 	# Enable the site
@@ -6772,14 +7299,14 @@ if [ -f /etc/os-release ]; then
 				fi
 			done
 		else
-			while [[ ! "$INST_TYPE" =~ ^[1-6]$ ]]; do
+			while [[ ! "$INST_TYPE" =~ ^[1-7]$ ]]; do
 				show_panel_menu
 				echo ""
-				prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3/4/5/6)${NC}: " INST_TYPE
-				if [[ ! "$INST_TYPE" =~ ^[1-6]$ ]]; then
+				prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3/4/5/6/7)${NC}: " INST_TYPE
+				if [[ ! "$INST_TYPE" =~ ^[1-7]$ ]]; then
 					echo ""
 					echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
-					echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), ${BOLD}3${NC} (Update), ${BOLD}4${NC} (Backup), ${BOLD}5${NC} (Info), or ${BOLD}6${NC} (Firewall)${NC}"
+					echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), ${BOLD}3${NC} (Update), ${BOLD}4${NC} (Backup), ${BOLD}5${NC} (Info), ${BOLD}6${NC} (Firewall), or ${BOLD}7${NC} (Web Server)${NC}"
 					echo ""
 					sleep 2
 				fi
@@ -7540,12 +8067,8 @@ if [ -f /etc/os-release ]; then
 			has_ssl="false"
 
 			if [[ "$setup_ssl_during_install" =~ ^[yY]$ ]]; then
-				# Check if certbot is installed
-				if ! command -v certbot >/dev/null 2>&1; then
-					log_info "Certbot is not installed. Installing Certbot..."
-					# Pass the reverse proxy type to auto-install the correct plugin
-					install_certbot "$REVERSE_PROXY_TYPE"
-				fi
+				# Install certbot and ensure the matching plugin exists (even if certbot was already present)
+				ensure_certbot_with_proxy_plugin "$REVERSE_PROXY_TYPE"
 
 				# Get public IP addresses for DNS guidance
 				log_info "Detecting your server's public IP addresses..."
@@ -7582,13 +8105,12 @@ if [ -f /etc/os-release ]; then
 					else
 						log_warn "Nginx plugin not installed. Using standalone method..."
 						log_info "Stopping Nginx temporarily to free port 80..."
-						systemctl stop nginx
+						systemctl stop nginx || true
 						if certbot certonly --standalone -d "$panel_domain" --non-interactive --agree-tos --email admin@"$panel_domain" >>"$LOG_FILE" 2>&1; then
 							ssl_created=true
 							has_ssl="true"
 						fi
-						log_info "Restarting Nginx..."
-						systemctl start nginx
+						restart_nginx_after_standalone
 					fi
 					;;
 				apache)
@@ -7601,13 +8123,12 @@ if [ -f /etc/os-release ]; then
 					else
 						log_warn "Apache plugin not installed. Using standalone method..."
 						log_info "Stopping Apache temporarily to free port 80..."
-						systemctl stop apache2
+						systemctl stop apache2 || true
 						if certbot certonly --standalone -d "$panel_domain" --non-interactive --agree-tos --email admin@"$panel_domain" >>"$LOG_FILE" 2>&1; then
 							ssl_created=true
 							has_ssl="true"
 						fi
-						log_info "Restarting Apache..."
-						systemctl start apache2
+						restart_apache_after_standalone
 					fi
 					;;
 				standalone)
@@ -8160,6 +8681,9 @@ if [ -f /etc/os-release ]; then
 		# Always ensure global featherpanel command is installed/updated
 		install_featherpanel_command
 
+		# Patch host nginx if present (Next.js Link headers exceed default upstream buffers)
+		ensure_nginx_proxy_buffers
+
 		# Ensure install marker exists after successful updates.
 		# This prevents feature gates from failing when the marker was accidentally removed.
 		touch /var/www/featherpanel/.installed
@@ -8258,6 +8782,17 @@ if [ -f /etc/os-release ]; then
 			log_success "Panel firewall manager completed."
 		else
 			log_error "Panel firewall manager failed. See log at $LOG_FILE"
+			exit 1
+		fi
+	elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "7" ]; then
+		# Panel Web Server Manager
+		if ! require_docker_panel_mode "Web Server Manager"; then
+			exit 1
+		fi
+		if manage_panel_webserver; then
+			log_success "Web Server manager completed."
+		else
+			log_error "Web Server manager failed. See log at $LOG_FILE"
 			exit 1
 		fi
 	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "1" ]; then
