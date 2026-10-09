@@ -4399,6 +4399,79 @@ update_feathercli() {
 }
 
 # SSL Certificate functions
+# Ensure certbot (+ optional nginx/apache plugin) is present without reinstalling everything.
+ensure_certbot_with_proxy_plugin() {
+	local proxy_type="${1:-}"
+
+	if ! command -v certbot >/dev/null 2>&1; then
+		install_certbot "$proxy_type"
+		return $?
+	fi
+
+	case "$proxy_type" in
+	nginx)
+		if ! dpkg -l 2>/dev/null | grep -q "^ii.*python3-certbot-nginx"; then
+			log_info "Installing missing Certbot Nginx plugin..."
+			install_packages python3-certbot-nginx || true
+		fi
+		;;
+	apache)
+		if ! dpkg -l 2>/dev/null | grep -q "^ii.*python3-certbot-apache"; then
+			log_info "Installing missing Certbot Apache plugin..."
+			install_packages python3-certbot-apache || true
+		fi
+		;;
+	esac
+	return 0
+}
+
+# Restart nginx after standalone certbot. Never abort the installer on a pre-existing bad site.
+restart_nginx_after_standalone() {
+	log_info "Restarting Nginx..."
+	local test_out rc=0
+	test_out="$(nginx -t 2>&1)" || rc=$?
+	if [ -n "${LOG_FILE:-}" ]; then
+		printf '%s\n' "$test_out" >>"$LOG_FILE" || true
+	fi
+
+	if [ "$rc" -ne 0 ]; then
+		log_warn "Nginx config is invalid; temporarily disabling FeatherPanel site so Nginx can start."
+		printf '%s\n' "$test_out" >&2
+		local site
+		for site in \
+			/etc/nginx/sites-enabled/featherpanel \
+			/etc/nginx/sites-enabled/featherpanel.conf \
+			/etc/nginx/sites-enabled/FeatherPanel.conf
+		do
+			if [ -e "$site" ]; then
+				mv "$site" "${site}.bak.invalid.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+				log_warn "Disabled broken site: ${site}"
+			fi
+		done
+		test_out="$(nginx -t 2>&1)" || rc=$?
+		if [ -n "${LOG_FILE:-}" ]; then
+			printf '%s\n' "$test_out" >>"$LOG_FILE" || true
+		fi
+	fi
+
+	if [ "$rc" -eq 0 ]; then
+		systemctl start nginx >/dev/null 2>&1 || systemctl reload nginx >/dev/null 2>&1 || true
+		return 0
+	fi
+
+	log_warn "Nginx still cannot start; continuing. Reverse proxy setup will rewrite the site config next."
+	printf '%s\n' "$test_out" >&2
+	# Must not trip ERR trap — bare failure here previously aborted the whole install.
+	systemctl start nginx >/dev/null 2>&1 || true
+	return 0
+}
+
+restart_apache_after_standalone() {
+	log_info "Restarting Apache..."
+	systemctl start apache2 >/dev/null 2>&1 || true
+	return 0
+}
+
 install_certbot() {
 	local webserver_type="${1:-}" # Optional parameter: "nginx", "apache", or empty for auto-detect
 	log_step "Installing Certbot..."
@@ -4540,14 +4613,13 @@ create_ssl_certificate_http() {
 		else
 			log_warn "Nginx plugin not installed. Falling back to standalone method."
 			log_info "Stopping Nginx temporarily to free port 80..."
-			systemctl stop nginx
+			systemctl stop nginx || true
 			certbot certonly --standalone -d "$domain" --non-interactive --agree-tos --email admin@"$domain" || {
 				log_error "Failed to create certificate with standalone method"
-				systemctl start nginx
+				restart_nginx_after_standalone
 				return 1
 			}
-			log_info "Restarting Nginx..."
-			systemctl start nginx
+			restart_nginx_after_standalone
 		fi
 		;;
 	apache)
@@ -4561,14 +4633,13 @@ create_ssl_certificate_http() {
 		else
 			log_warn "Apache plugin not installed. Falling back to standalone method."
 			log_info "Stopping Apache temporarily to free port 80..."
-			systemctl stop apache2
+			systemctl stop apache2 || true
 			certbot certonly --standalone -d "$domain" --non-interactive --agree-tos --email admin@"$domain" || {
 				log_error "Failed to create certificate with standalone method"
-				systemctl start apache2
+				restart_apache_after_standalone
 				return 1
 			}
-			log_info "Restarting Apache..."
-			systemctl start apache2
+			restart_apache_after_standalone
 		fi
 		;;
 	standalone)
@@ -5133,8 +5204,15 @@ setup_nginx_reverse_proxy() {
 	fi
 	if [ "$nginx_test_rc" -eq 0 ]; then
 		log_success "Nginx configuration is valid"
-		if ! run_with_spinner "Reloading Nginx" "Nginx reloaded." systemctl reload nginx; then
-			return 1
+		# Prefer reload; if nginx was stopped (e.g. standalone certbot), start it.
+		if systemctl is-active --quiet nginx; then
+			if ! run_with_spinner "Reloading Nginx" "Nginx reloaded." systemctl reload nginx; then
+				return 1
+			fi
+		else
+			if ! run_with_spinner "Starting Nginx" "Nginx started." systemctl start nginx; then
+				return 1
+			fi
 		fi
 	else
 		log_error "Nginx configuration test failed"
@@ -7989,12 +8067,8 @@ if [ -f /etc/os-release ]; then
 			has_ssl="false"
 
 			if [[ "$setup_ssl_during_install" =~ ^[yY]$ ]]; then
-				# Check if certbot is installed
-				if ! command -v certbot >/dev/null 2>&1; then
-					log_info "Certbot is not installed. Installing Certbot..."
-					# Pass the reverse proxy type to auto-install the correct plugin
-					install_certbot "$REVERSE_PROXY_TYPE"
-				fi
+				# Install certbot and ensure the matching plugin exists (even if certbot was already present)
+				ensure_certbot_with_proxy_plugin "$REVERSE_PROXY_TYPE"
 
 				# Get public IP addresses for DNS guidance
 				log_info "Detecting your server's public IP addresses..."
@@ -8031,13 +8105,12 @@ if [ -f /etc/os-release ]; then
 					else
 						log_warn "Nginx plugin not installed. Using standalone method..."
 						log_info "Stopping Nginx temporarily to free port 80..."
-						systemctl stop nginx
+						systemctl stop nginx || true
 						if certbot certonly --standalone -d "$panel_domain" --non-interactive --agree-tos --email admin@"$panel_domain" >>"$LOG_FILE" 2>&1; then
 							ssl_created=true
 							has_ssl="true"
 						fi
-						log_info "Restarting Nginx..."
-						systemctl start nginx
+						restart_nginx_after_standalone
 					fi
 					;;
 				apache)
@@ -8050,13 +8123,12 @@ if [ -f /etc/os-release ]; then
 					else
 						log_warn "Apache plugin not installed. Using standalone method..."
 						log_info "Stopping Apache temporarily to free port 80..."
-						systemctl stop apache2
+						systemctl stop apache2 || true
 						if certbot certonly --standalone -d "$panel_domain" --non-interactive --agree-tos --email admin@"$panel_domain" >>"$LOG_FILE" 2>&1; then
 							ssl_created=true
 							has_ssl="true"
 						fi
-						log_info "Restarting Apache..."
-						systemctl start apache2
+						restart_apache_after_standalone
 					fi
 					;;
 				standalone)
