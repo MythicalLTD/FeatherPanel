@@ -1788,6 +1788,10 @@ show_panel_menu() {
 		echo -e "     ${BLUE}→ Detect ufw/iptables and allow required Panel ports automatically${NC}"
 		echo -e "     ${BLUE}→ Smart port detection based on Panel config and reverse proxy${NC}"
 		echo ""
+		echo -e "  ${BLUE}${BOLD}[7]${NC} ${BOLD}Web Server${NC}"
+		echo -e "     ${BLUE}→ Reapply Nginx/Apache reverse proxy config from latest templates${NC}"
+		echo -e "     ${BLUE}→ Useful after Panel updates (e.g. proxy buffer fixes)${NC}"
+		echo ""
 	fi
 	draw_hr
 }
@@ -2175,6 +2179,243 @@ show_backup_menu() {
 	echo -e "     ${BLUE}→ Restores complete Panel installation from migration package${NC}"
 	echo ""
 	draw_hr
+}
+
+show_webserver_menu() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	print_centered "Web Server Manager" "$CYAN"
+	draw_hr
+	echo ""
+
+	local nginx_status="not configured"
+	local apache_status="not configured"
+	if [ -f /etc/nginx/sites-available/featherpanel ] || [ -f /etc/nginx/sites-enabled/featherpanel ]; then
+		nginx_status="configured"
+	elif command -v nginx >/dev/null 2>&1; then
+		nginx_status="installed (no FeatherPanel site)"
+	fi
+	if [ -f /etc/apache2/sites-available/featherpanel.conf ] || [ -f /etc/apache2/sites-enabled/featherpanel.conf ]; then
+		apache_status="configured"
+	elif command -v apache2 >/dev/null 2>&1 || command -v apachectl >/dev/null 2>&1; then
+		apache_status="installed (no FeatherPanel site)"
+	fi
+
+	echo -e "  ${BOLD}Nginx:${NC}  ${CYAN}${nginx_status}${NC}"
+	echo -e "  ${BOLD}Apache:${NC} ${CYAN}${apache_status}${NC}"
+	echo ""
+	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Reapply Nginx Config${NC}"
+	echo -e "     ${BLUE}→ Download latest Nginx reverse proxy template and reload${NC}"
+	echo -e "     ${BLUE}→ Keeps your domain; uses SSL template if a cert exists${NC}"
+	echo -e "     ${YELLOW}→ Overwrites /etc/nginx/sites-available/featherpanel (backup created)${NC}"
+	echo ""
+	echo -e "  ${BLUE}${BOLD}[2]${NC} ${BOLD}Reapply Apache Config${NC}"
+	echo -e "     ${BLUE}→ Download latest Apache reverse proxy template and reload${NC}"
+	echo -e "     ${BLUE}→ Keeps your domain; uses SSL template if a cert exists${NC}"
+	echo -e "     ${YELLOW}→ Overwrites /etc/apache2/sites-available/featherpanel.conf (backup created)${NC}"
+	echo ""
+	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Patch Nginx Proxy Buffers Only${NC}"
+	echo -e "     ${BLUE}→ Safe fix for large Next.js Link headers (502 / too big header)${NC}"
+	echo -e "     ${BLUE}→ Does not replace your full Nginx site config${NC}"
+	echo ""
+	draw_hr
+}
+
+# Detect domain from an existing FeatherPanel reverse-proxy site config.
+detect_reverse_proxy_domain() {
+	local site_file="$1"
+	local domain=""
+
+	if [ ! -f "$site_file" ]; then
+		echo ""
+		return 0
+	fi
+
+	domain="$(
+		grep -E '^\s*server_name\s+' "$site_file" 2>/dev/null |
+			awk '{print $2}' |
+			sed 's/;$//' |
+			grep -Ev '^(localhost|_)$' |
+			head -n 1 || true
+	)"
+	# Apache uses ServerName
+	if [ -z "$domain" ]; then
+		domain="$(
+			grep -Ei '^\s*ServerName\s+' "$site_file" 2>/dev/null |
+				awk '{print $2}' |
+				sed 's/;$//' |
+				grep -Ev '^(localhost|_)$' |
+				head -n 1 || true
+		)"
+	fi
+	echo "$domain"
+}
+
+detect_reverse_proxy_has_ssl() {
+	local domain="$1"
+	local site_file="$2"
+
+	if [ -n "$domain" ] && [ -f "/etc/letsencrypt/live/${domain}/fullchain.pem" ]; then
+		echo "true"
+		return 0
+	fi
+	if [ -f "$site_file" ] && grep -Eqi 'ssl_certificate|SSLEngine\s+on|listen\s+443' "$site_file" 2>/dev/null; then
+		echo "true"
+		return 0
+	fi
+	echo "false"
+}
+
+prompt_reverse_proxy_domain() {
+	local detected="$1"
+	local __varname="$2"
+	local domain=""
+
+	if [ -n "$detected" ]; then
+		echo -e "${BLUE}Detected domain:${NC} ${BOLD}${detected}${NC}"
+		prompt "${BOLD}Domain to use${NC} ${BLUE}(press Enter for ${detected})${NC}: " domain
+		if [ -z "$domain" ]; then
+			domain="$detected"
+		fi
+	else
+		while [ -z "$domain" ]; do
+			prompt "${BOLD}Enter Panel domain name${NC} ${BLUE}(e.g., panel.example.com)${NC}: " domain
+			if [ -z "$domain" ]; then
+				echo -e "${RED}Domain cannot be empty.${NC}"
+			fi
+		done
+	fi
+	printf -v "$__varname" '%s' "$domain"
+}
+
+reapply_nginx_reverse_proxy() {
+	local site_file="/etc/nginx/sites-available/featherpanel"
+	local detected_domain has_ssl domain confirm
+
+	log_step "Reapplying Nginx reverse proxy configuration..."
+
+	detected_domain="$(detect_reverse_proxy_domain "$site_file")"
+	if [ -z "$detected_domain" ] && [ -f /etc/nginx/sites-enabled/featherpanel ]; then
+		detected_domain="$(detect_reverse_proxy_domain /etc/nginx/sites-enabled/featherpanel)"
+	fi
+
+	prompt_reverse_proxy_domain "$detected_domain" domain
+	has_ssl="$(detect_reverse_proxy_has_ssl "$domain" "$site_file")"
+
+	echo ""
+	echo -e "${BOLD}Domain:${NC} ${CYAN}${domain}${NC}"
+	echo -e "${BOLD}SSL template:${NC} ${CYAN}${has_ssl}${NC}"
+	echo -e "${YELLOW}This will overwrite the FeatherPanel Nginx site and reload Nginx.${NC}"
+	confirm=""
+	prompt "${BOLD}Continue?${NC} ${BLUE}(y/n)${NC}: " confirm
+	if [[ ! "$confirm" =~ ^[yY]$ ]]; then
+		echo -e "${GREEN}Cancelled.${NC}"
+		return 0
+	fi
+
+	if [ -f "$site_file" ]; then
+		cp "$site_file" "${site_file}.bak.reapply.$(date +%Y%m%d%H%M%S)"
+		log_info "Backed up existing Nginx site to ${site_file}.bak.reapply.*"
+	fi
+
+	if setup_nginx_reverse_proxy "$domain" "$has_ssl"; then
+		log_success "Nginx reverse proxy config reapplied for ${domain}"
+		return 0
+	fi
+	log_error "Failed to reapply Nginx reverse proxy config"
+	return 1
+}
+
+reapply_apache_reverse_proxy() {
+	local site_file="/etc/apache2/sites-available/featherpanel.conf"
+	local detected_domain has_ssl domain confirm
+
+	log_step "Reapplying Apache reverse proxy configuration..."
+
+	detected_domain="$(detect_reverse_proxy_domain "$site_file")"
+	if [ -z "$detected_domain" ] && [ -f /etc/apache2/sites-enabled/featherpanel.conf ]; then
+		detected_domain="$(detect_reverse_proxy_domain /etc/apache2/sites-enabled/featherpanel.conf)"
+	fi
+
+	prompt_reverse_proxy_domain "$detected_domain" domain
+	has_ssl="$(detect_reverse_proxy_has_ssl "$domain" "$site_file")"
+
+	echo ""
+	echo -e "${BOLD}Domain:${NC} ${CYAN}${domain}${NC}"
+	echo -e "${BOLD}SSL template:${NC} ${CYAN}${has_ssl}${NC}"
+	echo -e "${YELLOW}This will overwrite the FeatherPanel Apache site and reload Apache.${NC}"
+	confirm=""
+	prompt "${BOLD}Continue?${NC} ${BLUE}(y/n)${NC}: " confirm
+	if [[ ! "$confirm" =~ ^[yY]$ ]]; then
+		echo -e "${GREEN}Cancelled.${NC}"
+		return 0
+	fi
+
+	if [ -f "$site_file" ]; then
+		cp "$site_file" "${site_file}.bak.reapply.$(date +%Y%m%d%H%M%S)"
+		log_info "Backed up existing Apache site to ${site_file}.bak.reapply.*"
+	fi
+
+	if setup_apache_reverse_proxy "$domain" "$has_ssl"; then
+		log_success "Apache reverse proxy config reapplied for ${domain}"
+		return 0
+	fi
+	log_error "Failed to reapply Apache reverse proxy config"
+	return 1
+}
+
+manage_panel_webserver() {
+	local action=""
+	while [[ ! "$action" =~ ^[1-3]$ ]]; do
+		show_webserver_menu
+		echo ""
+		prompt "${BOLD}${CYAN}Select web server operation${NC} ${BLUE}(1/2/3)${NC}: " action
+		if [[ ! "$action" =~ ^[1-3]$ ]]; then
+			echo ""
+			echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
+			echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Nginx), ${BOLD}2${NC} (Apache), or ${BOLD}3${NC} (Proxy buffers)${NC}"
+			echo ""
+			sleep 2
+		fi
+	done
+
+	case "$action" in
+	1)
+		reapply_nginx_reverse_proxy
+		;;
+	2)
+		reapply_apache_reverse_proxy
+		;;
+	3)
+		log_step "Patching Nginx proxy buffers..."
+		if [ ! -f /etc/nginx/sites-available/featherpanel ] &&
+			[ ! -f /etc/nginx/sites-available/featherpanel.conf ] &&
+			[ ! -f /etc/nginx/sites-available/FeatherPanel.conf ]; then
+			log_error "No FeatherPanel Nginx site found to patch."
+			return 1
+		fi
+		ensure_nginx_proxy_buffers
+		local patched=false
+		local candidate
+		for candidate in \
+			/etc/nginx/sites-available/featherpanel \
+			/etc/nginx/sites-available/featherpanel.conf \
+			/etc/nginx/sites-available/FeatherPanel.conf
+		do
+			if [ -f "$candidate" ] && grep -q 'proxy_buffer_size' "$candidate"; then
+				patched=true
+				break
+			fi
+		done
+		if [ "$patched" = true ]; then
+			log_success "Nginx proxy buffer settings are present."
+			return 0
+		fi
+		log_warn "Could not apply proxy buffer patch automatically. Use option 1 to reapply the full Nginx config."
+		return 1
+		;;
+	esac
 }
 
 show_release_type_menu() {
@@ -4660,6 +4901,72 @@ setup_ssl_auto_renewal() {
 	log_info "If renewed, the following command will be executed: $restart_command"
 }
 
+# Next.js emits large Link preload headers; nginx defaults (4k/8k) cause 502s.
+ensure_nginx_proxy_buffers() {
+	local site_file=""
+	for candidate in \
+		/etc/nginx/sites-available/featherpanel \
+		/etc/nginx/sites-available/featherpanel.conf \
+		/etc/nginx/sites-available/FeatherPanel.conf
+	do
+		if [ -f "$candidate" ]; then
+			site_file="$candidate"
+			break
+		fi
+	done
+
+	if [ -z "$site_file" ]; then
+		return 0
+	fi
+
+	if grep -q 'proxy_buffer_size' "$site_file"; then
+		return 0
+	fi
+
+	local tmp
+	tmp="$(mktemp)"
+	awk '
+		/proxy_buffering[[:space:]]+off;/ && !done {
+			print "      # Next.js Link preload headers exceed default upstream header buffer"
+			print "      proxy_buffer_size 128k;"
+			print "      proxy_buffers 8 128k;"
+			print "      proxy_busy_buffers_size 256k;"
+			done = 1
+		}
+		/proxy_pass[[:space:]]+http:\/\/127\.0\.0\.1:3000;/ && !done {
+			print "        # Next.js Link preload headers exceed default upstream header buffer"
+			print "        proxy_buffer_size 128k;"
+			print "        proxy_buffers 8 128k;"
+			print "        proxy_busy_buffers_size 256k;"
+			done = 1
+		}
+		/proxy_pass[[:space:]]+http:\/\/localhost:4831;/ && !done {
+			print "        # Next.js Link preload headers exceed default upstream header buffer"
+			print "        proxy_buffer_size 128k;"
+			print "        proxy_buffers 8 128k;"
+			print "        proxy_busy_buffers_size 256k;"
+			done = 1
+		}
+		{ print }
+	' "$site_file" >"$tmp"
+
+	if ! grep -q 'proxy_buffer_size' "$tmp"; then
+		rm -f "$tmp"
+		return 0
+	fi
+
+	cp "$site_file" "${site_file}.bak.pre-proxy-buffers"
+	mv "$tmp" "$site_file"
+
+	if nginx -t 2>&1 | tee -a "$LOG_FILE" >/dev/null; then
+		systemctl reload nginx 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
+		log_success "Nginx proxy buffers updated for large Next.js response headers"
+	else
+		log_warn "Nginx proxy buffer patch failed validation; restoring previous config"
+		mv "${site_file}.bak.pre-proxy-buffers" "$site_file"
+	fi
+}
+
 setup_nginx_reverse_proxy() {
 	local domain="$1"
 	local has_ssl="$2"
@@ -4687,6 +4994,9 @@ setup_nginx_reverse_proxy() {
 
 	# Enable the site
 	ln -sf /etc/nginx/sites-available/featherpanel /etc/nginx/sites-enabled/
+
+	# Older upstream templates may omit this; ensure it's present after download
+	ensure_nginx_proxy_buffers
 
 	# Test nginx configuration
 	if nginx -t 2>&1 | tee -a "$LOG_FILE" >/dev/null; then
@@ -6772,14 +7082,14 @@ if [ -f /etc/os-release ]; then
 				fi
 			done
 		else
-			while [[ ! "$INST_TYPE" =~ ^[1-6]$ ]]; do
+			while [[ ! "$INST_TYPE" =~ ^[1-7]$ ]]; do
 				show_panel_menu
 				echo ""
-				prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3/4/5/6)${NC}: " INST_TYPE
-				if [[ ! "$INST_TYPE" =~ ^[1-6]$ ]]; then
+				prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3/4/5/6/7)${NC}: " INST_TYPE
+				if [[ ! "$INST_TYPE" =~ ^[1-7]$ ]]; then
 					echo ""
 					echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
-					echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), ${BOLD}3${NC} (Update), ${BOLD}4${NC} (Backup), ${BOLD}5${NC} (Info), or ${BOLD}6${NC} (Firewall)${NC}"
+					echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), ${BOLD}3${NC} (Update), ${BOLD}4${NC} (Backup), ${BOLD}5${NC} (Info), ${BOLD}6${NC} (Firewall), or ${BOLD}7${NC} (Web Server)${NC}"
 					echo ""
 					sleep 2
 				fi
@@ -8160,6 +8470,9 @@ if [ -f /etc/os-release ]; then
 		# Always ensure global featherpanel command is installed/updated
 		install_featherpanel_command
 
+		# Patch host nginx if present (Next.js Link headers exceed default upstream buffers)
+		ensure_nginx_proxy_buffers
+
 		# Ensure install marker exists after successful updates.
 		# This prevents feature gates from failing when the marker was accidentally removed.
 		touch /var/www/featherpanel/.installed
@@ -8258,6 +8571,17 @@ if [ -f /etc/os-release ]; then
 			log_success "Panel firewall manager completed."
 		else
 			log_error "Panel firewall manager failed. See log at $LOG_FILE"
+			exit 1
+		fi
+	elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "7" ]; then
+		# Panel Web Server Manager
+		if ! require_docker_panel_mode "Web Server Manager"; then
+			exit 1
+		fi
+		if manage_panel_webserver; then
+			log_success "Web Server manager completed."
+		else
+			log_error "Web Server manager failed. See log at $LOG_FILE"
 			exit 1
 		fi
 	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "1" ]; then

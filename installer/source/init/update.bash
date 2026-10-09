@@ -284,11 +284,76 @@ ensure_nginx_webmail_location() {
     echo "Inserted /webmail location into ${site_file}"
 }
 
+# Next.js emits large Link preload headers; nginx defaults (4k/8k) cause 502s.
+ensure_nginx_proxy_buffers() {
+    step "Ensuring nginx upstream response header buffers are large enough..."
+    local site_file=""
+    for candidate in \
+        "$NGINX_SITE_FILE" \
+        /etc/nginx/sites-available/FeatherPanel.conf \
+        /etc/nginx/sites-available/featherpanel.conf \
+        /etc/nginx/sites-available/featherpanel
+    do
+        if [ -f "$candidate" ]; then
+            site_file="$candidate"
+            break
+        fi
+    done
+
+    if [ -z "$site_file" ]; then
+        echo "No FeatherPanel nginx site found; skipping proxy buffer patch." >&2
+        return 0
+    fi
+
+    if grep -q 'proxy_buffer_size' "$site_file"; then
+        echo "nginx already has proxy_buffer_size in ${site_file}"
+        return 0
+    fi
+
+    local tmp
+    tmp="$(mktemp)"
+    awk '
+        /proxy_buffering[[:space:]]+off;/ && !done {
+            print "      # Next.js Link preload headers exceed default upstream header buffer"
+            print "      proxy_buffer_size 128k;"
+            print "      proxy_buffers 8 128k;"
+            print "      proxy_busy_buffers_size 256k;"
+            done = 1
+        }
+        /proxy_pass[[:space:]]+http:\/\/127\.0\.0\.1:3000;/ && !done {
+            print "        # Next.js Link preload headers exceed default upstream header buffer"
+            print "        proxy_buffer_size 128k;"
+            print "        proxy_buffers 8 128k;"
+            print "        proxy_busy_buffers_size 256k;"
+            done = 1
+        }
+        /proxy_pass[[:space:]]+http:\/\/localhost:4831;/ && !done {
+            print "        # Next.js Link preload headers exceed default upstream header buffer"
+            print "        proxy_buffer_size 128k;"
+            print "        proxy_buffers 8 128k;"
+            print "        proxy_busy_buffers_size 256k;"
+            done = 1
+        }
+        { print }
+    ' "$site_file" >"$tmp"
+
+    if ! grep -q 'proxy_buffer_size' "$tmp"; then
+        echo "Could not insert proxy_buffer_size into ${site_file}; skipping." >&2
+        rm -f "$tmp"
+        return 0
+    fi
+
+    cp "$site_file" "${site_file}.bak.pre-proxy-buffers"
+    mv "$tmp" "$site_file"
+    echo "Inserted proxy_buffer_size into ${site_file}"
+}
+
 restart_services() {
     step "Restarting services (runner, frontend, nginx)..."
     systemctl restart "$RUNNER_SERVICE_NAME" || true
     systemctl restart "$NEXT_SERVICE_NAME" || true
     ensure_nginx_webmail_location
+    ensure_nginx_proxy_buffers
     nginx -t && systemctl restart nginx
 }
 
