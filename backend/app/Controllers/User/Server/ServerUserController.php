@@ -1443,12 +1443,6 @@ class ServerUserController
                         return ApiResponse::error('Variable is not editable: ' . $sv['env_variable'], 'VARIABLE_NOT_EDITABLE', 403);
                     }
 
-                    // Validate variable value
-                    $error = $this->validateVariableValue($val, (string) ($sv['rules'] ?? ''), (string) ($sv['field_type'] ?? ''));
-                    if ($error !== null) {
-                        return ApiResponse::error('Validation failed for ' . $sv['env_variable'] . ': ' . $error, 'INVALID_VARIABLE_VALUE', 422);
-                    }
-
                     $providedValues[$varId] = $val;
                 }
 
@@ -1530,11 +1524,6 @@ class ServerUserController
                 }
                 if ((int) $sv['user_editable'] !== 1 || (int) $sv['user_viewable'] !== 1) {
                     return ApiResponse::error('Variable is not editable: ' . $sv['env_variable'], 'VARIABLE_NOT_EDITABLE', 403);
-                }
-
-                $error = $this->validateVariableValue($val, (string) ($sv['rules'] ?? ''), (string) ($sv['field_type'] ?? ''));
-                if ($error !== null) {
-                    return ApiResponse::error('Validation failed for ' . $sv['env_variable'] . ': ' . $error, 'INVALID_VARIABLE_VALUE', 422);
                 }
             }
 
@@ -2516,11 +2505,6 @@ class ServerUserController
     }
 
     /**
-     * private function validateVariableValue(string $value, string $rules, string $fieldType = ''): ?string
-     * {
-     * return \App\Services\Spells\VariableValidator::validate($value, $rules);
-     * }.
-     * /**
      * Get user permissions for a specific server.
      * Returns full permissions for server owners, or subuser permissions for subusers.
      *

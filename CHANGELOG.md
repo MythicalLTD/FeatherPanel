@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.4.1 STABLE
+
+### Fixed
+
+- Saving server startup settings no longer returns HTTP 500 (`Call to undefined method validateVariableValue()`); variable checks use `VariableValidator::validatePayload` only. by @nayskutzu
+
 ## v1.4.0 STABLE
 
 ### Added
