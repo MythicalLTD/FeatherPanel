@@ -232,6 +232,48 @@ export default function AdminMailHostsPage() {
                         <AlertDescription>{t('admin.mailHosts.autoHint')}</AlertDescription>
                     </Alert>
 
+                    <PageCard
+                        title={t('admin.mailHosts.helpTitle')}
+                        description={t('admin.mailHosts.helpHint')}
+                        icon={Wrench}
+                    >
+                        <div className='space-y-4 text-sm'>
+                            <details className='rounded-lg border border-border/60 p-3' open>
+                                <summary className='cursor-pointer font-semibold'>{t('admin.mailHosts.helpCaseA')}</summary>
+                                <ol className='text-muted-foreground mt-2 list-decimal space-y-1 pl-5'>
+                                    <li>{t('admin.mailHosts.helpA1')}</li>
+                                    <li>{t('admin.mailHosts.helpA2')}</li>
+                                    <li>{t('admin.mailHosts.helpA3')}</li>
+                                    <li>{t('admin.mailHosts.helpA4')}</li>
+                                    <li>{t('admin.mailHosts.helpA5')}</li>
+                                </ol>
+                                <p className='text-muted-foreground mt-2 text-xs'>{t('admin.mailHosts.helpAPitfalls')}</p>
+                            </details>
+
+                            <details className='rounded-lg border border-border/60 p-3'>
+                                <summary className='cursor-pointer font-semibold'>{t('admin.mailHosts.helpCaseB')}</summary>
+                                <ol className='text-muted-foreground mt-2 list-decimal space-y-1 pl-5'>
+                                    <li>{t('admin.mailHosts.helpB1')}</li>
+                                    <li>{t('admin.mailHosts.helpB2')}</li>
+                                    <li>{t('admin.mailHosts.helpB3')}</li>
+                                    <li>{t('admin.mailHosts.helpB4')}</li>
+                                    <li>{t('admin.mailHosts.helpB5')}</li>
+                                </ol>
+                                <p className='text-muted-foreground mt-2 text-xs'>{t('admin.mailHosts.helpBPitfalls')}</p>
+                            </details>
+
+                            <a
+                                className='text-primary inline-flex items-center gap-1 text-xs hover:underline'
+                                href='https://github.com/MythicalLTD/FeatherQuilld/blob/master/docs/mail-backends.md'
+                                target='_blank'
+                                rel='noreferrer'
+                            >
+                                <ExternalLink className='h-3 w-3' />
+                                {t('admin.mailHosts.helpDocs')}
+                            </a>
+                        </div>
+                    </PageCard>
+
                     {nodesWithoutMail.length > 0 && (
                         <PageCard
                             title={t('admin.mailHosts.setupSection')}
