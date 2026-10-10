@@ -12773,6 +12773,8 @@
 				"remove_success": "{name} removed successfully",
 				"remove_failed": "Package removal failed",
 				"mail_host_created": "A mail host was registered in the panel for this node.",
+				"docs": "Guide",
+				"mailcow_next_step": "Next step for mailcow: set system.mail.backend: mailcow (plus mail.mailcow.url and mail.mailcow.api_key when the stack runs on another host) under this node's advanced config overrides, then check the domain's mail DNS records.",
 				"active_reverse_proxy": "Active reverse proxy: {name}. Remove it before installing another web server.",
 				"install_blocked": "Remove {name} before installing this web server.",
 				"terminal_title": "Live output",
