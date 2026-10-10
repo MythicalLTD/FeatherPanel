@@ -245,23 +245,31 @@ class MailHost
     }
 
     /**
+     * Normalizes only the fields present in $data, so a partial update()
+     * (e.g. DnsProvisioner writing mx_host/spf_record/dkim_*) does not reset
+     * provision_mode and the ports to their defaults.
+     *
      * @param array<string, mixed> $data
      *
      * @return array<string, mixed>
      */
     private static function normalize(array $data): array
     {
-        if (isset($data['web_node_id'])) {
+        if (array_key_exists('web_node_id', $data)) {
             $webNodeId = (int) $data['web_node_id'];
             $data['web_node_id'] = $webNodeId > 0 ? $webNodeId : null;
         }
 
-        $data['imap_port'] = max(1, (int) ($data['imap_port'] ?? 993));
-        $data['smtp_port'] = max(1, (int) ($data['smtp_port'] ?? 587));
-        $data['pop_port'] = max(1, (int) ($data['pop_port'] ?? 995));
+        foreach (['imap_port' => 993, 'smtp_port' => 587, 'pop_port' => 995] as $field => $default) {
+            if (array_key_exists($field, $data)) {
+                $data[$field] = max(1, (int) ($data[$field] ?? $default));
+            }
+        }
 
-        $mode = strtolower(trim((string) ($data['provision_mode'] ?? 'inventory')));
-        $data['provision_mode'] = in_array($mode, ['inventory', 'webhook', 'node'], true) ? $mode : 'inventory';
+        if (array_key_exists('provision_mode', $data)) {
+            $mode = strtolower(trim((string) $data['provision_mode']));
+            $data['provision_mode'] = in_array($mode, ['inventory', 'webhook', 'node'], true) ? $mode : 'inventory';
+        }
 
         foreach (['imap_encryption', 'smtp_encryption'] as $encField) {
             if (isset($data[$encField])) {

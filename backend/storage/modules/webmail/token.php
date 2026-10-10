@@ -62,8 +62,21 @@ $rcmail = rcmail::get_instance();
 $rcmail->config->set('default_host', $featherSso['host']);
 $rcmail->config->set('default_port', $featherSso['port']);
 
-if ($rcmail->login($featherSso['user'], $featherSso['pass'], $featherSso['host'], true)) {
-    $rcmail->session->set('auth_type', 'feather_sso');
+// Drop any stale/forged session id while the session is still anonymous.
+$rcmail->session->regenerate_id(true);
+
+// $cookiecheck=false: this is a server-side SSO hop, not a login form post. The
+// browser has no roundcube_sessid cookie yet on its first visit, so requiring
+// one made the first login always fail.
+if ($rcmail->login($featherSso['user'], $featherSso['pass'], $featherSso['host'], false)) {
+    // Same post-login sequence Roundcube's own index.php runs. Session::set()
+    // does not exist, and without set_auth_cookie() the next request is
+    // rejected as an invalid session.
+    $rcmail->session->remove('temp');
+    $rcmail->session->regenerate_id(false);
+    $rcmail->session->set_auth_cookie();
+    $_SESSION['auth_type'] = 'feather_sso';
+    $rcmail->log_login();
     header('Location: ./?_task=mail');
     exit;
 }

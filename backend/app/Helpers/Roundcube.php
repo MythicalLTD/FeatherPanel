@@ -143,7 +143,9 @@ class Roundcube
 \$config['db_dsnw'] = 'sqlite:///' . __DIR__ . '/../logs/roundcube.db?mode=0646';
 \$config['default_host'] = 'ssl://%n';
 \$config['default_port'] = 993;
-\$config['smtp_server'] = 'tls://%n';
+// %n is the host the browser used to reach the panel, which is not the mail
+// server in the usual deployment. %h is the IMAP host of the current session.
+\$config['smtp_server'] = 'tls://%h';
 \$config['smtp_port'] = 587;
 \$config['des_key'] = '{$desKey}';
 \$config['product_name'] = 'FeatherPanel Webmail';
