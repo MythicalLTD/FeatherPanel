@@ -27,7 +27,7 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Box, Download, Loader2, RefreshCw, Terminal, Trash2 } from 'lucide-react';
+import { Box, Download, ExternalLink, Loader2, RefreshCw, Terminal, Trash2 } from 'lucide-react';
 import {
     SystemPackageTerminalPanel,
     type SystemPackageTerminalPanelRef,
@@ -48,6 +48,8 @@ interface HostPackage {
     install_blocked?: boolean;
     blocked_by?: string | null;
     blocked_by_name?: string | null;
+    description?: string | null;
+    docs_url?: string | null;
 }
 
 interface PackagesPayload {
@@ -206,6 +208,25 @@ export function PackageManagerTab({ nodeId }: PackageManagerTabProps) {
                                             : t('admin.webNodes.packages.not_installed')}
                                     </Badge>
                                 </div>
+                                {pkg.description && (
+                                    <p className='text-muted-foreground text-xs'>{pkg.description}</p>
+                                )}
+                                {pkg.docs_url && (
+                                    <a
+                                        className='text-primary inline-flex items-center gap-1 text-xs hover:underline'
+                                        href={pkg.docs_url}
+                                        target='_blank'
+                                        rel='noreferrer'
+                                    >
+                                        <ExternalLink className='h-3 w-3' />
+                                        {t('admin.webNodes.packages.docs')}
+                                    </a>
+                                )}
+                                {pkg.id === 'mailcow' && pkg.installed && (
+                                    <p className='text-muted-foreground rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2 text-xs'>
+                                        {t('admin.webNodes.packages.mailcow_next_step')}
+                                    </p>
+                                )}
                                 {pkg.binary_path && (
                                     <p className='text-muted-foreground font-mono text-xs break-all'>
                                         {pkg.binary_path}
