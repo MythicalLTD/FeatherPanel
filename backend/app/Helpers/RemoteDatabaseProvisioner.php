@@ -33,8 +33,13 @@ class RemoteDatabaseProvisioner
         string $remote = '%',
         int $maxConnections = 0,
     ): void {
-        $pdo = self::connect($databaseHost);
         $type = (string) ($databaseHost['database_type'] ?? '');
+        if ($type === 'mongodb') {
+            self::mongoCreate($databaseHost, $databaseName, $username, $password);
+
+            return;
+        }
+        $pdo = self::connect($databaseHost);
         $remote = self::normalizeRemote($remote);
 
         switch ($type) {
@@ -83,8 +88,13 @@ class RemoteDatabaseProvisioner
         string $username,
         string $remote = '%',
     ): void {
-        $pdo = self::connect($databaseHost);
         $type = (string) ($databaseHost['database_type'] ?? '');
+        if ($type === 'mongodb') {
+            self::mongoDelete($databaseHost, $databaseName, $username);
+
+            return;
+        }
+        $pdo = self::connect($databaseHost);
         $remote = self::normalizeRemote($remote);
 
         switch ($type) {
@@ -122,8 +132,13 @@ class RemoteDatabaseProvisioner
         string $remote = '%',
         int $maxConnections = 0,
     ): void {
-        $pdo = self::connect($databaseHost);
         $type = (string) ($databaseHost['database_type'] ?? '');
+        if ($type === 'mongodb') {
+            self::mongoUpdatePassword($databaseHost, $databaseName, $username, $password);
+
+            return;
+        }
+        $pdo = self::connect($databaseHost);
         $remote = self::normalizeRemote($remote);
 
         switch ($type) {
@@ -173,6 +188,9 @@ class RemoteDatabaseProvisioner
     public static function dumpDatabase(array $databaseHost, string $databaseName): string
     {
         $type = (string) ($databaseHost['database_type'] ?? '');
+        if ($type === 'mongodb') {
+            return self::dumpMongo(self::connectMongo($databaseHost), $databaseName);
+        }
         $pdo = self::connectToDatabase($databaseHost, $databaseName);
 
         return match ($type) {
@@ -187,6 +205,11 @@ class RemoteDatabaseProvisioner
      */
     public static function importDatabase(array $databaseHost, string $databaseName, string $sql): void
     {
+        if (($databaseHost['database_type'] ?? '') === 'mongodb') {
+            self::importMongo(self::connectMongo($databaseHost), $databaseName, $sql);
+
+            return;
+        }
         $pdo = self::connectToDatabase($databaseHost, $databaseName);
         $sql = trim($sql);
         if ($sql === '') {
@@ -350,5 +373,100 @@ class RemoteDatabaseProvisioner
     private static function quoteIdentifierMySQL(string $identifier): string
     {
         return '`' . str_replace('`', '``', $identifier) . '`';
+    }
+
+    // ── MongoDB ─────────────────────────────────────────────────────────────
+
+    private static function connectMongo(array $databaseHost): \MongoDB\Driver\Manager
+    {
+        if (!extension_loaded('mongodb')) {
+            throw new \RuntimeException('PHP mongodb extension is not available on the panel host');
+        }
+        $host = (string) ($databaseHost['database_host'] ?? '');
+        $port = (int) ($databaseHost['database_port'] ?? 27017);
+        $user = rawurlencode((string) ($databaseHost['database_username'] ?? ''));
+        $pass = rawurlencode((string) ($databaseHost['database_password'] ?? ''));
+
+        return new \MongoDB\Driver\Manager(
+            "mongodb://{$user}:{$pass}@{$host}:{$port}/admin?authSource=admin&serverSelectionTimeoutMS=10000"
+        );
+    }
+
+    private static function mongoCreate(array $databaseHost, string $databaseName, string $username, string $password): void
+    {
+        $mgr = self::connectMongo($databaseHost);
+        // Materialize the database (MongoDB creates DBs lazily) + a readWrite user
+        $mgr->executeCommand($databaseName, new \MongoDB\Driver\Command([
+            'create' => '_panel_init',
+        ]));
+        $bw = new \MongoDB\Driver\BulkWrite;
+        $bw->insert(['_id' => 'created_by_featherpanel', 'created_at' => gmdate('c')]);
+        $mgr->executeBulkWrite("{$databaseName}._panel_init", $bw);
+        $mgr->executeCommand($databaseName, new \MongoDB\Driver\Command([
+            'createUser' => $username,
+            'pwd' => $password,
+            'roles' => [['role' => 'readWrite', 'db' => $databaseName]],
+        ]));
+    }
+
+    private static function mongoDelete(array $databaseHost, string $databaseName, string $username): void
+    {
+        $mgr = self::connectMongo($databaseHost);
+        try {
+            $mgr->executeCommand($databaseName, new \MongoDB\Driver\Command(['dropUser' => $username]));
+        } catch (\Throwable $e) {
+            // user may not exist
+        }
+        $mgr->executeCommand($databaseName, new \MongoDB\Driver\Command(['dropDatabase' => 1]));
+    }
+
+    private static function mongoUpdatePassword(array $databaseHost, string $databaseName, string $username, string $password): void
+    {
+        $mgr = self::connectMongo($databaseHost);
+        $mgr->executeCommand($databaseName, new \MongoDB\Driver\Command([
+            'updateUser' => $username,
+            'pwd' => $password,
+        ]));
+    }
+
+    private static function dumpMongo(\MongoDB\Driver\Manager $mgr, string $databaseName): string
+    {
+        $cols = $mgr->executeCommand($databaseName, new \MongoDB\Driver\Command(['listCollections' => 1]))->toArray();
+        $out = ['featherpanel_mongo_dump' => true, 'database' => $databaseName, 'collections' => []];
+        foreach ($cols as $col) {
+            $name = (string) ($col->name ?? '');
+            if ($name === '' || str_starts_with($name, 'system.')) {
+                continue;
+            }
+            $docs = $mgr->executeQuery("{$databaseName}.{$name}", new \MongoDB\Driver\Query([]))->toArray();
+            $out['collections'][$name] = $docs;
+        }
+
+        return json_encode($out, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    }
+
+    private static function importMongo(\MongoDB\Driver\Manager $mgr, string $databaseName, string $json): void
+    {
+        $data = json_decode(trim($json), true);
+        if (!is_array($data) || empty($data['featherpanel_mongo_dump']) || !is_array($data['collections'] ?? null)) {
+            throw new \InvalidArgumentException('Invalid MongoDB dump format (expected FeatherPanel JSON dump)');
+        }
+        foreach ($data['collections'] as $name => $docs) {
+            if (!is_array($docs) || !preg_match('/^[a-zA-Z0-9_.-]+$/', (string) $name)) {
+                continue;
+            }
+            $bw = new \MongoDB\Driver\BulkWrite;
+            $n = 0;
+            foreach ($docs as $doc) {
+                $bw->insert($doc);
+                if (++$n % 500 === 0) {
+                    $mgr->executeBulkWrite("{$databaseName}.{$name}", $bw);
+                    $bw = new \MongoDB\Driver\BulkWrite;
+                }
+            }
+            if ($n % 500) {
+                $mgr->executeBulkWrite("{$databaseName}.{$name}", $bw);
+            }
+        }
     }
 }
