@@ -394,7 +394,7 @@ class DatabasesController
         }
 
         // Validate database_type
-        $allowedTypes = ['mysql', 'postgresql', 'mariadb'];
+        $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb'];
         if (!in_array($data['database_type'], $allowedTypes)) {
             return ApiResponse::error('Invalid database type. Allowed types: ' . implode(', ', $allowedTypes), 'INVALID_DATABASE_TYPE');
         }
@@ -936,6 +936,15 @@ class DatabasesController
                         $startTime
                     );
 
+                case 'mongodb':
+                    return $this->testMongoConnection(
+                        (string) $data['database_host'],
+                        (int) $data['database_port'],
+                        (string) $data['database_username'],
+                        (string) $data['database_password'],
+                        $startTime
+                    );
+
                 default:
                     return [
                         'success' => false,
@@ -951,6 +960,31 @@ class DatabasesController
                 'message' => 'Unexpected error: ' . $e->getMessage(),
                 'response_time' => $responseTime,
             ];
+        }
+    }
+
+    private function testMongoConnection(string $host, int $port, string $username, string $password, float $startTime): array
+    {
+        try {
+            if (!extension_loaded('mongodb')) {
+                return ['success' => false, 'message' => 'PHP mongodb extension is not available'];
+            }
+            $mgr = new \MongoDB\Driver\Manager(sprintf(
+                'mongodb://%s:%s@%s:%d/admin?authSource=admin&serverSelectionTimeoutMS=10000',
+                rawurlencode($username),
+                rawurlencode($password),
+                $host,
+                $port
+            ));
+            $mgr->executeCommand('admin', new \MongoDB\Driver\Command(['ping' => 1]));
+
+            return [
+                'success' => true,
+                'message' => 'Connection successful',
+                'response_time' => round((microtime(true) - $startTime) * 1000, 2),
+            ];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
         }
     }
 

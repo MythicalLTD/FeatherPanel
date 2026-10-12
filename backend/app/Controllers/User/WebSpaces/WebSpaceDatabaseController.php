@@ -111,7 +111,7 @@ class WebSpaceDatabaseController
             return ApiResponse::error('Database host is not available for this WebSpace node', 'DATABASE_HOST_NODE_MISMATCH', 400);
         }
 
-        if (!in_array($databaseHost['database_type'], ['mysql', 'mariadb', 'postgresql'], true)) {
+        if (!in_array($databaseHost['database_type'], ['mysql', 'mariadb', 'postgresql', 'mongodb'], true)) {
             return ApiResponse::error('Unsupported database type', 'UNSUPPORTED_DATABASE_TYPE', 400);
         }
 
@@ -378,6 +378,18 @@ class WebSpaceDatabaseController
         $databaseHost = DatabaseInstance::getDatabaseById((int) $record['database_host_id']);
         if (!$databaseHost) {
             return ApiResponse::error('Database host not found', 'DATABASE_HOST_NOT_FOUND', 404);
+        }
+
+        // MongoDB databases are managed through an external admin UI (e.g. mongo-express)
+        // configured via the MONGO_ADMIN_URL app setting, instead of phpMyAdmin.
+        $dbType = strtolower((string) ($record['database_type'] ?? $databaseHost['database_type'] ?? ''));
+        if ($dbType === 'mongodb') {
+            $mongoUrl = trim((string) \App\App::getInstance(true)->getConfig()->getSetting('MONGO_ADMIN_URL', ''));
+            if ($mongoUrl === '') {
+                return ApiResponse::error('No MongoDB admin UI configured (MONGO_ADMIN_URL)', 'MONGO_ADMIN_NOT_CONFIGURED', 404);
+            }
+
+            return ApiResponse::success(['url' => $mongoUrl], 'OK', 200);
         }
 
         $app = \App\App::getInstance(true);
