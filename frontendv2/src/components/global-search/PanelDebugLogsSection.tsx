@@ -24,6 +24,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { adminSettingsApi } from '@/lib/admin-settings-api';
 import { copyToClipboard, cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export type LogType = 'web' | 'app' | 'mail' | 'runner';
 
@@ -82,8 +83,7 @@ export function PanelDebugLogsSection({ enabled }: { enabled: boolean }) {
             );
             setLogFiles(res.data?.data?.files ?? []);
         } catch (error) {
-            const message = axios.isAxiosError(error) ? error.response?.data?.message : null;
-            toast.error(message ?? t('globalSearch.debug.logsLoadFailed'));
+            toast.error(getApiErrorMessage(error, t, 'globalSearch.debug.logsLoadFailed'));
         } finally {
             setLoading(false);
         }
@@ -97,18 +97,18 @@ export function PanelDebugLogsSection({ enabled }: { enabled: boolean }) {
                 success: boolean;
                 data: { logs: string; file: string; type: string; lines_count: number };
                 message?: string;
+                error_code?: string;
             }>('/api/admin/log-viewer/get', {
                 params: { type: logType, lines: lineCount },
             });
             if (!res.data?.success) {
-                toast.error(res.data?.message ?? t('globalSearch.debug.logTailFailed'));
+                toast.error(getApiErrorMessageFromPayload(res.data, t, 'globalSearch.debug.logTailFailed'));
                 return;
             }
             setLogContent(res.data.data.logs ?? '');
             setLogMeta({ file: res.data.data.file, lines_count: res.data.data.lines_count });
         } catch (error) {
-            const message = axios.isAxiosError(error) ? error.response?.data?.message : null;
-            toast.error(message ?? t('globalSearch.debug.logTailFailed'));
+            toast.error(getApiErrorMessage(error, t, 'globalSearch.debug.logTailFailed'));
         } finally {
             setLoading(false);
         }
@@ -134,7 +134,7 @@ export function PanelDebugLogsSection({ enabled }: { enabled: boolean }) {
         try {
             const data = await adminSettingsApi.uploadLogs();
             if (!data.success || !data.data) {
-                toast.error(data.message ?? t('globalSearch.debug.logsUploadFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'globalSearch.debug.logsUploadFailed'));
                 return;
             }
 
@@ -159,10 +159,7 @@ export function PanelDebugLogsSection({ enabled }: { enabled: boolean }) {
                 toast.success(t('globalSearch.debug.logsUploaded'));
             }
         } catch (error) {
-            const message = axios.isAxiosError(error)
-                ? (error.response?.data?.message ?? error.message)
-                : t('globalSearch.debug.logsUploadFailed');
-            toast.error(typeof message === 'string' ? message : t('globalSearch.debug.logsUploadFailed'));
+            toast.error(getApiErrorMessage(error, t, 'globalSearch.debug.logsUploadFailed'));
         } finally {
             setUploadLoading(false);
         }

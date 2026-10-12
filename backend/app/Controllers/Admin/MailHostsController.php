@@ -21,6 +21,7 @@ use App\Chat\WebNode;
 use App\Chat\MailHost;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Plugins\Events\Events\MailHostsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -31,9 +32,7 @@ class MailHostsController
     {
         $hosts = MailHost::listAll();
         foreach ($hosts as &$host) {
-            if (!empty($host['provision_api_key'])) {
-                $host['provision_api_key'] = '[REDACTED]';
-            }
+            self::redactSecrets($host);
         }
         unset($host);
 
@@ -48,9 +47,7 @@ class MailHostsController
             return ApiResponse::error('Mail host not found', 'NOT_FOUND', 404);
         }
 
-        if (!empty($host['provision_api_key'])) {
-            $host['provision_api_key'] = '[REDACTED]';
-        }
+        self::redactSecrets($host);
 
         return ApiResponse::success(['host' => $host], 'OK', 200);
     }
@@ -77,6 +74,8 @@ class MailHostsController
         if ($host && !empty($host['provision_api_key'])) {
             $host['provision_api_key'] = '[REDACTED]';
         }
+
+        self::emitPluginEvent(MailHostsEvent::onMailHostCreated(), ['host' => $host]);
 
         return ApiResponse::success(['host' => $host], 'Created', 201);
     }
@@ -107,6 +106,11 @@ class MailHostsController
         if ($host && !empty($host['provision_api_key'])) {
             $host['provision_api_key'] = '[REDACTED]';
         }
+
+        self::emitPluginEvent(MailHostsEvent::onMailHostUpdated(), [
+            'host_id' => $id,
+            'host' => $host,
+        ]);
 
         return ApiResponse::success(['host' => $host], 'Updated', 200);
     }
@@ -147,6 +151,11 @@ class MailHostsController
         if (!MailHost::delete($id)) {
             return ApiResponse::error('Failed to delete mail host (it may still be in use)', 'DELETE_FAILED', 500);
         }
+
+        self::emitPluginEvent(MailHostsEvent::onMailHostDeleted(), [
+            'host_id' => $id,
+            'host' => $existing,
+        ]);
 
         return ApiResponse::success([], 'Deleted', 200);
     }
@@ -202,5 +211,29 @@ class MailHostsController
         }
 
         return null;
+    }
+
+    /**
+     * @param array<string, mixed> $host
+     */
+    private static function redactSecrets(array &$host): void
+    {
+        if (!empty($host['provision_api_key'])) {
+            $host['provision_api_key'] = '[REDACTED]';
+        }
+        if (!empty($host['webmail_sso_secret'])) {
+            $host['webmail_sso_secret'] = '[REDACTED]';
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private static function emitPluginEvent(string $event, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($event, $payload);
+        }
     }
 }

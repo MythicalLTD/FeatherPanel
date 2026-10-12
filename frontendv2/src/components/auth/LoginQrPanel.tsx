@@ -25,6 +25,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { authApi } from '@/lib/api/auth';
 import { cn } from '@/lib/utils';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 type QrStatus = 'idle' | 'pending' | 'scanned' | 'approved' | 'denied' | 'expired' | 'error';
 
@@ -109,7 +110,7 @@ export default function LoginQrPanel({ className, compact = false }: { className
             const response = await authApi.qrStart();
             if (!response.success || !response.data?.challenge_id || !response.data?.desktop_secret) {
                 setStatus('error');
-                setError(response.message || t('auth.qr.error'));
+                setError(getApiErrorMessageFromPayload(response, t, 'auth.qr.error'));
                 return;
             }
 
@@ -125,9 +126,9 @@ export default function LoginQrPanel({ className, compact = false }: { className
             };
             setChallenge(next);
             setStatus('pending');
-        } catch {
+        } catch (error) {
             setStatus('error');
-            setError(t('auth.qr.error'));
+            setError(getApiErrorMessage(error, t, 'auth.qr.error'));
         }
     }, [clearPoll, t]);
 
@@ -175,7 +176,7 @@ export default function LoginQrPanel({ className, compact = false }: { className
                         return;
                     }
                     setStatus('error');
-                    setError(response.message || t('auth.qr.error'));
+                    setError(getApiErrorMessageFromPayload(response, t, 'auth.qr.error'));
                     return;
                 }
 
@@ -223,12 +224,12 @@ export default function LoginQrPanel({ className, compact = false }: { className
                         } else {
                             exchangingRef.current = false;
                             setStatus('error');
-                            setError(exchange.message || t('auth.qr.error'));
+                            setError(getApiErrorMessageFromPayload(exchange, t, 'auth.qr.error'));
                         }
-                    } catch {
+                    } catch (error) {
                         exchangingRef.current = false;
                         setStatus('error');
-                        setError(t('auth.qr.error'));
+                        setError(getApiErrorMessage(error, t, 'auth.qr.error'));
                     }
                     return;
                 }

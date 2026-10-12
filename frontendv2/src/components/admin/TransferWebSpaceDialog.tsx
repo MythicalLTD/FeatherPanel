@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { toast } from 'sonner';
 import { ArrowLeftRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
@@ -25,6 +25,7 @@ import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface WebNodeOption {
     id: number;
@@ -122,7 +123,7 @@ export function TransferWebSpaceDialog({
                     onCompleted?.();
                 } else if (phase === 'failed') {
                     stopPolling();
-                    toast.error(daemon?.message || t('webSpaces.transfer.failed'));
+                    toast.error(getApiErrorMessageFromPayload(daemon, t, 'webSpaces.transfer.failed'));
                     setSubmitting(false);
                 }
             } catch {
@@ -149,9 +150,7 @@ export function TransferWebSpaceDialog({
             pollTransferStatus();
         } catch (err) {
             setTransferPhase('failed');
-            const message = isAxiosError(err)
-                ? err.response?.data?.message || t('webSpaces.transfer.failed')
-                : t('webSpaces.transfer.failed');
+            const message = getApiErrorMessage(err, t, 'webSpaces.transfer.failed');
             setTransferMessage(message);
             toast.error(message);
             setSubmitting(false);

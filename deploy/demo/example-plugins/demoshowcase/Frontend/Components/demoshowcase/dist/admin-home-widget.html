@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo Showcase Admin</title>
+  <style>
+    :root { color-scheme: dark; --ink:#e2e8f0; --muted:#94a3b8; --accent:#a78bfa; }
+    html.light { color-scheme: light; --ink:#0f172a; --muted:#64748b; }
+    * { box-sizing: border-box; }
+    html, body { margin:0; background:transparent; color:var(--ink); font-family: ui-sans-serif, system-ui, sans-serif; }
+    p { margin:0 0 .4rem; font-size:.85rem; }
+    .muted { color:var(--muted); font-size:.8rem; line-height:1.45; }
+    code { font-size:.75rem; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <p>Admin widget from the <strong>DemoShowcase</strong> addon.</p>
+  <p class="muted">
+    Open <a href="/admin/demoshowcase" target="_top">Admin → Demo Showcase</a> for the full addon page,
+    or toggle <code>hide_admin_card</code> under Plugins settings to hide this card.
+  </p>
+  <script>
+    if (new URLSearchParams(location.search).get('__theme') === 'light') {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    }
+  </script>
+</body>
+</html>

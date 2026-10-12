@@ -20,6 +20,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import TopLoadingBar from '@/components/common/TopLoadingBar';
 import PageTransition from '@/components/common/PageTransition';
 import HackerEasterEgg from '@/components/common/HackerEasterEgg';
+import { DemoModeBanner } from '@/components/common/DemoModeBanner';
 
 export default function AppContent({ children }: { children: React.ReactNode }) {
     const { ready } = useTranslation();
@@ -39,6 +40,7 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
 
     return (
         <HackerEasterEgg>
+            <DemoModeBanner />
             <Suspense fallback={null}>
                 <TopLoadingBar />
             </Suspense>

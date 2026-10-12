@@ -398,7 +398,7 @@ export default function TicketStatusesPage() {
                             <SheetTitle>{t('admin.tickets.statuses.create')}</SheetTitle>
                             <SheetDescription>{t('admin.tickets.statuses.subtitle')}</SheetDescription>
                         </SheetHeader>
-                        <form onSubmit={handleCreate} className='space-y-4'>
+                        <form onSubmit={handleCreate} className='space-y-4' data-fp-save-shortcut>
                             {renderStatusFormFields('create')}
 
                             <SheetFooter>
@@ -417,7 +417,7 @@ export default function TicketStatusesPage() {
                             <SheetDescription>{t('admin.tickets.statuses.subtitle')}</SheetDescription>
                         </SheetHeader>
                         {editingStatus && (
-                            <form onSubmit={handleUpdate} className='space-y-4'>
+                            <form onSubmit={handleUpdate} className='space-y-4' data-fp-save-shortcut>
                                 {renderStatusFormFields('edit')}
 
                                 <SheetFooter>

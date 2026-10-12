@@ -22,7 +22,7 @@ interface PageTransitionProps {
 }
 
 /**
- * Pass-through wrapper. Do NOT remount children on pathname change — that tears down
+ * Pass-through wrapper. Do NOT remount children on pathname change - that tears down
  * DashboardShell / navbar / widgets and causes chrome flash on every navigation.
  */
 export default function PageTransition({ children }: PageTransitionProps) {

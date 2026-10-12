@@ -48,6 +48,7 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import {
     Dialog,
     DialogContent,
@@ -157,7 +158,7 @@ export default function ServerSettingsPage() {
             }
         } catch (error) {
             console.error(error);
-            toast.error(t('serverSettings.errorTitle'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.errorTitle'));
         } finally {
             setLoading(false);
         }
@@ -186,7 +187,7 @@ export default function ServerSettingsPage() {
             }
         } catch (error) {
             console.error(error);
-            toast.error(t('serverSettings.saveError'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.saveError'));
         } finally {
             setSaving(false);
         }
@@ -205,7 +206,7 @@ export default function ServerSettingsPage() {
             }
         } catch (error) {
             console.error(error);
-            toast.error(t('serverSettings.reinstallError'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.reinstallError'));
         } finally {
             setReinstalling(false);
         }
@@ -225,7 +226,7 @@ export default function ServerSettingsPage() {
             await fetchData();
         } catch (error) {
             console.error(error);
-            toast.error(t('serverSettings.abortInstallError'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.abortInstallError'));
         } finally {
             setAbortingInstall(false);
         }
@@ -239,7 +240,7 @@ export default function ServerSettingsPage() {
             router.push('/dashboard');
         } catch (error) {
             console.error(error);
-            toast.error(t('serverSettings.deleteError'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.deleteError'));
             setDeleting(false);
         }
     };
@@ -270,10 +271,7 @@ export default function ServerSettingsPage() {
             }
         } catch (error) {
             console.error(error);
-            const msg = axios.isAxiosError(error)
-                ? (error.response?.data as { message?: string } | undefined)?.message
-                : undefined;
-            toast.error(msg || t('serverSettings.backupPolicySaveError'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.backupPolicySaveError'));
         } finally {
             setSavingBackupPolicy(false);
         }
@@ -293,10 +291,7 @@ export default function ServerSettingsPage() {
             }
         } catch (error) {
             console.error(error);
-            const msg = axios.isAxiosError(error)
-                ? (error.response?.data as { message?: string } | undefined)?.message
-                : undefined;
-            toast.error(msg || t('serverSettings.autoStartSaveError'));
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.autoStartSaveError'));
         } finally {
             setSavingAutoStart(false);
         }
@@ -390,6 +385,7 @@ export default function ServerSettingsPage() {
                                         disabled={saving || !hasChanges}
                                         variant='default'
                                         size='sm'
+                                        data-fp-save-shortcut
                                     >
                                         {saving ? (
                                             <Loader2 className='mr-2 h-4 w-4 animate-spin' />
@@ -429,7 +425,7 @@ export default function ServerSettingsPage() {
                                     <div className='border-border/10 bg-muted/40 flex h-12 items-center rounded-xl border px-4 text-sm font-medium'>
                                         {server?.backup_limit != null
                                             ? formatBackupLimitLabel(server.backup_limit, t('common.disabled'))
-                                            : '—'}
+                                            : '-'}
                                     </div>
                                     <p className='text-muted-foreground ml-1 text-xs break-words'>
                                         {t('serverSettings.backupLimitReadOnlyHelp')}
@@ -479,6 +475,7 @@ export default function ServerSettingsPage() {
                                     onClick={handleSaveBackupPolicy}
                                     disabled={savingBackupPolicy || !hasBackupPolicyChanges}
                                     size='sm'
+                                    data-fp-save-shortcut
                                 >
                                     {savingBackupPolicy ? (
                                         <Loader2 className='mr-2 h-4 w-4 animate-spin' />
@@ -534,6 +531,7 @@ export default function ServerSettingsPage() {
                                         onClick={handleSaveAutoStart}
                                         disabled={savingAutoStart || !hasAutoStartChanges}
                                         size='sm'
+                                        data-fp-save-shortcut
                                     >
                                         {savingAutoStart ? (
                                             <Loader2 className='mr-2 h-4 w-4 animate-spin' />

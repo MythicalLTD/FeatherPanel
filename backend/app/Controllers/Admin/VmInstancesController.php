@@ -1855,6 +1855,38 @@ class VmInstancesController
         return $this->taskStatus($request, $reinstallId);
     }
 
+    public function recoverBackup(Request $request, int $id, int $backupId): Response
+    {
+        if (!VmInstance::getById($id)) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+        $body = json_decode($request->getContent(), true);
+        if (($body['confirm_interrupted'] ?? null) !== true) {
+            return ApiResponse::error('Confirm that this job has stopped', 'BACKUP_RECOVERY_CONFIRMATION_REQUIRED', 400);
+        }
+        try {
+            $error = \App\Services\Backup\VmBackupReconciler::recoverBackup($id, $backupId);
+            if ($error !== '') {
+                return ApiResponse::error('Backup cannot be recovered in its current state', $error, 409);
+            }
+
+            $actor = $request->attributes->get('user');
+            $instance = VmInstance::getById($id);
+            VmInstanceActivity::createActivity([
+                'vm_instance_id' => $id,
+                'vm_node_id' => (int) ($instance['vm_node_id'] ?? 0),
+                'user_id' => $actor['id'] ?? null,
+                'event' => 'vm:backup.recovered',
+                'metadata' => ['backup_id' => $backupId, 'reason' => 'confirmed_interrupted'],
+                'ip' => CloudFlareRealIP::getRealIP(),
+            ]);
+
+            return ApiResponse::success(null, 'Backup marked as interrupted', 200);
+        } catch (\Throwable) {
+            return ApiResponse::error('Backup recovery failed', 'BACKUP_RECOVERY_FAILED', 500);
+        }
+    }
+
     #[OA\Get(
         path: '/api/admin/vm-instances/{id}/backups',
         summary: 'List VM backups',
@@ -1889,7 +1921,15 @@ class VmInstancesController
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
         }
 
+        \App\Services\Backup\VmBackupReconciler::reconcileInstance((int) $instance['id']);
         $backups = VmInstanceBackup::getBackupsByInstanceId((int) $instance['id']);
+        foreach ($backups as &$backup) {
+            $backup['is_stale'] = \App\Services\Backup\VmBackupReconciler::isStale($backup);
+            if (\App\Services\Backup\VmBackupReconciler::hasMissingArchive($backup)) {
+                $backup['status'] = 'pending';
+            }
+        }
+        unset($backup);
         $backups = TimeHelper::normaliseRows($backups);
 
         $storages = [];
@@ -2124,6 +2164,8 @@ class VmInstancesController
             return ApiResponse::error('Invalid backup task', 'INVALID_TASK', 400);
         }
 
+        $task = \App\Services\Backup\VmBackupReconciler::reconcile($task);
+
         if ($task['status'] === 'pending' || $task['status'] === 'running') {
             return ApiResponse::success(['status' => 'running'], 'Backup in progress', 200);
         }
@@ -2174,6 +2216,9 @@ class VmInstancesController
         $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
             return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
+        }
+        if (!empty($data['backup_id']) && \App\Services\Backup\VmBackupReconciler::deleteFailedPlaceholder((int) $instance['id'], (int) $data['backup_id'])) {
+            return ApiResponse::success([], 'Failed backup record removed', 200);
         }
         $volid = is_string($data['volid'] ?? null) ? trim($data['volid']) : '';
         $storage = is_string($data['storage'] ?? null) ? trim($data['storage']) : '';
@@ -2850,6 +2895,55 @@ class VmInstancesController
         ]);
 
         return ApiResponse::success(['task_id' => $taskId], 'VM deletion task added to queue', 202);
+    }
+
+    #[OA\Delete(
+        path: '/api/admin/vm-instances/{id}/hard',
+        summary: 'Hard delete VM instance',
+        description: 'Remove the VM instance and panel records without contacting Proxmox. The VM and its files remain on the Proxmox host.',
+        tags: ['Admin - VM Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'VM instance hard deleted successfully'),
+            new OA\Response(response: 404, description: 'VM instance not found'),
+        ]
+    )]
+    public function hardDelete(Request $request, int $id): Response
+    {
+        $admin = $request->attributes->get('user');
+        $instance = VmInstance::getById($id);
+        if (!$instance) {
+            return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
+        }
+
+        VmTask::deleteByInstanceId($id);
+        VmInstanceUtil::deleteInstanceBackups($instance, null);
+        if (!VmInstance::delete($id)) {
+            return ApiResponse::error('Failed to hard delete VM instance from database', 'FAILED_TO_HARD_DELETE_VM', 500);
+        }
+
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'vm_instance_hard_delete',
+            'context' => 'Hard deleted VM instance ' . ($instance['hostname'] ?? $id) . ' (database only, Proxmox not contacted)',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+        App::getInstance(true)->getLogger()->warning(
+            'VM instance hard deleted (database only): ' . ($instance['hostname'] ?? $id) .
+            ' (ID: ' . $id . ', VMID: ' . ($instance['vmid'] ?? 'unknown') . ') by user ' .
+            ($admin['username'] ?? 'unknown') . '. Proxmox was NOT contacted.'
+        );
+
+        self::emitVdsEvent(VdsEvent::onVdsDeleted(), [
+            'user_uuid' => $admin['uuid'] ?? null,
+            'vds_id' => $id,
+            'vmid' => (int) ($instance['vmid'] ?? 0),
+            'context' => ['source' => 'admin', 'reason' => 'hard_delete', 'hard_delete' => true],
+        ]);
+
+        return ApiResponse::success([], 'VM instance hard deleted successfully (database only - Proxmox was not contacted)', 200);
     }
 
     public function taskStatus(Request $request, string $taskId): Response

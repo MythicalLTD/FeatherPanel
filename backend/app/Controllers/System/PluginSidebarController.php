@@ -23,6 +23,7 @@ use App\Chat\Server;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Plugins\PluginSettings;
+use App\Plugins\PluginFrontendVisibility;
 use App\Plugins\Events\Events\PluginUiEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -53,6 +54,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'permission', type: 'string', nullable: true, description: 'Required permission for this item'),
         new OA\Property(property: 'group', type: 'string', nullable: true, description: 'Group name for organizing items (e.g., "Minecraft Java Edition"). Items with the same group name will be grouped together.'),
         new OA\Property(property: 'priority', type: 'integer', nullable: true, description: 'Sort order within the sidebar group. Lower numbers render first.'),
+        new OA\Property(property: 'hidden', type: 'boolean', nullable: true, description: 'Hide this sidebar route when true or when a visibility setting evaluates true.'),
     ]
 )]
 class PluginSidebarController
@@ -124,6 +126,11 @@ class PluginSidebarController
                             foreach (['server', 'vds', 'webspace', 'client', 'admin'] as $section) {
                                 if (isset($sidebarConfig[$section]) && is_array($sidebarConfig[$section])) {
                                     foreach ($sidebarConfig[$section] as $key => $item) {
+                                        if (!is_array($item) || !PluginFrontendVisibility::isVisible($plugin, $item, 'sidebar', $section . ':' . (string) $key)) {
+                                            continue;
+                                        }
+                                        $item = $this->stripVisibilityConfig($item);
+
                                         // Add plugin identifier to avoid conflicts
                                         $pluginKey = "/{$plugin}" . $key;
 
@@ -195,6 +202,11 @@ class PluginSidebarController
 
                                 if (isset($sidebarData[$section]) && is_array($items)) {
                                     foreach ($items as $key => $item) {
+                                        if (!is_array($item) || !PluginFrontendVisibility::isVisible($plugin, $item, 'sidebar', $section . ':' . (string) $key)) {
+                                            continue;
+                                        }
+                                        $item = $this->stripVisibilityConfig($item);
+
                                         $pluginKey = "/{$plugin}" . $key;
 
                                         // Enhance component URL with parameters for all sections
@@ -329,5 +341,17 @@ class PluginSidebarController
         }
 
         return $component;
+    }
+
+    /**
+     * @param array<string, mixed> $item
+     *
+     * @return array<string, mixed>
+     */
+    private function stripVisibilityConfig(array $item): array
+    {
+        unset($item['enabled'], $item['hidden']);
+
+        return $item;
     }
 }

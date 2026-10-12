@@ -31,6 +31,7 @@ import { toast } from 'sonner';
 
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface Category {
     id: number;
@@ -135,7 +136,7 @@ export default function CreateTicketPage() {
                 setPriorities(prios);
             } catch (error: unknown) {
                 console.error('Failed to fetch form data', error);
-                toast.error(t('tickets.failedToLoadCategories'));
+                toast.error(getApiErrorMessage(error, t, 'tickets.failedToLoadCategories'));
             } finally {
                 setIsLoading(false);
             }
@@ -227,6 +228,7 @@ export default function CreateTicketPage() {
                             });
                         } catch (err: unknown) {
                             console.error('Failed to upload attachment', err);
+                            toast.error(getApiErrorMessage(err, t, 'tickets.uploadError'));
                         }
                     }
                 }
@@ -234,13 +236,11 @@ export default function CreateTicketPage() {
                 toast.success(t('tickets.ticketCreated'));
                 router.push(`/dashboard/tickets/${ticketUuid}`);
             } else {
-                throw new Error(data.message || 'Failed to create ticket');
+                toast.error(getApiErrorMessageFromPayload(data, t, 'tickets.failedToCreate'));
             }
         } catch (error: unknown) {
             console.error('Failed to create ticket', error);
-            const err = error as { response?: { data?: { message?: string } }; message?: string };
-            const msg = err?.response?.data?.message || err?.message || t('tickets.failedToCreate');
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'tickets.failedToCreate'));
         } finally {
             setCreating(false);
         }
@@ -278,7 +278,7 @@ export default function CreateTicketPage() {
             <WidgetRenderer widgets={getWidgets('dashboard-tickets-create', 'after-header')} />
 
             <div className='bg-card/50 border-border/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
-                <form onSubmit={handleSubmit} className='space-y-8 p-8'>
+                <form onSubmit={handleSubmit} className='space-y-8 p-8' data-fp-save-shortcut>
                     <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                         <div className='md:col-span-2'>
                             <Input

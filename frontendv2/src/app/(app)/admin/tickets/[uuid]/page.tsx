@@ -634,7 +634,7 @@ export default function TicketViewPage() {
                     </div>
 
                     <div className='bg-background/50 border-border/50 border-t p-4 backdrop-blur-sm'>
-                        <form onSubmit={handleReply} className='flex flex-col gap-2'>
+                        <form onSubmit={handleReply} className='flex flex-col gap-2' data-fp-save-shortcut>
                             {files.length > 0 && (
                                 <div className='bg-muted/30 mb-2 flex flex-wrap gap-2 rounded-lg p-2'>
                                     {files.map((file, idx) => (
@@ -783,7 +783,7 @@ export default function TicketViewPage() {
                     <SheetDescription>{t('admin.tickets.view.edit_description')}</SheetDescription>
                 </SheetHeader>
 
-                <form onSubmit={handleUpdate} className='mt-6 space-y-6'>
+                <form onSubmit={handleUpdate} className='mt-6 space-y-6' data-fp-save-shortcut>
                     <div className='space-y-2'>
                         <Label>{t('admin.tickets.table.title')}</Label>
                         <Input

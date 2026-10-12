@@ -129,7 +129,7 @@ export function BannedPlayersEditor({
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('files.editors.bannedPlayersConfig.actions.switchToRaw')}
                         </Button>
-                        <Button size='sm' disabled={readonly || saving} onClick={handleSave}>
+                        <Button size='sm' disabled={readonly || saving} onClick={handleSave} data-fp-save-shortcut>
                             <Save className='mr-2 h-4 w-4' />
                             {saving
                                 ? t('files.editors.bannedPlayersConfig.actions.saving')

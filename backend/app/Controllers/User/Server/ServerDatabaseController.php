@@ -1068,7 +1068,7 @@ class ServerDatabaseController
     #[OA\Post(
         path: '/api/user/servers/{uuidShort}/databases/{databaseId}/phpmyadmin/token',
         summary: 'Generate phpMyAdmin signon token',
-        description: 'Generate an encrypted token for automatic phpMyAdmin login with database credentials.',
+        description: 'Mint a single-use phpMyAdmin signon token (credentials stay server-side; URL carries only the opaque token).',
         tags: ['User - Server Databases'],
         parameters: [
             new OA\Parameter(
@@ -1092,8 +1092,7 @@ class ServerDatabaseController
                 description: 'Token generated successfully',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'token', type: 'string', description: 'Encrypted signon token'),
-                        new OA\Property(property: 'url', type: 'string', description: 'phpMyAdmin URL with token'),
+                        new OA\Property(property: 'url', type: 'string', description: 'phpMyAdmin URL with single-use token query param only'),
                     ]
                 )
             ),
@@ -1162,14 +1161,21 @@ class ServerDatabaseController
                 . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
         }
 
-        // Build phpMyAdmin URL with database credentials as query parameters
-        $databaseHostname = DatabaseInstance::getDatabaseHostname($databaseHost);
+        // Keep credentials out of the URL: mint a single-use token exchanged server-side by token.php.
+        try {
+            $token = \App\Helpers\DatabaseSignonToken::mint([
+                'db' => $database['database'],
+                'host' => \App\Helpers\DatabaseSignonToken::backendHost($databaseHost),
+                'port' => (int) ($database['database_port'] ?? $databaseHost['database_port'] ?? 3306),
+                'user' => $database['username'],
+                'pass' => $database['password'],
+            ]);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Failed to prepare phpMyAdmin session', 'PHPMYADMIN_TOKEN_FAILED', 500);
+        }
+
         $pmaUrl = rtrim($appUrl, '/') . '/pma/token.php?' . http_build_query([
-            'db' => $database['database'],
-            'host' => $databaseHostname,
-            'port' => $database['database_port'] ?? $databaseHost['database_port'] ?? 3306,
-            'user' => $database['username'],
-            'pass' => $database['password'],
+            'token' => $token,
         ]);
 
         return ApiResponse::success([

@@ -48,6 +48,7 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { FormSection } from '@/components/featherui/FormSection';
 import { safeBack } from '@/lib/safe-back';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function CreateProxyPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -93,7 +94,7 @@ export default function CreateProxyPage() {
             }
         } catch (error) {
             console.error('Failed to fetch data:', error);
-            toast.error(t('common.error'));
+            toast.error(getApiErrorMessage(error, t, 'common.error'));
         } finally {
             setLoading(false);
         }
@@ -126,16 +127,16 @@ export default function CreateProxyPage() {
                 if (data.data.verified) {
                     toast.success(data.data.message || t('serverProxy.dnsVerifiedSuccess'));
                 } else {
-                    setDnsError(data.data.message || t('serverProxy.verificationFailed'));
+                    setDnsError(getApiErrorMessageFromPayload(data.data, t, 'serverProxy.verificationFailed'));
                 }
             } else {
                 setDnsVerified(false);
-                setDnsError(data.message || t('serverProxy.verificationFailed'));
+                setDnsError(getApiErrorMessageFromPayload(data, t, 'serverProxy.verificationFailed'));
             }
         } catch (error) {
             setDnsVerified(false);
             const axiosError = error as AxiosError<{ message: string }>;
-            setDnsError(axiosError.response?.data?.message || t('serverProxy.failedToVerify'));
+            setDnsError(getApiErrorMessage(axiosError, t, 'serverProxy.failedToVerify'));
         } finally {
             setVerifyingDns(false);
         }
@@ -158,7 +159,7 @@ export default function CreateProxyPage() {
             router.push(`/server/${uuidShort}/proxy`);
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            const msg = axiosError.response?.data?.message || t('serverProxy.createFailed');
+            const msg = getApiErrorMessage(axiosError, t, 'serverProxy.createFailed');
             toast.error(msg);
         } finally {
             setSaving(false);
@@ -218,6 +219,7 @@ export default function CreateProxyPage() {
                             onClick={handleCreate}
                             disabled={saving || !dnsVerified}
                             className='w-full sm:w-auto'
+                            data-fp-save-shortcut
                         >
                             {saving ? (
                                 <>
@@ -517,7 +519,12 @@ export default function CreateProxyPage() {
                     </FormSection>
 
                     <div className='pt-2 md:hidden'>
-                        <Button size='default' onClick={handleCreate} disabled={saving || !dnsVerified}>
+                        <Button
+                            size='default'
+                            onClick={handleCreate}
+                            disabled={saving || !dnsVerified}
+                            data-fp-save-shortcut
+                        >
                             {saving ? (
                                 <>
                                     <Loader2 className='mr-2 h-4 w-4 animate-spin' />

@@ -13,6 +13,8 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+import { reportPanelInteraction } from '@/lib/panel-analytics';
+
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { toast } from 'sonner';
@@ -56,7 +58,7 @@ export function safeImageSrc(url: string | null | undefined): string | null {
     const trimmed = url.trim();
     if (trimmed === '') return null;
 
-    // Same-origin path only — not protocol-relative "//evil.example".
+    // Same-origin path only - not protocol-relative "//evil.example".
     if (trimmed.startsWith('/') && !trimmed.startsWith('//')) {
         return trimmed;
     }
@@ -72,6 +74,7 @@ export function safeImageSrc(url: string | null | undefined): string | null {
  * Copy text to clipboard with fallback
  */
 export async function copyToClipboard(text: string, t?: (key: string) => string) {
+    reportPanelInteraction('panel.clipboard.copy', 'attempt');
     try {
         if (navigator.clipboard && window.isSecureContext) {
             await navigator.clipboard.writeText(text);
@@ -94,6 +97,7 @@ export async function copyToClipboard(text: string, t?: (key: string) => string)
         }
         toast.success(t ? t('common.copiedToClipboard') : 'Copied to clipboard');
     } catch (err) {
+        reportPanelInteraction('panel.clipboard.copy', 'failure');
         console.error('Failed to copy text: ', err);
         toast.error(t ? t('common.error') : 'Failed to copy');
     }

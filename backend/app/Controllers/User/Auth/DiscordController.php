@@ -24,6 +24,7 @@ use App\Chat\Activity;
 use App\Helpers\UUIDUtils;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
+use App\Helpers\PanelIpBlockGuard;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\EmailDomainValidator;
 use App\Helpers\AbuseIPDBRegistrationGuard;
@@ -518,6 +519,12 @@ class DiscordController
         $password = bin2hex(random_bytes(32));
         $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
         $ip = CloudFlareRealIP::getRealIP();
+
+        if (PanelIpBlockGuard::isBlocked($ip)) {
+            $app->getLogger()->warning('Discord auto-provision blocked by panel IP ban for IP ' . $ip);
+
+            return null;
+        }
 
         $abuseDecision = AbuseIPDBRegistrationGuard::evaluate($ip);
         if (AbuseIPDBRegistrationGuard::shouldBlock($abuseDecision)) {

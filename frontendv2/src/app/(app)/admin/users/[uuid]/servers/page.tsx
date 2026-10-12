@@ -306,11 +306,11 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                 {servers.map((server) => {
                                     const badges: ResourceBadge[] = [
                                         {
-                                            label: server.node?.name ?? '—',
+                                            label: server.node?.name ?? '-',
                                             className: 'bg-primary/10 text-primary border-primary/20',
                                         },
                                         {
-                                            label: server.spell?.name ?? '—',
+                                            label: server.spell?.name ?? '-',
                                             className: 'bg-muted text-muted-foreground border-border/50',
                                         },
                                     ];
@@ -434,7 +434,7 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                     {vms.map((vm) => {
                                         const vmBadges: ResourceBadge[] = [
                                             {
-                                                label: vm.node_name ?? vm.pve_node ?? '—',
+                                                label: vm.node_name ?? vm.pve_node ?? '-',
                                                 className: 'bg-primary/10 text-primary border-primary/20',
                                             },
                                             {
@@ -470,7 +470,7 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                                         </Badge>
                                                         <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
                                                             <Network className='h-3.5 w-3.5' />
-                                                            <span>{vm.ip_address || '—'}</span>
+                                                            <span>{vm.ip_address || '-'}</span>
                                                         </div>
                                                     </div>
                                                 }

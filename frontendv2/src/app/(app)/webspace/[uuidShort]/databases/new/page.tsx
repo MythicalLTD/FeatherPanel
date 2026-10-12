@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import { AlertTriangle, Database, Lock, Plus, Server as ServerIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -31,6 +31,7 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { HeadlessSelect } from '@/components/ui/headless-select';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface DatabaseHost {
     id: number;
@@ -75,8 +76,8 @@ export default function CreateWebSpaceDatabasePage() {
                 const payload = databasesRes.data?.data;
                 const list = (payload?.data ?? payload ?? []) as unknown[];
                 setDatabaseCount(Array.isArray(list) ? list.length : 0);
-            } catch {
-                toast.error(t('webSpaces.databases.loadFailed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'webSpaces.databases.loadFailed'));
             } finally {
                 setLoading(false);
             }
@@ -121,8 +122,7 @@ export default function CreateWebSpaceDatabasePage() {
             }
             router.push(`/webspace/${uuidShort}/databases`);
         } catch (error) {
-            const axiosError = error as AxiosError<{ message?: string }>;
-            toast.error(axiosError.response?.data?.message || t('webSpaces.databases.createFailed'));
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.databases.createFailed'));
         } finally {
             setSaving(false);
         }
@@ -198,7 +198,7 @@ export default function CreateWebSpaceDatabasePage() {
                     </div>
                 )}
 
-                <form onSubmit={(e) => void handleCreate(e)} className='space-y-8'>
+                <form onSubmit={(e) => void handleCreate(e)} className='space-y-8' data-fp-save-shortcut>
                     <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
                         <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                             <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>

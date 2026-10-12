@@ -20,7 +20,7 @@ namespace App\Controllers\System;
 use App\App;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
-use App\Plugins\PluginSettings;
+use App\Plugins\PluginFrontendVisibility;
 use App\Plugins\Events\Events\PluginUiEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -202,7 +202,9 @@ class PluginPublicPagesController
             }
         }
 
-        $enabled = $this->evaluateEnabled($plugin, $item['enabled'] ?? ['type' => 'always']);
+        if (!PluginFrontendVisibility::isVisible($plugin, $item, 'public-page', $path)) {
+            return null;
+        }
 
         $componentPath = ltrim($component, '/');
 
@@ -214,7 +216,7 @@ class PluginPublicPagesController
             'query' => $query,
             'fallbackPath' => $fallbackPath,
             'nav' => $nav,
-            'enabled' => $enabled,
+            'enabled' => true,
         ];
     }
 
@@ -248,49 +250,6 @@ class PluginPublicPagesController
             if ($path === $prefix || str_starts_with($path, $prefix . '/')) {
                 return true;
             }
-        }
-
-        return false;
-    }
-
-    private function evaluateEnabled(string $plugin, $enabledConfig): bool
-    {
-        if ($enabledConfig === true || $enabledConfig === 'true' || $enabledConfig === 1 || $enabledConfig === '1') {
-            return true;
-        }
-
-        if ($enabledConfig === false || $enabledConfig === 'false' || $enabledConfig === 0 || $enabledConfig === '0') {
-            return false;
-        }
-
-        if (!is_array($enabledConfig)) {
-            return true;
-        }
-
-        $type = (string) ($enabledConfig['type'] ?? 'always');
-
-        if ($type === 'always') {
-            return true;
-        }
-
-        if ($type === 'never') {
-            return false;
-        }
-
-        if ($type === 'plugin_setting') {
-            $key = trim((string) ($enabledConfig['key'] ?? ''));
-            if ($key === '') {
-                return false;
-            }
-
-            $expected = (string) ($enabledConfig['equals'] ?? 'true');
-            $actual = PluginSettings::getSetting($plugin, $key);
-
-            if ($actual === null || $actual === '') {
-                return false;
-            }
-
-            return (string) $actual === $expected;
         }
 
         return false;

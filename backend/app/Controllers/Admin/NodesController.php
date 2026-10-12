@@ -25,6 +25,7 @@ use App\Chat\Activity;
 use App\Chat\Location;
 use GuzzleHttp\Client;
 use App\Chat\Allocation;
+use App\Helpers\DemoGuard;
 use App\Chat\ServerTransfer;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
@@ -660,6 +661,10 @@ class NodesController
     )]
     public function delete(Request $request, int $id): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
@@ -1011,6 +1016,10 @@ class NodesController
     )]
     public function triggerSelfUpdate(Request $request, int $id): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
@@ -1148,6 +1157,10 @@ class NodesController
     )]
     public function resetKey(Request $request, int $id): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {
@@ -1305,6 +1318,10 @@ class NodesController
     )]
     public function executeTerminalCommand(Request $request, int $id): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $admin = $request->attributes->get('user');
         $node = Node::getNodeById($id);
         if (!$node) {

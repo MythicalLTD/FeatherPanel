@@ -24,7 +24,7 @@ use App\App;
  * before TOTP verification. Prevents unauthenticated email+code brute-force
  * against TwoFactorController::post().
  *
- * Fails open if Redis is unavailable (matches AccountLockoutHelper).
+ * Fails closed if Redis is unavailable (2FA cannot be proven without the challenge store).
  */
 class TwoFactorChallengeHelper
 {
@@ -54,14 +54,14 @@ class TwoFactorChallengeHelper
 
     /**
      * Validate that $token proves primary auth for $userUuid.
-     * When Redis is unavailable, returns true (fail open).
+     * When Redis is unavailable, returns false (fail closed).
      */
     public static function validate(string $token, string $userUuid): bool
     {
         try {
             $redis = self::getRedis();
             if ($redis === null) {
-                return true;
+                return false;
             }
 
             if ($token === '') {
@@ -72,7 +72,7 @@ class TwoFactorChallengeHelper
 
             return is_string($stored) && hash_equals($stored, $userUuid);
         } catch (\Throwable $e) {
-            return true;
+            return false;
         }
     }
 

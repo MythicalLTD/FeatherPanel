@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React, { useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -76,14 +77,12 @@ export function DiagnosticsTab({ nodeId, systemLogsEnabled = false }: Diagnostic
                 setResult(data.data.diagnostics);
                 toast.success(t('admin.node.view.diagnostics.success'));
             } else {
-                setError(data.message);
-                toast.error(data.message);
+                const msg = getApiErrorMessageFromPayload(data, t, 'admin.node.view.diagnostics.failed');
+                setError(msg);
+                toast.error(msg);
             }
         } catch (e: unknown) {
-            let msg = t('admin.node.view.diagnostics.failed');
-            if (axios.isAxiosError(e)) {
-                msg = e.response?.data?.message || e.message;
-            }
+            const msg = getApiErrorMessage(e, t, 'admin.node.view.diagnostics.failed');
             setError(msg);
             toast.error(msg);
         } finally {
@@ -98,7 +97,9 @@ export function DiagnosticsTab({ nodeId, systemLogsEnabled = false }: Diagnostic
             // Stub path until backend lands: GET /api/admin/nodes/{id}/system-logs
             const { data } = await axios.get(`/api/admin/nodes/${nodeId}/system-logs`);
             if (data?.success === false) {
-                throw new Error(data.message || t('admin.node.view.diagnostics.system_logs_failed'));
+                throw new Error(
+                    getApiErrorMessageFromPayload(data, t, 'admin.node.view.diagnostics.system_logs_failed'),
+                );
             }
             const payload = data?.data ?? data;
             if (typeof payload === 'string') {
@@ -120,12 +121,7 @@ export function DiagnosticsTab({ nodeId, systemLogsEnabled = false }: Diagnostic
             }
             toast.success(t('admin.node.view.diagnostics.system_logs_success'));
         } catch (e: unknown) {
-            let msg = t('admin.node.view.diagnostics.system_logs_failed');
-            if (axios.isAxiosError(e)) {
-                msg = e.response?.data?.message || e.message || msg;
-            } else if (e instanceof Error) {
-                msg = e.message;
-            }
+            const msg = getApiErrorMessage(e, t, 'admin.node.view.diagnostics.system_logs_failed');
             setSystemLogsError(msg);
             toast.error(msg);
         } finally {

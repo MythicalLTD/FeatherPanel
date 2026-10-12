@@ -90,6 +90,7 @@ export interface PluginWidget {
     pluginName: string;
     component: string;
     enabled: boolean;
+    hidden?: boolean;
     priority: number;
     page: string;
     location: string;

@@ -16,8 +16,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Progress } from '@/components/ui/progress';
@@ -82,7 +83,7 @@ function percentOf(used: number, total: number): number {
 }
 
 function formatUptime(seconds?: number): string {
-    if (!seconds || seconds < 0) return '—';
+    if (!seconds || seconds < 0) return '-';
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = Math.floor(seconds % 60);
@@ -133,16 +134,16 @@ export function StatusTab({ nodeId }: StatusTabProps) {
                 (utilRes.status === 'fulfilled' && utilRes.value.data?.success);
 
             if (!anyOk) {
-                let msg = t('admin.webNodes.status.fetch_failed');
                 const failed = [healthRes, systemRes, utilRes].find((r) => r.status === 'rejected');
-                if (failed && failed.status === 'rejected' && isAxiosError(failed.reason)) {
-                    msg = failed.reason.response?.data?.message || failed.reason.message || msg;
-                }
+                const msg =
+                    failed && failed.status === 'rejected'
+                        ? getApiErrorMessage(failed.reason, t, 'admin.webNodes.status.fetch_failed')
+                        : t('admin.webNodes.status.fetch_failed');
                 setError(msg);
             }
         } catch (e) {
             console.error(e);
-            setError(t('admin.webNodes.status.fetch_failed'));
+            setError(getApiErrorMessage(e, t, 'admin.webNodes.status.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -226,7 +227,7 @@ export function StatusTab({ nodeId }: StatusTabProps) {
                             : t('admin.webNodes.status.reachable')}
                     </div>
                     <div>
-                        {t('admin.webNodes.status.disk_limiter')}: {daemon?.disk_limiter || '—'}
+                        {t('admin.webNodes.status.disk_limiter')}: {daemon?.disk_limiter || '-'}
                     </div>
                     <div>
                         FuseQuota:{' '}
@@ -281,27 +282,27 @@ export function StatusTab({ nodeId }: StatusTabProps) {
                 <div className='grid grid-cols-1 gap-3 text-sm sm:grid-cols-2'>
                     <div>
                         <span className='text-muted-foreground'>{t('admin.webNodes.status.version')}: </span>
-                        {system?.version || daemon?.version || '—'}
+                        {system?.version || daemon?.version || '-'}
                     </div>
                     <div>
                         <span className='text-muted-foreground'>{t('admin.webNodes.status.os')}: </span>
-                        {system?.system?.os || system?.os || '—'}
+                        {system?.system?.os || system?.os || '-'}
                     </div>
                     <div>
                         <span className='text-muted-foreground'>{t('admin.webNodes.status.arch')}: </span>
-                        {system?.system?.architecture || system?.architecture || '—'}
+                        {system?.system?.architecture || system?.architecture || '-'}
                     </div>
                     <div>
                         <span className='text-muted-foreground'>{t('admin.webNodes.status.kernel')}: </span>
-                        {system?.system?.kernel_version || system?.kernel_version || '—'}
+                        {system?.system?.kernel_version || system?.kernel_version || '-'}
                     </div>
                     <div>
                         <span className='text-muted-foreground'>{t('admin.webNodes.status.cpu_threads')}: </span>
-                        {system?.system?.cpu_threads || system?.cpu_count || '—'}
+                        {system?.system?.cpu_threads || system?.cpu_count || '-'}
                     </div>
                     <div>
                         <span className='text-muted-foreground'>{t('admin.webNodes.status.host_memory')}: </span>
-                        {system?.system?.memory_bytes ? formatBytes(system.system.memory_bytes) : '—'}
+                        {system?.system?.memory_bytes ? formatBytes(system.system.memory_bytes) : '-'}
                     </div>
                 </div>
             </PageCard>

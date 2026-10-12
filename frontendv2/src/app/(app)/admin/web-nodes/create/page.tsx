@@ -17,8 +17,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -26,6 +27,7 @@ import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
+import { WebHostingAlphaNotice } from '@/components/admin/WebHostingAlphaNotice';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
@@ -86,6 +88,7 @@ export default function CreateWebNodePage() {
     });
     const [countryCodes, setCountryCodes] = useState<Record<string, string>>({});
     const [creatingLocation, setCreatingLocation] = useState(false);
+    const [webHostingAccepted, setWebHostingAccepted] = useState(false);
     const [selectedLocationName, setSelectedLocationName] = useState('');
     const [locationSearch, setLocationSearch] = useState('');
     const [debouncedLocationSearch, setDebouncedLocationSearch] = useState('');
@@ -155,9 +158,9 @@ export default function CreateWebNodePage() {
                     a[1].localeCompare(b[1]),
                 );
                 setCountryCodes(Object.fromEntries(sorted));
-            } catch {
+            } catch (error) {
                 if (!cancelled) {
-                    toast.error(t('admin.locations.messages.country_codes_failed'));
+                    toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.country_codes_failed'));
                 }
             }
         };
@@ -216,11 +219,7 @@ export default function CreateWebNodePage() {
             }
         } catch (error) {
             console.error('Error creating web node:', error);
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.webNodes.messages.create_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.webNodes.messages.create_failed'));
         } finally {
             setLoading(false);
         }
@@ -228,6 +227,10 @@ export default function CreateWebNodePage() {
 
     const handleCreateLocationInline = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!webHostingAccepted) {
+            toast.error(t('admin.locations.form.webhosting_alpha_required'));
+            return;
+        }
         const name = newLocationForm.name.trim();
         if (name.length < 2) {
             toast.error(t('admin.webNodes.form.create_location_name_required'));
@@ -238,6 +241,7 @@ export default function CreateWebNodePage() {
             const payload = {
                 name,
                 type: 'web' as const,
+                webhosting_alpha_accepted: true,
                 ...(newLocationForm.description.trim() ? { description: newLocationForm.description.trim() } : {}),
                 flag_code: newLocationForm.flag_code === '__NONE__' ? null : newLocationForm.flag_code || null,
             };
@@ -251,14 +255,11 @@ export default function CreateWebNodePage() {
             setSelectedLocationName(loc.name);
             setLocationPickerMode('select');
             setNewLocationForm({ name: '', description: '', flag_code: '__NONE__' });
+            setWebHostingAccepted(false);
             setLocationModalOpen(false);
             toast.success(t('admin.locations.messages.created'));
         } catch (error: unknown) {
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.locations.messages.create_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.create_failed'));
         } finally {
             setCreatingLocation(false);
         }
@@ -278,7 +279,7 @@ export default function CreateWebNodePage() {
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>
-                        <Button onClick={() => handleSubmit()} loading={loading}>
+                        <Button onClick={() => handleSubmit()} loading={loading} data-fp-save-shortcut>
                             <Save className='mr-2 h-4 w-4' />
                             {t('admin.webNodes.form.submit_create')}
                         </Button>
@@ -369,7 +370,13 @@ export default function CreateWebNodePage() {
                 </Tabs>
             </div>
 
-            <Sheet open={locationModalOpen} onOpenChange={setLocationModalOpen}>
+            <Sheet
+                open={locationModalOpen}
+                onOpenChange={(open) => {
+                    setLocationModalOpen(open);
+                    if (!open) setWebHostingAccepted(false);
+                }}
+            >
                 <SheetContent className='flex w-full flex-col sm:max-w-lg'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.webNodes.form.select_location')}</SheetTitle>
@@ -385,7 +392,10 @@ export default function CreateWebNodePage() {
                             type='button'
                             size='sm'
                             variant={locationPickerMode === 'select' ? 'default' : 'outline'}
-                            onClick={() => setLocationPickerMode('select')}
+                            onClick={() => {
+                                setLocationPickerMode('select');
+                                setWebHostingAccepted(false);
+                            }}
                         >
                             {t('admin.webNodes.form.location_picker_existing')}
                         </Button>
@@ -479,7 +489,7 @@ export default function CreateWebNodePage() {
                             )}
                         </div>
                     ) : (
-                        <form onSubmit={handleCreateLocationInline} className='mt-4 space-y-4'>
+                        <form onSubmit={handleCreateLocationInline} className='mt-4 space-y-4' data-fp-save-shortcut>
                             <p className='text-muted-foreground text-xs'>
                                 {t('admin.webNodes.form.create_location_hint')}
                             </p>
@@ -515,7 +525,16 @@ export default function CreateWebNodePage() {
                                     ))}
                                 </Select>
                             </div>
-                            <Button type='submit' loading={creatingLocation} className='w-full'>
+                            <WebHostingAlphaNotice
+                                accepted={webHostingAccepted}
+                                onAcceptedChange={setWebHostingAccepted}
+                            />
+                            <Button
+                                type='submit'
+                                loading={creatingLocation}
+                                disabled={!webHostingAccepted}
+                                className='w-full'
+                            >
                                 {t('admin.webNodes.form.create_location_submit')}
                             </Button>
                         </form>

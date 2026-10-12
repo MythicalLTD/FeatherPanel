@@ -38,9 +38,11 @@ import { JavaVersionDialog } from '@/components/server/features/JavaVersionDialo
 import { PidLimitDialog } from '@/components/server/features/PidLimitDialog';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { PluginSlot } from '@/components/plugins/PluginSlot';
 import PlayerStatusWidget from '@/components/server/PlayerStatusWidget';
 import { toast } from 'sonner';
 import { copyToClipboard } from '@/lib/utils';
+import { getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { resolveServerSpellBannerStyle } from '@/lib/server-spell-banner';
 
 interface WingsStats {
@@ -495,26 +497,74 @@ export default function ServerConsolePage() {
                 return;
             }
 
+            const { pluginActionHooks } = await import('@/lib/plugin-sdk/action-hooks');
+            const { pluginEventBus } = await import('@/lib/plugin-sdk/event-bus');
+            const { FP_ACTIONS, FP_EVENTS } = await import('@/lib/plugin-sdk/ids');
+
+            const hookCtx = await pluginActionHooks.run(FP_ACTIONS.SERVER_POWER, {
+                action,
+                uuid: serverUuid,
+                uuidShort: server?.uuidShort ?? null,
+            });
+            if (hookCtx.cancelled) {
+                pluginEventBus.emit(FP_EVENTS.SERVER_POWER_RESULT, {
+                    uuid: serverUuid,
+                    action,
+                    ok: false,
+                    cancelled: true,
+                    reason: hookCtx.cancelReason,
+                });
+                return;
+            }
+            const finalAction = (hookCtx.action as typeof action) || action;
+
+            if (finalAction === 'kill') {
+                const confirmCtx = await pluginActionHooks.run(FP_ACTIONS.UI_CONFIRM, {
+                    kind: 'server-kill',
+                    uuid: serverUuid,
+                    message: 'Kill server?',
+                });
+                if (confirmCtx.cancelled) {
+                    return;
+                }
+            }
+
             const optimisticStatus: Record<'start' | 'stop' | 'restart' | 'kill', string> = {
                 start: 'starting',
                 stop: 'stopping',
                 restart: 'stopping',
                 kill: 'stopping',
             };
-            setServerStatus(optimisticStatus[action]);
-            setLiveStatus(optimisticStatus[action]);
+            setServerStatus(optimisticStatus[finalAction]);
+            setLiveStatus(optimisticStatus[finalAction]);
 
             return new Promise<void>((resolve) => {
                 if (pendingActionResolveRef.current) {
                     pendingActionResolveRef.current();
                 }
                 pendingActionResolveRef.current = resolve;
-                void sendPowerAction(action).finally(() => {
-                    if (pendingActionResolveRef.current === resolve) {
-                        pendingActionResolveRef.current();
-                        pendingActionResolveRef.current = null;
-                    }
-                });
+                void sendPowerAction(finalAction)
+                    .then(() => {
+                        pluginEventBus.emit(FP_EVENTS.SERVER_POWER_RESULT, {
+                            uuid: serverUuid,
+                            action: finalAction,
+                            ok: true,
+                        });
+                    })
+                    .catch((err: unknown) => {
+                        pluginEventBus.emit(FP_EVENTS.SERVER_POWER_RESULT, {
+                            uuid: serverUuid,
+                            action: finalAction,
+                            ok: false,
+                            error: err instanceof Error ? err.message : String(err),
+                        });
+                    })
+                    .finally(() => {
+                        if (pendingActionResolveRef.current === resolve) {
+                            pendingActionResolveRef.current();
+                            pendingActionResolveRef.current = null;
+                        }
+                    });
 
                 setTimeout(() => {
                     if (pendingActionResolveRef.current === resolve) {
@@ -524,7 +574,7 @@ export default function ServerConsolePage() {
                 }, 2000);
             });
         },
-        [connectionStatus, sendPowerAction, setLiveStatus, t],
+        [connectionStatus, sendPowerAction, setLiveStatus, t, serverUuid, server?.uuidShort],
     );
 
     const handleUploadLogs = useCallback(() => {
@@ -540,7 +590,7 @@ export default function ServerConsolePage() {
             }>(`/api/user/servers/${serverUuid}/logs/upload`)
             .then(({ data }) => {
                 if (!data.success || !data.data) {
-                    throw new Error(data.message || t('servers.console.logs.upload_failed'));
+                    throw new Error(getApiErrorMessageFromPayload(data, t, 'servers.console.logs.upload_failed'));
                 }
                 return data;
             });
@@ -560,6 +610,18 @@ export default function ServerConsolePage() {
             },
         });
     }, [serverUuid, t]);
+
+    useEffect(() => {
+        if (!server) return;
+        void import('@/lib/plugin-sdk/event-bus').then(({ pluginEventBus }) =>
+            import('@/lib/plugin-sdk/ids').then(({ FP_EVENTS }) => {
+                pluginEventBus.emit(FP_EVENTS.SERVER_CONSOLE_READY, {
+                    uuid: server.uuid,
+                    uuidShort: server.uuidShort ?? serverUuid,
+                });
+            }),
+        );
+    }, [server, serverUuid]);
 
     const getConnectionStatusInfo = () => {
         switch (connectionStatus) {
@@ -690,6 +752,9 @@ export default function ServerConsolePage() {
                 onRestart={() => handlePowerAction('restart')}
                 onKill={() => handlePowerAction('kill')}
             />
+
+            <PluginSlot id='toolbar.server-header' showActions className='w-full' />
+            <PluginSlot id='toolbar.server-console' showActions className='w-full' />
 
             <WidgetRenderer widgets={getWidgets('server-console', 'after-header')} />
 

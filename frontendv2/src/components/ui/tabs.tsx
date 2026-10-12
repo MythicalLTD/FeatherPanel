@@ -18,8 +18,22 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import * as React from 'react';
 import * as TabsPrimitive from '@radix-ui/react-tabs';
 import { cn } from '@/lib/utils';
+import { reportPanelInteraction } from '@/lib/panel-analytics';
 
-const Tabs = TabsPrimitive.Root;
+const Tabs = React.forwardRef<
+    React.ElementRef<typeof TabsPrimitive.Root>,
+    React.ComponentPropsWithoutRef<typeof TabsPrimitive.Root>
+>(({ onValueChange, ...props }, ref) => (
+    <TabsPrimitive.Root
+        {...props}
+        ref={ref}
+        onValueChange={(value) => {
+            onValueChange?.(value);
+            reportPanelInteraction('panel.tab.select', value);
+        }}
+    />
+));
+Tabs.displayName = TabsPrimitive.Root.displayName;
 
 const TabsList = React.forwardRef<
     React.ElementRef<typeof TabsPrimitive.List>,

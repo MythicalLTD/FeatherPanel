@@ -292,7 +292,8 @@ function Show-PanelMenu {
     Write-Host "     → Pull latest Docker images and restart containers"
     Write-Host ""
     Write-Host "  [3] Backup Manager" -ForegroundColor Cyan
-    Write-Host "     → Create, list, restore, and manage backups"
+    Write-Host "     → Create, list, restore, and manage Panel backups"
+    Write-Host "     → Wings Backup/Migrate is Linux-only (install.bash: Wings > Backup Manager)"
     Write-Host ""
     Draw-HR
 }
@@ -438,7 +439,8 @@ function Get-FeatherPanelVolumes {
             "featherpanel_redis_data",
             "featherpanel_featherpanel_attachments",
             "featherpanel_featherpanel_config",
-            "featherpanel_featherpanel_snapshots"
+            "featherpanel_featherpanel_snapshots",
+            "featherpanel_featherpanel_data"
         )
     }
     
@@ -2092,5 +2094,4 @@ while ($true) {
         }
     }
 }
-
 

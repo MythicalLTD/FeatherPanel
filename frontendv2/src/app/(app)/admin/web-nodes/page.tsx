@@ -17,8 +17,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -141,10 +142,11 @@ export default function WebNodesPage() {
                 setLocations((data.data.locations || []) as Location[]);
             } catch (error) {
                 console.error('Error fetching locations:', error);
+                toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.fetch_failed'));
             }
         };
         fetchLocations();
-    }, []);
+    }, [t]);
 
     const checkNodeHealth = useCallback(async (nodeId: number) => {
         setNodeHealth((prev) => ({ ...prev, [nodeId]: 'checking' }));
@@ -200,7 +202,7 @@ export default function WebNodesPage() {
             }
         } catch (error) {
             console.error('Error fetching web nodes:', error);
-            toast.error(t('admin.webNodes.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.webNodes.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -219,11 +221,7 @@ export default function WebNodesPage() {
             setConfirmDeleteId(null);
         } catch (error) {
             console.error('Error deleting web node:', error);
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.webNodes.messages.delete_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.webNodes.messages.delete_failed'));
         } finally {
             setDeleting(false);
         }

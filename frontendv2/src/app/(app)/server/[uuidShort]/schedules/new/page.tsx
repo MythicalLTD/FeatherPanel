@@ -38,6 +38,7 @@ import { useUserTimezone } from '@/contexts/PreferencesContext';
 import type { ScheduleCreateRequest } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function CreateSchedulePage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -93,11 +94,11 @@ export default function CreateSchedulePage() {
                 toast.success(t('serverSchedules.createSuccess'));
                 router.push(`/server/${uuidShort}/schedules`);
             } else {
-                toast.error(data?.message || t('serverSchedules.createFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverSchedules.createFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            const msg = axiosError.response?.data?.message || t('serverSchedules.createFailed');
+            const msg = getApiErrorMessage(axiosError, t, 'serverSchedules.createFailed');
             toast.error(msg);
         } finally {
             setSaving(false);
@@ -157,6 +158,7 @@ export default function CreateSchedulePage() {
                             disabled={saving}
                             loading={saving}
                             className='order-1 w-full sm:order-2 sm:w-auto'
+                            data-fp-save-shortcut
                         >
                             <Plus className='mr-2 h-4 w-4' />
                             {t('serverSchedules.create')}
@@ -166,7 +168,7 @@ export default function CreateSchedulePage() {
             />
             <WidgetRenderer widgets={getWidgets('server-schedules-new', 'after-header')} />
 
-            <form onSubmit={handleCreate} className='space-y-8'>
+            <form onSubmit={handleCreate} className='space-y-8' data-fp-save-shortcut>
                 <FormSection>
                     <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                         <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>

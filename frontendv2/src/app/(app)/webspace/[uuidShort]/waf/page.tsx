@@ -27,6 +27,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 export default function WebSpaceWafPage() {
     const params = useParams();
@@ -56,7 +57,7 @@ export default function WebSpaceWafPage() {
             });
         } catch (error) {
             console.error(error);
-            toast.error(t('webSpaces.settings.loadFailed'));
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.settings.loadFailed'));
         } finally {
             setLoading(false);
         }
@@ -82,13 +83,9 @@ export default function WebSpaceWafPage() {
             });
             toast.success(t('webSpaces.settings.saved'));
         } catch (error) {
-            let msg = t('webSpaces.settings.saveFailed');
-            if (isAxiosError(error)) {
-                if (error.response?.status === 403) {
-                    msg = t('webSpaces.settings.noPermission');
-                } else if (error.response?.data?.message) {
-                    msg = error.response.data.message;
-                }
+            let msg = getApiErrorMessage(error, t, 'webSpaces.settings.saveFailed');
+            if (isAxiosError(error) && error.response?.status === 403) {
+                msg = t('webSpaces.settings.noPermission');
             }
             toast.error(msg);
         } finally {
@@ -145,7 +142,7 @@ export default function WebSpaceWafPage() {
                                 className='bg-secondary/50 border-border/10 focus:border-primary/50 w-full rounded-xl border p-3 font-mono text-sm'
                             />
                         </div>
-                        <Button loading={saving} onClick={() => void saveWaf()} size='sm'>
+                        <Button loading={saving} onClick={() => void saveWaf()} size='sm' data-fp-save-shortcut>
                             <Save className='mr-2 h-4 w-4' />
                             {t('webSpaces.settings.saveSettings')}
                         </Button>

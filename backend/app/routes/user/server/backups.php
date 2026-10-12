@@ -24,6 +24,24 @@ use App\Controllers\User\Server\ServerBackupController;
 
 return function (RouteCollection $routes): void {
 
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-recover-backup',
+        '/api/user/servers/{uuidShort}/backups/{backupUuid}/recover',
+        function (Request $request, array $args) {
+            $server = \App\Chat\Server::getServerByUuidShort($args['uuidShort'] ?? '');
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new ServerBackupController())->recoverBackup($request, $server['uuid'], $args['backupUuid']);
+        },
+        'uuidShort',
+        ['POST'],
+        Rate::perMinute(5),
+        'user-server-backups'
+    );
+
     // Backup-related routes
     App::getInstance(true)->registerServerRoute(
         $routes,

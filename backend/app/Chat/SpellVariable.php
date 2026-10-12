@@ -111,6 +111,11 @@ class SpellVariable
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    public static function filterUserViewable(array $variables): array
+    {
+        return array_values(array_filter($variables, static fn (array $variable): bool => filter_var($variable['user_viewable'] ?? false, FILTER_VALIDATE_BOOLEAN)));
+    }
+
     public static function getVariableById(int $id): ?array
     {
         if ($id <= 0) {

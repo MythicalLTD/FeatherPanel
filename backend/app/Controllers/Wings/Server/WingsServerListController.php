@@ -159,6 +159,13 @@ class WingsServerListController
             if (!$allocation || !$spell || !$realm) {
                 continue; // Skip servers with missing related data
             }
+            $spell = Spell::resolveConfiguration($spell, static function (int $id) use (&$spellsById): ?array {
+                if (!array_key_exists($id, $spellsById)) {
+                    $spellsById[$id] = Spell::getSpellById($id);
+                }
+
+                return $spellsById[$id];
+            });
 
             // Get all allocations for this server
             $allAllocations = $allocationsByServerId[(int) $server['id']] ?? [];
@@ -243,50 +250,12 @@ class WingsServerListController
             if (!empty($spell['config_files'])) {
                 try {
                     // config_files is stored as JSON string in the database
-                    $configs = json_decode($spell['config_files'], true);
-                    if (is_array($configs)) {
-                        // Convert config files to the expected format
-                        foreach ($configs as $configKey => $configValue) {
-                            if (is_string($configKey) && is_array($configValue)) {
-                                $configEntry = [
-                                    'file' => $configKey,
-                                    'parser' => $configValue['parser'] ?? 'properties',
-                                ];
-
-                                // Add find/replace rules if they exist
-                                if (isset($configValue['find']) && is_array($configValue['find'])) {
-                                    foreach ($configValue['find'] as $match => $replaceWith) {
-                                        $replaceEntry = [
-                                            'match' => $match,
-                                        ];
-
-                                        // Check if replaceWith is an array (conditional replacement with if_value)
-                                        if (is_array($replaceWith)) {
-                                            // Handle nested structure like: "servers.*.address": { "regex:...": "replacement" }
-                                            foreach ($replaceWith as $condition => $replacement) {
-                                                $replaceEntry['if_value'] = $condition;
-
-                                                // Replace placeholders with actual values
-                                                $replacement = $this->replacePlaceholders($replacement, $server, $allocation, $environment);
-
-                                                $replaceEntry['replace_with'] = $replacement;
-                                                break; // Only use the first condition
-                                            }
-                                        } else {
-                                            // Simple string replacement
-                                            // Replace placeholders with actual values
-                                            $replaceWith = $this->replacePlaceholders($replaceWith, $server, $allocation, $environment);
-
-                                            $replaceEntry['replace_with'] = $replaceWith;
-                                        }
-
-                                        $configEntry['replace'][] = $replaceEntry;
-                                    }
-                                }
-
-                                $configFiles[] = $configEntry;
-                            }
-                        }
+                    $configs = json_decode($spell['config_files']);
+                    if (is_object($configs) || is_array($configs)) {
+                        $configFiles = \App\Services\Spells\SpellConfiguration::files(
+                            $configs,
+                            fn (string $value): string => $this->replacePlaceholders($value, $server, $allocation, $environment)
+                        );
                     }
                 } catch (\Exception $e) {
                     // If config files parsing fails, use empty array
@@ -425,10 +394,7 @@ class WingsServerListController
                         'user_interaction' => $userInteractionMessages,
                         'strip_ansi' => $configStartup['strip_ansi'] ?? false,
                     ],
-                    'stop' => [
-                        'type' => $configStop['type'] ?? 'command',
-                        'value' => $configStop['value'] ?? $configStop,
-                    ],
+                    'stop' => \App\Services\Spells\SpellConfiguration::stop($configStop),
                 ],
             ];
 
@@ -565,7 +531,7 @@ class WingsServerListController
             $value = str_replace('{{config.docker.interface}}', '{{config.docker.network.interface}}', $value);
         }
 
-        return $value;
+        return \App\Services\Spells\SpellConfiguration::placeholders($value, $server, $allocation, $environment);
     }
 
     /**

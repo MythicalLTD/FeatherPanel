@@ -16,8 +16,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -197,7 +198,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             setNode(data.data.node);
         } catch (error) {
             console.error('Error fetching node:', error);
-            toast.error(t('admin.node_databases.messages.fetch_node_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node_databases.messages.fetch_node_failed'));
         }
     }, [nodeId, t]);
 
@@ -239,7 +240,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             }));
         } catch (error) {
             console.error('Error fetching databases:', error);
-            toast.error(t('admin.node_databases.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node_databases.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -298,11 +299,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error creating database:', error);
-            let msg = t('admin.node_databases.messages.create_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.node_databases.messages.create_failed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -334,11 +331,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error updating database:', error);
-            let msg = t('admin.node_databases.messages.update_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.node_databases.messages.update_failed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -352,7 +345,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error deleting database:', error);
-            toast.error(t('admin.node_databases.messages.delete_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.node_databases.messages.delete_failed'));
         }
     };
 
@@ -369,7 +362,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                 }
             } catch (error) {
                 console.error('Error checking health:', error);
-                toast.error(t('admin.node_databases.messages.health_unhealthy'));
+                toast.error(getApiErrorMessage(error, t, 'admin.node_databases.messages.health_unhealthy'));
                 setDatabases((prev) => prev.map((d) => (d.id === db.id ? { ...d, healthy: false } : d)));
             }
         },
@@ -628,7 +621,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                         <SheetTitle>{t('admin.node_databases.form.create_title')}</SheetTitle>
                         <SheetDescription>{t('admin.node_databases.form.create_description')}</SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleCreate} className='space-y-4 text-left'>
+                    <form onSubmit={handleCreate} className='space-y-4 text-left' data-fp-save-shortcut>
                         <div className='space-y-2'>
                             <Label>{t('admin.node_databases.form.name')}</Label>
                             <Input
@@ -783,7 +776,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                         <SheetDescription>{t('admin.node_databases.form.edit_description')}</SheetDescription>
                     </SheetHeader>
                     {editingDatabase && (
-                        <form onSubmit={handleUpdate} className='space-y-4 text-left'>
+                        <form onSubmit={handleUpdate} className='space-y-4 text-left' data-fp-save-shortcut>
                             <div className='space-y-2'>
                                 <Label>{t('admin.node_databases.form.name')}</Label>
                                 <Input

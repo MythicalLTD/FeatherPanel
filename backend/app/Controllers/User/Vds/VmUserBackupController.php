@@ -41,6 +41,39 @@ use Symfony\Component\HttpFoundation\Response;
 #[OA\Tag(name: 'User - VM Backups', description: 'List, create, delete, and restore VM backups (client area). Backup limit enforced per instance.')]
 class VmUserBackupController
 {
+    public function recoverBackup(Request $request, int $id, int $backupId): Response
+    {
+        $user = $request->attributes->get('user');
+        if (!$user || !VmGateway::hasVmPermission($user['uuid'], $id, 'backup')) {
+            return ApiResponse::error('Backup permission required', 'PERMISSION_DENIED', 403);
+        }
+        $body = json_decode($request->getContent(), true);
+        if (($body['confirm_interrupted'] ?? null) !== true) {
+            return ApiResponse::error('Confirm that this job has stopped', 'BACKUP_RECOVERY_CONFIRMATION_REQUIRED', 400);
+        }
+        try {
+            $error = \App\Services\Backup\VmBackupReconciler::recoverBackup($id, $backupId);
+            if ($error !== '') {
+                return ApiResponse::error('Backup cannot be recovered in its current state', $error, 409);
+            }
+
+            $actor = $request->attributes->get('user');
+            $instance = VmInstance::getById($id);
+            VmInstanceActivity::createActivity([
+                'vm_instance_id' => $id,
+                'vm_node_id' => (int) ($instance['vm_node_id'] ?? 0),
+                'user_id' => $actor['id'] ?? null,
+                'event' => 'vm:backup.recovered',
+                'metadata' => ['backup_id' => $backupId, 'reason' => 'confirmed_interrupted'],
+                'ip' => CloudFlareRealIP::getRealIP(),
+            ]);
+
+            return ApiResponse::success(null, 'Backup marked as interrupted', 200);
+        } catch (\Throwable) {
+            return ApiResponse::error('Backup recovery failed', 'BACKUP_RECOVERY_FAILED', 500);
+        }
+    }
+
     #[OA\Get(
         path: '/api/user/vm-instances/{id}/backups',
         summary: 'List VM backups',
@@ -78,7 +111,15 @@ class VmUserBackupController
             return ApiResponse::error('You do not have permission to manage backups for this VM', 'PERMISSION_DENIED', 403);
         }
 
+        \App\Services\Backup\VmBackupReconciler::reconcileInstance((int) $vmInstance['id']);
         $backups = VmInstanceBackup::getBackupsByInstanceId((int) $vmInstance['id']);
+        foreach ($backups as &$backup) {
+            $backup['is_stale'] = \App\Services\Backup\VmBackupReconciler::isStale($backup);
+            if (\App\Services\Backup\VmBackupReconciler::hasMissingArchive($backup)) {
+                $backup['status'] = 'pending';
+            }
+        }
+        unset($backup);
         $backups = TimeHelper::normaliseRows($backups);
         $storages = [];
         $vmNode = VmNode::getVmNodeById((int) $vmInstance['vm_node_id']);
@@ -326,6 +367,8 @@ class VmUserBackupController
         }
 
         // If it's still running or pending, return running
+        $task = \App\Services\Backup\VmBackupReconciler::reconcile($task);
+
         if ($task['status'] === 'pending' || $task['status'] === 'running') {
             return ApiResponse::success(['status' => 'running'], 'Backup in progress', 200);
         }
@@ -380,6 +423,9 @@ class VmUserBackupController
         $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
             return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
+        }
+        if (!empty($data['backup_id']) && \App\Services\Backup\VmBackupReconciler::deleteFailedPlaceholder((int) $instance['id'], (int) $data['backup_id'])) {
+            return ApiResponse::success([], 'Failed backup record removed', 200);
         }
         $volid = is_string($data['volid'] ?? null) ? trim($data['volid']) : '';
         $storage = is_string($data['storage'] ?? null) ? trim($data['storage']) : '';

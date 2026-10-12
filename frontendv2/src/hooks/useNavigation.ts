@@ -203,7 +203,7 @@ export function useNavigation() {
                         lucideIcon: item.lucideIcon,
                         panelIcon: item.panelIcon,
                         isActive: pathname === fullUrl || pathname.startsWith(fullUrl + '/'),
-                        category: 'server',
+                        category,
                         isPlugin: true,
                         pluginJs: item.js,
                         pluginRedirect: fullRedirect,
@@ -307,7 +307,13 @@ export function useNavigation() {
                 items.push(...vdsPlugins);
             }
 
-            return items.filter((item) => !item.permission || hasVdsPermission(item.permission));
+            const filtered = items.filter((item) => !item.permission || hasVdsPermission(item.permission));
+            return applySidebarCustomization(
+                filtered,
+                parseSidebarNavigationConfig(settings?.sidebar_navigation_config),
+                'vds',
+                'vds',
+            );
         }
 
         if (isWebspace && webspaceUuid) {
@@ -329,13 +335,19 @@ export function useNavigation() {
                 items.push(...webspacePlugins);
             }
 
-            return items.filter((item) => {
+            const filtered = items.filter((item) => {
                 if (!item.permission) return true;
                 const perm =
                     WebSpaceSubuserPermissions[item.permission as keyof typeof WebSpaceSubuserPermissions] ||
                     item.permission;
                 return hasWebSpacePermission(perm);
             });
+            return applySidebarCustomization(
+                filtered,
+                parseSidebarNavigationConfig(settings?.sidebar_navigation_config),
+                'webspace',
+                'webspace',
+            );
         }
 
         // MAIN NAVIGATION

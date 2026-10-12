@@ -19,10 +19,14 @@ namespace App\Controllers\Admin;
 
 use App\App;
 use App\Chat\Activity;
+use App\Chat\Database;
+use App\Helpers\DemoGuard;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Telemetry\UmamiTelemetry;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Telemetry\UmamiTelemetryState;
 use App\Plugins\Events\Events\SettingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -187,6 +191,10 @@ class SettingsController
                 ConfigInterface::APP_ACCENT_COLOR_LOCK,
                 ConfigInterface::APP_THEME_DEFAULT,
                 ConfigInterface::APP_THEME_LOCK,
+                ConfigInterface::APP_THEME_PACK_DEFAULT,
+                ConfigInterface::APP_THEME_PACK_LOCK,
+                ConfigInterface::APP_UI_PACK_DEFAULT,
+                ConfigInterface::APP_UI_PACK_LOCK,
                 ConfigInterface::APP_BACKGROUND_TYPE_DEFAULT,
                 ConfigInterface::APP_BACKGROUND_TYPE_LOCK,
                 ConfigInterface::APP_BACKDROP_BLUR_DEFAULT,
@@ -243,6 +251,12 @@ class SettingsController
                 ConfigInterface::LOGIN_HIDDEN_METHODS,
             ],
         ],
+        'telemetry' => [
+            'name' => 'Telemetry',
+            'description' => 'Enable or disable installation reports, browser analytics, heatmaps, and session recordings to FeatherPanel.',
+            'icon' => 'activity',
+            'settings' => [ConfigInterface::TELEMETRY],
+        ],
         'security' => [
             'name' => 'Security',
             'description' => 'Security and authentication settings',
@@ -281,7 +295,6 @@ class SettingsController
                 ConfigInterface::ABUSEIPDB_MIN_CONFIDENCE_SCORE,
                 ConfigInterface::ABUSEIPDB_MAX_AGE_DAYS,
                 ConfigInterface::ABUSEIPDB_REGISTER_ACTION,
-                ConfigInterface::TELEMETRY,
                 ConfigInterface::REQUIRE_TWO_FA_ADMINS,
                 ConfigInterface::AVATAR_PROVIDER,
                 ConfigInterface::AVATAR_CUSTOM_URL,
@@ -576,13 +589,13 @@ class SettingsController
                 'value' => $this->app
                     ->getConfig()
                     ->getSetting(ConfigInterface::TELEMETRY, 'true'),
-                'description' => 'Should the application send telemetry data to the telemetry service?',
+                'description' => 'Send daily aggregate counts to Umami: resource totals, backup outcomes, scheduling, databases, shared access, API keys, SSH keys, mounts, tickets, mailboxes, and feature usage over the last 30 days. No installation identifiers or individual activity records are sent. Browser tracking, recordings, and external error reporting remain disabled. The collector receives the server connection IP. Disable to stop reports.',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'true',
-                'validation' => 'required|string|max:255',
+                'validation' => 'required|string|in:true,false',
                 'options' => ['true', 'false'],
-                'category' => 'security',
+                'category' => 'telemetry',
             ],
             ConfigInterface::APP_LOGO_DARK => [
                 'name' => ConfigInterface::APP_LOGO_DARK,
@@ -761,6 +774,56 @@ class SettingsController
                     ->getConfig()
                     ->getSetting(ConfigInterface::APP_THEME_LOCK, 'false'),
                 'description' => 'Force the configured theme (light/dark) for all users (disables per-user theme toggle)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'app',
+            ],
+            ConfigInterface::APP_THEME_PACK_DEFAULT => [
+                'name' => ConfigInterface::APP_THEME_PACK_DEFAULT,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_THEME_PACK_DEFAULT, 'default'),
+                'description' => 'Default plugin theme pack id (default or pluginId:themeId)',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'default',
+                'validation' => 'nullable|string|max:255',
+                'category' => 'app',
+            ],
+            ConfigInterface::APP_THEME_PACK_LOCK => [
+                'name' => ConfigInterface::APP_THEME_PACK_LOCK,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_THEME_PACK_LOCK, 'false'),
+                'description' => 'Force the configured theme pack for all users',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'app',
+            ],
+            ConfigInterface::APP_UI_PACK_DEFAULT => [
+                'name' => ConfigInterface::APP_UI_PACK_DEFAULT,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_UI_PACK_DEFAULT, ''),
+                'description' => 'Active UI pack id for layout takeovers (empty = none, or pluginId:packId)',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => '',
+                'validation' => 'nullable|string|max:255',
+                'category' => 'app',
+            ],
+            ConfigInterface::APP_UI_PACK_LOCK => [
+                'name' => ConfigInterface::APP_UI_PACK_LOCK,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_UI_PACK_LOCK, 'false'),
+                'description' => 'Force the configured UI pack for all users',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',
@@ -1126,12 +1189,12 @@ class SettingsController
                 'value' => $this->app
                     ->getConfig()
                     ->getSetting(ConfigInterface::SMTP_ENCRYPTION, 'tls'),
-                'description' => 'The SMTP encryption of the application',
+                'description' => 'SMTP encryption: starttls/tls for port 587 (e.g. Brevo), ssl for port 465 SMTPS, none for plain SMTP',
                 'type' => 'select',
                 'required' => true,
-                'placeholder' => 'tls',
-                'validation' => 'required|string|max:255',
-                'options' => ['tls', 'ssl'],
+                'placeholder' => 'starttls',
+                'validation' => 'required|string|in:starttls,tls,ssl,none',
+                'options' => ['starttls', 'tls', 'ssl', 'none'],
                 'category' => 'email',
             ],
             ConfigInterface::CAPTCHA_PROVIDER => [
@@ -2256,7 +2319,7 @@ class SettingsController
                         ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED,
                         'false',
                     ),
-                'description' => 'Allow the Container Shell lifecycle step (docker exec /bin/sh -c inside the server container). This is a security-sensitive capability: users with schedule.update can run arbitrary shell commands in running containers when lifecycle hooks fire. Default off. Requires Lifecycle Hooks Enabled. Existing Container Shell steps will not execute while this is disabled.',
+                'description' => 'Allow Container Shell lifecycle hook steps and Container Shell schedule tasks (docker exec /bin/sh -c inside the server container). This is a security-sensitive capability: users with schedule.update (and control.console for schedule tasks) can run arbitrary shell commands in running containers when hooks fire or schedules run. Default off. Lifecycle hook steps additionally require Lifecycle Hooks Enabled; schedule tasks additionally require Schedules to be allowed. Existing Container Shell steps and tasks will not execute while this is disabled.',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',
@@ -3341,6 +3404,24 @@ class SettingsController
         ];
     }
 
+    public function telemetryStatus(Request $request): Response
+    {
+        $options = UmamiTelemetry::configuration($this->app->getConfig());
+        try {
+            $state = (new UmamiTelemetryState(Database::getPdoConnection()))->status();
+            $ready = true;
+        } catch (\Throwable) {
+            $state = ['last_attempt' => null, 'last_success' => null, 'last_result' => null, 'next_attempt' => null];
+            $ready = false;
+        }
+
+        return ApiResponse::success([
+            ...$state,
+            'enabled' => $options['enabled'], 'configured' => $options['configured'],
+            'environment_disabled' => $options['environment_disabled'], 'storage_ready' => $ready,
+        ]);
+    }
+
     #[OA\Get(
         path: '/api/admin/settings',
         summary: 'Get all settings',
@@ -3683,10 +3764,19 @@ class SettingsController
     ),]
     public function update(Request $request): Response
     {
+        // Demo panels may change settings — periodic wipe / reset restores defaults.
+
         $raw = $request->getContent();
         $data = json_decode($raw ?? '', true);
         if (!is_array($data)) {
             return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
+        }
+
+        // The collector destination is fixed; reject legacy overrides before saving anything.
+        foreach (['umami_endpoint', 'umami_website_id'] as $key) {
+            if (array_key_exists($key, $data)) {
+                return ApiResponse::error('The telemetry destination cannot be changed', 'INVALID_SETTING', 400);
+            }
         }
 
         $app = App::getInstance(true);
@@ -3719,6 +3809,10 @@ class SettingsController
                 $settingConfig,
                 $value,
             );
+
+            if ($setting === ConfigInterface::TELEMETRY && !in_array($stringValue, ['true', 'false'], true)) {
+                return ApiResponse::error('Telemetry must be enabled or disabled', 'INVALID_SETTING_VALUE', 400);
+            }
 
             // Basic validation (use normalized string so 0 / "false" are handled correctly)
             if ($settingConfig['required'] && $stringValue === '') {
@@ -4011,6 +4105,10 @@ class SettingsController
     ),]
     public function sendTestEmail(Request $request): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $user = $request->attributes->get('user');
         if (!$user || empty($user['email'])) {
             return ApiResponse::error(

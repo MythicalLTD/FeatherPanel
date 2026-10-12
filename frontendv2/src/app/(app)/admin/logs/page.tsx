@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import axios from 'axios';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -393,10 +394,10 @@ export default function AdminLogsPage() {
             if (res.data.success) {
                 setPanelLogs(res.data.data.logs);
             } else {
-                toast.error(res.data.message || t('admin.logs.messages.fetch_failed'));
+                toast.error(getApiErrorMessageFromPayload(res.data, t, 'admin.logs.messages.fetch_failed'));
             }
-        } catch {
-            toast.error(t('admin.logs.messages.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.logs.messages.fetch_failed'));
         } finally {
             setPanelLoading(false);
         }
@@ -411,10 +412,10 @@ export default function AdminLogsPage() {
                 setPanelLogs('');
                 toast.success(t('admin.logs.messages.cleared'));
             } else {
-                toast.error(res.data.message || t('admin.logs.messages.clear_failed'));
+                toast.error(getApiErrorMessageFromPayload(res.data, t, 'admin.logs.messages.clear_failed'));
             }
-        } catch {
-            toast.error(t('admin.logs.messages.clear_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.logs.messages.clear_failed'));
         }
     }, [currentLogType, t]);
 
@@ -453,8 +454,8 @@ export default function AdminLogsPage() {
             if (raw.length > 0 && selectedNodeId === null) {
                 setSelectedNodeId(raw[0].id);
             }
-        } catch {
-            toast.error(t('admin.logs.messages.fetch_nodes_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.logs.messages.fetch_nodes_failed'));
         } finally {
             setNodesLoading(false);
         }
@@ -483,10 +484,10 @@ export default function AdminLogsPage() {
                     })();
                     setWingsLogs(logSection || content);
                 } else {
-                    toast.error(res.data.message || t('admin.logs.messages.wings_fetch_failed'));
+                    toast.error(getApiErrorMessageFromPayload(res.data, t, 'admin.logs.messages.wings_fetch_failed'));
                 }
-            } catch {
-                toast.error(t('admin.logs.messages.wings_fetch_failed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'admin.logs.messages.wings_fetch_failed'));
             } finally {
                 setWingsLoading(false);
             }
@@ -511,10 +512,10 @@ export default function AdminLogsPage() {
                     toast.error(t('admin.logs.messages.wings_upload_no_url'));
                 }
             } else {
-                toast.error(res.data.message || t('admin.logs.messages.wings_upload_failed'));
+                toast.error(getApiErrorMessageFromPayload(res.data, t, 'admin.logs.messages.wings_upload_failed'));
             }
-        } catch {
-            toast.error(t('admin.logs.messages.wings_upload_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.logs.messages.wings_upload_failed'));
         } finally {
             setWingsUploading(false);
         }

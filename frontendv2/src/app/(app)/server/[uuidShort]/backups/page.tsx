@@ -69,6 +69,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 import { BackupItem, BackupsResponse, Server } from '@/types/server';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 type BackupTab = 'files' | 'databases';
 
@@ -146,11 +147,11 @@ export default function ServerBackupsPage() {
     }, [searchQuery]);
 
     const fetchBackups = useCallback(
-        async (targetPage = page) => {
+        async (targetPage = page, quiet = false) => {
             if (!uuidShort) return;
 
             try {
-                setLoading(true);
+                if (!quiet) setLoading(true);
                 const [backupsRes, serverRes] = await Promise.all([
                     axios.get<BackupsResponse>(`/api/user/servers/${uuidShort}/backups`, {
                         params: {
@@ -158,12 +159,14 @@ export default function ServerBackupsPage() {
                             search: debouncedSearch || undefined,
                         },
                     }),
-                    axios.get<{ success: boolean; data: Server }>(`/api/user/servers/${uuidShort}`),
+                    quiet
+                        ? Promise.resolve(null)
+                        : axios.get<{ success: boolean; data: Server }>(`/api/user/servers/${uuidShort}`),
                 ]);
 
                 if (backupsRes.data.success) {
                     setBackups(backupsRes.data.data.data);
-                    setSelectedUuids([]);
+                    if (!quiet) setSelectedUuids([]);
                     const p = backupsRes.data.data.pagination;
                     setPagination({
                         current_page: p.current_page,
@@ -173,14 +176,14 @@ export default function ServerBackupsPage() {
                     });
                 }
 
-                if (serverRes.data.success) {
+                if (serverRes?.data.success) {
                     setServer(serverRes.data.data);
                 }
             } catch (error) {
                 console.error('Error fetching backups:', error);
-                toast.error(t('serverBackups.failedToFetch'));
+                toast.error(getApiErrorMessage(error, t, 'serverBackups.failedToFetch'));
             } finally {
-                setLoading(false);
+                if (!quiet) setLoading(false);
             }
         },
         [uuidShort, debouncedSearch, page, t],
@@ -199,14 +202,14 @@ export default function ServerBackupsPage() {
     }, [canRead, permissionsLoading, fetchBackups, uuidShort, router, t]);
 
     useEffect(() => {
-        const hasCreating = backups.some((b) => !b.completed_at && !b.is_successful);
+        const hasCreating = backups.some((b) => !b.completed_at && !b.is_successful && !b.is_stale);
         if (hasCreating) {
             const interval = setInterval(() => {
-                fetchBackups();
-            }, 3000);
+                if (document.visibilityState !== 'hidden') void fetchBackups(page, true);
+            }, 10000);
             return () => clearInterval(interval);
         }
-    }, [backups, fetchBackups]);
+    }, [backups, fetchBackups, page]);
 
     const handleRestoreBackup = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -225,17 +228,37 @@ export default function ServerBackupsPage() {
                 toast.success(t('serverBackups.restoreSuccess'));
                 setRestoreDialogOpen(false);
             } else {
-                toast.error(data.message || t('serverBackups.restoreFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.restoreFailed'));
             }
         } catch (error) {
-            if (axios.isAxiosError(error) && error.response?.data?.error === 'BACKUP_LOCKED') {
-                toast.error(t('serverBackups.restoreLockedError'));
-            } else {
-                toast.error(t('serverBackups.restoreFailed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'serverBackups.restoreFailed'));
         } finally {
             setRestoring(false);
         }
+    };
+
+    const handleRecoverBackup = (backup: BackupItem) => {
+        setConfirmAction({
+            title: t('serverBackups.recoverTitle'),
+            description: t('serverBackups.recoverDescription'),
+            variant: 'destructive',
+            action: async () => {
+                try {
+                    const { data } = await axios.post(`/api/user/servers/${uuidShort}/backups/${backup.uuid}/recover`, {
+                        confirm_interrupted: true,
+                    });
+                    if (data.success) {
+                        toast.success(t('serverBackups.recoverSuccess'));
+                        await fetchBackups();
+                    } else {
+                        toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.recoverFailed'));
+                    }
+                } catch (error) {
+                    toast.error(getApiErrorMessage(error, t, 'serverBackups.recoverFailed'));
+                }
+            },
+        });
+        setConfirmDialogOpen(true);
     };
 
     const handleDeleteBackup = (backup: BackupItem) => {
@@ -249,7 +272,7 @@ export default function ServerBackupsPage() {
                     toast.success(t('serverBackups.deleteSuccess'));
                     fetchBackups();
                 } else {
-                    toast.error(data.message || t('serverBackups.deleteFailed'));
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.deleteFailed'));
                 }
             },
         });
@@ -278,7 +301,7 @@ export default function ServerBackupsPage() {
         data?: { deleted_count?: number; skipped_count?: number; failed_count?: number };
     }) => {
         if (!data.success) {
-            toast.error(data.message || t('serverBackups.bulkDeleteFailed'));
+            toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.bulkDeleteFailed'));
             return;
         }
         const deleted = data.data?.deleted_count ?? 0;
@@ -313,8 +336,8 @@ export default function ServerBackupsPage() {
                         data: { uuids: selectedUuids },
                     });
                     handleBulkDeleteResult(data);
-                } catch {
-                    toast.error(t('serverBackups.bulkDeleteFailed'));
+                } catch (error) {
+                    toast.error(getApiErrorMessage(error, t, 'serverBackups.bulkDeleteFailed'));
                 }
             },
         });
@@ -332,8 +355,8 @@ export default function ServerBackupsPage() {
                         data: { all: true },
                     });
                     handleBulkDeleteResult(data);
-                } catch {
-                    toast.error(t('serverBackups.bulkDeleteFailed'));
+                } catch (error) {
+                    toast.error(getApiErrorMessage(error, t, 'serverBackups.bulkDeleteFailed'));
                 }
             },
         });
@@ -351,7 +374,7 @@ export default function ServerBackupsPage() {
                     toast.success(lock ? t('serverBackups.lockSuccess') : t('serverBackups.unlockSuccess'));
                     fetchBackups();
                 } else {
-                    toast.error(data.message || t('serverBackups.failedToPerformAction'));
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.failedToPerformAction'));
                 }
             },
         });
@@ -365,10 +388,10 @@ export default function ServerBackupsPage() {
                 triggerSignedUrlDownload(data.data.download_url);
                 toast.success(t('serverBackups.downloadSuccess'));
             } else {
-                toast.error(data.message || t('serverBackups.downloadFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.downloadFailed'));
             }
-        } catch {
-            toast.error(t('serverBackups.downloadFailed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'serverBackups.downloadFailed'));
         }
     };
 
@@ -661,14 +684,20 @@ export default function ServerBackupsPage() {
                                                     className={cn(
                                                         'rounded-full px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase',
                                                         !backup.completed_at && !backup.is_successful
-                                                            ? 'animate-pulse bg-blue-500 text-white'
+                                                            ? backup.is_stale
+                                                                ? 'bg-amber-500 text-white'
+                                                                : 'animate-pulse bg-blue-500 text-white'
                                                             : backup.is_successful
                                                               ? 'bg-emerald-500 text-white'
                                                               : 'bg-red-500 text-white',
                                                     )}
                                                 >
                                                     {!backup.completed_at && !backup.is_successful
-                                                        ? t('serverBackups.statusCreating')
+                                                        ? t(
+                                                              backup.is_stale
+                                                                  ? 'serverBackups.statusStale'
+                                                                  : 'serverBackups.statusCreating',
+                                                          )
                                                         : backup.is_successful
                                                           ? t('serverBackups.statusSuccessful')
                                                           : t('serverBackups.statusFailed')}
@@ -745,6 +774,17 @@ export default function ServerBackupsPage() {
                                                                     </span>
                                                                 </DropdownMenuItem>
                                                             )}
+                                                        {canDelete && backup.is_stale && (
+                                                            <DropdownMenuItem
+                                                                onClick={() => handleRecoverBackup(backup)}
+                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3 text-amber-500'
+                                                            >
+                                                                <AlertTriangle className='h-4 w-4' />
+                                                                <span className='font-bold'>
+                                                                    {t('serverBackups.recoverAction')}
+                                                                </span>
+                                                            </DropdownMenuItem>
+                                                        )}
                                                         {canDelete && (
                                                             <DropdownMenuItem
                                                                 disabled={backup.is_locked === 1}
@@ -875,7 +915,7 @@ export default function ServerBackupsPage() {
                         </p>
                     </div>
 
-                    <form onSubmit={handleRestoreBackup} className='space-y-6'>
+                    <form onSubmit={handleRestoreBackup} className='space-y-6' data-fp-save-shortcut>
                         <div
                             className='group mx-1 flex cursor-pointer items-center gap-4 rounded-3xl border border-white/5 bg-black/20 p-5 transition-all hover:bg-black/30'
                             onClick={() => setTruncateDirectory(!truncateDirectory)}

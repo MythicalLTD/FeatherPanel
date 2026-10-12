@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { reportPanelInteraction } from '@/lib/panel-analytics';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { filesApi } from '@/lib/files-api';
@@ -22,6 +23,7 @@ import { filterFeatherTrashFiles, isHiddenServerEntry } from '@/lib/feather-tras
 import { FileObject } from '@/types/server';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorCode } from '@/lib/api-errors';
 
 function sanitizeDirectoryPath(path: string | null): string | null {
     if (!path) return null;
@@ -114,29 +116,19 @@ export function useFileManager(serverUuid: string) {
             setSelectedFiles([]);
         } catch (err) {
             console.error(err);
-            const apiError = err as {
-                response?: {
-                    data?: {
-                        message?: string;
-                        error_code?: string;
-                    };
-                };
-            };
-            const apiMessage = apiError.response?.data?.message;
-            const apiErrorCode = apiError.response?.data?.error_code;
-
-            if (apiErrorCode === 'WINGS_CONNECTION_UNAVAILABLE') {
-                setError(t('files.messages.wings_connection_unavailable'));
-                toast.error(apiMessage || t('files.messages.wings_connection_unavailable'));
-                return;
-            }
 
             if (err instanceof Error && err.message === 'Request timeout') {
-                setError(t('files.messages.request_timed_out'));
-                toast.error(t('files.messages.load_timeout_retry'));
+                const message = t('errors.codes.REQUEST_TIMEOUT');
+                setError(message);
+                toast.error(message);
+            } else if (getApiErrorCode(err) === 'WINGS_CONNECTION_UNAVAILABLE') {
+                const message = getApiErrorMessage(err, t, 'files.messages.wings_connection_unavailable');
+                setError(message);
+                toast.error(message);
             } else {
-                setError(apiMessage || t('files.messages.load_error'));
-                toast.error(apiMessage || t('files.messages.load_error'));
+                const message = getApiErrorMessage(err, t, 'files.messages.load_error');
+                setError(message);
+                toast.error(message);
             }
         } finally {
             setLoading(false);
@@ -149,7 +141,7 @@ export function useFileManager(serverUuid: string) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [serverUuid, currentDirectory, debouncedSearch]);
 
-    // Filtering logic — name search is server-side; only apply local ignore rules here
+    // Filtering logic - name search is server-side; only apply local ignore rules here
     const filteredFiles = useMemo(() => {
         let result = filterFeatherTrashFiles(files);
 
@@ -176,14 +168,20 @@ export function useFileManager(serverUuid: string) {
         }
         setSearchQuery('');
         setDebouncedSearch('');
+        reportPanelInteraction('panel.file.browse', 'files');
         router.push(`?${params.toString()}`);
     };
 
     const toggleSelect = (name: string) => {
+        reportPanelInteraction('panel.file.select', 'single');
         setSelectedFiles((prev) => (prev.includes(name) ? prev.filter((f) => f !== name) : [...prev, name]));
     };
 
     const selectAll = () => {
+        reportPanelInteraction(
+            'panel.file.select',
+            selectedFiles.length === filteredFiles.length ? 'clear-selection' : 'select-all',
+        );
         if (selectedFiles.length === filteredFiles.length) {
             setSelectedFiles([]);
         } else {
@@ -227,8 +225,8 @@ export function useFileManager(serverUuid: string) {
             await filesApi.deletePullFile(serverUuid, id);
             toast.success(t('files.messages.download_cancelled'));
             refreshPulls();
-        } catch {
-            toast.error(t('files.messages.cancel_download_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.messages.cancel_download_failed'));
         }
     };
 

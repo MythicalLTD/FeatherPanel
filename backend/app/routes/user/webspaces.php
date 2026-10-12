@@ -56,30 +56,6 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAuthRoute(
         $routes,
-        'user-webspaces-create',
-        '/api/user/webspaces/create',
-        function (Request $request) {
-            return (new WebSpacesController())->create($request);
-        },
-        ['POST'],
-        Rate::perMinute(5),
-        'user-webspaces'
-    );
-
-    App::getInstance(true)->registerAuthRoute(
-        $routes,
-        'user-webspaces-order',
-        '/api/user/webspaces/order',
-        function (Request $request) {
-            return (new WebSpacesController())->create($request);
-        },
-        ['POST'],
-        Rate::perMinute(5),
-        'user-webspaces'
-    );
-
-    App::getInstance(true)->registerAuthRoute(
-        $routes,
         'user-webspaces-utilization',
         '/api/user/webspaces/{uuidShort}/utilization',
         function (Request $request, array $args) {
@@ -569,6 +545,18 @@ return function (RouteCollection $routes): void {
         },
         ['GET'],
         Rate::perMinute(20),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-backups-reconcile',
+        '/api/user/webspaces/{uuidShort}/backups/reconcile',
+        function (Request $request, array $args) {
+            return (new WebSpacesController())->reconcileBackups($request, (string) ($args['uuidShort'] ?? ''));
+        },
+        ['POST'],
+        Rate::perMinute(5),
         'user-webspaces'
     );
 

@@ -338,11 +338,18 @@ class EmailLoginController
 
             // Return 2FA required response
             $challenge = TwoFactorChallengeHelper::issue($userInfo['uuid']);
+            if ($challenge === null) {
+                return ApiResponse::error(
+                    'Two-factor authentication is temporarily unavailable. Please try again shortly.',
+                    '2FA_UNAVAILABLE',
+                    503
+                );
+            }
 
-            return ApiResponse::error('2FA required', 'TWO_FACTOR_REQUIRED', 401, array_filter([
+            return ApiResponse::error('2FA required', 'TWO_FACTOR_REQUIRED', 401, [
                 'email' => $userInfo['email'],
                 'challenge' => $challenge,
-            ], static fn ($v) => $v !== null));
+            ]);
         }
 
         // Clear the code since it's been used

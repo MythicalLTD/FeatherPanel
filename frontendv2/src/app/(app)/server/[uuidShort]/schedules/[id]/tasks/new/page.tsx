@@ -37,7 +37,16 @@ import type { Database, TaskCreateRequest } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { BackupTaskFields } from '@/components/server/backup/BackupTaskFields';
 import { buildBackupPayload, emptyBackupFields, type BackupFields } from '@/components/server/backup/backup-payload';
+import { ContainerShellTaskFields } from '@/components/server/schedule/ContainerShellTaskFields';
+import {
+    CONTAINER_SHELL_ACTION,
+    buildContainerShellPayload,
+    emptyContainerShellFields,
+    validateContainerShellFields,
+    type ContainerShellFields,
+} from '@/components/server/schedule/container-shell-payload';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function CreateTaskPage() {
     const { uuidShort, id: scheduleId } = useParams() as { uuidShort: string; id: string };
@@ -57,16 +66,23 @@ export default function CreateTaskPage() {
         continue_on_failure: 0,
     });
     const [backup, setBackup] = React.useState<BackupFields>(emptyBackupFields());
+    const [containerShell, setContainerShell] = React.useState<ContainerShellFields>(emptyContainerShellFields());
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-tasks-new');
 
-    const actionOptions = React.useMemo(
-        () => [
+    // Container Shell runs arbitrary commands in the container: it needs the admin switch and console access.
+    const containerShellAvailable =
+        settings?.server_lifecycle_hooks_container_shell_enabled === 'true' && hasPermission('control.console');
+    const actionOptions = React.useMemo(() => {
+        const options = [
             { id: 'power', name: t('serverTasks.actionPower') },
             { id: 'backup', name: t('serverTasks.actionBackup') },
             { id: 'command', name: t('serverTasks.actionCommand') },
-        ],
-        [t],
-    );
+        ];
+        if (containerShellAvailable) {
+            options.push({ id: CONTAINER_SHELL_ACTION, name: t('serverTasks.actionContainerShell') });
+        }
+        return options;
+    }, [t, containerShellAvailable]);
 
     React.useEffect(() => {
         fetchWidgets();
@@ -108,6 +124,20 @@ export default function CreateTaskPage() {
             }
             payload = built;
         }
+        if (form.action === CONTAINER_SHELL_ACTION) {
+            const validation = validateContainerShellFields(containerShell);
+            if (validation !== 'ok') {
+                toast.error(
+                    validation === 'command_required'
+                        ? t('serverTasks.containerShellErrorCommandRequired')
+                        : validation === 'command_too_long'
+                          ? t('serverTasks.containerShellErrorCommandTooLong')
+                          : t('serverTasks.containerShellErrorTimeout'),
+                );
+                return;
+            }
+            payload = buildContainerShellPayload(containerShell);
+        }
         setSaving(true);
         try {
             const { data } = await axios.post(`/api/user/servers/${uuidShort}/schedules/${scheduleId}/tasks`, {
@@ -118,11 +148,11 @@ export default function CreateTaskPage() {
                 toast.success(t('serverTasks.createSuccess'));
                 router.push(`/server/${uuidShort}/schedules/${scheduleId}/tasks`);
             } else {
-                toast.error(data?.message || t('serverTasks.createFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverTasks.createFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('serverTasks.createFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'serverTasks.createFailed'));
         } finally {
             setSaving(false);
         }
@@ -180,7 +210,7 @@ export default function CreateTaskPage() {
             />
             <WidgetRenderer widgets={getWidgets('server-tasks-new', 'after-header')} />
 
-            <form onSubmit={handleCreate} className='space-y-8'>
+            <form onSubmit={handleCreate} className='space-y-8' data-fp-save-shortcut>
                 <FormSection>
                     <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                         <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
@@ -255,6 +285,12 @@ export default function CreateTaskPage() {
                             fields={backup}
                             setFields={setBackup}
                             databases={databases}
+                            disabled={saving}
+                        />
+                    ) : form.action === CONTAINER_SHELL_ACTION ? (
+                        <ContainerShellTaskFields
+                            fields={containerShell}
+                            setFields={setContainerShell}
                             disabled={saving}
                         />
                     ) : (

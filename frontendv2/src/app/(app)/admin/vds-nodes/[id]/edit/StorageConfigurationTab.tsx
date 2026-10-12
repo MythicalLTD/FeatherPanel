@@ -18,6 +18,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select-native';
 import { HardDrive, Loader2 } from 'lucide-react';
@@ -54,8 +55,7 @@ export function StorageConfigurationTab({ nodeId, form, setForm, errors }: Stora
                 setImageStorages((storageRes.data.data?.storage ?? []) as string[]);
                 setBackupStorages((backupStorageRes.data.data?.storages ?? []) as string[]);
             } catch (err) {
-                const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-                setStoragesError(msg);
+                setStoragesError(getApiErrorMessage(err, t, 'admin.vdsNodes.storage.fetch_failed'));
                 toast.error(t('admin.vdsNodes.storage.fetch_failed'));
             } finally {
                 setStoragesLoading(false);

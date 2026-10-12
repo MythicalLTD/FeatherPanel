@@ -13,6 +13,8 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+import { reportPanelInteraction } from '@/lib/panel-analytics';
+
 /**
  * Start a browser download from a cross-origin signed URL (e.g. Wings
  * `/download/file` or `/download/backup` with Content-Disposition: attachment).
@@ -28,6 +30,7 @@ export function triggerSignedUrlDownload(url: string): void {
     iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;visibility:hidden;pointer-events:none';
     iframe.src = url;
     document.body.appendChild(iframe);
+    reportPanelInteraction('panel.download.start', 'files');
 
     window.setTimeout(() => {
         iframe.remove();

@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { reportPanelInteraction } from '@/lib/panel-analytics';
 import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react';
 import { isCloudflareChallengeText } from '@/lib/cloudflare-challenge';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -43,7 +44,7 @@ const TranslationContext = createContext<TranslationContextType | undefined>(und
 
 const DEFAULT_LOCALE = 'en';
 const PRIMARY_LOCALE = 'en';
-const CACHE_VERSION = '1.5';
+const CACHE_VERSION = '1.10';
 const LOCALE_USER_OVERRIDE_KEY = 'localeUserOverride';
 const LOCALE_MIGRATION_KEY = 'localeMigrationV1';
 
@@ -316,6 +317,7 @@ export function TranslationProvider({ children, initialLocale, initialTranslatio
         if (isLocaleLocked) return;
 
         const normalized = normalizeLocaleCode(newLocale) || DEFAULT_LOCALE;
+        if (normalized !== locale) reportPanelInteraction('panel.preference.change', 'language');
         setLoading(true);
         setLocaleState(normalized);
         localStorage.setItem('locale', normalized);
@@ -334,12 +336,12 @@ export function TranslationProvider({ children, initialLocale, initialTranslatio
                 if (value && typeof value === 'object' && k in value) {
                     value = (value as Record<string, unknown>)[k];
                 } else {
-                    return key;
+                    return params?.defaultValue || key;
                 }
             }
 
             if (typeof value !== 'string') {
-                return key;
+                return params?.defaultValue || key;
             }
 
             if (params) {

@@ -377,7 +377,7 @@ const WEB_NODE_FIELD_TABS: Record<string, WebNodeFormTab> = {
     upload_size: 'advanced',
 };
 
-/** Validation order — first failing field wins for tab focus. */
+/** Validation order - first failing field wins for tab focus. */
 const WEB_NODE_VALIDATION_FIELD_ORDER = [
     'name',
     'location_id',

@@ -1,8 +1,7 @@
 use anyhow::Result;
-use sqlx::{MySqlPool, Row};
+use sqlx::{Connection, MySqlPool, Row};
 use tracing::{error, info, warn};
 use serde_json::{json, Value};
-use chrono;
 use std::collections::HashSet;
 
 use crate::proxmox::{ProxmoxClient, VmType, PowerAction};
@@ -12,7 +11,37 @@ use super::create::{
 };
 
 
-pub async fn process_vm_task(pool: &MySqlPool, task_id: &str, encryption_key: &str, _debug_decrypt: bool) -> Result<()> {
+static ACTIVE_VM_TASKS: once_cell::sync::Lazy<std::sync::Mutex<HashSet<String>>> =
+    once_cell::sync::Lazy::new(|| std::sync::Mutex::new(HashSet::new()));
+static VM_TASK_SLOTS: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(32);
+
+struct ActiveVmTask(String);
+impl Drop for ActiveVmTask {
+    fn drop(&mut self) {
+        if let Ok(mut active) = ACTIVE_VM_TASKS.lock() { active.remove(&self.0); }
+    }
+}
+
+pub async fn process_vm_task(pool: &MySqlPool, task_id: &str, encryption_key: &str, debug_decrypt: bool) -> Result<()> {
+    {
+        let mut active = ACTIVE_VM_TASKS.lock().map_err(|_| anyhow::anyhow!("VM task registry unavailable"))?;
+        if !active.insert(task_id.to_string()) { return Ok(()); }
+    }
+    let _active = ActiveVmTask(task_id.to_string());
+    let _permit = VM_TASK_SLOTS.acquire().await?;
+    // The connection owns this lock across awaits and across runner processes.
+    let mut connection = sqlx::MySqlConnection::connect_with(pool.connect_options().as_ref()).await?;
+    let lock_name = format!("fp-vm-{}", task_id);
+    let acquired: Option<i32> = sqlx::query_scalar("SELECT GET_LOCK(?, 0)")
+        .bind(&lock_name).fetch_one(&mut connection).await?;
+    if acquired != Some(1) { return Ok(()); }
+    // This dedicated connection closes and releases the lock if the future is aborted.
+    let result = process_vm_task_inner(pool, task_id, encryption_key, debug_decrypt).await;
+    let _ = sqlx::query("SELECT RELEASE_LOCK(?)").bind(&lock_name).execute(&mut connection).await;
+    result
+}
+
+async fn process_vm_task_inner(pool: &MySqlPool, task_id: &str, encryption_key: &str, _debug_decrypt: bool) -> Result<()> {
     info!("🔄 Processing VM task: {}", task_id);
 
     // Main processing loop - keep checking until task is completed or failed
@@ -41,42 +70,40 @@ pub async fn process_vm_task(pool: &MySqlPool, task_id: &str, encryption_key: &s
 
         let vm_node_id: i32 = task.try_get("vm_node_id").unwrap_or(0);
         let task_type: String = task.try_get("task_type").unwrap_or_default();
-        let data_str: String = task.try_get("data").unwrap_or_else(|_| "{}".to_string());
         let upid: String = task.try_get("upid").unwrap_or_default();
         
-        let meta: Value = serde_json::from_str(&data_str).unwrap_or(serde_json::json!({}));
 
         // Set status to running if it's pending
         if status == "pending" {
-            sqlx::query("UPDATE featherpanel_vm_tasks SET status = 'running' WHERE task_id = ?")
+            sqlx::query("UPDATE featherpanel_vm_tasks SET status = 'running' WHERE task_id = ? AND status = 'pending'")
                 .bind(task_id)
                 .execute(pool)
                 .await?;
             
-            // For backup tasks, create the database record immediately
-            if task_type == "backup" && !upid.is_empty() {
-                let instance_id = meta["instance_id"].as_i64().unwrap_or(0);
-                let vmid: i32 = task.try_get("vmid").unwrap_or(0);
-                let backup_id = meta["backup_id"].as_i64();
-                
-                if backup_id.is_none() {
-                    info!("📝 Creating pending backup record in database...");
-                    let new_backup_id = create_pending_backup_record(pool, instance_id, vmid).await?;
-                    
-                    // Update task metadata with backup_id
-                    let mut meta_mut = meta.clone();
-                    meta_mut["backup_id"] = serde_json::json!(new_backup_id);
-                    
-                    sqlx::query("UPDATE featherpanel_vm_tasks SET data = ? WHERE task_id = ?")
-                        .bind(serde_json::to_string(&meta_mut)?)
-                        .bind(task_id)
-                        .execute(pool)
-                        .await?;
-                    
-                    info!("✅ Created pending backup record with ID: {}", new_backup_id);
-                }
-            }
         }
+
+        if task_type == "backup" && !upid.is_empty() {
+            let mut transaction = pool.begin().await?;
+            let current = sqlx::query("SELECT data, status FROM featherpanel_vm_tasks WHERE task_id = ? FOR UPDATE")
+                .bind(task_id).fetch_one(&mut *transaction).await?;
+            let state: String = current.try_get("status")?;
+            if state == "completed" || state == "failed" { return Ok(()); }
+            let data: String = current.try_get("data")?;
+            let mut current_meta: Value = serde_json::from_str(&data)?;
+            if current_meta["backup_id"].as_i64().is_none() {
+                let instance_id: i32 = task.try_get("instance_id")?;
+                let vmid: i32 = task.try_get("vmid")?;
+                let insert = sqlx::query("INSERT INTO featherpanel_vm_instance_backups (vm_instance_id, vmid, storage, volid, size_bytes, ctime, format, status) VALUES (?, ?, 'pending', 'pending', 0, UNIX_TIMESTAMP(), NULL, 'pending')")
+                    .bind(instance_id).bind(vmid).execute(&mut *transaction).await?;
+                current_meta["backup_id"] = json!(insert.last_insert_id());
+                sqlx::query("UPDATE featherpanel_vm_tasks SET data = ? WHERE task_id = ?")
+                    .bind(serde_json::to_string(&current_meta)?).bind(task_id).execute(&mut *transaction).await?;
+            }
+            transaction.commit().await?;
+        }
+        let current_data: String = sqlx::query_scalar("SELECT data FROM featherpanel_vm_tasks WHERE task_id = ?")
+            .bind(task_id).fetch_one(pool).await?;
+        let meta: Value = serde_json::from_str(&current_data).unwrap_or(json!({}));
 
         // If there's a UPID, check if the Proxmox task is still running
         if !upid.is_empty() {
@@ -224,37 +251,6 @@ pub async fn process_vm_task(pool: &MySqlPool, task_id: &str, encryption_key: &s
                                 }
                             }
                             
-                            // For backup tasks, clean up the failed backup
-                            if task_type == "backup" {
-                                if let Some(backup_id) = meta["backup_id"].as_i64() {
-                                    info!("🧹 Cleaning up failed backup record {}...", backup_id);
-                                    
-                                    // Try to delete the backup from Proxmox if it exists
-                                    let target_node: String = task.try_get("target_node").unwrap_or_default();
-                                    
-                                    // Get the volid if backup was partially created
-                                    if let Ok(Some(backup_row)) = sqlx::query("SELECT volid FROM featherpanel_vm_instance_backups WHERE id = ?")
-                                        .bind(backup_id)
-                                        .fetch_optional(pool)
-                                        .await 
-                                    {
-                                        let volid: String = backup_row.try_get("volid").unwrap_or_default();
-                                        if !volid.is_empty() {
-                                            info!("🗑️ Deleting failed backup from Proxmox: {}", volid);
-                                            let _ = delete_backup_from_proxmox(&client, &target_node, &volid).await;
-                                        }
-                                    }
-                                    
-                                    // Mark backup as failed instead of deleting (for audit trail)
-                                    let _ = sqlx::query("UPDATE featherpanel_vm_instance_backups SET status = 'failed' WHERE id = ?")
-                                        .bind(backup_id)
-                                        .execute(pool)
-                                        .await;
-                                    
-                                    info!("✅ Marked backup record {} as failed", backup_id);
-                                }
-                            }
-                            
                             mark_failed(pool, task_id, &error).await?;
                             return Ok(());
                         }
@@ -298,6 +294,10 @@ pub async fn process_vm_task(pool: &MySqlPool, task_id: &str, encryption_key: &s
                     }
                     Err(e) => {
                         warn!("⚠️ Failed to get task status: {}", e);
+                        if task_type == "backup" {
+                            // Release the worker slot and retry during the next durable scan.
+                            anyhow::bail!("Backup node unavailable: {}", e);
+                        }
                         tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
                         continue;
                     }
@@ -634,285 +634,68 @@ async fn handle_backup_task(
     client: &ProxmoxClient,
 ) -> Result<()> {
     let target_node: String = task.try_get("target_node").unwrap_or_default();
-    let vmid: i32 = task.try_get("vmid").unwrap_or(0);
     let upid: String = task.try_get("upid").unwrap_or_default();
-    let vm_node_id: i32 = task.try_get("vm_node_id").unwrap_or(0);
+    let vmid: i32 = task.try_get("vmid").unwrap_or(0);
     let backup_id = meta["backup_id"].as_i64().ok_or_else(|| anyhow::anyhow!("No backup_id in metadata"))?;
-
-    info!("📝 Updating backup record {} with Proxmox details...", backup_id);
-
-    // Enforce node-level preferred backup storage when trying to locate the created backup.
-    let mut preferred_backup_storage: Option<String> = None;
-    if vm_node_id > 0 {
-        if let Ok(node_row) = sqlx::query("SELECT storage_backups FROM featherpanel_vm_nodes WHERE id = ?")
-            .bind(vm_node_id)
-            .fetch_optional(pool)
-            .await
-        {
-            if let Some(n) = node_row {
-                let s: String = n.try_get("storage_backups").unwrap_or_default();
-                let s = s.trim().to_string();
-                if !s.is_empty() {
-                    preferred_backup_storage = Some(s);
-                }
-            }
-        }
-    }
-    
-    // Prefer task log parsing (it is specific to this UPID, so we won't accidentally pick a different/latest backup).
-    if !upid.is_empty() {
-        match get_backup_info_from_task_log(client, &target_node, &upid).await {
-            Ok(backup_info) => {
-                update_backup_record_completed(pool, backup_id, &backup_info).await?;
-                info!("✅ Updated backup record {} from task log - marked as completed", backup_id);
-                mark_completed(pool, task_id).await?;
-                return Ok(());
-            }
-            Err(log_err) => {
-                warn!("⚠️ Could not parse task log for backup_id {}: {}", backup_id, log_err);
-            }
-        }
-    }
-
-    // Fallback: locate the created backup by scanning storages, but restrict to the configured preferred storage when available.
-    match get_latest_backup_info(
-        client,
-        &target_node,
-        vmid as u32,
-        preferred_backup_storage.as_deref(),
-    )
-    .await
-    {
-        Ok(backup_info) => {
-            match update_backup_record_completed(pool, backup_id, &backup_info).await {
-                Ok(_) => {
-                    info!("✅ Updated backup record {} - marked as completed", backup_id);
-                    mark_completed(pool, task_id).await?;
-                }
-                Err(e) => {
-                    error!("❌ Failed to update backup record: {}", e);
-                    let _ = sqlx::query("UPDATE featherpanel_vm_instance_backups SET status = 'failed' WHERE id = ?")
-                        .bind(backup_id)
-                        .execute(pool)
-                        .await;
-                    return Err(e);
-                }
-            }
-        }
-        Err(e) => {
-            warn!("⚠️ Could not fetch backup details from storage: {}", e);
-
-            // Last resort: mark backup as completed but without full details.
-            // This is better than failing completely since the backup exists in Proxmox.
-            warn!("⚠️ Backup completed in Proxmox but couldn't fetch details - marking as completed anyway");
-            sqlx::query("UPDATE featherpanel_vm_instance_backups SET status = 'completed' WHERE id = ?")
-                .bind(backup_id)
-                .execute(pool)
-                .await?;
-            info!("✅ Marked backup {} as completed (without full details)", backup_id);
-            mark_completed(pool, task_id).await?;
-        }
-    }
-
+    let backup_info = get_backup_info_from_task_log(client, &target_node, &upid, vmid as u32).await?;
+    let instance_id: i32 = task.try_get("instance_id")?;
+    update_backup_record_completed(pool, task_id, instance_id, backup_id, &backup_info).await?;
     Ok(())
 }
 
-async fn get_latest_backup_info(
-    client: &ProxmoxClient,
-    node: &str,
-    vmid: u32,
-    preferred_storage: Option<&str>,
-) -> Result<Value> {
-    // Get list of storages on this specific node
-    let path = format!("/nodes/{}/storage", node);
-    let storages = client.get(&path).await?;
-    
-    // Iterate through storages to find backups
-    if let Some(storage_list) = storages["data"].as_array() {
-        for storage in storage_list {
-            // Skip storages that are not active or available
-            if storage["status"].as_str() != Some("available") {
-                continue;
-            }
-            
-            if let Some(storage_name) = storage["storage"].as_str() {
-                if let Some(pref) = preferred_storage {
-                    if !pref.is_empty() && storage_name != pref {
-                        continue;
-                    }
-                }
+fn backup_filename_from_log(lines: &[Value], vmid: u32) -> Option<String> {
+    let pattern = regex::Regex::new(&format!(r#"vzdump-(?:qemu|lxc)-{}-[^\s'"/]+"#, vmid)).ok()?;
+    let names: HashSet<String> = lines.iter().filter_map(|line| line["t"].as_str())
+        .flat_map(|text| pattern.find_iter(text).map(|found| found.as_str().to_string()).collect::<Vec<_>>())
+        .collect();
+    if names.len() == 1 { names.into_iter().next() } else { None }
+}
 
-                // Check if this storage supports backup content
-                let content = storage["content"].as_str().unwrap_or("");
-                if !content.contains("backup") && !content.contains("vztmpl") {
-                    continue;
-                }
-                
-                // Try to get backups from this storage
-                let backup_path = format!("/nodes/{}/storage/{}/content", node, storage_name);
-                match client.get(&backup_path).await {
-                    Ok(content) => {
-                        if let Some(items) = content["data"].as_array() {
-                            // Find the most recent backup for this VMID
-                            let mut latest_backup: Option<Value> = None;
-                            let mut latest_ctime = 0i64;
-                            
-                            for item in items {
-                                if item["content"].as_str() == Some("backup") 
-                                    && item["vmid"].as_i64() == Some(vmid as i64) {
-                                    let ctime = item["ctime"].as_i64().unwrap_or(0);
-                                    if ctime > latest_ctime {
-                                        latest_ctime = ctime;
-                                        latest_backup = Some(item.clone());
-                                    }
-                                }
-                            }
-                            
-                            if let Some(backup) = latest_backup {
-                                return Ok(backup);
+async fn get_backup_info_from_task_log(client: &ProxmoxClient, node: &str, upid: &str, vmid: u32) -> Result<Value> {
+    let path = format!("/nodes/{}/tasks/{}/log?limit=10000", node, urlencoding::encode(upid));
+    let log = client.get(&path).await?;
+    let lines = log["data"].as_array().ok_or_else(|| anyhow::anyhow!("Missing task log"))?;
+    let filename = backup_filename_from_log(lines, vmid).ok_or_else(|| anyhow::anyhow!("Task log does not identify a unique backup archive"))?;
+    let storages = client.get(&format!("/nodes/{}/storage", node)).await?;
+    let mut matches = Vec::new();
+    if let Some(storages) = storages["data"].as_array() {
+        for storage in storages {
+            if let Some(name) = storage["storage"].as_str() {
+                let content = client.get(&format!("/nodes/{}/storage/{}/content", node, name)).await;
+                if let Ok(content) = content {
+                    if let Some(items) = content["data"].as_array() {
+                        for item in items {
+                            if item["content"].as_str() == Some("backup") && item["vmid"].as_u64() == Some(vmid as u64)
+                                && item["volid"].as_str().and_then(|v| v.rsplit('/').next()) == Some(filename.as_str()) {
+                                let mut verified = item.clone();
+                                verified["storage"] = json!(name);
+                                matches.push(verified);
                             }
                         }
-                    }
-                    Err(e) => {
-                        // Skip storages that error (not available, no permission, etc.)
-                        warn!("⚠️ Skipping storage {}: {}", storage_name, e);
-                        continue;
                     }
                 }
             }
         }
     }
-    
-    anyhow::bail!("No backup found for VM {}", vmid)
+    if matches.len() == 1 { return Ok(matches.remove(0)); }
+    anyhow::bail!("Task archive could not be uniquely verified in backup storage")
 }
 
-async fn get_backup_info_from_task_log(
-    client: &ProxmoxClient,
-    node: &str,
-    upid: &str,
-) -> Result<Value> {
-    // Get task log
-    let path = format!("/nodes/{}/tasks/{}/log", node, urlencoding::encode(upid));
-    let log_result = client.get(&path).await?;
-    
-    if let Some(log_lines) = log_result["data"].as_array() {
-        let mut volid = String::new();
-        let mut size_bytes = 0i64;
-        let mut storage_name = String::new();
-        
-        // Parse log lines to find backup info
-        for line in log_lines {
-            let text = if let Some(t) = line["t"].as_str() {
-                t
-            } else if let Some(n) = line["n"].as_i64() {
-                // Sometimes log format is different
-                if let Some(t) = log_lines.get(n as usize).and_then(|l| l["t"].as_str()) {
-                    t
-                } else {
-                    continue;
-                }
-            } else {
-                continue;
-            };
-            
-            // Look for patterns like:
-            // "creating vzdump archive '/var/lib/vz/dump/vzdump-qemu-103-2026_03_18-17_06_19.vma.zst'"
-            // "backup file: /mnt/pve/local/dump/vzdump-qemu-103-..."
-            // "archive file size: 451.23MB"
-            
-            // Try to find volid from various patterns
-            if volid.is_empty() {
-                // Pattern 1: creating vzdump archive
-                if let Some(start) = text.find("vzdump-") {
-                    if let Some(end) = text[start..].find(|c: char| c == '\'' || c == '"' || c == ' ') {
-                        let filename = &text[start..start + end];
-                        // Extract storage from path
-                        if let Some(dump_pos) = text[..start].rfind("/dump/") {
-                            if let Some(storage_start) = text[..dump_pos].rfind("/") {
-                                storage_name = text[storage_start + 1..dump_pos].to_string();
-                                volid = format!("{}:backup/{}", storage_name, filename);
-                            }
-                        }
-                        // Fallback: assume local storage
-                        if volid.is_empty() {
-                            storage_name = "local".to_string();
-                            volid = format!("local:backup/{}", filename);
-                        }
-                    }
-                }
-                
-                // Pattern 2: backup file: path
-                if volid.is_empty() && text.contains("backup file:") {
-                    if let Some(vzdump_pos) = text.find("vzdump-") {
-                        if let Some(end) = text[vzdump_pos..].find(char::is_whitespace) {
-                            let filename = &text[vzdump_pos..vzdump_pos + end];
-                            storage_name = "local".to_string();
-                            volid = format!("local:backup/{}", filename);
-                        }
-                    }
-                }
-            }
-            
-            // Look for size
-            if size_bytes == 0 {
-                if text.contains("archive file size:") || text.contains("backup file size:") {
-                    // Try to extract number before MB/GB
-                    if let Some(mb_pos) = text.find("MB") {
-                        let before_mb = &text[..mb_pos];
-                        if let Some(num_start) = before_mb.rfind(|c: char| !c.is_numeric() && c != '.') {
-                            if let Ok(size_mb) = before_mb[num_start + 1..].trim().parse::<f64>() {
-                                size_bytes = (size_mb * 1024.0 * 1024.0) as i64;
-                            }
-                        }
-                    } else if let Some(gb_pos) = text.find("GB") {
-                        let before_gb = &text[..gb_pos];
-                        if let Some(num_start) = before_gb.rfind(|c: char| !c.is_numeric() && c != '.') {
-                            if let Ok(size_gb) = before_gb[num_start + 1..].trim().parse::<f64>() {
-                                size_bytes = (size_gb * 1024.0 * 1024.0 * 1024.0) as i64;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        if !volid.is_empty() {
-            if storage_name.is_empty() {
-                storage_name = volid.split(':').next().unwrap_or("local").to_string();
-            }
-            
-            info!("📋 Parsed from log: volid={}, storage={}, size={}MB", 
-                volid, storage_name, size_bytes / 1024 / 1024);
-            
-            return Ok(json!({
-                "volid": volid,
-                "storage": storage_name,
-                "size": size_bytes,
-                "ctime": chrono::Utc::now().timestamp(),
-                "format": if volid.contains(".zst") { "zst" } else if volid.contains(".lzo") { "lzo" } else { "vma" }
-            }));
-        }
+#[cfg(test)]
+mod backup_recovery_tests {
+    use super::*;
+    #[test]
+    fn archive_identity_is_scoped_to_vm_and_task_log() {
+        let lines = vec![json!({"t": "creating vzdump archive '/mnt/storage/dump/vzdump-qemu-103-2026_10_06-12_00_00.vma.zst'"})];
+        assert_eq!(backup_filename_from_log(&lines, 103), Some("vzdump-qemu-103-2026_10_06-12_00_00.vma.zst".into()));
+        assert_eq!(backup_filename_from_log(&lines, 104), None);
+        assert_eq!(backup_filename_from_log(&[], 103), None);
     }
-    
-    anyhow::bail!("Could not parse backup info from task log")
-}
-
-async fn create_pending_backup_record(
-    pool: &MySqlPool,
-    instance_id: i64,
-    vmid: i32,
-) -> Result<i64> {
-    let result = sqlx::query(
-        "INSERT INTO featherpanel_vm_instance_backups 
-        (vm_instance_id, vmid, status, storage, volid, size_bytes, ctime) 
-        VALUES (?, ?, 'pending', '', '', 0, 0)"
-    )
-    .bind(instance_id)
-    .bind(vmid)
-    .execute(pool)
-    .await?;
-    
-    Ok(result.last_insert_id() as i64)
+    #[test]
+    fn ambiguous_logs_are_not_assumed_to_be_latest_backup() {
+        let lines = vec![json!({"t": "vzdump-lxc-103-one.tar.zst"}), json!({"t": "vzdump-lxc-103-two.tar.zst"})];
+        assert_eq!(backup_filename_from_log(&lines, 103), None);
+    }
 }
 
 async fn delete_backup_from_proxmox(
@@ -943,6 +726,8 @@ async fn delete_backup_from_proxmox(
 
 async fn update_backup_record_completed(
     pool: &MySqlPool,
+    task_id: &str,
+    instance_id: i32,
     backup_id: i64,
     backup_info: &Value,
 ) -> Result<()> {
@@ -959,70 +744,51 @@ async fn update_backup_record_completed(
         backup_info["storage"].as_str().unwrap_or("").to_string()
     };
     
-    // As a safety fallback, if storage is still empty, do nothing special.
+    if storage.is_empty() || volid.is_empty() { anyhow::bail!("Verified backup volume missing"); }
     
     let size_bytes = backup_info["size"].as_i64().unwrap_or(0);
     let ctime = backup_info["ctime"].as_i64().unwrap_or(0);
     let format = backup_info["format"].as_str();
     
-    // Update without notes column for now (will be added later if needed)
-    sqlx::query(
-        "UPDATE featherpanel_vm_instance_backups 
-        SET status = 'completed', storage = ?, volid = ?, size_bytes = ?, ctime = ?, format = ? 
-        WHERE id = ?"
-    )
-    .bind(storage.clone())
-    .bind(volid)
-    .bind(size_bytes)
-    .bind(ctime as i32)
-    .bind(format)
-    .bind(backup_id)
-    .execute(pool)
-    .await?;
-    
-    info!("✅ Updated backup record {}: storage={}, volid={}, size={}MB", 
-        backup_id, storage, volid, size_bytes / 1024 / 1024);
+    let mut transaction = pool.begin().await?;
+    let claim = sqlx::query("UPDATE featherpanel_vm_tasks SET status = 'completed' WHERE task_id = ? AND instance_id = ? AND status IN ('pending', 'running')")
+        .bind(task_id).bind(instance_id).execute(&mut *transaction).await?;
+    if claim.rows_affected() == 0 { return Ok(()); }
+    let updated = sqlx::query("UPDATE featherpanel_vm_instance_backups SET status = 'completed', storage = ?, volid = ?, size_bytes = ?, ctime = ?, format = ? WHERE id = ? AND vm_instance_id = ?")
+        .bind(storage).bind(volid).bind(size_bytes).bind(ctime as i32).bind(format).bind(backup_id).bind(instance_id)
+        .execute(&mut *transaction).await?;
+    if updated.rows_affected() == 0 { anyhow::bail!("Owned backup record missing"); }
+    transaction.commit().await?;
     Ok(())
 }
 
 async fn mark_failed(pool: &MySqlPool, task_id: &str, error: &str) -> Result<()> {
-    error!("❌ Task {} failed: {}", task_id, error);
-    
-    // Get current task data to preserve step information
-    let task = sqlx::query("SELECT data FROM featherpanel_vm_tasks WHERE task_id = ?")
-        .bind(task_id)
-        .fetch_optional(pool)
-        .await?;
-    
-    if let Some(task_row) = task {
-        let data_str: String = task_row.try_get("data").unwrap_or_else(|_| "{}".to_string());
-        let mut meta: Value = serde_json::from_str(&data_str).unwrap_or(serde_json::json!({}));
-        
-        // Store the failed step for debugging
-        if let Some(step) = meta["current_step"].as_str() {
-            meta["failed_at_step"] = serde_json::json!(step);
+    let mut transaction = pool.begin().await?;
+    let task = sqlx::query("SELECT data, task_type, instance_id, status FROM featherpanel_vm_tasks WHERE task_id = ? FOR UPDATE")
+        .bind(task_id).fetch_optional(&mut *transaction).await?;
+    if let Some(task) = task {
+        let status: String = task.try_get("status")?;
+        if status == "completed" || status == "failed" { return Ok(()); }
+        let data: String = task.try_get("data").unwrap_or_else(|_| "{}".into());
+        let mut meta: Value = serde_json::from_str(&data).unwrap_or(json!({}));
+        if task.try_get::<String, _>("task_type")? == "backup" {
+            if let Some(backup_id) = meta["backup_id"].as_i64() {
+                let instance_id: i32 = task.try_get("instance_id")?;
+                sqlx::query("UPDATE featherpanel_vm_instance_backups SET status = 'failed' WHERE id = ? AND vm_instance_id = ? AND status IN ('pending', 'running')")
+                    .bind(backup_id).bind(instance_id).execute(&mut *transaction).await?;
+            }
         }
-        
+        if let Some(step) = meta["current_step"].as_str() { meta["failed_at_step"] = json!(step); }
         sqlx::query("UPDATE featherpanel_vm_tasks SET status = 'failed', error = ?, data = ? WHERE task_id = ?")
-            .bind(error)
-            .bind(serde_json::to_string(&meta)?)
-            .bind(task_id)
-            .execute(pool)
-            .await?;
-    } else {
-        sqlx::query("UPDATE featherpanel_vm_tasks SET status = 'failed', error = ? WHERE task_id = ?")
-            .bind(error)
-            .bind(task_id)
-            .execute(pool)
-            .await?;
+            .bind(error).bind(serde_json::to_string(&meta)?).bind(task_id).execute(&mut *transaction).await?;
     }
-    
+    transaction.commit().await?;
     Ok(())
 }
 
 async fn mark_completed(pool: &MySqlPool, task_id: &str) -> Result<()> {
     info!("✅ Task {} completed", task_id);
-    sqlx::query("UPDATE featherpanel_vm_tasks SET status = 'completed' WHERE task_id = ?")
+    sqlx::query("UPDATE featherpanel_vm_tasks SET status = 'completed' WHERE task_id = ? AND status IN ('pending', 'running')")
         .bind(task_id)
         .execute(pool)
         .await?;

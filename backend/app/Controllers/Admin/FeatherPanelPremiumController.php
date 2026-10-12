@@ -21,6 +21,7 @@ use App\App;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Helpers\DemoCloudHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\FeatherCloud\FeatherCloudClient;
@@ -30,7 +31,7 @@ use App\Services\FeatherCloud\FeatherCloudException;
 
 class FeatherPanelPremiumController
 {
-    private const SIDEBAR_SCOPES = ['admin', 'main', 'server'];
+    private const SIDEBAR_SCOPES = ['admin', 'main', 'server', 'vds', 'webspace'];
 
     #[OA\Get(
         path: '/api/admin/featherpanel-premium',
@@ -39,6 +40,10 @@ class FeatherPanelPremiumController
     )]
     public function show(Request $request): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
         $refresh = filter_var($request->query->get('refresh', false), FILTER_VALIDATE_BOOLEAN);
         if ($refresh) {
             $this->tryRefreshEntitlement($request);
@@ -54,6 +59,10 @@ class FeatherPanelPremiumController
     )]
     public function update(Request $request): Response
     {
+        if (DemoCloudHelper::isBlocked()) {
+            return DemoCloudHelper::denyResponse();
+        }
+
         // Refresh entitlement before write so cancelled subscriptions cannot save.
         $this->tryRefreshEntitlement($request);
 

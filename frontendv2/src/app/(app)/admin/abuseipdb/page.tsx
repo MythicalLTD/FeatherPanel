@@ -28,6 +28,7 @@ import { Label } from '@/components/ui/label';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Loader2, RefreshCw, ShieldAlert, Search, ExternalLink, Settings } from 'lucide-react';
 import { toast } from 'sonner';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface ScanUser {
     uuid: string;
@@ -59,16 +60,6 @@ interface StatusData {
     register_action: string;
 }
 
-function axiosApiMessage(err: unknown, fallback: string): string {
-    if (axios.isAxiosError(err) && err.response?.data && typeof err.response.data === 'object') {
-        const msg = (err.response.data as { message?: string }).message;
-        if (typeof msg === 'string' && msg.trim()) {
-            return msg;
-        }
-    }
-    return fallback;
-}
-
 export default function AbuseIPDBPage() {
     const { t } = useTranslation();
     const [status, setStatus] = useState<StatusData | null>(null);
@@ -98,7 +89,7 @@ export default function AbuseIPDBPage() {
                 setMaxAgeDays(next.max_age_days || 90);
             }
         } catch (err) {
-            toast.error(axiosApiMessage(err, t('admin.abuseipdb.status_failed')));
+            toast.error(getApiErrorMessage(err, t, 'admin.abuseipdb.status_failed'));
         } finally {
             setStatusLoading(false);
         }
@@ -136,7 +127,7 @@ export default function AbuseIPDBPage() {
                 });
 
                 if (!data?.success) {
-                    toast.error(data?.message || t('admin.abuseipdb.scan_failed'));
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'admin.abuseipdb.scan_failed'));
                     break;
                 }
 
@@ -177,7 +168,7 @@ export default function AbuseIPDBPage() {
                 }),
             );
         } catch (err) {
-            toast.error(axiosApiMessage(err, t('admin.abuseipdb.scan_failed')));
+            toast.error(getApiErrorMessage(err, t, 'admin.abuseipdb.scan_failed'));
         } finally {
             setScanning(false);
         }
@@ -198,10 +189,10 @@ export default function AbuseIPDBPage() {
             if (data?.success) {
                 setSingleResult(data.data.result || null);
             } else {
-                toast.error(data?.message || t('admin.abuseipdb.check_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.abuseipdb.check_failed'));
             }
         } catch (err) {
-            toast.error(axiosApiMessage(err, t('admin.abuseipdb.check_failed')));
+            toast.error(getApiErrorMessage(err, t, 'admin.abuseipdb.check_failed'));
         } finally {
             setCheckingIp(false);
         }

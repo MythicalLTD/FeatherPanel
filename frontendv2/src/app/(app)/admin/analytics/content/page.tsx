@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { getApiErrorMessage } from '@/lib/api-errors';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import api from '@/lib/api';
@@ -126,7 +127,7 @@ export default function ContentAnalyticsPage() {
             setMailTemplatesTotal(mailTemplatesRes.data.data.total_templates ?? 0);
         } catch (err) {
             console.error('Failed to fetch content analytics:', err);
-            setError(t('admin.analytics.content.error'));
+            setError(getApiErrorMessage(err, t, 'admin.analytics.content.error'));
         } finally {
             setLoading(false);
         }

@@ -50,7 +50,12 @@ function storePath(): string | undefined {
     if (raw) {
         return raw;
     }
-    // Default persistence so MCP restarts (tsx watch / docker) keep Claude OAuth tokens.
+    // Prefer a private data dir over world-readable /tmp when available.
+    const dataDir = process.env.MCP_DATA_DIR?.trim() || process.env.HOME?.trim();
+    if (dataDir) {
+        return `${dataDir.replace(/\/+$/, '')}/.featherpanel-mcp-oauth.json`;
+    }
+    // Last resort: still mode 0600, but operators should set MCP_OAUTH_STORE_PATH.
     return '/tmp/featherpanel-mcp-oauth.json';
 }
 

@@ -40,6 +40,8 @@ class PhpPgAdmin
     {
         if (self::isInstalled()) {
             self::writeInstalledMarker();
+            // Keep token bridge hardened across panel updates.
+            self::writeTokenBridge(self::targetPath());
 
             return;
         }
@@ -171,28 +173,48 @@ session_set_cookie_params(0, '/', '', (!empty($_SERVER['HTTPS']) && $_SERVER['HT
 session_name('PpaTokenSession');
 @session_start();
 
-$host = (string) ($_GET['host'] ?? '');
-$port = (string) ($_GET['port'] ?? '5432');
-$user = (string) ($_GET['user'] ?? '');
-$pass = (string) ($_GET['pass'] ?? '');
-$db = (string) ($_GET['db'] ?? '');
+// Panel auto-login: exchange a single-use token; never trust raw $_GET credentials.
+$token = (string) ($_GET['token'] ?? '');
+if (!preg_match('/^[a-f0-9]{64}$/D', $token)) {
+    http_response_code(403);
+    echo 'This phpPgAdmin link is invalid or has expired. Open phpPgAdmin again from the panel.';
+    exit;
+}
 
-if ($host === '' || $user === '') {
-    http_response_code(400);
-    echo 'Missing connection parameters';
+$tokenDir = dirname(__DIR__, 2) . '/storage/db_signon_tokens';
+$tokenFile = $tokenDir . '/' . $token . '.json';
+$consumed = $tokenDir . '/' . $token . '.used.' . getmypid();
+$data = null;
+
+if (is_file($tokenFile) && @rename($tokenFile, $consumed)) {
+    $raw = @file_get_contents($consumed);
+    @unlink($consumed);
+    if ($raw !== false) {
+        $decoded = json_decode($raw, true);
+        if (is_array($decoded)
+            && isset($decoded['db'], $decoded['host'], $decoded['user'], $decoded['pass'], $decoded['expires'])
+            && (int) $decoded['expires'] >= time()) {
+            $data = $decoded;
+        }
+    }
+}
+
+if ($data === null) {
+    http_response_code(403);
+    echo 'This phpPgAdmin link is invalid or has expired. Open phpPgAdmin again from the panel.';
     exit;
 }
 
 $_SESSION['ppa_login'] = [
-    'host' => $host,
-    'port' => $port,
-    'user' => $user,
-    'pass' => $pass,
-    'db' => $db,
+    'host' => (string) $data['host'],
+    'port' => (string) ($data['port'] ?? 5432),
+    'user' => (string) $data['user'],
+    'pass' => (string) $data['pass'],
+    'db' => (string) $data['db'],
 ];
 @session_write_close();
 
-header('Location: index.php?server=0&subject=database&database=' . rawurlencode($db));
+header('Location: index.php?server=0&subject=database&database=' . rawurlencode((string) $data['db']));
 exit;
 PHP;
         @file_put_contents($targetPath . '/token.php', $token);

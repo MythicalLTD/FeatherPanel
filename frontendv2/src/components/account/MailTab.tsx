@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { Mail, RefreshCw, Clock, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface MailItem {
     id: number;
@@ -111,14 +112,10 @@ export default function MailTab() {
                 toast.success(t('account.mail.resendSuccess'));
                 await fetchMails(currentPage);
             } else {
-                toast.error(data.message || t('account.mail.resendFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'account.mail.resendFailed'));
             }
         } catch (err: unknown) {
-            const message =
-                axios.isAxiosError(err) && err.response?.data?.message
-                    ? String(err.response.data.message)
-                    : t('account.mail.resendFailed');
-            toast.error(message);
+            toast.error(getApiErrorMessage(err, t, 'account.mail.resendFailed'));
         } finally {
             setResendingMailId(null);
         }

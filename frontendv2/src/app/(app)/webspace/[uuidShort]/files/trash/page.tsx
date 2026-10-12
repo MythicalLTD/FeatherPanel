@@ -40,8 +40,8 @@ import { TrashActionToolbar } from '@/app/(app)/server/[uuidShort]/files/compone
 import { EmptyTrashDialog } from '@/app/(app)/server/[uuidShort]/files/components/dialogs/EmptyTrashDialog';
 import { RestoreTrashDialog } from '@/app/(app)/server/[uuidShort]/files/components/dialogs/RestoreTrashDialog';
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
-import axios from 'axios';
 import { ArrowLeft } from 'lucide-react';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 export default function WebSpaceTrashPage({ params }: { params: Promise<{ uuidShort: string }> }) {
     const { uuidShort } = use(params);
@@ -75,8 +75,8 @@ export default function WebSpaceTrashPage({ params }: { params: Promise<{ uuidSh
             setEntries(data.entries ?? []);
             setTotalSize(data.total_size ?? 0);
             setSelected([]);
-        } catch {
-            toast.error(t('files.trash.messages.load_error'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.trash.messages.load_error'));
         } finally {
             setLoading(false);
         }
@@ -117,11 +117,7 @@ export default function WebSpaceTrashPage({ params }: { params: Promise<{ uuidSh
             setRestoreOpen(false);
             await refresh();
         } catch (err) {
-            const message =
-                axios.isAxiosError(err) && err.response?.data?.message
-                    ? String(err.response.data.message)
-                    : t('files.trash.messages.restore_error');
-            toast.error(message);
+            toast.error(getApiErrorMessage(err, t, 'files.trash.messages.restore_error'));
         } finally {
             setBusy(false);
         }
@@ -134,8 +130,8 @@ export default function WebSpaceTrashPage({ params }: { params: Promise<{ uuidSh
             await webspaceFilesApi.deleteTrashEntries(uuidShort, selected);
             toast.success(t('files.trash.messages.deleted'));
             await refresh();
-        } catch {
-            toast.error(t('files.trash.messages.delete_error'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.trash.messages.delete_error'));
         } finally {
             setBusy(false);
         }
@@ -148,8 +144,8 @@ export default function WebSpaceTrashPage({ params }: { params: Promise<{ uuidSh
             toast.success(t('files.trash.messages.emptied'));
             setEmptyOpen(false);
             await refresh();
-        } catch {
-            toast.error(t('files.trash.messages.empty_error'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.trash.messages.empty_error'));
         } finally {
             setBusy(false);
         }

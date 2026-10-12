@@ -5,10 +5,10 @@ on: [push, pull_request]
 jobs:
   shellcheck:
     name: ShellCheck
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
 
       - name: Install ShellCheck
         run: |
@@ -20,10 +20,10 @@ jobs:
 
   bash-syntax:
     name: Bash Syntax
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
 
       - name: Validate installer syntax
         run: bash -n installer/install.bash

@@ -26,6 +26,7 @@ import { webspaceFilesApi } from '@/lib/webspace-files-api';
 import { useWebSpacePermissions } from '@/hooks/useWebSpacePermissions';
 import { WebSpaceSubuserPermissions } from '@/lib/webspace-permissions';
 import { useFileEditorEngine } from '@/hooks/useFileEditorEngine';
+import { useSaveShortcut } from '@/hooks/useSaveShortcut';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/featherui/Button';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -119,18 +120,15 @@ function WebSpaceFileEditorInner({
         [canEdit, content, uuidShort, fullPath, t, filesApi],
     );
 
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                e.preventDefault();
-                if (canEdit && content !== originalContent && !saving) {
-                    void handleSave();
-                }
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [canEdit, content, originalContent, saving, handleSave]);
+    useSaveShortcut(
+        () => {
+            void handleSave();
+        },
+        {
+            enabled: canEdit && content !== originalContent,
+            disabled: saving,
+        },
+    );
 
     const handleEditorMount: OnMount = (editor) => {
         editorRef.current = editor;

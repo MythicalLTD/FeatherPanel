@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useEffect, useState } from 'react';
 import {
     Dialog,
@@ -72,9 +73,9 @@ export function FileHashDialog({ open, onOpenChange, uuid, path }: FileHashDialo
                     } else if (!cancelled) {
                         toast.error(t('files.dialogs.hash.error'));
                     }
-                } catch {
+                } catch (error) {
                     if (!cancelled) {
-                        toast.error(t('files.dialogs.hash.error'));
+                        toast.error(getApiErrorMessage(error, t, 'files.dialogs.hash.error'));
                     }
                 }
             } finally {
@@ -95,8 +96,8 @@ export function FileHashDialog({ open, onOpenChange, uuid, path }: FileHashDialo
         try {
             await navigator.clipboard.writeText(value);
             toast.success(t('files.dialogs.hash.copied'));
-        } catch {
-            toast.error(t('files.dialogs.hash.copy_error'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.dialogs.hash.copy_error'));
         }
     };
 

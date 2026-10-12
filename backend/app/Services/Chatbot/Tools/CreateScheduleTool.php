@@ -209,6 +209,11 @@ class CreateScheduleTool implements ToolInterface
                     continue;
                 }
 
+                if ($action === 'container_shell') {
+                    $tasksError = 'Container shell tasks (docker exec) cannot be created or modified by the assistant; use the schedule task form.';
+                    continue;
+                }
+
                 // Validate payload for actions that require it
                 $payload = '';
                 if (isset($taskData['payload'])) {

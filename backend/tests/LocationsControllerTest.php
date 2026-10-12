@@ -17,6 +17,7 @@
 
 use App\App;
 use App\Chat\User;
+use App\Chat\Location;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use App\Controllers\Admin\LocationsController;
@@ -83,6 +84,34 @@ class LocationsControllerTest extends TestCase
         $data = json_decode($response->getContent(), true);
         $this->assertFalse($data['success']);
         $this->assertEquals('MISSING_REQUIRED_FIELDS', $data['error_code']);
+    }
+
+    public function testWebHostingLocationRequiresExplicitAlphaAcceptance()
+    {
+        foreach ([null, false, 'true'] as $acceptance) {
+            $payload = ['name' => 'Alpha Web Location', 'type' => 'web'];
+            if ($acceptance !== null) {
+                $payload['webhosting_alpha_accepted'] = $acceptance;
+            }
+            $request = Request::create('/api/admin/locations', 'PUT', [], [], [], [], json_encode($payload));
+            $response = $this->controller->create($request);
+            $data = json_decode($response->getContent(), true);
+
+            $this->assertFalse($data['success']);
+            $this->assertEquals('WEBHOSTING_ALPHA_ACCEPTANCE_REQUIRED', $data['error_code']);
+        }
+
+        $request = Request::create('/api/admin/locations', 'PUT', [], [], [], [], json_encode([
+            'name' => 'Alpha Web Location',
+            'type' => 'web',
+            'webhosting_alpha_accepted' => true,
+        ]));
+        $request->attributes->set('user', ['uuid' => $this->adminUuid]);
+        $response = $this->controller->create($request);
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertTrue($data['success']);
+        Location::delete((int) $data['data']['location']['id']);
     }
 
     public function testCreateAndDeleteLocation()

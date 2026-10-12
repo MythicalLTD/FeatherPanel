@@ -15,11 +15,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
+import { useSaveShortcut } from '@/hooks/useSaveShortcut';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { SaveShortcutHint } from '@/components/featherui/SaveShortcutHint';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
@@ -76,7 +79,7 @@ export default function EditWebPlatePage() {
                 setForm(webPlateToForm(plate));
             } catch (error) {
                 console.error(error);
-                toast.error(t('admin.webPlates.messages.load_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.webPlates.messages.load_failed'));
                 router.push('/admin/webplates');
             } finally {
                 setLoading(false);
@@ -92,7 +95,7 @@ export default function EditWebPlatePage() {
         return translated === key ? value : translated;
     };
 
-    const handleSave = async () => {
+    const handleSave = useCallback(async () => {
         if (!form.name.trim()) {
             toast.error(t('admin.webPlates.messages.name_required'));
             return;
@@ -105,15 +108,18 @@ export default function EditWebPlatePage() {
             router.push('/admin/webplates');
         } catch (error) {
             console.error(error);
-            let msg = t('admin.webPlates.messages.update_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.webPlates.messages.update_failed'));
         } finally {
             setSaving(false);
         }
-    };
+    }, [form, id, router, t]);
+
+    useSaveShortcut(
+        () => {
+            void handleSave();
+        },
+        { enabled: !loading, disabled: saving },
+    );
 
     const setField = <K extends keyof WebPlateFormState>(key: K, value: WebPlateFormState[K]) => {
         setForm((prev) => ({ ...prev, [key]: value }));
@@ -155,8 +161,9 @@ export default function EditWebPlatePage() {
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>
-                        <Button onClick={handleSave} loading={saving}>
+                        <Button onClick={() => void handleSave()} loading={saving}>
                             {t('admin.webPlates.form.submit_save')}
+                            <SaveShortcutHint />
                         </Button>
                     </div>
                 }

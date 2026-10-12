@@ -20,6 +20,7 @@ namespace App\Services\FeatherCloud;
 use App\App;
 use GuzzleHttp\Client;
 use App\Config\ConfigInterface;
+use App\Helpers\DemoCloudHelper;
 use GuzzleHttp\Exception\RequestException;
 
 /**
@@ -134,6 +135,8 @@ class MythicEggsClient
      */
     public function downloadEgg(string | int $id): string
     {
+        DemoCloudHelper::assertAllowed();
+
         try {
             $response = $this->client->request('GET', 'eggs/' . rawurlencode((string) $id) . '/download', [
                 'headers' => ['Accept' => 'application/json'],
@@ -284,6 +287,8 @@ class MythicEggsClient
      */
     private function getJson(string $path, array $query = []): array
     {
+        DemoCloudHelper::assertAllowed();
+
         try {
             $options = [];
             if ($query !== []) {

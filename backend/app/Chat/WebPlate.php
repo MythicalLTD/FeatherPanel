@@ -395,22 +395,35 @@ class WebPlate
         return json_encode(array_values($schedules), JSON_UNESCAPED_SLASHES);
     }
 
+    /**
+     * Count WebSpaces that currently use this WebPlate.
+     */
+    public static function countWebSpacesUsing(int $id): int
+    {
+        if ($id <= 0) {
+            return 0;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $check = $pdo->prepare('SELECT COUNT(*) FROM featherpanel_webspaces WHERE webplate_id = :id');
+        $check->execute(['id' => $id]);
+
+        return (int) $check->fetchColumn();
+    }
+
     public static function delete(int $id): bool
     {
         if ($id <= 0) {
             return false;
         }
 
-        $pdo = Database::getPdoConnection();
-        $check = $pdo->prepare('SELECT COUNT(*) FROM featherpanel_webspaces WHERE webplate_id = :id');
-        $check->execute(['id' => $id]);
-        if ((int) $check->fetchColumn() > 0) {
+        if (self::countWebSpacesUsing($id) > 0) {
             App::getInstance(true)->getLogger()->error('Cannot delete WebPlate ' . $id . ': still in use by WebSpaces');
 
             return false;
         }
 
-        $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id');
+        $stmt = Database::getPdoConnection()->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id');
 
         return $stmt->execute(['id' => $id]);
     }

@@ -19,14 +19,19 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { Switch } from '@/components/ui/switch';
+import { SizeInput } from '@/components/featherui/SizeInput';
+import { SettingToggleCard } from '@/components/admin/SettingToggleCard';
 import { Label } from '@/components/ui/label';
 import { Cpu, MemoryStick, HardDrive } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SERVER_RESOURCE_LIMITS } from '@/lib/server-utils';
 import { StepProps } from './types';
 
-export function Step4Resources({ formData, setFormData }: StepProps) {
+interface Step4ResourcesProps extends StepProps {
+    onSizeValidityChange: (field: 'memory' | 'swap' | 'disk', valid: boolean) => void;
+}
+
+export function Step4Resources({ formData, setFormData, onSizeValidityChange }: Step4ResourcesProps) {
     const { t } = useTranslation();
 
     return (
@@ -52,6 +57,7 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                                 className={cn(formData.memoryUnlimited && 'bg-emerald-600 hover:bg-emerald-700')}
                                 onClick={() => {
                                     setFormData((prev) => ({ ...prev, memoryUnlimited: true, memory: 0 }));
+                                    onSizeValidityChange('memory', true);
                                 }}
                             >
                                 {t('admin.servers.form.unlimited')}
@@ -73,15 +79,14 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                             </Button>
                         </div>
                         {!formData.memoryUnlimited && (
-                            <Input
-                                type='number'
+                            <SizeInput
                                 value={formData.memory}
-                                onChange={(e) =>
-                                    setFormData((prev) => ({ ...prev, memory: parseInt(e.target.value) || 0 }))
-                                }
-                                placeholder='1024'
+                                onValueChange={(value) => setFormData((prev) => ({ ...prev, memory: Number(value) }))}
+                                unit='MiB'
+                                ariaLabel={t('admin.servers.form.memory')}
                                 min={SERVER_RESOURCE_LIMITS.memory.min}
-                                className='bg-muted/30'
+                                max={SERVER_RESOURCE_LIMITS.memory.max}
+                                onValidityChange={(valid) => onSizeValidityChange('memory', valid)}
                             />
                         )}
                         <p className='text-muted-foreground text-xs'>{t('admin.servers.form.memory_help')}</p>
@@ -100,7 +105,10 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                                 size='sm'
                                 variant={formData.swapType === 'disabled' ? 'default' : 'outline'}
                                 className={cn(formData.swapType === 'disabled' && 'bg-red-600 hover:bg-red-700')}
-                                onClick={() => setFormData((prev) => ({ ...prev, swapType: 'disabled', swap: 0 }))}
+                                onClick={() => {
+                                    setFormData((prev) => ({ ...prev, swapType: 'disabled', swap: 0 }));
+                                    onSizeValidityChange('swap', true);
+                                }}
                             >
                                 {t('admin.servers.form.disabled')}
                             </Button>
@@ -126,21 +134,23 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                                 className={cn(
                                     formData.swapType === 'unlimited' && 'bg-emerald-600 hover:bg-emerald-700',
                                 )}
-                                onClick={() => setFormData((prev) => ({ ...prev, swapType: 'unlimited', swap: -1 }))}
+                                onClick={() => {
+                                    setFormData((prev) => ({ ...prev, swapType: 'unlimited', swap: -1 }));
+                                    onSizeValidityChange('swap', true);
+                                }}
                             >
                                 {t('admin.servers.form.unlimited')}
                             </Button>
                         </div>
                         {formData.swapType === 'limited' && (
-                            <Input
-                                type='number'
+                            <SizeInput
                                 value={formData.swap}
-                                onChange={(e) =>
-                                    setFormData((prev) => ({ ...prev, swap: parseInt(e.target.value) || 0 }))
-                                }
-                                placeholder='256'
+                                onValueChange={(value) => setFormData((prev) => ({ ...prev, swap: Number(value) }))}
+                                unit='MiB'
+                                ariaLabel={t('admin.servers.form.swap')}
                                 min={1}
-                                className='bg-muted/30'
+                                max={SERVER_RESOURCE_LIMITS.swap.max}
+                                onValidityChange={(valid) => onSizeValidityChange('swap', valid)}
                             />
                         )}
                         <p className='text-muted-foreground text-xs'>{t('admin.servers.form.swap_help')}</p>
@@ -159,7 +169,10 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                                 size='sm'
                                 variant={formData.diskUnlimited ? 'default' : 'outline'}
                                 className={cn(formData.diskUnlimited && 'bg-emerald-600 hover:bg-emerald-700')}
-                                onClick={() => setFormData((prev) => ({ ...prev, diskUnlimited: true, disk: 0 }))}
+                                onClick={() => {
+                                    setFormData((prev) => ({ ...prev, diskUnlimited: true, disk: 0 }));
+                                    onSizeValidityChange('disk', true);
+                                }}
                             >
                                 {t('admin.servers.form.unlimited')}
                             </Button>
@@ -180,15 +193,14 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                             </Button>
                         </div>
                         {!formData.diskUnlimited && (
-                            <Input
-                                type='number'
+                            <SizeInput
                                 value={formData.disk}
-                                onChange={(e) =>
-                                    setFormData((prev) => ({ ...prev, disk: parseInt(e.target.value) || 0 }))
-                                }
-                                placeholder='5120'
+                                onValueChange={(value) => setFormData((prev) => ({ ...prev, disk: Number(value) }))}
+                                unit='MiB'
+                                ariaLabel={t('admin.servers.form.disk')}
                                 min={SERVER_RESOURCE_LIMITS.disk.min}
-                                className='bg-muted/30'
+                                max={SERVER_RESOURCE_LIMITS.disk.max}
+                                onValidityChange={(valid) => onSizeValidityChange('disk', valid)}
                             />
                         )}
                         <p className='text-muted-foreground text-xs'>{t('admin.servers.form.disk_help')}</p>
@@ -268,16 +280,13 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                     </div>
                 </div>
 
-                <div className='bg-muted/20 border-border/50 mt-8 flex items-center justify-between rounded-xl border p-4'>
-                    <div className='space-y-0.5'>
-                        <Label>{t('admin.servers.form.oom_killer')}</Label>
-                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.oom_killer_help')}</p>
-                    </div>
-                    <Switch
-                        checked={formData.oomKiller}
-                        onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, oomKiller: checked }))}
-                    />
-                </div>
+                <SettingToggleCard
+                    className='mt-8'
+                    title={t('admin.servers.form.oom_killer')}
+                    description={t('admin.servers.form.oom_killer_help')}
+                    checked={formData.oomKiller}
+                    onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, oomKiller: checked }))}
+                />
             </PageCard>
         </div>
     );

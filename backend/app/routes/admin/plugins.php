@@ -50,6 +50,21 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-plugins-visibility',
+        '/api/admin/plugins/{identifier}/visibility',
+        function (Request $request, array $args) {
+            $identifier = $args['identifier'] ?? null;
+            if (!$identifier || !is_string($identifier)) {
+                return \App\Helpers\ApiResponse::error('Missing or invalid identifier', 'INVALID_IDENTIFIER', 400);
+            }
+
+            return (new PluginsController())->getVisibility($request, $identifier);
+        },
+        Permissions::ADMIN_PLUGINS_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-plugins-settings-set',
         '/api/admin/plugins/{identifier}/settings/set',
         function (Request $request, array $args) {

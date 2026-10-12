@@ -30,12 +30,28 @@ use App\Helpers\DaemonCapabilities;
 use App\Chat\ServerLifecycleHookStep;
 use App\Plugins\Events\Events\ServerEvent;
 use App\Helpers\ServerEnvPlaceholderHelper;
+use App\Services\Backup\ServerBackupTaskService;
 
 /**
- * Executes lifecycle hooks before server power actions.
+ * Executes lifecycle hooks around server power actions (pre_start, pre_stop, post_start, post_stop, server_crash).
  */
 class LifecycleHookExecutorService
 {
+    /**
+     * Hook types whose steps run while the server container is NOT running, so
+     * steps that talk to the container (container_command / container_shell)
+     * cannot work and are rejected at configuration time.
+     *
+     * @var list<string>
+     */
+    public const HOOK_TYPES_WITHOUT_RUNNING_CONTAINER = ['post_stop'];
+
+    /** Task types that require a running container. */
+    public const CONTAINER_TASK_TYPES = ['container_command', 'container_shell'];
+
+    /** Max characters of stdout/stderr kept per stream for logs and step results. */
+    public const MAX_CAPTURED_OUTPUT_CHARS = ContainerShellExec::MAX_OUTPUT_CHARS;
+
     private Client $httpClient;
 
     public function __construct()
@@ -172,6 +188,49 @@ class LifecycleHookExecutorService
             'attempted' => true,
             'pipelines' => [$pipelineResult],
         ];
+    }
+
+    /**
+     * Execute post-stop lifecycle hooks when the server is detected as stopped/offline.
+     *
+     * The container is no longer running at this point, so only container-independent
+     * steps (Discord webhook, HTTP request, sleep) are accepted for this hook type.
+     */
+    public function executeForServerStopped(array $server, array $node, ?array $actor = null): array
+    {
+        App::getInstance(true)->getLogger()->info('Post-stop lifecycle hook requested for server ' . ($server['uuid'] ?? 'unknown'));
+        $enabled = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED, 'false') === 'true';
+        if (!$enabled) {
+            return [
+                'attempted' => false,
+                'pipelines' => [],
+            ];
+        }
+
+        $hook = $this->getActiveHookByServerAndType((int) $server['id'], 'post_stop');
+        if (!$hook) {
+            return [
+                'attempted' => false,
+                'pipelines' => [],
+            ];
+        }
+
+        App::getInstance(true)->getLogger()->info('Executing post-stop lifecycle hook for server ' . ($server['uuid'] ?? 'unknown'));
+        $pipelineResult = $this->executeHookPipeline($hook, $server, $node, 'server_stopped', $actor);
+
+        return [
+            'attempted' => true,
+            'pipelines' => [$pipelineResult],
+        ];
+    }
+
+    /**
+     * Whether steps of the given task type can be configured for the given hook type.
+     */
+    public static function isTaskTypeAllowedForHookType(string $taskType, string $hookType): bool
+    {
+        return !(in_array($taskType, self::CONTAINER_TASK_TYPES, true)
+            && in_array($hookType, self::HOOK_TYPES_WITHOUT_RUNNING_CONTAINER, true));
     }
 
     protected function executeHookPipeline(array $hook, array $server, array $node, string $powerAction, ?array $actor): array
@@ -356,13 +415,12 @@ class LifecycleHookExecutorService
 
     protected function executeContainerShell(array $payload, array $server, array $node): array
     {
-        $enabled = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED, 'false') === 'true';
-        if (!$enabled) {
+        if (!$this->isContainerShellEnabled()) {
             throw new \Exception('Container Shell steps are disabled by the administrator');
         }
 
         if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_CONTAINER_EXEC)) {
-            App::getInstance(true)->getLogger()->warning(
+            $this->logWarning(
                 'Lifecycle container shell skipped: daemon does not support container_exec for server ' . ($server['uuid'] ?? 'unknown')
             );
 
@@ -373,26 +431,16 @@ class LifecycleHookExecutorService
         if ($command === '') {
             throw new \Exception('Missing shell command');
         }
-        if (strlen($command) > 4096) {
+        if (strlen($command) > ContainerShellExec::COMMAND_MAX_LENGTH) {
             throw new \Exception('Shell command too long');
         }
 
-        $timeout = (int) ($payload['timeout'] ?? 30);
-        if ($timeout < 1) {
-            $timeout = 30;
-        }
-        if ($timeout > 120) {
-            $timeout = 120;
-        }
+        $timeout = ContainerShellExec::normalizeTimeout($payload['timeout'] ?? null);
 
-        $wings = new Wings(
-            $node['fqdn'],
-            $node['daemonListen'],
-            $node['scheme'],
-            $node['daemon_token'],
-            max(35, $timeout + 10),
-            WingsUrlHelper::isBehindProxy($node)
-        );
+        // The command is sent verbatim as a JSON string field; the daemon runs it as
+        // `sh -c <command>` (docker exec, no TTY) inside the server container. The panel
+        // never interpolates it into a host shell command line.
+        $wings = $this->createWingsClient($node, max(35, $timeout + 10));
         $response = $wings->getServer()->execInContainer($server['uuid'], $command, $timeout);
         if (!$response->isSuccessful()) {
             throw new \Exception('Failed to execute shell command in container: ' . $response->getError());
@@ -403,26 +451,107 @@ class LifecycleHookExecutorService
             throw new \Exception('Invalid response from container shell exec');
         }
 
-        if (!empty($data['timed_out'])) {
-            throw new \Exception('Container shell command timed out after ' . $timeout . ' seconds');
-        }
+        return $this->processContainerShellResult($data, $timeout, (string) ($server['uuid'] ?? 'unknown'));
+    }
 
-        $exitCode = (int) ($data['exit_code'] ?? -1);
-        if ($exitCode !== 0) {
-            $stderr = trim((string) ($data['stderr'] ?? ''));
-            $stdout = trim((string) ($data['stdout'] ?? ''));
-            $detail = $stderr !== '' ? $stderr : $stdout;
-            if ($detail !== '') {
-                $detail = mb_substr($detail, 0, 500);
-                throw new \Exception('Container shell command exited with code ' . $exitCode . ': ' . $detail);
-            }
-            throw new \Exception('Container shell command exited with code ' . $exitCode);
+    /**
+     * Turn a daemon exec response into a step result, capturing (truncated) output.
+     *
+     * @throws \Exception when the command timed out or exited non-zero
+     */
+    protected function processContainerShellResult(array $data, int $timeout, string $serverUuid): array
+    {
+        $summary = ContainerShellExec::summarize($data, $timeout);
+
+        $this->logInfo(sprintf(
+            'Lifecycle container shell finished for server %s: exit=%d timed_out=%s duration_ms=%d stdout=%s stderr=%s',
+            $serverUuid,
+            $summary['exit_code'],
+            $summary['timed_out'] ? 'true' : 'false',
+            $summary['duration_ms'],
+            json_encode($summary['stdout']),
+            json_encode($summary['stderr'])
+        ));
+
+        if ($summary['error'] !== null) {
+            throw new \Exception($summary['error']);
         }
 
         return [
-            'exit_code' => $exitCode,
-            'duration_ms' => (int) ($data['duration_ms'] ?? 0),
+            'exit_code' => $summary['exit_code'],
+            'duration_ms' => $summary['duration_ms'],
+            'stdout' => $summary['stdout'],
+            'stderr' => $summary['stderr'],
         ];
+    }
+
+    protected function isContainerShellEnabled(): bool
+    {
+        return App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED, 'false') === 'true';
+    }
+
+    protected function createWingsClient(array $node, int $timeout): Wings
+    {
+        return new Wings(
+            $node['fqdn'],
+            $node['daemonListen'],
+            $node['scheme'],
+            $node['daemon_token'],
+            $timeout,
+            WingsUrlHelper::isBehindProxy($node)
+        );
+    }
+
+    protected function logInfo(string $message): void
+    {
+        App::getInstance(true)->getLogger()->info($message);
+    }
+
+    protected function logWarning(string $message): void
+    {
+        App::getInstance(true)->getLogger()->warning($message);
+    }
+
+    /**
+     * Start a server backup using the same logic as the schedule `backup` task
+     * (files / database / full, backup_limit and FIFO retention, locked backups).
+     *
+     * The daemon archives asynchronously, so the step succeeds once the backup job was accepted.
+     * A disabled backup limit, a reached limit or a failed FIFO rotation is reported as a
+     * skipped step (never as a failure), exactly like scheduled backups.
+     */
+    protected function executeBackup(array $payload, array $server, array $node): array
+    {
+        $result = $this->createBackupTaskService()->run(
+            $this->createWingsClientFromNode($node, 120),
+            $server,
+            json_encode($payload) ?: '[]',
+            ['context' => 'lifecycle', 'name_prefix' => 'Lifecycle hook']
+        );
+
+        if ($result['status'] === ServerBackupTaskService::STATUS_SKIPPED) {
+            $this->logInfo('Lifecycle backup skipped for server ' . ($server['uuid'] ?? 'unknown') . ': ' . $result['reason']);
+
+            return ['skipped' => true, 'reason' => $result['reason'], 'backup_type' => $result['type'], 'details' => $result['details']];
+        }
+
+        return [
+            'backup_type' => $result['type'],
+            'backup_uuid' => $result['backup_uuid'],
+            'backup_id' => $result['backup_id'],
+            'name' => $result['name'],
+            'details' => $result['details'],
+        ];
+    }
+
+    protected function createBackupTaskService(): ServerBackupTaskService
+    {
+        return new ServerBackupTaskService();
+    }
+
+    protected function createWingsClientFromNode(array $node, int $timeout): Wings
+    {
+        return Wings::fromNode($node, $timeout);
     }
 
     protected function executeHttpRequest(array $payload): array
@@ -553,6 +682,7 @@ class LifecycleHookExecutorService
             'discord_webhook' => $this->executeDiscordWebhook($payload, $server, $node),
             'container_command' => $this->executeContainerCommand($payload, $server, $node),
             'container_shell' => $this->executeContainerShell($payload, $server, $node),
+            'backup' => $this->executeBackup($payload, $server, $node),
             'http_request' => $this->executeHttpRequest($payload),
             'sleep' => $this->executeSleep($payload),
             default => throw new \Exception('Unsupported lifecycle hook task type: ' . $taskType),

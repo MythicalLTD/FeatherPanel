@@ -1,4 +1,4 @@
-/* FeatherPanel PWA service worker — keep minimal; required for installability. */
+/* FeatherPanel PWA service worker: keep minimal; required for installability. */
 /*
 This file is part of FeatherPanel.
 

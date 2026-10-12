@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { RefreshCw, ArrowUpCircle, Shield, Info, GitBranch, Globe, Settings2, Terminal } from 'lucide-react';
@@ -64,6 +65,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
             }
         } catch (e) {
             console.error('Failed to fetch version status', e);
+            toast.error(getApiErrorMessage(e, t, 'common.error'));
         } finally {
             setLoading(false);
         }
@@ -118,14 +120,10 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                 onRefresh();
                 fetchVersionStatus();
             } else {
-                toast.error(data.message || t('admin.node.view.self_update.failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.node.view.self_update.failed'));
             }
         } catch (e: unknown) {
-            let msg = t('admin.node.view.self_update.failed');
-            if (axios.isAxiosError(e)) {
-                msg = e.response?.data?.message || e.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(e, t, 'admin.node.view.self_update.failed'));
         } finally {
             setUpdating(false);
         }

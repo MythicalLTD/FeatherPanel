@@ -23,6 +23,8 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Select } from '@/components/ui/select-native';
 import { Button } from '@/components/featherui/Button';
+import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface MailboxRow {
     id: number;
@@ -54,10 +56,11 @@ export default function WebSpaceWebmailPage() {
             }
         } catch (err) {
             console.error(err);
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.email.loadFailed'));
         } finally {
             setLoading(false);
         }
-    }, [uuidShort, searchParams]);
+    }, [uuidShort, searchParams, t]);
 
     useEffect(() => {
         void load();
@@ -80,9 +83,10 @@ export default function WebSpaceWebmailPage() {
                 }
             } catch (err) {
                 console.error(err);
+                toast.error(getApiErrorMessage(err, t, 'webSpaces.email.webmailFailed'));
             }
         },
-        [uuidShort],
+        [uuidShort, t],
     );
 
     useEffect(() => {

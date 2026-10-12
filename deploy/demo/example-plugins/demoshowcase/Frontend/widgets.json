@@ -1,0 +1,169 @@
+[
+  {
+    "id": "demoshowcase-dashboard-banner",
+    "component": "demoshowcase/dist/banner-widget.html",
+    "enabled": true,
+    "priority": 40,
+    "page": "dashboard",
+    "location": "top-of-page",
+    "pluginName": "DemoShowcase",
+    "title": null,
+    "size": "full",
+    "borderless": true,
+    "useRawRendering": true,
+    "card": { "enabled": false },
+    "iframe": {
+      "minHeight": "72px",
+      "title": "Demo Showcase banner",
+      "ariaLabel": "Demo Showcase addon banner"
+    },
+    "hidden": {
+      "type": "plugin_setting",
+      "key": "hide_dashboard_banner",
+      "equals": "true"
+    },
+    "behavior": {
+      "loadingMessage": "Loading DemoShowcase…"
+    }
+  },
+  {
+    "id": "demoshowcase-dashboard-card",
+    "component": "demoshowcase/dist/dashboard-card.html",
+    "enabled": true,
+    "priority": 80,
+    "page": "dashboard",
+    "location": "after-header",
+    "pluginName": "DemoShowcase",
+    "title": "Demo Showcase",
+    "description": "Example addon card widget",
+    "icon": "DS",
+    "size": "half",
+    "card": {
+      "enabled": true,
+      "padding": "sm",
+      "header": { "show": true }
+    },
+    "iframe": {
+      "minHeight": "140px",
+      "title": "Demo Showcase card",
+      "ariaLabel": "Demo Showcase dashboard card"
+    },
+    "hidden": {
+      "type": "plugin_setting",
+      "key": "hide_dashboard_banner",
+      "equals": "true"
+    }
+  },
+  {
+    "id": "demoshowcase-admin-home",
+    "component": "demoshowcase/dist/admin-home-widget.html",
+    "enabled": true,
+    "priority": 70,
+    "page": "admin-home",
+    "location": "after-header",
+    "pluginName": "DemoShowcase",
+    "title": "Demo Showcase",
+    "description": "How addons inject admin widgets",
+    "icon": "DS",
+    "size": "full",
+    "card": {
+      "enabled": true,
+      "padding": "sm",
+      "header": { "show": true }
+    },
+    "iframe": {
+      "minHeight": "120px",
+      "title": "Demo Showcase admin widget",
+      "ariaLabel": "Demo Showcase on admin home"
+    },
+    "hidden": {
+      "type": "plugin_setting",
+      "key": "hide_admin_card",
+      "equals": "true"
+    }
+  },
+  {
+    "id": "demoshowcase-admin-servers",
+    "component": "demoshowcase/dist/admin-home-widget.html",
+    "enabled": true,
+    "priority": 90,
+    "page": "admin-servers",
+    "location": "after-header",
+    "pluginName": "DemoShowcase",
+    "title": "Demo Showcase",
+    "description": "Same widget, different page slug",
+    "icon": "DS",
+    "size": "half",
+    "card": {
+      "enabled": true,
+      "padding": "sm",
+      "header": { "show": true }
+    },
+    "iframe": {
+      "minHeight": "100px",
+      "title": "Demo Showcase on servers list",
+      "ariaLabel": "Demo Showcase on admin servers"
+    },
+    "hidden": {
+      "type": "plugin_setting",
+      "key": "hide_admin_card",
+      "equals": "true"
+    }
+  },
+  {
+    "id": "demoshowcase-server-console",
+    "component": "demoshowcase/dist/server-console-widget.html",
+    "enabled": true,
+    "priority": 60,
+    "page": "server-console",
+    "location": "after-header",
+    "pluginName": "DemoShowcase",
+    "title": "Demo Showcase",
+    "description": "Server-scoped addon widget",
+    "icon": "DS",
+    "size": "full",
+    "card": {
+      "enabled": true,
+      "padding": "sm",
+      "header": { "show": true }
+    },
+    "iframe": {
+      "minHeight": "110px",
+      "title": "Demo Showcase on console",
+      "ariaLabel": "Demo Showcase server console widget"
+    },
+    "hidden": {
+      "type": "plugin_setting",
+      "key": "hide_server_console_card",
+      "equals": "true"
+    }
+  },
+  {
+    "id": "demoshowcase-server-files",
+    "component": "demoshowcase/dist/server-console-widget.html",
+    "enabled": true,
+    "priority": 85,
+    "page": "server-files",
+    "location": "after-header",
+    "pluginName": "DemoShowcase",
+    "title": "Demo Showcase",
+    "description": "Also injected on the files page",
+    "icon": "DS",
+    "size": "half",
+    "card": {
+      "enabled": true,
+      "padding": "sm",
+      "header": { "show": true }
+    },
+    "iframe": {
+      "minHeight": "100px",
+      "title": "Demo Showcase on files",
+      "ariaLabel": "Demo Showcase server files widget"
+    },
+    "hidden": {
+      "type": "plugin_setting",
+      "key": "hide_server_console_card",
+      "equals": "true"
+    }
+  }
+]

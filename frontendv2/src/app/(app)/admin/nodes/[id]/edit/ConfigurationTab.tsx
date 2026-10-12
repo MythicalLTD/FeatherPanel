@@ -26,7 +26,7 @@ interface ConfigurationTabProps {
     form: NodeForm;
     setForm: React.Dispatch<React.SetStateAction<NodeForm>>;
     errors: Record<string, string>;
-    /** Daemon type locked at creation — shown read-only. */
+    /** Daemon type locked at creation - shown read-only. */
     originalDaemonType?: DaemonType;
 }
 

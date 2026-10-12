@@ -139,8 +139,9 @@ class PermissionsController
         if ($limit < 1) {
             $limit = 10;
         }
-        if ($limit > 100) {
-            $limit = 100;
+        // Role editor needs the full permission set (100+ nodes); allow up to 1000.
+        if ($limit > 1000) {
+            $limit = 1000;
         }
 
         $offset = ($page - 1) * $limit;

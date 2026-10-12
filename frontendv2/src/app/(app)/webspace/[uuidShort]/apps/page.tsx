@@ -21,7 +21,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { toast } from 'sonner';
 import { AppWindow, Loader2 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -32,6 +32,7 @@ import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
 import { useWebSpace } from '@/contexts/WebSpaceContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import {
     WEBSPACE_APP_DRUPAL,
     WEBSPACE_APP_PRESTASHOP,
@@ -128,9 +129,7 @@ export default function WebSpaceAppsPage() {
             setDeployKeyPublic(String(data?.data?.public_key ?? ''));
             toast.success(t('webSpaces.apps.deployKeyRegenerated'));
         } catch (error) {
-            let msg = t('webSpaces.apps.deployKeyFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.apps.deployKeyFailed'));
         } finally {
             setBusy(null);
         }
@@ -147,9 +146,7 @@ export default function WebSpaceAppsPage() {
             setResult(data?.data ?? null);
             toast.success(t('webSpaces.apps.wordpressSuccess'));
         } catch (error) {
-            let msg = t('webSpaces.apps.wordpressFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.apps.wordpressFailed'));
         } finally {
             setBusy(null);
         }
@@ -163,9 +160,7 @@ export default function WebSpaceAppsPage() {
             });
             toast.success(t('webSpaces.apps.wordpressUpdated'));
         } catch (error) {
-            let msg = t('webSpaces.apps.wordpressUpdateFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.apps.wordpressUpdateFailed'));
         } finally {
             setBusy(null);
         }
@@ -181,9 +176,7 @@ export default function WebSpaceAppsPage() {
             setResult(data?.data ?? null);
             toast.success(t('webSpaces.apps.stagingSuccess'));
         } catch (error) {
-            let msg = t('webSpaces.apps.stagingFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.apps.stagingFailed'));
         } finally {
             setBusy(null);
         }
@@ -199,9 +192,7 @@ export default function WebSpaceAppsPage() {
             setResult(data?.data ?? null);
             toast.success(t('webSpaces.apps.promoteSuccess'));
         } catch (error) {
-            let msg = t('webSpaces.apps.promoteFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.apps.promoteFailed'));
         } finally {
             setBusy(null);
         }
@@ -214,9 +205,7 @@ export default function WebSpaceAppsPage() {
             setResult(data?.data ?? null);
             toast.success(t('webSpaces.apps.laravelSuccess'));
         } catch (error) {
-            let msg = t('webSpaces.apps.laravelFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.apps.laravelFailed'));
         } finally {
             setBusy(null);
         }
@@ -229,9 +218,7 @@ export default function WebSpaceAppsPage() {
             setResult(data?.data ?? null);
             toast.success(t('webSpaces.apps.joomlaSuccess'));
         } catch (error) {
-            let msg = t('webSpaces.apps.joomlaFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.apps.joomlaFailed'));
         } finally {
             setBusy(null);
         }
@@ -244,9 +231,7 @@ export default function WebSpaceAppsPage() {
             setResult(data?.data ?? null);
             toast.success(t('webSpaces.apps.drupalSuccess'));
         } catch (error) {
-            let msg = t('webSpaces.apps.drupalFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.apps.drupalFailed'));
         } finally {
             setBusy(null);
         }
@@ -259,9 +244,7 @@ export default function WebSpaceAppsPage() {
             setResult(data?.data ?? null);
             toast.success(t('webSpaces.apps.prestashopSuccess'));
         } catch (error) {
-            let msg = t('webSpaces.apps.prestashopFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.apps.prestashopFailed'));
         } finally {
             setBusy(null);
         }
@@ -274,9 +257,7 @@ export default function WebSpaceAppsPage() {
             setResult(data?.data ?? null);
             toast.success(t('webSpaces.apps.magentoSuccess'));
         } catch (error) {
-            let msg = t('webSpaces.apps.magentoFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.apps.magentoFailed'));
         } finally {
             setBusy(null);
         }
@@ -289,9 +270,7 @@ export default function WebSpaceAppsPage() {
             setResult(data?.data ?? null);
             toast.success(t('webSpaces.apps.ghostSuccess'));
         } catch (error) {
-            let msg = t('webSpaces.apps.ghostFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.apps.ghostFailed'));
         } finally {
             setBusy(null);
         }
@@ -303,9 +282,7 @@ export default function WebSpaceAppsPage() {
             await axios.post(`/api/user/webspaces/${uuidShort}/apps/node-starter`, { directory: starterDir });
             toast.success(t('webSpaces.apps.nodeStarterSuccess'));
         } catch (error) {
-            let msg = t('webSpaces.apps.nodeStarterFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.apps.nodeStarterFailed'));
         } finally {
             setBusy(null);
         }
@@ -317,9 +294,7 @@ export default function WebSpaceAppsPage() {
             await axios.post(`/api/user/webspaces/${uuidShort}/apps/python-starter`, { directory: starterDir });
             toast.success(t('webSpaces.apps.pythonStarterSuccess'));
         } catch (error) {
-            let msg = t('webSpaces.apps.pythonStarterFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.apps.pythonStarterFailed'));
         } finally {
             setBusy(null);
         }
@@ -338,9 +313,7 @@ export default function WebSpaceAppsPage() {
             });
             toast.success(t('webSpaces.apps.pluginInstalled'));
         } catch (error) {
-            let msg = t('webSpaces.apps.pluginFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.apps.pluginFailed'));
         } finally {
             setBusy(null);
         }
@@ -354,9 +327,7 @@ export default function WebSpaceAppsPage() {
             });
             toast.success(t('webSpaces.apps.autoUpdateEnabled'));
         } catch (error) {
-            let msg = t('webSpaces.apps.autoUpdateFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.apps.autoUpdateFailed'));
         } finally {
             setBusy(null);
         }
@@ -372,9 +343,7 @@ export default function WebSpaceAppsPage() {
             await axios.post(`/api/user/webspaces/${uuidShort}/apps/git-deploy`, git);
             toast.success(t('webSpaces.apps.gitSuccess'));
         } catch (error) {
-            let msg = t('webSpaces.apps.gitFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.apps.gitFailed'));
         } finally {
             setBusy(null);
         }
@@ -395,9 +364,7 @@ export default function WebSpaceAppsPage() {
             setWebhookSecret(String(data?.data?.config?.secret ?? ''));
             toast.success(t('webSpaces.apps.webhookSaved'));
         } catch (error) {
-            let msg = t('webSpaces.apps.webhookFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'webSpaces.apps.webhookFailed'));
         } finally {
             setBusy(null);
         }

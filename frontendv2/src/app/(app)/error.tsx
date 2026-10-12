@@ -17,6 +17,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { reportPanelInteraction } from '@/lib/panel-analytics';
+import { captureClientException } from '@/lib/client-error-reporting';
 import { Button } from '@/components/featherui/Button';
 import { useTranslation } from '@/contexts/TranslationContext';
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer';
@@ -58,6 +60,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
 
     useEffect(() => {
         console.error(error);
+        captureClientException(error, 'react-boundary');
         if (staleVersion) {
             const alreadyRefreshed = sessionStorage.getItem('stale-refresh-attempted');
             if (!alreadyRefreshed) {
@@ -99,7 +102,10 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
 
                             <div className='flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:justify-center'>
                                 <Button
-                                    onClick={staleVersion ? hardRefresh : reset}
+                                    onClick={() => {
+                                        reportPanelInteraction('panel.error.retry', staleVersion ? 'refresh' : 'retry');
+                                        (staleVersion ? hardRefresh : reset)();
+                                    }}
                                     variant='outline'
                                     className='group w-full sm:w-auto'
                                 >

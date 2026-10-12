@@ -14,6 +14,12 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import type { LifecycleHookStep, LifecycleTaskType } from '@/types/server';
+import {
+    buildBackupPayload,
+    emptyBackupFields,
+    parseBackupFields,
+    type BackupFields,
+} from '@/components/server/backup/backup-payload';
 
 export type DiscordEmbedFieldForm = {
     name: string;
@@ -90,6 +96,8 @@ export type StepFormState = {
     container_command: string;
     container_shell_command: string;
     container_shell_timeout: number;
+    /** Same fields/payload as the schedule "backup" task. */
+    backup: BackupFields;
     http_url: string;
     http_method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     http_headers_json: string;
@@ -108,6 +116,7 @@ export const defaultForm: StepFormState = {
     container_command: '',
     container_shell_command: '',
     container_shell_timeout: 30,
+    backup: emptyBackupFields(),
     http_url: '',
     http_method: 'GET',
     http_headers_json: '{}',
@@ -293,6 +302,13 @@ export function serializeLifecyclePayload(state: StepFormState) {
             timeout: Math.max(1, Math.min(120, Math.floor(Number(state.container_shell_timeout) || 30))),
         };
     }
+    if (state.task_type === 'backup') {
+        const built = buildBackupPayload(state.backup);
+        if (built === null) {
+            throw new Error('Select at least one database');
+        }
+        return JSON.parse(built) as Record<string, unknown>;
+    }
     if (state.task_type === 'sleep') {
         return {
             seconds: Math.max(1, Math.min(300, Math.floor(Number(state.sleep_seconds) || 0))),
@@ -402,6 +418,14 @@ export function deserializeLifecyclePayload(step: LifecycleHookStep): StepFormSt
             continue_on_failure: step.continue_on_failure,
             container_shell_command: String(parsed.command || ''),
             container_shell_timeout: Number.isFinite(timeout) && timeout > 0 ? Math.floor(timeout) : 30,
+        };
+    }
+    if (step.task_type === 'backup') {
+        return {
+            ...defaultForm,
+            task_type: 'backup',
+            continue_on_failure: step.continue_on_failure,
+            backup: parseBackupFields('backup', JSON.stringify(parsed)),
         };
     }
     if (step.task_type === 'sleep') {

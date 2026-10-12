@@ -143,7 +143,11 @@ final class BackupFifoEviction
             ];
         }
 
-        $response = $wings->getServer()->deleteBackup($serverUuid, (string) $victim['uuid']);
+        $response = $wings->getServer()->deleteBackup(
+            $serverUuid,
+            (string) $victim['uuid'],
+            self::pbsSnapshotForBackup($victim)
+        );
         $missingOnNode = false;
         if (!$response->isSuccessful()) {
             $status = $response->getStatusCode();
@@ -265,5 +269,19 @@ final class BackupFifoEviction
             || str_contains($normalized, 'backup was not found')
             || str_contains($normalized, 'backup not found')
             || str_contains($normalized, 'no such backup');
+    }
+
+    /**
+     * PBS backups store the snapshot path in checksum; passing it avoids a fragile
+     * notes lookup on the daemon during delete/FIFO rotation.
+     *
+     * @param array<string, mixed> $backup
+     */
+    private static function pbsSnapshotForBackup(array $backup): ?string
+    {
+        $disk = strtolower(trim((string) ($backup['disk'] ?? '')));
+        $snapshot = trim((string) ($backup['checksum'] ?? ''));
+
+        return $disk === 'pbs' && $snapshot !== '' ? $snapshot : null;
     }
 }

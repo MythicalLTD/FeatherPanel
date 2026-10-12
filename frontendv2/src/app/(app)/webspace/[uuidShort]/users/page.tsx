@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { toast } from 'sonner';
 import { Plus, Trash2, Users, Mail, Loader2, RefreshCw, Shield } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -30,6 +30,7 @@ import { useWebSpacePermissions } from '@/hooks/useWebSpacePermissions';
 import { WebSpaceSubuserPermissions } from '@/lib/webspace-permissions';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface SubuserRow {
     id: number;
@@ -68,11 +69,7 @@ export default function WebSpaceUsersPage() {
                     : ['file.read', 'file.read-content'].filter((p) => perms.includes(p) || perms.length === 0),
             );
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.users.loadFailed')
-                    : t('webSpaces.users.loadFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.users.loadFailed'));
         } finally {
             setLoading(false);
         }
@@ -98,11 +95,7 @@ export default function WebSpaceUsersPage() {
             setIsAddOpen(false);
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.users.addFailed')
-                    : t('webSpaces.users.addFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.users.addFailed'));
         } finally {
             setBusy(false);
         }
@@ -115,11 +108,7 @@ export default function WebSpaceUsersPage() {
             toast.success(t('webSpaces.users.removed'));
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.users.deleteFailed')
-                    : t('webSpaces.users.deleteFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.users.deleteFailed'));
         }
     };
 
@@ -143,11 +132,7 @@ export default function WebSpaceUsersPage() {
             setEditUser(null);
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.users.updateFailed')
-                    : t('webSpaces.users.updateFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.users.updateFailed'));
         } finally {
             setBusy(false);
         }

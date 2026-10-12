@@ -4,6 +4,22 @@
 ENV_FILE="/var/www/html/storage/config/.env"
 mkdir -p /var/www/html/storage/config
 
+# OCI keeps runtime data under the single /data volume. Move any files baked
+# into the image or left in the old container layer before replacing the path
+# with the persistent symlink.
+PERSISTENT_STORAGE_DATA="/data/storage-data"
+LEGACY_STORAGE_DATA="/var/www/html/storage/data"
+if [ -d /data ] && [ ! -L "$LEGACY_STORAGE_DATA" ]; then
+	if [ -d "$LEGACY_STORAGE_DATA" ] && [ "$(find "$LEGACY_STORAGE_DATA" -mindepth 1 -print -quit 2>/dev/null)" ]; then
+		mkdir -p "$PERSISTENT_STORAGE_DATA"
+		cp -a "$LEGACY_STORAGE_DATA/." "$PERSISTENT_STORAGE_DATA/"
+	fi
+	rm -rf "$LEGACY_STORAGE_DATA"
+	mkdir -p "$(dirname "$LEGACY_STORAGE_DATA")"
+	ln -s "$PERSISTENT_STORAGE_DATA" "$LEGACY_STORAGE_DATA"
+fi
+mkdir -p "$LEGACY_STORAGE_DATA"
+
 generate_encryption_key() {
 	head -c 32 /dev/urandom | base64
 }

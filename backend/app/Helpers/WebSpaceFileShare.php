@@ -140,6 +140,10 @@ final class WebSpaceFileShare
      */
     public static function resolve(string $publicId): ?array
     {
+        if (!self::isValidPublicId($publicId)) {
+            return null;
+        }
+
         $metaPath = self::storageDir() . '/' . $publicId . '.meta.json';
         $binPath = self::storageDir() . '/' . $publicId . '.bin';
         if (!is_file($metaPath) || !is_file($binPath)) {
@@ -167,6 +171,10 @@ final class WebSpaceFileShare
 
     public static function delete(string $publicId, ?string $deleteKey = null): bool
     {
+        if (!self::isValidPublicId($publicId)) {
+            return false;
+        }
+
         $metaPath = self::storageDir() . '/' . $publicId . '.meta.json';
         if (is_file($metaPath)) {
             if ($deleteKey !== null) {
@@ -181,6 +189,15 @@ final class WebSpaceFileShare
         @unlink(self::storageDir() . '/' . $publicId . '.bin');
 
         return true;
+    }
+
+    /**
+     * Public IDs are always 32 lowercase hex chars (bin2hex of 16 bytes).
+     * Reject path separators / traversal before concatenating into filesystem paths.
+     */
+    private static function isValidPublicId(string $publicId): bool
+    {
+        return (bool) preg_match('/^[a-f0-9]{32}$/', $publicId);
     }
 
     private static function storageDir(): string

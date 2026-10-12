@@ -40,6 +40,7 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import {
     FEATHERPANEL_CATEGORY_SLUG,
     type InstalledPluginInfo,
@@ -107,9 +108,7 @@ export default function MythicProductsPage() {
             if (axios.isAxiosError(err)) {
                 const code = err.response?.data?.error_code;
                 if (code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED' || err.response?.status === 503) {
-                    setCredentialsError(
-                        err.response?.data?.message || t('admin.marketplace.plugins.credentials_error'),
-                    );
+                    setCredentialsError(getApiErrorMessage(err, t, 'admin.marketplace.plugins.credentials_error'));
                     return;
                 }
             }

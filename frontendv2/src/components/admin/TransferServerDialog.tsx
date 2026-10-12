@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { getFeatherpanelApiErrorMessage } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -99,7 +99,7 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                 setSourceDaemonType((node.daemon_type as DaemonType) ?? null);
                 setSourceCapabilities((node.capabilities as DaemonCapabilitiesMap) ?? null);
             } catch {
-                // Ignore — backups option stays hidden when caps are unknown.
+                // Ignore - backups option stays hidden when caps are unknown.
             }
         })();
         return () => {
@@ -132,8 +132,8 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
             });
             const list = (data?.data?.nodes || []) as ApiNode[];
             setNodes(list.filter((n) => n.id !== server.node_id));
-        } catch {
-            toast.error(t('admin.servers.transfer.fetch_nodes_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.transfer.fetch_nodes_failed'));
         } finally {
             setLoadingNodes(false);
         }
@@ -165,8 +165,8 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                 },
             });
             setAllocations(data.data.allocations || []);
-        } catch {
-            toast.error(t('admin.servers.transfer.fetch_allocations_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.servers.transfer.fetch_allocations_failed'));
         } finally {
             setLoadingAllocations(false);
         }
@@ -224,7 +224,7 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
             onCompleted?.();
         } catch (error) {
             console.error('Error initiating transfer:', error);
-            const message = getFeatherpanelApiErrorMessage(error) ?? t('admin.servers.messages.transfer_failed');
+            const message = getApiErrorMessage(error, t, 'admin.servers.messages.transfer_failed');
             setTransferError(message);
             toast.error(message);
         } finally {
@@ -285,7 +285,7 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                                     {loadingPreview ? (
                                         <Loader2 className='inline h-3.5 w-3.5 animate-spin' />
                                     ) : (
-                                        (freeOnDestination ?? '—')
+                                        (freeOnDestination ?? '-')
                                     )}
                                 </span>
                             </p>

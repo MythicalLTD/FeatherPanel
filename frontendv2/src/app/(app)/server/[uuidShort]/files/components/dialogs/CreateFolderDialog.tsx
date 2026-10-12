@@ -70,7 +70,7 @@ export function CreateFolderDialog({ open, onOpenChange, uuid, root, onSuccess }
                         {t('files.dialogs.create_folder.description', { root: root })}
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className='space-y-4'>
+                <form onSubmit={handleSubmit} className='space-y-4' data-fp-save-shortcut>
                     <Input
                         placeholder={t('files.dialogs.create_folder.name_placeholder')}
                         value={name}

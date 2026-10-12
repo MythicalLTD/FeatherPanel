@@ -18,12 +18,18 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Input } from '@/components/featherui/Input';
+import { SizeInput } from '@/components/featherui/SizeInput';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/featherui/Button';
 import { SERVER_RESOURCE_LIMITS } from '@/lib/server-utils';
 import { TabProps } from './types';
 
-export function ResourcesTab({ form, setForm, errors }: TabProps) {
+export function ResourcesTab({
+    form,
+    setForm,
+    errors,
+    onSizeValidityChange,
+}: TabProps & { onSizeValidityChange: (field: 'memory' | 'swap' | 'disk', valid: boolean) => void }) {
     const { t } = useTranslation();
 
     return (
@@ -41,7 +47,10 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                                 size='sm'
                                 variant={form.memory === 0 ? 'default' : 'outline'}
                                 className={form.memory === 0 ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}
-                                onClick={() => setForm((prev) => ({ ...prev, memory: 0 }))}
+                                onClick={() => {
+                                    setForm((prev) => ({ ...prev, memory: 0 }));
+                                    onSizeValidityChange('memory', true);
+                                }}
                             >
                                 {t('admin.servers.form.unlimited')}
                             </Button>
@@ -58,12 +67,13 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                             </Button>
                         </div>
                         {form.memory !== 0 && (
-                            <Input
-                                type='number'
+                            <SizeInput
                                 value={form.memory}
-                                onChange={(e) => setForm((prev) => ({ ...prev, memory: Number(e.target.value) }))}
+                                onValueChange={(value) => setForm((prev) => ({ ...prev, memory: Number(value) }))}
+                                unit='MiB'
+                                ariaLabel={t('admin.servers.form.memory')}
+                                onValidityChange={(valid) => onSizeValidityChange('memory', valid)}
                                 min={SERVER_RESOURCE_LIMITS.memory.min}
-                                className={`bg-muted/30 h-11 ${errors.memory ? 'border-red-500' : ''}`}
                             />
                         )}
                         <p className='text-muted-foreground text-xs'>{t('admin.servers.form.memory_help')}</p>
@@ -77,7 +87,10 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                                 size='sm'
                                 variant={form.swap === 0 ? 'default' : 'outline'}
                                 className={form.swap === 0 ? 'bg-red-600 text-white hover:bg-red-700' : ''}
-                                onClick={() => setForm((prev) => ({ ...prev, swap: 0 }))}
+                                onClick={() => {
+                                    setForm((prev) => ({ ...prev, swap: 0 }));
+                                    onSizeValidityChange('swap', true);
+                                }}
                             >
                                 {t('admin.servers.form.disabled')}
                             </Button>
@@ -102,18 +115,22 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                                 size='sm'
                                 variant={form.swap === -1 ? 'default' : 'outline'}
                                 className={form.swap === -1 ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}
-                                onClick={() => setForm((prev) => ({ ...prev, swap: -1 }))}
+                                onClick={() => {
+                                    setForm((prev) => ({ ...prev, swap: -1 }));
+                                    onSizeValidityChange('swap', true);
+                                }}
                             >
                                 {t('admin.servers.form.unlimited')}
                             </Button>
                         </div>
                         {form.swap !== 0 && form.swap !== -1 && (
-                            <Input
-                                type='number'
+                            <SizeInput
                                 value={form.swap}
-                                onChange={(e) => setForm((prev) => ({ ...prev, swap: Number(e.target.value) }))}
+                                onValueChange={(value) => setForm((prev) => ({ ...prev, swap: Number(value) }))}
+                                unit='MiB'
+                                ariaLabel={t('admin.servers.form.swap')}
+                                onValidityChange={(valid) => onSizeValidityChange('swap', valid)}
                                 min={1}
-                                className={`bg-muted/30 h-11 ${errors.swap ? 'border-red-500' : ''}`}
                             />
                         )}
                         <p className='text-muted-foreground text-xs'>{t('admin.servers.form.swap_help')}</p>
@@ -127,7 +144,10 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                                 size='sm'
                                 variant={form.disk === 0 ? 'default' : 'outline'}
                                 className={form.disk === 0 ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}
-                                onClick={() => setForm((prev) => ({ ...prev, disk: 0 }))}
+                                onClick={() => {
+                                    setForm((prev) => ({ ...prev, disk: 0 }));
+                                    onSizeValidityChange('disk', true);
+                                }}
                             >
                                 {t('admin.servers.form.unlimited')}
                             </Button>
@@ -144,12 +164,13 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                             </Button>
                         </div>
                         {form.disk !== 0 && (
-                            <Input
-                                type='number'
+                            <SizeInput
                                 value={form.disk}
-                                onChange={(e) => setForm((prev) => ({ ...prev, disk: Number(e.target.value) }))}
+                                onValueChange={(value) => setForm((prev) => ({ ...prev, disk: Number(value) }))}
+                                unit='MiB'
+                                ariaLabel={t('admin.servers.form.disk')}
+                                onValidityChange={(valid) => onSizeValidityChange('disk', valid)}
                                 min={SERVER_RESOURCE_LIMITS.disk.min}
-                                className={`bg-muted/30 h-11 ${errors.disk ? 'border-red-500' : ''}`}
                             />
                         )}
                         <p className='text-muted-foreground text-xs'>{t('admin.servers.form.disk_help')}</p>

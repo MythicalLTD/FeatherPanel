@@ -20,6 +20,7 @@ namespace App\Controllers\Wings;
 use App\App;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
+use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -37,6 +38,14 @@ class WingsHealthController
     {
         $node = $request->attributes->get('wings_node');
         if (!is_array($node)) {
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(WingsEvent::onWingsNodeError(), [
+                    'node_id' => null,
+                    'error' => 'INVALID_WINGS_AUTH',
+                ]);
+            }
+
             return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
         }
 
@@ -45,6 +54,14 @@ class WingsHealthController
             $appName = is_string($appName) && trim($appName) !== '' ? trim($appName) : 'FeatherPanel';
         } catch (\Throwable) {
             $appName = 'FeatherPanel';
+        }
+
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(WingsEvent::onWingsNodeConnectionStatus(), [
+                'node_id' => $node['id'] ?? null,
+                'status' => 'healthy',
+            ]);
         }
 
         return ApiResponse::success([

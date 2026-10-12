@@ -42,7 +42,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerAllocationDeleted(): string
     {
-        return 'featherpanel:server:allocation:delete';
+        return 'featherpanel:user:server:allocation:deleted';
     }
 
     /**
@@ -50,7 +50,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerDatabaseCreated(): string
     {
-        return 'featherpanel:server:database:create';
+        return 'featherpanel:user:server:database:created';
     }
 
     /**
@@ -58,7 +58,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerDatabaseUpdated(): string
     {
-        return 'featherpanel:server:database:update';
+        return 'featherpanel:user:server:database:updated';
     }
 
     /**
@@ -66,7 +66,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerDatabaseDeleted(): string
     {
-        return 'featherpanel:server:database:delete';
+        return 'featherpanel:user:server:database:deleted';
     }
 
     /**
@@ -74,7 +74,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerBackupCreated(): string
     {
-        return 'featherpanel:server:backup:create';
+        return 'featherpanel:user:server:backup:created';
     }
 
     /**
@@ -82,7 +82,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerBackupRestored(): string
     {
-        return 'featherpanel:server:backup:restore';
+        return 'featherpanel:user:server:backup:restored';
     }
 
     /**
@@ -106,7 +106,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerBackupDeleted(): string
     {
-        return 'featherpanel:server:backup:delete';
+        return 'featherpanel:user:server:backup:deleted';
     }
 
     /**
@@ -114,7 +114,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerScheduleCreated(): string
     {
-        return 'featherpanel:server:schedule:create';
+        return 'featherpanel:user:server:schedule:created';
     }
 
     /**
@@ -122,7 +122,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerScheduleUpdated(): string
     {
-        return 'featherpanel:server:schedule:update';
+        return 'featherpanel:user:server:schedule:updated';
     }
 
     /**
@@ -138,7 +138,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerScheduleDeleted(): string
     {
-        return 'featherpanel:server:schedule:delete';
+        return 'featherpanel:user:server:schedule:deleted';
     }
 
     /**
@@ -170,7 +170,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerTaskCreated(): string
     {
-        return 'featherpanel:server:task:create';
+        return 'featherpanel:user:server:task:created';
     }
 
     /**
@@ -178,7 +178,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerTaskUpdated(): string
     {
-        return 'featherpanel:server:task:update';
+        return 'featherpanel:user:server:task:updated';
     }
 
     /**
@@ -186,7 +186,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerTaskSequenceUpdated(): string
     {
-        return 'featherpanel:server:task:sequence:update';
+        return 'featherpanel:user:server:task:sequence:updated';
     }
 
     /**
@@ -202,7 +202,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerTaskDeleted(): string
     {
-        return 'featherpanel:server:task:delete';
+        return 'featherpanel:user:server:task:deleted';
     }
 
     /**
@@ -210,7 +210,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerSubuserCreated(): string
     {
-        return 'featherpanel:server:subuser:create';
+        return 'featherpanel:user:server:subuser:created';
     }
 
     /**
@@ -218,7 +218,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerSubuserUpdated(): string
     {
-        return 'featherpanel:server:subuser:update';
+        return 'featherpanel:user:server:subuser:updated';
     }
 
     /**
@@ -226,7 +226,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerSubuserDeleted(): string
     {
-        return 'featherpanel:server:subuser:delete';
+        return 'featherpanel:user:server:subuser:deleted';
     }
 
     /**
@@ -290,7 +290,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerFilesDeleted(): string
     {
-        return 'featherpanel:server:files:delete';
+        return 'featherpanel:user:server:files:deleted';
     }
 
     /**
@@ -298,7 +298,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerDirectoryCreated(): string
     {
-        return 'featherpanel:server:directory:create';
+        return 'featherpanel:user:server:directory:created';
     }
 
     /**
@@ -306,7 +306,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerPullProcessDeleted(): string
     {
-        return 'featherpanel:server:pull:delete';
+        return 'featherpanel:user:server:pull:deleted';
     }
 
     /**
@@ -314,7 +314,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerFileWritten(): string
     {
-        return 'featherpanel:server:file:write';
+        return 'featherpanel:user:server:file:saved';
     }
 
     /**
@@ -322,7 +322,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerFileRenamed(): string
     {
-        return 'featherpanel:server:file:rename';
+        return 'featherpanel:user:server:file:renamed';
     }
 
     /**
@@ -362,7 +362,7 @@ class ServerEvent implements PluginEvent
      */
     public static function onServerFileUploaded(): string
     {
-        return 'featherpanel:server:file:upload';
+        return 'featherpanel:user:server:file:uploaded';
     }
 
     /**

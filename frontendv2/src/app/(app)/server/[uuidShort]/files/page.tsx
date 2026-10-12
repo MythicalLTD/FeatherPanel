@@ -48,7 +48,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { isEnabled } from '@/lib/utils';
 import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 import { toast } from 'sonner';
-import { getFeatherpanelApiErrorMessage } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { filesApi, ARCHIVE_EXTRACT_DRAG_MIME } from '@/lib/files-api';
 import { triggerSignedUrlDownload } from '@/lib/trigger-signed-download';
 import { isBinaryLikeFileName } from '@/lib/binary-like-file-names';
@@ -372,9 +372,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 if (!cancelled) {
                     setSearchResults(results);
                 }
-            } catch {
+            } catch (error) {
                 if (!cancelled) {
-                    toast.error(t('files.search.search_failed'));
+                    toast.error(getApiErrorMessage(error, t, 'files.search.search_failed'));
                     setSearchResults([]);
                 }
             } finally {
@@ -480,9 +480,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 closeArchiveBrowse();
                 refresh();
             } catch (error) {
-                const err = error as { response?: { data?: { error?: string } } };
-                const msg = err.response?.data?.error || t('files.messages.archive_members_extract_failed');
-                toast.error(msg, { id: toastId });
+                toast.error(getApiErrorMessage(error, t, 'files.messages.archive_members_extract_failed'), {
+                    id: toastId,
+                });
             }
         },
         [closeArchiveBrowse, refresh, t, uuidShort],
@@ -546,9 +546,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 setSelectedFiles([]);
                 refresh();
             } catch (error) {
-                const err = error as { response?: { data?: { error?: string } } };
-                const msg = err.response?.data?.error || t('files.messages.move_error');
-                toast.error(msg, { id: toastId });
+                toast.error(getApiErrorMessage(error, t, 'files.messages.move_error'), { id: toastId });
             }
         },
         [refresh, setSelectedFiles, t, uuidShort],
@@ -639,8 +637,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             setEmptyTrashOpen(false);
             await refreshTrashStats();
             refresh();
-        } catch {
-            toast.error(t('files.trash.messages.empty_error'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.trash.messages.empty_error'));
         } finally {
             setEmptyTrashBusy(false);
         }
@@ -739,8 +737,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             const downloadUrl = await filesApi.getDownloadUrl(uuidShort, path);
             triggerSignedUrlDownload(downloadUrl);
             setActionFile(null);
-        } catch {
-            toast.error(t('files.messages.failed_download'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.messages.failed_download'));
         }
     };
 
@@ -755,8 +753,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             triggerSignedUrlDownload(downloadUrl);
             toast.success(t('files.messages.download_directory_started'), { id: toastId });
             setActionFile(null);
-        } catch {
-            toast.error(t('files.messages.failed_download_directory'), { id: toastId });
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.messages.failed_download_directory'), { id: toastId });
         }
     };
 
@@ -772,9 +770,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             toast.success(t('files.messages.extracted'), { id: toastId });
             refresh();
         } catch (error) {
-            const err = error as { response?: { data?: { error?: string } } };
-            const errorMessage = err.response?.data?.error || t('files.messages.extract_failed');
-            toast.error(errorMessage, { id: toastId });
+            toast.error(getApiErrorMessage(error, t, 'files.messages.extract_failed'), { id: toastId });
         }
     };
 
@@ -1073,10 +1069,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 );
                 refresh();
             } catch (error) {
-                const message =
-                    getFeatherpanelApiErrorMessage(error) ||
-                    (error instanceof Error && error.message ? error.message : null) ||
-                    t('files.messages.upload_failed');
+                const message = getApiErrorMessage(error, t, 'files.messages.upload_failed');
                 setUploadQueue((prev) =>
                     prev.map((u) => (u.id === next.id ? { ...u, status: 'error' as const, error: message } : u)),
                 );

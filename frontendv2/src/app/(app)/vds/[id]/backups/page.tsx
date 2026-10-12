@@ -46,6 +46,7 @@ import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 type VmBackup = {
     id: number;
@@ -57,6 +58,7 @@ type VmBackup = {
     ctime: number;
     created_at?: string | null;
     format?: string | null;
+    is_stale?: boolean;
     status?: string;
 };
 
@@ -94,34 +96,37 @@ export default function VdsBackupsPage() {
     const [confirmCreateOpen, setConfirmCreateOpen] = useState(false);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [confirmRestoreOpen, setConfirmRestoreOpen] = useState(false);
+    const [selectedForRecovery, setSelectedForRecovery] = useState<VmBackup | null>(null);
     const [selectedForDelete, setSelectedForDelete] = useState<VmBackup | null>(null);
     const [selectedForRestore, setSelectedForRestore] = useState<VmBackup | null>(null);
 
     const backupDisplayTime = (backup: VmBackup) => {
         const ts = backup.ctime > 0 ? backup.ctime : backup.created_at;
-        return ts ? formatDateTimeInTz(ts, dateOpts) : '—';
+        return ts ? formatDateTimeInTz(ts, dateOpts) : '-';
     };
 
-    const fetchBackups = useCallback(async () => {
-        if (!id) return;
-        setLoading(true);
-        try {
-            const { data } = await axios.get<ListBackupsResponse>(`/api/user/vm-instances/${id}/backups`);
-            if (!data.success) {
-                toast.error(data.message || t('serverBackups.failedToFetch'));
-                return;
+    const fetchBackups = useCallback(
+        async (quiet = false) => {
+            if (!id) return;
+            if (!quiet) setLoading(true);
+            try {
+                const { data } = await axios.get<ListBackupsResponse>(`/api/user/vm-instances/${id}/backups`);
+                if (!data.success) {
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.failedToFetch'));
+                    return;
+                }
+                setBackups(data.data.backups || []);
+                setBackupLimit(data.data.backup_limit ?? 0);
+                setFifoRolling(Boolean(data.data.fifo_rolling_enabled));
+                setStorages(data.data.storages || []);
+            } catch (err) {
+                toast.error(getApiErrorMessage(err, t, 'serverBackups.failedToFetch'));
+            } finally {
+                if (!quiet) setLoading(false);
             }
-            setBackups(data.data.backups || []);
-            setBackupLimit(data.data.backup_limit ?? 0);
-            setFifoRolling(Boolean(data.data.fifo_rolling_enabled));
-            setStorages(data.data.storages || []);
-        } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
-        } finally {
-            setLoading(false);
-        }
-    }, [id, t]);
+        },
+        [id, t],
+    );
 
     useEffect(() => {
         if (!instanceLoading && !instance) {
@@ -139,7 +144,7 @@ export default function VdsBackupsPage() {
 
     useEffect(() => {
         // Auto-refresh if any backup is pending or recently created
-        const hasPending = backups.some((b) => b.status === 'pending' || b.status === 'running');
+        const hasPending = backups.some((b) => (b.status === 'pending' || b.status === 'running') && !b.is_stale);
         const hasRecent = backups.some((b) => {
             const created = b.ctime ? b.ctime * 1000 : 0;
             return created > Date.now() - 120_000;
@@ -148,13 +153,27 @@ export default function VdsBackupsPage() {
         if (!hasPending && !hasRecent) return;
 
         const interval = setInterval(() => {
-            fetchBackups();
-        }, 5000);
+            if (document.visibilityState === 'visible') void fetchBackups(true);
+        }, 10000);
         return () => clearInterval(interval);
     }, [backups, fetchBackups]);
 
     const backupsDisabled = isBackupLimitDisabled(backupLimit);
     const limitReached = backupsDisabled || (backupLimit > 0 && backups.length >= backupLimit && !fifoRolling);
+
+    const handleRecoverBackup = async () => {
+        if (!selectedForRecovery) return;
+        try {
+            await axios.post(`/api/user/vm-instances/${id}/backups/${selectedForRecovery.id}/recover`, {
+                confirm_interrupted: true,
+            });
+            setSelectedForRecovery(null);
+            toast.success(t('serverBackups.recoverSuccess'));
+            await fetchBackups();
+        } catch (err) {
+            toast.error(getApiErrorMessage(err, t, 'serverBackups.recoverFailed'));
+        }
+    };
 
     const handleCreateBackup = async () => {
         if (limitReached) {
@@ -171,15 +190,14 @@ export default function VdsBackupsPage() {
                 // Storage is enforced server-side from the VDS node default.
             });
             if (!data.success) {
-                toast.error(data.message || t('serverBackups.startFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.startFailed'));
                 return;
             }
             toast.success(t('serverBackups.startSuccess'));
             setConfirmCreateOpen(false);
             fetchBackups();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'serverBackups.startFailed'));
         } finally {
             setCreating(false);
         }
@@ -191,12 +209,13 @@ export default function VdsBackupsPage() {
         try {
             const { data } = await axios.delete(`/api/user/vm-instances/${id}/backups`, {
                 data: {
+                    backup_id: selectedForDelete.id,
                     volid: selectedForDelete.volid,
                     storage: selectedForDelete.storage,
                 },
             });
             if (!data.success) {
-                toast.error(data.message || t('serverBackups.deleteFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.deleteFailed'));
                 return;
             }
             toast.success(t('serverBackups.deleteSuccessShort'));
@@ -204,8 +223,7 @@ export default function VdsBackupsPage() {
             setSelectedForDelete(null);
             fetchBackups();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'serverBackups.deleteFailed'));
         } finally {
             setDeleting(false);
         }
@@ -220,7 +238,7 @@ export default function VdsBackupsPage() {
                 storage: selectedForRestore.storage,
             });
             if (!data.success) {
-                toast.error(data.message || t('serverBackups.restoreStartFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverBackups.restoreStartFailed'));
                 return;
             }
             const restoreId = data.data?.restore_id;
@@ -233,8 +251,7 @@ export default function VdsBackupsPage() {
                 pollRestoreStatus(restoreId);
             }
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg);
+            toast.error(getApiErrorMessage(err, t, 'serverBackups.restoreStartFailed'));
         } finally {
             setRestoring(false);
         }
@@ -260,7 +277,13 @@ export default function VdsBackupsPage() {
                     fetchBackups();
                     return;
                 } else if (status === 'failed') {
-                    toast.error(data.data?.error || t('serverBackups.restoreFailed'));
+                    toast.error(
+                        getApiErrorMessageFromPayload(
+                            { message: data.data?.error, error_code: data.data?.error_code },
+                            t,
+                            'serverBackups.restoreFailed',
+                        ),
+                    );
                     return;
                 }
 
@@ -322,7 +345,7 @@ export default function VdsBackupsPage() {
                         <Button
                             variant='glass'
                             size='default'
-                            onClick={fetchBackups}
+                            onClick={() => void fetchBackups()}
                             disabled={loading}
                             className='order-2 sm:order-1'
                             aria-label={t('serverBackups.refresh')}
@@ -374,6 +397,9 @@ export default function VdsBackupsPage() {
 
             <div className='space-y-6'>
                 <div className='flex items-center gap-4'>
+                    <Button variant='glass' disabled={loading} onClick={() => void fetchBackups()}>
+                        {t('serverBackups.recheckAction')}
+                    </Button>
                     <div className='group relative flex-1'>
                         <Search className='text-muted-foreground/80 group-focus-within:text-foreground absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transition-colors' />
                         <Input
@@ -467,7 +493,11 @@ export default function VdsBackupsPage() {
                                             )}
                                             {isPending && (
                                                 <span className='animate-pulse rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-blue-500 uppercase'>
-                                                    {t('serverBackups.inProgress')}
+                                                    {t(
+                                                        backup.is_stale
+                                                            ? 'serverBackups.statusStale'
+                                                            : 'serverBackups.inProgress',
+                                                    )}
                                                 </span>
                                             )}
                                             {isFailed && (
@@ -478,7 +508,15 @@ export default function VdsBackupsPage() {
                                         </div>
                                     }
                                     actions={
-                                        isPending ? (
+                                        isPending && backup.is_stale ? (
+                                            <Button
+                                                variant='outline'
+                                                size='sm'
+                                                onClick={() => setSelectedForRecovery(backup)}
+                                            >
+                                                {t('serverBackups.recoverAction')}
+                                            </Button>
+                                        ) : isPending ? (
                                             <div className='text-muted-foreground flex items-center gap-2 text-sm'>
                                                 <Loader2 className='h-4 w-4 animate-spin' />
                                                 <span>{t('serverBackups.pleaseWait')}</span>
@@ -520,6 +558,28 @@ export default function VdsBackupsPage() {
                     </div>
                 )}
             </div>
+
+            <Dialog
+                open={selectedForRecovery !== null}
+                onOpenChange={(open) => {
+                    if (!open) setSelectedForRecovery(null);
+                }}
+            >
+                <div className='space-y-6 p-4'>
+                    <DialogHeader>
+                        <DialogTitle>{t('serverBackups.recoverTitle')}</DialogTitle>
+                        <DialogDescription>{t('serverBackups.recoverDescription')}</DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant='outline' onClick={() => setSelectedForRecovery(null)}>
+                            {t('common.cancel')}
+                        </Button>
+                        <Button variant='destructive' onClick={() => void handleRecoverBackup()}>
+                            {t('serverBackups.recoverAction')}
+                        </Button>
+                    </DialogFooter>
+                </div>
+            </Dialog>
 
             {/* Create backup confirm dialog */}
             <Dialog open={confirmCreateOpen} onOpenChange={setConfirmCreateOpen}>

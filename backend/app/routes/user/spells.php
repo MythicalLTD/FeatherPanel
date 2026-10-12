@@ -102,7 +102,8 @@ return function (RouteCollection $routes): void {
                 return ApiResponse::error('Spell not found', 'SPELL_NOT_FOUND', 404);
             }
 
-            $variables = SpellVariable::getVariablesBySpellId((int) $id);
+            $spell = Spell::resolveConfiguration($spell);
+            $variables = SpellVariable::filterUserViewable(SpellVariable::getVariablesBySpellId((int) $id));
 
             return ApiResponse::success([
                 'spell' => $spell,

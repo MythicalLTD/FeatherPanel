@@ -15,6 +15,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useState, useEffect, type ReactNode } from 'react';
 import {
     Server,
@@ -251,6 +253,7 @@ export default function DashboardPage() {
                     }
                 } catch (e) {
                     console.error('Failed to load recent servers ordering', e);
+                    toast.error(getApiErrorMessage(e, t, 'common.error'));
                 }
 
                 if (orderedServers.length === 0) {
@@ -315,6 +318,7 @@ export default function DashboardPage() {
                 }
             } catch (err) {
                 console.error('Failed to fetch activity', err);
+                toast.error(getApiErrorMessage(err, t, 'common.error'));
             } finally {
                 setLoadingActivity(false);
             }

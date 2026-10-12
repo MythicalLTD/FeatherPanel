@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { getApiErrorMessage } from '@/lib/api-errors';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import api from '@/lib/api';
@@ -162,7 +163,7 @@ export default function InfrastructureAnalyticsPage() {
             setTopIp((ipUsageRes.data.data.ips || [])[0] ?? null);
         } catch (err) {
             console.error('Failed to fetch infrastructure analytics:', err);
-            setError(t('admin.analytics.infrastructure.error'));
+            setError(getApiErrorMessage(err, t, 'admin.analytics.infrastructure.error'));
         } finally {
             setLoading(false);
         }

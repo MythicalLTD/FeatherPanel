@@ -28,6 +28,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { reportPanelInteraction } from '@/lib/panel-analytics';
 
 export interface ConfirmDialogProps {
     open: boolean;
@@ -68,6 +69,7 @@ export function ConfirmDialog({
     className,
 }: ConfirmDialogProps) {
     const handleConfirm = async () => {
+        reportPanelInteraction('panel.confirm.accept', destructive ? 'destructive' : 'standard');
         await onConfirm();
     };
 
@@ -89,7 +91,14 @@ export function ConfirmDialog({
                 </AlertDialogHeader>
                 {children}
                 <AlertDialogFooter>
-                    <AlertDialogCancel disabled={loading}>{cancelLabel}</AlertDialogCancel>
+                    <AlertDialogCancel
+                        disabled={loading}
+                        onClick={() =>
+                            reportPanelInteraction('panel.confirm.cancel', destructive ? 'destructive' : 'standard')
+                        }
+                    >
+                        {cancelLabel}
+                    </AlertDialogCancel>
                     {destructive ? (
                         <Button
                             variant='destructive'

@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React, { useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { LayoutGrid, Trash2, RefreshCw, AlertTriangle, Info } from 'lucide-react';
@@ -44,11 +45,7 @@ export function DockerTab({ nodeId, loading, data, error, onRefresh }: DockerTab
             toast.success(t('admin.node.view.docker.prune_success'));
             onRefresh();
         } catch (e: unknown) {
-            let msg = t('admin.node.view.docker.prune_failed');
-            if (axios.isAxiosError(e)) {
-                msg = e.response?.data?.message || e.message;
-            }
-            toast.error(msg);
+            toast.error(getApiErrorMessage(e, t, 'admin.node.view.docker.prune_failed'));
         } finally {
             setCleaning(false);
         }

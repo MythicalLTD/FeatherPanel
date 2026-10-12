@@ -21,6 +21,7 @@ import { Check, MonitorSmartphone, ShieldX, TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
+import { getApiErrorMessage, type TranslateFn } from '@/lib/api-errors';
 
 /** Short, human device line from a User-Agent (no raw dump). */
 export function summarizeDesktopUa(ua?: string | null): string {
@@ -67,12 +68,8 @@ export function isQrChallengeGoneError(err: unknown): boolean {
     );
 }
 
-export function qrErrorMessage(err: unknown, fallback: string): string {
-    if (axios.isAxiosError(err)) {
-        return err.response?.data?.message || fallback;
-    }
-    if (err instanceof Error) return err.message;
-    return fallback;
+export function qrErrorMessage(err: unknown, t: TranslateFn, fallbackKey: string): string {
+    return getApiErrorMessage(err, t, fallbackKey);
 }
 
 /** Local countdown + expiry callback based on server expires_in. */

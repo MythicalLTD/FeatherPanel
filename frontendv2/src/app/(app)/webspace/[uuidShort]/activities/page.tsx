@@ -292,7 +292,7 @@ export default function WebSpaceActivitiesPage() {
                                                 <span className='text-sm font-semibold'>
                                                     {item.timestamp
                                                         ? formatRelativeTime(item.timestamp, dateOpts)
-                                                        : '—'}
+                                                        : '-'}
                                                 </span>
                                             </div>
                                         </div>
@@ -404,7 +404,7 @@ export default function WebSpaceActivitiesPage() {
                                             <Clock className='text-muted-foreground h-4 w-4 shrink-0' />
                                             {selectedItem.timestamp
                                                 ? formatDateTimeInTz(selectedItem.timestamp, dateOpts)
-                                                : '—'}
+                                                : '-'}
                                         </dd>
                                     </div>
                                 </dl>

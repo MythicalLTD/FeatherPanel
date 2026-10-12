@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo Showcase · Server</title>
+  <style>
+    :root { color-scheme: dark; --ink:#e2e8f0; --muted:#94a3b8; --line:rgba(255,255,255,.1); --panel:hsl(222 18% 12%); --accent:#34d399; }
+    html.light { color-scheme: light; --ink:#0f172a; --muted:#64748b; --line:rgba(15,23,42,.1); --panel:#fff; }
+    * { box-sizing: border-box; }
+    body { margin:0; padding:1.25rem; background:transparent; color:var(--ink); font-family: ui-sans-serif, system-ui, sans-serif; }
+    .card { border:1px solid var(--line); border-radius:1rem; background:var(--panel); padding:1.25rem; max-width:40rem; }
+    h1 { margin:0 0 .5rem; font-size:1.15rem; }
+    p { color:var(--muted); font-size:.9rem; line-height:1.5; }
+    .ok { color:var(--accent); font-weight:600; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Spell-limited server page</h1>
+    <p>
+      You can see this page because this server’s spell is in the DemoShowcase allow-list
+      (<span class="ok">plugin-sidebar-server-allowedOnlyOnSpells</span>).
+    </p>
+    <p>
+      On other spells / junk servers this sidebar entry is hidden. That is how addons limit
+      features by egg/spell without custom frontend code.
+    </p>
+  </div>
+  <script>
+    if (new URLSearchParams(location.search).get('__theme') === 'light') {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    }
+  </script>
+</body>
+</html>

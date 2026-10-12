@@ -16,9 +16,10 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import {
     Bell,
     Plus,
@@ -44,6 +45,7 @@ import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
+import { SaveShortcutHint } from '@/components/featherui/SaveShortcutHint';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
@@ -287,11 +289,7 @@ export default function NotificationsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error: unknown) {
             console.error('Error creating notification:', error);
-            let errorMessage = t('admin.notifications.messages.create_failed');
-            if (isAxiosError(error) && error.response?.data?.error_message) {
-                errorMessage = error.response.data.error_message;
-            }
-            toast.error(errorMessage);
+            toast.error(getApiErrorMessage(error, t, 'admin.notifications.messages.create_failed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -318,11 +316,7 @@ export default function NotificationsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error: unknown) {
             console.error('Error updating notification:', error);
-            let errorMessage = t('admin.notifications.messages.update_failed');
-            if (isAxiosError(error) && error.response?.data?.error_message) {
-                errorMessage = error.response.data.error_message;
-            }
-            toast.error(errorMessage);
+            toast.error(getApiErrorMessage(error, t, 'admin.notifications.messages.update_failed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -338,11 +332,7 @@ export default function NotificationsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error: unknown) {
             console.error('Error deleting notification:', error);
-            let errorMessage = t('admin.notifications.messages.delete_failed');
-            if (isAxiosError(error) && error.response?.data?.error_message) {
-                errorMessage = error.response.data.error_message;
-            }
-            toast.error(errorMessage);
+            toast.error(getApiErrorMessage(error, t, 'admin.notifications.messages.delete_failed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -625,7 +615,7 @@ export default function NotificationsPage() {
                         <SheetDescription>{t('admin.notifications.form.create_description')}</SheetDescription>
                     </SheetHeader>
 
-                    <form onSubmit={handleCreate} className='space-y-4'>
+                    <form onSubmit={handleCreate} className='space-y-4' data-fp-save-shortcut>
                         <div className='space-y-2'>
                             <Label htmlFor='create-title'>{t('admin.notifications.form.title')}</Label>
                             <Input
@@ -806,6 +796,7 @@ export default function NotificationsPage() {
                         <SheetFooter>
                             <Button type='submit' loading={isSubmitting}>
                                 {t('admin.notifications.form.submit_create')}
+                                <SaveShortcutHint />
                             </Button>
                         </SheetFooter>
                     </form>
@@ -820,7 +811,7 @@ export default function NotificationsPage() {
                     </SheetHeader>
 
                     {editingNotification && (
-                        <form onSubmit={handleUpdate} className='space-y-4'>
+                        <form onSubmit={handleUpdate} className='space-y-4' data-fp-save-shortcut>
                             <div className='space-y-2'>
                                 <Label htmlFor='edit-title'>{t('admin.notifications.form.title')}</Label>
                                 <Input
@@ -900,6 +891,7 @@ export default function NotificationsPage() {
                             <SheetFooter>
                                 <Button type='submit' loading={isSubmitting}>
                                     {t('admin.notifications.form.submit_update')}
+                                    <SaveShortcutHint />
                                 </Button>
                             </SheetFooter>
                         </form>

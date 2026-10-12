@@ -14,19 +14,30 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 export const ANALYTICS_COOKIE_NAME = 'featherpanel_analytics';
-
-const COOKIE_MAX_AGE_DAYS = 365;
-
-export function setAnalyticsCookie(enabled: boolean): void {
+export const ANALYTICS_CONSENT_COOKIE_NAME = 'featherpanel_analytics_consent_v1';
+export const ANALYTICS_CONSENT_EVENT = 'featherpanel:analytics-consent';
+/** Compatibility for existing preferences: browser telemetry cannot be enabled. */
+export function setAnalyticsCookie(_enabled: boolean): void {
+    void _enabled;
     if (typeof document === 'undefined') return;
-    const value = enabled ? '1' : '0';
-    const maxAge = COOKIE_MAX_AGE_DAYS * 24 * 60 * 60;
-    document.cookie = `${ANALYTICS_COOKIE_NAME}=${value}; path=/; max-age=${maxAge}; SameSite=Lax`;
+    for (const name of [ANALYTICS_COOKIE_NAME, ANALYTICS_CONSENT_COOKIE_NAME]) {
+        document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`;
+    }
+    window.dispatchEvent(new Event(ANALYTICS_CONSENT_EVENT));
+}
+
+export function getAnalyticsConsent(): boolean | null {
+    return false;
 }
 
 export function getAnalyticsCookie(): boolean {
-    if (typeof document === 'undefined') return true;
-    const match = document.cookie.match(new RegExp(`(?:^|; )${ANALYTICS_COOKIE_NAME}=([^;]*)`));
-    const value = match ? match[1] : null;
-    return value !== '0';
+    return false;
+}
+
+export function isAnalyticsPreferenceCookie(name: string): boolean {
+    return name === ANALYTICS_COOKIE_NAME || name === ANALYTICS_CONSENT_COOKIE_NAME;
+}
+
+export function isClientTelemetryEnvironment(): boolean {
+    return false;
 }

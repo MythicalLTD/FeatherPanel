@@ -34,6 +34,8 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useSession } from '@/contexts/SessionContext';
 import Permissions from '@/lib/permissions';
+import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface Category {
     id: number;
@@ -251,6 +253,7 @@ export default function TicketsPage() {
             fetchTickets();
         } catch (error: unknown) {
             console.error('Failed to delete ticket', error);
+            toast.error(getApiErrorMessage(error, t, 'tickets.failedToDelete'));
         } finally {
             setDeleting(false);
         }

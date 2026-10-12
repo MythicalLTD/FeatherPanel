@@ -23,9 +23,11 @@ use App\Helpers\WebSpaceGateway;
 use App\WebSpaceSubuserPermissions;
 use App\Helpers\FeatherQuilldClient;
 use App\Helpers\WebSpaceAppsCatalog;
+use App\Helpers\WebSpacePluginEvents;
 use App\Helpers\WebSpaceActivityLogger;
 use App\Helpers\CheckWebSpacePermission;
 use App\Helpers\WebSpaceWordPressInstaller;
+use App\Plugins\Events\Events\WebSpaceEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -76,6 +78,12 @@ class WebSpaceAppsController
             ],
         );
 
+        WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceAppInstalled(), WebSpacePluginEvents::basePayload(
+            is_array($user) ? ($user['uuid'] ?? null) : null,
+            $space,
+            ['app' => 'wordpress', 'result' => $result],
+        ));
+
         return ApiResponse::success($result, 'WordPress installed', 200);
     }
 
@@ -116,6 +124,12 @@ class WebSpaceAppsController
             'wordpress.update',
             ['directory' => $result['directory'] ?? '/'],
         );
+
+        WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceAppUpdated(), WebSpacePluginEvents::basePayload(
+            is_array($user) ? ($user['uuid'] ?? null) : null,
+            $space,
+            ['app' => 'wordpress', 'result' => $result],
+        ));
 
         return ApiResponse::success($result, 'WordPress updated', 200);
     }
@@ -254,6 +268,13 @@ class WebSpaceAppsController
             ['directory' => $result['directory'] ?? '/', 'database' => $result['database'] ?? null],
         );
 
+        $user = $request->attributes->get('user');
+        WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceAppInstalled(), WebSpacePluginEvents::basePayload(
+            is_array($user) ? ($user['uuid'] ?? null) : null,
+            $space,
+            ['app' => 'laravel', 'result' => $result],
+        ));
+
         return ApiResponse::success($result, 'Laravel installed', 200);
     }
 
@@ -299,6 +320,13 @@ class WebSpaceAppsController
             ['directory' => $result['directory'] ?? '/', 'database' => $result['database'] ?? null],
         );
 
+        $user = $request->attributes->get('user');
+        WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceAppInstalled(), WebSpacePluginEvents::basePayload(
+            is_array($user) ? ($user['uuid'] ?? null) : null,
+            $space,
+            ['app' => 'joomla', 'result' => $result],
+        ));
+
         return ApiResponse::success($result, 'Joomla installed', 200);
     }
 
@@ -343,6 +371,13 @@ class WebSpaceAppsController
             'drupal.install',
             ['directory' => $result['directory'] ?? '/', 'database' => $result['database'] ?? null],
         );
+
+        $user = $request->attributes->get('user');
+        WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceAppInstalled(), WebSpacePluginEvents::basePayload(
+            is_array($user) ? ($user['uuid'] ?? null) : null,
+            $space,
+            ['app' => 'drupal', 'result' => $result],
+        ));
 
         return ApiResponse::success($result, 'Drupal installed', 200);
     }
@@ -392,6 +427,13 @@ class WebSpaceAppsController
             'directory' => $result['directory'] ?? '/',
         ]);
 
+        $user = $request->attributes->get('user');
+        WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceAppInstalled(), WebSpacePluginEvents::basePayload(
+            is_array($user) ? ($user['uuid'] ?? null) : null,
+            $space,
+            ['app' => 'ghost', 'result' => $result],
+        ));
+
         return ApiResponse::success($result, 'Ghost installed', 200);
     }
 
@@ -432,6 +474,13 @@ class WebSpaceAppsController
             'node_starter.install',
             ['directory' => $result['directory'] ?? '/'],
         );
+
+        $user = $request->attributes->get('user');
+        WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceAppInstalled(), WebSpacePluginEvents::basePayload(
+            is_array($user) ? ($user['uuid'] ?? null) : null,
+            $space,
+            ['app' => 'node_starter', 'result' => $result],
+        ));
 
         return ApiResponse::success($result, 'Node starter created', 200);
     }
@@ -474,6 +523,13 @@ class WebSpaceAppsController
             ['directory' => $result['directory'] ?? '/'],
         );
 
+        $user = $request->attributes->get('user');
+        WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceAppInstalled(), WebSpacePluginEvents::basePayload(
+            is_array($user) ? ($user['uuid'] ?? null) : null,
+            $space,
+            ['app' => 'python_starter', 'result' => $result],
+        ));
+
         return ApiResponse::success($result, 'Python starter created', 200);
     }
 
@@ -514,6 +570,13 @@ class WebSpaceAppsController
             'wordpress.plugin_install',
             ['slug' => $result['slug'] ?? null, 'directory' => $result['directory'] ?? '/'],
         );
+
+        $user = $request->attributes->get('user');
+        WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceAppInstalled(), WebSpacePluginEvents::basePayload(
+            is_array($user) ? ($user['uuid'] ?? null) : null,
+            $space,
+            ['app' => 'wordpress_plugin', 'result' => $result],
+        ));
 
         return ApiResponse::success($result, 'Plugin installed', 200);
     }
@@ -634,6 +697,13 @@ class WebSpaceAppsController
                 'ref' => $result['ref'] ?? null,
             ],
         );
+
+        $user = $request->attributes->get('user');
+        WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceAppUpdated(), WebSpacePluginEvents::basePayload(
+            is_array($user) ? ($user['uuid'] ?? null) : null,
+            $space,
+            ['app' => 'git_deploy', 'result' => $result],
+        ));
 
         return ApiResponse::success($result, 'Git deploy complete', 200);
     }
@@ -812,6 +882,13 @@ class WebSpaceAppsController
             'directory' => $result['directory'] ?? '/',
             'database' => $result['database'] ?? null,
         ]);
+
+        $user = $request->attributes->get('user');
+        WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceAppInstalled(), WebSpacePluginEvents::basePayload(
+            is_array($user) ? ($user['uuid'] ?? null) : null,
+            $space,
+            ['app' => $logKey, 'result' => $result],
+        ));
 
         return ApiResponse::success($result, ucfirst($logKey) . ' installed', 200);
     }

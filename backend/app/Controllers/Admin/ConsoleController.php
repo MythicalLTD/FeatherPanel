@@ -18,6 +18,7 @@
 namespace App\Controllers\Admin;
 
 use App\App;
+use App\Helpers\DemoGuard;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
@@ -66,6 +67,10 @@ class ConsoleController
     )]
     public function executeCommand(Request $request): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         try {
             $config = App::getInstance(true)->getConfig();
             if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {

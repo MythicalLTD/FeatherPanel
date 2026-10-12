@@ -28,6 +28,7 @@ import { Select } from '@/components/ui/select-native';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Plus, Trash2, RefreshCw, Layers, Loader2, Monitor, Cpu, ShieldAlert } from 'lucide-react';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { TutorialVM } from './TutorialVM';
 import { TutorialLXC } from './TutorialLXC';
@@ -84,8 +85,8 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
         try {
             const { data } = await axios.get(`/api/admin/vm-nodes/${nodeId}/templates`);
             setTemplates(Array.isArray(data.data?.templates) ? data.data.templates : []);
-        } catch {
-            toast.error(t('admin.vdsNodes.ips.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.ips.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -105,12 +106,11 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                 setProxmoxVms(Array.isArray(res.data.data?.vms) ? res.data.data.vms : []);
             })
             .catch((err) => {
-                const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-                setProxmoxVmsError(msg || 'Failed to load VMs from Proxmox');
+                setProxmoxVmsError(getApiErrorMessage(err, t, 'common.error'));
                 setProxmoxVms([]);
             })
             .finally(() => setLoadingProxmoxVms(false));
-    }, [createOpen, nodeId]);
+    }, [createOpen, nodeId, t]);
 
     const handleProxmoxVmSelect = (vmidStr: string) => {
         const vmid = vmidStr ? Number(vmidStr) : 0;
@@ -159,8 +159,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
             setCreateForm({ name: '', template_file: '', guest_type: 'qemu', description: '', lxc_root_password: '' });
             loadTemplates();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg || t('admin.vdsNodes.templates.create_failed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.vdsNodes.templates.create_failed'));
         } finally {
             setCreating(false);
         }
@@ -174,8 +173,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
             setDeleteConfirmId(null);
             loadTemplates();
         } catch (err) {
-            const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg || t('admin.vdsNodes.templates.delete_failed'));
+            toast.error(getApiErrorMessage(err, t, 'admin.vdsNodes.templates.delete_failed'));
         } finally {
             setDeletingId(null);
         }
@@ -236,7 +234,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                     <tr key={tpl.id} className='hover:bg-muted/20 transition-colors'>
                                         <td className='p-3 font-medium'>{tpl.name}</td>
                                         <td className='text-muted-foreground p-3 font-mono'>
-                                            {tpl.template_file ?? '—'}
+                                            {tpl.template_file ?? '-'}
                                         </td>
                                         <td className='text-muted-foreground p-3'>
                                             {tpl.guest_type === 'qemu' ? 'QEMU/KVM' : 'LXC'}
@@ -314,7 +312,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                             {t('admin.vdsNodes.templates.create_desc_select')}
                         </p>
                     </SheetHeader>
-                    <form onSubmit={handleCreate} className='mt-6 space-y-4'>
+                    <form onSubmit={handleCreate} className='mt-6 space-y-4' data-fp-save-shortcut>
                         <div>
                             <Label className='mb-2 block'>{t('admin.vdsNodes.templates.field_select_vm')}</Label>
                             {loadingProxmoxVms ? (

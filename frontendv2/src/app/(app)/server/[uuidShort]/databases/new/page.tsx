@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import { AlertTriangle, Database, Lock, Plus, Server as ServerIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -33,6 +33,7 @@ import { Label } from '@/components/ui/label';
 import { HeadlessSelect } from '@/components/ui/headless-select';
 import type { DatabaseHost, Server } from '@/types/server';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function CreateDatabasePage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -89,7 +90,7 @@ export default function CreateDatabasePage() {
                 }
             } catch (error) {
                 console.error('Failed to load create database context:', error);
-                toast.error(t('serverDatabases.failedToFetch'));
+                toast.error(getApiErrorMessage(error, t, 'serverDatabases.failedToFetch'));
             } finally {
                 setLoading(false);
             }
@@ -129,15 +130,10 @@ export default function CreateDatabasePage() {
                 toast.success(t('serverDatabases.createSuccess'));
                 router.push(`/server/${uuidShort}/databases`);
             } else {
-                toast.error(data?.message || t('serverDatabases.createFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverDatabases.createFailed'));
             }
         } catch (error) {
-            const axiosError = error as AxiosError<{ message?: string; error_message?: string }>;
-            toast.error(
-                axiosError.response?.data?.message ||
-                    axiosError.response?.data?.error_message ||
-                    t('serverDatabases.createFailed'),
-            );
+            toast.error(getApiErrorMessage(error, t, 'serverDatabases.createFailed'));
         } finally {
             setSaving(false);
         }
@@ -216,7 +212,7 @@ export default function CreateDatabasePage() {
                 </div>
             )}
 
-            <form onSubmit={handleCreate} className='space-y-8'>
+            <form onSubmit={handleCreate} className='space-y-8' data-fp-save-shortcut>
                 <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
                     <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                         <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>

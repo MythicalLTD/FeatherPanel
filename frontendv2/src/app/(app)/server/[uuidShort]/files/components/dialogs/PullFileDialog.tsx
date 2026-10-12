@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useState } from 'react';
 import {
     Dialog,
@@ -61,8 +62,8 @@ export function PullFileDialog({ open, onOpenChange, uuid, root, onSuccess }: Pu
             onOpenChange(false);
             setUrl('');
             setFilename('');
-        } catch {
-            toast.error(t('files.dialogs.pull.error'), { id: toastId });
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.dialogs.pull.error'), { id: toastId });
         } finally {
             setLoading(false);
         }

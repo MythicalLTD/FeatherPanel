@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { HardDrive, Cpu, Database, ArrowDown, ArrowUp, Activity, Globe, ExternalLink, Server } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Progress } from '@/components/ui/progress';
+import { OverflowText } from '@/components/featherui/OverflowText';
 import { cn, formatFileSize } from '@/lib/utils';
 import { getProgressColor } from '@/lib/server-utils';
 import { buildWebSpaceAccessUrls, type WebSpaceAccessUrls } from '@/lib/webspace-urls';
@@ -272,7 +273,7 @@ export function WebSpaceInfoCards({
                     <div className='flex items-center justify-between gap-2 text-sm'>
                         <span className='text-muted-foreground flex min-w-0 items-center gap-2'>
                             <ArrowDown className='h-3 w-3 shrink-0' />
-                            <span className='truncate'>{t('servers.console.info_cards.network_rx')}</span>
+                            <OverflowText>{t('servers.console.info_cards.network_rx')}</OverflowText>
                         </span>
                         <span className='shrink-0 font-medium tabular-nums'>
                             {util?.network_rx_bytes != null ? `${formatFileSize(util.network_rx_bytes)}/s` : na}
@@ -281,7 +282,7 @@ export function WebSpaceInfoCards({
                     <div className='flex items-center justify-between gap-2 text-sm'>
                         <span className='text-muted-foreground flex min-w-0 items-center gap-2'>
                             <ArrowUp className='h-3 w-3 shrink-0' />
-                            <span className='truncate'>{t('servers.console.info_cards.network_tx')}</span>
+                            <OverflowText>{t('servers.console.info_cards.network_tx')}</OverflowText>
                         </span>
                         <span className='shrink-0 font-medium tabular-nums'>
                             {util?.network_tx_bytes != null ? `${formatFileSize(util.network_tx_bytes)}/s` : na}
@@ -295,13 +296,13 @@ export function WebSpaceInfoCards({
                                         <Server className='h-3 w-3 shrink-0' />
                                         {t('webSpaces.overview.webplate')}
                                     </span>
-                                    <span className='truncate font-medium'>{webplateName}</span>
+                                    <OverflowText className='font-medium'>{webplateName}</OverflowText>
                                 </div>
                             )}
                             {nodeName && (
                                 <div className='flex items-center justify-between gap-2'>
                                     <span className='text-muted-foreground'>{t('webSpaces.overview.node')}</span>
-                                    <span className='truncate font-medium'>{nodeName}</span>
+                                    <OverflowText className='font-medium'>{nodeName}</OverflowText>
                                 </div>
                             )}
                         </div>

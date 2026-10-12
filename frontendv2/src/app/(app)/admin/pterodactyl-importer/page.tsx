@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -148,8 +149,8 @@ export default function PterodactylImporterPage() {
             } else {
                 toast.error(t('admin.pterodactyl_importer.prerequisites.failed'));
             }
-        } catch {
-            toast.error(t('admin.pterodactyl_importer.prerequisites.failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.pterodactyl_importer.prerequisites.failed'));
         } finally {
             setIsCheckingPrerequisites(false);
         }
@@ -165,8 +166,8 @@ export default function PterodactylImporterPage() {
                 } else {
                     toast.error(t('admin.pterodactyl_importer.toasts.failed_load_key'));
                 }
-            } catch {
-                toast.error(t('admin.pterodactyl_importer.toasts.failed_load_key'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'admin.pterodactyl_importer.toasts.failed_load_key'));
             }
         },
         [t],
@@ -186,8 +187,8 @@ export default function PterodactylImporterPage() {
             } else {
                 toast.error(t('admin.pterodactyl_importer.toasts.failed_fetch_keys'));
             }
-        } catch {
-            toast.error(t('admin.pterodactyl_importer.toasts.failed_fetch_keys'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.pterodactyl_importer.toasts.failed_fetch_keys'));
         } finally {
             setLoadingApiKeys(false);
         }
@@ -216,8 +217,8 @@ export default function PterodactylImporterPage() {
             } else {
                 toast.error(t('admin.pterodactyl_importer.toasts.key_create_failed'));
             }
-        } catch {
-            toast.error(t('admin.pterodactyl_importer.toasts.key_create_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.pterodactyl_importer.toasts.key_create_failed'));
         } finally {
             setIsCreatingApiKey(false);
         }

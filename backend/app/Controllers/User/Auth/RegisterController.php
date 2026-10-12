@@ -26,6 +26,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Mail\templates\Welcome;
+use App\Helpers\PanelIpBlockGuard;
 use App\Helpers\UserDeviceTracker;
 use App\Mail\templates\VerifyEmail;
 use App\CloudFlare\CloudFlareRealIP;
@@ -227,6 +228,24 @@ class RegisterController
         }
 
         $clientIp = CloudFlareRealIP::getRealIP();
+        $ipBanResponse = PanelIpBlockGuard::assertRegistrationAllowed($clientIp);
+        if ($ipBanResponse !== null) {
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    AuthEvent::onAuthRegistrationFailed(),
+                    [
+                        'email' => $data['email'],
+                        'username' => $data['username'],
+                        'reason' => PanelIpBlockGuard::ERROR_CODE,
+                        'ip_address' => $clientIp,
+                    ]
+                );
+            }
+
+            return $ipBanResponse;
+        }
+
         $abuseDecision = AbuseIPDBRegistrationGuard::evaluate($clientIp);
         if (AbuseIPDBRegistrationGuard::shouldBlock($abuseDecision)) {
             global $eventManager;

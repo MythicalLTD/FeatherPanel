@@ -157,6 +157,38 @@ class Spell
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
 
+    /** Resolve local egg inheritance for exports and Wings; imported IDs are never reused. */
+    public static function resolveConfiguration(array $spell, ?callable $lookup = null, array $visited = []): array
+    {
+        $id = (int) ($spell['id'] ?? 0);
+        if ($id > 0 && isset($visited[$id])) {
+            return $spell;
+        }
+        $visited[$id] = true;
+        $lookup ??= self::getSpellById(...);
+
+        $parentId = (int) ($spell['config_from'] ?? 0);
+        if ($parentId > 0 && !isset($visited[$parentId]) && ($parent = $lookup($parentId))) {
+            $parent = self::resolveConfiguration($parent, $lookup, $visited);
+            foreach (['config_files', 'config_startup', 'config_logs', 'config_stop', 'features'] as $field) {
+                if (($spell[$field] ?? null) === null) {
+                    $spell[$field] = $parent[$field] ?? null;
+                }
+            }
+            $spell['file_denylist'] = $parent['file_denylist'] ?? null;
+        }
+
+        $parentId = (int) ($spell['copy_script_from'] ?? 0);
+        if ($parentId > 0 && !isset($visited[$parentId]) && ($parent = $lookup($parentId))) {
+            $parent = self::resolveConfiguration($parent, $lookup, $visited);
+            foreach (['script_install', 'script_entry', 'script_container'] as $field) {
+                $spell[$field] = $parent[$field] ?? null;
+            }
+        }
+
+        return $spell;
+    }
+
     /**
      * Resolve the file denylist configured on a server's spell.
      *
@@ -172,6 +204,9 @@ class Spell
         }
 
         $spell = self::getSpellById($spellId);
+        if ($spell) {
+            $spell = self::resolveConfiguration($spell);
+        }
         if (!$spell || empty($spell['file_denylist'])) {
             return [];
         }

@@ -567,7 +567,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         const [showSettings, setShowSettings] = useState(false);
         const [showQuickRules, setShowQuickRules] = useState(false);
         const [showHistory, setShowHistory] = useState(false);
-        // Sheet portals to body, so CSS sm:hidden cannot hide it — gate open state instead.
+        // Sheet portals to body, so CSS sm:hidden cannot hide it - gate open state instead.
         const [isNarrowViewport, setIsNarrowViewport] = useState(false);
 
         autoScrollRef.current = autoScroll;
@@ -860,6 +860,12 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             const host = terminalRef.current;
             let touchLastY = 0;
             let touchActive = false;
+            // Carries the fractional line remainder between touchmove events.
+            // Without this, small/slow finger movements (a very common case on
+            // mobile) round to a sub-1-line scroll amount that xterm's
+            // scrollLines() silently drops each time, making the console feel
+            // like it barely scrolls or doesn't scroll at all (#221, #230).
+            let touchLineRemainder = 0;
 
             const onTouchStart = (e: TouchEvent) => {
                 if (e.touches.length !== 1) {
@@ -868,6 +874,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                 }
                 touchLastY = e.touches[0].clientY;
                 touchActive = true;
+                touchLineRemainder = 0;
             };
 
             const onTouchMove = (e: TouchEvent) => {
@@ -883,7 +890,12 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                 const rows = Math.max(terminal.rows, 1);
                 const cellHeight = host.clientHeight / rows || 14;
                 // Finger down → reveal older lines (negative scrollLines).
-                terminal.scrollLines(-dy / cellHeight);
+                const lines = -dy / cellHeight + touchLineRemainder;
+                const wholeLines = Math.trunc(lines);
+                touchLineRemainder = lines - wholeLines;
+                if (wholeLines !== 0) {
+                    terminal.scrollLines(wholeLines);
+                }
             };
 
             const onTouchEnd = () => {

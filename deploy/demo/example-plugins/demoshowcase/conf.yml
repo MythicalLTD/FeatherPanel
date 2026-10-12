@@ -1,0 +1,45 @@
+plugin:
+  name: DemoShowcase
+  identifier: demoshowcase
+  description: 'Public demo showcase addon — widgets on dashboard/admin/server pages, hide toggles, and spell-limited server nav.'
+  flags:
+    - hasEvents
+    - hasInstallScript
+  version: 1.1.0
+  target: v2
+  author:
+    - FeatherPanel Demo
+  icon: 'https://cdn.mythical.systems/featherpanel/logo.png'
+  requiredConfigs: {}
+  dependencies:
+    - php=8.3
+    - php-ext=pdo
+config:
+  - name: hide_dashboard_banner
+    display_name: 'Hide dashboard banner widget'
+    type: boolean
+    description: 'When true, the dashboard top banner widget is hidden (demo of plugin_setting visibility).'
+    required: false
+    validation: {}
+    default: 'false'
+  - name: hide_admin_card
+    display_name: 'Hide admin home card'
+    type: boolean
+    description: 'Hide the Demo Showcase card on the admin home page.'
+    required: false
+    validation: {}
+    default: 'false'
+  - name: hide_server_console_card
+    display_name: 'Hide server console card'
+    type: boolean
+    description: 'Hide the showcase card on the server console page.'
+    required: false
+    validation: {}
+    default: 'false'
+  - name: tip_text
+    display_name: 'Banner tip text'
+    type: text
+    description: 'Custom tip shown in the dashboard banner widget.'
+    required: false
+    validation: {}
+    default: 'This widget comes from the DemoShowcase addon. Toggle visibility under Admin → Plugins → DemoShowcase.'

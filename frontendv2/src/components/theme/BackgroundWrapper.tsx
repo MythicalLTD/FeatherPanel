@@ -31,7 +31,7 @@ export default function BackgroundWrapper({
     fillViewport = false,
 }: {
     children: React.ReactNode;
-    /** Lock shell to viewport height — dashboard uses a single inner scroll area. */
+    /** Lock shell to viewport height - dashboard uses a single inner scroll area. */
     fillViewport?: boolean;
 }) {
     const {

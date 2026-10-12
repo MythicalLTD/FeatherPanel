@@ -19,6 +19,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { adminSettingsApi, OrganizedSettings, Setting } from '@/lib/admin-settings-api';
+import { useDemoMode } from '@/hooks/useDemoMode';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -33,6 +34,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import {
     Settings,
     Mail,
@@ -67,7 +69,7 @@ const UPDATE_PROGRESS_TTL_MS = 10 * 60 * 1000;
 
 const ADMIN_SETTING_DISPLAY_NAMES: Record<string, string> = {
     server_lifecycle_hooks_enabled: 'Lifecycle hooks (pre-start / pre-stop / post-start / crash)',
-    server_lifecycle_hooks_container_shell_enabled: 'Lifecycle Container Shell (docker exec)',
+    server_lifecycle_hooks_container_shell_enabled: 'Container Shell (docker exec) for lifecycle hooks & schedules',
     auth_shell_tagline: 'Auth marketing tagline',
     auth_aside_title: 'Marketing panel title',
     auth_login_headline: 'Login headline',
@@ -151,7 +153,11 @@ function SettingFieldRow({
         translatedLabel !== labelKey ? translatedLabel : formatSettingName(currentSetting.name, settingKey);
     const description = translatedDescription !== descriptionKey ? translatedDescription : currentSetting.description;
 
-    if (currentSetting.type === 'toggle' || (currentSetting.type as string) === 'boolean') {
+    if (
+        settingKey === 'telemetry' ||
+        currentSetting.type === 'toggle' ||
+        (currentSetting.type as string) === 'boolean'
+    ) {
         return (
             <div className='border-border/50 bg-card/30 hover:bg-card/50 flex flex-row items-center justify-between gap-4 rounded-2xl border p-4 transition-colors'>
                 <div className='min-w-0 space-y-0.5 pr-2'>
@@ -165,7 +171,9 @@ function SettingFieldRow({
                     checked={
                         currentSetting.value === true || currentSetting.value === 'true' || currentSetting.value === 1
                     }
-                    onCheckedChange={(checked: boolean) => onSettingChange(settingKey, checked)}
+                    onCheckedChange={(checked: boolean) =>
+                        onSettingChange(settingKey, settingKey === 'telemetry' ? String(checked) : checked)
+                    }
                     className='shrink-0'
                 />
             </div>
@@ -267,6 +275,7 @@ function SettingFieldRow({
 
 export default function SettingsPage() {
     const { t } = useTranslation();
+    const isDemo = useDemoMode();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [sendingTestEmail, setSendingTestEmail] = useState(false);
@@ -361,10 +370,10 @@ export default function SettingsPage() {
 
                     setInitialSettings(JSON.parse(JSON.stringify(response.data.settings)));
                 } else {
-                    toast.error(response.message || t('admin.settings.messages.load_failed'));
+                    toast.error(getApiErrorMessageFromPayload(response, t, 'admin.settings.messages.load_failed'));
                 }
-            } catch {
-                toast.error(t('admin.settings.messages.load_failed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'admin.settings.messages.load_failed'));
             } finally {
                 setLoading(false);
             }
@@ -438,14 +447,15 @@ export default function SettingsPage() {
 
             const response = await adminSettingsApi.updateSettings(payload);
             if (response.success) {
-                toast.success(response.message || t('admin.settings.messages.save_success'));
+                toast.success(t('admin.settings.messages.save_success'));
 
                 setInitialSettings(JSON.parse(JSON.stringify(settings)));
+                if ('telemetry' in payload) window.location.reload();
             } else {
-                toast.error(response.message || t('admin.settings.messages.save_failed'));
+                toast.error(getApiErrorMessageFromPayload(response, t, 'admin.settings.messages.save_failed'));
             }
-        } catch {
-            toast.error(t('admin.settings.messages.save_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.settings.messages.save_failed'));
         } finally {
             setSaving(false);
         }
@@ -454,7 +464,7 @@ export default function SettingsPage() {
     const handleUploadLogs = async () => {
         const promise = adminSettingsApi.uploadLogs().then((data) => {
             if (!data.success || !data.data) {
-                throw new Error(data.message || t('admin.settings.logs.upload_failed'));
+                throw new Error(getApiErrorMessageFromPayload(data, t, 'admin.settings.logs.upload_failed'));
             }
             return data;
         });
@@ -476,16 +486,12 @@ export default function SettingsPage() {
         try {
             const response = await axios.post('/api/admin/settings/email/test');
             if (response.data.success) {
-                toast.success(response.data.message || t('admin.settings.email_test.success'));
+                toast.success(t('admin.settings.email_test.success'));
             } else {
-                toast.error(response.data.message || t('admin.settings.email_test.failed_short'));
+                toast.error(getApiErrorMessageFromPayload(response.data, t, 'admin.settings.email_test.failed_short'));
             }
         } catch (error: unknown) {
-            if (axios.isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.settings.email_test.failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.settings.email_test.failed'));
         } finally {
             setSendingTestEmail(false);
         }
@@ -543,11 +549,11 @@ export default function SettingsPage() {
                 icon={Settings}
                 actions={
                     <div className='flex flex-wrap items-center justify-end gap-2'>
-                        <Button variant='outline' onClick={handleUploadLogs} className='shrink-0'>
+                        <Button variant='outline' onClick={handleUploadLogs} className='shrink-0' disabled={isDemo}>
                             <UploadCloud className='mr-2 h-4 w-4' />
                             {t('admin.settings.actions.upload_logs')}
                         </Button>
-                        <Button onClick={handleSave} disabled={saving} className='shrink-0'>
+                        <Button onClick={handleSave} disabled={saving} className='shrink-0' data-fp-save-shortcut>
                             {saving ? (
                                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                             ) : (
@@ -667,7 +673,12 @@ export default function SettingsPage() {
                                                 ) : (
                                                     <span />
                                                 )}
-                                                <Button onClick={handleSave} disabled={saving} className='shrink-0'>
+                                                <Button
+                                                    onClick={handleSave}
+                                                    disabled={saving}
+                                                    className='shrink-0'
+                                                    data-fp-save-shortcut
+                                                >
                                                     {saving ? (
                                                         <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                                     ) : (

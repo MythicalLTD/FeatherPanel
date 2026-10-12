@@ -22,13 +22,13 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Helpers\WebSpaceScheduleTasks;
 use App\Helpers\WebPlateCascadeService;
+use App\Plugins\Events\Events\WebPlatesEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Admin CRUD for WebPlates (web hosting templates — not Spells).
- */
-class WebPlatesController
+ */class WebPlatesController
 {
     #[OA\Get(path: '/api/admin/webplates', summary: 'List WebPlates', tags: ['Admin - WebPlates'])]
     public function index(Request $request): Response
@@ -127,6 +127,8 @@ class WebPlatesController
             $plate['default_schedules'] = WebPlate::getDefaultSchedules($plate);
         }
 
+        self::emitPluginEvent(WebPlatesEvent::onWebPlateCreated(), ['webplate' => $plate]);
+
         return ApiResponse::success(['webplate' => $plate], 'WebPlate created', 201);
     }
 
@@ -193,6 +195,11 @@ class WebPlatesController
 
         $cascade = WebPlateCascadeService::cascadeAfterPlateUpdate($previousPlate, $plate ?: []);
 
+        self::emitPluginEvent(WebPlatesEvent::onWebPlateUpdated(), [
+            'webplate_id' => $id,
+            'webplate' => $plate,
+        ]);
+
         return ApiResponse::success([
             'webplate' => $plate,
             'cascaded_count' => $cascade['cascaded'],
@@ -207,14 +214,33 @@ class WebPlatesController
             return ApiResponse::error('WebPlate not found', 'WEBPLATE_NOT_FOUND', 404);
         }
 
-        if (!WebPlate::delete($id)) {
+        if (WebPlate::countWebSpacesUsing($id) > 0) {
             return ApiResponse::error(
-                'Failed to delete WebPlate (it may still be used by WebSpaces)',
-                'DELETE_FAILED',
+                'Cannot delete WebPlate that is in use by one or more WebSpaces',
+                'WEBPLATE_IN_USE',
                 409,
             );
         }
 
+        if (!WebPlate::delete($id)) {
+            return ApiResponse::error('Failed to delete WebPlate', 'WEBPLATE_DELETE_FAILED', 500);
+        }
+
+        self::emitPluginEvent(WebPlatesEvent::onWebPlateDeleted(), [
+            'webplate_id' => $id,
+        ]);
+
         return ApiResponse::success(['id' => $id], 'WebPlate deleted', 200);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private static function emitPluginEvent(string $event, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($event, $payload);
+        }
     }
 }

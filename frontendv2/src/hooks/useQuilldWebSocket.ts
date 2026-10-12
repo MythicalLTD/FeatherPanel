@@ -17,6 +17,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
+import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface QuilldWsMessage {
     event?: string;
@@ -99,6 +101,7 @@ export function useQuilldWebSocket({
     onConsoleOutput,
     onStats,
 }: UseQuilldWebSocketOptions): UseQuilldWebSocketReturn {
+    const { t } = useTranslation();
     const [lines, setLines] = useState<string[]>([]);
     const [installLines, setInstallLines] = useState<string[]>([]);
     const [stats, setStats] = useState<QuilldStats | null>(null);
@@ -266,7 +269,7 @@ export function useQuilldWebSocket({
                 if (cleanedUp || !enabled) return;
 
                 if (!response.data.success || !response.data.data?.token) {
-                    throw new Error(response.data.error_message || response.data.message || 'Failed to get JWT');
+                    throw new Error(getApiErrorMessageFromPayload(response.data, t, 'common.error'));
                 }
 
                 const socketUrl = response.data.data.connection_string || response.data.data.socket;
@@ -450,6 +453,7 @@ export function useQuilldWebSocket({
         markConnected,
         scheduleReconnect,
         clearReconnectTimer,
+        t,
     ]);
 
     return {

@@ -223,7 +223,7 @@ class AccountDeletionController
             }
         }
 
-        if ($app->isDemoMode() && in_array((int) $user['id'], [1, 2], true)) {
+        if ($app->isDemoMode()) {
             return ApiResponse::error('Unmanaged actions are not permitted in demo mode', 'UNMANAGED_ACTIONS_NOT_PERMITTED', 400);
         }
 

@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PickerSheet } from '@/components/ui/picker-sheet';
 import { Button } from '@/components/featherui/Button';
@@ -26,6 +26,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Search as SearchIcon, Plus, Network } from 'lucide-react';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 export interface VmFreeIpOption {
     id: number;
@@ -129,11 +130,7 @@ export function VmIpPickerSheet({
             setCreateErrors({});
             setMode('browse');
         } catch (error) {
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.vdsNodes.ips.add_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.ips.add_failed'));
         } finally {
             setCreating(false);
         }

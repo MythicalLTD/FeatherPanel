@@ -42,6 +42,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import type { BackgroundImageFit } from '@/contexts/ThemeContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { usePluginUi } from '@/contexts/PluginUiContext';
 import { useNavbarHoverReveal } from '@/hooks/useNavbarHoverReveal';
 import { useNavbarSticky } from '@/hooks/useNavbarSticky';
 import { useChromeLayout } from '@/hooks/useChromeLayout';
@@ -158,7 +159,7 @@ function SegmentButton({
             onClick={onClick}
             className={cn(
                 'border-border/60 bg-muted/20 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all',
-                active && 'border-primary/50 bg-primary/15 text-primary shadow-primary/10 shadow-sm',
+                active && 'border-primary bg-primary/15 text-primary',
                 !active &&
                     !disabled &&
                     'text-muted-foreground hover:border-primary/30 hover:bg-accent/40 hover:text-foreground',
@@ -190,7 +191,7 @@ function AnimatedBackgroundTile({
             onClick={onClick}
             className={cn(
                 'group relative overflow-hidden rounded-xl border text-left transition-all',
-                active ? 'border-primary ring-primary/30 ring-2' : 'border-border/50 hover:border-primary/40',
+                active ? 'border-primary' : 'border-border/50 hover:border-primary/40',
             )}
         >
             <BackgroundEffectPreview variant={variant} accentColor={accentColor} className='h-32 w-full' preview />
@@ -198,7 +199,7 @@ function AnimatedBackgroundTile({
                 <p className='truncate text-xs font-semibold text-white'>{label}</p>
             </div>
             {active && (
-                <span className='bg-primary text-primary-foreground absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full shadow-md'>
+                <span className='bg-primary text-primary-foreground absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full'>
                     <Check className='h-3 w-3' strokeWidth={3} aria-hidden />
                 </span>
             )}
@@ -227,9 +228,7 @@ function StaticPreviewTile({
             onClick={onClick}
             className={cn(
                 'group relative flex flex-col overflow-hidden rounded-2xl border text-left transition-all',
-                active
-                    ? 'border-primary shadow-primary/15 ring-primary/30 shadow-lg ring-2'
-                    : 'border-border/50 hover:border-primary/35 hover:shadow-md',
+                active ? 'border-primary' : 'border-border/50 hover:border-primary/35',
             )}
         >
             <div
@@ -244,7 +243,7 @@ function StaticPreviewTile({
                 {subtitle && <p className='text-muted-foreground truncate text-xs'>{subtitle}</p>}
             </div>
             {active && (
-                <span className='bg-primary text-primary-foreground absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full shadow-md'>
+                <span className='bg-primary text-primary-foreground absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full'>
                     <Check className='h-3.5 w-3.5' strokeWidth={3} aria-hidden />
                 </span>
             )}
@@ -270,7 +269,7 @@ function MotionOptionCard({
             className={cn(
                 'flex flex-col gap-2 rounded-2xl border p-5 text-left transition-all',
                 active
-                    ? 'border-primary/50 bg-primary/10 shadow-primary/10 shadow-md'
+                    ? 'border-primary bg-primary/10'
                     : 'border-border/50 bg-card/40 hover:border-primary/30 hover:bg-card/70',
             )}
         >
@@ -312,7 +311,7 @@ function LanguageOptionCard({
             className={cn(
                 'group relative flex items-center gap-3 rounded-2xl border p-4 text-left transition-all',
                 active
-                    ? 'border-primary/50 bg-primary/10 shadow-primary/10 ring-primary/20 shadow-md ring-2'
+                    ? 'border-primary bg-primary/10'
                     : 'border-border/50 bg-card/40 hover:border-primary/30 hover:bg-card/70',
                 disabled && 'cursor-not-allowed opacity-50',
             )}
@@ -333,7 +332,7 @@ function LanguageOptionCard({
                 </p>
             </div>
             {active && (
-                <span className='bg-primary text-primary-foreground flex h-6 w-6 shrink-0 items-center justify-center rounded-full shadow-sm'>
+                <span className='bg-primary text-primary-foreground flex h-6 w-6 shrink-0 items-center justify-center rounded-full'>
                     <Check className='h-3.5 w-3.5' strokeWidth={3} aria-hidden />
                 </span>
             )}
@@ -364,11 +363,15 @@ export default function AppearanceSettingsPanel() {
         setBackdropBlur,
         setBackdropDarken,
         setBackgroundImageFit,
+        themePackId,
+        themePacks,
+        setThemePackId,
     } = useTheme();
     const { navbarHoverReveal, setNavbarHoverReveal } = useNavbarHoverReveal();
     const { navbarSticky, setNavbarSticky } = useNavbarSticky();
     const { chromeLayout, setChromeLayout } = useChromeLayout();
     const sidebar = useSidebarPreferences();
+    const { packs: uiPacks, uiPackId, setUiPackId } = usePluginUi();
     const { t, availableLanguages, setLocale, locale, isLocaleLocked } = useTranslation();
     const { settings } = useSettings();
 
@@ -410,6 +413,8 @@ export default function AppearanceSettingsPanel() {
     const isBackgroundDisabled = theme === 'light' || settings?.app_background_type_lock === 'true';
     const isAccentColorLocked = settings?.app_accent_color_lock === 'true';
     const isThemeLocked = settings?.app_theme_lock === 'true';
+    const isThemePackLocked = settings?.app_theme_pack_lock === 'true';
+    const isUiPackLocked = settings?.app_ui_pack_lock === 'true';
 
     const applyCustomAccent = (hex: string) => {
         if (isAccentColorLocked) {
@@ -497,6 +502,101 @@ export default function AppearanceSettingsPanel() {
                             </SegmentGroup>
                         </FormSection>
 
+                        {(themePacks.length > 1 || uiPacks.length > 0) && (
+                            <FormSection className='space-y-4'>
+                                {themePacks.length > 1 && (
+                                    <div>
+                                        <p className='text-foreground mb-1 text-sm font-semibold'>
+                                            {t('appearance.themePack.title')}
+                                        </p>
+                                        <p className='text-muted-foreground mb-3 text-xs'>
+                                            {t('appearance.themePack.description')}
+                                        </p>
+                                        <div className='grid gap-2 sm:grid-cols-2'>
+                                            {themePacks.map((pack) => (
+                                                <button
+                                                    key={pack.id}
+                                                    type='button'
+                                                    disabled={isThemePackLocked}
+                                                    onClick={() => !isThemePackLocked && setThemePackId(pack.id)}
+                                                    className={cn(
+                                                        'rounded-xl border px-3.5 py-3 text-left transition-colors',
+                                                        themePackId === pack.id
+                                                            ? 'border-primary/40 bg-primary/10'
+                                                            : 'border-border/40 bg-card/40 hover:bg-accent/40',
+                                                        isThemePackLocked && 'cursor-not-allowed opacity-50',
+                                                    )}
+                                                >
+                                                    <p className='text-foreground text-sm font-medium'>{pack.name}</p>
+                                                    <p className='text-muted-foreground mt-0.5 text-xs'>
+                                                        {pack.pluginName}
+                                                    </p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {isThemePackLocked && (
+                                            <p className='text-muted-foreground mt-2 text-xs'>
+                                                {t('appearance.themePack.lockedByAdmin')}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                                {uiPacks.length > 0 && (
+                                    <div>
+                                        <p className='text-foreground mb-1 text-sm font-semibold'>
+                                            {t('appearance.uiPack.title')}
+                                        </p>
+                                        <p className='text-muted-foreground mb-3 text-xs'>
+                                            {t('appearance.uiPack.description')}
+                                        </p>
+                                        <div className='grid gap-2 sm:grid-cols-2'>
+                                            <button
+                                                type='button'
+                                                disabled={isUiPackLocked}
+                                                onClick={() => !isUiPackLocked && setUiPackId('none')}
+                                                className={cn(
+                                                    'rounded-xl border px-3.5 py-3 text-left transition-colors',
+                                                    uiPackId === 'none' || !uiPackId
+                                                        ? 'border-primary/40 bg-primary/10'
+                                                        : 'border-border/40 bg-card/40 hover:bg-accent/40',
+                                                    isUiPackLocked && 'cursor-not-allowed opacity-50',
+                                                )}
+                                            >
+                                                <p className='text-foreground text-sm font-medium'>
+                                                    {t('appearance.uiPack.none')}
+                                                </p>
+                                            </button>
+                                            {uiPacks.map((pack) => (
+                                                <button
+                                                    key={pack.id}
+                                                    type='button'
+                                                    disabled={isUiPackLocked}
+                                                    onClick={() => !isUiPackLocked && setUiPackId(pack.id)}
+                                                    className={cn(
+                                                        'rounded-xl border px-3.5 py-3 text-left transition-colors',
+                                                        uiPackId === pack.id
+                                                            ? 'border-primary/40 bg-primary/10'
+                                                            : 'border-border/40 bg-card/40 hover:bg-accent/40',
+                                                        isUiPackLocked && 'cursor-not-allowed opacity-50',
+                                                    )}
+                                                >
+                                                    <p className='text-foreground text-sm font-medium'>{pack.name}</p>
+                                                    <p className='text-muted-foreground mt-0.5 text-xs'>
+                                                        {pack.pluginName}
+                                                    </p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {isUiPackLocked && (
+                                            <p className='text-muted-foreground mt-2 text-xs'>
+                                                {t('appearance.uiPack.lockedByAdmin')}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                            </FormSection>
+                        )}
+
                         <FormSection>
                             <p className='text-foreground mb-4 text-sm font-semibold'>{t('appearance.accentColor')}</p>
                             <div className='grid grid-cols-5 gap-3 sm:grid-cols-8 lg:grid-cols-10'>
@@ -516,8 +616,7 @@ export default function AppearanceSettingsPanel() {
                                             onClick={() => !isAccentColorLocked && setAccentColor(presetId)}
                                             className={cn(
                                                 'ring-border/60 relative mx-auto flex h-10 w-10 items-center justify-center rounded-full ring-1 transition-transform',
-                                                accentColor === presetId &&
-                                                    'ring-primary ring-offset-background ring-2 ring-offset-2',
+                                                accentColor === presetId && 'ring-foreground/80 ring-2',
                                                 !isAccentColorLocked && 'hover:scale-110',
                                                 isAccentColorLocked && 'cursor-not-allowed opacity-50',
                                             )}
@@ -827,9 +926,8 @@ export default function AppearanceSettingsPanel() {
                                     type='button'
                                     onClick={() => setFontFamily(font.value)}
                                     className={cn(
-                                        'border-border/60 bg-card/50 hover:border-primary/40 flex flex-col rounded-2xl border p-4 text-left transition-all hover:shadow-md',
-                                        fontFamily === font.value &&
-                                            'border-primary bg-primary/10 ring-primary/20 ring-2',
+                                        'border-border/60 bg-card/50 hover:border-primary/40 flex flex-col rounded-2xl border p-4 text-left transition-all',
+                                        fontFamily === font.value && 'border-primary bg-primary/10',
                                     )}
                                 >
                                     <div className='mb-3 flex items-start justify-between gap-2'>

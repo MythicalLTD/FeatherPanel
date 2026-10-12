@@ -208,7 +208,11 @@ class UserDataExportProcessor implements TimeTask
                         $node['daemon_token'],
                         30
                     );
-                    $response = $wings->getServer()->deleteBackup((string) $backup['server_uuid'], (string) $backup['uuid']);
+                    $response = $wings->getServer()->deleteBackup(
+                        (string) $backup['server_uuid'],
+                        (string) $backup['uuid'],
+                        $this->pbsSnapshotForBackup($backup)
+                    );
                     if (!$response->isSuccessful()) {
                         App::getInstance(false, true)->getLogger()->warning(
                             'Failed to delete user data export Wings backup ' . $backup['uuid'] . ': ' . $response->getError()
@@ -238,6 +242,17 @@ class UserDataExportProcessor implements TimeTask
         $stmt->execute(['name' => 'Personal data export backup ' . $exportUuid]);
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * @param array<string, mixed> $backup
+     */
+    private function pbsSnapshotForBackup(array $backup): ?string
+    {
+        $disk = strtolower(trim((string) ($backup['disk'] ?? '')));
+        $snapshot = trim((string) ($backup['checksum'] ?? ''));
+
+        return $disk === 'pbs' && $snapshot !== '' ? $snapshot : null;
     }
 
     private function processExport(UserDataExportService $service, array $export): void

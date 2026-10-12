@@ -42,7 +42,7 @@ export default function PermissionGuard({
     }, [isSessionChecked, isLoading, hasPermission, permission, router, fallbackUrl]);
 
     if (!isSessionChecked || isLoading) {
-        // Cached session already hydrated — keep the shell visible while we refresh.
+        // Cached session already hydrated - keep the shell visible while we refresh.
         if (user) {
             if (!hasPermission(permission)) {
                 return <PageLoading />;

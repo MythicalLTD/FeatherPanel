@@ -1,10 +1,20 @@
 # Changelog
 
+## v1.4.1 STABLE
+
+### Fixed
+
+- Saving server startup settings no longer returns HTTP 500 (`Call to undefined method validateVariableValue()`); variable checks use `VariableValidator::validatePayload` only. by @nayskutzu
+
 ## v1.4.0 STABLE
 
 ### Added
 
+- Forms, sheets, dialogs, and page save actions across the panel support **Ctrl+S** / **⌘S** (mark with `data-fp-save-shortcut` or use `useSaveShortcut`). by @nayskutzu
+- Admin **backup schedules** for game servers: target specific servers, all servers on a node, or the whole panel; cron timing with timezone; run history; manual run; failure notifications. Reuses per-server backup limits/FIFO and each node’s default Wings backup adapter. by @nayskutzu
+- SMTP settings now include a dedicated **STARTTLS** encryption option (plus **None**), so providers like Brevo on port 587 can be configured correctly; the async mail runner maps `starttls`/`tls` to STARTTLS and `ssl` to SMTPS. by @nayskutzu
 - FeatherPanel **MCP OAuth 2.1** (DCR + PKCE + refresh) so Claude.ai custom connectors can **Connect** with panel sign-in / API-key consent; static Bearer / `x-api-key` headers still work. by @nayskutzu
+- Added so that the server status column from the database is a source of truth for the server status. by @nayskutzu
 - Widgets are now a part of the customization system. by @nayskutzu
 - Added full support for progressive web apps (PWA). by @nayskutzu
 - QR Code login was added to the panel for easy access to the panel. by @nayskutzu
@@ -12,6 +22,10 @@
 - WebSpaces now appear in the dashboard Resources list (with a WebSpaces filter) and use the left sidebar for navigation like servers and VDS. by @nayskutzu
 - The user WebSpaces list now matches the servers/VMs list UI (search, sort, grid/list). Self-service “Order WebSpace” was removed; admins provision WebSpaces. by @nayskutzu
 - Server **lifecycle hooks**: Discord webhook steps resolve container environment placeholders (e.g. `{{env.SERVER_PORT}}`, `{{env.YOUR_VAR}}`) in content, username, and embeds when the webhook is sent. by @nayskutzu
+- Server **lifecycle hooks**: new `post_stop` hook (runs after the server has stopped; webhook / HTTP / sleep steps only) and Container Shell steps now capture and log truncated stdout/stderr. by @nayskutzu
+- Server **lifecycle hooks** can now run a **Backup** step (server files, database dumps or full backup) just like schedule backup tasks, sharing the same limit/FIFO handling. Available on every hook type. by @nayskutzu
+- Schedules can now run a **Container Shell** task: a Linux command executed inside the server's Docker container (`docker exec … sh -c`) with a 1–120s timeout, captured stdout/stderr in the activity log, behind the existing admin Container Shell switch and the `control.console` permission. by @nayskutzu
+- Webmail links now use short-lived signed SSO tokens with encrypted mailbox credentials for both web-node Roundcube and the panel's Roundcube instance; plaintext credentials are no longer placed in URLs. by @nayskutzu
 - Servers can be chosen to be hidden from the public status page. by @nayskutzu
 - WebHosting was now added to the panel. by @nayskutzu
 - Database backups was added to the panel. by @nayskutzu
@@ -24,9 +38,16 @@
 - Brand new sidebar design that really is floating alongside a new Dockbar design. That can be customized with a lot of different styles. with LTR and RTL support. by @nayskutzu
 - Support for custom color schemes was added. So now users can chose their own colors for the panel. by @nayskutzu
 - Support for more icons engines were added. So now you can chose from lucide, tabler, react-icons, and more. by @nayskutzu
+- New way to hide plugins widgets, pages and so much more by @nayskutzu
+- Introduced the ability to block specific IP addresses from accessing panel services. by @nayskutzu
+- Added Wings backups to the panel. by @nayskutzu
 
 ### Improved
 
+- Premium sidebar customization now honors saved ordering across navigation groups, including plugin entries.
+- VDS console status polling no longer overlaps or remains blocked on a stalled request.
+- Administrators can hard-delete VDS records without contacting Proxmox.
+- Premium sidebar customization now applies consistently to VDS and WebSpace navigation, including plugin entries, ordering, visibility, and custom links.
 - Admin WebPlates list/create/edit now match Spells/Realms UI (filter chrome, ResourceCards, ghost actions, dual pagination, help cards). by @nayskutzu
 - Removed mistaken `user.webspaces.*` role permission nodes; panel roles stay `admin.*` only, and user WebSpace access uses subuser permissions (`settings.update`, etc.). by @nayskutzu
 - Admin WebSpaces list/create now match Servers/VDS (filter chrome, ghost actions, owner picker, owner on cards). by @nayskutzu
@@ -44,9 +65,18 @@
 - The crash page was improved with a better design and a better message. by @nayskutzu
 - Widget rendering system was improved to more fit the responsive design. by @nayskutzu
 - The api key encryption system was improved to use the new encryption system. by @nayskutzu & @Crackhead-gsk
+- Rewrote how the plugins settings ui works added releams and moved to a full ui rather than a modal! by @nayskutzu
+- The entire telemetry system was reworked to enhance privacy, ensure GDPR compliance, and provide secure error reporting to Mythical. by @nayskutzu
+- Enhanced handling of Pterodactyl egg file formats with expanded support for additional egg features. by @nayskutzu
+- Redesigned the VDS console to look better on more devices. by @nayskutzu
+- The documentation was improved to be more accurate and up to date on how to create plugins, widgets, events, permissions, and more. by @nayskutzu
+- Redesigned the create server experience for vds,servers,webspaces by @nayskutzu
+- Fixed several issues where exceeding form limits would return a generic error, instead of notifying you that the form length is too large. by @nayskutzu
 
 ### Fixed
 
+- Migrate no longer fails when removing obsolete addons whose trees contain pnpm directory symlinks (`rmdir(): Not a directory`). by @nayskutzu
+- Obsolete addons (`navlayout`, `whitelabel`, etc.) are skipped at route/plugin load so a half-deleted leftover tree no longer 500s on `/api/user/navlayout/active`. by @nayskutzu
 - Security: stop auth account enumeration on forgot-password and login (generic responses + timing-safe unknown-user path); Redis-backed per-account escalating login delay and tighter 2FA lockout; expire password reset tokens after 1 hour. by @Crackhead-gsk
 - Security: block admin privilege escalation via UsersController::update() (role/2FA/session fields require ADMIN_ROOT) and stop leaking daemon tokens from node list/detail responses; harden Node::searchNodes() sort allowlist. by @Crackhead-gsk
 - WebSpace schedule create/update no longer deadlocks MySQL (transaction used a second PDO connection) or hangs the UI waiting on daemon sync. by @nayskutzu
@@ -57,6 +87,7 @@
 - Fixed: Schedule creation no longer fails with a 500 error when `is_active` is submitted as a boolean; boolean values are handled correctly.
 - Fixes related to server transfers with bunch of allocations were fixed by @nayskutzu
 - The navbar server state was stuck to the last server state instead of updating when the server state changes. by @nayskutzu
+- Backups and similar tasks that remain pending for over 3 hours can now be canceled and marked as failed, preventing stuck or hanging jobs. by @nayskutzu
 
 ## v1.3.7.10 STABLE
 

@@ -63,7 +63,7 @@ export function DetailsTab({
     const { t } = useTranslation();
 
     return (
-        <form onSubmit={onSave}>
+        <form onSubmit={onSave} data-fp-save-shortcut>
             <PageCard title={t('admin.vmInstances.edit_tabs.details') ?? 'Details'} icon={Server}>
                 <div className='space-y-4'>
                     <div>

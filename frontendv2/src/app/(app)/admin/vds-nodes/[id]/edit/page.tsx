@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 import { DetailsTab } from './DetailsTab';
 import { ConnectionTab } from './ConnectionTab';
@@ -138,8 +139,8 @@ export default function EditVdsNodePage() {
                 params: { type: 'vps', limit: 100 },
             });
             setLocations((data.data?.locations ?? []) as Location[]);
-        } catch {
-            toast.error(t('admin.vdsNodes.errors.fetch_locations_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.errors.fetch_locations_failed'));
         }
     }, [t]);
 
@@ -209,8 +210,8 @@ export default function EditVdsNodePage() {
                         }
                     } catch {}
                 }
-            } catch {
-                toast.error(t('admin.vdsNodes.errors.fetch_failed'));
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.errors.fetch_failed'));
                 router.push('/admin/vds-nodes');
             } finally {
                 setLoadingNode(false);
@@ -246,7 +247,7 @@ export default function EditVdsNodePage() {
                     if (err.field) fieldErrors[err.field] = err.detail;
                 }
                 setErrors(fieldErrors);
-                toast.error(t('admin.vdsNodes.errors.validation_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.errors.validation_failed'));
             } else {
                 toast.error(t('admin.vdsNodes.errors.save_failed'));
             }
@@ -272,14 +273,12 @@ export default function EditVdsNodePage() {
             } else {
                 setConnectionResult({
                     ok: false,
-                    message: data.message ?? data.error_message ?? t('admin.vdsNodes.connection.failed'),
+                    message: getApiErrorMessageFromPayload(data, t, 'admin.vdsNodes.connection.failed'),
                     payload: data.data,
                 });
             }
         } catch (error) {
-            const errMsg = isAxiosError(error)
-                ? (error.response?.data?.message ?? error.message)
-                : t('admin.vdsNodes.connection.failed');
+            const errMsg = getApiErrorMessage(error, t, 'admin.vdsNodes.connection.failed');
             const payload = isAxiosError(error) ? error.response?.data?.data : undefined;
             setConnectionResult({ ok: false, message: errMsg, payload });
         } finally {
@@ -329,7 +328,7 @@ export default function EditVdsNodePage() {
                             <Wifi className='mr-2 h-4 w-4' />
                             {t('admin.vdsNodes.connection.test_button')}
                         </Button>
-                        <Button size='sm' onClick={handleSave} loading={saving}>
+                        <Button size='sm' onClick={handleSave} loading={saving} data-fp-save-shortcut>
                             <Save className='mr-2 h-4 w-4' />
                             {t('common.save')}
                         </Button>

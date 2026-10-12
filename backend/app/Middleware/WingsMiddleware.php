@@ -19,6 +19,7 @@ namespace App\Middleware;
 
 use App\Chat\Node;
 use App\Helpers\ApiResponse;
+use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -35,6 +36,11 @@ class WingsMiddleware implements MiddlewareInterface
         $token = $this->getWingsToken($request);
 
         if ($token == null) {
+            self::emitWings(WingsEvent::onWingsError(), [
+                'error' => 'NO_WINGS_TOKEN',
+                'message' => 'Missing Wings authorization token',
+            ]);
+
             return ApiResponse::error('You need authorization to hit this endpoint!', 'NO_WINGS_TOKEN', 401, []);
         }
 
@@ -46,8 +52,24 @@ class WingsMiddleware implements MiddlewareInterface
         // Game nodes (FeatherWings) only — web nodes use FeatherQuilldMiddleware on /api/quilld-remote/*
         $node = Node::getNodeByWingsAuth($tokenId, $tokenSecret);
         if ($node === null) {
+            self::emitWings(WingsEvent::onWingsError(), [
+                'error' => 'INVALID_WINGS_TOKEN',
+                'message' => 'Invalid Wings authorization token',
+                'token_id' => $tokenId,
+            ]);
+            self::emitWings(WingsEvent::onWingsNodeConnectionStatus(), [
+                'node_id' => null,
+                'status' => 'unauthorized',
+                'token_id' => $tokenId,
+            ]);
+
             return ApiResponse::error('You are not authorized to hit this endpoint!', 'INVALID_WINGS_TOKEN', 401, []);
         }
+
+        self::emitWings(WingsEvent::onWingsNodeConnectionStatus(), [
+            'node_id' => $node['id'] ?? null,
+            'status' => 'connected',
+        ]);
 
         $request->attributes->set('wings_token', $token);
         $request->attributes->set('wings_token_id', $tokenId);
@@ -63,5 +85,13 @@ class WingsMiddleware implements MiddlewareInterface
     public static function getWingsToken(Request $request): ?string
     {
         return $request->headers->get('Authorization');
+    }
+
+    private static function emitWings(string $event, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($event, $payload);
+        }
     }
 }

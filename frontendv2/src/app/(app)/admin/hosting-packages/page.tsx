@@ -20,10 +20,11 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { Loader2, Package, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -67,8 +68,8 @@ export default function HostingPackagesPage() {
         try {
             const { data } = await axios.get('/api/admin/hosting-packages');
             setPackages((data?.data?.packages as HostingPackage[]) || []);
-        } catch {
-            toast.error(t('admin.hostingPackages.loadFailed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.hostingPackages.loadFailed'));
         } finally {
             setLoading(false);
         }
@@ -100,9 +101,7 @@ export default function HostingPackagesPage() {
             setForm(emptyForm);
             await load();
         } catch (error) {
-            let msg = t('admin.hostingPackages.createFailed');
-            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
-            toast.error(msg);
+            toast.error(getApiErrorMessage(error, t, 'admin.hostingPackages.createFailed'));
         } finally {
             setSaving(false);
         }
@@ -113,8 +112,8 @@ export default function HostingPackagesPage() {
             await axios.delete(`/api/admin/hosting-packages/${id}`);
             toast.success(t('admin.hostingPackages.deleted'));
             await load();
-        } catch {
-            toast.error(t('admin.hostingPackages.deleteFailed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.hostingPackages.deleteFailed'));
         }
     };
 
@@ -192,7 +191,7 @@ export default function HostingPackagesPage() {
                         />
                     </div>
                 </div>
-                <Button className='mt-4' loading={saving} onClick={() => void create()}>
+                <Button className='mt-4' loading={saving} onClick={() => void create()} data-fp-save-shortcut>
                     {t('admin.hostingPackages.create')}
                 </Button>
             </PageCard>

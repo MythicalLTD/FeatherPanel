@@ -21,13 +21,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState } from 'react';
 import Link from 'next/link';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { toast } from 'sonner';
 import { CheckCircle2, CircleAlert, Clock, Loader2, RefreshCw, Rocket, Sparkles, Wrench } from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
 import { useWebSpaceHostingMaturity } from '@/hooks/useWebSpaceHostingMaturity';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface WebSpaceHostingMaturityPanelProps {
     webNodeId?: number | string | null;
@@ -58,11 +59,7 @@ export function WebSpaceHostingMaturityPanel({
             toast.success(t('webSpaces.hosting.installWebmailDone'));
             await refresh();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.hosting.installWebmailFailed')
-                    : t('webSpaces.hosting.installWebmailFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.hosting.installWebmailFailed'));
         } finally {
             setInstallingWebmail(false);
         }

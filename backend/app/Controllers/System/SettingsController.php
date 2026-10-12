@@ -21,6 +21,7 @@ use App\App;
 use App\Config\PublicConfig;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Telemetry\UmamiTelemetry;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -75,7 +76,7 @@ class SettingsController
             'kernel' => SYSTEM_KERNEL_NAME,
             'os_name' => SYSTEM_OS_NAME,
             'hostname' => gethostname(),
-            'telemetry' => TELEMETRY,
+            'telemetry' => UmamiTelemetry::configuration($appInstance->getConfig())['enabled'],
             'startup' => defined('APP_START') ? number_format((microtime(true) - APP_START) * 1000, 2) . ' ms' : 'N/A',
             'request_id' => defined('REQUEST_ID') ? REQUEST_ID : '',
         ];

@@ -19,7 +19,14 @@ export function publicOriginFromRequest(req: Request): string {
         .split(',')[0]
         .trim()
         .toLowerCase();
-    const host = String(req.headers['x-forwarded-host'] || req.headers.host || 'localhost')
+
+    // Prefer the connection Host. Only honor X-Forwarded-Host when the operator
+    // explicitly opts in (MCP_TRUST_PROXY=1) and the reverse proxy overwrites it.
+    const trustProxy = process.env.MCP_TRUST_PROXY === '1' || process.env.MCP_TRUST_PROXY === 'true';
+    const rawHost = trustProxy
+        ? req.headers['x-forwarded-host'] || req.headers.host
+        : req.headers.host;
+    const host = String(rawHost || 'localhost')
         .split(',')[0]
         .trim();
 

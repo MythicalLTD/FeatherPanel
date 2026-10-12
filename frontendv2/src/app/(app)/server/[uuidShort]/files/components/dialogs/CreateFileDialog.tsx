@@ -26,9 +26,9 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
-import { getFeatherpanelApiErrorMessage } from '@/lib/api';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Textarea } from '@/components/featherui/Textarea';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 interface CreateFileDialogProps {
     open: boolean;
@@ -60,7 +60,7 @@ export function CreateFileDialog({ open, onOpenChange, uuid, root, onSuccess }: 
             onOpenChange(false);
         } catch (error) {
             console.error(error);
-            toast.error(getFeatherpanelApiErrorMessage(error) || t('files.dialogs.create_file.error'));
+            toast.error(getApiErrorMessage(error, t, 'files.dialogs.create_file.error'));
         } finally {
             setLoading(false);
         }
@@ -73,7 +73,7 @@ export function CreateFileDialog({ open, onOpenChange, uuid, root, onSuccess }: 
                     <DialogTitle>{t('files.dialogs.create_file.title')}</DialogTitle>
                     <DialogDescription>{t('files.dialogs.create_file.description', { root: root })}</DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className='space-y-4'>
+                <form onSubmit={handleSubmit} className='space-y-4' data-fp-save-shortcut>
                     <div className='space-y-2'>
                         <label className='text-sm font-medium'>{t('files.dialogs.create_file.name_label')}</label>
                         <Input

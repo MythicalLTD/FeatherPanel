@@ -21,6 +21,7 @@ use App\App;
 use App\Chat\User;
 use App\Chat\Activity;
 use App\Chat\Database;
+use App\Helpers\DemoGuard;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
@@ -160,6 +161,10 @@ class DatabaseSnapshotsController
     )]
     public function create(Request $request): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         try {
             $devModeCheck = $this->checkDeveloperMode();
             if ($devModeCheck !== null) {
@@ -406,6 +411,10 @@ class DatabaseSnapshotsController
     )]
     public function restore(Request $request, string $filename): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         try {
             $devModeCheck = $this->checkDeveloperMode();
             if ($devModeCheck !== null) {
@@ -526,6 +535,10 @@ class DatabaseSnapshotsController
     )]
     public function delete(Request $request, string $filename): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         try {
             $devModeCheck = $this->checkDeveloperMode();
             if ($devModeCheck !== null) {
@@ -620,6 +633,10 @@ class DatabaseSnapshotsController
     )]
     public function restoreUpload(Request $request): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         try {
             $devModeCheck = $this->checkDeveloperMode();
             if ($devModeCheck !== null) {

@@ -17,6 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import api from '@/lib/api';
 import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
@@ -89,15 +90,11 @@ export default function NodeStatusPage() {
                     setGlobalStats(res.data.data.global);
                     setNodes(res.data.data.nodes);
                 } else {
-                    setError(res.data.message || t('admin.nodes.error'));
+                    setError(getApiErrorMessageFromPayload(res.data, t, 'admin.nodes.error'));
                 }
             } catch (err) {
                 console.error('Failed to fetch node status:', err);
-
-                const errorMessage =
-                    (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
-                    t('admin.nodes.error');
-                setError(errorMessage as string);
+                setError(getApiErrorMessage(err, t, 'admin.nodes.error'));
             } finally {
                 setLoading(false);
             }

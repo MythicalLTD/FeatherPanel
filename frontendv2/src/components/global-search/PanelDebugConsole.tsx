@@ -324,7 +324,7 @@ export default function PanelDebugConsole() {
                                 <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-4'>
                                     <MetricCard
                                         label={t('globalSearch.debug.fields.user')}
-                                        value={user?.username ?? '—'}
+                                        value={user?.username ?? '-'}
                                     />
                                     <MetricCard
                                         label={t('globalSearch.debug.fields.path')}
@@ -333,7 +333,7 @@ export default function PanelDebugConsole() {
                                     />
                                     <MetricCard
                                         label={t('globalSearch.debug.fields.memory')}
-                                        value={memoryUsed ? formatBytes(memoryUsed) : '—'}
+                                        value={memoryUsed ? formatBytes(memoryUsed) : '-'}
                                         hint={t('globalSearch.debug.memoryHint')}
                                     />
                                     <MetricCard label={t('globalSearch.debug.fields.developerMode')} value='on' />
@@ -387,7 +387,7 @@ export default function PanelDebugConsole() {
                                         <pre className='text-foreground mt-2 overflow-x-auto font-mono text-[11px] whitespace-pre-wrap'>
                                             {typeof value === 'object'
                                                 ? JSON.stringify(value, null, 2)
-                                                : String(value ?? '—')}
+                                                : String(value ?? '-')}
                                         </pre>
                                         {typeof value === 'object' && value ? (
                                             <Button
@@ -441,7 +441,7 @@ export default function PanelDebugConsole() {
                                                         {bench.detail}
                                                     </td>
                                                     <td className='text-foreground px-3 py-2.5 text-right tabular-nums'>
-                                                        {bench.durationMs !== null ? `${bench.durationMs} ms` : '—'}
+                                                        {bench.durationMs !== null ? `${bench.durationMs} ms` : '-'}
                                                     </td>
                                                 </tr>
                                             ))}
@@ -524,7 +524,7 @@ export default function PanelDebugConsole() {
                                                             {probe.detail}
                                                         </td>
                                                         <td className='text-foreground px-3 py-2.5 text-right tabular-nums'>
-                                                            {probe.durationMs !== null ? `${probe.durationMs} ms` : '—'}
+                                                            {probe.durationMs !== null ? `${probe.durationMs} ms` : '-'}
                                                         </td>
                                                     </tr>
                                                 ))
@@ -592,7 +592,7 @@ export default function PanelDebugConsole() {
                                                 </div>
                                             </div>
                                             <p className='text-muted-foreground mt-1 truncate font-mono text-[10px]'>
-                                                {row.preview || '—'}
+                                                {row.preview || '-'}
                                             </p>
                                         </li>
                                     ))}

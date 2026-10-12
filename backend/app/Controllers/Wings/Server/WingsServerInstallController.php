@@ -104,6 +104,9 @@ class WingsServerInstallController
 
         // Get spell information
         $spell = Spell::getSpellById($server['spell_id']);
+        if ($spell) {
+            $spell = Spell::resolveConfiguration($spell);
+        }
         if (!$spell) {
             return ApiResponse::error('Spell not found', 'SPELL_NOT_FOUND', 404);
         }

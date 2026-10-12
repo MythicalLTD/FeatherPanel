@@ -173,6 +173,9 @@ PHP;
                 @copy($src, $target . '/' . $file);
             }
         }
+
+        // Ensure SSO secret under storage/config (not web-served).
+        WebmailSso::panelSecretForTokenPhp();
     }
 
     private static function copyTree(string $src, string $dst): void

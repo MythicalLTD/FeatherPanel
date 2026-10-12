@@ -50,6 +50,7 @@ import { cn, isEnabled } from '@/lib/utils';
 import type { Subuser, SubuserPagination, SubusersResponse, SubuserPermissionsResponse } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function ServerSubusersPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -110,7 +111,7 @@ export default function ServerSubusersPage() {
                 }
             } catch (error) {
                 console.error('Failed to fetch subusers:', error);
-                toast.error(t('serverSubusers.failedToFetch'));
+                toast.error(getApiErrorMessage(error, t, 'serverSubusers.failedToFetch'));
             } finally {
                 setLoading(false);
             }
@@ -145,11 +146,11 @@ export default function ServerSubusersPage() {
                 setAddEmail('');
                 fetchSubusers(1);
             } else {
-                toast.error(data?.message || t('serverSubusers.createFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverSubusers.createFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            const msg = axiosError.response?.data?.message || t('serverSubusers.createFailed');
+            const msg = getApiErrorMessage(axiosError, t, 'serverSubusers.createFailed');
             toast.error(msg);
         } finally {
             setAddLoading(false);
@@ -166,11 +167,11 @@ export default function ServerSubusersPage() {
                 setIsDeleteOpen(false);
                 fetchSubusers(pagination.current_page);
             } else {
-                toast.error(data?.message || t('serverSubusers.deleteFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverSubusers.deleteFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            const msg = axiosError.response?.data?.message || t('serverSubusers.deleteFailed');
+            const msg = getApiErrorMessage(axiosError, t, 'serverSubusers.deleteFailed');
             toast.error(msg);
         } finally {
             setDeleting(false);
@@ -193,7 +194,7 @@ export default function ServerSubusersPage() {
             }
         } catch (error) {
             console.error('Failed to fetch available permissions:', error);
-            toast.error(t('serverSubusers.failedToFetch'));
+            toast.error(getApiErrorMessage(error, t, 'serverSubusers.failedToFetch'));
         } finally {
             setPermissionsLoadingData(false);
         }
@@ -211,11 +212,11 @@ export default function ServerSubusersPage() {
                 setIsPermissionsOpen(false);
                 fetchSubusers(pagination.current_page);
             } else {
-                toast.error(data?.message || t('serverSubusers.updateFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverSubusers.updateFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            const msg = axiosError.response?.data?.message || t('serverSubusers.updateFailed');
+            const msg = getApiErrorMessage(axiosError, t, 'serverSubusers.updateFailed');
             toast.error(msg);
         } finally {
             setSavingPermissions(false);
@@ -747,6 +748,7 @@ export default function ServerSubusersPage() {
                             onClick={handleSavePermissions}
                             disabled={savingPermissions}
                             className='rounded-2xl'
+                            data-fp-save-shortcut
                         >
                             {savingPermissions ? (
                                 <Loader2 className='mr-2 h-5 w-5 animate-spin' />

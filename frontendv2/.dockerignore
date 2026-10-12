@@ -8,31 +8,28 @@ node_modules
 .env.production
 .env.staging
 
-# IDE files
+# IDE / OS
 .vscode
 .idea
 *.swp
 *.swo
-
-# OS files
 .DS_Store
 Thumbs.db
 
-# Git
+# Git / Docker meta
 .git
 .gitignore
-
-# Docker
 Dockerfile
 .dockerignore
 
-# Documentation
-README.md
-*.md
+# Hand-authored docs sources — already compiled into public/icanhasfeatherpanel/ on the host
+/icanhas/
+/docsrc/
+/README.md
 
-# Development tools
+# Do NOT ignore public/**/*.md — RAG and view.html need those files in the image.
+
+# Dev / build noise
 tsconfig.tsbuildinfo
-
-# Build artifacts
 dist
 build

@@ -24,6 +24,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { CalagopusAuthorizeView } from '@/components/account/CalagopusAuthorizeView';
 import { isLoopbackCallbackUrl } from '@/lib/utils';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 function splitCsv(value: string | null): string[] {
     if (!value) return [];
@@ -102,15 +103,14 @@ export default function CalagopusApiKeyUpdatePage() {
                     setLookupError(null);
                     return;
                 }
-                setLookupError(response.data?.message || t('account.calagopus.keyNotFound'));
+                setLookupError(getApiErrorMessageFromPayload(response.data, t, 'account.calagopus.keyNotFound'));
             })
             .catch((err) => {
                 if (axios.isAxiosError(err) && err.response?.data?.error_code === 'INVALID_ACCOUNT_TOKEN') {
                     router.push(`/auth/login?redirect=${encodeURIComponent(redirectTarget)}`);
                     return;
                 }
-                const message = axios.isAxiosError(err) ? err.response?.data?.message : null;
-                setLookupError(message || t('account.calagopus.keyNotFound'));
+                setLookupError(getApiErrorMessage(err, t, 'account.calagopus.keyNotFound'));
             })
             .finally(() => setLookupLoading(false));
     }, [isSessionChecked, isLoading, user, keyStart, redirectTarget, router, t]);
@@ -134,7 +134,7 @@ export default function CalagopusApiKeyUpdatePage() {
                     router.push(`/auth/login?redirect=${encodeURIComponent(redirectTarget)}`);
                     return;
                 }
-                throw new Error(response.data?.message || t('account.calagopus.createFailed'));
+                throw new Error(getApiErrorMessageFromPayload(response.data, t, 'account.calagopus.createFailed'));
             }
 
             await deliverCalagopusCallback(callbackUrl);
@@ -146,8 +146,11 @@ export default function CalagopusApiKeyUpdatePage() {
             setCompletedKey('');
             setSubmitting(false);
         } catch (err) {
-            const message = axios.isAxiosError(err) ? err.response?.data?.message : null;
-            toast.error(message || t('account.calagopus.createFailed'));
+            toast.error(
+                err instanceof Error && !axios.isAxiosError(err)
+                    ? err.message
+                    : getApiErrorMessage(err, t, 'account.calagopus.createFailed'),
+            );
             setSubmitting(false);
         }
     };

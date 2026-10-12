@@ -15,6 +15,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 export interface AppSettings {
     app_developer_mode: string;
+    /** When 'true', this panel is a public demo instance (wipes, limited features). */
+    app_demo_yes?: string;
     app_name: string;
     app_timezone: string;
     cache_driver: string;
@@ -165,6 +167,14 @@ export interface AppSettings {
     app_theme_default?: string;
     /** When 'true', force the configured theme for all users. */
     app_theme_lock?: string;
+    /** Default plugin theme pack id (`default` or `pluginId:themeId`). */
+    app_theme_pack_default?: string;
+    /** When 'true', force the configured theme pack for all users. */
+    app_theme_pack_lock?: string;
+    /** Active UI pack id (`pluginId:packId` or empty). */
+    app_ui_pack_default?: string;
+    /** When 'true', force the configured UI pack for all users. */
+    app_ui_pack_lock?: string;
     /** Optional default background type (aurora, gradient, solid, image, pattern). */
     app_background_type_default?: string;
     /** When 'true', force the configured background type for all users. */

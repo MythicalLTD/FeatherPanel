@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { toast } from 'sonner';
 import {
     Plus,
@@ -57,6 +57,7 @@ import { useWebSpace } from '@/contexts/WebSpaceContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
 import { cn } from '@/lib/utils';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface MailboxRow {
     id: number;
@@ -199,11 +200,7 @@ export default function WebSpaceEmailPage() {
             setForwarders((fwdRes?.data?.data?.data || []) as ForwarderRow[]);
             setMailingLists((listsRes?.data?.data?.data || []) as MailingListRow[]);
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.email.loadFailed')
-                    : t('webSpaces.email.loadFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.email.loadFailed'));
         } finally {
             setLoading(false);
         }
@@ -220,11 +217,7 @@ export default function WebSpaceEmailPage() {
             }
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.email.dnsProvisionFailed')
-                    : t('webSpaces.email.dnsProvisionFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.email.dnsProvisionFailed'));
         } finally {
             setBusy(false);
         }
@@ -262,11 +255,7 @@ export default function WebSpaceEmailPage() {
             setCreateOpen(false);
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.email.createFailed')
-                    : t('webSpaces.email.createFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.email.createFailed'));
         } finally {
             setBusy(false);
         }
@@ -279,11 +268,7 @@ export default function WebSpaceEmailPage() {
             toast.success(t('webSpaces.email.mailboxDeleted'));
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.email.deleteFailed')
-                    : t('webSpaces.email.deleteFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.email.deleteFailed'));
         }
     };
 
@@ -295,11 +280,7 @@ export default function WebSpaceEmailPage() {
                 toast.message(t('webSpaces.email.newPassword', { password: data.data.password }), { duration: 10000 });
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.email.resetFailed')
-                    : t('webSpaces.email.resetFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.email.resetFailed'));
         }
     };
 
@@ -310,14 +291,10 @@ export default function WebSpaceEmailPage() {
                 window.open(data.data.url, '_blank');
                 toast.success(t('webSpaces.email.openingWebmail'));
             } else {
-                toast.error(data?.message || t('webSpaces.email.webmailFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'webSpaces.email.webmailFailed'));
             }
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.email.webmailFailed')
-                    : t('webSpaces.email.webmailFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.email.webmailFailed'));
         }
     };
 
@@ -328,11 +305,7 @@ export default function WebSpaceEmailPage() {
             toast.success(enabled ? t('webSpaces.email.mailboxEnabled') : t('webSpaces.email.mailboxDisabled'));
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.email.updateFailed')
-                    : t('webSpaces.email.updateFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.email.updateFailed'));
         }
     };
 
@@ -355,11 +328,7 @@ export default function WebSpaceEmailPage() {
             setAutorespondId(null);
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.email.updateFailed')
-                    : t('webSpaces.email.updateFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.email.updateFailed'));
         }
     };
 
@@ -374,11 +343,7 @@ export default function WebSpaceEmailPage() {
             toast.success(t('webSpaces.email.spamFilterUpdated'));
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.email.updateFailed')
-                    : t('webSpaces.email.updateFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.email.updateFailed'));
         }
     };
 
@@ -405,11 +370,7 @@ export default function WebSpaceEmailPage() {
             setListOpen(false);
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.email.createFailed')
-                    : t('webSpaces.email.createFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.email.createFailed'));
         } finally {
             setBusy(false);
         }
@@ -425,11 +386,7 @@ export default function WebSpaceEmailPage() {
             toast.success(t('webSpaces.email.mailingListDeleted'));
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.email.deleteFailed')
-                    : t('webSpaces.email.deleteFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.email.deleteFailed'));
         }
     };
 
@@ -454,11 +411,7 @@ export default function WebSpaceEmailPage() {
             setFwdOpen(false);
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.email.createFailed')
-                    : t('webSpaces.email.createFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.email.createFailed'));
         } finally {
             setBusy(false);
         }
@@ -471,11 +424,7 @@ export default function WebSpaceEmailPage() {
             toast.success(t('webSpaces.email.forwarderDeleted'));
             await load();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.email.deleteFailed')
-                    : t('webSpaces.email.deleteFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.email.deleteFailed'));
         }
     };
 

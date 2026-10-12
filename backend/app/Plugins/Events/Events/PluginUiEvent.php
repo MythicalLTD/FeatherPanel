@@ -52,4 +52,28 @@ class PluginUiEvent implements PluginEvent
     {
         return 'featherpanel:system:plugins:ui:error';
     }
+
+    /**
+     * Callback: array themes from Frontend/theme.json aggregations.
+     */
+    public static function onThemesRetrieved(): string
+    {
+        return 'featherpanel:system:plugins:ui:themes:retrieved';
+    }
+
+    /**
+     * Callback: array overrides from Frontend/overrides.json aggregations.
+     */
+    public static function onOverridesRetrieved(): string
+    {
+        return 'featherpanel:system:plugins:ui:overrides:retrieved';
+    }
+
+    /**
+     * Callback: array UI packs from Frontend/ui.json aggregations.
+     */
+    public static function onUiPacksRetrieved(): string
+    {
+        return 'featherpanel:system:plugins:ui:packs:retrieved';
+    }
 }

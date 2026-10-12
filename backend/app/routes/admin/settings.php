@@ -24,6 +24,16 @@ use Symfony\Component\Routing\RouteCollection;
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-settings-telemetry-status',
+        '/api/admin/settings/telemetry/status',
+        function (Request $request) {
+            return (new SettingsController())->telemetryStatus($request);
+        },
+        Permissions::ADMIN_SETTINGS_VIEW,
+        ['GET']
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-settings',
         '/api/admin/settings',
         function (Request $request) {

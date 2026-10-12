@@ -238,7 +238,7 @@ export function MinecraftServerPropertiesEditor({
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {tr('files.editors.minecraftProperties.actions.switchToRaw', 'Switch to Raw Editor')}
                         </Button>
-                        <Button size='sm' disabled={readonly || saving} onClick={handleSave}>
+                        <Button size='sm' disabled={readonly || saving} onClick={handleSave} data-fp-save-shortcut>
                             <Save className='mr-2 h-4 w-4' />
                             {saving
                                 ? tr('files.editors.minecraftProperties.actions.saving', 'Saving...')

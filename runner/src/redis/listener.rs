@@ -11,6 +11,30 @@ use crate::types::{MailNotification, SettingsReloadNotification, VmNotification}
 
 pub async fn listen(redis_url: &str, pool: MySqlPool, encryption_key: String) -> Result<()> {
     let retry_delay = Duration::from_secs(5);
+    tokio::spawn({
+        let pool = pool.clone();
+        let encryption_key = encryption_key.clone();
+        async move {
+            let mut interval = tokio::time::interval(Duration::from_secs(60));
+            loop {
+                interval.tick().await;
+                let tasks = sqlx::query_scalar::<_, String>("SELECT task_id FROM featherpanel_vm_tasks WHERE task_type = 'backup' AND status IN ('pending', 'running') ORDER BY created_at")
+                    .fetch_all(&pool).await;
+                match tasks {
+                    Ok(tasks) => for task_id in tasks {
+                        let pool = pool.clone();
+                        let key = encryption_key.clone();
+                        tokio::spawn(async move {
+                            if let Err(e) = processor::process_vm_task(&pool, &task_id, &key, false).await {
+                                warn!("Backup recovery {} will retry: {}", task_id, e);
+                            }
+                        });
+                    },
+                    Err(e) => warn!("Could not scan unfinished backups: {}", e),
+                }
+            }
+        }
+    });
 
     loop {
         info!("📡 Connecting to Redis...");

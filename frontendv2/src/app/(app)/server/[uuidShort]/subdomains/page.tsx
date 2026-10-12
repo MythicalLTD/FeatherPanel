@@ -35,6 +35,7 @@ import { cn, formatDate } from '@/lib/utils';
 import type { SubdomainOverview, SubdomainEntry } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 export default function ServerSubdomainsPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -71,7 +72,7 @@ export default function ServerSubdomainsPage() {
             }
         } catch (error) {
             console.error('Failed to fetch subdomains:', error);
-            toast.error(t('serverSubdomains.loadFailed'));
+            toast.error(getApiErrorMessage(error, t, 'serverSubdomains.loadFailed'));
         } finally {
             setLoading(false);
         }
@@ -95,7 +96,7 @@ export default function ServerSubdomainsPage() {
             fetchData();
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            const msg = axiosError.response?.data?.message || t('serverSubdomains.deleteFailed');
+            const msg = getApiErrorMessage(axiosError, t, 'serverSubdomains.deleteFailed');
             toast.error(msg);
         } finally {
             setDeleting(false);

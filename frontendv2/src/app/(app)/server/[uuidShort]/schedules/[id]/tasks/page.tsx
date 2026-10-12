@@ -35,7 +35,13 @@ import { useSettings } from '@/contexts/SettingsContext';
 import type { Task, Schedule, SchedulePagination, Database } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { formatBackupPayloadDisplay, isBackupAction } from '@/components/server/backup/backup-payload';
+import {
+    CONTAINER_SHELL_ACTION,
+    formatContainerShellDisplay,
+    isContainerShellAction,
+} from '@/components/server/schedule/container-shell-payload';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 export default function ServerTasksPage() {
     const { uuidShort, id: scheduleId } = useParams() as { uuidShort: string; id: string };
@@ -82,8 +88,9 @@ export default function ServerTasksPage() {
             }
         } catch (error) {
             console.error('Failed to fetch schedule:', error);
+            toast.error(getApiErrorMessage(error, t, 'serverSchedules.loadFailed'));
         }
-    }, [uuidShort, scheduleId]);
+    }, [uuidShort, scheduleId, t]);
 
     const fetchDatabases = React.useCallback(async () => {
         if (!uuidShort) return;
@@ -119,7 +126,7 @@ export default function ServerTasksPage() {
                 }
             } catch (error) {
                 console.error('Failed to fetch tasks:', error);
-                toast.error(t('serverTasks.failedToFetch'));
+                toast.error(getApiErrorMessage(error, t, 'serverTasks.failedToFetch'));
             } finally {
                 setLoading(false);
             }
@@ -164,11 +171,11 @@ export default function ServerTasksPage() {
                 setIsDeleteOpen(false);
                 fetchTasks(pagination.current_page);
             } else {
-                toast.error(data?.message || t('serverTasks.deleteFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverTasks.deleteFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('serverTasks.deleteFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'serverTasks.deleteFailed'));
         } finally {
             setDeleting(false);
         }
@@ -185,11 +192,11 @@ export default function ServerTasksPage() {
                 toast.success(t('serverTasks.moveUpSuccess'));
                 fetchTasks(pagination.current_page);
             } else {
-                toast.error(data?.message || t('serverTasks.moveUpFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverTasks.moveUpFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('serverTasks.moveUpFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'serverTasks.moveUpFailed'));
         }
     };
 
@@ -204,11 +211,11 @@ export default function ServerTasksPage() {
                 toast.success(t('serverTasks.moveDownSuccess'));
                 fetchTasks(pagination.current_page);
             } else {
-                toast.error(data?.message || t('serverTasks.moveDownFailed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'serverTasks.moveDownFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('serverTasks.moveDownFailed'));
+            toast.error(getApiErrorMessage(axiosError, t, 'serverTasks.moveDownFailed'));
         }
     };
 
@@ -221,6 +228,8 @@ export default function ServerTasksPage() {
                 return t('serverTasks.actionBackup');
             case 'command':
                 return t('serverTasks.actionCommand');
+            case CONTAINER_SHELL_ACTION:
+                return t('serverTasks.actionContainerShell');
             default:
                 return action;
         }
@@ -236,6 +245,9 @@ export default function ServerTasksPage() {
                 specific: t('serverTasks.databaseScopeSpecific'),
                 noPayload: t('serverTasks.noPayload'),
             });
+        }
+        if (isContainerShellAction(task.action)) {
+            return formatContainerShellDisplay(task.payload || '');
         }
         return task.payload || t('serverTasks.noPayload');
     };

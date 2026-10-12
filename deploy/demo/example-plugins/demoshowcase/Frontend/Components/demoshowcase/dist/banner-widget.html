@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo Showcase</title>
+  <style>
+    :root { color-scheme: dark; --ink:#e2e8f0; --muted:#94a3b8; --line:rgba(255,255,255,.12); --panel:hsl(222 20% 14% / .92); --accent:#38bdf8; }
+    html.light { color-scheme: light; --ink:#0f172a; --muted:#64748b; --line:rgba(15,23,42,.12); --panel:rgba(255,255,255,.95); }
+    * { box-sizing: border-box; }
+    html, body { margin:0; background:transparent; color:var(--ink); font-family: ui-sans-serif, system-ui, sans-serif; }
+    .row { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.75rem; padding:.85rem 1rem; border:1px solid var(--line); border-radius:.75rem; background:var(--panel); }
+    .title { margin:0; font-size:.875rem; font-weight:600; }
+    .lede { margin:.25rem 0 0; color:var(--muted); font-size:.8rem; line-height:1.4; }
+    .pill { font-size:.7rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--accent); border:1px solid color-mix(in srgb, var(--accent) 40%, transparent); border-radius:999px; padding:.2rem .55rem; }
+  </style>
+</head>
+<body>
+  <div class="row">
+    <div>
+      <p class="title">DemoShowcase addon widget</p>
+      <p class="lede" id="tip">Widgets are HTML iframes declared in Frontend/widgets.json. Hide this banner from Admin → Plugins → DemoShowcase.</p>
+    </div>
+    <span class="pill">addon · widget</span>
+  </div>
+  <script>
+    (function () {
+      var q = new URLSearchParams(location.search);
+      if (q.get('__theme') === 'light') document.documentElement.classList.remove('dark'), document.documentElement.classList.add('light');
+    })();
+  </script>
+</body>
+</html>

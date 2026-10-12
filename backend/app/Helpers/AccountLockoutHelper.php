@@ -18,6 +18,7 @@
 namespace App\Helpers;
 
 use App\App;
+use App\Plugins\Events\Events\AuthEvent;
 
 /**
  * Per-account failed authentication tracking, independent of the existing
@@ -117,7 +118,8 @@ class AccountLockoutHelper
      * caller may proceed; on success call clear(), on failure the counter
      * already reflects this attempt.
      *
-     * Fails open (returns true) if Redis is unavailable.
+     * Fails closed (returns false) if Redis is unavailable — do not allow
+     * unbounded 2FA verification attempts without a working counter store.
      */
     public static function reserveHardLockAttempt(
         string $identifier,
@@ -127,7 +129,7 @@ class AccountLockoutHelper
         try {
             $redis = self::getRedis();
             if ($redis === null) {
-                return true;
+                return false;
             }
 
             $maxAttempts ??= self::MAX_ATTEMPTS;
@@ -163,9 +165,24 @@ LUA;
                 2
             );
 
-            return is_numeric($result) && (int) $result > 0;
+            $allowed = is_numeric($result) && (int) $result > 0;
+            if (is_numeric($result) && (int) $result >= ($maxAttempts ?? self::MAX_ATTEMPTS)) {
+                self::emitAuthEvent(AuthEvent::onAuthAccountLocked(), [
+                    'identifier' => $identifier,
+                    'lockout_seconds' => $lockoutSeconds ?? self::LOCKOUT_SECONDS,
+                    'attempts' => (int) $result,
+                ]);
+            } elseif ($result === -1 || $result === '-1') {
+                self::emitAuthEvent(AuthEvent::onAuthAccountLocked(), [
+                    'identifier' => $identifier,
+                    'lockout_seconds' => $lockoutSeconds ?? self::LOCKOUT_SECONDS,
+                    'already_locked' => true,
+                ]);
+            }
+
+            return $allowed;
         } catch (\Throwable $e) {
-            return true;
+            return false;
         }
     }
 
@@ -203,6 +220,11 @@ LUA;
             if ($hardLock && $count >= $maxAttempts) {
                 try {
                     $redis->setex(self::lockKey($identifier), $lockoutSeconds, '1');
+                    self::emitAuthEvent(AuthEvent::onAuthAccountLocked(), [
+                        'identifier' => $identifier,
+                        'lockout_seconds' => $lockoutSeconds,
+                        'attempts' => $count,
+                    ]);
                 } catch (\RedisException $e) {
                     return;
                 }
@@ -224,12 +246,32 @@ LUA;
             }
 
             try {
+                $wasLocked = (bool) $redis->exists(self::lockKey($identifier));
                 $redis->del([self::countKey($identifier), self::lockKey($identifier)]);
+                if ($wasLocked) {
+                    self::emitAuthEvent(AuthEvent::onAuthAccountUnlocked(), [
+                        'identifier' => $identifier,
+                    ]);
+                }
             } catch (\RedisException $e) {
                 return;
             }
         } catch (\Throwable $e) {
             // Fail open.
+        }
+    }
+
+    public static function isLocked(string $identifier): bool
+    {
+        try {
+            $redis = self::getRedis();
+            if ($redis === null) {
+                return false;
+            }
+
+            return (bool) $redis->exists(self::lockKey($identifier));
+        } catch (\Throwable $e) {
+            return false;
         }
     }
 
@@ -274,6 +316,14 @@ LUA;
             return $app->getRedisConnection();
         } catch (\Throwable $e) {
             return null;
+        }
+    }
+
+    private static function emitAuthEvent(string $event, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($event, $payload);
         }
     }
 }

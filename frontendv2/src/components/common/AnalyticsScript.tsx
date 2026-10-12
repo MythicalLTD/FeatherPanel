@@ -16,22 +16,21 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useEffect } from 'react';
+import { setAnalyticsCookie } from '@/lib/analytics-cookie';
 
-interface AnalyticsScriptProps {
-    enabled: boolean;
-}
-
-export default function AnalyticsScript({ enabled }: AnalyticsScriptProps) {
+/** Browser tracking is permanently disabled. Stop scripts left by a hot update. */
+export default function AnalyticsScript() {
     useEffect(() => {
-        if (!enabled) return;
-
-        // Load analytics script dynamically on client side
-        const script = document.createElement('script');
-        script.src = 'https://dynhost.mythical.systems/script.js';
-        script.dataset.websiteId = '71281b01-8c95-4fac-9f58-6d68aac179d7';
-        script.defer = true;
-        document.head.appendChild(script);
-    }, [enabled]);
-
+        setAnalyticsCookie(false);
+        const tracker = document.getElementById('featherpanel-umami-tracker');
+        const recorder = document.getElementById('featherpanel-umami-recorder');
+        const legacyScript = document.querySelector?.(
+            'script[src="https://dynhost.mythical.systems/script.js"], script[src="https://dynhost.mythical.systems/recorder.js"]',
+        );
+        if (tracker || recorder || legacyScript) {
+            // Removing a script cannot remove the listeners installed by its execution.
+            window.location.reload();
+        }
+    }, []);
     return null;
 }

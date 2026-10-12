@@ -103,7 +103,7 @@ async function loadBackendTranslations(lang: string): Promise<Record<string, unk
 
     try {
         const res = await fetch(`${getBaseUrl()}/api/system/translations/${encodeURIComponent(normalized)}`, {
-            // Short cache — admins can install new locales from FeatherCloud at any time.
+            // Short cache - admins can install new locales from FeatherCloud at any time.
             next: { revalidate: 30, tags: ['translations', `translations:${normalized}`] },
             headers: {
                 Accept: 'application/json',

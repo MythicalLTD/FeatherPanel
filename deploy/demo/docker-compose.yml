@@ -1,0 +1,395 @@
+# FeatherPanel full demo / testing stack
+#
+# Zero-touch on a Docker-only VM:
+#   cd deploy/demo && docker compose up -d
+#
+# host-prep creates Wings/Quilld data dirs. demo-updater keeps :dev images current.
+# demo-reset restores the golden snapshot on an interval.
+
+services:
+  # Creates host paths Wings/Quilld need (identical bind mounts for docker.sock).
+  host-prep:
+    image: alpine:3.20
+    container_name: featherpanel_demo_host_prep
+    restart: "no"
+    network_mode: none
+    volumes:
+      - /var/lib:/var/lib
+      - /tmp:/tmp
+      - /var/log:/var/log
+      - ./host-prep.sh:/host-prep.sh:ro
+    environment:
+      - DEMO_WINGS_ROOT_PATH=${DEMO_WINGS_ROOT_PATH:-/var/lib/featherpanel-demo}
+      - DEMO_WINGS_TMP_PATH=${DEMO_WINGS_TMP_PATH:-/tmp/featherpanel-demo-wings}
+      - DEMO_QUILL_ROOT_PATH=${DEMO_QUILL_ROOT_PATH:-/var/lib/featherquilld-demo}
+      - DEMO_QUILL_TMP_PATH=${DEMO_QUILL_TMP_PATH:-/tmp/featherquilld-demo}
+      - DEMO_WINGS_UID=${DEMO_WINGS_UID:-988}
+      - DEMO_WINGS_GID=${DEMO_WINGS_GID:-988}
+    entrypoint: ["/bin/sh", "/host-prep.sh"]
+
+  mysql:
+    image: mariadb:latest
+    container_name: featherpanel_demo_mysql
+    restart: unless-stopped
+    pull_policy: always
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-featherpanel_demo_root}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-featherpanel}
+      MARIADB_USER: ${MARIADB_USER:-featherpanel}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-featherpanel_demo_password}
+      MARIADB_AUTO_UPGRADE: "1"
+    volumes:
+      - demo_mariadb_data:/var/lib/mysql
+    networks:
+      - featherpanel_demo_network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mariadb-admin ping -h localhost -u root -p$$MARIADB_ROOT_PASSWORD --silent",
+        ]
+      timeout: 20s
+      retries: 15
+      start_period: 30s
+
+  redis:
+    image: redis:latest
+    container_name: featherpanel_demo_redis
+    restart: unless-stopped
+    pull_policy: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-featherpanel_demo_redis}
+    volumes:
+      - demo_redis_data:/data
+    networks:
+      - featherpanel_demo_network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "redis-cli",
+          "-a",
+          "${REDIS_PASSWORD:-featherpanel_demo_redis}",
+          "ping",
+        ]
+      timeout: 20s
+      retries: 10
+
+  backend:
+    image: ghcr.io/mythicalltd/featherpanel-backend:dev
+    container_name: featherpanel_demo_backend
+    restart: unless-stopped
+    pull_policy: always
+    environment:
+      - DATABASE_HOST=mysql
+      - DATABASE_PORT=3306
+      - DATABASE_DATABASE=${MARIADB_DATABASE:-featherpanel}
+      - DATABASE_USER=${MARIADB_USER:-featherpanel}
+      - DATABASE_PASSWORD=${MARIADB_PASSWORD:-featherpanel_demo_password}
+      - DATABASE_ENCRYPTION=xchacha20
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-featherpanel_demo_redis}
+      - TRUST_PROXY_HEADERS=true
+      - PANEL_DOCKER_DEPLOYMENT=true
+      - FEATHERPANEL_VERSION_CHANNEL=development
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "cli", "help"]
+      timeout: 20s
+      retries: 15
+      start_period: 180s
+    volumes:
+      - demo_attachments:/var/www/html/public/attachments
+      - demo_config:/var/www/html/storage/config
+      - demo_snapshots:/var/www/html/storage/backups
+      - demo_logs:/var/www/html/storage/logs
+      - demo_translations:/var/www/html/public/translations
+      - demo_addons:/var/www/html/storage/addons
+      - demo_data:/var/www/html/storage/data
+    networks:
+      - featherpanel_demo_network
+
+  frontendv2:
+    image: ghcr.io/mythicalltd/featherpanel-frontendv2:dev
+    container_name: featherpanel_demo_frontendv2
+    restart: unless-stopped
+    pull_policy: always
+    environment:
+      - INTERNAL_API_URL=http://backend:80
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:80",
+        ]
+      timeout: 20s
+      retries: 10
+    ports:
+      - "${FEATHERPANEL_PANEL_PORT:-8088}:80"
+    networks:
+      - featherpanel_demo_network
+
+  mcp:
+    image: ghcr.io/mythicalltd/featherpanel-mcp:dev
+    container_name: featherpanel_demo_mcp
+    restart: unless-stopped
+    pull_policy: always
+    environment:
+      - FEATHERPANEL_URL=http://backend:80
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=3001
+      - MCP_OAUTH_STORE_PATH=/data/oauth-store.json
+      - MCP_DANGEROUSLY_ALLOW_INSECURE_ISSUER_URL=true
+    volumes:
+      - demo_mcp_oauth_data:/data
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "${FEATHERPANEL_MCP_PORT:-3001}:3001"
+    networks:
+      - featherpanel_demo_network
+
+  async-runner:
+    image: ghcr.io/mythicalltd/featherpanel-async-runner:dev
+    container_name: featherpanel_demo_async_runner
+    restart: unless-stopped
+    pull_policy: always
+    environment:
+      - RUST_LOG=info
+      - LOG_DIR=/var/www/html/storage/logs
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=${MARIADB_DATABASE:-featherpanel}
+      - DB_USER=${MARIADB_USER:-featherpanel}
+      - DB_PASS=${MARIADB_PASSWORD:-featherpanel_demo_password}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-featherpanel_demo_redis}@redis:6379
+    volumes:
+      - demo_config:/app/config:ro
+      - demo_logs:/var/www/html/storage/logs
+      - demo_data:/var/www/html/storage/data
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - featherpanel_demo_network
+
+  # Real FeatherWings daemon — browser talks to published host ports;
+  # Wings talks to the panel API at http://backend:80 on the compose network.
+  wings:
+    image: ghcr.io/mythicalltd/featherwings:latest
+    container_name: featherpanel_demo_wings
+    restart: unless-stopped
+    pull_policy: always
+    tty: true
+    # Needed so Wings can chown server data dirs to uid 988 inside Docker volumes.
+    privileged: true
+    environment:
+      - TZ=UTC
+    volumes:
+      - demo_wings_config:/etc/featherpanel
+      # Path MUST be identical on host and in-container: Wings asks the host
+      # Docker daemon to bind-mount these paths into game containers.
+      - ${DEMO_WINGS_ROOT_PATH:-/var/lib/featherpanel-demo}:${DEMO_WINGS_ROOT_PATH:-/var/lib/featherpanel-demo}
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DEMO_WINGS_TMP_PATH:-/tmp/featherpanel-demo-wings}:${DEMO_WINGS_TMP_PATH:-/tmp/featherpanel-demo-wings}
+    ports:
+      - "${DEMO_WINGS_DAEMON_PORT:-8081}:8081"
+      - "${DEMO_WINGS_SFTP_HOST_PORT:-22022}:${DEMO_WINGS_SFTP_PORT:-2022}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      host-prep:
+        condition: service_completed_successfully
+      backend:
+        condition: service_healthy
+    networks:
+      - featherpanel_demo_network
+
+  # Real FeatherQuilld — web hosting daemon (GHCR :main track).
+  quilld:
+    image: ghcr.io/mythicalltd/featherquilld:main
+    container_name: featherpanel_demo_quilld
+    restart: unless-stopped
+    pull_policy: always
+    user: "0:0"
+    environment:
+      - TZ=UTC
+      - FEATHERQUILLD_CONFIG=/etc/featherquilld/config.yml
+      - ASPNETCORE_URLS=http://0.0.0.0:${DEMO_QUILL_DAEMON_PORT:-8989}
+    volumes:
+      - demo_quill_config:/etc/featherquilld
+      - ${DEMO_QUILL_ROOT_PATH:-/var/lib/featherquilld-demo}:${DEMO_QUILL_ROOT_PATH:-/var/lib/featherquilld-demo}
+      - ${DEMO_QUILL_TMP_PATH:-/tmp/featherquilld-demo}:${DEMO_QUILL_TMP_PATH:-/tmp/featherquilld-demo}
+      - /var/log/featherquilld:/var/log/featherquilld
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "${DEMO_QUILL_DAEMON_PORT:-8989}:${DEMO_QUILL_DAEMON_PORT:-8989}"
+      # SFTP disabled in Docker demo (image has no ssh-keygen)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      host-prep:
+        condition: service_completed_successfully
+      backend:
+        condition: service_healthy
+    networks:
+      - featherpanel_demo_network
+
+  demo-reset:
+    image: ghcr.io/mythicalltd/featherpanel-backend:dev
+    container_name: featherpanel_demo_reset
+    restart: unless-stopped
+    pull_policy: always
+    entrypoint: ["/bin/bash", "/demo/reset-loop.sh"]
+    # Image healthcheck probes FrankenPHP metrics; reset is a bash loop.
+    healthcheck:
+      disable: true
+    environment:
+      - DATABASE_HOST=mysql
+      - DATABASE_PORT=3306
+      - DATABASE_DATABASE=${MARIADB_DATABASE:-featherpanel}
+      - DATABASE_USER=${MARIADB_USER:-featherpanel}
+      - DATABASE_PASSWORD=${MARIADB_PASSWORD:-featherpanel_demo_password}
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-featherpanel_demo_redis}
+      - DEMO_RESET_INTERVAL_SECONDS=${DEMO_RESET_INTERVAL_SECONDS:-1800}
+      - DEMO_ADMIN_USERNAME=${DEMO_ADMIN_USERNAME:-admin}
+      - DEMO_ADMIN_EMAIL=${DEMO_ADMIN_EMAIL:-admin@featherpanel.com}
+      - DEMO_ADMIN_PASSWORD=${DEMO_ADMIN_PASSWORD:-admin@featherpanel.com}
+      - DEMO_USER_USERNAME=${DEMO_USER_USERNAME:-demo}
+      - DEMO_USER_EMAIL=${DEMO_USER_EMAIL:-demo@demo.demo}
+      - DEMO_USER_PASSWORD=${DEMO_USER_PASSWORD:-demoPassword}
+      - DEMO_SUPPORT_USERNAME=${DEMO_SUPPORT_USERNAME:-support}
+      - DEMO_SUPPORT_PASSWORD=${DEMO_SUPPORT_PASSWORD:-demoPassword}
+      - DEMO_MOD_USERNAME=${DEMO_MOD_USERNAME:-moderator}
+      - DEMO_MOD_PASSWORD=${DEMO_MOD_PASSWORD:-demoPassword}
+      - FEATHERPANEL_APP_URL=${FEATHERPANEL_APP_URL:-http://localhost:8088}
+      - DEMO_GOLDEN_SNAPSHOT=demo-golden.fpb
+      # Wings/Quilld → panel (compose DNS). Do NOT use the public frontend URL here.
+      - DEMO_WINGS_REMOTE_URL=${DEMO_WINGS_REMOTE_URL:-http://backend:80}
+      - DEMO_WINGS_FQDN=${DEMO_WINGS_FQDN:-localhost}
+      - DEMO_WINGS_DAEMON_PORT=${DEMO_WINGS_DAEMON_PORT:-8081}
+      - DEMO_WINGS_SFTP_PORT=${DEMO_WINGS_SFTP_PORT:-2022}
+      - DEMO_ALLOCATION_IP=${DEMO_ALLOCATION_IP:-0.0.0.0}
+      - DEMO_ALLOCATION_IP_ALIAS=${DEMO_ALLOCATION_IP_ALIAS:-localhost}
+      - DEMO_ALLOCATION_PORT_START=${DEMO_ALLOCATION_PORT_START:-25565}
+      - DEMO_ALLOCATION_PORT_END=${DEMO_ALLOCATION_PORT_END:-25584}
+      - DEMO_NODE_NAME=${DEMO_NODE_NAME:-Demo Wings}
+      - DEMO_QUILL_NODE_NAME=${DEMO_QUILL_NODE_NAME:-Demo FeatherQuill}
+      - DEMO_QUILL_FQDN=${DEMO_QUILL_FQDN:-localhost}
+      - DEMO_QUILL_DAEMON_PORT=${DEMO_QUILL_DAEMON_PORT:-8989}
+      - DEMO_QUILL_SFTP_PORT=${DEMO_QUILL_SFTP_PORT:-2222}
+      - DEMO_QUILL_CONTAINER=${DEMO_QUILL_CONTAINER:-featherpanel_demo_quilld}
+      - DEMO_QUILL_ROOT_PATH=${DEMO_QUILL_ROOT_PATH:-/var/lib/featherquilld-demo}
+      - DEMO_QUILL_TMP_PATH=${DEMO_QUILL_TMP_PATH:-/tmp/featherquilld-demo}
+      - DEMO_VM_NODE_NAME=${DEMO_VM_NODE_NAME:-Demo Proxmox}
+      - DEMO_REBUILD_GOLDEN=${DEMO_REBUILD_GOLDEN:-0}
+      - DEMO_WINGS_CONTAINER=${DEMO_WINGS_CONTAINER:-featherpanel_demo_wings}
+      - DEMO_WINGS_DOCKER_NETWORK=${DEMO_WINGS_DOCKER_NETWORK:-featherpanel_nw}
+      - DEMO_WINGS_DOCKER_SUBNET=${DEMO_WINGS_DOCKER_SUBNET:-172.19.0.0/16}
+      - DEMO_WINGS_DOCKER_GATEWAY=${DEMO_WINGS_DOCKER_GATEWAY:-172.19.0.1}
+      - DEMO_WINGS_UID=${DEMO_WINGS_UID:-988}
+      - DEMO_WINGS_GID=${DEMO_WINGS_GID:-988}
+      - DEMO_WINGS_ROOT_PATH=${DEMO_WINGS_ROOT_PATH:-/var/lib/featherpanel-demo}
+      - DEMO_WINGS_TMP_PATH=${DEMO_WINGS_TMP_PATH:-/tmp/featherpanel-demo-wings}
+      - FEATHERPANEL_PANEL_PORT=${FEATHERPANEL_PANEL_PORT:-8088}
+    volumes:
+      - .:/demo:ro
+      - demo_attachments:/var/www/html/public/attachments
+      - demo_config:/var/www/html/storage/config
+      - demo_snapshots:/var/www/html/storage/backups
+      - demo_logs:/var/www/html/storage/logs
+      - demo_data:/var/www/html/storage/data
+      - demo_wings_config:/etc/featherpanel
+      - demo_quill_config:/etc/featherquilld
+      - ${DEMO_WINGS_ROOT_PATH:-/var/lib/featherpanel-demo}:${DEMO_WINGS_ROOT_PATH:-/var/lib/featherpanel-demo}
+      - ${DEMO_WINGS_TMP_PATH:-/tmp/featherpanel-demo-wings}:${DEMO_WINGS_TMP_PATH:-/tmp/featherpanel-demo-wings}
+      - ${DEMO_QUILL_ROOT_PATH:-/var/lib/featherquilld-demo}:${DEMO_QUILL_ROOT_PATH:-/var/lib/featherquilld-demo}
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      host-prep:
+        condition: service_completed_successfully
+      backend:
+        condition: service_healthy
+      wings:
+        condition: service_started
+      quilld:
+        condition: service_started
+    networks:
+      - featherpanel_demo_network
+
+  demo-updater:
+    image: docker:27-cli
+    container_name: featherpanel_demo_updater
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/compose/update-loop.sh"]
+    environment:
+      - DEMO_UPDATE_INTERVAL_SECONDS=${DEMO_UPDATE_INTERVAL_SECONDS:-3600}
+      - COMPOSE_FILE=docker-compose.yml
+      - COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-demo}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:/compose:ro
+    working_dir: /compose
+    depends_on:
+      host-prep:
+        condition: service_completed_successfully
+
+volumes:
+  demo_mariadb_data:
+    driver: local
+  demo_redis_data:
+    driver: local
+  demo_attachments:
+    driver: local
+  demo_config:
+    driver: local
+  demo_snapshots:
+    driver: local
+  demo_logs:
+    driver: local
+  demo_translations:
+    driver: local
+  demo_addons:
+    driver: local
+  demo_data:
+    driver: local
+  demo_mcp_oauth_data:
+    driver: local
+  demo_wings_config:
+    driver: local
+  demo_quill_config:
+    driver: local
+
+networks:
+  featherpanel_demo_network:
+    driver: bridge

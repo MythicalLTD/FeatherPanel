@@ -175,10 +175,19 @@ fn send_via_host(
         .port(config.port)
         .timeout(Some(Duration::from_secs(30)));
 
-    builder = match config.encryption.as_str() {
+    // lettre: Wrapper = implicit TLS (SMTPS / port 465), Required = STARTTLS (port 587).
+    // "tls" is kept as a STARTTLS alias for existing panel settings.
+    builder = match config.encryption.to_ascii_lowercase().as_str() {
         "ssl" => builder.tls(Tls::Wrapper(tls_params)),
-        "tls" => builder.tls(Tls::Required(tls_params)),
-        _ => builder.tls(Tls::Required(tls_params)),
+        "starttls" | "tls" => builder.tls(Tls::Required(tls_params)),
+        "none" | "off" | "false" => builder.tls(Tls::None),
+        other => {
+            warn!(
+                "Unknown SMTP encryption '{}', falling back to STARTTLS (Tls::Required)",
+                other
+            );
+            builder.tls(Tls::Required(tls_params))
+        }
     };
 
     let mailer = builder.build();

@@ -22,8 +22,9 @@ import ChatbotWidget from '@/components/ai/ChatbotWidget';
 export default function DashboardChrome({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
 
-    // OAuth consent: one page, no sidebar / glow background / chatbot.
-    if (pathname.includes('/oauth2/')) {
+    // OAuth consent redirect flow: one page, no sidebar / glow background / chatbot.
+    // Device-code entry stays in the normal dashboard shell because users open it from Account > API Keys.
+    if (pathname === '/dashboard/account/oauth2/api/new') {
         return <>{children}</>;
     }
 

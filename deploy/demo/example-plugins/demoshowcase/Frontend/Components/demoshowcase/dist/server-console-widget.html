@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo Showcase Server</title>
+  <style>
+    :root { color-scheme: dark; --ink:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; }
+    html.light { color-scheme: light; --ink:#0f172a; --muted:#64748b; }
+    * { box-sizing: border-box; }
+    html, body { margin:0; background:transparent; color:var(--ink); font-family: ui-sans-serif, system-ui, sans-serif; }
+    p { margin:0 0 .35rem; font-size:.85rem; }
+    .muted { color:var(--muted); font-size:.8rem; line-height:1.45; }
+    code { font-size:.75rem; }
+  </style>
+</head>
+<body>
+  <p>Server widget from <strong>DemoShowcase</strong>.</p>
+  <p class="muted">
+    The <strong>Demo Showcase</strong> sidebar item on servers is limited to allowed spell IDs
+    (<code>plugin-sidebar-server-allowedOnlyOnSpells</code>). Widgets on this page can still show;
+    use <code>hide_server_console_card</code> to hide this card.
+  </p>
+  <script>
+    if (new URLSearchParams(location.search).get('__theme') === 'light') {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    }
+  </script>
+</body>
+</html>

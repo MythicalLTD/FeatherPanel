@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { getApiErrorMessage } from '@/lib/api-errors';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import api from '@/lib/api';
@@ -231,7 +232,7 @@ export default function ServerAnalyticsPage() {
             setServerActivityStats(serverActivitiesRes.data.data);
         } catch (err) {
             console.error('Failed to fetch server analytics:', err);
-            setError(t('admin.analytics.servers.error'));
+            setError(getApiErrorMessage(err, t, 'admin.analytics.servers.error'));
         } finally {
             setLoading(false);
         }

@@ -71,6 +71,7 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 type ActivityMetadata = {
     message?: string;
@@ -200,7 +201,7 @@ export default function ServerActivityPage() {
                 const { data } = await axios.get(`/api/user/servers/${uuidShort}/activities`, { params: queryParams });
 
                 if (!data.success) {
-                    toast.error(data.message || t('serverActivities.failedToFetch'));
+                    toast.error(getApiErrorMessageFromPayload(data, t, 'serverActivities.failedToFetch'));
                     return;
                 }
 
@@ -261,7 +262,7 @@ export default function ServerActivityPage() {
                 });
             } catch (error) {
                 console.error(error);
-                toast.error(t('serverActivities.failedToFetch'));
+                toast.error(getApiErrorMessage(error, t, 'serverActivities.failedToFetch'));
             } finally {
                 setLoading(false);
             }
@@ -728,7 +729,7 @@ export default function ServerActivityPage() {
                                             <span>
                                                 {selectedItem.timestamp
                                                     ? formatDateTimeInTz(selectedItem.timestamp, dateOpts)
-                                                    : '—'}
+                                                    : '-'}
                                             </span>
                                         </dd>
                                     </div>

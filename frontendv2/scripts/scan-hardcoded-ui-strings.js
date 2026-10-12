@@ -96,7 +96,7 @@ function scanFile(file) {
         while ((match = regex.exec(content)) !== null) {
             const text = match[2];
             if (isExemptLiteral(text)) continue;
-            // Skip if the call already wraps t( somewhere nearby on same statement — rough
+            // Skip if the call already wraps t( somewhere nearby on same statement: rough
             const before = content.slice(Math.max(0, match.index - 40), match.index);
             if (/\bt\s*\(\s*$/.test(before)) continue;
             hits.push({ kind, text: text.slice(0, 120), line: lineOf(content, match.index), file: relative });

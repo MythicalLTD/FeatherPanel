@@ -100,6 +100,8 @@ while [[ $# -gt 0 ]]; do
 		echo "  --skip-system-update   Skip apt update and essential package installation"
 		echo "  --refresh-docker-updater-only  Rewrite /etc/featherpanel host updater scripts only (no full install)"
 		echo "  --wings-install-only   Install FeatherWings only (no setup wizard; for panel quick-setup step 1)"
+		echo "  Env for daemons:       FP_WINGS_METHOD = apt|direct  FP_WINGS_CHANNEL = stable|nightly"
+		echo "                         FP_QUILLD_CHANNEL = stable|nightly  (FeatherQuilld is APT-only)"
 		echo "  --dev                  Use latest dev release images"
 		echo "  --dev-branch BRANCH    Use dev images for specific branch (e.g., develop, main)"
 		echo "  --dev-sha SHA          Use dev images for specific commit SHA (requires --dev-branch)"
@@ -134,6 +136,11 @@ done
 LOG_DIR=/var/www/featherpanel
 LOG_FILE=$LOG_DIR/install.log
 BACKUP_DIR="/var/www/featherpanel/backups"
+WINGS_BACKUP_DIR="/var/lib/featherpanel/wings_backup"
+WINGS_MIGRATION_DIR="/var/lib/featherpanel/wings_migrations"
+WINGS_CONFIG_FILE="/etc/featherpanel/config.yml"
+WINGS_VOLUMES_DEFAULT="/var/lib/featherpanel/volumes"
+WINGS_BACKUPS_DEFAULT="/var/lib/featherpanel/backups"
 CONFIG_FILE="/var/www/featherpanel/.featherpanel.conf"
 COMPOSE_FILE_PATH="$LOG_DIR/docker-compose.yml"
 
@@ -583,6 +590,8 @@ refresh_compose_from_upstream
 
 PMA_BACKUP="${PANEL_ROOT}/.pma-update-backup"
 rm -rf "$PMA_BACKUP"
+DATA_BACKUP="${PANEL_ROOT}/.storage-data-update-backup"
+rm -rf "$DATA_BACKUP"
 if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx featherpanel_backend; then
 	if docker exec featherpanel_backend test -f /var/www/html/public/pma/index.php 2>/dev/null; then
 		log "featherpanel-docker-updater: backing up phpMyAdmin before container recreate"
@@ -593,6 +602,16 @@ if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx featherpanel_backend; 
 		else
 			log "featherpanel-docker-updater: warning: phpMyAdmin backup failed (continuing)"
 			rm -rf "$PMA_BACKUP"
+		fi
+	fi
+	if docker exec featherpanel_backend test -d /var/www/html/storage/data 2>/dev/null; then
+		log "featherpanel-docker-updater: backing up addon data before container recreate"
+		mkdir -p "$DATA_BACKUP"
+		if docker cp featherpanel_backend:/var/www/html/storage/data/. "$DATA_BACKUP/" >>"$LOG_FILE" 2>&1; then
+			log "featherpanel-docker-updater: addon data backup ready at ${DATA_BACKUP}"
+		else
+			log "featherpanel-docker-updater: warning: addon data backup failed (continuing)"
+			rm -rf "$DATA_BACKUP"
 		fi
 	fi
 fi
@@ -606,7 +625,28 @@ log "featherpanel-docker-updater: docker compose up (--pull always)"
 if ! docker compose -f "$COMPOSE_FILE" up -d --pull always --remove-orphans >>"$LOG_FILE" 2>&1; then
 	log "featherpanel-docker-updater: ERROR docker compose up failed (see ${LOG_FILE})"
 	rm -rf "$PMA_BACKUP"
+	rm -rf "$DATA_BACKUP"
 	exit 1
+fi
+
+if [ -d "$DATA_BACKUP" ]; then
+	log "featherpanel-docker-updater: restoring addon data into persisted volume"
+	restored_data=0
+	for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+		if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx featherpanel_backend; then
+			if docker exec featherpanel_backend mkdir -p /var/www/html/storage/data >>"$LOG_FILE" 2>&1 \
+				&& docker cp "$DATA_BACKUP/." featherpanel_backend:/var/www/html/storage/data/ >>"$LOG_FILE" 2>&1; then
+				log "featherpanel-docker-updater: addon data restored successfully"
+				restored_data=1
+				break
+			fi
+		fi
+		sleep 2
+	done
+	if [ "$restored_data" -ne 1 ]; then
+		log "featherpanel-docker-updater: warning: could not restore addon data backup"
+	fi
+	rm -rf "$DATA_BACKUP"
 fi
 
 if [ -d "$PMA_BACKUP" ] && [ -f "$PMA_BACKUP/index.php" ]; then
@@ -1441,7 +1481,11 @@ set_panel_install_mode() {
 }
 
 get_source_scripts_branch() {
-	echo "main"
+	if [ "${USE_DEV:-false}" = "true" ] || [ -n "${FP_DEV:-}" ]; then
+		echo "${DEV_BRANCH:-develop}"
+	else
+		echo "main"
+	fi
 }
 
 get_latest_panel_release_tag() {
@@ -1743,6 +1787,10 @@ show_panel_menu() {
 		echo -e "  ${GREEN}${BOLD}[6]${NC} ${BOLD}Firewall Manager${NC}"
 		echo -e "     ${BLUE}→ Detect ufw/iptables and allow required Panel ports automatically${NC}"
 		echo -e "     ${BLUE}→ Smart port detection based on Panel config and reverse proxy${NC}"
+		echo ""
+		echo -e "  ${BLUE}${BOLD}[7]${NC} ${BOLD}Web Server${NC}"
+		echo -e "     ${BLUE}→ Reapply Nginx/Apache reverse proxy config from latest templates${NC}"
+		echo -e "     ${BLUE}→ Useful after Panel updates (e.g. proxy buffer fixes)${NC}"
 		echo ""
 	fi
 	draw_hr
@@ -2133,6 +2181,283 @@ show_backup_menu() {
 	draw_hr
 }
 
+show_webserver_menu() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	print_centered "Web Server Manager" "$CYAN"
+	draw_hr
+	echo ""
+
+	local nginx_status="not configured"
+	local apache_status="not configured"
+	local nginx_site
+	nginx_site="$(find_featherpanel_nginx_site || true)"
+	if [ -n "$nginx_site" ]; then
+		nginx_status="configured (${nginx_site})"
+	elif command -v nginx >/dev/null 2>&1; then
+		nginx_status="installed (no FeatherPanel site)"
+	fi
+	if [ -f /etc/apache2/sites-available/featherpanel.conf ] || [ -f /etc/apache2/sites-enabled/featherpanel.conf ]; then
+		apache_status="configured"
+	elif command -v apache2 >/dev/null 2>&1 || command -v apachectl >/dev/null 2>&1; then
+		apache_status="installed (no FeatherPanel site)"
+	fi
+
+	echo -e "  ${BOLD}Nginx:${NC}  ${CYAN}${nginx_status}${NC}"
+	echo -e "  ${BOLD}Apache:${NC} ${CYAN}${apache_status}${NC}"
+	echo ""
+	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Reapply Nginx Config${NC}"
+	echo -e "     ${BLUE}→ Download latest Nginx reverse proxy template and reload${NC}"
+	echo -e "     ${BLUE}→ Keeps your domain; uses SSL template if a cert exists${NC}"
+	echo -e "     ${YELLOW}→ Overwrites /etc/nginx/sites-available/featherpanel (backup created)${NC}"
+	echo ""
+	echo -e "  ${BLUE}${BOLD}[2]${NC} ${BOLD}Reapply Apache Config${NC}"
+	echo -e "     ${BLUE}→ Download latest Apache reverse proxy template and reload${NC}"
+	echo -e "     ${BLUE}→ Keeps your domain; uses SSL template if a cert exists${NC}"
+	echo -e "     ${YELLOW}→ Overwrites /etc/apache2/sites-available/featherpanel.conf (backup created)${NC}"
+	echo ""
+	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Patch Nginx Proxy Buffers Only${NC}"
+	echo -e "     ${BLUE}→ Safe fix for large Next.js Link headers (502 / too big header)${NC}"
+	echo -e "     ${BLUE}→ Does not replace your full Nginx site config${NC}"
+	echo ""
+	draw_hr
+}
+
+# Detect domain from an existing FeatherPanel reverse-proxy site config.
+detect_reverse_proxy_domain() {
+	local site_file="$1"
+	local domain=""
+
+	if [ -f "$site_file" ]; then
+		domain="$(
+			grep -E '^\s*server_name\s+' "$site_file" 2>/dev/null |
+				awk '{print $2}' |
+				sed 's/;$//' |
+				grep -E '[^[:space:]]' |
+				grep -Ev '^(localhost|_)$' |
+				head -n 1 || true
+		)"
+		# Apache uses ServerName
+		if [ -z "$domain" ]; then
+			domain="$(
+				grep -Ei '^\s*ServerName\s+' "$site_file" 2>/dev/null |
+					awk '{print $2}' |
+					sed 's/;$//' |
+					grep -E '[^[:space:]]' |
+					grep -Ev '^(localhost|_)$' |
+					head -n 1 || true
+			)"
+		fi
+		# Fall back to Let's Encrypt path in the site file
+		if [ -z "$domain" ]; then
+			domain="$(
+				grep -Eo '/etc/letsencrypt/live/[^/]+/' "$site_file" 2>/dev/null |
+					sed -E 's|.*/live/([^/]+)/.*|\1|' |
+					grep -E '[^[:space:]]' |
+					head -n 1 || true
+			)"
+		fi
+	fi
+
+	# Last resort: single cert under /etc/letsencrypt/live
+	if [ -z "$domain" ] && [ -d /etc/letsencrypt/live ]; then
+		local cert_dirs
+		cert_dirs="$(find /etc/letsencrypt/live -mindepth 1 -maxdepth 1 -type d ! -name 'README' 2>/dev/null | wc -l)"
+		if [ "$cert_dirs" = "1" ]; then
+			domain="$(basename "$(find /etc/letsencrypt/live -mindepth 1 -maxdepth 1 -type d ! -name 'README' | head -n 1)")"
+		fi
+	fi
+
+	echo "$domain"
+}
+
+detect_reverse_proxy_has_ssl() {
+	local domain="$1"
+	local site_file="$2"
+
+	if [ -n "$domain" ] && [ -f "/etc/letsencrypt/live/${domain}/fullchain.pem" ]; then
+		echo "true"
+		return 0
+	fi
+	if [ -f "$site_file" ] && grep -Eqi 'ssl_certificate|SSLEngine\s+on|listen\s+443' "$site_file" 2>/dev/null; then
+		echo "true"
+		return 0
+	fi
+	echo "false"
+}
+
+prompt_reverse_proxy_domain() {
+	local detected="$1"
+	local __varname="$2"
+	# IMPORTANT: do not name this local "domain" — printf -v would clobber the wrong scope.
+	local entered=""
+
+	if [ -n "$detected" ]; then
+		echo -e "${BLUE}Detected domain:${NC} ${BOLD}${detected}${NC}"
+		prompt "${BOLD}Domain to use${NC} ${BLUE}(press Enter for ${detected})${NC}: " entered
+		if [ -z "$entered" ]; then
+			entered="$detected"
+		fi
+	else
+		while [ -z "$entered" ]; do
+			prompt "${BOLD}Enter Panel domain name${NC} ${BLUE}(e.g., panel.example.com)${NC}: " entered
+			if [ -z "$entered" ]; then
+				echo -e "${RED}Domain cannot be empty.${NC}"
+			fi
+		done
+	fi
+
+	# Basic sanity: reject values that would produce empty/broken nginx server_name
+	entered="$(printf '%s' "$entered" | tr -d '[:space:]')"
+	if [ -z "$entered" ] || [ "$entered" = "your-domain.com" ]; then
+		echo -e "${RED}Invalid domain.${NC}" >&2
+		return 1
+	fi
+	printf -v "$__varname" '%s' "$entered"
+}
+
+reapply_nginx_reverse_proxy() {
+	local site_file=""
+	local detected_domain has_ssl domain confirm
+
+	log_step "Reapplying Nginx reverse proxy configuration..."
+
+	site_file="$(find_featherpanel_nginx_site || true)"
+	if [ -z "$site_file" ]; then
+		site_file="/etc/nginx/sites-available/featherpanel"
+	fi
+
+	detected_domain="$(detect_reverse_proxy_domain "$site_file")"
+	if [ -z "$detected_domain" ]; then
+		detected_domain="$(detect_reverse_proxy_domain /etc/nginx/sites-available/featherpanel)"
+	fi
+	if [ -z "$detected_domain" ]; then
+		detected_domain="$(detect_reverse_proxy_domain /etc/nginx/sites-enabled/featherpanel.conf)"
+	fi
+
+	domain=""
+	if ! prompt_reverse_proxy_domain "$detected_domain" domain; then
+		return 1
+	fi
+	if [ -z "$domain" ]; then
+		log_error "Domain is empty; refusing to write Nginx config."
+		return 1
+	fi
+	has_ssl="$(detect_reverse_proxy_has_ssl "$domain" "$site_file")"
+
+	echo ""
+	echo -e "${BOLD}Domain:${NC} ${CYAN}${domain}${NC}"
+	echo -e "${BOLD}SSL template:${NC} ${CYAN}${has_ssl}${NC}"
+	echo -e "${YELLOW}This will overwrite the FeatherPanel Nginx site and reload Nginx.${NC}"
+	confirm=""
+	prompt "${BOLD}Continue?${NC} ${BLUE}(y/n)${NC}: " confirm
+	if [[ ! "$confirm" =~ ^[yY]$ ]]; then
+		echo -e "${GREEN}Cancelled.${NC}"
+		return 0
+	fi
+
+	if [ -f "$site_file" ]; then
+		cp "$site_file" "${site_file}.bak.reapply.$(date +%Y%m%d%H%M%S)"
+		log_info "Backed up existing Nginx site to ${site_file}.bak.reapply.*"
+	fi
+
+	if setup_nginx_reverse_proxy "$domain" "$has_ssl"; then
+		log_success "Nginx reverse proxy config reapplied for ${domain}"
+		return 0
+	fi
+	log_error "Failed to reapply Nginx reverse proxy config"
+	return 1
+}
+
+reapply_apache_reverse_proxy() {
+	local site_file="/etc/apache2/sites-available/featherpanel.conf"
+	local detected_domain has_ssl domain confirm
+
+	log_step "Reapplying Apache reverse proxy configuration..."
+
+	detected_domain="$(detect_reverse_proxy_domain "$site_file")"
+	if [ -z "$detected_domain" ] && [ -f /etc/apache2/sites-enabled/featherpanel.conf ]; then
+		detected_domain="$(detect_reverse_proxy_domain /etc/apache2/sites-enabled/featherpanel.conf)"
+	fi
+
+	domain=""
+	if ! prompt_reverse_proxy_domain "$detected_domain" domain; then
+		return 1
+	fi
+	if [ -z "$domain" ]; then
+		log_error "Domain is empty; refusing to write Apache config."
+		return 1
+	fi
+	has_ssl="$(detect_reverse_proxy_has_ssl "$domain" "$site_file")"
+
+	echo ""
+	echo -e "${BOLD}Domain:${NC} ${CYAN}${domain}${NC}"
+	echo -e "${BOLD}SSL template:${NC} ${CYAN}${has_ssl}${NC}"
+	echo -e "${YELLOW}This will overwrite the FeatherPanel Apache site and reload Apache.${NC}"
+	confirm=""
+	prompt "${BOLD}Continue?${NC} ${BLUE}(y/n)${NC}: " confirm
+	if [[ ! "$confirm" =~ ^[yY]$ ]]; then
+		echo -e "${GREEN}Cancelled.${NC}"
+		return 0
+	fi
+
+	if [ -f "$site_file" ]; then
+		cp "$site_file" "${site_file}.bak.reapply.$(date +%Y%m%d%H%M%S)"
+		log_info "Backed up existing Apache site to ${site_file}.bak.reapply.*"
+	fi
+
+	if setup_apache_reverse_proxy "$domain" "$has_ssl"; then
+		log_success "Apache reverse proxy config reapplied for ${domain}"
+		return 0
+	fi
+	log_error "Failed to reapply Apache reverse proxy config"
+	return 1
+}
+
+manage_panel_webserver() {
+	local action=""
+	while [[ ! "$action" =~ ^[1-3]$ ]]; do
+		show_webserver_menu
+		echo ""
+		prompt "${BOLD}${CYAN}Select web server operation${NC} ${BLUE}(1/2/3)${NC}: " action
+		if [[ ! "$action" =~ ^[1-3]$ ]]; then
+			echo ""
+			echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
+			echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Nginx), ${BOLD}2${NC} (Apache), or ${BOLD}3${NC} (Proxy buffers)${NC}"
+			echo ""
+			sleep 2
+		fi
+	done
+
+	case "$action" in
+	1)
+		reapply_nginx_reverse_proxy
+		;;
+	2)
+		reapply_apache_reverse_proxy
+		;;
+	3)
+		log_step "Patching Nginx proxy buffers..."
+		local site_file
+		site_file="$(find_featherpanel_nginx_site || true)"
+		if [ -z "$site_file" ]; then
+			log_error "No FeatherPanel Nginx site found to patch."
+			return 1
+		fi
+		if ! ensure_nginx_proxy_buffers; then
+			return 1
+		fi
+		if [ -f "$site_file" ] && grep -Eq '[[:space:]]proxy_buffer_size[[:space:]]+' "$site_file"; then
+			log_success "Nginx proxy buffer settings are present in ${site_file}"
+			return 0
+		fi
+		log_warn "Proxy buffers were not applied. Use option 1 to reapply the full Nginx config."
+		return 1
+		;;
+	esac
+}
+
 show_release_type_menu() {
 	if [ -t 1 ]; then clear; fi
 	print_banner
@@ -2163,17 +2488,53 @@ show_wings_menu() {
 	draw_hr
 	echo ""
 	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Install Wings${NC}"
-	echo -e "     ${BLUE}→ Install FeatherWings, Docker, and required directories${NC}"
+	echo -e "     ${GREEN}→ Recommended: MythicalSystems ${BOLD}APT repo${NC}${GREEN} (cleaner upgrades & easy migration)${NC}"
+	echo -e "     ${BLUE}→ Direct GitHub binary still available if you prefer${NC}"
+	echo -e "     ${BLUE}→ Installs Docker and required directories${NC}"
 	echo -e "     ${BLUE}→ Launches ${BOLD}featherwings configure${NC} to finish setup (node, SSL, service)${NC}"
 	echo ""
 	echo -e "  ${RED}${BOLD}[2]${NC} ${BOLD}Uninstall Wings${NC}"
 	echo -e "     ${YELLOW}⚠️  WARNING: This will remove Wings and its configuration${NC}"
-	echo -e "     ${BLUE}→ Stops and removes systemd service${NC}"
+	echo -e "     ${BLUE}→ Stops and removes systemd service / APT package${NC}"
 	echo -e "     ${BLUE}→ Removes Wings binary and data (optional)${NC}"
 	echo ""
 	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Update Wings${NC}"
-	echo -e "     ${BLUE}→ Download latest Wings binary${NC}"
-	echo -e "     ${BLUE}→ Restart Wings service with new version${NC}"
+	echo -e "     ${GREEN}→ APT (recommended): ${BOLD}apt upgrade${NC}${GREEN} — clean, supports stable ↔ nightly switches${NC}"
+	echo -e "     ${BLUE}→ Direct installs: download latest binary and restart${NC}"
+	echo ""
+	echo -e "  ${CYAN}${BOLD}[4]${NC} ${BOLD}Backup Manager${NC}"
+	echo -e "     ${BLUE}→ Create, list, restore, and manage Wings backups${NC}"
+	echo -e "     ${BLUE}→ Archive volumes under /var/lib/featherpanel/wings_backup${NC}"
+	echo -e "     ${BLUE}→ Export/Import for migrating Wings to another server${NC}"
+	echo ""
+	draw_hr
+}
+
+show_wings_backup_menu() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	print_centered "Wings Backup Manager" "$CYAN"
+	draw_hr
+	echo ""
+	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Create Backup${NC}"
+	echo -e "     ${BLUE}→ Zip server volumes into ${BOLD}$WINGS_BACKUP_DIR${NC}"
+	echo -e "     ${BLUE}→ Optional full mode also includes backups + config.yml${NC}"
+	echo ""
+	echo -e "  ${BLUE}${BOLD}[2]${NC} ${BOLD}List Backups${NC}"
+	echo -e "     ${BLUE}→ View local Wings backup archives${NC}"
+	echo ""
+	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Restore Backup${NC}"
+	echo -e "     ${YELLOW}⚠️  WARNING: This replaces volumes (and optionally config)${NC}"
+	echo ""
+	echo -e "  ${RED}${BOLD}[4]${NC} ${BOLD}Delete Backup${NC}"
+	echo -e "     ${YELLOW}⚠️  WARNING: Permanently deletes a backup file${NC}"
+	echo ""
+	echo -e "  ${CYAN}${BOLD}[5]${NC} ${BOLD}Export for Migration${NC}"
+	echo -e "     ${BLUE}→ Full package to move Wings from VM A to VM B${NC}"
+	echo ""
+	echo -e "  ${GREEN}${BOLD}[6]${NC} ${BOLD}Import Migration${NC}"
+	echo -e "     ${YELLOW}⚠️  WARNING: Replaces current Wings data${NC}"
 	echo ""
 	draw_hr
 }
@@ -2834,22 +3195,174 @@ setup_cloudflare_tunnel_client() {
 	fi
 }
 
-# Wings installation functions
-install_wings() {
-	log_step "Installing FeatherWings daemon..."
+# MythicalSystems APT repository (FeatherWings / FeatherQuilld packages)
+mythicalsystems_apt_supported() {
+	command -v apt-get >/dev/null 2>&1 && command -v dpkg >/dev/null 2>&1
+}
 
-	# Check and install Docker first (Wings requires Docker)
-	if command -v docker &>/dev/null; then
-		log_info "Docker is already installed."
-	else
-		log_step "Installing Docker engine (required for Wings, this may take a minute)..."
-		curl -sSL https://get.docker.com/ | CHANNEL=stable bash >>"$LOG_FILE" 2>&1
-		systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
-		usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
-		log_success "Docker installed. You may need to re-login for group changes to take effect."
+mythicalsystems_apt_package_installed() {
+	local pkg="$1"
+	dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q "install ok installed"
+}
+
+setup_mythicalsystems_apt_repo() {
+	log_step "Configuring MythicalSystems APT repository..."
+
+	if ! mythicalsystems_apt_supported; then
+		log_error "APT repository installs require Debian/Ubuntu (apt-get + dpkg)."
+		return 1
 	fi
 
-	# Check kernel version for swap support
+	apt-get install -y ca-certificates curl gnupg >>"$LOG_FILE" 2>&1
+	install -d -m 0755 /etc/apt/keyrings
+
+	if ! curl -fsSL https://apt.mythicalsystems.org/repository/keys/public.gpg |
+		gpg --dearmor -o /etc/apt/keyrings/mythicalsystems.gpg 2>>"$LOG_FILE"; then
+		log_error "Failed to import MythicalSystems APT GPG key."
+		return 1
+	fi
+	chmod a+r /etc/apt/keyrings/mythicalsystems.gpg
+
+	local arch
+	arch="$(dpkg --print-architecture)"
+	echo "deb [arch=${arch} signed-by=/etc/apt/keyrings/mythicalsystems.gpg] https://apt.mythicalsystems.org/repository/MythicalSystems/ stable main" \
+		>/etc/apt/sources.list.d/mythicalsystems.list
+
+	if ! apt-get update -qq >>"$LOG_FILE" 2>&1; then
+		log_error "Failed to refresh APT after adding MythicalSystems repository."
+		return 1
+	fi
+
+	log_success "MythicalSystems APT repository ready."
+}
+
+# Sets DAEMON_INSTALL_METHOD (apt|direct) and DAEMON_APT_CHANNEL (stable|nightly).
+# Optional 4th arg "apt_only" forces APT (used by FeatherQuilld).
+# Env overrides: FP_DAEMON_METHOD / FP_DAEMON_CHANNEL, or component-specific
+# FP_WINGS_METHOD / FP_WINGS_CHANNEL / FP_QUILLD_CHANNEL.
+prompt_daemon_install_method() {
+	local component_label="$1"
+	local env_method_var="$2"
+	local env_channel_var="$3"
+	local force_apt_only="${4:-}"
+	local method="" channel=""
+	local apt_ok=false
+
+	if mythicalsystems_apt_supported; then
+		apt_ok=true
+	fi
+
+	eval "method=\"\${${env_method_var}:-\${FP_DAEMON_METHOD:-}}\""
+	eval "channel=\"\${${env_channel_var}:-\${FP_DAEMON_CHANNEL:-}}\""
+	method="$(printf '%s' "$method" | tr '[:upper:]' '[:lower:]')"
+	channel="$(printf '%s' "$channel" | tr '[:upper:]' '[:lower:]')"
+
+	case "$method" in
+	apt | repo | package) method="apt" ;;
+	direct | binary | github | manual) method="direct" ;;
+	*) method="" ;;
+	esac
+
+	if [ "$force_apt_only" = "apt_only" ]; then
+		if [ "$method" = "direct" ]; then
+			log_warn "${component_label} only supports APT installs — ignoring direct method override."
+		fi
+		method="apt"
+		if [ "$apt_ok" != true ]; then
+			log_error "${component_label} requires Debian/Ubuntu with apt-get (APT-only install)."
+			return 1
+		fi
+	fi
+
+	if [ "$method" = "apt" ] && [ "$apt_ok" != true ]; then
+		if [ "$force_apt_only" = "apt_only" ]; then
+			log_error "${component_label} requires APT, but apt-get is unavailable on this system."
+			return 1
+		fi
+		log_warn "APT install requested but apt-get is unavailable; falling back to direct binary install."
+		method="direct"
+	fi
+
+	if [ -z "$method" ]; then
+		if [ ! -t 0 ] && [ ! -t 1 ]; then
+			if [ "$apt_ok" = true ]; then
+				method="apt"
+			else
+				method="direct"
+			fi
+		else
+			echo ""
+			echo -e "${BOLD}${CYAN}${component_label} install method${NC}"
+			if [ "$apt_ok" = true ]; then
+				echo -e "  ${GREEN}${BOLD}We strongly recommend APT${NC}${GREEN} — cleaner upgrades, package-managed systemd,${NC}"
+				echo -e "  ${GREEN}and easy migration between stable/nightly (or from a direct install).${NC}"
+				echo ""
+				echo -e "  ${GREEN}[1]${NC} ${BOLD}APT repository${NC} ${GREEN}(recommended)${NC}"
+				echo -e "  ${YELLOW}[2]${NC} ${BOLD}Direct binary${NC} ${CYAN}(GitHub download — manual updates)${NC}"
+				method_choice=""
+				prompt "${BOLD}Select method${NC} ${BLUE}(1 recommended / 2)${NC}: " method_choice
+				case "$method_choice" in
+				2) method="direct" ;;
+				*) method="apt" ;;
+				esac
+			else
+				log_info "APT is not available on this OS — using direct binary install."
+				method="direct"
+			fi
+		fi
+	fi
+
+	if [ "$method" = "apt" ]; then
+		case "$channel" in
+		stable | release) channel="stable" ;;
+		nightly | dev | development) channel="nightly" ;;
+		*)
+			if [ "${PREFER_DEV:-no}" = "yes" ]; then
+				channel="nightly"
+			elif [ ! -t 0 ] && [ ! -t 1 ]; then
+				channel="stable"
+			else
+				echo ""
+				echo -e "${BOLD}${CYAN}APT package channel${NC}"
+				echo -e "  ${GREEN}[1]${NC} ${BOLD}Stable${NC} ${CYAN}(published releases)${NC}"
+				echo -e "  ${GREEN}[2]${NC} ${BOLD}Nightly / Dev${NC} ${CYAN}(latest main builds)${NC}"
+				channel_choice=""
+				prompt "${BOLD}Select channel${NC} ${BLUE}(1/2)${NC}: " channel_choice
+				case "$channel_choice" in
+				2) channel="nightly" ;;
+				*) channel="stable" ;;
+				esac
+			fi
+			;;
+		esac
+	else
+		channel="stable"
+	fi
+
+	DAEMON_INSTALL_METHOD="$method"
+	DAEMON_APT_CHANNEL="$channel"
+	if [ "$DAEMON_INSTALL_METHOD" = "apt" ]; then
+		log_info "${component_label} install method: apt (${DAEMON_APT_CHANNEL})"
+	else
+		log_info "${component_label} install method: direct"
+	fi
+}
+
+ensure_docker_for_daemon() {
+	local label="${1:-daemon}"
+	if command -v docker &>/dev/null; then
+		log_info "Docker is already installed."
+		return 0
+	fi
+	log_step "Installing Docker engine (required for ${label}, this may take a minute)..."
+	curl -sSL https://get.docker.com/ | CHANNEL=stable bash >>"$LOG_FILE" 2>&1
+	systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
+	usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
+	log_success "Docker installed. You may need to re-login for group changes to take effect."
+}
+
+warn_docker_swap_kernel() {
+	local KERNEL_VERSION KERNEL_MAJOR KERNEL_MINOR
 	KERNEL_VERSION=$(uname -r | cut -d. -f1-2)
 	KERNEL_MAJOR=$(echo "$KERNEL_VERSION" | cut -d. -f1)
 	KERNEL_MINOR=$(echo "$KERNEL_VERSION" | cut -d. -f2)
@@ -2862,23 +3375,36 @@ install_wings() {
 	else
 		log_info "Kernel version $KERNEL_VERSION detected (6.1+) - swap enabled by default"
 	fi
+}
 
-	# Create directory structure
+create_wings_directories() {
 	log_info "Creating FeatherWings directory structure..."
 	mkdir -p /etc/featherpanel
 	mkdir -p /var/lib/featherpanel/volumes
 	mkdir -p /var/lib/featherpanel/archives
 	mkdir -p /var/lib/featherpanel/backups
+	mkdir -p /var/lib/featherpanel/wings_backup
+	mkdir -p /var/lib/featherpanel/wings_migrations
 	mkdir -p /var/log/featherpanel
 	mkdir -p /tmp/featherpanel
 	mkdir -p /var/run/featherwings
+}
 
-	# Download and install featherwings binary
+wings_apt_package_name() {
+	if mythicalsystems_apt_package_installed featherwings-dev; then
+		echo "featherwings-dev"
+	elif mythicalsystems_apt_package_installed featherwings; then
+		echo "featherwings"
+	else
+		echo ""
+	fi
+}
+
+install_wings_direct() {
 	log_info "Downloading FeatherWings binary..."
 	curl -L -o /usr/local/bin/featherwings "https://github.com/MythicalLTD/FeatherWings/releases/latest/download/wings_linux_$([[ "$(uname -m)" == "x86_64" ]] && echo "amd64" || echo "arm64")"
 	chmod +x /usr/local/bin/featherwings
 
-	# Create systemd service
 	cat <<EOF | tee /etc/systemd/system/featherwings.service >/dev/null
 [Unit]
 Description=FeatherWings Daemon
@@ -2901,9 +3427,52 @@ StandardError=journal
 WantedBy=multi-user.target
 EOF
 
-	# Enable but don't start yet (needs configuration)
 	systemctl daemon-reload
 	systemctl enable featherwings
+}
+
+install_wings_apt() {
+	local pkg="featherwings"
+	if [ "${DAEMON_APT_CHANNEL:-stable}" = "nightly" ]; then
+		pkg="featherwings-dev"
+	fi
+
+	if ! setup_mythicalsystems_apt_repo; then
+		return 1
+	fi
+
+	# Prefer package unit over a leftover manual unit from a prior direct install
+	systemctl stop featherwings >/dev/null 2>&1 || true
+	systemctl stop wings >/dev/null 2>&1 || true
+	rm -f /etc/systemd/system/featherwings.service /etc/systemd/system/wings.service
+	systemctl daemon-reload >/dev/null 2>&1 || true
+
+	log_info "Installing APT package: ${pkg}"
+	if ! apt-get install -y "$pkg" >>"$LOG_FILE" 2>&1; then
+		log_error "Failed to install ${pkg} from MythicalSystems APT repository."
+		return 1
+	fi
+
+	systemctl enable featherwings >/dev/null 2>&1 || true
+	log_success "Installed ${pkg} via APT."
+}
+
+# Wings installation functions
+install_wings() {
+	log_step "Installing FeatherWings daemon..."
+
+	prompt_daemon_install_method "FeatherWings" "FP_WINGS_METHOD" "FP_WINGS_CHANNEL"
+	ensure_docker_for_daemon "Wings"
+	warn_docker_swap_kernel
+	create_wings_directories
+
+	if [ "$DAEMON_INSTALL_METHOD" = "apt" ]; then
+		if ! install_wings_apt; then
+			return 1
+		fi
+	else
+		install_wings_direct
+	fi
 
 	log_success "FeatherWings daemon installed successfully."
 }
@@ -2943,36 +3512,38 @@ run_featherwings_configure_wizard() {
 uninstall_wings() {
 	log_step "Uninstalling FeatherWings daemon..."
 
-	# Stop and disable service
+	local apt_pkg
+	apt_pkg="$(wings_apt_package_name)"
+
 	systemctl stop featherwings >/dev/null 2>&1 || true
 	systemctl disable featherwings >/dev/null 2>&1 || true
 
-	# Remove service file
-	rm -f /etc/systemd/system/featherwings.service
+	if [ -n "$apt_pkg" ]; then
+		log_info "Removing APT package: ${apt_pkg}"
+		apt-get remove -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || true
+		apt-get purge -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || true
+	fi
+
+	rm -f /etc/systemd/system/featherwings.service /etc/systemd/system/wings.service
 	systemctl daemon-reload
+	rm -f /usr/local/bin/featherwings /usr/local/bin/wings
 
-	# Remove binary
-	rm -f /usr/local/bin/featherwings
-
-	# Remove configuration (ask first)
 	if [ -d /etc/featherpanel ]; then
-		log_info "Remove FeatherWings configuration directory (/etc/featherpanel)? (y/n): "
-		read -r remove_config
+		remove_config="n"
+		prompt "Remove FeatherWings configuration directory (/etc/featherpanel)? (y/n): " remove_config
 		if [[ "$remove_config" =~ ^[yY]$ ]]; then
 			rm -rf /etc/featherpanel
 		fi
 	fi
 
-	# Remove data directories (ask first)
 	if [ -d /var/lib/featherpanel ]; then
-		log_info "Remove FeatherWings data directory (/var/lib/featherpanel)? (y/n): "
-		read -r remove_data
+		remove_data="n"
+		prompt "Remove FeatherWings data directory (/var/lib/featherpanel)? (y/n): " remove_data
 		if [[ "$remove_data" =~ ^[yY]$ ]]; then
 			rm -rf /var/lib/featherpanel
 		fi
 	fi
 
-	# Remove logs
 	rm -rf /var/log/featherpanel
 
 	log_success "FeatherWings daemon uninstalled successfully."
@@ -2981,23 +3552,473 @@ uninstall_wings() {
 update_wings() {
 	log_step "Updating FeatherWings daemon..."
 
-	if [ ! -f /usr/local/bin/featherwings ]; then
+	if ! wings_is_installed; then
 		log_error "FeatherWings is not installed. Please install it first."
 		return 1
 	fi
 
-	# Stop featherwings service
-	systemctl stop featherwings
+	local apt_pkg
+	apt_pkg="$(wings_apt_package_name)"
 
-	# Download latest FeatherWings binary
+	if [ -n "$apt_pkg" ]; then
+		log_info "Updating via APT package: ${apt_pkg}"
+		if ! setup_mythicalsystems_apt_repo; then
+			return 1
+		fi
+		if ! apt-get install --only-upgrade -y "$apt_pkg" >>"$LOG_FILE" 2>&1; then
+			# Package may already be newest; also allow reinstall of current channel
+			apt-get install -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || {
+				log_error "Failed to upgrade ${apt_pkg}."
+				return 1
+			}
+		fi
+		systemctl restart featherwings >/dev/null 2>&1 || systemctl start featherwings >/dev/null 2>&1 || true
+		log_success "FeatherWings daemon updated successfully (APT: ${apt_pkg})."
+		return 0
+	fi
+
+	systemctl stop featherwings >/dev/null 2>&1 || true
 	log_info "Downloading latest FeatherWings binary..."
 	curl -L -o /usr/local/bin/featherwings "https://github.com/MythicalLTD/FeatherWings/releases/latest/download/wings_linux_$([[ "$(uname -m)" == "x86_64" ]] && echo "amd64" || echo "arm64")"
 	chmod +x /usr/local/bin/featherwings
-
-	# Restart service
 	systemctl start featherwings
 
 	log_success "FeatherWings daemon updated successfully."
+}
+
+wings_is_installed() {
+	[ -x /usr/local/bin/featherwings ] || command -v featherwings >/dev/null 2>&1 || [ -n "$(wings_apt_package_name)" ]
+}
+
+wings_resolve_volumes_dir() {
+	local data_dir=""
+	if [ -f "$WINGS_CONFIG_FILE" ]; then
+		data_dir=$(grep -E '^\s*data:' "$WINGS_CONFIG_FILE" 2>/dev/null | head -1 | sed -E 's/.*data:[[:space:]]*"?([^"#]+)"?.*/\1/' | tr -d '[:space:]')
+	fi
+	if [ -n "$data_dir" ] && [ -d "$data_dir" ]; then
+		echo "$data_dir"
+	else
+		echo "$WINGS_VOLUMES_DEFAULT"
+	fi
+}
+
+wings_resolve_backups_dir() {
+	local backup_dir=""
+	if [ -f "$WINGS_CONFIG_FILE" ]; then
+		backup_dir=$(grep -E '^\s*backup_directory:' "$WINGS_CONFIG_FILE" 2>/dev/null | head -1 | sed -E 's/.*backup_directory:[[:space:]]*"?([^"#]+)"?.*/\1/' | tr -d '[:space:]')
+	fi
+	if [ -n "$backup_dir" ]; then
+		echo "$backup_dir"
+	else
+		echo "$WINGS_BACKUPS_DEFAULT"
+	fi
+}
+
+wings_cli_supports_node_backup() {
+	command -v featherwings >/dev/null 2>&1 && featherwings node-backup --help >/dev/null 2>&1
+}
+
+wings_stop_service() {
+	if systemctl is-active --quiet featherwings 2>/dev/null || systemctl is-active --quiet wings 2>/dev/null; then
+		log_info "Stopping FeatherWings service for consistent backup..."
+		systemctl stop featherwings 2>/dev/null || systemctl stop wings 2>/dev/null || true
+		return 0
+	fi
+	return 1
+}
+
+wings_start_service() {
+	systemctl start featherwings 2>/dev/null || systemctl start wings 2>/dev/null || true
+}
+
+create_wings_backup() {
+	log_step "Creating FeatherWings backup..."
+
+	if ! wings_is_installed && [ ! -d "$(wings_resolve_volumes_dir)" ]; then
+		log_error "FeatherWings does not appear to be installed and no volumes directory was found."
+		return 1
+	fi
+
+	local mode="volumes"
+	local mode_choice=""
+	prompt "${BOLD}Backup mode${NC} ${BLUE}(1=volumes [default], 2=full, 3=user_backups_only)${NC}: " mode_choice
+	case "$mode_choice" in
+	2) mode="full" ;;
+	3) mode="user_backups_only" ;;
+	*) mode="volumes" ;;
+	esac
+
+	local stopped=0
+	local stop_choice="y"
+	prompt "${BOLD}Stop featherwings for consistency?${NC} ${BLUE}(Y/n)${NC}: " stop_choice
+	if [[ ! "$stop_choice" =~ ^[nN]$ ]]; then
+		if wings_stop_service; then
+			stopped=1
+		fi
+	fi
+
+	mkdir -p "$WINGS_BACKUP_DIR"
+
+	if wings_cli_supports_node_backup; then
+		log_info "Using featherwings node-backup CLI..."
+		if featherwings node-backup create --mode "$mode"; then
+			log_success "Wings backup created via CLI in $WINGS_BACKUP_DIR"
+			[ "$stopped" -eq 1 ] && wings_start_service
+			return 0
+		fi
+		log_warn "CLI backup failed; falling back to tar archive..."
+	fi
+
+	local volumes_dir backups_dir
+	volumes_dir=$(wings_resolve_volumes_dir)
+	backups_dir=$(wings_resolve_backups_dir)
+	local ts name path temp
+	ts=$(date +%Y%m%d_%H%M%S)
+	name="featherwings_backup_${ts}.tar.gz"
+	path="${WINGS_BACKUP_DIR}/${name}"
+	temp=$(mktemp -d)
+	# shellcheck disable=SC2064
+	trap "rm -rf '$temp'" RETURN
+
+	mkdir -p "$temp"
+	{
+		echo "FeatherWings Node Backup"
+		echo "Mode: $mode"
+		echo "Created: $(date -Iseconds)"
+		echo "Hostname: $(hostname)"
+		echo "Volumes: $volumes_dir"
+		echo "Backups: $backups_dir"
+		echo "Config: $WINGS_CONFIG_FILE"
+	} >"$temp/backup_info.txt"
+
+	case "$mode" in
+	volumes)
+		if [ ! -d "$volumes_dir" ]; then
+			log_error "Volumes directory not found: $volumes_dir"
+			[ "$stopped" -eq 1 ] && wings_start_service
+			return 1
+		fi
+		mkdir -p "$temp/volumes"
+		log_info "Archiving volumes from $volumes_dir ..."
+		cp -a "$volumes_dir"/. "$temp/volumes/" 2>>"$LOG_FILE" || {
+			log_error "Failed to copy volumes"
+			[ "$stopped" -eq 1 ] && wings_start_service
+			return 1
+		}
+		;;
+	user_backups_only)
+		mkdir -p "$temp/backups"
+		if [ -d "$backups_dir" ]; then
+			cp -a "$backups_dir"/. "$temp/backups/" 2>>"$LOG_FILE" || true
+		fi
+		;;
+	full)
+		mkdir -p "$temp/volumes" "$temp/backups" "$temp/config"
+		if [ -d "$volumes_dir" ]; then
+			cp -a "$volumes_dir"/. "$temp/volumes/" 2>>"$LOG_FILE" || true
+		fi
+		if [ -d "$backups_dir" ]; then
+			cp -a "$backups_dir"/. "$temp/backups/" 2>>"$LOG_FILE" || true
+		fi
+		if [ -f "$WINGS_CONFIG_FILE" ]; then
+			cp -a "$WINGS_CONFIG_FILE" "$temp/config/config.yml" 2>>"$LOG_FILE" || true
+		fi
+		;;
+	esac
+
+	log_info "Compressing backup to $path ..."
+	if tar -czf "$path" -C "$temp" . 2>>"$LOG_FILE"; then
+		chmod 600 "$path"
+		local size
+		size=$(du -h "$path" | cut -f1)
+		log_success "Wings backup created: $name ($size)"
+		echo -e "  ${BLUE}• Location:${NC} $path"
+		[ "$stopped" -eq 1 ] && wings_start_service
+		return 0
+	fi
+
+	log_error "Failed to create Wings backup archive"
+	[ "$stopped" -eq 1 ] && wings_start_service
+	return 1
+}
+
+list_wings_backups() {
+	log_step "Listing FeatherWings backups..."
+	mkdir -p "$WINGS_BACKUP_DIR"
+	local files=()
+	mapfile -t files < <(find "$WINGS_BACKUP_DIR" \( -name 'featherwings_backup_*.tar.gz' -o -name '*.tar.gz' \) -type f 2>/dev/null | sort -r)
+	if [ ${#files[@]} -eq 0 ]; then
+		log_warn "No Wings backups found in $WINGS_BACKUP_DIR"
+		return 0
+	fi
+	local i=1
+	for f in "${files[@]}"; do
+		local size
+		size=$(du -h "$f" | cut -f1)
+		echo -e "  ${CYAN}${BOLD}[$i]${NC} $(basename "$f")  ${BLUE}$size${NC}  ${YELLOW}$(date -r "$f" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || true)${NC}"
+		i=$((i + 1))
+	done
+	if wings_cli_supports_node_backup; then
+		echo ""
+		log_info "CLI metadata listing:"
+		featherwings node-backup list 2>/dev/null || true
+	fi
+}
+
+restore_wings_backup() {
+	log_step "Restoring FeatherWings backup..."
+	mkdir -p "$WINGS_BACKUP_DIR"
+	local files=()
+	mapfile -t files < <(find "$WINGS_BACKUP_DIR" \( -name 'featherwings_backup_*.tar.gz' -o -name '*.tar.gz' \) -type f 2>/dev/null | sort -r)
+	if [ ${#files[@]} -eq 0 ]; then
+		log_error "No Wings backups found in $WINGS_BACKUP_DIR"
+		return 1
+	fi
+	list_wings_backups
+	local idx=""
+	prompt "${BOLD}Select backup number to restore${NC}: " idx
+	if ! [[ "$idx" =~ ^[0-9]+$ ]] || [ "$idx" -lt 1 ] || [ "$idx" -gt ${#files[@]} ]; then
+		log_error "Invalid selection"
+		return 1
+	fi
+	local archive="${files[$((idx - 1))]}"
+	local confirm=""
+	prompt "${BOLD}${RED}This will overwrite Wings data. Type 'yes' to continue${NC}: " confirm
+	if [ "$confirm" != "yes" ]; then
+		log_info "Restore cancelled."
+		return 0
+	fi
+
+	wings_stop_service || true
+	local volumes_dir backups_dir
+	volumes_dir=$(wings_resolve_volumes_dir)
+	backups_dir=$(wings_resolve_backups_dir)
+	mkdir -p "$volumes_dir" "$backups_dir"
+
+	if wings_cli_supports_node_backup; then
+		if featherwings node-backup import --file "$archive"; then
+			log_success "Restore completed via CLI"
+			wings_start_service
+			return 0
+		fi
+		log_warn "CLI import failed; trying tar extract..."
+	fi
+
+	local temp
+	temp=$(mktemp -d)
+	# shellcheck disable=SC2064
+	trap "rm -rf '$temp'" RETURN
+	tar -xzf "$archive" -C "$temp" 2>>"$LOG_FILE" || {
+		log_error "Failed to extract archive"
+		wings_start_service
+		return 1
+	}
+	if [ -d "$temp/volumes" ]; then
+		rm -rf "${volumes_dir:?}/"*
+		cp -a "$temp/volumes"/. "$volumes_dir/" 2>>"$LOG_FILE" || true
+	fi
+	if [ -d "$temp/backups" ]; then
+		mkdir -p "$backups_dir"
+		cp -a "$temp/backups"/. "$backups_dir/" 2>>"$LOG_FILE" || true
+	fi
+	if [ -f "$temp/config/config.yml" ]; then
+		mkdir -p "$(dirname "$WINGS_CONFIG_FILE")"
+		cp -a "$temp/config/config.yml" "$WINGS_CONFIG_FILE"
+	fi
+	wings_start_service
+	log_success "Wings backup restored from $(basename "$archive")"
+	log_info "Verify the node FQDN/IP in FeatherPanel if this host changed."
+}
+
+delete_wings_backup() {
+	log_step "Deleting FeatherWings backup..."
+	mkdir -p "$WINGS_BACKUP_DIR"
+	local files=()
+	mapfile -t files < <(find "$WINGS_BACKUP_DIR" \( -name 'featherwings_backup_*.tar.gz' -o -name '*.tar.gz' \) -type f 2>/dev/null | sort -r)
+	if [ ${#files[@]} -eq 0 ]; then
+		log_error "No Wings backups found"
+		return 1
+	fi
+	list_wings_backups
+	local idx=""
+	prompt "${BOLD}Select backup number to delete${NC}: " idx
+	if ! [[ "$idx" =~ ^[0-9]+$ ]] || [ "$idx" -lt 1 ] || [ "$idx" -gt ${#files[@]} ]; then
+		log_error "Invalid selection"
+		return 1
+	fi
+	local archive="${files[$((idx - 1))]}"
+	local confirm=""
+	prompt "${BOLD}${RED}Delete $(basename "$archive")? Type 'yes'${NC}: " confirm
+	if [ "$confirm" != "yes" ]; then
+		log_info "Delete cancelled."
+		return 0
+	fi
+	rm -f "$archive" "${archive%.tar.gz}.meta.json" 2>/dev/null || true
+	# Also remove UUID-named meta next to CLI archives
+	local base
+	base=$(basename "$archive" .tar.gz)
+	rm -f "${WINGS_BACKUP_DIR}/${base}.meta.json" 2>/dev/null || true
+	log_success "Deleted $(basename "$archive")"
+}
+
+export_wings_migration() {
+	log_step "Exporting FeatherWings migration package..."
+	mkdir -p "$WINGS_MIGRATION_DIR" "$WINGS_BACKUP_DIR"
+
+	local stopped=0
+	if wings_stop_service; then
+		stopped=1
+	fi
+
+	if wings_cli_supports_node_backup; then
+		if featherwings node-backup export --out "$WINGS_MIGRATION_DIR"; then
+			log_success "Migration package exported to $WINGS_MIGRATION_DIR"
+			[ "$stopped" -eq 1 ] && wings_start_service
+			return 0
+		fi
+		log_warn "CLI export failed; using tar fallback..."
+	fi
+
+	local volumes_dir backups_dir ts name path temp
+	volumes_dir=$(wings_resolve_volumes_dir)
+	backups_dir=$(wings_resolve_backups_dir)
+	ts=$(date +%Y%m%d_%H%M%S)
+	name="featherwings_migration_${ts}.tar.gz"
+	path="${WINGS_MIGRATION_DIR}/${name}"
+	temp=$(mktemp -d)
+	# shellcheck disable=SC2064
+	trap "rm -rf '$temp'" RETURN
+
+	mkdir -p "$temp/volumes" "$temp/backups" "$temp/config"
+	if [ -d "$volumes_dir" ]; then
+		cp -a "$volumes_dir"/. "$temp/volumes/" 2>>"$LOG_FILE" || true
+	fi
+	if [ -d "$backups_dir" ]; then
+		cp -a "$backups_dir"/. "$temp/backups/" 2>>"$LOG_FILE" || true
+	fi
+	if [ -f "$WINGS_CONFIG_FILE" ]; then
+		cp -a "$WINGS_CONFIG_FILE" "$temp/config/config.yml" 2>>"$LOG_FILE" || true
+	fi
+
+	cat >"$temp/migration_info.txt" <<EOF
+FeatherWings Migration Package
+Migration Name: $name
+Created: $(date -Iseconds)
+Source Host: $(hostname)
+EOF
+
+	cat >"$temp/README_MIGRATION.txt" <<'EOF'
+FeatherWings Node Migration
+===========================
+
+1. Copy this archive to the destination host (scp, rsync, or SFTP).
+2. Install FeatherWings on the destination (installer: Wings > Install).
+3. Place the archive under /var/lib/featherpanel/wings_migrations/
+4. Run the installer: Wings > Backup Manager > Import Migration
+   or: featherwings node-backup import --file /path/to/archive.tar.gz
+5. Start featherwings and update the node FQDN/IP in FeatherPanel if it changed.
+EOF
+
+	if tar -czf "$path" -C "$temp" . 2>>"$LOG_FILE"; then
+		chmod 600 "$path"
+		local size
+		size=$(du -h "$path" | cut -f1)
+		log_success "Migration package created: $name ($size)"
+		echo -e "  ${BLUE}• Location:${NC} $path"
+		echo -e "  ${CYAN}scp${NC} ${YELLOW}user@$(hostname):$path${NC} ${CYAN}./${NC}"
+		[ "$stopped" -eq 1 ] && wings_start_service
+		return 0
+	fi
+	log_error "Failed to create migration package"
+	[ "$stopped" -eq 1 ] && wings_start_service
+	return 1
+}
+
+import_wings_migration() {
+	log_step "Importing FeatherWings migration package..."
+	mkdir -p "$WINGS_MIGRATION_DIR"
+	local files=()
+	mapfile -t files < <(find "$WINGS_MIGRATION_DIR" /root /home -maxdepth 2 -name 'featherwings_migration_*.tar.gz' -type f 2>/dev/null | sort -r)
+	local custom=""
+	if [ ${#files[@]} -eq 0 ]; then
+		prompt "${BOLD}No packages found. Enter full path to migration archive${NC}: " custom
+		if [ -z "$custom" ] || [ ! -f "$custom" ]; then
+			log_error "Migration archive not found"
+			return 1
+		fi
+		files=("$custom")
+	else
+		local i=1
+		for f in "${files[@]}"; do
+			echo -e "  ${CYAN}${BOLD}[$i]${NC} $f"
+			i=$((i + 1))
+		done
+		local idx=""
+		prompt "${BOLD}Select package number (or 0 to enter path)${NC}: " idx
+		if [ "$idx" = "0" ]; then
+			prompt "${BOLD}Full path${NC}: " custom
+			files=("$custom")
+		elif ! [[ "$idx" =~ ^[0-9]+$ ]] || [ "$idx" -lt 1 ] || [ "$idx" -gt ${#files[@]} ]; then
+			log_error "Invalid selection"
+			return 1
+		else
+			files=("${files[$((idx - 1))]}")
+		fi
+	fi
+
+	local archive="${files[0]}"
+	if [ ! -f "$archive" ]; then
+		log_error "Archive not found: $archive"
+		return 1
+	fi
+
+	local confirm=""
+	prompt "${BOLD}${RED}This replaces Wings data on this host. Type 'yes'${NC}: " confirm
+	if [ "$confirm" != "yes" ]; then
+		log_info "Import cancelled."
+		return 0
+	fi
+
+	if ! wings_is_installed; then
+		log_warn "FeatherWings binary not found. Install Wings first for a complete migration."
+	fi
+
+	wings_stop_service || true
+	if wings_cli_supports_node_backup; then
+		if featherwings node-backup import --file "$archive"; then
+			log_success "Migration imported via CLI"
+			wings_start_service
+			log_info "Update the node FQDN/IP in FeatherPanel if this host changed."
+			return 0
+		fi
+	fi
+
+	local volumes_dir backups_dir temp
+	volumes_dir=$(wings_resolve_volumes_dir)
+	backups_dir=$(wings_resolve_backups_dir)
+	temp=$(mktemp -d)
+	# shellcheck disable=SC2064
+	trap "rm -rf '$temp'" RETURN
+	tar -xzf "$archive" -C "$temp" 2>>"$LOG_FILE" || {
+		log_error "Failed to extract migration archive"
+		wings_start_service
+		return 1
+	}
+	mkdir -p "$volumes_dir" "$backups_dir"
+	if [ -d "$temp/volumes" ]; then
+		rm -rf "${volumes_dir:?}/"*
+		cp -a "$temp/volumes"/. "$volumes_dir/"
+	fi
+	if [ -d "$temp/backups" ]; then
+		cp -a "$temp/backups"/. "$backups_dir/"
+	fi
+	if [ -f "$temp/config/config.yml" ]; then
+		mkdir -p "$(dirname "$WINGS_CONFIG_FILE")"
+		cp -a "$temp/config/config.yml" "$WINGS_CONFIG_FILE"
+	fi
+	wings_start_service
+	log_success "Migration imported from $(basename "$archive")"
+	log_info "Update the node FQDN/IP in FeatherPanel if this host changed."
 }
 
 show_featherquilld_menu() {
@@ -3008,221 +4029,21 @@ show_featherquilld_menu() {
 	draw_hr
 	echo ""
 	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Install FeatherQuilld${NC}"
+	echo -e "     ${GREEN}→ ${BOLD}APT only${NC}${GREEN} via MythicalSystems repo (stable or nightly)${NC}"
 	echo -e "     ${BLUE}→ Web hosting daemon (Docker + reverse proxy)${NC}"
-	echo -e "     ${BLUE}→ Creates systemd service for automatic startup${NC}"
+	echo -e "     ${BLUE}→ Launches ${BOLD}featherquilld configure${NC} / ${BOLD}quilld configure${NC} to finish setup${NC}"
 	echo ""
 	echo -e "  ${RED}${BOLD}[2]${NC} ${BOLD}Uninstall FeatherQuilld${NC}"
 	echo -e "     ${YELLOW}⚠️  WARNING: This will remove FeatherQuilld and its configuration${NC}"
+	echo -e "     ${BLUE}→ Stops and removes the APT package and optional data${NC}"
 	echo ""
 	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Update FeatherQuilld${NC}"
-	echo -e "     ${BLUE}→ Download latest FeatherQuilld binary${NC}"
-	echo -e "     ${BLUE}→ Restart FeatherQuilld service with new version${NC}"
+	echo -e "     ${GREEN}→ ${BOLD}apt upgrade${NC}${GREEN} — clean updates, supports stable ↔ nightly switches${NC}"
 	echo ""
 	draw_hr
 }
 
-featherquilld_arch_suffix() {
-	case "$(uname -m)" in
-	x86_64) echo "amd64" ;;
-	aarch64 | arm64) echo "arm64" ;;
-	*) echo "amd64" ;;
-	esac
-}
-
-download_featherquilld_binary() {
-	local arch suffix dest tmp
-	arch="$(featherquilld_arch_suffix)"
-	suffix="linux_${arch}"
-	dest="/usr/local/bin/featherquilld"
-	tmp="$(mktemp)"
-
-	local urls=(
-		"https://github.com/MythicalLTD/FeatherQuilld/releases/latest/download/featherquilld_${suffix}"
-		"https://github.com/MythicalLTD/FeatherQuilld/releases/latest/download/featherquilld_${suffix}.tar.gz"
-	)
-
-	for url in "${urls[@]}"; do
-		log_info "Trying download: $url"
-		if curl -fsSL -o "$tmp" "$url" 2>>"$LOG_FILE"; then
-			if file "$tmp" | grep -qi 'gzip compressed'; then
-				tar -xzf "$tmp" -C /tmp featherquilld 2>>"$LOG_FILE" || tar -xzf "$tmp" -C /tmp 2>>"$LOG_FILE"
-				if [ -f /tmp/featherquilld ]; then
-					mv /tmp/featherquilld "$dest"
-					chmod +x "$dest"
-					rm -f "$tmp"
-					return 0
-				fi
-			else
-				mv "$tmp" "$dest"
-				chmod +x "$dest"
-				return 0
-			fi
-		fi
-	done
-	rm -f "$tmp"
-
-	if command -v dotnet &>/dev/null; then
-		log_info "Release binary not found — building FeatherQuilld from source..."
-		local build_dir="/tmp/featherquilld-build-$$"
-		rm -rf "$build_dir"
-		git clone --depth 1 https://github.com/MythicalLTD/FeatherQuilld.git "$build_dir" >>"$LOG_FILE" 2>&1 || return 1
-		(
-			cd "$build_dir" || exit 1
-			dotnet publish FeatherQuilld.csproj -c Release -o /usr/local/lib/featherquilld -r "linux-${arch}" --self-contained true -p:PublishSingleFile=true >>"$LOG_FILE" 2>&1
-		) || return 1
-		ln -sf /usr/local/lib/featherquilld/FeatherQuilld "$dest"
-		chmod +x "$dest"
-		rm -rf "$build_dir"
-		return 0
-	fi
-
-	log_error "Could not download FeatherQuilld and dotnet SDK is not available to build from source."
-	return 1
-}
-
-install_featherquilld_proxy() {
-	local provider="${FEATHERQUILLD_PROXY_PROVIDER:-caddy}"
-	case "$provider" in
-	caddy)
-		if command -v caddy &>/dev/null; then
-			log_info "Caddy is already installed."
-			return 0
-		fi
-		log_info "Installing Caddy reverse proxy..."
-		install_packages debian-keyring debian-archive-keyring apt-transport-https curl
-		curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg 2>>"$LOG_FILE" || true
-		curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list >/dev/null 2>>"$LOG_FILE" || true
-		apt-get update -qq >>"$LOG_FILE" 2>&1 || true
-		apt-get install -y caddy >>"$LOG_FILE" 2>&1 || true
-		;;
-	nginx)
-		if command -v nginx &>/dev/null; then
-			log_info "nginx is already installed."
-			return 0
-		fi
-		log_info "Installing nginx reverse proxy..."
-		install_packages nginx
-		;;
-	traefik)
-		if command -v traefik &>/dev/null; then
-			log_info "Traefik is already installed."
-			return 0
-		fi
-		log_info "Installing Traefik reverse proxy..."
-		local arch suffix
-		arch="$(featherquilld_arch_suffix)"
-		suffix="linux_${arch}"
-		curl -fsSL -o /usr/local/bin/traefik "https://github.com/traefik/traefik/releases/download/v3.3.4/traefik_v3.3.4_${suffix}.tar.gz" 2>>"$LOG_FILE" || true
-		if [ ! -x /usr/local/bin/traefik ]; then
-			local tmp="/tmp/traefik-$$.tar.gz"
-			curl -fsSL -o "$tmp" "https://github.com/traefik/traefik/releases/download/v3.3.4/traefik_v3.3.4_${suffix}.tar.gz" >>"$LOG_FILE" 2>&1
-			tar -xzf "$tmp" -C /usr/local/bin traefik 2>>"$LOG_FILE"
-			chmod +x /usr/local/bin/traefik
-			rm -f "$tmp"
-		fi
-		mkdir -p /etc/featherquilld/traefik
-		if [ ! -f /etc/featherquilld/traefik/traefik.yml ]; then
-			cat <<'EOF' | tee /etc/featherquilld/traefik/traefik.yml >/dev/null
-entryPoints:
-  web:
-    address: ":80"
-  websecure:
-    address: ":443"
-providers:
-  file:
-    filename: /var/lib/featherquilld/proxy/traefik-dynamic.yml
-    watch: true
-certificatesResolvers:
-  featherquilld:
-    acme:
-      email: "ops@example.com"
-      storage: /etc/featherquilld/traefik/acme.json
-      httpChallenge:
-        entryPoint: web
-EOF
-			touch /etc/featherquilld/traefik/acme.json
-			chmod 600 /etc/featherquilld/traefik/acme.json
-		fi
-		;;
-	esac
-}
-
-write_featherquilld_config() {
-	local provider="${FEATHERQUILLD_PROXY_PROVIDER:-caddy}"
-	local acme_email="${FEATHERQUILLD_ACME_EMAIL:-}"
-	local config_file="Caddyfile"
-	case "$provider" in
-	nginx) config_file="nginx.conf" ;;
-	traefik) config_file="traefik-dynamic.yml" ;;
-	esac
-	mkdir -p /etc/featherquilld
-	if [ -f /etc/featherquilld/config.yml ]; then
-		log_info "Keeping existing /etc/featherquilld/config.yml"
-		return 0
-	fi
-	cat <<EOF | tee /etc/featherquilld/config.yml >/dev/null
-debug: false
-app_name: FeatherQuilld
-api:
-  host: 0.0.0.0
-  port: 8080
-system:
-  root_directory: /var/lib/featherquilld
-  data: /var/lib/featherquilld/volumes
-  log_directory: /var/log/featherquilld
-  proxy:
-    enabled: true
-    provider: ${provider}
-    config_path: /var/lib/featherquilld/proxy/${config_file}
-    acme_email: "${acme_email}"
-docker:
-  network:
-    network_mode: featherquilld
-remote:
-  panel: ""
-  token_id: ""
-  token: ""
-sftp:
-  enabled: true
-  port: 2022
-EOF
-	log_success "Created /etc/featherquilld/config.yml"
-}
-
-install_featherquilld() {
-	log_step "Installing FeatherQuilld web hosting daemon..."
-
-	if command -v docker &>/dev/null; then
-		log_info "Docker is already installed."
-	else
-		log_step "Installing Docker engine (required for FeatherQuilld)..."
-		curl -sSL https://get.docker.com/ | CHANNEL=stable bash >>"$LOG_FILE" 2>&1
-		systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
-		usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
-	fi
-
-	FEATHERQUILLD_PROXY_PROVIDER="${FEATHERQUILLD_PROXY_PROVIDER:-}"
-	if [ -z "$FEATHERQUILLD_PROXY_PROVIDER" ]; then
-		echo ""
-		echo -e "${BOLD}${CYAN}Reverse proxy provider${NC}"
-		echo -e "  ${GREEN}[1]${NC} Caddy (recommended)"
-		echo -e "  ${GREEN}[2]${NC} nginx"
-		echo -e "  ${GREEN}[3]${NC} Traefik"
-		proxy_choice=""
-		prompt "${BOLD}Select provider${NC} ${BLUE}(1/2/3)${NC}: " proxy_choice
-		case "$proxy_choice" in
-		2) FEATHERQUILLD_PROXY_PROVIDER="nginx" ;;
-		3) FEATHERQUILLD_PROXY_PROVIDER="traefik" ;;
-		*) FEATHERQUILLD_PROXY_PROVIDER="caddy" ;;
-		esac
-	fi
-
-	if [ -z "${FEATHERQUILLD_ACME_EMAIL:-}" ]; then
-		prompt "${BOLD}ACME email for automatic HTTPS${NC} ${BLUE}(optional, press Enter to skip)${NC}: " FEATHERQUILLD_ACME_EMAIL
-	fi
-
-	install_featherquilld_proxy
-
+create_featherquilld_directories() {
 	log_info "Creating FeatherQuilld directory structure..."
 	mkdir -p /etc/featherquilld
 	mkdir -p /var/lib/featherquilld/volumes
@@ -3231,52 +4052,121 @@ install_featherquilld() {
 	mkdir -p /var/lib/featherquilld/backups
 	mkdir -p /var/lib/featherquilld/proxy
 	mkdir -p /var/log/featherquilld
+}
 
-	if ! download_featherquilld_binary; then
+featherquilld_apt_package_name() {
+	if mythicalsystems_apt_package_installed featherquilld-dev; then
+		echo "featherquilld-dev"
+	elif mythicalsystems_apt_package_installed featherquilld; then
+		echo "featherquilld"
+	else
+		echo ""
+	fi
+}
+
+featherquilld_is_installed() {
+	[ -x /usr/local/bin/featherquilld ] ||
+		command -v featherquilld >/dev/null 2>&1 ||
+		command -v quilld >/dev/null 2>&1 ||
+		[ -n "$(featherquilld_apt_package_name)" ]
+}
+
+install_featherquilld_apt() {
+	local pkg="featherquilld"
+	if [ "${DAEMON_APT_CHANNEL:-stable}" = "nightly" ]; then
+		pkg="featherquilld-dev"
+	fi
+
+	if ! setup_mythicalsystems_apt_repo; then
 		return 1
 	fi
 
-	write_featherquilld_config
+	systemctl stop featherquilld >/dev/null 2>&1 || true
+	rm -f /etc/systemd/system/featherquilld.service
+	systemctl daemon-reload >/dev/null 2>&1 || true
 
-	cat <<EOF | tee /etc/systemd/system/featherquilld.service >/dev/null
-[Unit]
-Description=FeatherQuilld Web Hosting Daemon
-After=network-online.target docker.service
-Wants=network-online.target
-Requires=docker.service
+	create_featherquilld_directories
 
-[Service]
-User=root
-WorkingDirectory=/etc/featherquilld
-ExecStart=/usr/local/bin/featherquilld --config /etc/featherquilld/config.yml
-Restart=on-failure
-RestartSec=5
-StandardOutput=journal
-StandardError=journal
+	log_info "Installing APT package: ${pkg}"
+	if ! apt-get install -y "$pkg" >>"$LOG_FILE" 2>&1; then
+		log_error "Failed to install ${pkg} from MythicalSystems APT repository."
+		return 1
+	fi
 
-[Install]
-WantedBy=multi-user.target
-EOF
+	systemctl enable featherquilld >/dev/null 2>&1 || true
+	log_success "Installed ${pkg} via APT (quilld is available as a short alias)."
+}
 
-	systemctl daemon-reload
-	systemctl enable featherquilld
+install_featherquilld() {
+	log_step "Installing FeatherQuilld web hosting daemon..."
+
+	# FeatherQuilld is APT-only (no direct GitHub binary installs).
+	if ! prompt_daemon_install_method "FeatherQuilld" "FP_QUILLD_METHOD" "FP_QUILLD_CHANNEL" "apt_only"; then
+		return 1
+	fi
+	ensure_docker_for_daemon "FeatherQuilld"
+
+	if ! install_featherquilld_apt; then
+		return 1
+	fi
 
 	log_success "FeatherQuilld daemon installed successfully."
-	log_info "Next steps:"
-	log_info "1. Create a Web Node in FeatherPanel admin and copy its configuration"
-	log_info "2. Merge panel credentials into /etc/featherquilld/config.yml (remote.panel, token_id, token)"
-	log_info "3. Set proxy acme_email in config.yml if using automatic HTTPS"
-	log_info "4. Start FeatherQuilld: systemctl start featherquilld"
-	log_info "5. Or run: featherquilld configure"
+	log_info "If the install wizard did not run automatically:"
+	log_info "  featherquilld configure   # or: quilld configure"
+	log_info "  systemctl enable --now featherquilld"
+}
+
+run_featherquilld_configure_wizard() {
+	local quilld_bin=""
+	if command -v featherquilld >/dev/null 2>&1; then
+		quilld_bin="featherquilld"
+	elif command -v quilld >/dev/null 2>&1; then
+		quilld_bin="quilld"
+	else
+		log_error "FeatherQuilld binary not found (featherquilld / quilld)."
+		return 1
+	fi
+
+	if [ ! -t 0 ] || [ ! -t 1 ]; then
+		log_info "FeatherQuilld is installed. Run the setup wizard on this server:"
+		log_info "  ${quilld_bin} configure"
+		return 0
+	fi
+
+	echo ""
+	draw_hr
+	echo -e "${BOLD}${CYAN}FeatherQuilld setup wizard${NC}"
+	draw_hr
+	echo -e "${BLUE}Modes: OAuth quick setup (recommended), paste join-data, or manual credentials.${NC}"
+	echo ""
+	run_configure=""
+	prompt "${BOLD}Run ${quilld_bin} configure now?${NC} ${BLUE}(y/n)${NC}: " run_configure
+	if [[ "$run_configure" =~ ^[yY]$ ]]; then
+		"$quilld_bin" configure
+		systemctl enable --now featherquilld >/dev/null 2>&1 || true
+	else
+		log_info "Skipped. Later run: ${quilld_bin} configure && systemctl enable --now featherquilld"
+	fi
 }
 
 uninstall_featherquilld() {
 	log_step "Uninstalling FeatherQuilld daemon..."
+
+	local apt_pkg
+	apt_pkg="$(featherquilld_apt_package_name)"
+
 	systemctl stop featherquilld >/dev/null 2>&1 || true
 	systemctl disable featherquilld >/dev/null 2>&1 || true
+
+	if [ -n "$apt_pkg" ]; then
+		log_info "Removing APT package: ${apt_pkg}"
+		apt-get remove -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || true
+		apt-get purge -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || true
+	fi
+
 	rm -f /etc/systemd/system/featherquilld.service
 	systemctl daemon-reload
-	rm -f /usr/local/bin/featherquilld
+	rm -f /usr/local/bin/featherquilld /usr/local/bin/quilld
 	rm -rf /usr/local/lib/featherquilld
 
 	remove_config="n"
@@ -3296,17 +4186,46 @@ uninstall_featherquilld() {
 
 update_featherquilld() {
 	log_step "Updating FeatherQuilld daemon..."
-	if [ ! -x /usr/local/bin/featherquilld ]; then
+	if ! featherquilld_is_installed; then
 		log_error "FeatherQuilld is not installed. Please install it first."
 		return 1
 	fi
-	systemctl stop featherquilld
-	if ! download_featherquilld_binary; then
-		systemctl start featherquilld || true
+
+	if ! mythicalsystems_apt_supported; then
+		log_error "FeatherQuilld updates are APT-only and require Debian/Ubuntu with apt-get."
 		return 1
 	fi
-	systemctl start featherquilld
-	log_success "FeatherQuilld daemon updated successfully."
+
+	local apt_pkg
+	apt_pkg="$(featherquilld_apt_package_name)"
+
+	# Legacy direct installs: migrate onto the APT package, then upgrade.
+	if [ -z "$apt_pkg" ]; then
+		log_warn "Direct binary install detected. FeatherQuilld is APT-only — migrating to the APT package..."
+		DAEMON_APT_CHANNEL="stable"
+		if [ "${PREFER_DEV:-no}" = "yes" ]; then
+			DAEMON_APT_CHANNEL="nightly"
+		fi
+		if ! install_featherquilld_apt; then
+			return 1
+		fi
+		systemctl restart featherquilld >/dev/null 2>&1 || systemctl start featherquilld >/dev/null 2>&1 || true
+		log_success "FeatherQuilld migrated to APT and updated successfully."
+		return 0
+	fi
+
+	log_info "Updating via APT package: ${apt_pkg}"
+	if ! setup_mythicalsystems_apt_repo; then
+		return 1
+	fi
+	if ! apt-get install --only-upgrade -y "$apt_pkg" >>"$LOG_FILE" 2>&1; then
+		apt-get install -y "$apt_pkg" >>"$LOG_FILE" 2>&1 || {
+			log_error "Failed to upgrade ${apt_pkg}."
+			return 1
+		}
+	fi
+	systemctl restart featherquilld >/dev/null 2>&1 || systemctl start featherquilld >/dev/null 2>&1 || true
+	log_success "FeatherQuilld daemon updated successfully (APT: ${apt_pkg})."
 }
 
 install_proxmox_vnc_agent() {
@@ -3480,6 +4399,79 @@ update_feathercli() {
 }
 
 # SSL Certificate functions
+# Ensure certbot (+ optional nginx/apache plugin) is present without reinstalling everything.
+ensure_certbot_with_proxy_plugin() {
+	local proxy_type="${1:-}"
+
+	if ! command -v certbot >/dev/null 2>&1; then
+		install_certbot "$proxy_type"
+		return $?
+	fi
+
+	case "$proxy_type" in
+	nginx)
+		if ! dpkg -l 2>/dev/null | grep -q "^ii.*python3-certbot-nginx"; then
+			log_info "Installing missing Certbot Nginx plugin..."
+			install_packages python3-certbot-nginx || true
+		fi
+		;;
+	apache)
+		if ! dpkg -l 2>/dev/null | grep -q "^ii.*python3-certbot-apache"; then
+			log_info "Installing missing Certbot Apache plugin..."
+			install_packages python3-certbot-apache || true
+		fi
+		;;
+	esac
+	return 0
+}
+
+# Restart nginx after standalone certbot. Never abort the installer on a pre-existing bad site.
+restart_nginx_after_standalone() {
+	log_info "Restarting Nginx..."
+	local test_out rc=0
+	test_out="$(nginx -t 2>&1)" || rc=$?
+	if [ -n "${LOG_FILE:-}" ]; then
+		printf '%s\n' "$test_out" >>"$LOG_FILE" || true
+	fi
+
+	if [ "$rc" -ne 0 ]; then
+		log_warn "Nginx config is invalid; temporarily disabling FeatherPanel site so Nginx can start."
+		printf '%s\n' "$test_out" >&2
+		local site
+		for site in \
+			/etc/nginx/sites-enabled/featherpanel \
+			/etc/nginx/sites-enabled/featherpanel.conf \
+			/etc/nginx/sites-enabled/FeatherPanel.conf
+		do
+			if [ -e "$site" ]; then
+				mv "$site" "${site}.bak.invalid.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+				log_warn "Disabled broken site: ${site}"
+			fi
+		done
+		test_out="$(nginx -t 2>&1)" || rc=$?
+		if [ -n "${LOG_FILE:-}" ]; then
+			printf '%s\n' "$test_out" >>"$LOG_FILE" || true
+		fi
+	fi
+
+	if [ "$rc" -eq 0 ]; then
+		systemctl start nginx >/dev/null 2>&1 || systemctl reload nginx >/dev/null 2>&1 || true
+		return 0
+	fi
+
+	log_warn "Nginx still cannot start; continuing. Reverse proxy setup will rewrite the site config next."
+	printf '%s\n' "$test_out" >&2
+	# Must not trip ERR trap — bare failure here previously aborted the whole install.
+	systemctl start nginx >/dev/null 2>&1 || true
+	return 0
+}
+
+restart_apache_after_standalone() {
+	log_info "Restarting Apache..."
+	systemctl start apache2 >/dev/null 2>&1 || true
+	return 0
+}
+
 install_certbot() {
 	local webserver_type="${1:-}" # Optional parameter: "nginx", "apache", or empty for auto-detect
 	log_step "Installing Certbot..."
@@ -3621,14 +4613,13 @@ create_ssl_certificate_http() {
 		else
 			log_warn "Nginx plugin not installed. Falling back to standalone method."
 			log_info "Stopping Nginx temporarily to free port 80..."
-			systemctl stop nginx
+			systemctl stop nginx || true
 			certbot certonly --standalone -d "$domain" --non-interactive --agree-tos --email admin@"$domain" || {
 				log_error "Failed to create certificate with standalone method"
-				systemctl start nginx
+				restart_nginx_after_standalone
 				return 1
 			}
-			log_info "Restarting Nginx..."
-			systemctl start nginx
+			restart_nginx_after_standalone
 		fi
 		;;
 	apache)
@@ -3642,14 +4633,13 @@ create_ssl_certificate_http() {
 		else
 			log_warn "Apache plugin not installed. Falling back to standalone method."
 			log_info "Stopping Apache temporarily to free port 80..."
-			systemctl stop apache2
+			systemctl stop apache2 || true
 			certbot certonly --standalone -d "$domain" --non-interactive --agree-tos --email admin@"$domain" || {
 				log_error "Failed to create certificate with standalone method"
-				systemctl start apache2
+				restart_apache_after_standalone
 				return 1
 			}
-			log_info "Restarting Apache..."
-			systemctl start apache2
+			restart_apache_after_standalone
 		fi
 		;;
 	standalone)
@@ -3669,10 +4659,8 @@ create_ssl_certificate_http() {
 	local config_updated=false
 	if [ -f /etc/nginx/sites-enabled/featherpanel ] && grep -q "$domain" /etc/nginx/sites-enabled/featherpanel 2>/dev/null; then
 		log_info "Updating existing Nginx configuration to use SSL..."
-		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/nginx.conf" |
-			sed "s/your-domain.com/$domain/g" |
-			tee /etc/nginx/sites-available/featherpanel >/dev/null
-		if nginx -t 2>&1 | tee -a "$LOG_FILE" >/dev/null; then
+		if render_reverse_proxy_template ".github/docker/ssl/nginx.conf" "$domain" /etc/nginx/sites-available/featherpanel &&
+			nginx -t >>"$LOG_FILE" 2>&1; then
 			systemctl reload nginx 2>&1 | tee -a "$LOG_FILE" >/dev/null
 			log_success "Nginx SSL configuration updated and reloaded successfully"
 			config_updated=true
@@ -3681,10 +4669,8 @@ create_ssl_certificate_http() {
 		fi
 	elif [ -f /etc/apache2/sites-enabled/featherpanel.conf ] && grep -q "$domain" /etc/apache2/sites-enabled/featherpanel.conf 2>/dev/null; then
 		log_info "Updating existing Apache configuration to use SSL..."
-		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/apache2.conf" |
-			sed "s/your-domain.com/$domain/g" |
-			tee /etc/apache2/sites-available/featherpanel.conf >/dev/null
-		if apache2ctl configtest 2>&1 | tee -a "$LOG_FILE" >/dev/null; then
+		if render_reverse_proxy_template ".github/docker/ssl/apache2.conf" "$domain" /etc/apache2/sites-available/featherpanel.conf &&
+			apache2ctl configtest >>"$LOG_FILE" 2>&1; then
 			systemctl reload apache2 2>&1 | tee -a "$LOG_FILE" >/dev/null
 			log_success "Apache SSL configuration updated and reloaded successfully"
 			config_updated=true
@@ -3789,10 +4775,8 @@ create_ssl_certificate_dns() {
 	local config_updated=false
 	if [ -f /etc/nginx/sites-enabled/featherpanel ] && grep -q "$domain" /etc/nginx/sites-enabled/featherpanel 2>/dev/null; then
 		log_info "Updating existing Nginx configuration to use SSL..."
-		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/nginx.conf" |
-			sed "s/your-domain.com/$domain/g" |
-			tee /etc/nginx/sites-available/featherpanel >/dev/null
-		if nginx -t 2>&1 | tee -a "$LOG_FILE" >/dev/null; then
+		if render_reverse_proxy_template ".github/docker/ssl/nginx.conf" "$domain" /etc/nginx/sites-available/featherpanel &&
+			nginx -t >>"$LOG_FILE" 2>&1; then
 			systemctl reload nginx 2>&1 | tee -a "$LOG_FILE" >/dev/null
 			log_success "Nginx SSL configuration updated and reloaded successfully"
 			config_updated=true
@@ -3801,10 +4785,8 @@ create_ssl_certificate_dns() {
 		fi
 	elif [ -f /etc/apache2/sites-enabled/featherpanel.conf ] && grep -q "$domain" /etc/apache2/sites-enabled/featherpanel.conf 2>/dev/null; then
 		log_info "Updating existing Apache configuration to use SSL..."
-		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/apache2.conf" |
-			sed "s/your-domain.com/$domain/g" |
-			tee /etc/apache2/sites-available/featherpanel.conf >/dev/null
-		if apache2ctl configtest 2>&1 | tee -a "$LOG_FILE" >/dev/null; then
+		if render_reverse_proxy_template ".github/docker/ssl/apache2.conf" "$domain" /etc/apache2/sites-available/featherpanel.conf &&
+			apache2ctl configtest >>"$LOG_FILE" 2>&1; then
 			systemctl reload apache2 2>&1 | tee -a "$LOG_FILE" >/dev/null
 			log_success "Apache SSL configuration updated and reloaded successfully"
 			config_updated=true
@@ -4022,9 +5004,165 @@ setup_ssl_auto_renewal() {
 	log_info "If renewed, the following command will be executed: $restart_command"
 }
 
+find_featherpanel_nginx_site() {
+	local candidate
+	for candidate in \
+		/etc/nginx/sites-available/featherpanel \
+		/etc/nginx/sites-available/featherpanel.conf \
+		/etc/nginx/sites-available/FeatherPanel.conf \
+		/etc/nginx/sites-enabled/featherpanel \
+		/etc/nginx/sites-enabled/featherpanel.conf \
+		/etc/nginx/sites-enabled/FeatherPanel.conf
+	do
+		# Resolve symlinks so we patch the real file nginx loads.
+		if [ -e "$candidate" ]; then
+			readlink -f "$candidate" 2>/dev/null || printf '%s\n' "$candidate"
+			return 0
+		fi
+	done
+	return 1
+}
+
+# Next.js emits large Link preload headers; nginx defaults (4k/8k) cause 502s.
+# Returns 0 when buffers are present, skipped, or newly patched.
+# Returns 1 only when a patch was applied and nginx -t rejected it.
+ensure_nginx_proxy_buffers() {
+	local site_file=""
+	site_file="$(find_featherpanel_nginx_site || true)"
+
+	if [ -z "$site_file" ] || [ ! -f "$site_file" ]; then
+		log_info "No FeatherPanel Nginx site found; skipping proxy buffer patch."
+		return 0
+	fi
+
+	log_info "Using Nginx site: ${site_file}"
+
+	if grep -Eq '[[:space:]]proxy_buffer_size[[:space:]]+' "$site_file"; then
+		log_success "Nginx proxy_buffer_size already present in ${site_file}"
+		return 0
+	fi
+
+	if ! grep -Eq 'proxy_pass[[:space:]]+http://(127\.0\.0\.1|localhost)(:[0-9]+)?/?' "$site_file" &&
+		! grep -Eq 'proxy_buffering[[:space:]]+off' "$site_file"; then
+		log_warn "Nginx site ${site_file} has no panel reverse-proxy location to patch."
+		log_info "Use option 1 to reapply the Docker Nginx reverse proxy template."
+		return 0
+	fi
+
+	local tmp nginx_test_out nginx_test_rc=0
+	tmp="$(mktemp)"
+	# Insert once before the first panel proxy_pass / proxy_buffering off.
+	# Match 127.0.0.1 and localhost on any port (4831, custom panel port, 3000, etc.).
+	awk '
+		BEGIN { done = 0 }
+		!done && $0 ~ /proxy_pass[[:space:]]+http:\/\/(127\.0\.0\.1|localhost)(:[0-9]+)?\/?/ {
+			match($0, /^[[:space:]]*/)
+			indent = substr($0, RSTART, RLENGTH)
+			if (indent == "") indent = "        "
+			print indent "# Next.js Link preload headers exceed default upstream header buffer"
+			print indent "proxy_buffer_size 128k;"
+			print indent "proxy_buffers 4 256k;"
+			print indent "proxy_busy_buffers_size 256k;"
+			done = 1
+		}
+		!done && $0 ~ /proxy_buffering[[:space:]]+off;/ {
+			match($0, /^[[:space:]]*/)
+			indent = substr($0, RSTART, RLENGTH)
+			if (indent == "") indent = "        "
+			print indent "# Next.js Link preload headers exceed default upstream header buffer"
+			print indent "proxy_buffer_size 128k;"
+			print indent "proxy_buffers 4 256k;"
+			print indent "proxy_busy_buffers_size 256k;"
+			done = 1
+		}
+		{ print }
+	' "$site_file" >"$tmp"
+
+	if ! grep -Eq '[[:space:]]proxy_buffer_size[[:space:]]+' "$tmp"; then
+		rm -f "$tmp"
+		log_warn "Could not locate an insertion point in ${site_file}."
+		return 0
+	fi
+
+	cp "$site_file" "${site_file}.bak.pre-proxy-buffers"
+	# Write in-place so symlinks keep pointing at the real site file.
+	cat "$tmp" >"$site_file"
+	rm -f "$tmp"
+
+	# Avoid `nginx -t | tee` under pipefail — tee/log failures must not undo a good patch.
+	nginx_test_out="$(nginx -t 2>&1)" || nginx_test_rc=$?
+	if [ -n "${LOG_FILE:-}" ]; then
+		printf '%s\n' "$nginx_test_out" >>"$LOG_FILE" || true
+	fi
+
+	if [ "$nginx_test_rc" -eq 0 ]; then
+		systemctl reload nginx >/dev/null 2>&1 || true
+		log_success "Nginx proxy buffers updated for large Next.js response headers"
+		return 0
+	fi
+
+	log_warn "Nginx proxy buffer patch failed validation; restoring previous config"
+	printf '%s\n' "$nginx_test_out" >&2
+	mv "${site_file}.bak.pre-proxy-buffers" "$site_file"
+	return 1
+}
+
+# Render a reverse-proxy template, preferring the local panel checkout over GitHub.
+render_reverse_proxy_template() {
+	local relative_path="$1"
+	local domain="$2"
+	local dest="$3"
+	local local_file="/var/www/featherpanel/${relative_path}"
+	local remote_url="https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/${relative_path}"
+	local tmp
+
+	if [ -z "$domain" ]; then
+		log_error "Cannot render reverse proxy template: domain is empty."
+		return 1
+	fi
+
+	tmp="$(mktemp)"
+	if [ -f "$local_file" ]; then
+		log_info "Using local template: ${local_file}"
+		cp "$local_file" "$tmp"
+	else
+		log_info "Downloading template: ${remote_url}"
+		if ! curl -fsSL "$remote_url" -o "$tmp"; then
+			rm -f "$tmp"
+			log_error "Failed to download reverse proxy template."
+			return 1
+		fi
+	fi
+
+	# Escape sed replacement specials in domain (& and \)
+	local domain_escaped
+	domain_escaped="$(printf '%s' "$domain" | sed -e 's/[&\\]/\\&/g')"
+	sed "s/your-domain.com/${domain_escaped}/g" "$tmp" >"$dest"
+	rm -f "$tmp"
+
+	# Drop IPv6 listen lines when the host has no IPv6 stack (nginx -t would fail).
+	if [ ! -f /proc/net/if_inet6 ]; then
+		sed -i '/listen[[:space:]]*\[::\]/d' "$dest"
+		log_info "IPv6 not available on this host; removed [::] listen directives."
+	fi
+
+	if grep -Eq 'server_name[[:space:]]*;|/etc/letsencrypt/live//' "$dest"; then
+		log_error "Rendered reverse proxy config still has an empty domain; aborting."
+		return 1
+	fi
+	return 0
+}
+
 setup_nginx_reverse_proxy() {
 	local domain="$1"
 	local has_ssl="$2"
+	local nginx_test_out nginx_test_rc=0
+
+	domain="$(printf '%s' "$domain" | tr -d '[:space:]')"
+	if [ -z "$domain" ]; then
+		log_error "Nginx reverse proxy setup requires a non-empty domain."
+		return 1
+	fi
 
 	install_packages nginx
 	systemctl enable nginx 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
@@ -4034,30 +5172,51 @@ setup_nginx_reverse_proxy() {
 	mkdir -p /etc/nginx/sites-available
 	mkdir -p /etc/nginx/sites-enabled
 
-	# Download and customize nginx config
+	# Download/customize nginx config
 	if [ "$has_ssl" = "true" ]; then
-		log_info "Downloading SSL-enabled Nginx configuration..."
-		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/nginx.conf" |
-			sed "s/your-domain.com/$domain/g" |
-			tee /etc/nginx/sites-available/featherpanel >/dev/null
-	else
-		log_info "Downloading HTTP-only Nginx configuration..."
-		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/plaintext/nginx.conf" |
-			sed "s/your-domain.com/$domain/g" |
-			tee /etc/nginx/sites-available/featherpanel >/dev/null
-	fi
-
-	# Enable the site
-	ln -sf /etc/nginx/sites-available/featherpanel /etc/nginx/sites-enabled/
-
-	# Test nginx configuration
-	if nginx -t 2>&1 | tee -a "$LOG_FILE" >/dev/null; then
-		log_success "Nginx configuration is valid"
-		if ! run_with_spinner "Reloading Nginx" "Nginx reloaded." systemctl reload nginx; then
+		log_info "Installing SSL-enabled Nginx configuration for ${domain}..."
+		if ! render_reverse_proxy_template ".github/docker/ssl/nginx.conf" "$domain" /etc/nginx/sites-available/featherpanel; then
 			return 1
 		fi
 	else
+		log_info "Installing HTTP-only Nginx configuration for ${domain}..."
+		if ! render_reverse_proxy_template ".github/docker/plaintext/nginx.conf" "$domain" /etc/nginx/sites-available/featherpanel; then
+			return 1
+		fi
+	fi
+
+	# Enable the site
+	ln -sf /etc/nginx/sites-available/featherpanel /etc/nginx/sites-enabled/featherpanel
+	# Remove legacy filename if present so only one FeatherPanel site is active
+	if [ -f /etc/nginx/sites-enabled/featherpanel.conf ] && [ ! -L /etc/nginx/sites-enabled/featherpanel.conf ]; then
+		log_warn "Found legacy /etc/nginx/sites-enabled/featherpanel.conf — disabling it to avoid duplicate servers."
+		mv /etc/nginx/sites-enabled/featherpanel.conf "/etc/nginx/sites-enabled/featherpanel.conf.bak.$(date +%Y%m%d%H%M%S)"
+	elif [ -L /etc/nginx/sites-enabled/featherpanel.conf ]; then
+		rm -f /etc/nginx/sites-enabled/featherpanel.conf
+	fi
+
+	# Older upstream templates may omit this; ensure it's present after install
+	ensure_nginx_proxy_buffers
+
+	nginx_test_out="$(nginx -t 2>&1)" || nginx_test_rc=$?
+	if [ -n "${LOG_FILE:-}" ]; then
+		printf '%s\n' "$nginx_test_out" >>"$LOG_FILE" || true
+	fi
+	if [ "$nginx_test_rc" -eq 0 ]; then
+		log_success "Nginx configuration is valid"
+		# Prefer reload; if nginx was stopped (e.g. standalone certbot), start it.
+		if systemctl is-active --quiet nginx; then
+			if ! run_with_spinner "Reloading Nginx" "Nginx reloaded." systemctl reload nginx; then
+				return 1
+			fi
+		else
+			if ! run_with_spinner "Starting Nginx" "Nginx started." systemctl start nginx; then
+				return 1
+			fi
+		fi
+	else
 		log_error "Nginx configuration test failed"
+		printf '%s\n' "$nginx_test_out" >&2
 		return 1
 	fi
 }
@@ -4065,6 +5224,12 @@ setup_nginx_reverse_proxy() {
 setup_apache_reverse_proxy() {
 	local domain="$1"
 	local has_ssl="$2"
+
+	domain="$(printf '%s' "$domain" | tr -d '[:space:]')"
+	if [ -z "$domain" ]; then
+		log_error "Apache reverse proxy setup requires a non-empty domain."
+		return 1
+	fi
 
 	install_packages apache2
 	systemctl enable apache2 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
@@ -4077,17 +5242,17 @@ setup_apache_reverse_proxy() {
 	# Create config directory if it doesn't exist
 	mkdir -p /etc/apache2/sites-available
 
-	# Download and customize apache config
+	# Download/customize apache config
 	if [ "$has_ssl" = "true" ]; then
-		log_info "Downloading SSL-enabled Apache configuration..."
-		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/apache2.conf" |
-			sed "s/your-domain.com/$domain/g" |
-			tee /etc/apache2/sites-available/featherpanel.conf >/dev/null
+		log_info "Installing SSL-enabled Apache configuration for ${domain}..."
+		if ! render_reverse_proxy_template ".github/docker/ssl/apache2.conf" "$domain" /etc/apache2/sites-available/featherpanel.conf; then
+			return 1
+		fi
 	else
-		log_info "Downloading HTTP-only Apache configuration..."
-		curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/plaintext/apache2.conf" |
-			sed "s/your-domain.com/$domain/g" |
-			tee /etc/apache2/sites-available/featherpanel.conf >/dev/null
+		log_info "Installing HTTP-only Apache configuration for ${domain}..."
+		if ! render_reverse_proxy_template ".github/docker/plaintext/apache2.conf" "$domain" /etc/apache2/sites-available/featherpanel.conf; then
+			return 1
+		fi
 	fi
 
 	# Enable the site
@@ -4465,7 +5630,7 @@ create_backup() {
 	# Fallback: Try known volume names if still nothing found
 	if [ ${#ACTUAL_VOLUMES[@]} -eq 0 ]; then
 		log_warn "Could not detect volumes from containers, trying known volume names..."
-		ACTUAL_VOLUMES=("featherpanel_mariadb_data" "featherpanel_redis_data" "featherpanel_featherpanel_attachments" "featherpanel_featherpanel_config" "featherpanel_featherpanel_snapshots")
+		ACTUAL_VOLUMES=("featherpanel_mariadb_data" "featherpanel_redis_data" "featherpanel_featherpanel_attachments" "featherpanel_featherpanel_config" "featherpanel_featherpanel_snapshots" "featherpanel_featherpanel_data")
 	fi
 
 	# Backup each volume that actually exists
@@ -5479,13 +6644,21 @@ modify_compose_for_dev() {
 	sed -i "s|image: .*mythicalltd/featherpanel-backend:latest|image: ${registry_base}/mythicalltd/featherpanel-backend:${backend_tag}|g" "$compose_file"
 	sed -i "s|image: .*mythicalltd/featherpanel-backend:.*|image: ${registry_base}/mythicalltd/featherpanel-backend:${backend_tag}|g" "$compose_file"
 
-	# Replace frontend image
+	# Replace legacy frontend image (pre-frontendv2 compose files)
 	sed -i "s|image: .*mythicalltd/featherpanel-frontend:latest|image: ${registry_base}/mythicalltd/featherpanel-frontend:${frontend_tag}|g" "$compose_file"
 	sed -i "s|image: .*mythicalltd/featherpanel-frontend:.*|image: ${registry_base}/mythicalltd/featherpanel-frontend:${frontend_tag}|g" "$compose_file"
 
-	# Replace frontendv2 image
-	sed -i "s|image: .*mythicalltd/frontendv2:latest|image: ${registry_base}/mythicalltd/frontendv2:${frontend_tag}|g" "$compose_file"
-	sed -i "s|image: .*mythicalltd/frontendv2:.*|image: ${registry_base}/mythicalltd/frontendv2:${frontend_tag}|g" "$compose_file"
+	# Replace frontendv2 image (current 1.4+ compose)
+	sed -i "s|image: .*mythicalltd/featherpanel-frontendv2:latest|image: ${registry_base}/mythicalltd/featherpanel-frontendv2:${frontend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-frontendv2:.*|image: ${registry_base}/mythicalltd/featherpanel-frontendv2:${frontend_tag}|g" "$compose_file"
+
+	# Replace MCP image
+	sed -i "s|image: .*mythicalltd/featherpanel-mcp:latest|image: ${registry_base}/mythicalltd/featherpanel-mcp:${frontend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-mcp:.*|image: ${registry_base}/mythicalltd/featherpanel-mcp:${frontend_tag}|g" "$compose_file"
+
+	# Replace async-runner image
+	sed -i "s|image: .*mythicalltd/featherpanel-async-runner:latest|image: ${registry_base}/mythicalltd/featherpanel-async-runner:${frontend_tag}|g" "$compose_file"
+	sed -i "s|image: .*mythicalltd/featherpanel-async-runner:.*|image: ${registry_base}/mythicalltd/featherpanel-async-runner:${frontend_tag}|g" "$compose_file"
 
 	log_success "docker-compose.yml modified for dev images"
 }
@@ -6126,14 +7299,14 @@ if [ -f /etc/os-release ]; then
 				fi
 			done
 		else
-			while [[ ! "$INST_TYPE" =~ ^[1-6]$ ]]; do
+			while [[ ! "$INST_TYPE" =~ ^[1-7]$ ]]; do
 				show_panel_menu
 				echo ""
-				prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3/4/5/6)${NC}: " INST_TYPE
-				if [[ ! "$INST_TYPE" =~ ^[1-6]$ ]]; then
+				prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3/4/5/6/7)${NC}: " INST_TYPE
+				if [[ ! "$INST_TYPE" =~ ^[1-7]$ ]]; then
 					echo ""
 					echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
-					echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), ${BOLD}3${NC} (Update), ${BOLD}4${NC} (Backup), ${BOLD}5${NC} (Info), or ${BOLD}6${NC} (Firewall)${NC}"
+					echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), ${BOLD}3${NC} (Update), ${BOLD}4${NC} (Backup), ${BOLD}5${NC} (Info), ${BOLD}6${NC} (Firewall), or ${BOLD}7${NC} (Web Server)${NC}"
 					echo ""
 					sleep 2
 				fi
@@ -6161,14 +7334,14 @@ if [ -f /etc/os-release ]; then
 		fi
 	elif [ "$COMPONENT_TYPE" = "2" ]; then
 		# Wings operations
-		while [[ ! "$INST_TYPE" =~ ^[1-3]$ ]]; do
+		while [[ ! "$INST_TYPE" =~ ^[1-4]$ ]]; do
 			show_wings_menu
 			echo ""
-			prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3)${NC}: " INST_TYPE
-			if [[ ! "$INST_TYPE" =~ ^[1-3]$ ]]; then
+			prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3/4)${NC}: " INST_TYPE
+			if [[ ! "$INST_TYPE" =~ ^[1-4]$ ]]; then
 				echo ""
 				echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
-				echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), or ${BOLD}3${NC} (Update)${NC}"
+				echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), ${BOLD}3${NC} (Update), or ${BOLD}4${NC} (Backup Manager)${NC}"
 				echo ""
 				sleep 2
 			fi
@@ -6894,12 +8067,8 @@ if [ -f /etc/os-release ]; then
 			has_ssl="false"
 
 			if [[ "$setup_ssl_during_install" =~ ^[yY]$ ]]; then
-				# Check if certbot is installed
-				if ! command -v certbot >/dev/null 2>&1; then
-					log_info "Certbot is not installed. Installing Certbot..."
-					# Pass the reverse proxy type to auto-install the correct plugin
-					install_certbot "$REVERSE_PROXY_TYPE"
-				fi
+				# Install certbot and ensure the matching plugin exists (even if certbot was already present)
+				ensure_certbot_with_proxy_plugin "$REVERSE_PROXY_TYPE"
 
 				# Get public IP addresses for DNS guidance
 				log_info "Detecting your server's public IP addresses..."
@@ -6936,13 +8105,12 @@ if [ -f /etc/os-release ]; then
 					else
 						log_warn "Nginx plugin not installed. Using standalone method..."
 						log_info "Stopping Nginx temporarily to free port 80..."
-						systemctl stop nginx
+						systemctl stop nginx || true
 						if certbot certonly --standalone -d "$panel_domain" --non-interactive --agree-tos --email admin@"$panel_domain" >>"$LOG_FILE" 2>&1; then
 							ssl_created=true
 							has_ssl="true"
 						fi
-						log_info "Restarting Nginx..."
-						systemctl start nginx
+						restart_nginx_after_standalone
 					fi
 					;;
 				apache)
@@ -6955,13 +8123,12 @@ if [ -f /etc/os-release ]; then
 					else
 						log_warn "Apache plugin not installed. Using standalone method..."
 						log_info "Stopping Apache temporarily to free port 80..."
-						systemctl stop apache2
+						systemctl stop apache2 || true
 						if certbot certonly --standalone -d "$panel_domain" --non-interactive --agree-tos --email admin@"$panel_domain" >>"$LOG_FILE" 2>&1; then
 							ssl_created=true
 							has_ssl="true"
 						fi
-						log_info "Restarting Apache..."
-						systemctl start apache2
+						restart_apache_after_standalone
 					fi
 					;;
 				standalone)
@@ -7514,6 +8681,9 @@ if [ -f /etc/os-release ]; then
 		# Always ensure global featherpanel command is installed/updated
 		install_featherpanel_command
 
+		# Patch host nginx if present (Next.js Link headers exceed default upstream buffers)
+		ensure_nginx_proxy_buffers
+
 		# Ensure install marker exists after successful updates.
 		# This prevents feature gates from failing when the marker was accidentally removed.
 		touch /var/www/featherpanel/.installed
@@ -7614,11 +8784,23 @@ if [ -f /etc/os-release ]; then
 			log_error "Panel firewall manager failed. See log at $LOG_FILE"
 			exit 1
 		fi
+	elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "7" ]; then
+		# Panel Web Server Manager
+		if ! require_docker_panel_mode "Web Server Manager"; then
+			exit 1
+		fi
+		if manage_panel_webserver; then
+			log_success "Web Server manager completed."
+		else
+			log_error "Web Server manager failed. See log at $LOG_FILE"
+			exit 1
+		fi
 	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "1" ]; then
 		# Wings Install
-		if [ -f /usr/local/bin/featherwings ]; then
-			read -r -p "FeatherWings appears to be already installed. Do you want to reinstall? (y/n): " reinstall
-			if [ "$reinstall" != "y" ]; then
+		if wings_is_installed; then
+			reinstall=""
+			prompt "FeatherWings appears to be already installed. Do you want to reinstall? (y/n): " reinstall
+			if [[ ! "$reinstall" =~ ^[yY]$ ]]; then
 				echo "Exiting installation."
 				exit 0
 			fi
@@ -7627,7 +8809,10 @@ if [ -f /etc/os-release ]; then
 		check_virtualization_compatibility
 
 		install_packages curl jq
-		install_wings
+		if ! install_wings; then
+			log_error "Wings installation failed. See log at $LOG_FILE"
+			exit 1
+		fi
 		log_success "Wings installation finished. See log at $LOG_FILE"
 
 		if [ "${FP_WINGS_SKIP_CONFIGURE:-}" = "true" ]; then
@@ -7637,7 +8822,7 @@ if [ -f /etc/os-release ]; then
 		fi
 	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "2" ]; then
 		# Wings Uninstall
-		if [ ! -f /usr/local/bin/featherwings ]; then
+		if ! wings_is_installed; then
 			echo "FeatherWings does not appear to be installed. Nothing to uninstall."
 			exit 0
 		fi
@@ -7650,18 +8835,80 @@ if [ -f /etc/os-release ]; then
 		fi
 	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "3" ]; then
 		# Wings Update
-		if [ ! -f /usr/local/bin/featherwings ]; then
+		if ! wings_is_installed; then
 			echo "FeatherWings does not appear to be installed. Nothing to update."
 			exit 0
 		fi
 		print_banner
-		update_wings
-		log_success "Wings updated successfully."
+		if update_wings; then
+			log_success "Wings updated successfully."
+		else
+			log_error "Wings update failed. See log at $LOG_FILE"
+			exit 1
+		fi
 		exit 0
 	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "4" ]; then
-		log_info "SSL for game nodes is handled by the FeatherWings setup wizard."
-		log_info "Run: featherwings configure"
-		exit 0
+		# Wings Backup Manager
+		WINGS_BACKUP_ACTION=""
+		while [[ ! "$WINGS_BACKUP_ACTION" =~ ^[1-6]$ ]]; do
+			show_wings_backup_menu
+			echo ""
+			prompt "${BOLD}${CYAN}Select Wings backup operation${NC} ${BLUE}(1/2/3/4/5/6)${NC}: " WINGS_BACKUP_ACTION
+			if [[ ! "$WINGS_BACKUP_ACTION" =~ ^[1-6]$ ]]; then
+				echo ""
+				echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
+				echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Create), ${BOLD}2${NC} (List), ${BOLD}3${NC} (Restore), ${BOLD}4${NC} (Delete), ${BOLD}5${NC} (Export), or ${BOLD}6${NC} (Import)${NC}"
+				echo ""
+				sleep 2
+			fi
+		done
+
+		case $WINGS_BACKUP_ACTION in
+		1)
+			if create_wings_backup; then
+				log_success "Wings backup operation completed. See log at $LOG_FILE"
+			else
+				log_error "Wings backup operation failed. See log at $LOG_FILE"
+				exit 1
+			fi
+			;;
+		2)
+			list_wings_backups
+			log_info "Wings backup listing completed. See log at $LOG_FILE"
+			;;
+		3)
+			if restore_wings_backup; then
+				log_success "Wings backup restore completed. See log at $LOG_FILE"
+			else
+				log_error "Wings backup restore failed. See log at $LOG_FILE"
+				exit 1
+			fi
+			;;
+		4)
+			if delete_wings_backup; then
+				log_success "Wings backup deletion completed. See log at $LOG_FILE"
+			else
+				log_error "Wings backup deletion failed. See log at $LOG_FILE"
+				exit 1
+			fi
+			;;
+		5)
+			if export_wings_migration; then
+				log_success "Wings migration export completed. See log at $LOG_FILE"
+			else
+				log_error "Wings migration export failed. See log at $LOG_FILE"
+				exit 1
+			fi
+			;;
+		6)
+			if import_wings_migration; then
+				log_success "Wings migration import completed. See log at $LOG_FILE"
+			else
+				log_error "Wings migration import failed. See log at $LOG_FILE"
+				exit 1
+			fi
+			;;
+		esac
 	elif [ "$COMPONENT_TYPE" = "3" ] && [ "$INST_TYPE" = "1" ]; then
 		# CLI Install
 		if [ -f /usr/local/bin/feathercli ]; then
@@ -7751,20 +8998,28 @@ if [ -f /etc/os-release ]; then
 			exit 1
 		fi
 	elif [ "$COMPONENT_TYPE" = "7" ] && [ "$INST_TYPE" = "1" ]; then
-		if [ -x /usr/local/bin/featherquilld ]; then
-			read -r -p "FeatherQuilld appears to be already installed. Reinstall? (y/n): " reinstall
-			if [ "$reinstall" != "y" ]; then
+		if featherquilld_is_installed; then
+			reinstall=""
+			prompt "FeatherQuilld appears to be already installed. Reinstall? (y/n): " reinstall
+			if [[ ! "$reinstall" =~ ^[yY]$ ]]; then
 				echo "Exiting installation."
 				exit 0
 			fi
 		fi
 		if install_featherquilld; then
 			log_success "FeatherQuilld install finished. See log at $LOG_FILE"
+			if [ "${FP_QUILLD_SKIP_CONFIGURE:-}" != "true" ]; then
+				run_featherquilld_configure_wizard
+			fi
 		else
 			log_error "FeatherQuilld install failed. See log at $LOG_FILE"
 			exit 1
 		fi
 	elif [ "$COMPONENT_TYPE" = "7" ] && [ "$INST_TYPE" = "2" ]; then
+		if ! featherquilld_is_installed; then
+			echo "FeatherQuilld does not appear to be installed. Nothing to uninstall."
+			exit 0
+		fi
 		if uninstall_featherquilld; then
 			log_success "FeatherQuilld uninstall finished. See log at $LOG_FILE"
 		else
@@ -7772,6 +9027,10 @@ if [ -f /etc/os-release ]; then
 			exit 1
 		fi
 	elif [ "$COMPONENT_TYPE" = "7" ] && [ "$INST_TYPE" = "3" ]; then
+		if ! featherquilld_is_installed; then
+			echo "FeatherQuilld does not appear to be installed. Nothing to update."
+			exit 0
+		fi
 		if update_featherquilld; then
 			log_success "FeatherQuilld update finished. See log at $LOG_FILE"
 		else

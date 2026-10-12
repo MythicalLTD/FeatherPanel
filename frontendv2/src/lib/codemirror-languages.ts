@@ -21,10 +21,12 @@ import { json } from '@codemirror/lang-json';
 import { markdown } from '@codemirror/lang-markdown';
 import { python } from '@codemirror/lang-python';
 import { yaml } from '@codemirror/lang-yaml';
-import { StreamLanguage } from '@codemirror/language';
+import { StreamLanguage, type StreamParser } from '@codemirror/language';
 import { shell } from '@codemirror/legacy-modes/mode/shell';
 import { EditorView } from '@codemirror/view';
 import type { Extension } from '@codemirror/state';
+
+const shellParser = shell as unknown as StreamParser<unknown>;
 
 const editorTheme = EditorView.theme({
     '&': { height: '100%' },
@@ -70,7 +72,7 @@ export function getCodeMirrorExtensions(fileName: string): Extension[] {
             languageExtensions.push(python());
             break;
         case 'sh':
-            languageExtensions.push(StreamLanguage.define(shell));
+            languageExtensions.push(StreamLanguage.define(shellParser));
             break;
         case 'yml':
         case 'yaml':

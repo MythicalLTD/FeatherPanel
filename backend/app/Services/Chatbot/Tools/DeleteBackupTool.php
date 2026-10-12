@@ -158,7 +158,7 @@ class DeleteBackupTool implements ToolInterface
                 WingsUrlHelper::isBehindProxy($node)
             );
 
-            $response = $wings->getServer()->deleteBackup($server['uuid'], $backup['uuid']);
+            $response = $wings->getServer()->deleteBackup($server['uuid'], $backup['uuid'], $this->pbsSnapshotForBackup($backup));
 
             if (!$response->isSuccessful()) {
                 $error = $response->getError();
@@ -237,5 +237,16 @@ class DeleteBackupTool implements ToolInterface
             'backup_uuid' => 'Backup UUID (required if backup_name not provided)',
             'backup_name' => 'Backup name (required if backup_uuid not provided)',
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $backup
+     */
+    private function pbsSnapshotForBackup(array $backup): ?string
+    {
+        $disk = strtolower(trim((string) ($backup['disk'] ?? '')));
+        $snapshot = trim((string) ($backup['checksum'] ?? ''));
+
+        return $disk === 'pbs' && $snapshot !== '' ? $snapshot : null;
     }
 }

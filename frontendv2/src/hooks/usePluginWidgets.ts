@@ -81,10 +81,16 @@ export function usePluginWidgets(initialPage?: string): UsePluginWidgetsResult {
             }>('/api/system/plugin-widgets', { params });
 
             if (response.data.success) {
-                // Merge logic: If we are fetching specific page, merge it. If generic, maybe replace?
-                // The API likely returns structure relative to query.
-                // Currently assuming safe to merge spread.
-                globalWidgets = { ...globalWidgets, ...response.data.data.widgets };
+                if (forceRefresh && !page) {
+                    globalWidgets = response.data.data.widgets;
+                } else if (forceRefresh && page) {
+                    globalWidgets = {
+                        ...globalWidgets,
+                        [page]: response.data.data.widgets[page] ?? {},
+                    };
+                } else {
+                    globalWidgets = { ...globalWidgets, ...response.data.data.widgets };
+                }
             } else {
                 globalError = 'Failed to load widgets';
             }

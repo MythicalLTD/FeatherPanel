@@ -359,6 +359,18 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerVmInstanceRoute(
         $routes,
+        'user-vm-instance-backup-recover',
+        '/api/user/vm-instances/{id}/backups/{backupId}/recover',
+        function (Request $request, array $args) {
+            return (new VmUserBackupController())->recoverBackup($request, (int) ($args['id'] ?? 0), (int) ($args['backupId'] ?? 0));
+        },
+        'id',
+        ['POST'],
+        Rate::perMinute(5)
+    );
+
+    App::getInstance(true)->registerVmInstanceRoute(
+        $routes,
         'user-vm-instance-backup-create',
         '/api/user/vm-instances/{id}/backups',
         function (Request $request, array $args) {

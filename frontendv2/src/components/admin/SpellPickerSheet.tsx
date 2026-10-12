@@ -22,6 +22,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PickerSheet } from '@/components/ui/picker-sheet';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -154,8 +155,7 @@ export function SpellPickerSheet({
                 setOnlineSpells(response.data?.data?.spells || []);
                 setOnlinePagination(response.data?.data?.pagination || null);
             } catch (err: unknown) {
-                const e = err as { response?: { data?: { message?: string } } };
-                setOnlineError(e?.response?.data?.message || t('admin.marketplace.spells.loading_error'));
+                setOnlineError(getApiErrorMessage(err, t, 'admin.marketplace.spells.loading_error'));
             } finally {
                 setOnlineLoading(false);
             }
@@ -193,8 +193,7 @@ export function SpellPickerSheet({
             fetchSpells();
             void loadInstalledNames();
         } catch (err: unknown) {
-            const e = err as { response?: { data?: { message?: string } } };
-            toast.error(e?.response?.data?.message || t('admin.marketplace.spells.install_error'));
+            toast.error(getApiErrorMessage(err, t, 'admin.marketplace.spells.install_error'));
         } finally {
             setInstallingId(null);
         }

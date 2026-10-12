@@ -57,6 +57,7 @@ import {
     Code,
     Workflow,
     Ban,
+    ShieldBan,
     RefreshCcw,
     ShieldAlert,
     Bug,
@@ -294,6 +295,28 @@ export const getAdminNavigationItems = (
                     group: 'infrastructure',
                     badge: 'WEB',
                 },
+                {
+                    id: 'admin-backup-schedules',
+                    name: t('navigation.items.backupSchedules'),
+                    title: t('navigation.items.backupSchedules'),
+                    url: '/admin/backup-schedules',
+                    icon: Archive,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_BACKUP_SCHEDULES_VIEW,
+                    group: 'infrastructure',
+                },
+                {
+                    id: 'admin-wings-backups',
+                    name: t('navigation.items.wingsBackups'),
+                    title: t('navigation.items.wingsBackups'),
+                    url: '/admin/wings-backups',
+                    icon: HardDrive,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_WINGS_BACKUPS_VIEW,
+                    group: 'infrastructure',
+                },
             ],
         },
         {
@@ -356,8 +379,8 @@ export const getAdminNavigationItems = (
                 },
                 {
                     id: 'admin-mail-hosts',
-                    name: 'Mail',
-                    title: 'Mail',
+                    name: t('navigation.items.mailHosts'),
+                    title: t('navigation.items.mailHosts'),
                     url: '/admin/mail-hosts',
                     icon: Mail,
                     isActive: false,
@@ -368,8 +391,8 @@ export const getAdminNavigationItems = (
                 },
                 {
                     id: 'admin-dns-hosts',
-                    name: 'DNS hosts',
-                    title: 'DNS hosts',
+                    name: t('navigation.items.dnsHosts'),
+                    title: t('navigation.items.dnsHosts'),
                     url: '/admin/dns-hosts',
                     icon: Cloud,
                     isActive: false,
@@ -590,6 +613,17 @@ export const getAdminNavigationItems = (
                     group: 'system',
                 },
                 {
+                    id: 'admin-blocked-ips',
+                    name: t('navigation.items.blockedIps'),
+                    title: t('navigation.items.blockedIps'),
+                    url: '/admin/blocked-ips',
+                    icon: ShieldBan,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_BLOCKED_IPS_VIEW,
+                    group: 'system',
+                },
+                {
                     id: 'admin-abuseipdb',
                     name: t('navigation.items.abuseipdb'),
                     title: t('navigation.items.abuseipdb'),
@@ -766,6 +800,38 @@ export const getAdminNavigationItems = (
                 ],
             },
         );
+    }
+
+    // Demo instances: hide cloud + dangerous admin surfaces (mutations are also API-blocked).
+    if (settings?.app_demo_yes === 'true') {
+        const demoBlockedIds = new Set([
+            'admin-myfeatherpanel-cloud',
+            'admin-myfeatherpanel-premium',
+            'admin-myfeatherpanel-report-issue',
+            'admin-myfeatherpanel-suggest',
+            'admin-myfeatherpanel-marketplace',
+            'admin-feathercloud-ai-agent',
+            'admin-storage-sense',
+            'admin-dev-plugins',
+            'admin-dev-console',
+            'admin-updates',
+            'admin-translations',
+        ]);
+
+        return items
+            .map((item) => {
+                if (!item.children?.length) {
+                    return demoBlockedIds.has(item.id) ? null : item;
+                }
+
+                const children = item.children.filter((child) => !demoBlockedIds.has(child.id));
+                if (demoBlockedIds.has(item.id)) {
+                    return null;
+                }
+
+                return { ...item, children };
+            })
+            .filter((item): item is NavigationItem => item != null);
     }
 
     return items;

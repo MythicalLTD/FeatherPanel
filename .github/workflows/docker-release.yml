@@ -23,15 +23,15 @@ jobs:
       matrix:
         include:
           - platform: linux/amd64
-            runner: ubuntu-latest
+            runner: blacksmith-4vcpu-ubuntu-2404
             cache-key: amd64
           - platform: linux/arm64
-            runner: ubuntu-24.04-arm
+            runner: blacksmith-4vcpu-ubuntu-2404-arm
             cache-key: arm64
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
         with:
           ref: ${{ github.event.inputs.version || github.ref }}
 
@@ -54,8 +54,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-composer-${{ matrix.cache-key }}-
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup Blacksmith Builder
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: backend/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -71,23 +73,17 @@ jobs:
           echo "tag=$PLATFORM_TAG" >> $GITHUB_OUTPUT
 
       - name: Build & Push Backend
-        uses: docker/build-push-action@v5
+        uses: useblacksmith/build-push-action@v2
         with:
           context: ./backend
           platforms: ${{ matrix.platform }}
           push: true
-          cache-from: |
-            type=registry,ref=ghcr.io/mythicalltd/featherpanel-backend:buildcache-${{ matrix.cache-key }}
-            type=gha
-          cache-to: |
-            type=registry,ref=ghcr.io/mythicalltd/featherpanel-backend:buildcache-${{ matrix.cache-key }},mode=max
-            type=gha,mode=max
           tags: |
             ghcr.io/mythicalltd/featherpanel-backend:${{ steps.version.outputs.tag }}-${{ steps.platform-tag.outputs.tag }}
 
   manifest-backend:
     name: Create Multi-Arch Manifest - Backend
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: build-backend
     permissions:
       contents: read
@@ -95,7 +91,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
         with:
           ref: ${{ github.event.inputs.version || github.ref }}
 
@@ -110,8 +106,10 @@ jobs:
             echo "tag=latest" >> $GITHUB_OUTPUT
           fi
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup Blacksmith Builder
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: backend/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -134,7 +132,6 @@ jobs:
             ghcr.io/mythicalltd/featherpanel-backend:${{ steps.version.outputs.tag }}-linux-amd64 \
             ghcr.io/mythicalltd/featherpanel-backend:${{ steps.version.outputs.tag }}-linux-arm64
 
-
   build-frontendv2:
     name: Build & Push Frontend v2 (Release) - ${{ matrix.platform }}
     runs-on: ${{ matrix.runner }}
@@ -146,15 +143,15 @@ jobs:
       matrix:
         include:
           - platform: linux/amd64
-            runner: ubuntu-latest
+            runner: blacksmith-4vcpu-ubuntu-2404
             cache-key: amd64
           - platform: linux/arm64
-            runner: ubuntu-24.04-arm
+            runner: blacksmith-4vcpu-ubuntu-2404-arm
             cache-key: arm64
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
         with:
           ref: ${{ github.event.inputs.version || github.ref }}
 
@@ -177,8 +174,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-v2-${{ matrix.cache-key }}-
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup Blacksmith Builder
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: frontendv2/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -193,24 +192,54 @@ jobs:
           PLATFORM_TAG=$(echo "${{ matrix.platform }}" | sed 's/\//-/g')
           echo "tag=$PLATFORM_TAG" >> $GITHUB_OUTPUT
 
+      - name: Setup PHP (OpenAPI for in-panel docs)
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          tools: composer:v2
+          coverage: none
+
+      - name: Generate OpenAPI specification
+        working-directory: backend
+        run: |
+          composer install --no-interaction --no-progress --prefer-dist
+          COMPOSER_ALLOW_SUPERUSER=1 composer openapi
+          test -s openapi.json
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontendv2/pnpm-lock.yaml
+
+      - name: Generate developer docs (not committed; baked into image)
+        working-directory: frontendv2
+        env:
+          OPENAPI_JSON: ../backend/openapi.json
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm export:docs
+          test -f public/icanhasfeatherpanel/api/openapi.json
+          test -f public/icanhasfeatherpanel/api/oauth2.md
+
       - name: Build & Push Frontend v2
-        uses: docker/build-push-action@v5
+        uses: useblacksmith/build-push-action@v2
         with:
           context: ./frontendv2
           platforms: ${{ matrix.platform }}
           push: true
-          cache-from: |
-            type=registry,ref=ghcr.io/mythicalltd/featherpanel-frontendv2:buildcache-${{ matrix.cache-key }}
-            type=gha
-          cache-to: |
-            type=registry,ref=ghcr.io/mythicalltd/featherpanel-frontendv2:buildcache-${{ matrix.cache-key }},mode=max
-            type=gha,mode=max
           tags: |
             ghcr.io/mythicalltd/featherpanel-frontendv2:${{ steps.version.outputs.tag }}-${{ steps.platform-tag.outputs.tag }}
 
   manifest-frontendv2:
     name: Create Multi-Arch Manifest - Frontend v2
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: build-frontendv2
     permissions:
       contents: read
@@ -218,7 +247,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
         with:
           ref: ${{ github.event.inputs.version || github.ref }}
 
@@ -233,8 +262,10 @@ jobs:
             echo "tag=latest" >> $GITHUB_OUTPUT
           fi
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup Blacksmith Builder
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: frontendv2/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -268,15 +299,15 @@ jobs:
       matrix:
         include:
           - platform: linux/amd64
-            runner: ubuntu-latest
+            runner: blacksmith-4vcpu-ubuntu-2404
             cache-key: amd64
           - platform: linux/arm64
-            runner: ubuntu-24.04-arm
+            runner: blacksmith-4vcpu-ubuntu-2404-arm
             cache-key: arm64
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
         with:
           ref: ${{ github.event.inputs.version || github.ref }}
 
@@ -291,8 +322,10 @@ jobs:
             echo "tag=latest" >> $GITHUB_OUTPUT
           fi
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup Blacksmith Builder
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: runner/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -308,24 +341,18 @@ jobs:
           echo "tag=$PLATFORM_TAG" >> $GITHUB_OUTPUT
 
       - name: Build & Push Async Runner
-        uses: docker/build-push-action@v5
+        uses: useblacksmith/build-push-action@v2
         with:
           context: ./runner
           file: ./runner/Dockerfile
           platforms: ${{ matrix.platform }}
           push: true
-          cache-from: |
-            type=registry,ref=ghcr.io/mythicalltd/featherpanel-async-runner:buildcache-${{ matrix.cache-key }}
-            type=gha,scope=async-runner-${{ matrix.cache-key }}
-          cache-to: |
-            type=registry,ref=ghcr.io/mythicalltd/featherpanel-async-runner:buildcache-${{ matrix.cache-key }},mode=max
-            type=gha,mode=max,scope=async-runner-${{ matrix.cache-key }}
           tags: |
             ghcr.io/mythicalltd/featherpanel-async-runner:${{ steps.version.outputs.tag }}-${{ steps.platform-tag.outputs.tag }}
 
   manifest-async-runner:
     name: Create Multi-Arch Manifest - Async Runner
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: build-async-runner
     permissions:
       contents: read
@@ -333,7 +360,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
         with:
           ref: ${{ github.event.inputs.version || github.ref }}
 
@@ -348,8 +375,10 @@ jobs:
             echo "tag=latest" >> $GITHUB_OUTPUT
           fi
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup Blacksmith Builder
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: runner/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -383,15 +412,15 @@ jobs:
       matrix:
         include:
           - platform: linux/amd64
-            runner: ubuntu-latest
+            runner: blacksmith-2vcpu-ubuntu-2404
             cache-key: amd64
           - platform: linux/arm64
-            runner: ubuntu-24.04-arm
+            runner: blacksmith-2vcpu-ubuntu-2404-arm
             cache-key: arm64
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
         with:
           ref: ${{ github.event.inputs.version || github.ref }}
 
@@ -407,7 +436,9 @@ jobs:
           fi
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: mcp/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -423,24 +454,18 @@ jobs:
           echo "tag=$PLATFORM_TAG" >> $GITHUB_OUTPUT
 
       - name: Build & Push MCP
-        uses: docker/build-push-action@v5
+        uses: useblacksmith/build-push-action@v2
         with:
           context: ./mcp
           file: ./mcp/Dockerfile
           platforms: ${{ matrix.platform }}
           push: true
-          cache-from: |
-            type=registry,ref=ghcr.io/mythicalltd/featherpanel-mcp:buildcache-${{ matrix.cache-key }}
-            type=gha,scope=mcp-${{ matrix.cache-key }}
-          cache-to: |
-            type=registry,ref=ghcr.io/mythicalltd/featherpanel-mcp:buildcache-${{ matrix.cache-key }},mode=max
-            type=gha,mode=max,scope=mcp-${{ matrix.cache-key }}
           tags: |
             ghcr.io/mythicalltd/featherpanel-mcp:${{ steps.version.outputs.tag }}-${{ steps.platform-tag.outputs.tag }}
 
   manifest-mcp:
     name: Create Multi-Arch Manifest - MCP
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     needs: build-mcp
     permissions:
       contents: read
@@ -448,7 +473,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
         with:
           ref: ${{ github.event.inputs.version || github.ref }}
 
@@ -464,7 +489,9 @@ jobs:
           fi
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: useblacksmith/setup-docker-builder@v2
+        with:
+          cache-key: mcp/Dockerfile
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3

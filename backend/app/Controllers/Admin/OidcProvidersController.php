@@ -19,6 +19,7 @@ namespace App\Controllers\Admin;
 
 use App\App;
 use App\Chat\OidcProvider;
+use App\Helpers\DemoGuard;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
@@ -87,6 +88,10 @@ class OidcProvidersController
     )]
     public function create(Request $request): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $admin = $request->attributes->get('user');
         $data = json_decode($request->getContent(), true) ?? [];
 
@@ -166,6 +171,10 @@ class OidcProvidersController
     )]
     public function update(Request $request, string $uuid): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $admin = $request->attributes->get('user');
         $existing = OidcProvider::getProviderByUuid($uuid);
         if (!$existing) {
@@ -260,6 +269,10 @@ class OidcProvidersController
     )]
     public function delete(Request $request, string $uuid): Response
     {
+        if (($demoDeny = DemoGuard::denyIfDemo()) !== null) {
+            return $demoDeny;
+        }
+
         $admin = $request->attributes->get('user');
         $existing = OidcProvider::getProviderByUuid($uuid);
         if (!$existing) {

@@ -27,6 +27,8 @@ class WebSpaceRoadmapFeatures
      */
     public static function assess(): array
     {
+        $webmailReady = WebSpaceHostingMaturity::assessWebmailStatus() === 'ready';
+
         return [
             [
                 'id' => 'ftp',
@@ -40,10 +42,10 @@ class WebSpaceRoadmapFeatures
             ],
             [
                 'id' => 'webmail',
-                'status' => Roundcube::isInstalled() ? 'ready' : 'external',
-                'detail' => Roundcube::isInstalled()
-                    ? 'Panel Roundcube is installed. Node webmail package adds per-node Roundcube when configured on mail hosts.'
-                    : 'Use your mail host webmail URL or integrate Roundcube on a mail host.',
+                'status' => $webmailReady ? 'ready' : 'external',
+                'detail' => $webmailReady
+                    ? 'Webmail SSO is ready (panel Roundcube and/or node Roundcube with HTTPS + SSO secret).'
+                    : 'Install panel Roundcube or the node webmail package (HTTPS hostname + SSO secret on the mail host).',
             ],
         ];
     }

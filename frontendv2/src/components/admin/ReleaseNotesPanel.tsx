@@ -104,14 +104,14 @@ export function ReleaseNotesPanel({
         if (hasReleaseContent(current)) {
             items.push({
                 id: 'current',
-                label: t('admin.version.changelog_tab_current', { version: current?.version || '—' }),
+                label: t('admin.version.changelog_tab_current', { version: current?.version || '-' }),
                 data: current,
             });
         }
         if (hasReleaseContent(latest) && !sameVersion) {
             items.push({
                 id: 'latest',
-                label: t('admin.version.changelog_tab_latest', { version: latest?.version || '—' }),
+                label: t('admin.version.changelog_tab_latest', { version: latest?.version || '-' }),
                 data: latest,
             });
         }
@@ -202,7 +202,7 @@ export function ReleaseNotesPanel({
                     <div className='space-y-1'>
                         <div className='flex flex-wrap items-center gap-2'>
                             <h4 className='text-base font-black md:text-lg'>
-                                {data?.release_name || data?.version || '—'}
+                                {data?.release_name || data?.version || '-'}
                             </h4>
                             {data?.type ? (
                                 <span className='bg-primary/15 text-primary border-primary/25 rounded-full border px-2 py-0.5 text-[9px] font-black tracking-widest uppercase'>
@@ -217,7 +217,7 @@ export function ReleaseNotesPanel({
                             ) : null}
                         </div>
                         <p className='text-muted-foreground text-xs font-medium'>
-                            {t('admin.version.release_notes_for', { version: data?.version || '—' })}
+                            {t('admin.version.release_notes_for', { version: data?.version || '-' })}
                         </p>
                     </div>
 

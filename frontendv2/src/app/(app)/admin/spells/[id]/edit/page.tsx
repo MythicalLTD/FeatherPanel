@@ -17,8 +17,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -46,6 +47,10 @@ import {
 import { ImageAttachmentField } from '@/components/featherui/ImageAttachmentField';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { SpellInheritanceField } from '@/components/admin/SpellInheritanceField';
+import { SpellConfigField } from '@/components/admin/SpellConfigField';
+import { spellConfigPayload, spellConfigText } from '@/lib/spellConfig';
+import { isEnabled } from '@/lib/utils';
 
 interface Variable {
     id: number;
@@ -55,8 +60,8 @@ interface Variable {
     default_value: string;
     field_type: string;
     rules?: string;
-    user_viewable: string;
-    user_editable: string;
+    user_viewable: string | boolean | number;
+    user_editable: string | boolean | number;
 }
 
 export default function EditSpellPage() {
@@ -70,6 +75,9 @@ export default function EditSpellPage() {
     const [activeTab, setActiveTab] = useState('general');
 
     const [form, setForm] = useState({
+        realm_id: '',
+        config_from: '',
+        copy_script_from: '',
         name: '',
         author: '',
         description: '',
@@ -109,6 +117,7 @@ export default function EditSpellPage() {
     const [dockerImages, setDockerImages] = useState<{ name: string; value: string }[]>([]);
     const [defaultDockerImage, setDefaultDockerImage] = useState('');
     const [features, setFeatures] = useState<string[]>([]);
+    const [inheritFeatures, setInheritFeatures] = useState(false);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-spells-edit');
 
@@ -123,6 +132,9 @@ export default function EditSpellPage() {
                 const spell = data.data.spell;
 
                 setForm({
+                    realm_id: String(spell.realm_id),
+                    config_from: spell.config_from ? String(spell.config_from) : '',
+                    copy_script_from: spell.copy_script_from ? String(spell.copy_script_from) : '',
                     name: spell.name || '',
                     author: spell.author || '',
                     description: spell.description || '',
@@ -134,14 +146,15 @@ export default function EditSpellPage() {
                     force_outgoing_ip: spell.force_outgoing_ip || false,
                     features: spell.features || '[]',
                     file_denylist: spell.file_denylist || '[]',
-                    config_files: spell.config_files || '{}',
-                    config_startup: spell.config_startup || '{}',
-                    config_logs: spell.config_logs || '{}',
+                    config_files: spellConfigText(spell.config_files),
+                    config_startup: spellConfigText(spell.config_startup),
+                    config_logs: spellConfigText(spell.config_logs),
                     config_stop: spell.config_stop || '',
                     script_install: spell.script_install || '',
                     script_is_privileged: spell.script_is_privileged || false,
                     startup: spell.startup || '',
                 });
+                setInheritFeatures(spell.features == null && !!spell.config_from);
 
                 try {
                     const dockerImagesData = spell.docker_images || '{}';
@@ -164,7 +177,7 @@ export default function EditSpellPage() {
                 }
             } catch (error) {
                 console.error('Error fetching spell:', error);
-                toast.error(t('admin.spells.messages.fetch_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.fetch_failed'));
                 router.push('/admin/spells');
             } finally {
                 setLoading(false);
@@ -181,13 +194,14 @@ export default function EditSpellPage() {
                 setVariables(data.data.variables || []);
             } catch (error) {
                 console.error('Error fetching variables:', error);
+                toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.fetch_failed'));
             }
         };
 
         if (!loading) {
             fetchVariables();
         }
-    }, [spellId, loading]);
+    }, [spellId, loading, t]);
 
     const handleSave = async () => {
         setSaving(true);
@@ -202,20 +216,23 @@ export default function EditSpellPage() {
 
             await axios.patch(`/api/admin/spells/${spellId}`, {
                 ...form,
+                ...spellConfigPayload(form),
+                config_from: form.config_from ? Number(form.config_from) : null,
+                copy_script_from: form.copy_script_from ? Number(form.copy_script_from) : null,
                 docker_images: JSON.stringify(dockerImagesObj),
                 default_docker_image: defaultDockerImage || null,
-                features: JSON.stringify(features),
+                features: form.config_from && inheritFeatures ? null : JSON.stringify(features),
             });
 
             toast.success(t('admin.spells.messages.updated'));
             router.push('/admin/spells');
         } catch (error) {
             console.error('Error updating spell:', error);
-            let msg = t('admin.spells.messages.update_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                msg = error.response.data.message;
-            }
-            toast.error(msg);
+            toast.error(
+                axios.isAxiosError(error)
+                    ? getApiErrorMessage(error, t, 'admin.spells.messages.update_failed')
+                    : t('admin.spells.messages.invalid_config'),
+            );
         } finally {
             setSaving(false);
         }
@@ -281,8 +298,8 @@ export default function EditSpellPage() {
             default_value: variable.default_value,
             field_type: variable.field_type,
             rules: variable.rules || '',
-            user_viewable: variable.user_viewable,
-            user_editable: variable.user_editable,
+            user_viewable: isEnabled(variable.user_viewable) ? 'true' : 'false',
+            user_editable: isEnabled(variable.user_editable) ? 'true' : 'false',
         });
         setEditingVariable(variable);
         setAddingVariable(false);
@@ -342,7 +359,7 @@ export default function EditSpellPage() {
             setConfirmDeleteVariable(null);
         } catch (error) {
             console.error('Error deleting variable:', error);
-            toast.error(t('admin.spells.messages.variable_delete_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.variable_delete_failed'));
         } finally {
             setDeletingVariable(false);
         }
@@ -373,7 +390,7 @@ export default function EditSpellPage() {
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>
-                        <Button onClick={handleSave} loading={saving}>
+                        <Button onClick={handleSave} loading={saving} data-fp-save-shortcut>
                             {t('admin.spells.form.submit_update')}
                         </Button>
                     </div>
@@ -495,6 +512,7 @@ export default function EditSpellPage() {
                                     <Label>{t('admin.spells.form.script_container')}</Label>
                                     <Input
                                         value={form.script_container}
+                                        disabled={!!form.copy_script_from}
                                         onChange={(e) => setForm({ ...form, script_container: e.target.value })}
                                         placeholder='alpine:3.4'
                                     />
@@ -503,6 +521,7 @@ export default function EditSpellPage() {
                                     <Label>{t('admin.spells.form.script_entry')}</Label>
                                     <Input
                                         value={form.script_entry}
+                                        disabled={!!form.copy_script_from}
                                         onChange={(e) => setForm({ ...form, script_entry: e.target.value })}
                                         placeholder='ash'
                                     />
@@ -526,6 +545,15 @@ export default function EditSpellPage() {
 
                 <TabsContent value='features' className='space-y-4'>
                     <PageCard title={t('admin.spells.form.server_features')} icon={Zap}>
+                        {form.config_from && (
+                            <label className='mb-4 flex items-center gap-2'>
+                                <Checkbox
+                                    checked={inheritFeatures}
+                                    onCheckedChange={(checked) => setInheritFeatures(checked === true)}
+                                />
+                                {t('admin.spells.form.inherit_features')}
+                            </label>
+                        )}
                         <div className='space-y-2'>
                             <Label>{t('admin.spells.form.features')}</Label>
                             <div className='space-y-2'>
@@ -557,64 +585,69 @@ export default function EditSpellPage() {
 
                 <TabsContent value='config' className='space-y-4'>
                     <PageCard title={t('admin.spells.form.server_configuration')} icon={FileCode}>
+                        <SpellInheritanceField
+                            realmId={form.realm_id}
+                            spellId={spellId}
+                            kind='config_from'
+                            value={form.config_from}
+                            onChange={(value) => setForm({ ...form, config_from: value })}
+                        />
                         <div className='space-y-4'>
                             <div className='space-y-2'>
                                 <Label>{t('admin.spells.form.file_denylist')}</Label>
                                 <Textarea
                                     value={form.file_denylist}
+                                    disabled={!!form.config_from}
                                     onChange={(e) => setForm({ ...form, file_denylist: e.target.value })}
                                     placeholder='["file1", "file2"]'
                                     rows={3}
                                 />
                             </div>
-                            <div className='space-y-2'>
-                                <Label>{t('admin.spells.form.config_files')}</Label>
-                                <Textarea
-                                    value={form.config_files}
-                                    onChange={(e) => setForm({ ...form, config_files: e.target.value })}
-                                    placeholder='{"file.properties": {...}}'
-                                    rows={4}
+                            <SpellConfigField
+                                field='config_files'
+                                value={form.config_files}
+                                inheritable={!!form.config_from}
+                                onChange={(value) => setForm({ ...form, config_files: value })}
+                            />
+                            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+                                <SpellConfigField
+                                    field='config_startup'
+                                    value={form.config_startup}
+                                    inheritable={!!form.config_from}
+                                    onChange={(value) => setForm({ ...form, config_startup: value })}
+                                />
+                                <SpellConfigField
+                                    field='config_logs'
+                                    value={form.config_logs}
+                                    inheritable={!!form.config_from}
+                                    onChange={(value) => setForm({ ...form, config_logs: value })}
                                 />
                             </div>
-                            <div className='grid grid-cols-2 gap-4'>
-                                <div className='space-y-2'>
-                                    <Label>{t('admin.spells.form.config_startup')}</Label>
-                                    <Textarea
-                                        value={form.config_startup}
-                                        onChange={(e) => setForm({ ...form, config_startup: e.target.value })}
-                                        placeholder='{"done": "text"}'
-                                        rows={3}
-                                    />
-                                </div>
-                                <div className='space-y-2'>
-                                    <Label>{t('admin.spells.form.config_logs')}</Label>
-                                    <Textarea
-                                        value={form.config_logs}
-                                        onChange={(e) => setForm({ ...form, config_logs: e.target.value })}
-                                        placeholder='{}'
-                                        rows={3}
-                                    />
-                                </div>
-                            </div>
-                            <div className='space-y-2'>
-                                <Label>{t('admin.spells.form.config_stop')}</Label>
-                                <Input
-                                    value={form.config_stop}
-                                    onChange={(e) => setForm({ ...form, config_stop: e.target.value })}
-                                    placeholder='stop'
-                                />
-                            </div>
+                            <SpellConfigField
+                                field='config_stop'
+                                value={form.config_stop}
+                                inheritable={!!form.config_from}
+                                onChange={(value) => setForm({ ...form, config_stop: value })}
+                            />
                         </div>
                     </PageCard>
                 </TabsContent>
 
                 <TabsContent value='script' className='space-y-4'>
                     <PageCard title={t('admin.spells.form.installation_startup_scripts')} icon={Terminal}>
+                        <SpellInheritanceField
+                            realmId={form.realm_id}
+                            spellId={spellId}
+                            kind='copy_script_from'
+                            value={form.copy_script_from}
+                            onChange={(value) => setForm({ ...form, copy_script_from: value })}
+                        />
                         <div className='space-y-4'>
                             <div className='space-y-2'>
                                 <Label>{t('admin.spells.form.script_install')}</Label>
                                 <Textarea
                                     value={form.script_install}
+                                    disabled={!!form.copy_script_from}
                                     onChange={(e) => setForm({ ...form, script_install: e.target.value })}
                                     placeholder='#!/bin/bash...'
                                     rows={8}
@@ -731,7 +764,7 @@ export default function EditSpellPage() {
                                 </div>
                                 <div className='grid grid-cols-2 gap-3'>
                                     <div className='space-y-2'>
-                                        <Label>{t('admin.spells.variables.default_value')} *</Label>
+                                        <Label>{t('admin.spells.variables.default_value')}</Label>
                                         <Input
                                             value={variableForm.default_value}
                                             onChange={(e) =>
@@ -913,7 +946,7 @@ export default function EditSpellPage() {
                                         </div>
                                         <div className='grid grid-cols-2 gap-3'>
                                             <div className='space-y-2'>
-                                                <Label>{t('admin.spells.variables.default_value')} *</Label>
+                                                <Label>{t('admin.spells.variables.default_value')}</Label>
                                                 <Input
                                                     value={variableForm.default_value}
                                                     onChange={(e) =>
@@ -1027,22 +1060,22 @@ export default function EditSpellPage() {
                                                     <span className='text-muted-foreground'>User Viewable:</span>
                                                     <Badge
                                                         variant={
-                                                            variable.user_viewable === 'true' ? 'default' : 'secondary'
+                                                            isEnabled(variable.user_viewable) ? 'default' : 'secondary'
                                                         }
                                                         className='text-xs'
                                                     >
-                                                        {variable.user_viewable === 'true' ? 'Yes' : 'No'}
+                                                        {isEnabled(variable.user_viewable) ? 'Yes' : 'No'}
                                                     </Badge>
                                                 </div>
                                                 <div className='flex justify-between'>
                                                     <span className='text-muted-foreground'>User Editable:</span>
                                                     <Badge
                                                         variant={
-                                                            variable.user_editable === 'true' ? 'default' : 'secondary'
+                                                            isEnabled(variable.user_editable) ? 'default' : 'secondary'
                                                         }
                                                         className='text-xs'
                                                     >
-                                                        {variable.user_editable === 'true' ? 'Yes' : 'No'}
+                                                        {isEnabled(variable.user_editable) ? 'Yes' : 'No'}
                                                     </Badge>
                                                 </div>
                                             </div>

@@ -19,6 +19,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
+import { SizeInput } from '@/components/featherui/SizeInput';
 import { Label } from '@/components/ui/label';
 import { HeadlessSelect } from '@/components/ui/headless-select';
 import { HardDrive, Plus, Trash2 } from 'lucide-react';
@@ -32,6 +33,7 @@ interface DisksTabProps {
     setNewDiskStorage: (v: string) => void;
     newDiskSizeGb: number;
     setNewDiskSizeGb: (v: number) => void;
+    onNewDiskSizeValidityChange: (valid: boolean) => void;
     newDiskPath: string;
     setNewDiskPath: (v: string) => void;
     resizeDisk: string;
@@ -55,6 +57,7 @@ export function DisksTab({
     setNewDiskStorage,
     newDiskSizeGb,
     setNewDiskSizeGb,
+    onNewDiskSizeValidityChange,
     newDiskPath,
     setNewDiskPath,
     resizeDisk,
@@ -139,6 +142,7 @@ export function DisksTab({
                 <form
                     onSubmit={onCreateDisk}
                     className='border-border/50 bg-muted/10 flex flex-wrap items-end gap-3 rounded-xl border p-4'
+                    data-fp-save-shortcut
                 >
                     <div className='min-w-[160px]'>
                         <Label className='text-xs'>{t('admin.vmInstances.disk_storage') ?? 'Storage'}</Label>
@@ -151,12 +155,13 @@ export function DisksTab({
                     </div>
                     <div>
                         <Label className='text-xs'>{t('admin.vmInstances.disk_size_gb') ?? 'Size (GB)'}</Label>
-                        <Input
-                            type='number'
+                        <SizeInput
                             min={1}
                             value={newDiskSizeGb}
-                            onChange={(e) => setNewDiskSizeGb(parseInt(e.target.value, 10) || 10)}
-                            className='bg-muted/30 mt-1 h-10 w-24 rounded-xl'
+                            onValueChange={(value) => setNewDiskSizeGb(Number(value))}
+                            unit='GB'
+                            ariaLabel={t('admin.vmInstances.disk_size_gb')}
+                            onValidityChange={onNewDiskSizeValidityChange}
                         />
                     </div>
                     {isLxc && (
@@ -179,7 +184,7 @@ export function DisksTab({
                 </form>
                 <div>
                     <Label className='mb-2 block'>{t('admin.vmInstances.resize_disk') ?? 'Expand disk'}</Label>
-                    <form onSubmit={onResizeDisk} className='flex flex-wrap items-end gap-3'>
+                    <form onSubmit={onResizeDisk} className='flex flex-wrap items-end gap-3' data-fp-save-shortcut>
                         <div className='min-w-[160px]'>
                             <Label className='text-xs'>{t('admin.vmInstances.resize_disk_label')}</Label>
                             <HeadlessSelect

@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import Image from 'next/image';
 import {
     Shield,
@@ -51,6 +51,7 @@ import { cn } from '@/lib/utils';
 import { RoleBadge, RoleIconAvatar } from '@/components/RoleBadge';
 import { ROLE_COLOR_PRESETS, randomRoleColor, isDefaultRole, type RoleForm } from '@/lib/role-utils';
 import { toast } from 'sonner';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface PermissionNode {
     constant: string;
@@ -137,14 +138,10 @@ export function RoleEditor({
                 onFormChange({ ...form, badge_icon: data.data.url });
                 toast.success(t('admin.roles.messages.badge_icon_uploaded'));
             } else {
-                toast.error(data?.message || t('admin.roles.messages.badge_icon_upload_failed'));
+                toast.error(getApiErrorMessageFromPayload(data, t, 'admin.roles.messages.badge_icon_upload_failed'));
             }
         } catch (error: unknown) {
-            let message = t('admin.roles.messages.badge_icon_upload_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                message = error.response.data.message;
-            }
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, t, 'admin.roles.messages.badge_icon_upload_failed'));
         } finally {
             setUploadingBadgeIcon(false);
             if (badgeIconInputRef.current) {
@@ -271,7 +268,11 @@ export function RoleEditor({
                                 {t('common.delete')}
                             </Button>
                         )}
-                        <Button loading={isSubmitting} onClick={(e) => onSave(e as unknown as React.FormEvent)}>
+                        <Button
+                            loading={isSubmitting}
+                            onClick={(e) => onSave(e as unknown as React.FormEvent)}
+                            data-fp-save-shortcut
+                        >
                             <Save className='mr-2 h-4 w-4' />
                             {mode === 'create'
                                 ? t('admin.roles.form.submit_create')
@@ -352,7 +353,7 @@ export function RoleEditor({
 
                 <TabsContent value='details' className='mt-6 space-y-6'>
                     <PageCard title={t('admin.roles.tabs.details')} icon={Settings2}>
-                        <form onSubmit={onSave} className='space-y-5'>
+                        <form onSubmit={onSave} className='space-y-5' data-fp-save-shortcut>
                             <div className='grid gap-5 lg:grid-cols-2'>
                                 <div className='space-y-2'>
                                     <Label htmlFor='editor-display-name'>{t('admin.roles.form.display_name')}</Label>

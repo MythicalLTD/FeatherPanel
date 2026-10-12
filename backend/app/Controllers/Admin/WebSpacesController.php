@@ -1168,6 +1168,8 @@ class WebSpacesController
             return ApiResponse::error($daemon['error'] ?? 'Daemon backup list failed', 'DAEMON_BACKUP_LIST_FAILED', 502, ['daemon' => $daemon]);
         }
 
+        \App\Services\Backup\WebSpaceBackupReconciler::sync((int) $space['id'], is_array($daemon['body']) ? $daemon['body'] : []);
+
         return ApiResponse::success([
             'backups' => is_array($daemon['body']) ? $daemon['body'] : [],
             'panel_backups' => \App\Chat\WebSpaceBackup::listByWebSpaceId((int) $space['id']),
@@ -1194,6 +1196,11 @@ class WebSpacesController
                 502,
                 ['daemon' => $daemon],
             );
+        }
+
+        $list = FeatherQuilldClient::listWebSpaceBackups($webNode, $uuid);
+        if ($list['ok']) {
+            \App\Services\Backup\WebSpaceBackupReconciler::sync((int) $space['id'], is_array($list['body']) ? $list['body'] : []);
         }
 
         $body = is_array($daemon['body']) ? $daemon['body'] : [];

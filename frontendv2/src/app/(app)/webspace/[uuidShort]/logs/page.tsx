@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { Copy, Loader2, Play, RefreshCw, RotateCcw, Search, Square } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -38,6 +38,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
 import { useQuilldWebSocket } from '@/hooks/useQuilldWebSocket';
 import { copyToClipboard, cn } from '@/lib/utils';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 type LogTab = 'access' | 'error' | 'runtime' | 'install';
 
@@ -182,11 +183,7 @@ export default function WebSpaceLogsPage() {
             setRotateOpen(false);
             await loadLogs();
         } catch (err) {
-            toast.error(
-                isAxiosError(err)
-                    ? err.response?.data?.message || t('webSpaces.logs.rotateFailed')
-                    : t('webSpaces.logs.rotateFailed'),
-            );
+            toast.error(getApiErrorMessage(err, t, 'webSpaces.logs.rotateFailed'));
         } finally {
             setRotating(false);
         }

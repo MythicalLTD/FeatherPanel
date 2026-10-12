@@ -566,7 +566,7 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
                             'destructive',
                             async () => {
                                 try {
-                                    const result = await executeServerPowerAction(command.action!, serverUuid!);
+                                    const result = await executeServerPowerAction(command.action!, serverUuid!, t);
                                     if (result.success) {
                                         const actionKey = `${command.action}edServer`;
                                         showActionNotification(
@@ -588,7 +588,7 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
                             'pending',
                         );
                         try {
-                            const result = await executeServerPowerAction(command.action, serverUuid);
+                            const result = await executeServerPowerAction(command.action, serverUuid, t);
                             if (result.success) {
                                 showActionNotification(
                                     t('chatbot.startedServer', { server: serverName || serverUuid }),
@@ -642,7 +642,7 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
                                 'pending',
                             );
                             try {
-                                const result = await executeServerCommand(serverUuid!, command.command!);
+                                const result = await executeServerCommand(serverUuid!, command.command!, t);
                                 if (result.success) {
                                     showActionNotification(
                                         t('chatbot.sentCommand', { server: serverName || serverUuid }),

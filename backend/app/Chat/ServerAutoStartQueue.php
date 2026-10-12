@@ -67,9 +67,9 @@ class ServerAutoStartQueue
             );
             if (
                 !$stmt->execute([
-                'server_id' => $serverId,
-                'node_id' => $nodeId,
-                'scheduled_at' => $scheduledAt,
+                    'server_id' => $serverId,
+                    'node_id' => $nodeId,
+                    'scheduled_at' => $scheduledAt,
                 ])
             ) {
                 return false;

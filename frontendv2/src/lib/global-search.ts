@@ -33,7 +33,8 @@ export type GlobalSearchCategory =
     | 'adminSettings'
     | 'pages'
     | 'settings'
-    | 'admin';
+    | 'admin'
+    | 'plugins';
 
 export type GlobalSearchScope =
     'all' | 'admin' | 'settings' | 'account' | 'servers' | 'webspaces' | 'vds' | 'pages' | 'infrastructure';
@@ -94,6 +95,7 @@ export const GLOBAL_SEARCH_CATEGORY_ORDER: GlobalSearchCategory[] = [
     'pages',
     'settings',
     'admin',
+    'plugins',
 ];
 
 const CATEGORY_PRIORITY: Record<GlobalSearchCategory, number> = {
@@ -109,6 +111,7 @@ const CATEGORY_PRIORITY: Record<GlobalSearchCategory, number> = {
     pages: 200,
     settings: 180,
     admin: 100,
+    plugins: 350,
 };
 
 const SCOPE_ALIASES: Record<string, GlobalSearchScope> = {

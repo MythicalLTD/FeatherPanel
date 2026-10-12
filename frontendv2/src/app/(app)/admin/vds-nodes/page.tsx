@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
@@ -30,6 +30,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import {
     Server,
     Search,
@@ -99,7 +100,7 @@ export default function VdsNodesPage() {
         VDS_NODES_LIST_FILTERS_DEFAULTS,
     );
     const { searchQuery, page, pageSize } = filters;
-    // Location filter must come from the URL only — sticky localStorage locationId
+    // Location filter must come from the URL only - sticky localStorage locationId
     // hid nodes with no clear-filter UI (same bug as /admin/nodes).
     const locationIdFilter = urlLocationId;
 
@@ -145,10 +146,11 @@ export default function VdsNodesPage() {
                 setLocations((data.data.locations || []) as Location[]);
             } catch (error) {
                 console.error('Error fetching locations:', error);
+                toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.fetch_failed'));
             }
         };
         fetchLocations();
-    }, []);
+    }, [t]);
 
     const testConnection = useCallback(
         async (vmNodeId: number) => {
@@ -162,11 +164,7 @@ export default function VdsNodesPage() {
             } catch (error) {
                 console.error(`Error testing connection for VM node ${vmNodeId}:`, error);
                 setConnectionStatus((prev) => ({ ...prev, [vmNodeId]: 'offline' }));
-                if (isAxiosError(error) && error.response?.data?.message) {
-                    toast.error(error.response.data.message);
-                } else {
-                    toast.error(t('admin.vdsNodes.messages.connection_failed'));
-                }
+                toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.messages.connection_failed'));
             }
         },
         [t],
@@ -179,7 +177,7 @@ export default function VdsNodesPage() {
                 await Promise.all(nodesToCheck.map((node) => testConnection(node.id)));
             } catch (error) {
                 console.error('Error testing all VM node connections:', error);
-                toast.error(t('admin.vdsNodes.messages.connection_check_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.messages.connection_check_failed'));
             } finally {
                 setIsCheckingConnections(false);
             }
@@ -219,7 +217,7 @@ export default function VdsNodesPage() {
             }
         } catch (error) {
             console.error('Error fetching VM nodes:', error);
-            toast.error(t('admin.vdsNodes.messages.fetch_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
@@ -242,11 +240,7 @@ export default function VdsNodesPage() {
             setConfirmDeleteId(null);
         } catch (error) {
             console.error('Error deleting VM node:', error);
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.vdsNodes.messages.delete_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.vdsNodes.messages.delete_failed'));
         } finally {
             setDeleting(false);
         }

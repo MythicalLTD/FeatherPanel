@@ -175,6 +175,8 @@ class PhpMyAdmin
     {
         if (self::isInstalled()) {
             self::writeInstalledMarker();
+            // Keep signon bridge + hardened config in sync on every check (panel updates).
+            self::refreshSignonHardening();
 
             return;
         }
@@ -186,6 +188,36 @@ class PhpMyAdmin
         $logger = App::getInstance(true)->getLogger();
         $logger->info('phpMyAdmin marker present but files missing — reinstalling');
         self::downloadPhpMyAdmin();
+    }
+
+    /**
+     * Re-copy token bridge files and ensure AllowArbitraryServer stays off.
+     */
+    public static function refreshSignonHardening(): void
+    {
+        $publicDir = dirname(__DIR__, 2) . '/public';
+        $targetPath = $publicDir . '/pma';
+        if (!is_dir($targetPath) || !is_file($targetPath . '/index.php')) {
+            return;
+        }
+
+        $logger = App::getInstance(true)->getLogger();
+        self::copyTokenFiles($targetPath, $logger);
+
+        $configPath = $targetPath . '/config.inc.php';
+        if (!is_file($configPath) || !is_writable($configPath)) {
+            return;
+        }
+
+        $configContent = (string) file_get_contents($configPath);
+        $updated = preg_replace(
+            "/\\\$cfg\\['AllowArbitraryServer'\\]\\s*=\\s*true;?/",
+            "\$cfg['AllowArbitraryServer'] = false;",
+            $configContent
+        );
+        if (is_string($updated) && $updated !== $configContent) {
+            @file_put_contents($configPath, $updated);
+        }
     }
 
     /**
@@ -317,15 +349,15 @@ class PhpMyAdmin
             $configContent .= "\n\$cfg['ThemeDefault'] = 'darkwolf';\n";
         }
 
-        // Set AllowArbitraryServer to true
+        // Host comes from the signon session; arbitrary-server mode is unnecessary surface.
         if (preg_match("/\\\$cfg\\['AllowArbitraryServer'\\]\\s*=\\s*(true|false);?/", $configContent)) {
             $configContent = preg_replace(
                 "/\\\$cfg\\['AllowArbitraryServer'\\]\\s*=\\s*(true|false);?/",
-                "\$cfg['AllowArbitraryServer'] = true;",
+                "\$cfg['AllowArbitraryServer'] = false;",
                 $configContent
             );
         } else {
-            $configContent .= "\n\$cfg['AllowArbitraryServer'] = true;\n";
+            $configContent .= "\n\$cfg['AllowArbitraryServer'] = false;\n";
         }
 
         // Configure signon authentication for servers
@@ -386,8 +418,7 @@ class PhpMyAdmin
                 );
             }
 
-            // Configure host to use from session (for AllowArbitraryServer)
-            // This allows phpMyAdmin to connect to the database host specified in the session
+            // Host is injected from the panel-issued signon session (not the login form).
             if (preg_match("/\\\$cfg\\['Servers'\\]\\[.*?\\]\\['host'\\]\\s*=\\s*['\"].*?['\"];?/", $configContent)) {
                 // Replace existing host with dynamic session-based host
                 $configContent = preg_replace(

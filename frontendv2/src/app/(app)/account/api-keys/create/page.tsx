@@ -24,6 +24,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { CalagopusAuthorizeView } from '@/components/account/CalagopusAuthorizeView';
 import { isLoopbackCallbackUrl } from '@/lib/utils';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 function splitCsv(value: string | null): string[] {
     if (!value) return [];
@@ -38,7 +39,7 @@ function splitCsv(value: string | null): string[] {
  * Top-level HTTPS → HTTP localhost navigations often hang; prefer fetch/iframe first.
  */
 async function deliverCalagopusCallback(redirectUrl: string): Promise<void> {
-    // 1) fetch — works for same-machine loopback in most Chromium builds
+    // 1) fetch - works for same-machine loopback in most Chromium builds
     try {
         await fetch(redirectUrl, {
             method: 'GET',
@@ -48,7 +49,7 @@ async function deliverCalagopusCallback(redirectUrl: string): Promise<void> {
             redirect: 'follow',
         });
     } catch {
-        // ignore — fall through
+        // ignore - fall through
     }
 
     // 2) hidden iframe as a second delivery path
@@ -116,13 +117,13 @@ export default function CalagopusApiKeyCreatePage() {
                     router.push(`/auth/login?redirect=${encodeURIComponent(redirectTarget)}`);
                     return;
                 }
-                throw new Error(response.data?.message || t('account.calagopus.createFailed'));
+                throw new Error(getApiErrorMessageFromPayload(response.data, t, 'account.calagopus.createFailed'));
             }
 
             await deliverCalagopusCallback(redirectUrl);
 
             // Best-effort navigation for the extension's "Signed in" HTML page.
-            // Do not wait on this — HTTPS→HTTP localhost often never finishes unloading.
+            // Do not wait on this - HTTPS→HTTP localhost often never finishes unloading.
             try {
                 window.location.assign(redirectUrl);
             } catch {
@@ -136,8 +137,11 @@ export default function CalagopusApiKeyCreatePage() {
                 router.push(`/auth/login?redirect=${encodeURIComponent(redirectTarget)}`);
                 return;
             }
-            const message = axios.isAxiosError(err) ? err.response?.data?.message : null;
-            toast.error(message || t('account.calagopus.createFailed'));
+            toast.error(
+                err instanceof Error && !axios.isAxiosError(err)
+                    ? err.message
+                    : getApiErrorMessage(err, t, 'account.calagopus.createFailed'),
+            );
             setSubmitting(false);
         }
     };

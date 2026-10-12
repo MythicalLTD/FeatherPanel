@@ -25,7 +25,8 @@ const nextConfig: NextConfig = {
     },
 
     experimental: {
-        // Filesystem cache balloons RAM on large apps; use webpack dev by default instead.
+        // Prefer webpack for next/dev + next/build (see package.json --webpack flags).
+        // Turbopack in Next 16.3 fails next/font/google when many families load at once.
         turbopackFileSystemCacheForDev: true,
         // TypeScript 7 has no programmatic compiler API; Next must shell out to `tsc`.
         useTypeScriptCli: true,

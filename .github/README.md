@@ -119,13 +119,19 @@ Docker images for the backend, frontend, and async runner are published through 
 
 <br />
 
-| Section | Contents |
-| --- | --- |
-| 🧩 **Widgets** | Injection points and widget slugs for plugin UI |
-| 🔐 **Permissions** | Every permission node from `permission_nodes.fpperm` |
-| 📡 **Events** | Plugin hooks and event payloads |
-| 🔌 **API reference** | Redoc UI backed by the generated OpenAPI spec |
-| 🔑 **OAuth2 playground** | OAuth2 docs (live API calls still need a panel) |
+| Section                  | Contents                                                                                             |
+| ------------------------ | ---------------------------------------------------------------------------------------------------- |
+| 🧩 **Plugins**           | Full Markdown guides for building addons (`conf.yml`, backend, frontend, SDK, packaging, AI recipes) |
+| 🧭 **Pages**             | Every frontend Next.js route/slug (`pages/all.json`) for UI navigation guidance                      |
+| 🧩 **Widgets**           | Injection points as HTML + `.md` + `.json`                                                           |
+| ⌨️ **CLI**               | All `featherpanel` / `php cli` commands + production usage (`cli/usage.md`, `cli/all.json`)          |
+| ⚙️ **Settings**          | Admin settings keys, types, options, categories from `SettingsController` (`settings/all.json`)      |
+| 🧰 **Installer**         | `install.bash` flags, menus, automation env vars (`installer/guide.md`)                              |
+| 🔐 **Permissions**       | Every permission node as HTML + `.md` + `.json` (`all.json`)                                         |
+| 📡 **Events**            | Plugin hooks as HTML + `.md` + `.json` (`all.json`)                                                  |
+| 🔌 **API reference**     | Redoc UI + raw `openapi.json`                                                                        |
+| 🧠 **RAG index**         | `catalog.json` + `llms.txt` listing every machine-readable doc                                       |
+| 🔑 **OAuth2 playground** | OAuth2 docs (live API calls still need a panel)                                                      |
 
 </details>
 
@@ -136,6 +142,18 @@ Docker images for the backend, frontend, and async runner are published through 
 
 **https://mythicalltd.github.io/FeatherPanel/icanhasfeatherpanel/**
 
+Plugin authoring (Markdown + AI index):
+
+**https://mythicalltd.github.io/FeatherPanel/icanhasfeatherpanel/plugins/**
+
+RAG / machine-readable index:
+
+- **https://mythicalltd.github.io/FeatherPanel/icanhasfeatherpanel/rag/**
+- **https://mythicalltd.github.io/FeatherPanel/catalog.json**
+- **https://mythicalltd.github.io/FeatherPanel/llms.txt**
+
+Examples for crawlers: `…/pages/all.json`, `…/cli/all.json`, `…/cli/usage.md`, `…/settings/all.json`, `…/installer/guide.md`, `…/permissions/all.json`, `…/events/all.json`, `…/widgets/index.json`, `…/api/openapi.json`, `…/plugins/ai-guide.md`.
+
 </details>
 
 <details>
@@ -144,12 +162,14 @@ Docker images for the backend, frontend, and async runner are published through 
 
 <br />
 
+Hand-authored inputs live in `frontendv2/icanhas/` (plugin Markdown, auth guides, assets, schemas). One command — `pnpm export:docs` — builds the **entire** `public/icanhasfeatherpanel/` tree (widgets, pages, permissions, events, API + OpenAPI, CLI, settings, installer, plugins/auth indexes, RAG). That output is gitignored and produced at ship time for **both** GitHub Pages (`pnpm build:public-docs`) and Docker/panel images (host `export:docs` then `frontendv2` image build, or `pnpm build:with-docs` / `make frontend`).
+
 ```bash
 # 1. Generate OpenAPI from PHP controller annotations
 cd backend
 COMPOSER_ALLOW_SUPERUSER=1 composer openapi
 
-# 2. Export widgets / permissions / events + assemble static site
+# 2. Export docs + assemble static GitHub Pages site
 cd ../frontendv2
 pnpm install
 pnpm build:public-docs
@@ -159,13 +179,20 @@ pnpm build:public-docs
 python3 -m http.server 8080 --directory ../docs-site
 ```
 
+For a normal panel image / local Next build that should include `/icanhasfeatherpanel/`:
+
+```bash
+cd frontendv2
+pnpm build:with-docs   # export:docs then pnpm build
+```
+
 Optional environment variables for `build:public-docs`:
 
-| Variable | Purpose |
-| --- | --- |
-| `DOCS_OUTPUT_DIR` | Output directory (default: `docs-site/`) |
-| `DOCS_BASE_PATH` | URL prefix for GitHub Pages project sites (CI sets `/FeatherPanel` from the repo name) |
-| `OPENAPI_JSON` | Path to the generated OpenAPI file |
+| Variable          | Purpose                                                                                |
+| ----------------- | -------------------------------------------------------------------------------------- |
+| `DOCS_OUTPUT_DIR` | Output directory (default: `docs-site/`)                                               |
+| `DOCS_BASE_PATH`  | URL prefix for GitHub Pages project sites (CI sets `/FeatherPanel` from the repo name) |
+| `OPENAPI_JSON`    | Path to the generated OpenAPI file                                                     |
 
 </details>
 
@@ -196,7 +223,7 @@ Optional environment variables for `build:public-docs`:
 </tr>
 <tr>
 <td><a href="workflows/docs-pages.yml">docs-pages.yml</a></td>
-<td>Builds icanhasfeatherpanel + OpenAPI and deploys to GitHub Pages</td>
+<td>Generates icanhasfeatherpanel (not committed) + OpenAPI and deploys the static site to GitHub Pages</td>
 </tr>
 <tr>
 <td><a href="workflows/docker-dev.yml">docker-dev.yml</a></td>
@@ -226,20 +253,20 @@ Optional environment variables for `build:public-docs`:
 
 <!-- COUNT-STATS:START -->
 
-_Last updated: 2026-09-18T20:49:37.513Z_
+_Last updated: 2026-10-10T10:56:03.507Z_
 
 | Extension | Files | Lines |
 | --- | ---: | ---: |
-| `.php` | 679 | 175,047 |
-| `.tsx` | 543 | 162,516 |
-| `.ts` | 168 | 22,151 |
-| `.json` | 14 | 14,604 |
-| `.yaml` | 5 | 7,718 |
-| `.rs` | 16 | 3,529 |
-| `.sql` | 206 | 3,227 |
-| `.yml` | 21 | 2,561 |
-| `.css` | 5 | 621 |
-| **Total** | 1,657 | 391,974 |
+| `.php` | 743 | 188,549 |
+| `.tsx` | 580 | 169,239 |
+| `.ts` | 195 | 24,660 |
+| `.json` | 19 | 16,057 |
+| `.yaml` | 5 | 7,755 |
+| `.sql` | 211 | 3,428 |
+| `.rs` | 16 | 3,363 |
+| `.yml` | 26 | 2,909 |
+| `.css` | 6 | 657 |
+| **Total** | 1,801 | 416,617 |
 
 <!-- COUNT-STATS:END -->
 

@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { getApiErrorMessage } from '@/lib/api-errors';
 import React, { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -47,7 +48,7 @@ export default function VdsAnalyticsPage() {
             setDashboard(res.data.data);
         } catch (err) {
             console.error('Failed to fetch VDS analytics:', err);
-            setError(t('admin.analytics.vds.error'));
+            setError(getApiErrorMessage(err, t, 'admin.analytics.vds.error'));
         } finally {
             setLoading(false);
         }

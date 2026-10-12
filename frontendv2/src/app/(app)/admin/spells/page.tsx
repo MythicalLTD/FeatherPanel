@@ -17,8 +17,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -139,6 +140,7 @@ export default function SpellsPage() {
     const [importDialogOpen, setImportDialogOpen] = useState(false);
     const [importRealmId, setImportRealmId] = useState('');
     const [importing, setImporting] = useState(false);
+    const pendingImportFile = useRef<File | null>(null);
     const [isReorderMode, setIsReorderMode] = useState(false);
     const [reorderLoading, setReorderLoading] = useState(false);
     const [hasOrderChanges, setHasOrderChanges] = useState(false);
@@ -198,7 +200,7 @@ export default function SpellsPage() {
                 });
             } catch (error) {
                 console.error('Error fetching spells:', error);
-                toast.error(t('admin.spells.messages.fetch_failed'));
+                toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.fetch_failed'));
             } finally {
                 setLoading(false);
             }
@@ -216,7 +218,7 @@ export default function SpellsPage() {
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error deleting spell:', error);
-            toast.error(t('admin.spells.messages.delete_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.delete_failed'));
         }
     };
 
@@ -236,7 +238,7 @@ export default function SpellsPage() {
             URL.revokeObjectURL(url);
         } catch (error) {
             console.error('Error exporting spell:', error);
-            toast.error(t('admin.spells.messages.export_failed'));
+            toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.export_failed'));
         }
     };
 
@@ -254,7 +256,7 @@ export default function SpellsPage() {
 
         setImportDialogOpen(true);
 
-        (window as unknown as { __importFile?: File }).__importFile = file;
+        pendingImportFile.current = file;
     };
 
     const performImport = async (file: File, realmId: string) => {
@@ -276,14 +278,10 @@ export default function SpellsPage() {
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
-            delete (window as unknown as { __importFile?: File }).__importFile;
+            pendingImportFile.current = null;
         } catch (error) {
             console.error('Error importing spell:', error);
-            if (isAxiosError(error) && error.response?.data?.message) {
-                toast.error(error.response.data.message);
-            } else {
-                toast.error(t('admin.spells.messages.import_failed'));
-            }
+            toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.import_failed'));
         } finally {
             setImporting(false);
         }
@@ -295,7 +293,7 @@ export default function SpellsPage() {
             return;
         }
 
-        const file = (window as unknown as { __importFile?: File }).__importFile;
+        const file = pendingImportFile.current;
         if (!file) {
             toast.error(t('admin.spells.messages.no_file_selected'));
             setImportDialogOpen(false);
@@ -334,8 +332,8 @@ export default function SpellsPage() {
             );
             setSpells(sorted);
             return true;
-        } catch {
-            toast.error(t('admin.spells.messages.fetch_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.fetch_failed'));
             return false;
         }
     }, [realmIdParam, t]);
@@ -374,8 +372,8 @@ export default function SpellsPage() {
             setIsReorderMode(false);
             patchFilters({ page: 1 });
             setRefreshKey((prev) => prev + 1);
-        } catch {
-            toast.error(t('admin.spells.order.messages.save_failed'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.spells.order.messages.save_failed'));
         } finally {
             setReorderLoading(false);
         }
@@ -672,7 +670,17 @@ export default function SpellsPage() {
                 </div>
             )}
 
-            <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+            <Dialog
+                open={importDialogOpen}
+                onOpenChange={(open) => {
+                    if (importing) return;
+                    setImportDialogOpen(open);
+                    if (!open) {
+                        pendingImportFile.current = null;
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                    }
+                }}
+            >
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{t('admin.spells.import')}</DialogTitle>

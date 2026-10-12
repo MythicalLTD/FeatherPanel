@@ -25,8 +25,10 @@ use App\Helpers\ApiResponse;
 use App\Config\ConfigFactory;
 use App\Logger\LoggerFactory;
 use App\Config\ConfigInterface;
+use App\Plugins\ObsoleteAddons;
 use App\Helpers\RateLimitConfig;
 use App\Middleware\AuthMiddleware;
+use App\Telemetry\SentryTelemetry;
 use App\Middleware\AdminMiddleware;
 use App\Middleware\WingsMiddleware;
 use App\Middleware\ServerMiddleware;
@@ -143,7 +145,8 @@ class App
                 (int) self::env('DATABASE_PORT', '3306'),
             );
         } catch (\Exception $e) {
-            self::getLogger()->error('Database connection failed: ' . $e->getMessage());
+            SentryTelemetry::captureException($e);
+            self::getLogger()->error('Database connection failed: ' . $e->getMessage(), false);
             http_response_code(500);
             header('Content-Type: application/json');
             header('Cache-Control: no-cache, private');
@@ -237,6 +240,9 @@ class App
             foreach ($pluginDirs as $pluginDir) {
                 if ($pluginDir->isDir() && !$pluginDir->isDot()) {
                     $currentAddonId = $pluginDir->getBasename();
+                    if (ObsoleteAddons::isObsolete($currentAddonId)) {
+                        continue;
+                    }
                     $pluginRoutesDir = $pluginDir->getPathname() . '/Routes';
                     if (is_dir($pluginRoutesDir)) {
                         $pluginIterator = new \RecursiveIteratorIterator(
@@ -286,6 +292,7 @@ class App
 
         try {
             $parameters = $matcher->match($request->getPathInfo());
+            SentryTelemetry::startRequest($request, $this->routes->get($parameters['_route'])->getPath());
             $controller = $parameters['_controller'];
             unset($parameters['_controller'], $parameters['_route']);
 
@@ -347,17 +354,26 @@ class App
             $response = ApiResponse::error('The api route does not exist! [' . $request->getPathInfo() . ']', 'API_ROUTE_NOT_FOUND', 404, null);
         } catch (MethodNotAllowedException $e) {
             $response = ApiResponse::error('Method not allowed for this route. Allowed: ' . implode(', ', $e->getAllowedMethods()), 'METHOD_NOT_ALLOWED', 405, null);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            $eventId = SentryTelemetry::captureException($e);
             self::getLogger()->error(
                 'Exception in router: [' . get_class($e) . '] ' .
                 'Message: ' . $e->getMessage() .
                 ' Code: ' . $e->getCode() .
                 ' File: ' . $e->getFile() .
                 ' Line: ' . $e->getLine() .
-                ' Trace: ' . $e->getTraceAsString()
+                ' Trace: ' . $e->getTraceAsString(),
+                false
             );
-            $response = ApiResponse::exception('An error occurred: ' . $e->getMessage(), $e->getCode(), $e->getTrace());
+            $response = ApiResponse::error('Internal server error', 'INTERNAL_SERVER_ERROR', 500, [
+                'request_id' => defined('REQUEST_ID') ? REQUEST_ID : null,
+                'event_id' => $eventId,
+            ]);
         }
+        if (defined('REQUEST_ID')) {
+            $response->headers->set('X-Request-ID', REQUEST_ID);
+        }
+        SentryTelemetry::finishRequest($response->getStatusCode());
         $response->send();
     }
 

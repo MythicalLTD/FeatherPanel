@@ -64,6 +64,14 @@ interface ConfigInterface
     public const APP_ACCENT_COLOR_LOCK = 'app_accent_color_lock';
     public const APP_THEME_DEFAULT = 'app_theme_default';
     public const APP_THEME_LOCK = 'app_theme_lock';
+    /** Active plugin theme pack id (`pluginId:themeId` or `default`). */
+    public const APP_THEME_PACK_DEFAULT = 'app_theme_pack_default';
+    /** When true, force the configured theme pack for all users. */
+    public const APP_THEME_PACK_LOCK = 'app_theme_pack_lock';
+    /** Active UI pack id (`pluginId:packId` or empty for none). */
+    public const APP_UI_PACK_DEFAULT = 'app_ui_pack_default';
+    /** When true, force the configured UI pack for all users. */
+    public const APP_UI_PACK_LOCK = 'app_ui_pack_lock';
     public const APP_BACKGROUND_TYPE_DEFAULT = 'app_background_type_default';
     public const APP_BACKGROUND_TYPE_LOCK = 'app_background_type_lock';
     /** When false, hide FeatherPanel "powered by" branding (FeatherPanel Premium / Mythic entitlement). */
@@ -282,8 +290,9 @@ interface ConfigInterface
     /** When false, lifecycle hook UI and execution are disabled (default off until enabled by an administrator). */
     public const SERVER_LIFECYCLE_HOOKS_ENABLED = 'server_lifecycle_hooks_enabled';
     /**
-     * When false, the lifecycle Container Shell (docker exec) step type cannot be created/updated
-     * and will not execute. Default off docker exec is a security-sensitive capability.
+     * When false, the Container Shell (docker exec) lifecycle step type and schedule task action
+     * cannot be created/updated and will not execute. Default off: docker exec is a
+     * security-sensitive capability.
      */
     public const SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED = 'server_lifecycle_hooks_container_shell_enabled';
     /**

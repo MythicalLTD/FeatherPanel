@@ -19,6 +19,7 @@ namespace App\Controllers\Quilld;
 
 use App\Chat\WebSpace;
 use App\Helpers\ApiResponse;
+use App\Plugins\Events\Events\QuilldEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -38,6 +39,10 @@ class FeatherQuilldWebSpaceController
         if (!$space) {
             return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
         }
+
+        self::emitPluginEvent(QuilldEvent::onQuilldWebSpaceRetrieved(), [
+            'webspace' => $space,
+        ]);
 
         return ApiResponse::success(WebSpace::toDaemonConfig($space), 'OK', 200);
     }
@@ -60,6 +65,11 @@ class FeatherQuilldWebSpaceController
         }
 
         // Match Wings: raw install object (no envelope) so daemons can parse either style.
+        self::emitPluginEvent(QuilldEvent::onQuilldInstallRetrieved(), [
+            'webspace' => $space,
+            'install' => $install,
+        ]);
+
         return ApiResponse::sendManualResponse($install, 200);
     }
 
@@ -94,6 +104,10 @@ class FeatherQuilldWebSpaceController
 
         $updated = WebSpace::getByUuid($uuid);
 
+        self::emitPluginEvent(QuilldEvent::onQuilldWebSpaceUpdated(), [
+            'webspace' => $updated,
+        ]);
+
         return ApiResponse::success($updated, 'OK', 200);
     }
 
@@ -125,6 +139,13 @@ class FeatherQuilldWebSpaceController
         if (!WebSpace::updateStatus($uuid, $status)) {
             return ApiResponse::error('Failed to update WebSpace status', 'UPDATE_FAILED', 500);
         }
+
+        self::emitPluginEvent(QuilldEvent::onQuilldInstallCompleted(), [
+            'webspace' => WebSpace::getByUuid($uuid) ?? $space,
+            'successful' => $successful,
+            'reinstall' => $reinstall,
+            'status' => $status,
+        ]);
 
         return new Response('', 204);
     }
@@ -190,5 +211,13 @@ class FeatherQuilldWebSpaceController
         }
 
         return ApiResponse::success(['action' => 'clear', 'name' => $name, 'deleted' => $result['deleted'] ?? 0], 'OK', 200);
+    }
+
+    private static function emitPluginEvent(string $event, array $payload): void
+    {
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit($event, $payload);
+        }
     }
 }

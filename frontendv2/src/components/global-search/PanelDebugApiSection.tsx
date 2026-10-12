@@ -16,7 +16,6 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import axios from 'axios';
 import { Copy, Loader2, Play, RotateCcw, Search, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -26,6 +25,7 @@ import { usePanelApiHistory } from '@/hooks/usePanelApiHistory';
 import { entryToReplayDraft, formatPanelApiBody, type PanelApiHistoryEntry } from '@/lib/panel-api-history';
 import { copyToClipboard, cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const;
 
@@ -72,7 +72,7 @@ function BodyBlock({ label, value, onCopy }: { label: string; value: string; onC
                 </Button>
             </div>
             <pre className='custom-scrollbar text-foreground max-h-56 overflow-auto p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap'>
-                {value || '—'}
+                {value || '-'}
             </pre>
         </div>
     );
@@ -140,21 +140,16 @@ export function PanelDebugApiSection() {
             });
             setSelectedId(entry.id);
             if (entry.ok) {
-                toast.success(t('globalSearch.debug.apiRequestSent', { status: String(entry.responseStatus ?? '—') }));
+                toast.success(t('globalSearch.debug.apiRequestSent', { status: String(entry.responseStatus ?? '-') }));
             } else {
                 toast.error(entry.error ?? t('globalSearch.debug.apiRequestFailed'));
             }
         } catch (error) {
             if (error instanceof SyntaxError) {
-                toast.error(t('globalSearch.debug.apiInvalidJson'));
+                toast.error(getApiErrorMessage(error, t, 'globalSearch.debug.apiInvalidJson'));
                 return;
             }
-            const message = axios.isAxiosError(error)
-                ? (error.response?.data?.message ?? error.message)
-                : error instanceof Error
-                  ? error.message
-                  : t('globalSearch.debug.apiRequestFailed');
-            toast.error(typeof message === 'string' ? message : t('globalSearch.debug.apiRequestFailed'));
+            toast.error(getApiErrorMessage(error, t, 'globalSearch.debug.apiRequestFailed'));
             if (entries[0]) {
                 setSelectedId(entries[0].id);
             }
@@ -255,7 +250,7 @@ export function PanelDebugApiSection() {
                                                     statusTone(entry.responseStatus, entry.ok),
                                                 )}
                                             >
-                                                {entry.responseStatus ?? '—'}
+                                                {entry.responseStatus ?? '-'}
                                             </span>
                                             <span className='text-muted-foreground ml-auto text-[10px] tabular-nums'>
                                                 {entry.durationMs} ms
@@ -371,7 +366,7 @@ export function PanelDebugApiSection() {
                                         statusTone(selected.responseStatus, selected.ok),
                                     )}
                                 >
-                                    {selected.responseStatus ?? '—'}
+                                    {selected.responseStatus ?? '-'}
                                 </span>
                                 <span className='text-muted-foreground text-xs tabular-nums'>
                                     {selected.durationMs} ms

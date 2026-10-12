@@ -23,7 +23,7 @@ export interface FormSectionProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 /**
- * Shared wizard/form shell — sober glass without backdrop-blur-3xl / jumbo radii.
+ * Shared wizard/form shell - sober glass without backdrop-blur-3xl / jumbo radii.
  */
 export function FormSection({ children, className, ...props }: FormSectionProps) {
     return (

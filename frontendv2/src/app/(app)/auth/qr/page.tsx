@@ -22,6 +22,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { authApi } from '@/lib/api/auth';
 import { AuthLoadingState } from '@/components/auth/AuthUi';
+import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import {
     isQrChallengeGoneError,
     qrErrorMessage,
@@ -92,9 +93,9 @@ function QrApproveContent() {
                         markExpired();
                         return;
                     }
-                    setError(err.response?.data?.message || t('auth.qr.error'));
+                    setError(qrErrorMessage(err, t, 'auth.qr.error'));
                 } else {
-                    setError(err instanceof Error ? err.message : t('auth.qr.error'));
+                    setError(getApiErrorMessage(err, t, 'auth.qr.error'));
                 }
                 if (!opts?.quiet) setPayload(null);
             } finally {
@@ -121,7 +122,7 @@ function QrApproveContent() {
         void loadChallenge();
     }, [challengeId, isLoading, isSessionChecked, loadChallenge, router, t, user]);
 
-    // Keep phone UI in sync — desktop may refresh a new QR while this page is open.
+    // Keep phone UI in sync - desktop may refresh a new QR while this page is open.
     useEffect(() => {
         if (!challengeId || !payload || outcome) return;
         const id = window.setInterval(() => {
@@ -144,7 +145,7 @@ function QrApproveContent() {
                     markExpired();
                     return;
                 }
-                throw new Error(response.message || t('auth.qr.error'));
+                throw new Error(getApiErrorMessageFromPayload(response, t, 'auth.qr.error'));
             }
             setOutcome('approved');
         } catch (err: unknown) {
@@ -152,7 +153,7 @@ function QrApproveContent() {
                 markExpired();
                 return;
             }
-            setError(qrErrorMessage(err, t('auth.qr.error')));
+            setError(qrErrorMessage(err, t, 'auth.qr.error'));
             setSubmitting(false);
         }
     };
@@ -171,7 +172,7 @@ function QrApproveContent() {
                     markExpired();
                     return;
                 }
-                throw new Error(response.message || t('auth.qr.error'));
+                throw new Error(getApiErrorMessageFromPayload(response, t, 'auth.qr.error'));
             }
             setOutcome('denied');
         } catch (err: unknown) {
@@ -179,7 +180,7 @@ function QrApproveContent() {
                 markExpired();
                 return;
             }
-            setError(qrErrorMessage(err, t('auth.qr.error')));
+            setError(qrErrorMessage(err, t, 'auth.qr.error'));
             setSubmitting(false);
         }
     };

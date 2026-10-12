@@ -34,6 +34,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import type { SubdomainCreateRequest, SubdomainOverview } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 export default function CreateSubdomainPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -104,7 +105,7 @@ export default function CreateSubdomainPage() {
             router.push(`/server/${uuidShort}/subdomains`);
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            const msg = axiosError.response?.data?.message || t('serverSubdomains.createFailed');
+            const msg = getApiErrorMessage(axiosError, t, 'serverSubdomains.createFailed');
             toast.error(msg);
         } finally {
             setSaving(false);
@@ -183,6 +184,7 @@ export default function CreateSubdomainPage() {
                             disabled={saving || limitReached}
                             loading={saving}
                             className='order-1 w-full sm:order-2 sm:w-auto'
+                            data-fp-save-shortcut
                         >
                             {saving ? (
                                 t('common.saving')
@@ -324,6 +326,7 @@ export default function CreateSubdomainPage() {
                             disabled={saving || limitReached}
                             loading={saving}
                             className='h-12 w-full text-[10px]'
+                            data-fp-save-shortcut
                         >
                             {saving ? (
                                 t('common.saving')

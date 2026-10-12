@@ -82,6 +82,10 @@ class PluginManager
                     return false;
                 }
 
+                if (ObsoleteAddons::isObsolete($file)) {
+                    return false;
+                }
+
                 // Only return directories (plugins are directories)
                 return is_dir($pluginsDir . '/' . $file);
             }));
@@ -145,6 +149,10 @@ class PluginManager
                 return false;
             }
 
+            if (ObsoleteAddons::isObsolete($file)) {
+                return false;
+            }
+
             // Only return directories (plugins are directories)
             return is_dir($pluginsDir . '/' . $file);
         });
@@ -152,6 +160,10 @@ class PluginManager
 
     private function processPlugin(string $plugin, $eventManager): void
     {
+        if (ObsoleteAddons::isObsolete($plugin)) {
+            return;
+        }
+
         if (!PluginConfig::isValidIdentifier($plugin)) {
             $this->logger->warning('Invalid plugin identifier: ' . $plugin);
 

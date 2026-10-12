@@ -196,4 +196,92 @@ class WebSpaceEvent implements PluginEvent
     {
         return 'featherpanel:webspace:console:access';
     }
+
+    /**
+     * Callback: string|null user uuid, string webspace uuid, string uuid_short, array zone.
+     */
+    public static function onWebSpaceDnsZoneLinked(): string
+    {
+        return 'featherpanel:webspace:dns:zone:linked';
+    }
+
+    /**
+     * Callback: string|null user uuid, string webspace uuid, string uuid_short, int zone id.
+     */
+    public static function onWebSpaceDnsZoneUnlinked(): string
+    {
+        return 'featherpanel:webspace:dns:zone:unlinked';
+    }
+
+    /**
+     * Callback: string|null user uuid, string webspace uuid, string uuid_short, array record.
+     */
+    public static function onWebSpaceDnsRecordCreated(): string
+    {
+        return 'featherpanel:webspace:dns:record:created';
+    }
+
+    /**
+     * Callback: string|null user uuid, string webspace uuid, string uuid_short, array record.
+     */
+    public static function onWebSpaceDnsRecordUpdated(): string
+    {
+        return 'featherpanel:webspace:dns:record:updated';
+    }
+
+    /**
+     * Callback: string|null user uuid, string webspace uuid, string uuid_short, string record id.
+     */
+    public static function onWebSpaceDnsRecordDeleted(): string
+    {
+        return 'featherpanel:webspace:dns:record:deleted';
+    }
+
+    /**
+     * Callback: string|null user uuid, string webspace uuid, string uuid_short, array account.
+     */
+    public static function onWebSpaceSftpAccountCreated(): string
+    {
+        return 'featherpanel:webspace:sftp:account:created';
+    }
+
+    /**
+     * Callback: string|null user uuid, string webspace uuid, string uuid_short, array account.
+     */
+    public static function onWebSpaceSftpAccountUpdated(): string
+    {
+        return 'featherpanel:webspace:sftp:account:updated';
+    }
+
+    /**
+     * Callback: string|null user uuid, string webspace uuid, string uuid_short, int account id.
+     */
+    public static function onWebSpaceSftpAccountDeleted(): string
+    {
+        return 'featherpanel:webspace:sftp:account:deleted';
+    }
+
+    /**
+     * Callback: string|null user uuid, string webspace uuid, string uuid_short, int account id.
+     */
+    public static function onWebSpaceSftpPasswordReset(): string
+    {
+        return 'featherpanel:webspace:sftp:password:reset';
+    }
+
+    /**
+     * Callback: string|null user uuid, string webspace uuid, string uuid_short, string app, array context.
+     */
+    public static function onWebSpaceAppInstalled(): string
+    {
+        return 'featherpanel:webspace:app:installed';
+    }
+
+    /**
+     * Callback: string|null user uuid, string webspace uuid, string uuid_short, string app, array context.
+     */
+    public static function onWebSpaceAppUpdated(): string
+    {
+        return 'featherpanel:webspace:app:updated';
+    }
 }

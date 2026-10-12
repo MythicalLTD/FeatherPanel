@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import type { NavigationItem } from '@/types/navigation';
 
-export type SidebarScope = 'admin' | 'main' | 'server';
+export type SidebarScope = 'admin' | 'main' | 'server' | 'vds' | 'webspace';
 
 export type SidebarCustomLink = {
     id: string;
@@ -125,7 +125,7 @@ export function applySidebarCustomization(
             if (ai !== bi) return ai - bi;
             return (a.priority ?? 0) - (b.priority ?? 0);
         });
-        next = next.map((item, index) => ({ ...item, priority: index }));
+        next = next.map((item, index) => ({ ...item, priority: index, sidebarOrderIndex: index }));
     }
 
     return next;

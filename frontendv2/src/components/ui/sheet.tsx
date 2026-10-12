@@ -20,16 +20,35 @@ import { Dialog as HeadlessDialog, DialogPanel, Transition, TransitionChild } fr
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { triggerSaveShortcutTarget, useSaveShortcut } from '@/hooks/useSaveShortcut';
 
 interface SheetProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     children: React.ReactNode;
     className?: string;
+    /**
+     * When true (default), Ctrl/Cmd+S submits a child form marked with
+     * `data-fp-save-shortcut` while the sheet is open.
+     */
+    enableSaveShortcut?: boolean;
 }
 
-export function Sheet({ open, onOpenChange, children, className }: SheetProps) {
+export function Sheet({ open, onOpenChange, children, className, enableSaveShortcut = true }: SheetProps) {
     const { t } = useTranslation();
+    const contentRef = React.useRef<HTMLDivElement>(null);
+
+    useSaveShortcut(
+        () => {
+            // Always claim while open so we don't save a page form behind the sheet.
+            triggerSaveShortcutTarget(contentRef.current ?? undefined);
+            return true;
+        },
+        {
+            enabled: open && enableSaveShortcut,
+            capture: true,
+        },
+    );
 
     return (
         <Transition show={open} as={React.Fragment}>
@@ -64,7 +83,10 @@ export function Sheet({ open, onOpenChange, children, className }: SheetProps) {
                                         className,
                                     )}
                                 >
-                                    <div className='bg-background/95 border-border/50 flex h-full flex-col overflow-y-scroll border-l py-6 shadow-2xl backdrop-blur-xl'>
+                                    <div
+                                        ref={contentRef}
+                                        className='bg-background/95 border-border/50 flex h-full flex-col overflow-y-scroll border-l py-6 shadow-2xl backdrop-blur-xl'
+                                    >
                                         <div className='px-4 sm:px-6'>
                                             <div className='flex items-start justify-between'>
                                                 <div className='absolute top-6 right-6 z-20 ml-3 flex h-7 items-center'>

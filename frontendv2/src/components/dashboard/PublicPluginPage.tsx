@@ -17,6 +17,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
 import { getPluginIframeThemeOverrideCss } from '@/lib/pluginIframeThemeCss';
@@ -40,7 +41,8 @@ function buildIframeSrc(page: PluginPublicPage, theme: string): string {
 }
 
 export default function PublicPluginPage({ page }: PublicPluginPageProps) {
-    const { theme } = useTheme();
+    const { t } = useTranslation();
+    const { theme, themePack } = useTheme();
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const challengeRetryCountRef = useRef(0);
     const challengeRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -91,7 +93,10 @@ export default function PublicPluginPage({ page }: PublicPluginPageProps) {
 
             const style = iframeDoc.createElement('style');
             style.id = 'featherpanel-theme-override';
-            style.textContent = getPluginIframeThemeOverrideCss(theme);
+            style.textContent = getPluginIframeThemeOverrideCss(
+                theme,
+                theme === 'dark' ? themePack?.tokens.dark : themePack?.tokens.light,
+            );
             if (iframeDoc.head) {
                 iframeDoc.head.appendChild(style);
             }
@@ -102,11 +107,11 @@ export default function PublicPluginPage({ page }: PublicPluginPageProps) {
 
     useEffect(() => {
         if (iframeRef.current?.contentWindow) {
-            iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+            iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, window.location.origin);
             injectThemeStyles();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [theme]);
+    }, [theme, themePack]);
 
     const onIframeLoad = () => {
         if (iframeRef.current) {
@@ -126,7 +131,7 @@ export default function PublicPluginPage({ page }: PublicPluginPageProps) {
                         return;
                     }
 
-                    setIframeError('Cloudflare verification is still in progress. Please wait a moment and try again.');
+                    setIframeError(t('errors.plugin.cloudflare_challenge'));
                     setIframeLoading(false);
                     return;
                 }
@@ -138,7 +143,7 @@ export default function PublicPluginPage({ page }: PublicPluginPageProps) {
         challengeRetryCountRef.current = 0;
         setIframeError(null);
         setIframeLoading(false);
-        iframeRef.current?.contentWindow?.postMessage({ type: 'featherpanel-theme', theme }, '*');
+        iframeRef.current?.contentWindow?.postMessage({ type: 'featherpanel-theme', theme }, window.location.origin);
         setTimeout(() => injectThemeStyles(), 100);
     };
 
@@ -163,7 +168,7 @@ export default function PublicPluginPage({ page }: PublicPluginPageProps) {
                 <p className='text-muted-foreground text-sm'>{iframeError}</p>
                 <Button type='button' variant='outline' onClick={retryLoad}>
                     <RefreshCw className='mr-2 h-4 w-4' />
-                    Retry
+                    {t('common.retry')}
                 </Button>
             </div>
         );
