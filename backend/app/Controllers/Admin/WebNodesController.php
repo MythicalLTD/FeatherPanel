@@ -937,7 +937,10 @@ class WebNodesController
         }
 
         $mailHostId = null;
-        if (strtolower($packageId) === 'mailserver') {
+        // Both mail stacks sit behind the same daemon API (/api/mail/*), so a node's mail host is
+        // registered for either package. Which backend FeatherQuilld drives is a node setting
+        // (system.mail.backend), not a panel one.
+        if (in_array(strtolower($packageId), ['mailserver', 'mailcow'], true)) {
             $mailHostId = MailHost::ensureNodeMailHost($id, $webNode);
         }
         if (strtolower($packageId) === 'webmail') {

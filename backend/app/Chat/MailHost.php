@@ -210,7 +210,8 @@ class MailHost
     }
 
     /**
-     * Create a node-mode mail host for a web node after mailserver package install.
+     * Create a node-mode mail host for a web node after a mail stack package install
+     * (`mailserver` for docker-mailserver or `mailcow`); the daemon serves /api/mail/* for both.
      *
      * @param array<string, mixed> $webNode
      */
