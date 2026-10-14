@@ -28,6 +28,7 @@ use App\Helpers\PanelAssetUrl;
 use App\Config\ConfigInterface;
 use App\Plugins\PluginSettings;
 use App\Helpers\AddonPackageHelper;
+use App\Helpers\SafeUrlFetcher;
 use App\Plugins\PluginDependencies;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\PluginFrontendScanner;
@@ -573,6 +574,10 @@ class PluginsController
             return $demoDeny;
         }
 
+        if (!preg_match('/^[a-zA-Z0-9_\-]+$/', $identifier)) {
+            return ApiResponse::error('Invalid addon identifier', 'INVALID_IDENTIFIER', 400);
+        }
+
         try {
             if (!defined('APP_ADDONS_DIR')) {
                 define('APP_ADDONS_DIR', dirname(__DIR__, 3) . '/storage/addons');
@@ -626,6 +631,10 @@ class PluginsController
 
     public function export(Request $request, string $identifier): Response
     {
+        if (!preg_match('/^[a-zA-Z0-9_\-]+$/', $identifier)) {
+            return ApiResponse::error('Invalid addon identifier', 'INVALID_IDENTIFIER', 400);
+        }
+
         try {
             // Restrict export to developer mode only.
             $config = App::getInstance(true)->getConfig();
@@ -833,13 +842,7 @@ class PluginsController
                 return ApiResponse::error('Failed to prepare addons directory', 'ADDONS_DIR_CREATE_FAILED', 500);
             }
 
-            $context = stream_context_create([
-                'http' => [
-                    'timeout' => 30,
-                    'ignore_errors' => true,
-                ],
-            ]);
-            $fileContent = @file_get_contents($url, false, $context);
+            $fileContent = SafeUrlFetcher::fetch($url);
             if ($fileContent === false) {
                 return ApiResponse::error('Failed to download file from URL', 'DOWNLOAD_FAILED', 500);
             }
@@ -896,6 +899,10 @@ class PluginsController
     )]
     public function resyncSymlinks(Request $request, string $identifier): Response
     {
+        if (!preg_match('/^[a-zA-Z0-9_\-]+$/', $identifier)) {
+            return ApiResponse::error('Invalid plugin identifier', 'INVALID_IDENTIFIER', 400);
+        }
+
         try {
             if (!defined('APP_ADDONS_DIR')) {
                 define('APP_ADDONS_DIR', dirname(__DIR__, 3) . '/storage/addons');

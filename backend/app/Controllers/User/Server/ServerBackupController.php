@@ -1002,6 +1002,16 @@ class ServerBackupController
             return ApiResponse::error('Backup not found', 'BACKUP_NOT_FOUND', 404);
         }
 
+        // Unlocking removes the protection against deletion/restoration, so it needs
+        // one of the permissions the lock guards.
+        $permissionCheck = $this->checkAnyPermission($request, $server, [
+            SubuserPermissions::BACKUP_DELETE,
+            SubuserPermissions::BACKUP_RESTORE,
+        ]);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Update backup to unlocked status
         if (!Backup::updateBackup($backup['id'], ['is_locked' => 0])) {
             return ApiResponse::error('Failed to unlock backup', 'UNLOCK_FAILED', 500);

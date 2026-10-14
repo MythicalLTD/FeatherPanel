@@ -16,6 +16,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use App\Controllers\User\Auth\LdapController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
@@ -29,7 +30,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new LdapController())->login($request);
         },
-        ['PUT']
+        ['PUT'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json (same as the password login)
+        'user-auth'
     );
 
     App::getInstance(true)->registerAuthRoute(

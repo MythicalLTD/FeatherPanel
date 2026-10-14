@@ -26,6 +26,10 @@ namespace App\Helpers;
  */
 class AddonPackageHelper
 {
+    /** Hard limits that legitimate addon packages stay far below. */
+    public const MAX_ENTRIES = 20000;
+    public const MAX_TOTAL_UNCOMPRESSED_BYTES = 1073741824; // 1 GiB
+
     /**
      * Extract a .fpa archive into a destination directory.
      *
@@ -44,12 +48,109 @@ class AddonPackageHelper
             return false;
         }
 
+        // Reject archives with traversal/absolute paths or symlink entries before
+        // anything touches the filesystem (Zip-Slip guard for both extraction paths).
+        if (class_exists(\ZipArchive::class)) {
+            $validator = new \ZipArchive();
+            if ($validator->open($archivePath) === true) {
+                $safe = self::entriesAreSafe($validator, $entries);
+                $validator->close();
+                if (!$safe) {
+                    return false;
+                }
+            }
+        }
+
         if (self::extractWithZipArchive($archivePath, $destinationDir, $password, $entries)) {
             return true;
         }
 
         // Fallback for legacy ZipCrypto packages if ZipArchive is unavailable/broken
         return self::extractWithUnzip($archivePath, $destinationDir, $password, $entries);
+    }
+
+    /**
+     * Validate that the selected archive entries cannot escape the destination
+     * directory (no traversal, no absolute paths, no symlinks) and stay within
+     * sane count/size limits. Returns false when the archive must be rejected.
+     *
+     * @param list<string>|null $entries
+     */
+    private static function entriesAreSafe(\ZipArchive $zip, ?array $entries): bool
+    {
+        if ($zip->numFiles > self::MAX_ENTRIES) {
+            return false;
+        }
+
+        $selected = ($entries === null || $entries === []) ? null : $entries;
+        $totalSize = 0;
+
+        for ($i = 0; $i < $zip->numFiles; ++$i) {
+            $name = $zip->getNameIndex($i);
+            if (!is_string($name)) {
+                return false;
+            }
+            if ($selected !== null && !in_array($name, $selected, true)) {
+                continue;
+            }
+            if (!self::isSafeEntryName($name)) {
+                return false;
+            }
+            if (self::isSymlinkEntry($zip, $i)) {
+                return false;
+            }
+
+            $stat = $zip->statIndex($i);
+            if (is_array($stat) && isset($stat['size'])) {
+                $totalSize += (int) $stat['size'];
+                if ($totalSize > self::MAX_TOTAL_UNCOMPRESSED_BYTES) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private static function isSafeEntryName(string $name): bool
+    {
+        if ($name === '' || str_contains($name, "\0")) {
+            return false;
+        }
+
+        $normalized = str_replace('\\', '/', $name);
+
+        if (str_starts_with($normalized, '/')) {
+            return false;
+        }
+        // Windows drive letters (C:\...) and UNC-ish prefixes.
+        if (preg_match('#^[A-Za-z]:#', $normalized) === 1) {
+            return false;
+        }
+
+        foreach (explode('/', $normalized) as $segment) {
+            if ($segment === '..') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static function isSymlinkEntry(\ZipArchive $zip, int $index): bool
+    {
+        if (!method_exists($zip, 'getExternalAttributesIndex')) {
+            return false;
+        }
+
+        $opsys = 0;
+        $attr = 0;
+        if (!$zip->getExternalAttributesIndex($index, $opsys, $attr)) {
+            return false;
+        }
+
+        // Unix host (3): S_IFLNK lives in the high 16 bits of the external attributes.
+        return $opsys === 3 && (($attr >> 16) & 0xF000) === 0xA000;
     }
 
     /**

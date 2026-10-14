@@ -3379,15 +3379,31 @@ This plugin includes:
         // Security: Check file extension and size
         $maxFileSize = 5 * 1024 * 1024; // 5MB
 
-        $originalName = $uploadedFile->getClientOriginalName();
+        $originalName = (string) $uploadedFile->getClientOriginalName();
         $fileSize = $uploadedFile->getSize(); // Get size BEFORE moving the file
 
         if ($fileSize > $maxFileSize) {
             return ['success' => false, 'message' => 'File size too large. Maximum size: 5MB'];
         }
 
-        // Sanitize filename
-        $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
+        // Security: the Public folder is served/browsable, so only static web
+        // assets are allowed. Anything executable (.php/.phar/.phtml/...) is rejected.
+        $allowedExtensions = [
+            'css', 'js', 'mjs', 'map', 'json', 'html', 'htm', 'txt', 'md', 'xml', 'csv', 'webmanifest',
+            'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'avif', 'ico', 'bmp',
+            'woff', 'woff2', 'ttf', 'otf', 'eot',
+        ];
+        $extension = strtolower(pathinfo(basename($originalName), PATHINFO_EXTENSION));
+        if ($extension === '' || !in_array($extension, $allowedExtensions, true)) {
+            return ['success' => false, 'message' => 'File type not allowed. Allowed types: ' . implode(', ', $allowedExtensions)];
+        }
+
+        // Sanitize filename (drop any directory component so the file cannot escape Public/)
+        $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($originalName));
+        $filename = (string) $filename;
+        if ($filename === '' || $filename === '.' || $filename === '..') {
+            return ['success' => false, 'message' => 'Invalid file name'];
+        }
         $filepath = $pluginPath . '/Public/' . $filename;
 
         // Ensure Public directory exists
@@ -3395,6 +3411,16 @@ This plugin includes:
         if (!is_dir($publicDir)) {
             mkdir($publicDir, 0755, true);
         }
+
+        // Target path must stay inside the plugin's Public directory.
+        $realPublicDir = realpath($publicDir);
+        if ($realPublicDir === false) {
+            return ['success' => false, 'message' => 'Failed to prepare public directory'];
+        }
+        if (dirname($realPublicDir . DIRECTORY_SEPARATOR . $filename) !== $realPublicDir) {
+            return ['success' => false, 'message' => 'Invalid file path'];
+        }
+        $publicDir = $realPublicDir;
 
         try {
             $uploadedFile->move($publicDir, $filename);

@@ -583,7 +583,9 @@ class WebSpaceMailboxController
 
     public function generateWebmailToken(Request $request, string $uuidShort, int $mailboxId): Response
     {
-        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::MAIL_READ);
+        // The token embeds the mailbox password, so it must require the same
+        // permission as viewing the password (mail.view_password).
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::MAIL_VIEW_PASSWORD);
         if ($resolved instanceof Response) {
             return $resolved;
         }

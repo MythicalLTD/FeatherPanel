@@ -254,6 +254,18 @@ interface ConfigInterface
     public const OIDC_DISABLE_LOCAL_LOGIN = 'oidc_disable_local_login';
 
     /**
+     * API clients: legacy compatibility switch.
+     *
+     * When true an API client may also authenticate with its own `public_key` as a
+     * Bearer token (old behaviour). The public key is not a secret (it is printed
+     * in redirect URLs for Calagopus compatible integrations), which is why this is
+     * off by default and only exists to rescue a badly configured legacy client.
+     * Only private keys are accepted by default; the public_key redirect URL is not
+     * affected by this switch.
+     */
+    public const API_CLIENTS_ALLOW_PUBLIC_KEY_AUTH = 'api_clients_allow_public_key_auth';
+
+    /**
      * Servers Related Configs.
      */
     public const SERVER_ALLOW_EGG_CHANGE = 'server_allow_egg_change';

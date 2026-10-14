@@ -70,8 +70,12 @@ class CloudFlareRealIP
         // Cloudflare - highest priority
         if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
             $cfIP = $_SERVER['HTTP_CF_CONNECTING_IP'];
-            // If we're behind Cloudflare, trust their header
-            if (self::isFromCloudflare($remoteAddr) || self::isValidIP($cfIP)) {
+            // The header is only trusted when the direct peer is Cloudflare
+            // itself or a local/trusted proxy (e.g. cloudflared on 127.0.0.1).
+            // Accepting it from every sender merely because it looks like an IP
+            // let any direct caller pick their own address, which fed the
+            // API-key IP allowlist, the rate-limit key and the audit logs.
+            if (self::isFromCloudflare($remoteAddr) || (self::shouldTrustProxyHeaders() && self::isValidIP($cfIP))) {
                 return $cfIP;
             }
         }
@@ -227,35 +231,39 @@ class CloudFlareRealIP
     private static function shouldTrustProxyHeaders()
     {
         // Check environment variable first
-        $trustProxy = $_ENV['TRUST_PROXY_HEADERS'] ?? '';
+        $trustProxy = $_ENV['TRUST_PROXY_HEADERS'] ?? getenv('TRUST_PROXY_HEADERS') ?: '';
         if ($trustProxy === 'true' || $trustProxy === '1') {
             return true;
         }
 
-        // Auto-detect if we're behind a reverse proxy
-        $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '';
+        // Auto-detect: only when the direct peer is a local/private address we
+        // can rely on (nginx/Caddy/Traefik on the same host, Docker network).
+        // Previously the mere presence of a proxy header was enough to trust it,
+        // so any client could spoof X-Forwarded-For by sending the header itself.
+        // Installations whose proxy runs on another host set TRUST_PROXY_HEADERS=true.
+        return self::isTrustedProxyPeer($_SERVER['REMOTE_ADDR'] ?? '');
+    }
 
-        // If remote_addr is localhost, we're likely behind a proxy
+    /**
+     * Whether the direct peer address belongs to an infrastructure network we
+     * treat as a trusted proxy (loopback, private, link-local, unique-local).
+     */
+    private static function isTrustedProxyPeer(string $remoteAddr): bool
+    {
+        if ($remoteAddr === '') {
+            return false;
+        }
+
         if ($remoteAddr === '127.0.0.1' || $remoteAddr === '::1') {
             return true;
         }
 
-        // If we have any proxy headers, we're likely behind a proxy
-        $proxyHeaders = [
-            'HTTP_X_FORWARDED_FOR',
-            'HTTP_X_REAL_IP',
-            'HTTP_X_CLIENT_IP',
-            'HTTP_CLIENT_IP',
-            'HTTP_CF_CONNECTING_IP',
-        ];
-
-        foreach ($proxyHeaders as $header) {
-            if (!empty($_SERVER[$header])) {
-                return true;
-            }
+        if (!filter_var($remoteAddr, FILTER_VALIDATE_IP)) {
+            return false;
         }
 
-        return false;
+        // Returns false for private and reserved ranges - exactly what we want here.
+        return filter_var($remoteAddr, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
     }
 
     /**

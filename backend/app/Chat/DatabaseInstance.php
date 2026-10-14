@@ -300,6 +300,12 @@ class DatabaseInstance
             $params['node_id'] = $nodeId;
         }
 
+        // Security: only known columns may reach the ORDER BY clause.
+        if (!in_array($sortBy, ['id', 'name', 'node_id', 'database_type', 'database_port', 'database_username', 'database_host', 'database_subdomain', 'created_at', 'updated_at'], true)) {
+            $sortBy = 'name';
+        }
+        $sortOrder = strtoupper($sortOrder) === 'DESC' ? 'DESC' : 'ASC';
+
         $sql .= ' ORDER BY d.' . $sortBy . ' ' . $sortOrder;
         $sql .= ' LIMIT :limit OFFSET :offset';
 

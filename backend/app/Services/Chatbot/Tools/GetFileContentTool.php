@@ -19,9 +19,11 @@ namespace App\Services\Chatbot\Tools;
 
 use App\Chat\Node;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Services\Wings\Wings;
 use App\Helpers\ServerGateway;
 use App\Helpers\WingsUrlHelper;
+use App\Helpers\SubuserPermissionChecker;
 
 /**
  * Tool to get file content.
@@ -77,6 +79,14 @@ class GetFileContentTool implements ToolInterface
             return [
                 'success' => false,
                 'error' => 'Access denied to server',
+            ];
+        }
+
+        // Enforce the same subuser permission as the REST file endpoints.
+        if (!SubuserPermissionChecker::hasPermission((int) $user['id'], (int) $server['id'], SubuserPermissions::FILE_READ_CONTENT)) {
+            return [
+                'success' => false,
+                'error' => 'You do not have permission to perform this action',
             ];
         }
 

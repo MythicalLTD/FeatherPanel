@@ -154,6 +154,7 @@ class ApiClientController
     private const OAUTH2_DEVICE_EXPIRES_IN = 900;
     private const OAUTH2_DEVICE_POLL_INTERVAL = 5;
     private const OAUTH2_DEVICE_USER_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    private const OAUTH2_REQUEST_EXPIRES_IN = 86400; // 24h validity for interactive consent requests
 
     #[OA\Get(
         path: '/api/user/api-clients',
@@ -1002,7 +1003,7 @@ class ApiClientController
     #[OA\Post(
         path: '/api/user/api-clients/validate',
         summary: 'Validate API client',
-        description: 'Validate an API client by public key and return associated user information. This endpoint does not require authentication.',
+        description: 'Validate an API client by public key. This endpoint does not require authentication and only reports whether the key belongs to a valid API client (`valid`); no owner data is returned (FP-19).',
         tags: ['User - API Clients'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -1034,30 +1035,25 @@ class ApiClientController
         // Find the API client by public key
         $apiClient = ApiClient::getApiClientByPublicKey($publicKey);
         if (!$apiClient) {
-            return ApiResponse::error('Invalid API client', 'INVALID_API_CLIENT', 404);
+            // FP-19: this endpoint is reachable without authentication, so the
+            // answer is reduced to a boolean. The status code (404) stays as it
+            // was to not break external apps that only look at it.
+            return ApiResponse::error('Invalid API client', 'INVALID_API_CLIENT', 404, [
+                'valid' => false,
+            ]);
         }
 
         // Get user information
         $user = User::getUserByUuid($apiClient['user_uuid']);
         if (!$user) {
-            return ApiResponse::error('API client user not found', 'USER_NOT_FOUND', 404);
+            return ApiResponse::error('API client user not found', 'USER_NOT_FOUND', 404, [
+                'valid' => false,
+            ]);
         }
 
-        // Return validation result (without sensitive data)
+        // FP-19: no owner data (id/name/uuid/username/email) is returned any more.
         return ApiResponse::success([
             'valid' => true,
-            'api_client' => [
-                'id' => $apiClient['id'],
-                'name' => $apiClient['name'],
-                'user_uuid' => $apiClient['user_uuid'],
-                'created_at' => $apiClient['created_at'],
-            ],
-            'user' => [
-                'id' => $user['id'],
-                'username' => $user['username'],
-                'email' => $user['email'],
-                'uuid' => $user['uuid'],
-            ],
         ], 'API client validated successfully', 200);
     }
 
@@ -1419,8 +1415,7 @@ class ApiClientController
             'notify_foreign_ip' => $normalized['notify_foreign_ip'],
             'request_state' => null,
             'request_nonce' => $normalized['mode'],
-            // Kept for schema compatibility; no expiry logic is enforced.
-            'expires_at' => date('Y-m-d H:i:s', strtotime('+10 years')),
+            'expires_at' => gmdate('Y-m-d H:i:s', time() + self::OAUTH2_REQUEST_EXPIRES_IN),
         ]);
 
         if ($authorizationId === false) {
@@ -1480,6 +1475,9 @@ class ApiClientController
         }
         if ($authorization['user_uuid'] !== $user['uuid']) {
             return ApiResponse::error('You are not allowed to approve this request', 'UNAUTHORIZED_ACCESS', 403);
+        }
+        if ($this->oauth2RequestExpired($authorization)) {
+            return ApiResponse::error('Authorization request has expired', 'AUTHORIZATION_REQUEST_EXPIRED', 400);
         }
         if ($authorization['status'] !== 'pending') {
             if ($authorization['status'] === 'approved') {
@@ -1569,6 +1567,9 @@ class ApiClientController
         }
         if ($authorization['user_uuid'] !== $user['uuid']) {
             return ApiResponse::error('You are not allowed to deny this request', 'UNAUTHORIZED_ACCESS', 403);
+        }
+        if ($this->oauth2RequestExpired($authorization)) {
+            return ApiResponse::error('Authorization request has expired', 'AUTHORIZATION_REQUEST_EXPIRED', 400);
         }
         if ($authorization['status'] !== 'pending') {
             $mode = $this->resolveOAuth2Mode($authorization);
@@ -1777,6 +1778,21 @@ class ApiClientController
     private function generateOpaqueToken(string $prefix): string
     {
         return $prefix . bin2hex(random_bytes(32));
+    }
+
+    /**
+     * Whether a stored OAuth2 authorization request has passed its expiry.
+     */
+    private function oauth2RequestExpired(array $authorization): bool
+    {
+        $expiresAt = $authorization['expires_at'] ?? null;
+        if (!is_string($expiresAt) || $expiresAt === '') {
+            return false;
+        }
+
+        $timestamp = strtotime($expiresAt);
+
+        return $timestamp !== false && $timestamp < time();
     }
 
     private function resolveOAuth2Mode(array $authorization): string

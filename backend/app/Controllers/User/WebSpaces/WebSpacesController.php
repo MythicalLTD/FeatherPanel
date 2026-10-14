@@ -998,6 +998,11 @@ class WebSpacesController
         $space = $resolved['space'];
         $uuid = (string) $space['uuid'];
 
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::SETTINGS_UPDATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
         $content = json_decode($request->getContent(), true);
         if (!is_array($content)) {
             $content = [];
