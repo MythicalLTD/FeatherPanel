@@ -67,6 +67,7 @@ const GROUP_ORDER = [
 
 export function SidebarBottomDock({
     collapsed,
+    dockDisplay,
     dockSize,
     sidebarGlow,
     groupedItems,
@@ -97,7 +98,7 @@ export function SidebarBottomDock({
     );
 
     const iconPx = getDockIconSize(dockSize, itemCount, collapsed);
-    const showItemLabels = !collapsed;
+    const showItemLabels = !collapsed && dockDisplay === 'labels';
     const collapseLabel = collapsed ? t('navbar.expandSidebar') : t('navbar.collapseSidebar');
 
     const renderGroupTitle = (group: string) => {
@@ -121,7 +122,7 @@ export function SidebarBottomDock({
     };
 
     const renderItemContent = (item: NavigationItem) => (
-        <span className='relative flex items-center justify-center text-current'>
+        <span className='relative flex items-center justify-center leading-none text-current'>
             <PanelIcon
                 source={item}
                 size={iconPx}

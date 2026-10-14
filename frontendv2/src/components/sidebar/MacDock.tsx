@@ -126,7 +126,7 @@ export function MacDockProvider({
         <MacDockContext.Provider value={{ metrics, expanded, showItemLabels, sidebarGlow }}>
             <div
                 ref={shellRef}
-                className={cn('fp-mac-dock-provider flex min-w-0 items-end overflow-visible', className)}
+                className={cn('fp-mac-dock-provider flex min-w-0 items-center overflow-visible', className)}
                 style={{
                     minHeight: metrics.tile + metrics.padY * 2 + (showItemLabels ? metrics.caption + 2 : 0),
                     gap: metrics.gap,
@@ -144,21 +144,18 @@ export type MacDockTrackProps = {
 };
 
 export function MacDockTrack({ className, children }: MacDockTrackProps) {
-    const { metrics, showItemLabels } = useMacDockContext();
+    const { metrics } = useMacDockContext();
     const scrollRef = useHorizontalWheelScroll<HTMLDivElement>();
-    const captionSpace = showItemLabels ? metrics.caption + 2 : 0;
 
     return (
         <div className={cn('fp-mac-dock-track relative min-w-0 flex-1 overflow-visible', className)}>
             <div
                 ref={scrollRef}
-                className='fp-mac-dock-track-scroll hide-scrollbar flex h-full items-end overflow-x-auto overflow-y-visible'
+                className='fp-mac-dock-track-scroll hide-scrollbar flex h-full items-center overflow-x-auto overflow-y-visible'
                 style={{ gap: metrics.gap, paddingBlock: metrics.padY }}
             >
-                <div
-                    className='flex items-end overflow-visible'
-                    style={{ gap: metrics.gap, paddingBottom: captionSpace ? 0 : undefined }}
-                >
+                {/* mx-auto centers when the row fits; when it overflows, margins collapse and scroll starts at the left */}
+                <div className='mx-auto flex min-w-max items-center overflow-visible' style={{ gap: metrics.gap }}>
                     {children}
                 </div>
             </div>
@@ -175,7 +172,7 @@ export function MacDockCategory({ label }: MacDockCategoryProps) {
 
     return (
         <div
-            className='fp-mac-dock-category flex shrink-0 items-center gap-1.5 self-center px-1'
+            className='fp-mac-dock-category flex shrink-0 items-center gap-1.5 px-1'
             role='separator'
             aria-label={label}
         >
@@ -267,6 +264,8 @@ export function MacDockItem({ label, active, className, children }: MacDockItemP
     const ref = useRef<HTMLDivElement>(null);
     const [hovered, setHovered] = useState(false);
     const showTooltip = hovered && !showItemLabels;
+    // Labels need more than the tile width or neighbors collide / truncate into each other.
+    const itemWidth = showItemLabels ? metrics.tile + 28 : metrics.tile;
 
     const glowClass =
         sidebarGlow === 'accent' && active
@@ -280,20 +279,20 @@ export function MacDockItem({ label, active, className, children }: MacDockItemP
             ref={ref}
             className={cn(
                 'fp-mac-dock-item relative shrink-0 overflow-visible transition-transform duration-150 ease-out',
-                hovered && 'z-20 scale-[1.28]',
+                hovered && 'z-20 scale-[1.18]',
                 className,
             )}
-            style={{ width: metrics.tile, transformOrigin: 'center bottom' }}
+            style={{ width: itemWidth, transformOrigin: 'center center' }}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             onFocus={() => setHovered(true)}
             onBlur={() => setHovered(false)}
         >
             <DockTooltip label={label} anchorRef={ref} visible={showTooltip} />
-            <div className='flex flex-col items-center gap-0.5 overflow-visible'>
+            <div className='flex flex-col items-center justify-center gap-0.5 overflow-visible'>
                 <div
                     className={cn(
-                        'flex items-center justify-center overflow-hidden rounded-xl border transition-[background-color,border-color,color,box-shadow] duration-150',
+                        'relative flex items-center justify-center overflow-hidden rounded-xl border transition-[background-color,border-color,color,box-shadow] duration-150',
                         active
                             ? 'border-primary/40 bg-primary/12 text-primary'
                             : 'border-border/45 bg-muted/30 text-muted-foreground hover:border-primary/25 hover:bg-primary/8 hover:text-foreground',
@@ -301,7 +300,7 @@ export function MacDockItem({ label, active, className, children }: MacDockItemP
                     )}
                     style={{ width: metrics.tile, height: metrics.tile }}
                 >
-                    <div className='flex h-full w-full items-center justify-center [&_svg]:max-h-[88%] [&_svg]:max-w-[88%] [&_svg]:text-current'>
+                    <div className='flex h-full w-full items-center justify-center leading-none [&_img]:block [&_svg]:block [&_svg]:shrink-0 [&_svg]:text-current'>
                         {children}
                     </div>
                     {active && (
@@ -314,10 +313,9 @@ export function MacDockItem({ label, active, className, children }: MacDockItemP
                 {showItemLabels && (
                     <span
                         className={cn(
-                            'max-w-full truncate text-center text-[10px] leading-tight font-medium',
+                            'w-full truncate text-center text-[10px] leading-tight font-medium',
                             active ? 'text-primary' : 'text-muted-foreground',
                         )}
-                        style={{ maxWidth: metrics.tile + 12 }}
                         title={label}
                     >
                         {label}
@@ -335,6 +333,7 @@ export function getDockMetrics(dockSize: DockSize, itemCount = 0, compact = fals
     return { panelMinHeight: shellHeight, shellPadding: shellHeight + 28 };
 }
 
+/** Icons-only (compact chrome). Prefer EXPANDED for the expanded dock. */
 export const DOCK_PANEL_HEIGHT_CLASS: Record<DockSize, string> = {
     sm: 'h-[52px]',
     md: 'h-[60px]',
@@ -343,13 +342,19 @@ export const DOCK_PANEL_HEIGHT_CLASS: Record<DockSize, string> = {
 
 export const DOCK_PANEL_COLLAPSED_CLASS = 'h-[50px]';
 
+/** Icons-only expanded dock — room for tiles + hover scale without clipping. */
 export const DOCK_PANEL_EXPANDED_CLASS: Record<DockSize, string> = {
-    sm: 'h-[72px]',
-    md: 'h-[80px]',
-    lg: 'h-[88px]',
+    sm: 'h-[64px]',
+    md: 'h-[72px]',
+    lg: 'h-[80px]',
 };
 
-export const DOCK_PANEL_LABELS_CLASS = 'h-[88px]';
+/** Icons + labels — sized per dock size so sm/md/lg stay vertically centered. */
+export const DOCK_PANEL_LABELS_CLASS: Record<DockSize, string> = {
+    sm: 'h-[78px]',
+    md: 'h-[88px]',
+    lg: 'h-[98px]',
+};
 
 export const DOCK_SHELL_INSET_CLASS: Record<DockSize, string> = {
     sm: 'lg:pb-[64px]',
@@ -360,15 +365,15 @@ export const DOCK_SHELL_INSET_CLASS: Record<DockSize, string> = {
 export const DOCK_SHELL_INSET_COLLAPSED_CLASS = 'lg:pb-[62px]';
 
 export const DOCK_SHELL_INSET_EXPANDED_CLASS: Record<DockSize, string> = {
-    sm: 'lg:pb-[84px]',
-    md: 'lg:pb-[92px]',
-    lg: 'lg:pb-[100px]',
+    sm: 'lg:pb-[76px]',
+    md: 'lg:pb-[84px]',
+    lg: 'lg:pb-[92px]',
 };
 
 export const DOCK_SHELL_INSET_LABELS_CLASS: Record<DockSize, string> = {
-    sm: 'lg:pb-[84px]',
-    md: 'lg:pb-[92px]',
-    lg: 'lg:pb-[100px]',
+    sm: 'lg:pb-[90px]',
+    md: 'lg:pb-[100px]',
+    lg: 'lg:pb-[110px]',
 };
 
 export function getDockIconSize(dockSize: DockSize, itemCount: number, compact = false): number {
