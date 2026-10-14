@@ -44,13 +44,15 @@ class RateLimitConfig
     {
         $config = self::loadConfig();
 
-        // Check global _enabled flag (defaults to false - disabled by default)
+        // Check global _enabled flag. An explicit value wins (installs that
+        // deliberately switched rate limiting off keep it off); without the
+        // flag rate limiting is now ON, because an "opt-in" default left the
+        // login/2FA limits inactive on every untouched installation.
         if (isset($config['_enabled'])) {
             return $config['_enabled'] === true;
         }
 
-        // Default to disabled if not explicitly set
-        return false;
+        return true;
     }
 
     /**
@@ -93,7 +95,12 @@ class RateLimitConfig
 
             // Only return config if enabled
             if (!$isEnabled || !$hasValues) {
-                return null;
+                // An explicit per-route `_enabled: false` stays an admin decision.
+                if (isset($routeConfig['_enabled']) && $routeConfig['_enabled'] === false) {
+                    return null;
+                }
+
+                return self::defaultRateFor($defaultRate, $defaultNamespace, $routeConfig);
             }
 
             $rate = self::parseRateConfig($routeConfig);
@@ -106,8 +113,49 @@ class RateLimitConfig
             }
         }
 
-        // Don't return default - rate limiting is opt-in only
-        return null;
+        return self::defaultRateFor($defaultRate, $defaultNamespace);
+    }
+
+    /**
+     * Namespaces whose code default (e.g. Rate::perMinute(10) on the login
+     * route) is enforced even without a matching ratelimit.json entry.
+     *
+     * Deliberately limited to authentication, public webhooks and API-client
+     * endpoints — the brute-force and abuse targets. Other routes stay opt-in
+     * as before, so a running installation does not suddenly answer HTTP 429
+     * on busy UI polling routes.
+     */
+    private const DEFAULT_ENFORCED_NAMESPACES = [
+        'user-auth',
+        'user-auth-verify-email',
+        'user-api-clients',
+        'public-webhooks',
+    ];
+
+    /**
+     * Resolve the developer default for namespaces that are enforced without
+     * a config entry.
+     *
+     * @param array<string, mixed> $routeConfig Existing (but disabled/empty) route entry, if any
+     *
+     * @return array{rate: Rate, namespace: string}|null
+     */
+    private static function defaultRateFor(?Rate $defaultRate, ?string $defaultNamespace, array $routeConfig = []): ?array
+    {
+        if (!$defaultRate instanceof Rate) {
+            return null;
+        }
+
+        $namespace = (string) ($routeConfig['namespace'] ?? $defaultNamespace ?? 'rate_limit');
+
+        if (!in_array($namespace, self::DEFAULT_ENFORCED_NAMESPACES, true)) {
+            return null;
+        }
+
+        return [
+            'rate' => $defaultRate,
+            'namespace' => $namespace,
+        ];
     }
 
     /**

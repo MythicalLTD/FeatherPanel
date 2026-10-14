@@ -1879,9 +1879,13 @@ class ServerDatabaseController
     {
         $characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         $randomString = '';
+        $max = strlen($characters) - 1;
 
         for ($i = 0; $i < $length; ++$i) {
-            $randomString .= $characters[mt_rand(0, strlen($characters) - 1)];
+            // Database usernames and passwords must come from a CSPRNG;
+            // mt_rand()'s output stream is predictable once enough values from
+            // the same request lifetime have been observed.
+            $randomString .= $characters[random_int(0, $max)];
         }
 
         return $randomString;

@@ -21,6 +21,14 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 
 return function (RouteCollection $routes): void {
+    // Diagnostics endpoint: it echoes every request header and the raw server
+    // variables (i.e. the whole proxy/IP resolution chain). Keep it out of
+    // production unless APP_DEBUG is explicitly switched on - no frontend code
+    // calls it.
+    if (!defined('APP_DEBUG') || APP_DEBUG !== true) {
+        return;
+    }
+
     App::getInstance(true)->registerApiRoute(
         $routes,
         'debug-ip',
