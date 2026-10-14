@@ -1002,7 +1002,7 @@ class ApiClientController
     #[OA\Post(
         path: '/api/user/api-clients/validate',
         summary: 'Validate API client',
-        description: 'Validate an API client by public key and return associated user information. This endpoint does not require authentication.',
+        description: 'Validate an API client by public key. This endpoint does not require authentication and only reports whether the key belongs to a valid API client (`valid`); no owner data is returned (FP-19).',
         tags: ['User - API Clients'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -1034,30 +1034,25 @@ class ApiClientController
         // Find the API client by public key
         $apiClient = ApiClient::getApiClientByPublicKey($publicKey);
         if (!$apiClient) {
-            return ApiResponse::error('Invalid API client', 'INVALID_API_CLIENT', 404);
+            // FP-19: this endpoint is reachable without authentication, so the
+            // answer is reduced to a boolean. The status code (404) stays as it
+            // was to not break external apps that only look at it.
+            return ApiResponse::error('Invalid API client', 'INVALID_API_CLIENT', 404, [
+                'valid' => false,
+            ]);
         }
 
         // Get user information
         $user = User::getUserByUuid($apiClient['user_uuid']);
         if (!$user) {
-            return ApiResponse::error('API client user not found', 'USER_NOT_FOUND', 404);
+            return ApiResponse::error('API client user not found', 'USER_NOT_FOUND', 404, [
+                'valid' => false,
+            ]);
         }
 
-        // Return validation result (without sensitive data)
+        // FP-19: no owner data (id/name/uuid/username/email) is returned any more.
         return ApiResponse::success([
             'valid' => true,
-            'api_client' => [
-                'id' => $apiClient['id'],
-                'name' => $apiClient['name'],
-                'user_uuid' => $apiClient['user_uuid'],
-                'created_at' => $apiClient['created_at'],
-            ],
-            'user' => [
-                'id' => $user['id'],
-                'username' => $user['username'],
-                'email' => $user['email'],
-                'uuid' => $user['uuid'],
-            ],
         ], 'API client validated successfully', 200);
     }
 

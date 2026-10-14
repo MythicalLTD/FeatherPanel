@@ -25,6 +25,7 @@ use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\ForgotPassword;
+use App\Helpers\PasswordResetTokenHelper;
 use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -157,9 +158,15 @@ class ForgotPasswordController
             // success path instead of returning EMAIL_DOES_NOT_EXIST.
             return $genericSuccess();
         }
-        $resetToken = bin2hex(random_bytes(32)) . '.' . (time() + 3600);
+        $resetToken = PasswordResetTokenHelper::issueToken();
 
-        if (User::updateUser($userInfo['uuid'], ['mail_verify' => $resetToken])) {
+        // FP-18: the reset token lives in the same column that the login evaluates
+        // as "email verified" flag. It is stored with the "fpreset:" prefix so it is
+        // never taken for an email verification token, and so a completed reset can
+        // keep an unverified address unverified.
+        $storedMailVerify = PasswordResetTokenHelper::mailVerifyForNewRequest($userInfo['mail_verify'] ?? null, $resetToken);
+
+        if (User::updateUser($userInfo['uuid'], ['mail_verify' => $storedMailVerify])) {
             // Queue reset email asynchronously (MailQueue) — do not wait for SMTP.
             $appUrl = $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
             if (!preg_match('#^https?://#i', $appUrl)) {

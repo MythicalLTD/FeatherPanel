@@ -24,6 +24,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Helpers\PanelIpBlockGuard;
+use App\Helpers\OidcIdTokenVerifier;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\EmailDomainValidator;
 use App\Helpers\AbuseIPDBRegistrationGuard;
@@ -228,9 +229,37 @@ class OidcController
         }
 
         $idToken = $tokenData['id_token'];
-        $claims = $this->decodeJwtWithoutVerification($idToken);
+        if (!is_string($idToken)) {
+            return $this->oidcErrorRedirect('oidc_invalid_id_token', $isLinkFlow);
+        }
+
+        // FP-6: verify the signature against the JWKS of the issuer (and the
+        // exp/iat/nbf claims) before the claims are used at all. If the token
+        // cannot be checked (no jwks_uri, unsupported algorithm, JWKS down) the
+        // login keeps working like before, but the fact that the signature stayed
+        // unverified is logged loudly.
+        $tokenVerification = OidcIdTokenVerifier::verify(
+            $idToken,
+            is_array($discovery) ? $discovery : [],
+            $clientSecret
+        );
+        $claims = $tokenVerification['claims'];
         if (!is_array($claims)) {
             return $this->oidcErrorRedirect('oidc_invalid_id_token', $isLinkFlow);
+        }
+        if ($tokenVerification['verdict'] === OidcIdTokenVerifier::VERDICT_INVALID) {
+            $app->getLogger()->warning(
+                'OIDC id_token rejected: ' . $tokenVerification['reason'] . ' - provider: ' . $providerUuid
+            );
+
+            return $this->oidcErrorRedirect('oidc_invalid_id_token', $isLinkFlow);
+        }
+        if ($tokenVerification['verdict'] === OidcIdTokenVerifier::VERDICT_UNVERIFIABLE) {
+            $app->getLogger()->warning(
+                'OIDC id_token signature was NOT verified (unverified id_token signature!): '
+                . $tokenVerification['reason'] . ' - provider: ' . $providerUuid
+                . ' - continuing with the previous behaviour for compatibility'
+            );
         }
 
         if (!isset($claims['iss']) || !is_string($claims['iss']) || rtrim($claims['iss'], '/') !== $issuerUrl) {
@@ -245,6 +274,23 @@ class OidcController
         }
         if (is_array($aud) && !in_array($clientId, $aud, true)) {
             return $this->oidcErrorRedirect('oidc_invalid_audience', $isLinkFlow);
+        }
+
+        // FP-16: the nonce that was sent with the authorization request must come
+        // back unchanged, otherwise an id_token (e.g. one observed earlier) is
+        // being replayed against this state.
+        $expectedNonce = isset($cached['nonce']) && is_string($cached['nonce']) ? $cached['nonce'] : '';
+        $tokenNonce = isset($claims['nonce']) && is_string($claims['nonce']) ? $claims['nonce'] : '';
+        if ($tokenNonce === '') {
+            $app->getLogger()->warning(
+                'OIDC id_token does not contain a nonce claim (replay protection limited) - provider: ' . $providerUuid
+            );
+        } elseif (!OidcIdTokenVerifier::nonceMatches($expectedNonce, $tokenNonce)) {
+            $app->getLogger()->warning(
+                'OIDC id_token nonce mismatch, login rejected - provider: ' . $providerUuid
+            );
+
+            return $this->oidcErrorRedirect('oidc_invalid_id_token', $isLinkFlow);
         }
 
         $emailClaimKey = (string) ($provider['email_claim'] ?? 'email');
@@ -591,32 +637,6 @@ class OidcController
             return null;
         }
         $data = json_decode($response, true);
-
-        return is_array($data) ? $data : null;
-    }
-
-    /**
-     * Decode a JWT without verifying the signature.
-     *
-     * This is intentional for now to avoid pulling in additional dependencies.
-     * The token is still validated for issuer and audience.
-     */
-    private function decodeJwtWithoutVerification(string $jwt): ?array
-    {
-        $parts = explode('.', $jwt);
-        if (count($parts) !== 3) {
-            return null;
-        }
-
-        $payload = $parts[1] ?? '';
-        $payload .= str_repeat('=', (4 - strlen($payload) % 4) % 4);
-        $decoded = base64_decode(strtr($payload, '-_', '+/'), true);
-
-        if ($decoded === false) {
-            return null;
-        }
-
-        $data = json_decode($decoded, true);
 
         return is_array($data) ? $data : null;
     }
