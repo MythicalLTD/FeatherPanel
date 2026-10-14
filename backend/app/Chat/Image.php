@@ -178,6 +178,12 @@ class Image
             $params['search'] = '%' . $search . '%';
         }
 
+        // Security: only known columns may reach the ORDER BY clause.
+        if (!in_array($sortBy, ['id', 'name', 'url', 'created_at', 'updated_at'], true)) {
+            $sortBy = 'created_at';
+        }
+        $sortOrder = strtoupper($sortOrder) === 'ASC' ? 'ASC' : 'DESC';
+
         $sql .= " ORDER BY {$sortBy} {$sortOrder} LIMIT :limit OFFSET :offset";
         $stmt = $pdo->prepare($sql);
 

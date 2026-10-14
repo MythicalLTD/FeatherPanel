@@ -711,9 +711,7 @@ class ServerFilesController
             // Log activity
             $this->logActivity($server, $node, 'file_written', [
                 'path' => $path,
-
                 'content_length' => strlen($content),
-                'file_exists' => file_exists($path),
             ], $user);
 
             // Emit event

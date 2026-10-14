@@ -154,6 +154,7 @@ class ApiClientController
     private const OAUTH2_DEVICE_EXPIRES_IN = 900;
     private const OAUTH2_DEVICE_POLL_INTERVAL = 5;
     private const OAUTH2_DEVICE_USER_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    private const OAUTH2_REQUEST_EXPIRES_IN = 86400; // 24h validity for interactive consent requests
 
     #[OA\Get(
         path: '/api/user/api-clients',
@@ -1414,8 +1415,7 @@ class ApiClientController
             'notify_foreign_ip' => $normalized['notify_foreign_ip'],
             'request_state' => null,
             'request_nonce' => $normalized['mode'],
-            // Kept for schema compatibility; no expiry logic is enforced.
-            'expires_at' => date('Y-m-d H:i:s', strtotime('+10 years')),
+            'expires_at' => gmdate('Y-m-d H:i:s', time() + self::OAUTH2_REQUEST_EXPIRES_IN),
         ]);
 
         if ($authorizationId === false) {
@@ -1475,6 +1475,9 @@ class ApiClientController
         }
         if ($authorization['user_uuid'] !== $user['uuid']) {
             return ApiResponse::error('You are not allowed to approve this request', 'UNAUTHORIZED_ACCESS', 403);
+        }
+        if ($this->oauth2RequestExpired($authorization)) {
+            return ApiResponse::error('Authorization request has expired', 'AUTHORIZATION_REQUEST_EXPIRED', 400);
         }
         if ($authorization['status'] !== 'pending') {
             if ($authorization['status'] === 'approved') {
@@ -1564,6 +1567,9 @@ class ApiClientController
         }
         if ($authorization['user_uuid'] !== $user['uuid']) {
             return ApiResponse::error('You are not allowed to deny this request', 'UNAUTHORIZED_ACCESS', 403);
+        }
+        if ($this->oauth2RequestExpired($authorization)) {
+            return ApiResponse::error('Authorization request has expired', 'AUTHORIZATION_REQUEST_EXPIRED', 400);
         }
         if ($authorization['status'] !== 'pending') {
             $mode = $this->resolveOAuth2Mode($authorization);
@@ -1772,6 +1778,21 @@ class ApiClientController
     private function generateOpaqueToken(string $prefix): string
     {
         return $prefix . bin2hex(random_bytes(32));
+    }
+
+    /**
+     * Whether a stored OAuth2 authorization request has passed its expiry.
+     */
+    private function oauth2RequestExpired(array $authorization): bool
+    {
+        $expiresAt = $authorization['expires_at'] ?? null;
+        if (!is_string($expiresAt) || $expiresAt === '') {
+            return false;
+        }
+
+        $timestamp = strtotime($expiresAt);
+
+        return $timestamp !== false && $timestamp < time();
     }
 
     private function resolveOAuth2Mode(array $authorization): string

@@ -1193,6 +1193,11 @@ class SessionController
     )]
     public function signApiKey(Request $request): Response
     {
+        $user = AuthMiddleware::getCurrentUser($request);
+        if ($user == null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+
         $data = json_decode($request->getContent(), true);
         if ($data == null || !isset($data['api_key'])) {
             return ApiResponse::error('API key is required', 'API_KEY_REQUIRED', 400, []);
@@ -1209,6 +1214,11 @@ class SessionController
             if ($apiClient == null) {
                 return ApiResponse::error('Invalid API key', 'INVALID_API_KEY', 400, []);
             }
+        }
+
+        // Only the owner of the API client may have its key signed.
+        if (($apiClient['user_uuid'] ?? null) !== ($user['uuid'] ?? null)) {
+            return ApiResponse::error('You are not allowed to sign this API key', 'UNAUTHORIZED_ACCESS', 403, []);
         }
 
         $signature = hash_hmac('sha256', $apiKey, $apiClient['private_key']);
