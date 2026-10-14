@@ -519,6 +519,23 @@ class ServerScheduleController
             return ApiResponse::error('Invalid request body', 'INVALID_REQUEST_BODY', 400);
         }
 
+        // Only the documented schedule fields may be updated; this blocks re-homing a
+        // schedule onto another server via the raw server_id column.
+        $body = array_intersect_key($body, array_flip([
+            'name',
+            'cron_day_of_week',
+            'cron_month',
+            'cron_day_of_month',
+            'cron_hour',
+            'cron_minute',
+            'timezone',
+            'only_when_online',
+            'is_active',
+        ]));
+        if (empty($body)) {
+            return ApiResponse::error('No updatable fields provided', 'INVALID_REQUEST_BODY', 400);
+        }
+
         // If a timezone was supplied, validate it up-front (and recompute next_run_at below).
         if (isset($body['timezone'])) {
             if (!is_string($body['timezone']) || !ServerSchedule::isValidTimezone($body['timezone'])) {

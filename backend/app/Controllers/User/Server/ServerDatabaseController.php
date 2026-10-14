@@ -1618,9 +1618,15 @@ class ServerDatabaseController
                     $columns[] = $meta['name'] ?? "col{$i}";
                 }
 
-                $allRows = $stmt->fetchAll(\PDO::FETCH_NUM);
-                $truncated = count($allRows) > 500;
-                $rows = $truncated ? array_slice($allRows, 0, 500) : $allRows;
+                $rows = [];
+                $truncated = false;
+                while (($row = $stmt->fetch(\PDO::FETCH_NUM)) !== false) {
+                    if (count($rows) >= 500) {
+                        $truncated = true;
+                        break;
+                    }
+                    $rows[] = $row;
+                }
 
                 return ApiResponse::success([
                     'type' => 'select',

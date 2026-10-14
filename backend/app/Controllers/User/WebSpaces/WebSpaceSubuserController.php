@@ -19,11 +19,13 @@ namespace App\Controllers\User\WebSpaces;
 
 use App\Chat\User;
 use App\Chat\WebNode;
+use App\Permissions;
 use App\Helpers\ApiResponse;
 use App\Chat\WebSpaceSubuser;
 use OpenApi\Attributes as OA;
 use App\Helpers\WebSpaceGateway;
 use App\WebSpaceSubuserPermissions;
+use App\Helpers\PermissionHelper;
 use App\Helpers\FeatherQuilldClient;
 use App\Helpers\WebSpacePluginEvents;
 use App\Helpers\CheckWebSpacePermission;
@@ -85,6 +87,9 @@ class WebSpaceSubuserController
             return ApiResponse::error('Cannot add the WebSpace owner as a subuser', 'VALIDATION_FAILED', 400);
         }
 
+        // A subuser may only grant permissions they themselves hold; owners/admins keep full control.
+        $permissions = WebSpaceSubuser::clampAssignablePermissions($permissions, $this->assignablePermissions($resolved));
+
         $subuser = WebSpaceSubuser::create([
             'user_id' => (int) $target['id'],
             'webspace_id' => (int) $resolved['space']['id'],
@@ -130,13 +135,25 @@ class WebSpaceSubuserController
             return ApiResponse::error('permissions array is required', 'VALIDATION_FAILED', 400);
         }
 
-        if (!WebSpaceSubuser::updatePermissions($subuserId, $content['permissions'])) {
+        // Null when the actor is the owner or a panel admin (unrestricted).
+        $actorPermissions = $this->assignablePermissions($resolved);
+
+        // A subuser may not change their own access record (privilege escalation guard);
+        // owners and panel admins are unrestricted and stay unaffected.
+        if ($actorPermissions !== null && (int) ($existing['user_id'] ?? 0) === (int) ($resolved['user']['id'] ?? 0)) {
+            return ApiResponse::error('You cannot modify your own subuser permissions', 'CANNOT_MODIFY_SELF', 403);
+        }
+
+        // A subuser may only grant permissions they themselves hold; owners/admins keep full control.
+        $permissions = WebSpaceSubuser::clampAssignablePermissions($content['permissions'], $actorPermissions);
+
+        if (!WebSpaceSubuser::updatePermissions($subuserId, $permissions)) {
             return ApiResponse::error('Failed to update permissions', 'UPDATE_FAILED', 500);
         }
 
         $targetUser = User::getUserById((int) ($existing['user_id'] ?? 0));
         if ($targetUser && !empty($targetUser['uuid'])) {
-            self::pushDaemonAccess($resolved['space'], (string) $targetUser['uuid'], $content['permissions']);
+            self::pushDaemonAccess($resolved['space'], (string) $targetUser['uuid'], $permissions);
         }
 
         \App\Helpers\WebSpaceActivityLogger::log($resolved['space'], $resolved['user'], 'webspace.subuser.updated', [
@@ -221,6 +238,36 @@ class WebSpaceSubuserController
         }
 
         FeatherQuilldClient::deauthorizeUser($webNode, $userUuid, [(string) ($space['uuid'] ?? '')]);
+    }
+
+    /**
+     * Permissions the current actor is allowed to hand out inside this WebSpace.
+     *
+     * @param array{user: array<string, mixed>, space: array<string, mixed>} $resolved
+     *
+     * @return list<string>|null null when the actor is the WebSpace owner or a panel admin (unrestricted)
+     */
+    private function assignablePermissions(array $resolved): ?array
+    {
+        $user = $resolved['user'];
+        $space = $resolved['space'];
+
+        if ((int) ($space['owner_id'] ?? 0) === (int) ($user['id'] ?? 0)) {
+            return null;
+        }
+
+        $userUuid = (string) ($user['uuid'] ?? '');
+        if (
+            $userUuid !== ''
+            && (
+                PermissionHelper::hasPermission($userUuid, Permissions::ADMIN_WEBSPACES_VIEW)
+                || PermissionHelper::hasPermission($userUuid, Permissions::ADMIN_WEBSPACES_EDIT)
+            )
+        ) {
+            return null;
+        }
+
+        return WebSpaceSubuser::getPermissionsList((int) ($user['id'] ?? 0), (int) ($space['id'] ?? 0));
     }
 
     /**

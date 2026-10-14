@@ -555,6 +555,19 @@ class TaskController
             return ApiResponse::error('Invalid request body', 'INVALID_REQUEST_BODY', 400);
         }
 
+        // Only the documented task fields may be updated; this blocks re-homing a task
+        // onto another schedule via the raw schedule_id column.
+        $body = array_intersect_key($body, array_flip([
+            'action',
+            'payload',
+            'sequence_id',
+            'time_offset',
+            'continue_on_failure',
+        ]));
+        if (empty($body)) {
+            return ApiResponse::error('No updatable fields provided', 'INVALID_REQUEST_BODY', 400);
+        }
+
         // Validate action if provided
         if (isset($body['action']) && !Task::validateAction($body['action'])) {
             return ApiResponse::error('Invalid action type', 'INVALID_ACTION', 400);

@@ -1089,6 +1089,18 @@ class WebSpaceFilesController
             return $resolved;
         }
 
+        // Only shares that belong to the resolved WebSpace may be deleted (IDOR guard).
+        $owned = false;
+        foreach (WebSpaceFileShare::listForWebSpace($resolved['uuid']) as $share) {
+            if ((string) ($share['identifier'] ?? '') === $shareId) {
+                $owned = true;
+                break;
+            }
+        }
+        if (!$owned) {
+            return ApiResponse::error('Share job not found', 'NOT_FOUND', 404);
+        }
+
         WebSpaceFileShare::delete($shareId);
 
         return ApiResponse::success([], 'Share job cancelled', 200);
