@@ -735,7 +735,7 @@ class WebSpacesController
 
         WebSpace::updateStatus($uuid, 'reinstalling');
 
-        $daemon = FeatherQuilldClient::reinstallWebSpace($webNode, $uuid, $wipeFiles, $startOnCompletion);
+        $daemon = WebSpaceDaemonSync::reinstallOrCreate($webNode, $uuid, $wipeFiles, $startOnCompletion);
         if (!$daemon['ok']) {
             WebSpace::updateStatus($uuid, 'reinstall_failed');
 
@@ -748,6 +748,28 @@ class WebSpacesController
         }
 
         $body = is_array($daemon['body']) ? $daemon['body'] : [];
+        $created = !empty($daemon['created']);
+        $daemonStatus = (int) ($daemon['status'] ?? 0);
+
+        if ($created && ($daemonStatus === 202 || (($body['status'] ?? '') === 'installing'))) {
+            WebSpace::updateStatus($uuid, 'installing');
+            if (isset($body['state'])) {
+                WebSpace::updateRuntimeState(
+                    $uuid,
+                    (string) $body['state'],
+                    isset($body['backend_port']) ? (int) $body['backend_port'] : null,
+                );
+            }
+            $space = WebSpace::getByUuid($uuid) ?? $space;
+
+            return ApiResponse::success([
+                'webspace' => $space,
+                'daemon' => $body,
+                'created' => true,
+                'installing' => true,
+            ], 'WebSpace created on daemon (was missing); install started', 202);
+        }
+
         if (isset($body['state'])) {
             WebSpace::updateRuntimeState(
                 $uuid,
@@ -766,7 +788,8 @@ class WebSpacesController
         return ApiResponse::success([
             'webspace' => $space,
             'daemon' => $body,
-        ], 'OK', 200);
+            'created' => $created,
+        ], $created ? 'WebSpace created on daemon (was missing)' : 'OK', 200);
     }
 
     public function sync(Request $request, string $uuid): Response
@@ -781,7 +804,17 @@ class WebSpacesController
             return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
         }
 
-        $daemon = FeatherQuilldClient::syncWebSpace($webNode, $uuid);
+        $content = json_decode($request->getContent(), true);
+        if (!is_array($content)) {
+            $content = [];
+        }
+        $startOnCompletion = array_key_exists('start_on_completion', $content)
+            ? (bool) $content['start_on_completion']
+            : true;
+        $skipScripts = !empty($content['skip_scripts']);
+
+        // Create-on-404: recovers daemon_sync_failed WebSpaces that never landed on the daemon.
+        $daemon = WebSpaceDaemonSync::syncOrCreate($webNode, $uuid, $startOnCompletion, $skipScripts);
         if (!$daemon['ok']) {
             return ApiResponse::error(
                 $daemon['error'] ?? 'Daemon sync failed',
@@ -792,6 +825,28 @@ class WebSpacesController
         }
 
         $body = is_array($daemon['body']) ? $daemon['body'] : [];
+        $created = !empty($daemon['created']);
+        $daemonStatus = (int) ($daemon['status'] ?? 0);
+
+        if ($created && ($daemonStatus === 202 || (($body['status'] ?? '') === 'installing'))) {
+            WebSpace::updateStatus($uuid, 'installing');
+            if (isset($body['state'])) {
+                WebSpace::updateRuntimeState(
+                    $uuid,
+                    (string) $body['state'],
+                    isset($body['backend_port']) ? (int) $body['backend_port'] : null,
+                );
+            }
+            $space = WebSpace::getByUuid($uuid) ?? $space;
+
+            return ApiResponse::success([
+                'webspace' => $space,
+                'daemon' => $body,
+                'created' => true,
+                'installing' => true,
+            ], 'WebSpace created on daemon (was missing); install started', 202);
+        }
+
         if (isset($body['state'])) {
             WebSpace::updateRuntimeState(
                 $uuid,
@@ -800,12 +855,21 @@ class WebSpacesController
             );
         }
 
+        if ($created) {
+            if (isset($body['status'])) {
+                WebSpace::updateStatus($uuid, (string) $body['status']);
+            } else {
+                WebSpace::updateStatus($uuid, 'installed');
+            }
+        }
+
         $space = WebSpace::getByUuid($uuid) ?? $space;
 
         return ApiResponse::success([
             'webspace' => $space,
             'daemon' => $body,
-        ], 'Config synced from panel', 200);
+            'created' => $created,
+        ], $created ? 'WebSpace created on daemon (was missing)' : 'Config synced from panel', 200);
     }
 
     public function abortInstall(Request $request, string $uuid): Response

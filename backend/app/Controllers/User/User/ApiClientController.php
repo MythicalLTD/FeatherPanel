@@ -121,18 +121,6 @@ use App\Plugins\Events\Events\UserApiClientEvent;
     type: 'object',
     properties: [
         new OA\Property(property: 'valid', type: 'boolean', description: 'Whether the API client is valid'),
-        new OA\Property(property: 'api_client', type: 'object', properties: [
-            new OA\Property(property: 'id', type: 'integer'),
-            new OA\Property(property: 'name', type: 'string'),
-            new OA\Property(property: 'user_uuid', type: 'string'),
-            new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
-        ]),
-        new OA\Property(property: 'user', type: 'object', properties: [
-            new OA\Property(property: 'id', type: 'integer'),
-            new OA\Property(property: 'username', type: 'string'),
-            new OA\Property(property: 'email', type: 'string'),
-            new OA\Property(property: 'uuid', type: 'string'),
-        ]),
     ]
 )]
 #[OA\Schema(
@@ -1476,9 +1464,7 @@ class ApiClientController
         if ($authorization['user_uuid'] !== $user['uuid']) {
             return ApiResponse::error('You are not allowed to approve this request', 'UNAUTHORIZED_ACCESS', 403);
         }
-        if ($this->oauth2RequestExpired($authorization)) {
-            return ApiResponse::error('Authorization request has expired', 'AUTHORIZATION_REQUEST_EXPIRED', 400);
-        }
+        // Expiry only blocks pending requests; approved/denied results stay replayable.
         if ($authorization['status'] !== 'pending') {
             if ($authorization['status'] === 'approved') {
                 $approvedApiClient = ApiClient::getApiClientById((int) $authorization['api_client_id']);
@@ -1495,6 +1481,9 @@ class ApiClientController
             }
 
             return ApiResponse::error('Authorization request is no longer pending', 'AUTHORIZATION_NOT_PENDING', 400);
+        }
+        if ($this->oauth2RequestExpired($authorization)) {
+            return ApiResponse::error('Authorization request has expired', 'AUTHORIZATION_REQUEST_EXPIRED', 400);
         }
 
         $publicKey = $this->generateApiKey();
@@ -1568,9 +1557,7 @@ class ApiClientController
         if ($authorization['user_uuid'] !== $user['uuid']) {
             return ApiResponse::error('You are not allowed to deny this request', 'UNAUTHORIZED_ACCESS', 403);
         }
-        if ($this->oauth2RequestExpired($authorization)) {
-            return ApiResponse::error('Authorization request has expired', 'AUTHORIZATION_REQUEST_EXPIRED', 400);
-        }
+        // Expiry only blocks pending requests; approved/denied results stay replayable.
         if ($authorization['status'] !== 'pending') {
             $mode = $this->resolveOAuth2Mode($authorization);
             if ($authorization['status'] === 'denied') {
@@ -1584,6 +1571,9 @@ class ApiClientController
             }
 
             return ApiResponse::error('Authorization request is no longer pending', 'AUTHORIZATION_NOT_PENDING', 400);
+        }
+        if ($this->oauth2RequestExpired($authorization)) {
+            return ApiResponse::error('Authorization request has expired', 'AUTHORIZATION_REQUEST_EXPIRED', 400);
         }
 
         OAuth2ApiAuthorization::updateAuthorization((int) $authorization['id'], [

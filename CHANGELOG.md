@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.4.2 STABLE
+
+### Fixed
+
+- Web node setup no longer suggests invalid `bash -s -- featherquilld`. Panel install command now uses `FP_COMPONENT=featherquilld` like Wings. Installer accepts `--quilld-install-only` and positional `featherquilld`. Args are validated before any apt work. Early unconditional `apt upgrade`/`purge`/`autoremove` was removed. Cleanup is opt-in via `--system-cleanup`. by @nayskutzu
+- WebSpace `/sync` and `/reinstall` create on the daemon when it returns 404. Failed first pushes (e.g. `daemon_sync_failed`) can be retried without DELETE + recreate. by @nayskutzu
+- Task updates no longer accept `sequence_id`. Reordering stays on the sequence endpoint. by @nayskutzu
+- Addon packages fail closed when ZipArchive cannot validate entries. by @nayskutzu
+- File-backed rate counters periodically purge expired keys. by @nayskutzu
+- Password reset tokens no longer mark verified accounts as unverified. Legacy tokens keep a compatibility state. by @nayskutzu
+- Rate limiting is on by default when `_enabled` is absent. Auto-written `_enabled: false` is migrated once. by @nayskutzu
+- Safe URL fetches pin the validated IP per hop. IPv4-mapped private addresses are rejected. by @nayskutzu
+- `X-Forwarded-For` is scanned right-to-left. Trusted proxies and Cloudflare are skipped. by @nayskutzu
+- WebSpace share create/delete require `file.update`. Read-only subusers cannot manage shares. by @nayskutzu
+- API client validate returns only `valid`. It uses a stricter unauthenticated rate limit. OAuth2 expiry applies only to pending requests. by @nayskutzu
+
 ## v1.4.1 STABLE
 
 ### Fixed

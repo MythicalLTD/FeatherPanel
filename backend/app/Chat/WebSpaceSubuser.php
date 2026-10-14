@@ -188,7 +188,7 @@ class WebSpaceSubuser
      * subuser may only hand out a subset of the permissions they themselves hold, and
      * never the "*" wildcard.
      *
-     * @param list<string>|string $requested Raw permission list from the request
+     * @param array<int|string, mixed> $requested Raw permission list from the request
      * @param list<string>|null $actorPermissions Actor's own permissions, or null when unrestricted
      *
      * @return list<string>

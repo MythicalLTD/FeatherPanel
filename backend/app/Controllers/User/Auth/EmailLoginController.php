@@ -25,6 +25,7 @@ use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\EmailLoginCode;
 use App\Plugins\Events\Events\AuthEvent;
+use App\Helpers\PasswordResetTokenHelper;
 use App\Helpers\TwoFactorChallengeHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -162,7 +163,7 @@ class EmailLoginController
 
         // Check if email verification is required
         $requiresEmailVerification = $config->getSetting(ConfigInterface::REGISTRATION_REQUIRE_EMAIL_VERIFICATION, 'false') === 'true';
-        $isEmailVerified = !isset($userInfo['mail_verify']) || $userInfo['mail_verify'] === null || trim((string) $userInfo['mail_verify']) === '';
+        $isEmailVerified = PasswordResetTokenHelper::isEmailVerified($userInfo['mail_verify'] ?? null);
         if ($requiresEmailVerification && !$isEmailVerified) {
             return ApiResponse::error('Email verification is required before login. Please verify your email first.', 'EMAIL_NOT_VERIFIED', 403);
         }

@@ -143,12 +143,13 @@ class RateLimitController
                 $config['routes'] = [];
             }
 
-            // Update the _enabled flag
+            // Update the _enabled flag — mark as an explicit admin decision so the
+            // auto-written-false migration does not clear a deliberate opt-out.
             $enabledValue = (bool) $data['_enabled'];
 
-            // Ensure _enabled is at the root level and routes exist
             $jsonData = [
                 '_enabled' => $enabledValue,
+                '_enabled_explicit' => true,
                 'routes' => $config['routes'] ?? [],
             ];
 

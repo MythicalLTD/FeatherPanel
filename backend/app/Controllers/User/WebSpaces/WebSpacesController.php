@@ -26,6 +26,7 @@ use OpenApi\Attributes as OA;
 use App\Helpers\WebSpaceLimits;
 use App\Helpers\WebSpaceGateway;
 use App\Helpers\WebSpacePresenter;
+use App\Helpers\WebSpaceDaemonSync;
 use App\WebSpaceSubuserPermissions;
 use App\Helpers\FeatherQuilldClient;
 use App\Helpers\WebSpacePluginEvents;
@@ -330,7 +331,7 @@ class WebSpacesController
 
         $space = WebSpace::getByUuid($uuid) ?? $space;
 
-        $daemon = \App\Helpers\WebSpaceDaemonSync::syncAfterUpdate($webNode, $space, $previousSpace);
+        $daemon = WebSpaceDaemonSync::syncAfterUpdate($webNode, $space, $previousSpace);
         if (!$daemon['ok']) {
             return ApiResponse::error(
                 'WebSpace saved on panel but daemon sync failed: ' . ($daemon['error'] ?? 'unknown'),
@@ -1018,7 +1019,7 @@ class WebSpacesController
 
         WebSpace::updateStatus($uuid, 'reinstalling');
 
-        $daemon = FeatherQuilldClient::reinstallWebSpace($webNode, $uuid, $wipeFiles, $startOnCompletion);
+        $daemon = WebSpaceDaemonSync::reinstallOrCreate($webNode, $uuid, $wipeFiles, $startOnCompletion);
         if (!$daemon['ok']) {
             WebSpace::updateStatus($uuid, 'reinstall_failed');
 
@@ -1031,6 +1032,34 @@ class WebSpacesController
         }
 
         $body = is_array($daemon['body']) ? $daemon['body'] : [];
+        $created = !empty($daemon['created']);
+        $daemonStatus = (int) ($daemon['status'] ?? 0);
+
+        if ($created && ($daemonStatus === 202 || (($body['status'] ?? '') === 'installing'))) {
+            WebSpace::updateStatus($uuid, 'installing');
+            if (isset($body['state'])) {
+                WebSpace::updateRuntimeState(
+                    $uuid,
+                    (string) $body['state'],
+                    isset($body['backend_port']) ? (int) $body['backend_port'] : null,
+                );
+            }
+            $space = WebSpace::getByUuid($uuid) ?? $space;
+
+            WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceReinstalled(), WebSpacePluginEvents::basePayload(
+                $resolved['user']['uuid'] ?? null,
+                $space,
+                ['context' => ['source' => 'user', 'wipe_files' => $wipeFiles, 'created' => true]],
+            ));
+
+            return ApiResponse::success([
+                'webspace' => $space,
+                'daemon' => $body,
+                'created' => true,
+                'installing' => true,
+            ], 'WebSpace created on daemon (was missing); install started', 202);
+        }
+
         if (isset($body['state'])) {
             WebSpace::updateRuntimeState(
                 $uuid,
@@ -1049,13 +1078,14 @@ class WebSpacesController
         WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceReinstalled(), WebSpacePluginEvents::basePayload(
             $resolved['user']['uuid'] ?? null,
             $space,
-            ['context' => ['source' => 'user', 'wipe_files' => $wipeFiles]],
+            ['context' => ['source' => 'user', 'wipe_files' => $wipeFiles, 'created' => $created]],
         ));
 
         return ApiResponse::success([
             'webspace' => $space,
             'daemon' => $body,
-        ], 'OK', 200);
+            'created' => $created,
+        ], $created ? 'WebSpace created on daemon (was missing)' : 'OK', 200);
     }
 
     public function abortInstall(Request $request, string $uuidShort): Response

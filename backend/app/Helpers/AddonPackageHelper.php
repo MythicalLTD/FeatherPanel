@@ -48,24 +48,28 @@ class AddonPackageHelper
             return false;
         }
 
-        // Reject archives with traversal/absolute paths or symlink entries before
-        // anything touches the filesystem (Zip-Slip guard for both extraction paths).
-        if (class_exists(\ZipArchive::class)) {
-            $validator = new \ZipArchive();
-            if ($validator->open($archivePath) === true) {
-                $safe = self::entriesAreSafe($validator, $entries);
-                $validator->close();
-                if (!$safe) {
-                    return false;
-                }
-            }
+        // Fail closed: ZipArchive is required to validate entries before any extraction
+        // path (including the unzip fallback) can touch the filesystem.
+        if (!class_exists(\ZipArchive::class)) {
+            return false;
+        }
+
+        $validator = new \ZipArchive();
+        if ($validator->open($archivePath) !== true) {
+            return false;
+        }
+        $safe = self::entriesAreSafe($validator, $entries);
+        $validator->close();
+        if (!$safe) {
+            return false;
         }
 
         if (self::extractWithZipArchive($archivePath, $destinationDir, $password, $entries)) {
             return true;
         }
 
-        // Fallback for legacy ZipCrypto packages if ZipArchive is unavailable/broken
+        // Fallback for legacy ZipCrypto packages if ZipArchive extraction fails
+        // (entries already validated above).
         return self::extractWithUnzip($archivePath, $destinationDir, $password, $entries);
     }
 

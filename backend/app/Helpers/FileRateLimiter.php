@@ -39,8 +39,8 @@ class FileRateLimiter
     /**
      * Register one hit for the identifier.
      *
-     * @return bool True when the request is within the limit, false when it
-     *              should be rejected (caller answers HTTP 429).
+     * @return bool true when the request is within the limit, false when it
+     *              should be rejected (caller answers HTTP 429)
      */
     public function limit(string $identifier): bool
     {

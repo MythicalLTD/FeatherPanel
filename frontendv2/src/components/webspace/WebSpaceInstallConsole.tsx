@@ -61,6 +61,8 @@ export function WebSpaceInstallConsole({
     const isFailed = status === 'failed' || status === 'installation_failed' || status === 'daemon_sync_failed';
     const isDone = status === 'installed';
 
+    const [retryBusy, setRetryBusy] = useState(false);
+
     const abortInstall = async () => {
         try {
             await axios.post(`/api/admin/webspaces/${uuid}/install/abort`);
@@ -68,6 +70,23 @@ export function WebSpaceInstallConsole({
             toast.success(t('admin.webSpaces.install.abortSuccess'));
         } catch (error) {
             toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.install.abortFailed'));
+        }
+    };
+
+    const retryDaemonPush = async () => {
+        setRetryBusy(true);
+        try {
+            const { data } = await axios.post(`/api/admin/webspaces/${uuid}/sync`, {
+                start_on_completion: true,
+            });
+            const nextStatus = (data?.data?.webspace?.status as string | undefined) ?? 'installing';
+            setStatus(nextStatus);
+            completedRef.current = false;
+            toast.success(t('admin.webSpaces.install.retry_daemon_push_ok'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.webSpaces.install.retry_daemon_push_failed'));
+        } finally {
+            setRetryBusy(false);
         }
     };
 
@@ -115,6 +134,18 @@ export function WebSpaceInstallConsole({
                         <Button variant='outline' size='sm' className='mt-4' onClick={() => void abortInstall()}>
                             <OctagonX className='mr-2 h-4 w-4' />
                             {t('admin.webSpaces.install.abort')}
+                        </Button>
+                    ) : null}
+                    {status === 'daemon_sync_failed' ? (
+                        <Button
+                            variant='default'
+                            size='sm'
+                            className='mt-4'
+                            disabled={retryBusy}
+                            onClick={() => void retryDaemonPush()}
+                        >
+                            {retryBusy ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : null}
+                            {t('admin.webSpaces.install.retry_daemon_push')}
                         </Button>
                     ) : null}
                 </PageCard>

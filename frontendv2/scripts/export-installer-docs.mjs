@@ -61,6 +61,14 @@ function parseInstallerMeta(source) {
             flag: '--wings-install-only',
             description: 'Install FeatherWings only (no setup wizard)',
         },
+        {
+            flag: '--quilld-install-only',
+            description: 'Install FeatherQuilld only (no setup wizard)',
+        },
+        {
+            flag: '--system-cleanup',
+            description: 'Opt-in apt purge + autoremove after essentials (risky on production hosts)',
+        },
         { flag: '--dev', description: 'Use latest dev release images' },
         { flag: '--dev-branch BRANCH', description: 'Use dev images for a specific branch' },
         { flag: '--dev-sha SHA', description: 'Use dev images for a specific commit SHA' },
@@ -104,13 +112,18 @@ function parseInstallerMeta(source) {
     const envAutomation = [
         {
             name: 'FP_COMPONENT',
-            description: 'Non-interactive target: panel | wings | …',
+            description: 'Non-interactive target: panel | wings | featherquilld | …',
             example: 'FP_COMPONENT=panel',
         },
         {
             name: 'FP_ACTION',
             description: 'Non-interactive action: install | update | uninstall | …',
             example: 'FP_ACTION=update',
+        },
+        {
+            name: 'FP_QUILLD_SKIP_CONFIGURE',
+            description: 'Skip FeatherQuilld configure wizard after install (panel step 2 handles join-data)',
+            example: 'FP_QUILLD_SKIP_CONFIGURE=true',
         },
     ];
 
@@ -181,6 +194,14 @@ sudo bash installer/install.bash --dev-branch develop --dev-sha abc1234
 
 \`\`\`bash
 sudo bash installer/install.bash --wings-install-only
+\`\`\`
+
+### FeatherQuilld-only (web node quick-setup)
+
+\`\`\`bash
+sudo bash installer/install.bash --quilld-install-only
+# or: sudo bash installer/install.bash featherquilld
+# or: curl -sSL https://get.featherpanel.com/installer.sh | env FP_COMPONENT=featherquilld FP_ACTION=install FP_QUILLD_SKIP_CONFIGURE=true bash
 \`\`\`
 
 ### Configuration manager only

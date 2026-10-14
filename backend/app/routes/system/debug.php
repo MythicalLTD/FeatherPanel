@@ -25,6 +25,11 @@ return function (RouteCollection $routes): void {
     // variables (i.e. the whole proxy/IP resolution chain). Keep it out of
     // production unless APP_DEBUG is explicitly switched on - no frontend code
     // calls it.
+    //
+    // Stock installs leave APP_DEBUG=false in backend/public/index.php, so this
+    // file returns early and /api/debug/ip is never registered. Operators who
+    // need the endpoint must flip APP_DEBUG to true in that entry point.
+    // See SECURITY-FIXES-2026-10-14.md §12.
     if (!defined('APP_DEBUG') || APP_DEBUG !== true) {
         return;
     }

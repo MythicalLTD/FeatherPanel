@@ -35,11 +35,13 @@ use App\App;
  */
 class FileCounterStore
 {
+    /** Roughly 1 in N writes triggers a sweep of expired counter files. */
+    private const CLEANUP_EVERY = 100;
     /** @var string|null */
-    private static $directory = null;
+    private static $directory;
 
     /** @var bool|null Cached writability probe. */
-    private static $writable = null;
+    private static $writable;
 
     /**
      * Whether the file store can be used at all.
@@ -158,7 +160,7 @@ class FileCounterStore
      *
      * @param string|list<string> $keys
      */
-    public static function delete(string|array $keys): void
+    public static function delete(string | array $keys): void
     {
         if (!self::available()) {
             return;
@@ -265,11 +267,60 @@ class FileCounterStore
 
             @chmod($path, 0o600);
 
+            // Probabilistic cleanup so expired files for untouched keys do not linger.
+            if (random_int(1, self::CLEANUP_EVERY) === 1) {
+                self::sweepExpired();
+            }
+
             return $state['count'];
         } catch (\Throwable $e) {
             return 0;
         } finally {
             fclose($handle);
+        }
+    }
+
+    /**
+     * Delete counter files whose expiration has passed.
+     */
+    private static function sweepExpired(): void
+    {
+        $directory = self::directory();
+        if ($directory === '' || !is_dir($directory)) {
+            return;
+        }
+
+        $now = time();
+        $files = @scandir($directory);
+        if (!is_array($files)) {
+            return;
+        }
+
+        foreach ($files as $file) {
+            if (!str_ends_with($file, '.json')) {
+                continue;
+            }
+            $candidate = $directory . '/' . $file;
+            if (!is_file($candidate)) {
+                continue;
+            }
+
+            $raw = @file_get_contents($candidate);
+            if (!is_string($raw) || $raw === '') {
+                @unlink($candidate);
+                continue;
+            }
+
+            $decoded = json_decode($raw, true);
+            if (!is_array($decoded)) {
+                @unlink($candidate);
+                continue;
+            }
+
+            $expiresAt = max(0, (int) ($decoded['expires_at'] ?? 0));
+            if ($expiresAt > 0 && $expiresAt <= $now) {
+                @unlink($candidate);
+            }
         }
     }
 

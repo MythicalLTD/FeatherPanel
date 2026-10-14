@@ -244,7 +244,7 @@ final class OidcIdTokenVerifier
      * algorithm problems so the caller can report "unverifiable".
      *
      * @param array $segments the three raw JWT segments
-     * @param array $jwks     the key set of the issuer
+     * @param array $jwks the key set of the issuer
      */
     private static function verifySignatureNative(array $header, array $segments, array $jwks, string $alg): bool
     {

@@ -8,22 +8,8 @@ if [ "$EUID" -ne 0 ]; then
 	exit 1
 fi
 
-REFRESH_DOCKER_UPDATER_ONLY=false
-for _fp_early_arg in "$@"; do
-	if [ "$_fp_early_arg" = "--refresh-docker-updater-only" ]; then
-		REFRESH_DOCKER_UPDATER_ONLY=true
-		break
-	fi
-done
-
-if [ "$REFRESH_DOCKER_UPDATER_ONLY" != true ]; then
-apt update -y
-apt upgrade -y
-apt purge -y
-apt autoremove -y
-fi
-
-# Parse command-line arguments
+# Parse command-line arguments before any package manager work so bad/unknown
+# flags (and --help) exit immediately without apt upgrade/purge side effects.
 SKIP_OS_CHECK=false
 FORCE_ARM=false
 SKIP_INSTALL_CHECK=false
@@ -34,7 +20,9 @@ USE_DEV=false
 DEV_BRANCH=""
 DEV_SHA=""
 SHOW_CONFIG_MENU=false
-SCRIPT_VERSION="2.1.15-dev"
+REFRESH_DOCKER_UPDATER_ONLY=false
+SYSTEM_CLEANUP=false
+SCRIPT_VERSION="2.1.16-dev"
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
@@ -57,6 +45,12 @@ while [[ $# -gt 0 ]]; do
 		;;
 	--skip-system-update)
 		SKIP_SYSTEM_UPDATE=true
+		shift
+		;;
+	--system-cleanup)
+		# Opt-in: apt purge (no packages) + autoremove after essentials.
+		# Not run by default — risky on shared/production hosts with orphaned-but-in-use libs.
+		SYSTEM_CLEANUP=true
 		shift
 		;;
 	--dev)
@@ -87,10 +81,23 @@ while [[ $# -gt 0 ]]; do
 		FP_WINGS_SKIP_CONFIGURE=true
 		shift
 		;;
+	--quilld-install-only)
+		FP_COMPONENT=featherquilld
+		FP_ACTION=install
+		FP_QUILLD_SKIP_CONFIGURE=true
+		shift
+		;;
+	featherquilld | quilld)
+		# Positional shorthand for panel-generated / documented quick install (step 1 only).
+		FP_COMPONENT=featherquilld
+		FP_ACTION=install
+		FP_QUILLD_SKIP_CONFIGURE=true
+		shift
+		;;
 	--help | -h)
 		echo "FeatherPanel Installer"
 		echo ""
-		echo "Usage: $0 [OPTIONS]"
+		echo "Usage: $0 [OPTIONS] [featherquilld|quilld]"
 		echo ""
 		echo "Options:"
 		echo "  --skip-os-check        Skip OS version compatibility checks"
@@ -98,10 +105,14 @@ while [[ $# -gt 0 ]]; do
 		echo "  --skip-install-check   Skip check for existing installation"
 		echo "  --skip-virt-check      Skip virtualization compatibility checks"
 		echo "  --skip-system-update   Skip apt update and essential package installation"
+		echo "  --system-cleanup       Opt-in apt purge + autoremove after essentials (risky on production hosts)"
 		echo "  --refresh-docker-updater-only  Rewrite /etc/featherpanel host updater scripts only (no full install)"
 		echo "  --wings-install-only   Install FeatherWings only (no setup wizard; for panel quick-setup step 1)"
+		echo "  --quilld-install-only  Install FeatherQuilld only (no setup wizard; for panel quick-setup step 1)"
+		echo "  featherquilld|quilld   Same as --quilld-install-only"
 		echo "  Env for daemons:       FP_WINGS_METHOD = apt|direct  FP_WINGS_CHANNEL = stable|nightly"
 		echo "                         FP_QUILLD_CHANNEL = stable|nightly  (FeatherQuilld is APT-only)"
+		echo "                         FP_COMPONENT=featherquilld FP_ACTION=install FP_QUILLD_SKIP_CONFIGURE=true"
 		echo "  --dev                  Use latest dev release images"
 		echo "  --dev-branch BRANCH    Use dev images for specific branch (e.g., develop, main)"
 		echo "  --dev-sha SHA          Use dev images for specific commit SHA (requires --dev-branch)"
@@ -2668,6 +2679,13 @@ ensure_system_ready() {
 
 	log_success "Package lists updated and essential packages ready."
 	log_info "To upgrade all system packages later (optional): apt update && DEBIAN_FRONTEND=noninteractive apt upgrade -y"
+
+	if [ "$SYSTEM_CLEANUP" = true ]; then
+		log_warn "Running opt-in system cleanup (apt purge + autoremove)..."
+		apt-get purge -y >>"$LOG_FILE" 2>&1 || true
+		apt-get autoremove -y >>"$LOG_FILE" 2>&1 || true
+		log_info "System cleanup finished."
+	fi
 }
 
 # Function to check if a package is installed and install it if not
@@ -7259,7 +7277,8 @@ if [ -f /etc/os-release ]; then
 		COMPONENT_TYPE="8"
 	fi
 
-	# Environment overrides for non-interactive mode
+	# Environment overrides for non-interactive mode (must run before menus).
+	# Do not clear COMPONENT_TYPE on empty FP_COMPONENT — --config may have set it.
 	case "${FP_COMPONENT:-}" in
 	panel) COMPONENT_TYPE="1" ;;
 	wings) COMPONENT_TYPE="2" ;;
@@ -7269,7 +7288,18 @@ if [ -f /etc/os-release ]; then
 	proxmox) COMPONENT_TYPE="6" ;;
 	featherquilld) COMPONENT_TYPE="7" ;;
 	config | configuration) COMPONENT_TYPE="8" ;;
-	*) COMPONENT_TYPE="" ;;
+	*) ;;
+	esac
+
+	case "${FP_ACTION:-}" in
+	install) INST_TYPE="1" ;;
+	uninstall) INST_TYPE="2" ;;
+	update) INST_TYPE="3" ;;
+	db_remote)
+		COMPONENT_TYPE="5"
+		INST_TYPE="1"
+		;;
+	*) ;;
 	esac
 
 	while [[ ! "$COMPONENT_TYPE" =~ ^[1-8]$ ]]; do
@@ -7465,18 +7495,6 @@ if [ -f /etc/os-release ]; then
 		SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 		exec bash "$SCRIPT_PATH" "$@"
 	fi
-
-	# Environment overrides for non-interactive mode
-	case "${FP_ACTION:-}" in
-	install) INST_TYPE="1" ;;
-	uninstall) INST_TYPE="2" ;;
-	update) INST_TYPE="3" ;;
-	db_remote)
-		COMPONENT_TYPE="5"
-		INST_TYPE="1"
-		;;
-	*) ;;
-	esac
 
 	# Environment overrides for dev mode
 	if [ -n "${FP_DEV:-}" ] && [ "${FP_DEV}" = "true" ]; then

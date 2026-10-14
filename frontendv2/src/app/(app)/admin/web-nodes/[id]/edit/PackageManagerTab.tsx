@@ -208,9 +208,7 @@ export function PackageManagerTab({ nodeId }: PackageManagerTabProps) {
                                             : t('admin.webNodes.packages.not_installed')}
                                     </Badge>
                                 </div>
-                                {pkg.description && (
-                                    <p className='text-muted-foreground text-xs'>{pkg.description}</p>
-                                )}
+                                {pkg.description && <p className='text-muted-foreground text-xs'>{pkg.description}</p>}
                                 {pkg.docs_url && (
                                     <a
                                         className='text-primary inline-flex items-center gap-1 text-xs hover:underline'

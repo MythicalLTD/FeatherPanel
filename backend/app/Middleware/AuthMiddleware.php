@@ -21,10 +21,10 @@ use App\App;
 use App\Chat\User;
 use App\Chat\ApiClient;
 use App\Helpers\ApiResponse;
+use App\Config\ConfigInterface;
 use App\Helpers\IpAddressMatcher;
 use App\Helpers\UserDeviceTracker;
 use App\CloudFlare\CloudFlareRealIP;
-use App\Config\ConfigInterface;
 use App\Helpers\ApiClientForeignIpNotifier;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -137,23 +137,6 @@ class AuthMiddleware implements MiddlewareInterface
     }
 
     /**
-     * Whether an API client may still authenticate with its own public_key.
-     * Defaults to false; an operator can restore the legacy behaviour with a single
-     * config entry (`api_clients_allow_public_key_auth = true`).
-     */
-    private static function publicKeyAuthAllowed(): bool
-    {
-        try {
-            return App::getInstance(true)->getConfig()->getSetting(
-                ConfigInterface::API_CLIENTS_ALLOW_PUBLIC_KEY_AUTH,
-                'false'
-            ) === 'true';
-        } catch (\Throwable $e) {
-            return false;
-        }
-    }
-
-    /**
      * Get the authenticated user from the request (if available).
      */
     public static function getCurrentUser(Request $request): ?array
@@ -191,5 +174,22 @@ class AuthMiddleware implements MiddlewareInterface
     public static function isSessionAuth(Request $request): bool
     {
         return $request->attributes->get('auth_type') === 'session';
+    }
+
+    /**
+     * Whether an API client may still authenticate with its own public_key.
+     * Defaults to false; an operator can restore the legacy behaviour with a single
+     * config entry (`api_clients_allow_public_key_auth = true`).
+     */
+    private static function publicKeyAuthAllowed(): bool
+    {
+        try {
+            return App::getInstance(true)->getConfig()->getSetting(
+                ConfigInterface::API_CLIENTS_ALLOW_PUBLIC_KEY_AUTH,
+                'false'
+            ) === 'true';
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 }

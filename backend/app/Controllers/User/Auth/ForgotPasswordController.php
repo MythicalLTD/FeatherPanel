@@ -25,8 +25,8 @@ use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\ForgotPassword;
-use App\Helpers\PasswordResetTokenHelper;
 use App\Plugins\Events\Events\AuthEvent;
+use App\Helpers\PasswordResetTokenHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 

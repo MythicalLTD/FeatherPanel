@@ -399,7 +399,7 @@ class RemoteDatabaseProvisioner
         $mgr->executeCommand($databaseName, new \MongoDB\Driver\Command([
             'create' => '_panel_init',
         ]));
-        $bw = new \MongoDB\Driver\BulkWrite;
+        $bw = new \MongoDB\Driver\BulkWrite();
         $bw->insert(['_id' => 'created_by_featherpanel', 'created_at' => gmdate('c')]);
         $mgr->executeBulkWrite("{$databaseName}._panel_init", $bw);
         $mgr->executeCommand($databaseName, new \MongoDB\Driver\Command([
@@ -455,13 +455,13 @@ class RemoteDatabaseProvisioner
             if (!is_array($docs) || !preg_match('/^[a-zA-Z0-9_.-]+$/', (string) $name)) {
                 continue;
             }
-            $bw = new \MongoDB\Driver\BulkWrite;
+            $bw = new \MongoDB\Driver\BulkWrite();
             $n = 0;
             foreach ($docs as $doc) {
                 $bw->insert($doc);
                 if (++$n % 500 === 0) {
                     $mgr->executeBulkWrite("{$databaseName}.{$name}", $bw);
-                    $bw = new \MongoDB\Driver\BulkWrite;
+                    $bw = new \MongoDB\Driver\BulkWrite();
                 }
             }
             if ($n % 500) {

@@ -24,8 +24,8 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
-use App\Helpers\PasswordResetTokenHelper;
 use App\Plugins\Events\Events\AuthEvent;
+use App\Helpers\PasswordResetTokenHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -257,7 +257,13 @@ class ResetPasswordController
             return ['user' => $userInfo, 'state' => PasswordResetTokenHelper::STATE_LEGACY];
         }
 
-        foreach ([PasswordResetTokenHelper::STATE_VERIFIED, PasswordResetTokenHelper::STATE_UNVERIFIED] as $state) {
+        foreach (
+            [
+            PasswordResetTokenHelper::STATE_VERIFIED,
+            PasswordResetTokenHelper::STATE_UNVERIFIED,
+            PasswordResetTokenHelper::STATE_LEGACY,
+            ] as $state
+        ) {
             $userInfo = User::getUserByMailVerify(PasswordResetTokenHelper::storedValue($state, $token));
             if ($userInfo !== null) {
                 return ['user' => $userInfo, 'state' => $state];

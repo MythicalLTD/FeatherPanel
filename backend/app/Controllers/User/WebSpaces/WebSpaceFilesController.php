@@ -1033,12 +1033,8 @@ class WebSpaceFilesController
 
     public function shareFile(Request $request, string $uuidShort): Response
     {
-        $resolved = $this->resolve(
-            $request,
-            $uuidShort,
-            WebSpaceSubuserPermissions::FILE_READ_CONTENT,
-            [WebSpaceSubuserPermissions::FILE_READ],
-        );
+        // Write-level: creating a share is a mutating action (same bar as deleting one).
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_UPDATE);
         if ($resolved instanceof Response) {
             return $resolved;
         }
@@ -1084,7 +1080,8 @@ class WebSpaceFilesController
 
     public function deleteShareJob(Request $request, string $uuidShort, string $shareId): Response
     {
-        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_READ);
+        // Write-level: read-only subusers must not cancel/delete shares.
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_UPDATE);
         if ($resolved instanceof Response) {
             return $resolved;
         }

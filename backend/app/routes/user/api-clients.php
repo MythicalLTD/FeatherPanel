@@ -168,8 +168,9 @@ return function (RouteCollection $routes): void {
             return (new ApiClientController())->validateApiClient($request);
         },
         ['POST'],
-        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
-        'user-api-clients'
+        // Unauthenticated public-key probe — stricter than the default user-api-clients bucket.
+        Rate::perMinute(10),
+        'user-api-clients-validate'
     );
 
     App::getInstance(true)->registerAuthRoute(

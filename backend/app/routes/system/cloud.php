@@ -16,15 +16,15 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
 use App\Helpers\DemoCloudHelper;
-use RateLimit\Rate;
-use Symfony\Component\Routing\Route;
 use App\CloudFlare\CloudFlareRealIP;
+use Symfony\Component\Routing\Route;
+use App\Middleware\RateLimitMiddleware;
 use App\Middleware\CloudAccessMiddleware;
 use App\Middleware\PanelAccessMiddleware;
-use App\Middleware\RateLimitMiddleware;
 use App\Controllers\System\CloudV1Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;

@@ -1124,7 +1124,7 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                     canEdit={canUpdate || canReadContent}
                     canDelete={canDelete}
                     canDownload={canRead}
-                    canShare={shareEnabled}
+                    canShare={shareEnabled && canUpdate}
                     canBrowseArchiveFeature={archiveBrowseEnabled}
                     canDownloadDirectory={directoryDownloadEnabled}
                     acceptArchiveExtract={canArchive && archiveBrowseEnabled}

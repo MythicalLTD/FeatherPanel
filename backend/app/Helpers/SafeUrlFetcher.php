@@ -21,8 +21,9 @@ namespace App\Helpers;
  * Fetch remote URLs without exposing the panel to SSRF.
  *
  * Only http(s) URLs whose hostname resolves exclusively to public IP addresses
- * are fetched. Redirects are followed manually and every hop is re-validated;
- * the raw body is capped by a byte limit.
+ * are fetched. Each hop connects to the IP that was validated for that URL
+ * (no second DNS lookup). Redirects are followed manually and every hop is
+ * re-validated and re-pinned; the raw body is capped by a byte limit.
  */
 class SafeUrlFetcher
 {
@@ -33,7 +34,7 @@ class SafeUrlFetcher
     /**
      * Download a URL body, or return false when the URL is not allowed / the request fails.
      */
-    public static function fetch(string $url, int $maxBytes = self::DEFAULT_MAX_BYTES, int $timeoutSeconds = self::DEFAULT_TIMEOUT): string|false
+    public static function fetch(string $url, int $maxBytes = self::DEFAULT_MAX_BYTES, int $timeoutSeconds = self::DEFAULT_TIMEOUT): string | false
     {
         if ($maxBytes <= 0) {
             $maxBytes = self::DEFAULT_MAX_BYTES;
@@ -44,7 +45,8 @@ class SafeUrlFetcher
 
         $currentUrl = $url;
         for ($redirect = 0; $redirect <= self::MAX_REDIRECTS; ++$redirect) {
-            if (!self::isAllowedUrl($currentUrl)) {
+            $pinned = self::pinAllowedUrl($currentUrl);
+            if ($pinned === null) {
                 return false;
             }
 
@@ -55,14 +57,16 @@ class SafeUrlFetcher
                     'follow_location' => 0,
                     'max_redirects' => 0,
                     'user_agent' => 'FeatherPanel/1.0',
+                    'header' => 'Host: ' . $pinned['host_header'] . "\r\n",
                 ],
                 'ssl' => [
                     'verify_peer' => true,
                     'verify_peer_name' => true,
+                    'peer_name' => $pinned['tls_peer_name'],
                 ],
             ]);
 
-            $handle = @fopen($currentUrl, 'rb', false, $context);
+            $handle = @fopen($pinned['url'], 'rb', false, $context);
             if ($handle === false) {
                 return false;
             }
@@ -86,6 +90,7 @@ class SafeUrlFetcher
             $location = self::parseLocation($http_response_header ?? []);
 
             if ($status >= 300 && $status < 400 && $location !== null) {
+                // Resolve against the original (hostname) URL so relative redirects keep the host.
                 $currentUrl = self::resolveRedirect($currentUrl, $location);
                 if ($currentUrl === null) {
                     return false;
@@ -109,31 +114,72 @@ class SafeUrlFetcher
      */
     public static function isAllowedUrl(string $url): bool
     {
+        return self::pinAllowedUrl($url) !== null;
+    }
+
+    /**
+     * Validate the URL and return a connection target pinned to a validated IP.
+     *
+     * @return array{url: string, host_header: string, tls_peer_name: string}|null
+     */
+    private static function pinAllowedUrl(string $url): ?array
+    {
         $parts = parse_url($url);
         if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
-            return false;
+            return null;
         }
 
-        if (!in_array(strtolower($parts['scheme']), ['http', 'https'], true)) {
-            return false;
+        $scheme = strtolower((string) $parts['scheme']);
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            return null;
         }
 
         if (isset($parts['user']) || isset($parts['pass'])) {
-            return false;
+            return null;
         }
 
-        $ips = self::resolveHost((string) $parts['host']);
+        $host = (string) $parts['host'];
+        $ips = self::resolveHost($host);
         if ($ips === []) {
-            return false;
+            return null;
         }
 
         foreach ($ips as $ip) {
             if (!self::isPublicIp($ip)) {
-                return false;
+                return null;
             }
         }
 
-        return true;
+        // Prefer IPv4 when available; otherwise use the first validated address.
+        $connectIp = $ips[0];
+        foreach ($ips as $ip) {
+            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false) {
+                $connectIp = $ip;
+                break;
+            }
+        }
+
+        $port = isset($parts['port']) ? (int) $parts['port'] : ($scheme === 'https' ? 443 : 80);
+        $path = $parts['path'] ?? '/';
+        if (isset($parts['query'])) {
+            $path .= '?' . $parts['query'];
+        }
+
+        $authority = filter_var($connectIp, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false
+            ? '[' . $connectIp . ']'
+            : $connectIp;
+
+        $hostHeader = $host;
+        $defaultPort = $scheme === 'https' ? 443 : 80;
+        if ($port !== $defaultPort) {
+            $hostHeader .= ':' . $port;
+        }
+
+        return [
+            'url' => $scheme . '://' . $authority . ':' . $port . $path,
+            'host_header' => $hostHeader,
+            'tls_peer_name' => trim($host, '[]'),
+        ];
     }
 
     /**
@@ -143,7 +189,7 @@ class SafeUrlFetcher
      */
     private static function resolveHost(string $host): array
     {
-        $host = trim($host, "[]");
+        $host = trim($host, '[]');
         if ($host === '') {
             return [];
         }
@@ -172,12 +218,18 @@ class SafeUrlFetcher
 
     /**
      * Reject loopback, private, link-local, CGNAT and other reserved ranges.
+     * IPv4-mapped / IPv4-compatible IPv6 forms are unwrapped and checked as IPv4.
      */
     private static function isPublicIp(string $ip): bool
     {
-        $ip = trim($ip, "[]");
+        $ip = trim($ip, '[]');
         if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
             return false;
+        }
+
+        $embedded = self::unwrapIpv4MappedOrCompatible($ip);
+        if ($embedded !== null) {
+            return self::isPublicIpv4($embedded);
         }
 
         // Public/global only: excludes private + reserved ranges (IPv4 and IPv6).
@@ -186,14 +238,60 @@ class SafeUrlFetcher
         }
 
         if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false) {
-            // CGNAT 100.64.0.0/10 is not covered by the reserved-range flag on every PHP build.
-            $long = ip2long($ip);
-            if ($long !== false && ($long & 0xFFC00000) === ip2long('100.64.0.0')) {
-                return false;
-            }
+            return self::isPublicIpv4($ip);
         }
 
         return true;
+    }
+
+    private static function isPublicIpv4(string $ip): bool
+    {
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return false;
+        }
+
+        // CGNAT 100.64.0.0/10 is not covered by the reserved-range flag on every PHP build.
+        $long = ip2long($ip);
+        if ($long !== false && ($long & 0xFFC00000) === ip2long('100.64.0.0')) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Extract the embedded IPv4 from IPv4-mapped (::ffff:a.b.c.d) or
+     * IPv4-compatible (::a.b.c.d) addresses. Returns null for other forms.
+     */
+    private static function unwrapIpv4MappedOrCompatible(string $ip): ?string
+    {
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) === false) {
+            return null;
+        }
+
+        $binary = @inet_pton($ip);
+        if ($binary === false || strlen($binary) !== 16) {
+            return null;
+        }
+
+        // IPv4-mapped: ::ffff:0:0/96 → first 12 bytes are 00..00 ffff
+        if (substr($binary, 0, 12) === "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff") {
+            $v4 = inet_ntop(substr($binary, 12));
+
+            return is_string($v4) ? $v4 : null;
+        }
+
+        // IPv4-compatible (deprecated): ::a.b.c.d → first 12 bytes zero, last 4 not all zero
+        if (substr($binary, 0, 12) === "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00") {
+            $last4 = substr($binary, 12);
+            if ($last4 !== "\x00\x00\x00\x00" && $last4 !== "\x00\x00\x00\x01") {
+                $v4 = inet_ntop($last4);
+
+                return is_string($v4) ? $v4 : null;
+            }
+        }
+
+        return null;
     }
 
     /**

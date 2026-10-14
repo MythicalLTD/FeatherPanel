@@ -27,14 +27,16 @@ namespace App\Helpers;
  * the token that is sent by mail keeps its original "<64 hex>.<expiry>" shape.
  *
  * Stored formats (the part after "fpreset:" is what the user received by mail):
- *   fpreset:v:<token>     reset token issued for an already verified address
- *   fpreset:u:<token>     reset token issued for an address that is NOT verified
- *   fpreset:used:<random> consumed reset token of a not verified address
- *   <token>               legacy value written before this change (no prefix)
+ *   fpreset:v:<token>      reset token issued for an already verified address
+ *   fpreset:u:<token>      reset token issued for an address that is NOT verified
+ *   fpreset:legacy:<token> reset token whose prior verification state is unknown
+ *   fpreset:used:<random>  consumed reset token of a not verified address
+ *   <token>                legacy value written before this change (no prefix)
  *
  * A password reset therefore never turns an unverified address into a verified
  * one, and a stored reset token is never mistaken for an email-verification
- * token (only an empty value means "verified").
+ * token (only an empty value means "verified"). Raw legacy reset tokens do not
+ * by themselves decide verified vs unverified — they keep a compatibility state.
  */
 final class PasswordResetTokenHelper
 {
@@ -82,15 +84,22 @@ final class PasswordResetTokenHelper
      */
     public static function storedValue(string $state, string $token): string
     {
-        $flag = $state === self::STATE_VERIFIED ? self::STATE_VERIFIED : self::STATE_UNVERIFIED;
+        if ($state === self::STATE_VERIFIED) {
+            return self::PREFIX . self::STATE_VERIFIED . ':' . $token;
+        }
 
-        return self::PREFIX . $flag . ':' . $token;
+        if ($state === self::STATE_LEGACY) {
+            return self::PREFIX . self::STATE_LEGACY . ':' . $token;
+        }
+
+        return self::PREFIX . self::STATE_UNVERIFIED . ':' . $token;
     }
 
     /**
      * True when the value is a reset token written by this helper.
-     * Read sites that treat `mail_verify` as a verification flag must treat such
-     * a value as "not verified".
+     * Read sites that treat `mail_verify` as a verification flag must use
+     * {@see isEmailVerified()} instead of treating every non-empty value as
+     * "not verified".
      */
     public static function isResetTokenValue(?string $value): bool
     {
@@ -98,12 +107,42 @@ final class PasswordResetTokenHelper
     }
 
     /**
+     * Whether the account's email should be treated as verified for login.
+     *
+     * Empty/NULL is verified. A pending reset for a previously verified address
+     * (`fpreset:v:…`) does not revoke that status. Legacy / unknown-state reset
+     * tokens also do not flip eligibility based on token shape alone. Explicit
+     * unverified markers and plain email-verification tokens still block login.
+     */
+    public static function isEmailVerified(?string $mailVerify): bool
+    {
+        $value = is_string($mailVerify) ? trim($mailVerify) : '';
+        if ($value === '') {
+            return true;
+        }
+
+        if (str_starts_with($value, self::PREFIX . self::STATE_VERIFIED . ':')) {
+            return true;
+        }
+
+        // Compatibility: raw or prefixed legacy reset tokens must not alone
+        // decide that the address is unverified.
+        if (self::isLegacyResetTokenValue($value)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * `mail_verify` value to keep after a reset was completed (or the stored
      * token turned out to be expired). Verified addresses stay verified (NULL),
      * not verified addresses stay not verified - the reset token must never
-     * count as an email verification.
+     * count as an email verification. Legacy/unknown state keeps a non-empty
+     * compatibility marker that does not change login eligibility by shape.
      *
      * @return string|null null means "verified", a non-empty string means "not verified"
+     *                     (or a legacy compatibility marker that stays login-eligible)
      */
     public static function mailVerifyAfterReset(string $state): ?string
     {
@@ -111,13 +150,22 @@ final class PasswordResetTokenHelper
             return self::USED_PREFIX . bin2hex(random_bytes(16));
         }
 
+        if ($state === self::STATE_LEGACY) {
+            // Preserve unknown prior state without inventing verified/unverified
+            // from the token shape. Login treats this marker as still eligible.
+            return self::PREFIX . self::STATE_LEGACY . ':used:' . bin2hex(random_bytes(16));
+        }
+
         return null;
     }
 
     /**
-     * Classify the currently stored `mail_verify` value: an empty value means the
-     * address is verified, everything else means it is not (legacy email
-     * verification token or a reset token issued earlier).
+     * Classify the currently stored `mail_verify` value.
+     *
+     * Empty means verified. Prefixed reset tokens carry an explicit state.
+     * Raw legacy reset tokens keep {@see STATE_LEGACY} so they never alone
+     * decide verified vs unverified. Everything else is a pending email
+     * verification token (not verified).
      */
     private static function stateForCurrentValue(?string $currentMailVerify): string
     {
@@ -130,11 +178,38 @@ final class PasswordResetTokenHelper
             return self::STATE_VERIFIED;
         }
 
+        if (str_starts_with($value, self::PREFIX . self::STATE_LEGACY . ':')) {
+            return self::STATE_LEGACY;
+        }
+
         if (self::isResetTokenValue($value)) {
             return self::STATE_UNVERIFIED;
         }
 
+        // Raw legacy reset token (no prefix): state unknown — do not treat as unverified.
+        if (self::isLegacyResetTokenShape($value)) {
+            return self::STATE_LEGACY;
+        }
+
         // Pending email verification token: the address is not verified yet.
         return self::STATE_UNVERIFIED;
+    }
+
+    /**
+     * Raw `<64 hex>.<unix>` token written before the fpreset: prefix existed,
+     * or a prefixed legacy compatibility value.
+     */
+    private static function isLegacyResetTokenValue(string $value): bool
+    {
+        if (str_starts_with($value, self::PREFIX . self::STATE_LEGACY . ':')) {
+            return true;
+        }
+
+        return self::isLegacyResetTokenShape($value);
+    }
+
+    private static function isLegacyResetTokenShape(string $value): bool
+    {
+        return (bool) preg_match('/^[a-f0-9]{64}\.\d+$/', $value);
     }
 }

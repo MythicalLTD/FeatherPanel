@@ -556,11 +556,11 @@ class TaskController
         }
 
         // Only the documented task fields may be updated; this blocks re-homing a task
-        // onto another schedule via the raw schedule_id column.
+        // onto another schedule via the raw schedule_id column. Ordering stays on the
+        // dedicated sequence endpoint — sequence_id is not writable here.
         $body = array_intersect_key($body, array_flip([
             'action',
             'payload',
-            'sequence_id',
             'time_offset',
             'continue_on_failure',
         ]));

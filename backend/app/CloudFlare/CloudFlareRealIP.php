@@ -267,8 +267,11 @@ class CloudFlareRealIP
     }
 
     /**
-     * Extract the first valid public IP from an X-Forwarded-For header value.
-     * Falls back to the first non-empty entry if no public IP exists.
+     * Extract the client IP from an X-Forwarded-For header.
+     *
+     * Scans right-to-left (closest proxy first), skipping trusted proxy peers
+     * and Cloudflare addresses. Returns the first untrusted address, or an
+     * empty string when none qualifies.
      */
     private static function extractFirstPublicIpFromForwardedFor($xff)
     {
@@ -279,12 +282,18 @@ class CloudFlareRealIP
         $forwardedIPs = array_map('trim', explode(',', $xff));
         $forwardedIPs = array_values(array_filter($forwardedIPs, static fn ($ip) => $ip !== ''));
 
-        foreach ($forwardedIPs as $ip) {
-            if (self::isValidIP($ip)) {
-                return $ip;
+        for ($i = count($forwardedIPs) - 1; $i >= 0; --$i) {
+            $ip = $forwardedIPs[$i];
+            if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+                continue;
             }
+            if (self::isTrustedProxyPeer($ip) || self::isFromCloudflare($ip)) {
+                continue;
+            }
+
+            return $ip;
         }
 
-        return $forwardedIPs[0] ?? '';
+        return '';
     }
 }
