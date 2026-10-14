@@ -1862,23 +1862,31 @@ class ServersController
                 return ApiResponse::error('Failed to update server. Check server logs for details.', 'FAILED_TO_UPDATE_SERVER', 500);
             }
 
-            if (isset($data['allocation_id']) && $data['allocation_id'] !== $server['allocation_id']) {
-                if (isset($server['allocation_id'])) {
-                    $oldAllocationUnclaimed = Allocation::unassignFromServer($server['allocation_id'], $pdo);
-                    if (!$oldAllocationUnclaimed) {
-                        $pdo->rollBack();
-                        App::getInstance(true)->getLogger()->error('Failed to unclaim old allocation (ID: ' . $server['allocation_id'] . ') for server ID: ' . $id);
+            // Changing primary only updates which allocation is primary.
+            // Never unassign the previous primary here — that drops extra ports on save.
+            if (isset($data['allocation_id']) && (int) $data['allocation_id'] !== (int) $server['allocation_id']) {
+                $newAllocation = Allocation::getById((int) $data['allocation_id']);
+                if (!$newAllocation) {
+                    $pdo->rollBack();
 
-                        return ApiResponse::error('Failed to unassign previous allocation', 'ALLOCATION_UPDATE_FAILED', 500);
-                    }
+                    return ApiResponse::error('Allocation not found', 'ALLOCATION_NOT_FOUND', 404);
                 }
 
-                $newAllocationClaimed = Allocation::assignToServer($data['allocation_id'], $id, $pdo);
-                if (!$newAllocationClaimed) {
+                $newAllocationServerId = (int) ($newAllocation['server_id'] ?? 0);
+                if ($newAllocationServerId !== 0 && $newAllocationServerId !== (int) $id) {
                     $pdo->rollBack();
-                    App::getInstance(true)->getLogger()->error('Failed to claim new allocation (ID: ' . $data['allocation_id'] . ') for server ID: ' . $id);
 
-                    return ApiResponse::error('Failed to claim new allocation', 'ALLOCATION_UPDATE_FAILED', 500);
+                    return ApiResponse::error('Allocation is already assigned to another server', 'ALLOCATION_IN_USE', 400);
+                }
+
+                if ($newAllocationServerId === 0) {
+                    $newAllocationClaimed = Allocation::assignToServer((int) $data['allocation_id'], (int) $id, $pdo);
+                    if (!$newAllocationClaimed) {
+                        $pdo->rollBack();
+                        App::getInstance(true)->getLogger()->error('Failed to claim new allocation (ID: ' . $data['allocation_id'] . ') for server ID: ' . $id);
+
+                        return ApiResponse::error('Failed to claim new allocation', 'ALLOCATION_UPDATE_FAILED', 500);
+                    }
                 }
             }
 

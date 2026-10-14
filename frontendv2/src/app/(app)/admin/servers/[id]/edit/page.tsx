@@ -1189,6 +1189,10 @@ export default function EditServerPage() {
                             selectedEntities={selectedEntities}
                             openAllocationModal={(mode) => void openAllocationModal(mode)}
                             refreshTrigger={allocationsRefreshTrigger}
+                            onPrimaryChanged={(allocation) => {
+                                setSelectedEntities((prev) => ({ ...prev, allocation }));
+                                setForm((prev) => ({ ...prev, allocation_id: allocation.id }));
+                            }}
                         />
                     </TabsContent>
 

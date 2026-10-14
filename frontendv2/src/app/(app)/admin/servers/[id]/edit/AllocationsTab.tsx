@@ -23,13 +23,14 @@ import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Plug, Search, Trash2, RefreshCw, Star } from 'lucide-react';
-import { ServerAllocations, SelectedEntities } from './types';
+import { Allocation, ServerAllocations, SelectedEntities } from './types';
 
 interface AllocationsTabProps {
     serverId: string;
     selectedEntities: SelectedEntities;
     openAllocationModal: (mode: 'primary' | 'assign') => void;
     refreshTrigger?: number;
+    onPrimaryChanged?: (allocation: Allocation) => void;
 }
 
 export function AllocationsTab({
@@ -37,6 +38,7 @@ export function AllocationsTab({
     selectedEntities,
     openAllocationModal,
     refreshTrigger = 0,
+    onPrimaryChanged,
 }: AllocationsTabProps) {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
@@ -82,11 +84,13 @@ export function AllocationsTab({
         }
     };
 
-    const setPrimaryAllocation = async (allocationId: number) => {
-        setSettingPrimaryId(allocationId);
+    const setPrimaryAllocation = async (allocation: Allocation) => {
+        setSettingPrimaryId(allocation.id);
         try {
-            await axios.post(`/api/admin/servers/${serverId}/allocations/${allocationId}/primary`);
+            await axios.post(`/api/admin/servers/${serverId}/allocations/${allocation.id}/primary`);
             toast.success(t('admin.servers.edit.allocations.primary_success'));
+            // Keep edit-form primary in sync so Save Changes does not revert it.
+            onPrimaryChanged?.(allocation);
             fetchServerAllocations();
         } catch (error) {
             console.error('Error setting primary allocation:', error);
@@ -198,7 +202,7 @@ export function AllocationsTab({
                                             type='button'
                                             variant='outline'
                                             size='sm'
-                                            onClick={() => setPrimaryAllocation(allocation.id)}
+                                            onClick={() => setPrimaryAllocation(allocation)}
                                             loading={settingPrimaryId === allocation.id}
                                             disabled={deletingId === allocation.id}
                                         >
