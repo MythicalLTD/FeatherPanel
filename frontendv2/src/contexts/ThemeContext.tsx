@@ -165,6 +165,11 @@ function hasUserOverride(key: keyof typeof USER_OVERRIDE_KEYS): boolean {
     return localStorage.getItem(USER_OVERRIDE_KEYS[key]) === 'true';
 }
 
+/** Light mode only supports opaque, non-WebGL backgrounds. */
+function isLightSafeBackgroundType(type: BackgroundType): boolean {
+    return type === 'pattern' || type === 'solid';
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
     const [mounted, setMounted] = useState(false);
     const [theme, setThemeState] = useState<Theme>('dark');
@@ -208,17 +213,25 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         // Load initial values from localStorage until public admin settings are available.
-        setThemeState(saved || (prefersDark ? 'dark' : 'light'));
-        setAccentColorState(savedAccent && isValidAccentValue(savedAccent) ? savedAccent : 'purple');
-        setBackgroundTypeState(
+        const initialTheme: Theme = saved === 'light' || saved === 'dark' ? saved : prefersDark ? 'dark' : 'light';
+        const parsedBgType: BackgroundType =
             savedBgType === 'aurora' ||
-                savedBgType === 'gradient' ||
-                savedBgType === 'solid' ||
-                savedBgType === 'image' ||
-                savedBgType === 'pattern'
+            savedBgType === 'gradient' ||
+            savedBgType === 'solid' ||
+            savedBgType === 'image' ||
+            savedBgType === 'pattern'
                 ? savedBgType
-                : 'pattern',
-        );
+                : 'pattern';
+        // Light tokens + aurora/image canvas = dark page with dark text. Coerce immediately.
+        const initialBgType: BackgroundType =
+            initialTheme === 'light' && !isLightSafeBackgroundType(parsedBgType) ? 'pattern' : parsedBgType;
+        if (initialBgType !== parsedBgType) {
+            localStorage.setItem('backgroundType', initialBgType);
+        }
+
+        setThemeState(initialTheme);
+        setAccentColorState(savedAccent && isValidAccentValue(savedAccent) ? savedAccent : 'purple');
+        setBackgroundTypeState(initialBgType);
         setBackgroundAnimatedVariantState(
             isBackgroundAnimatedVariant(savedAnimatedVariant) ? savedAnimatedVariant : 'aurora',
         );
@@ -292,7 +305,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         // Enforce background type: light mode limits and forced image when background URL is locked.
         const mustUseImageForLockedBg = imageLock && adminBgUrl !== '';
         if (theme === 'light') {
-            if (backgroundType !== 'pattern' && backgroundType !== 'solid') {
+            if (!isLightSafeBackgroundType(backgroundType)) {
                 setBackgroundTypeState('pattern');
                 localStorage.setItem('backgroundType', 'pattern');
             }
@@ -383,6 +396,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setThemeState(newTheme);
         localStorage.setItem('theme', newTheme);
         localStorage.setItem(USER_OVERRIDE_KEYS.theme, 'true');
+        // Sync-coerce so light tokens never paint over aurora/image/black WebGL canvases.
+        if (newTheme === 'light' && !isLightSafeBackgroundType(backgroundType)) {
+            setBackgroundTypeState('pattern');
+            localStorage.setItem('backgroundType', 'pattern');
+        }
     };
 
     const setAccentColor = (color: string) => {
@@ -398,6 +416,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const adminUrl = (settings?.app_background_image_url ?? '').trim();
         const imageLocked = settings?.app_background_lock === 'true';
         const mustUseImageForLockedBg = Boolean(imageLocked && adminUrl);
+        // Light mode cannot host dark-first animated/image canvases.
+        if (theme === 'light' && !isLightSafeBackgroundType(type)) {
+            return;
+        }
         if (mustUseImageForLockedBg && type !== 'image') {
             return;
         }

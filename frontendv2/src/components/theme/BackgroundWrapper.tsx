@@ -35,6 +35,7 @@ export default function BackgroundWrapper({
     fillViewport?: boolean;
 }) {
     const {
+        theme,
         backgroundType,
         backgroundImage,
         backdropBlur,
@@ -60,12 +61,18 @@ export default function BackgroundWrapper({
         isServerRoute && spellBgMode !== 'off' ? resolveSpellBannerUrl(serverCtx?.server?.spell?.banner) : null;
     const useSpellReplace = Boolean(spellBannerUrl && spellBgMode === 'replace');
     const useSpellBlend = Boolean(spellBannerUrl && spellBgMode === 'blend');
+    const isLight = theme === 'light';
+    // Light mode only paints pattern/solid; never aurora/image/gradient canvases.
+    const effectiveBackgroundType =
+        isLight && backgroundType !== 'pattern' && backgroundType !== 'solid' ? 'pattern' : backgroundType;
 
     useEffect(() => {
         if (!mounted) return;
         if (!settings) return;
         // Don't fight a server-route spell replace background with admin image seeding.
         if (useSpellReplace) return;
+        // Image backgrounds are dark-first and disabled while Light is active.
+        if (isLight) return;
 
         const imageUrl = settings.app_background_image_url;
         const lock = settings.app_background_lock === 'true';
@@ -91,6 +98,7 @@ export default function BackgroundWrapper({
         setBackgroundImage,
         setBackgroundType,
         useSpellReplace,
+        isLight,
     ]);
 
     if (!mounted) {
@@ -98,8 +106,13 @@ export default function BackgroundWrapper({
     }
 
     const getBackgroundStyle = (): React.CSSProperties => {
+        const opaqueBase: React.CSSProperties = {
+            backgroundColor: 'hsl(var(--background))',
+        };
+
         if (useSpellReplace && spellBannerUrl) {
             return {
+                ...opaqueBase,
                 backgroundImage: `url(${spellBannerUrl})`,
                 backgroundSize: backgroundFitToCssSize(backgroundImageFit),
                 backgroundPosition: 'center',
@@ -107,8 +120,9 @@ export default function BackgroundWrapper({
             };
         }
 
-        if (backgroundType === 'image' && backgroundImage) {
+        if (effectiveBackgroundType === 'image' && backgroundImage) {
             return {
+                ...opaqueBase,
                 backgroundImage: `url(${backgroundImage})`,
                 backgroundSize: backgroundFitToCssSize(backgroundImageFit),
                 backgroundPosition: 'center',
@@ -116,21 +130,22 @@ export default function BackgroundWrapper({
             };
         }
 
-        if (backgroundType === 'gradient') {
+        if (effectiveBackgroundType === 'gradient') {
             return {
                 background:
-                    'linear-gradient(135deg, hsl(var(--primary) / 0.12) 0%, hsl(var(--primary) / 0.04) 50%, hsl(var(--primary) / 0.12) 100%)',
+                    'linear-gradient(135deg, hsl(var(--primary) / 0.12) 0%, hsl(var(--primary) / 0.04) 50%, hsl(var(--primary) / 0.12) 100%), hsl(var(--background))',
             };
         }
 
-        if (backgroundType === 'pattern') {
+        if (effectiveBackgroundType === 'pattern') {
             return {
+                ...opaqueBase,
                 backgroundImage: 'radial-gradient(circle, hsl(var(--muted-foreground) / 0.1) 1px, transparent 1px)',
                 backgroundSize: '16px 16px',
             };
         }
 
-        if (backgroundType === 'solid' && backgroundImage) {
+        if (effectiveBackgroundType === 'solid' && backgroundImage) {
             if (backgroundImage.startsWith('#')) {
                 return {
                     backgroundColor: backgroundImage,
@@ -138,17 +153,20 @@ export default function BackgroundWrapper({
             }
         }
 
-        return {};
+        return opaqueBase;
     };
 
-    const useAurora = !useSpellReplace && backgroundType === 'aurora';
-    const hasOverlay = backdropBlur > 0 || backdropDarken > 0 || useSpellReplace;
+    const useAurora = !isLight && !useSpellReplace && effectiveBackgroundType === 'aurora';
+    // Darken veil breaks light-mode contrast; keep blur only when useful.
+    const effectiveDarken = isLight ? 0 : backdropDarken;
+    const effectiveBlur = isLight ? 0 : backdropBlur;
+    const hasOverlay = effectiveBlur > 0 || effectiveDarken > 0 || useSpellReplace;
     const overlayStyle: React.CSSProperties = {
-        backdropFilter: backdropBlur > 0 ? `blur(${backdropBlur}px)` : undefined,
-        WebkitBackdropFilter: backdropBlur > 0 ? `blur(${backdropBlur}px)` : undefined,
+        backdropFilter: effectiveBlur > 0 ? `blur(${effectiveBlur}px)` : undefined,
+        WebkitBackdropFilter: effectiveBlur > 0 ? `blur(${effectiveBlur}px)` : undefined,
         backgroundColor:
-            backdropDarken > 0 || useSpellReplace
-                ? `rgba(0,0,0,${Math.max(backdropDarken, useSpellReplace ? 35 : 0) / 100})`
+            effectiveDarken > 0 || useSpellReplace
+                ? `rgba(0,0,0,${Math.max(effectiveDarken, useSpellReplace ? 35 : 0) / 100})`
                 : undefined,
     };
 
