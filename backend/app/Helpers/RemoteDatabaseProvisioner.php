@@ -183,6 +183,9 @@ class RemoteDatabaseProvisioner
         }
     }
 
+    /**
+     * Generates a cryptographically random alphanumeric string.
+     */
     public static function generateRandomString(int $length): string
     {
         $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -278,6 +281,9 @@ class RemoteDatabaseProvisioner
         );
     }
 
+    /**
+     * Exports a MySQL/MariaDB database to SQL (schema + rows) via PDO.
+     */
     private static function dumpMysql(\PDO $pdo, string $databaseName): string
     {
         $out = "-- FeatherQuilld dump for `{$databaseName}`\nSET NAMES utf8mb4;\nSET FOREIGN_KEY_CHECKS=0;\n\n";
@@ -305,6 +311,9 @@ class RemoteDatabaseProvisioner
         return $out . "SET FOREIGN_KEY_CHECKS=1;\n";
     }
 
+    /**
+     * Exports a PostgreSQL database to SQL (schema + rows) via PDO.
+     */
     private static function dumpPostgres(\PDO $pdo, string $databaseName): string
     {
         $out = "-- FeatherQuilld dump for \"{$databaseName}\"\n";
@@ -368,6 +377,9 @@ class RemoteDatabaseProvisioner
         );
     }
 
+    /**
+     * Normalizes the MySQL host-scope part of a user (e.g. `%`, `localhost`).
+     */
     private static function normalizeRemote(string $remote): string
     {
         $remote = trim($remote);
@@ -383,6 +395,9 @@ class RemoteDatabaseProvisioner
         return $remote;
     }
 
+    /**
+     * Quotes the remote-host part of a MySQL account.
+     */
     private static function quoteRemoteMySQL(string $remote): string
     {
         return "'" . str_replace(['\\', "'"], ['\\\\', "\\'"], $remote) . "'";
@@ -393,6 +408,9 @@ class RemoteDatabaseProvisioner
         return '"' . str_replace('"', '""', $identifier) . '"';
     }
 
+    /**
+     * Quotes a MySQL/MariaDB identifier with backticks.
+     */
     private static function quoteIdentifierMySQL(string $identifier): string
     {
         return '`' . str_replace('`', '``', $identifier) . '`';
@@ -400,6 +418,9 @@ class RemoteDatabaseProvisioner
 
     // ── MongoDB ─────────────────────────────────────────────────────────────
 
+    /**
+     * Opens an authenticated MongoDB driver manager from a database-host record.
+     */
     private static function connectMongo(array $databaseHost): \MongoDB\Driver\Manager
     {
         if (!extension_loaded('mongodb')) {
@@ -415,6 +436,9 @@ class RemoteDatabaseProvisioner
         );
     }
 
+    /**
+     * Creates a MongoDB database user with readWrite on the given database.
+     */
     private static function mongoCreate(array $databaseHost, string $databaseName, string $username, string $password): void
     {
         $mgr = self::connectMongo($databaseHost);
@@ -432,6 +456,9 @@ class RemoteDatabaseProvisioner
         ]));
     }
 
+    /**
+     * Drops a MongoDB user and its database.
+     */
     private static function mongoDelete(array $databaseHost, string $databaseName, string $username): void
     {
         $mgr = self::connectMongo($databaseHost);
@@ -443,6 +470,9 @@ class RemoteDatabaseProvisioner
         $mgr->executeCommand($databaseName, new \MongoDB\Driver\Command(['dropDatabase' => 1]));
     }
 
+    /**
+     * Updates a MongoDB user password via updateUser.
+     */
     private static function mongoUpdatePassword(array $databaseHost, string $databaseName, string $username, string $password): void
     {
         $mgr = self::connectMongo($databaseHost);
@@ -452,6 +482,9 @@ class RemoteDatabaseProvisioner
         ]));
     }
 
+    /**
+     * Exports every MongoDB collection as JSON documents.
+     */
     private static function dumpMongo(\MongoDB\Driver\Manager $mgr, string $databaseName): string
     {
         $cols = $mgr->executeCommand($databaseName, new \MongoDB\Driver\Command(['listCollections' => 1]))->toArray();

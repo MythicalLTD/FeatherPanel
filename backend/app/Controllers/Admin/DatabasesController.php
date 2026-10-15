@@ -170,6 +170,9 @@ class DatabasesController
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
         ]
     )]
+    /**
+     * GET /api/admin/databases — lists registered database hosts.
+     */
     public function index(Request $request): Response
     {
         $page = $request->query->get('page', 1);
@@ -255,6 +258,9 @@ class DatabasesController
             new OA\Response(response: 404, description: 'Database not found'),
         ]
     )]
+    /**
+     * GET /api/admin/databases/{id} — returns one database host.
+     */
     public function show(Request $request, int $id): Response
     {
         $database = DatabaseInstance::getDatabaseWithNode($id);
@@ -652,6 +658,9 @@ class DatabasesController
             new OA\Response(response: 500, description: 'Internal server error - Failed to delete database'),
         ]
     )]
+    /**
+     * DELETE /api/admin/databases/{id} — removes a database host.
+     */
     public function delete(Request $request, int $id): Response
     {
         $database = DatabaseInstance::getDatabaseById($id);
@@ -755,6 +764,9 @@ class DatabasesController
             new OA\Response(response: 404, description: 'Node not found'),
         ]
     )]
+    /**
+     * GET /api/admin/databases/node/{nodeId} — lists hosts bound to a node.
+     */
     public function getByNode(Request $request, int $nodeId): Response
     {
         // Check if node exists
@@ -846,6 +858,9 @@ class DatabasesController
             new OA\Response(response: 404, description: 'Database not found'),
         ]
     )]
+    /**
+     * POST /api/admin/databases/{id}/health-check — re-tests connectivity of a host.
+     */
     public function healthCheck(Request $request, int $id): Response
     {
         $database = DatabaseInstance::getDatabaseById($id);
@@ -889,6 +904,9 @@ class DatabasesController
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
         ]
     )]
+    /**
+     * POST /api/admin/databases/test — connectivity check for unsaved credentials.
+     */
     public function testConnection(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
@@ -981,6 +999,9 @@ class DatabasesController
         }
     }
 
+    /**
+     * Verifies credentials by opening a MongoDB driver connection.
+     */
     private function testMongoConnection(string $host, int $port, string $username, string $password, float $startTime): array
     {
         try {
@@ -1044,6 +1065,9 @@ class DatabasesController
         }
     }
 
+    /**
+     * Verifies credentials through a plain PDO connect (MySQL/MariaDB/PostgreSQL).
+     */
     private function testPDOConnection(string $dsn, string $username, string $password, float $startTime): array
     {
         try {
