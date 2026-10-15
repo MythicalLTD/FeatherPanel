@@ -308,6 +308,12 @@ export default function VdsConsolePage() {
         }
     };
 
+    /**
+     * Requests a VNC ticket and opens the console.
+     *
+     * Panel-proxied mode (`wss_url`) embeds noVNC in-page; the legacy
+     * `pve_redirect_url` mode still opens Proxmox in a new tab.
+     */
     const openVnc = async () => {
         if (!id) return;
         setVncLoading(true);
