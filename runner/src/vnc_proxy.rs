@@ -43,6 +43,10 @@ struct VncTicket {
     tls_no_verify: String,
 }
 
+/// Starts the VNC console WebSocket proxy HTTP listener.
+///
+/// Serves `GET /vnc-proxy/:token` and bridges authenticated clients to the
+/// Proxmox `vncwebsocket` endpoint of the VM's node.
 pub async fn serve(pool: MySqlPool) {
     let listen = std::env::var("VNC_PROXY_LISTEN").unwrap_or_else(|_| "0.0.0.0:9100".to_string());
 
@@ -67,6 +71,10 @@ pub async fn serve(pool: MySqlPool) {
     }
 }
 
+/// Validates the one-time panel ticket, consumes it, then upgrades to WS.
+///
+/// Returns 403 for unknown, expired, or already-used tokens before any
+/// upstream connection is attempted.
 async fn ws_handler(pool: MySqlPool, token: String, ws: WebSocketUpgrade) -> Response {
     match load_ticket(&pool, &token).await {
         Ok(Some(ticket)) => ws
@@ -125,6 +133,10 @@ async fn load_ticket(pool: &MySqlPool, token: &str) -> Result<Option<VncTicket>>
     }))
 }
 
+/// Connects to the node's vncwebsocket endpoint and relays frames both ways.
+///
+/// Ends when either side closes; Proxmox close frames are propagated to the
+/// client.
 async fn bridge(client: WebSocket, ticket: VncTicket) {
     let scheme = if ticket.scheme == "http" { "ws" } else { "wss" };
     let port = if ticket.node_port > 0 { ticket.node_port } else { 8006 };
@@ -222,6 +234,10 @@ async fn bridge(client: WebSocket, ticket: VncTicket) {
     debug!("VNC proxy: bridge closed for VMID {}", ticket.vmid);
 }
 
+/// Builds the TLS connector for the upstream Proxmox socket.
+///
+/// `tls_no_verify` maps to `danger_accept_invalid_certs` — needed for the
+/// self-signed certs Proxmox ships by default.
 fn build_connector(tls_no_verify: bool) -> Result<Connector> {
     let mut builder = native_tls::TlsConnector::builder();
     if tls_no_verify {
@@ -232,6 +248,10 @@ fn build_connector(tls_no_verify: bool) -> Result<Connector> {
     Ok(Connector::NativeTls(tls.into()))
 }
 
+/// Converts an axum WebSocket message to its tungstenite equivalent.
+///
+/// Ping/Pong return `None` — axum handles liveness on the client side;
+/// upstream we forward data frames only.
 fn to_tungstenite(m: AxumMessage) -> Option<tungstenite::Message> {
     match m {
         AxumMessage::Text(t) => Some(tungstenite::Message::Text(t.to_string())),
@@ -242,6 +262,7 @@ fn to_tungstenite(m: AxumMessage) -> Option<tungstenite::Message> {
     }
 }
 
+/// Converts a tungstenite message (from Proxmox) to an axum message for the browser.
 fn to_axum(m: tungstenite::Message) -> Option<AxumMessage> {
     match m {
         tungstenite::Message::Text(t) => Some(AxumMessage::Text(t.into())),

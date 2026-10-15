@@ -739,6 +739,21 @@ final class VmInstanceUtil
      *
      * @return array{ok: true, payload: array}|array{ok: false, error: string, code: string, http_status: int}
      */
+    /**
+     * Builds the VNC console URL + auth payload for a VM instance.
+     *
+     * When the `vnc_proxy_via_panel` setting is enabled the payload carries a
+     * panel-relative `wss://{host}/vnc-proxy/{token}` URL whose single-use ticket
+     * is stored in `featherpanel_vnc_tickets`; otherwise the direct Proxmox
+     * `vncwebsocket` URL is returned.
+     *
+     * @param array<string, mixed> $instance VM instance row.
+     * @param array<string, mixed> $vmNode   VM node row.
+     * @param int                  $httpCode  Proxmox HTTP status.
+     * @param array<string, mixed> $payload   Proxmox vncproxy response data.
+     *
+     * @return array<string, mixed> response body for the API call.
+     */
     public static function createVncTicketPayload(array $instance, array $vmNode, int $instanceIdForLabel): array
     {
         try {

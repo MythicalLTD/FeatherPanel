@@ -33,6 +33,13 @@ interface VncConsoleProps {
  * endpoint (FeatherPanel /vnc-proxy relay or a direct Proxmox vncwebsocket URL)
  * and renders the screen into a canvas.
  */
+/**
+ * Embedded noVNC client for the panel-proxied Proxmox console.
+ *
+ * Connects the RFB session to `wss://{panel}/vnc-proxy/{token}` — the
+ * token is single-use and expires in ~5 minutes; the upstream
+ * Proxmox address never reaches the browser.
+ */
 export function VncConsole({ url, className, onDisconnect }: VncConsoleProps) {
     const { t } = useTranslation();
     const containerRef = useRef<HTMLDivElement>(null);
