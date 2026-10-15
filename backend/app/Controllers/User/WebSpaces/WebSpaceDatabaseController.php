@@ -73,6 +73,9 @@ class WebSpaceDatabaseController
         return ApiResponse::success(['hosts' => $sanitized], 'OK', 200);
     }
 
+    /**
+     * POST /api/user/webspaces/{uuidShort}/databases — provisions a new database on a shared host for this WebSpace.
+     */
     public function create(Request $request, string $uuidShort): Response
     {
         $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::DATABASE_CREATE);

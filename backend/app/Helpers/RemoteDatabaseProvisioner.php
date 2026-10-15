@@ -468,6 +468,9 @@ class RemoteDatabaseProvisioner
         return json_encode($out, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     }
 
+    /**
+     * Imports a JSON document dump ({"collection": [docs]}) into MongoDB.
+     */
     private static function importMongo(\MongoDB\Driver\Manager $mgr, string $databaseName, string $json): void
     {
         $data = json_decode(trim($json), true);
@@ -495,6 +498,9 @@ class RemoteDatabaseProvisioner
 
     // -- ClickHouse (HTTP interface on port 8123) --------------------------------
 
+    /**
+     * Executes a ClickHouse SQL statement over the HTTP interface and returns the raw response body.
+     */
     private static function chQuery(array $databaseHost, string $sql, ?string $postData = null): string
     {
         $host = (string) ($databaseHost['database_host'] ?? '');
@@ -522,11 +528,17 @@ class RemoteDatabaseProvisioner
         return (string) $body;
     }
 
+    /**
+     * Quotes a ClickHouse identifier (database/table name) with backticks.
+     */
     private static function chIdent(string $name): string
     {
         return '`' . str_replace('`', '``', $name) . '`';
     }
 
+    /**
+     * Creates a ClickHouse database and user, granting full access on that database.
+     */
     private static function chCreate(array $databaseHost, string $databaseName, string $username, string $password): void
     {
         $db = self::chIdent($databaseName);
@@ -536,6 +548,9 @@ class RemoteDatabaseProvisioner
         self::chQuery($databaseHost, "GRANT SELECT, INSERT, ALTER, CREATE, DROP, OPTIMIZE, SHOW, dictGet ON {$db}.* TO {$user}");
     }
 
+    /**
+     * Drops a ClickHouse database and its associated user.
+     */
     private static function chDelete(array $databaseHost, string $databaseName, string $username): void
     {
         try {
@@ -546,6 +561,9 @@ class RemoteDatabaseProvisioner
         self::chQuery($databaseHost, 'DROP DATABASE IF EXISTS ' . self::chIdent($databaseName));
     }
 
+    /**
+     * Changes a ClickHouse user password via ALTER USER.
+     */
     private static function chUpdatePassword(array $databaseHost, string $username, string $password): void
     {
         self::chQuery(
@@ -554,6 +572,9 @@ class RemoteDatabaseProvisioner
         );
     }
 
+    /**
+     * Exports every table of a ClickHouse database as JSONEachRow, packed into one JSON object.
+     */
     private static function chDump(array $databaseHost, string $databaseName): string
     {
         $tables = self::chQuery($databaseHost, "SELECT name FROM system.tables WHERE database=" . var_export($databaseName, true) . ' FORMAT TSV');
@@ -570,6 +591,9 @@ class RemoteDatabaseProvisioner
         return json_encode($out, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     }
 
+    /**
+     * Imports a chDump() JSON payload back into a ClickHouse database (JSONEachRow per table).
+     */
     private static function chImport(array $databaseHost, string $databaseName, string $json): void
     {
         $data = json_decode(trim($json), true);

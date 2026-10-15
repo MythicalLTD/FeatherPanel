@@ -294,6 +294,9 @@ class DatabasesController
             new OA\Response(response: 500, description: 'Internal server error - Failed to create database'),
         ]
     )]
+    /**
+     * POST /api/admin/databases — registers a new remote database host.
+     */
     public function create(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
@@ -487,6 +490,9 @@ class DatabasesController
             new OA\Response(response: 500, description: 'Internal server error - Failed to update database'),
         ]
     )]
+    /**
+     * PUT /api/admin/databases/{id} — updates an existing database host configuration.
+     */
     public function update(Request $request, int $id): Response
     {
         $database = DatabaseInstance::getDatabaseById($id);
@@ -913,6 +919,9 @@ class DatabasesController
         ], 'Connection test completed', 200);
     }
 
+    /**
+     * Dispatches a live connectivity check to the handler matching the database type.
+     */
     private function testDatabaseConnection(array $data): array
     {
         $startTime = microtime(true);
@@ -997,6 +1006,9 @@ class DatabasesController
         }
     }
 
+    /**
+     * Verifies credentials against a ClickHouse HTTP endpoint and returns latency + server version.
+     */
     private function testClickHouseConnection(string $host, int $port, string $username, string $password, float $startTime): array
     {
         try {
