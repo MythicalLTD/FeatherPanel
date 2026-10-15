@@ -14308,7 +14308,10 @@
 				"power_failed": "Power action failed",
 				"vnc_wss": "VNC WSS: {url}",
 				"vnc_failed": "Failed to get VNC ticket"
-			}
+			},
+			"connecting": "Connecting to console...",
+			"disconnected": "Console disconnected",
+			"close_console": "Close console"
 		},
 		"subusers": {
 			"title": "Subuser Management",

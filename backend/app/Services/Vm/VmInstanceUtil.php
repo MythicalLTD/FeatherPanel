@@ -780,10 +780,35 @@ final class VmInstanceUtil
         if ($usePanelProxy) {
             $appUrl = rtrim($config->getSetting(ConfigInterface::APP_URL, ''), '/');
             if ($appUrl !== '') {
-                $panelScheme = str_starts_with($appUrl, 'https:') ? 'wss' : 'ws';
-                $panelHost = parse_url($appUrl, PHP_URL_HOST);
-                $panelPort = parse_url($appUrl, PHP_URL_PORT);
-                $wssUrl = $panelScheme . '://' . $panelHost . ($panelPort ? ':' . $panelPort : '') . '/vnc-proxy' . $wssPath . '?' . $wssQuery;
+                // Issue a short-lived, single-use console token. The async-runner
+                // /vnc-proxy/{token} endpoint looks it up, deletes it on first use
+                // and bridges the client websocket to Proxmox vncwebsocket.
+                $token = bin2hex(random_bytes(24));
+                try {
+                    $pdo = Database::getPdoConnection();
+                    $stmt = $pdo->prepare(
+                        'INSERT INTO featherpanel_vnc_tickets (token, vm_instance_id, user_uuid, pve_node, vm_type, vmid, port, vncticket, expires_at)
+                         VALUES (:token, :instance, :user_uuid, :pve_node, :vm_type, :vmid, :port, :vncticket, :expires)'
+                    );
+                    $stmt->execute([
+                        'token' => $token,
+                        'instance' => (int) ($instance['id'] ?? $instanceIdForLabel),
+                        'user_uuid' => $instance['user_uuid'] ?? null,
+                        'pve_node' => $node,
+                        'vm_type' => $vmType,
+                        'vmid' => $vmid,
+                        'port' => (int) $vnc['port'],
+                        'vncticket' => $vnc['ticket'],
+                        'expires' => time() + 300,
+                    ]);
+                    $panelScheme = str_starts_with($appUrl, 'https:') ? 'wss' : 'ws';
+                    $panelHost = parse_url($appUrl, PHP_URL_HOST);
+                    $panelPort = parse_url($appUrl, PHP_URL_PORT);
+                    $wssUrl = $panelScheme . '://' . $panelHost . ($panelPort ? ':' . $panelPort : '') . '/vnc-proxy/' . $token;
+                } catch (\Throwable $e) {
+                    App::getInstance(true)->getLogger()->error('VNC proxy ticket insert failed: ' . $e->getMessage());
+                    $usePanelProxy = false;
+                }
             } else {
                 $usePanelProxy = false;
             }

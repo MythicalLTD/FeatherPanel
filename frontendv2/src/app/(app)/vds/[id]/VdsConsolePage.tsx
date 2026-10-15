@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import VdsPerformance from '@/components/vds/VdsPerformance';
 import VdsInfoCards, { VdsNetworkCard } from '@/components/vds/VdsInfoCards';
+import { VncConsole } from '@/components/vds/VncConsole';
 import {
     Play,
     Square,
@@ -166,6 +167,7 @@ export default function VdsConsolePage() {
     const [statusLoading, setStatusLoading] = useState(false);
     const [powering, setPowering] = useState<string | null>(null);
     const [vncLoading, setVncLoading] = useState(false);
+    const [vncUrl, setVncUrl] = useState<string | null>(null);
     const [showAccessPassword, setShowAccessPassword] = useState(false);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const statusInFlightRef = useRef(false);
@@ -316,7 +318,7 @@ export default function VdsConsolePage() {
                 if (payload.pve_redirect_url) {
                     window.open(payload.pve_redirect_url, '_blank', 'noopener,noreferrer');
                 } else if (payload.wss_url) {
-                    toast.info(t('vds.console.toast.vnc_wss', { url: payload.wss_url }));
+                    setVncUrl(payload.wss_url);
                 }
             } else {
                 toast.error(getApiErrorMessageFromPayload(data, t, 'vds.console.toast.vnc_failed'));
@@ -610,6 +612,17 @@ export default function VdsConsolePage() {
                     />
                 </div>
             </div>
+
+            {vncUrl && (
+                <div className='relative'>
+                    <div className='absolute top-2 right-2 z-20'>
+                        <Button variant='glass' size='sm' onClick={() => setVncUrl(null)}>
+                            {t('vds.console.close_console')}
+                        </Button>
+                    </div>
+                    <VncConsole url={vncUrl} onDisconnect={() => {}} />
+                </div>
+            )}
 
             <WidgetRenderer widgets={getVdsWidgets('after-stats')} />
 

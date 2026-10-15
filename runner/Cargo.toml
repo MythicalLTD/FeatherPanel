@@ -23,3 +23,6 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls-native-roots"], de
 urlencoding = "2.1"
 regex = "1.11"
 chrono = "0.4"
+axum = { version = "0.7", features = ["ws"] }
+tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
+native-tls = "0.2"
