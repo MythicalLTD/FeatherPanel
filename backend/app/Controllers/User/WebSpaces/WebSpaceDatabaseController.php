@@ -245,6 +245,7 @@ class WebSpaceDatabaseController
                 $password,
                 (string) ($record['remote'] ?? '%'),
                 (int) ($record['max_connections'] ?? 0),
+                (string) $record['database'],
             );
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to reset password: ' . $e->getMessage(), 'RESET_FAILED', 500);
