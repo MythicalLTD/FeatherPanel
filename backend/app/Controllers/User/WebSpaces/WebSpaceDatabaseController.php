@@ -111,7 +111,7 @@ class WebSpaceDatabaseController
             return ApiResponse::error('Database host is not available for this WebSpace node', 'DATABASE_HOST_NODE_MISMATCH', 400);
         }
 
-        if (!in_array($databaseHost['database_type'], ['mysql', 'mariadb', 'postgresql', 'mongodb'], true)) {
+        if (!in_array($databaseHost['database_type'], ['mysql', 'mariadb', 'postgresql', 'mongodb', 'clickhouse'], true)) {
             return ApiResponse::error('Unsupported database type', 'UNSUPPORTED_DATABASE_TYPE', 400);
         }
 

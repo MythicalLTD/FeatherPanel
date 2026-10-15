@@ -394,7 +394,7 @@ class DatabasesController
         }
 
         // Validate database_type
-        $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb'];
+        $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis', 'clickhouse'];
         if (!in_array($data['database_type'], $allowedTypes)) {
             return ApiResponse::error('Invalid database type. Allowed types: ' . implode(', ', $allowedTypes), 'INVALID_DATABASE_TYPE');
         }
@@ -582,7 +582,7 @@ class DatabasesController
 
         // Validate database_type if updating
         if (isset($data['database_type'])) {
-            $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis'];
+            $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis', 'clickhouse'];
             if (!in_array($data['database_type'], $allowedTypes)) {
                 return ApiResponse::error('Invalid database type. Allowed types: ' . implode(', ', $allowedTypes), 'INVALID_DATABASE_TYPE');
             }
@@ -936,6 +936,15 @@ class DatabasesController
                         $startTime
                     );
 
+                case 'clickhouse':
+                    return $this->testClickHouseConnection(
+                        (string) $data['database_host'],
+                        (int) $data['database_port'],
+                        (string) $data['database_username'],
+                        (string) $data['database_password'],
+                        $startTime
+                    );
+
                 case 'mongodb':
                     return $this->testMongoConnection(
                         (string) $data['database_host'],
@@ -988,6 +997,41 @@ class DatabasesController
         }
     }
 
+    private function testClickHouseConnection(string $host, int $port, string $username, string $password, float $startTime): array
+    {
+        try {
+            $url = "http://{$host}:{$port}/?query=" . urlencode('SELECT version()');
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_USERPWD => "{$username}:{$password}",
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 10,
+            ]);
+            $body = curl_exec($ch);
+            $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $err = curl_error($ch);
+                $responseTime = round((microtime(true) - $startTime) * 1000, 2);
+
+            if ($body === false || $code >= 400) {
+                return [
+                    'success' => false,
+                    'message' => 'Connection failed: HTTP ' . $code . ' ' . ($err !== '' ? $err : (string) $body),
+                    'response_time' => $responseTime,
+                ];
+            }
+
+            return ['success' => true, 'message' => 'Successful (ClickHouse ' . trim((string) $body) . ')', 'response_time' => $responseTime];
+        } catch (\Exception $e) {
+            $responseTime = round((microtime(true) - $startTime) * 1000, 2);
+
+            return [
+                'success' => false,
+                'message' => 'Connection failed: ' . $e->getMessage(),
+                'response_time' => $responseTime,
+            ];
+        }
+    }
+
     private function testPDOConnection(string $dsn, string $username, string $password, float $startTime): array
     {
         try {
@@ -1033,6 +1077,8 @@ class DatabasesController
         return match ($databaseType) {
             'mysql', 'mariadb' => 3306,
             'postgresql' => 5432,
+            'mongodb' => 27017,
+            'clickhouse' => 8123,
             default => 3306,
         };
     }

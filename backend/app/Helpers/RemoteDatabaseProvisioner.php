@@ -39,6 +39,11 @@ class RemoteDatabaseProvisioner
 
             return;
         }
+        if ($type === 'clickhouse') {
+            self::chCreate($databaseHost, $databaseName, $username, $password);
+
+            return;
+        }
         $pdo = self::connect($databaseHost);
         $remote = self::normalizeRemote($remote);
 
@@ -94,6 +99,11 @@ class RemoteDatabaseProvisioner
 
             return;
         }
+        if ($type === 'clickhouse') {
+            self::chDelete($databaseHost, $databaseName, $username);
+
+            return;
+        }
         $pdo = self::connect($databaseHost);
         $remote = self::normalizeRemote($remote);
 
@@ -135,6 +145,11 @@ class RemoteDatabaseProvisioner
         $type = (string) ($databaseHost['database_type'] ?? '');
         if ($type === 'mongodb') {
             self::mongoUpdatePassword($databaseHost, $databaseName, $username, $password);
+
+            return;
+        }
+        if ($type === 'clickhouse') {
+            self::chUpdatePassword($databaseHost, $username, $password);
 
             return;
         }
@@ -191,6 +206,9 @@ class RemoteDatabaseProvisioner
         if ($type === 'mongodb') {
             return self::dumpMongo(self::connectMongo($databaseHost), $databaseName);
         }
+        if ($type === 'clickhouse') {
+            return self::chDump($databaseHost, $databaseName);
+        }
         $pdo = self::connectToDatabase($databaseHost, $databaseName);
 
         return match ($type) {
@@ -207,6 +225,11 @@ class RemoteDatabaseProvisioner
     {
         if (($databaseHost['database_type'] ?? '') === 'mongodb') {
             self::importMongo(self::connectMongo($databaseHost), $databaseName, $sql);
+
+            return;
+        }
+        if (($databaseHost['database_type'] ?? '') === 'clickhouse') {
+            self::chImport($databaseHost, $databaseName, $sql);
 
             return;
         }
@@ -466,6 +489,108 @@ class RemoteDatabaseProvisioner
             }
             if ($n % 500) {
                 $mgr->executeBulkWrite("{$databaseName}.{$name}", $bw);
+            }
+        }
+    }
+
+    // -- ClickHouse (HTTP interface on port 8123) --------------------------------
+
+    private static function chQuery(array $databaseHost, string $sql, ?string $postData = null): string
+    {
+        $host = (string) ($databaseHost['database_host'] ?? '');
+        $port = (int) ($databaseHost['database_port'] ?? 8123);
+        $user = (string) ($databaseHost['database_username'] ?? 'default');
+        $pass = (string) ($databaseHost['database_password'] ?? '');
+
+        $url = "http://{$host}:{$port}/?query=" . urlencode($sql);
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_USERPWD => "{$user}:{$pass}",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_POST => $postData !== null,
+            CURLOPT_POSTFIELDS => $postData,
+        ]);
+        $body = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err = curl_error($ch);
+
+        if ($body === false || $code >= 400) {
+            throw new \RuntimeException('ClickHouse query failed (HTTP ' . $code . '): ' . ($err !== '' ? $err : (string) $body));
+        }
+
+        return (string) $body;
+    }
+
+    private static function chIdent(string $name): string
+    {
+        return '`' . str_replace('`', '``', $name) . '`';
+    }
+
+    private static function chCreate(array $databaseHost, string $databaseName, string $username, string $password): void
+    {
+        $db = self::chIdent($databaseName);
+        $user = self::chIdent($username);
+        self::chQuery($databaseHost, "CREATE DATABASE IF NOT EXISTS {$db}");
+        self::chQuery($databaseHost, "CREATE USER IF NOT EXISTS {$user} IDENTIFIED BY " . var_export($password, true));
+        self::chQuery($databaseHost, "GRANT SELECT, INSERT, ALTER, CREATE, DROP, OPTIMIZE, SHOW, dictGet ON {$db}.* TO {$user}");
+    }
+
+    private static function chDelete(array $databaseHost, string $databaseName, string $username): void
+    {
+        try {
+            self::chQuery($databaseHost, 'DROP USER IF EXISTS ' . self::chIdent($username));
+        } catch (\Throwable $e) {
+            // user may not exist
+        }
+        self::chQuery($databaseHost, 'DROP DATABASE IF EXISTS ' . self::chIdent($databaseName));
+    }
+
+    private static function chUpdatePassword(array $databaseHost, string $username, string $password): void
+    {
+        self::chQuery(
+            $databaseHost,
+            'ALTER USER ' . self::chIdent($username) . ' IDENTIFIED BY ' . var_export($password, true)
+        );
+    }
+
+    private static function chDump(array $databaseHost, string $databaseName): string
+    {
+        $tables = self::chQuery($databaseHost, "SELECT name FROM system.tables WHERE database=" . var_export($databaseName, true) . ' FORMAT TSV');
+        $out = ['featherpanel_clickhouse_dump' => true, 'database' => $databaseName, 'tables' => []];
+        foreach (preg_split('/\s+/', trim($tables)) ?: [] as $table) {
+            if ($table === '') {
+                continue;
+            }
+            $ddl = self::chQuery($databaseHost, 'SHOW CREATE TABLE ' . self::chIdent($databaseName) . '.' . self::chIdent($table) . ' FORMAT TSVRaw');
+            $data = self::chQuery($databaseHost, 'SELECT * FROM ' . self::chIdent($databaseName) . '.' . self::chIdent($table) . ' FORMAT JSONEachRow');
+            $out['tables'][$table] = ['ddl' => $ddl, 'rows' => $data];
+        }
+
+        return json_encode($out, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    }
+
+    private static function chImport(array $databaseHost, string $databaseName, string $json): void
+    {
+        $data = json_decode(trim($json), true);
+        if (!is_array($data) || empty($data['featherpanel_clickhouse_dump']) || !is_array($data['tables'] ?? null)) {
+            throw new \InvalidArgumentException('Invalid ClickHouse dump format (expected FeatherPanel JSON dump)');
+        }
+        self::chQuery($databaseHost, 'CREATE DATABASE IF NOT EXISTS ' . self::chIdent($databaseName));
+        foreach ($data['tables'] as $name => $t) {
+            if (!is_array($t) || !preg_match('/^[a-zA-Z0-9_.-]+$/', (string) $name)) {
+                continue;
+            }
+            $ddl = (string) ($t['ddl'] ?? '');
+            $ddl = preg_replace('/^CREATE TABLE\s+\S+/i', 'CREATE TABLE IF NOT EXISTS ' . self::chIdent($databaseName) . '.' . self::chIdent($name), $ddl);
+            self::chQuery($databaseHost, $ddl);
+            $rows = (string) ($t['rows'] ?? '');
+            if (trim($rows) !== '') {
+                self::chQuery(
+                    $databaseHost,
+                    'INSERT INTO ' . self::chIdent($databaseName) . '.' . self::chIdent($name) . ' FORMAT JSONEachRow',
+                    $rows
+                );
             }
         }
     }
