@@ -131,10 +131,11 @@ class RemoteDatabaseProvisioner
         string $password,
         string $remote = '%',
         int $maxConnections = 0,
+        ?string $databaseName = null,
     ): void {
         $type = (string) ($databaseHost['database_type'] ?? '');
         if ($type === 'mongodb') {
-            self::mongoUpdatePassword($databaseHost, $databaseName, $username, $password);
+            self::mongoUpdatePassword($databaseHost, (string) $databaseName, $username, $password);
 
             return;
         }
