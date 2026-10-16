@@ -541,14 +541,13 @@ class RemoteDatabaseProvisioner
         $user = (string) ($databaseHost['database_username'] ?? 'default');
         $pass = (string) ($databaseHost['database_password'] ?? '');
 
-        $url = "http://{$host}:{$port}/?query=" . urlencode($sql);
-        $ch = curl_init($url);
+        $ch = curl_init("http://{$host}:{$port}/");
         curl_setopt_array($ch, [
             CURLOPT_USERPWD => "{$user}:{$pass}",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT => 30,
-            CURLOPT_POST => $postData !== null,
-            CURLOPT_POSTFIELDS => $postData,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $postData !== null ? $sql . "\n" . $postData : $sql,
         ]);
         $body = curl_exec($ch);
         $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -612,7 +611,7 @@ class RemoteDatabaseProvisioner
     {
         $tables = self::chQuery($databaseHost, "SELECT name FROM system.tables WHERE database=" . var_export($databaseName, true) . ' FORMAT TSV');
         $out = ['featherpanel_clickhouse_dump' => true, 'database' => $databaseName, 'tables' => []];
-        foreach (preg_split('/\s+/', trim($tables)) ?: [] as $table) {
+        foreach (preg_split('/\r?\n/', trim($tables)) ?: [] as $table) {
             if ($table === '') {
                 continue;
             }

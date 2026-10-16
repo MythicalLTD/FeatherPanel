@@ -91,7 +91,7 @@ class DatabaseInstance
                     return false;
                 }
             } elseif ($field === 'database_type') {
-                $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis'];
+                $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis', 'clickhouse'];
                 if (!in_array($data[$field], $allowedTypes)) {
                     $sanitizedData = self::sanitizeDataForLogging($data);
                     App::getInstance(true)->getLogger()->error('Invalid database_type: ' . $data[$field] . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
@@ -391,7 +391,7 @@ class DatabaseInstance
 
         // Validate database_type if provided
         if (isset($data['database_type'])) {
-            $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis'];
+            $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis', 'clickhouse'];
             if (!in_array($data['database_type'], $allowedTypes)) {
                 App::getInstance(true)->getLogger()->error('Invalid database_type: ' . $data['database_type'] . ' for database update with data: ' . json_encode($data));
 

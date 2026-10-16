@@ -1033,17 +1033,18 @@ class DatabasesController
     private function testClickHouseConnection(string $host, int $port, string $username, string $password, float $startTime): array
     {
         try {
-            $url = "http://{$host}:{$port}/?query=" . urlencode('SELECT version()');
-            $ch = curl_init($url);
+            $ch = curl_init("http://{$host}:{$port}/");
             curl_setopt_array($ch, [
                 CURLOPT_USERPWD => "{$username}:{$password}",
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_TIMEOUT => 10,
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => 'SELECT version()',
             ]);
             $body = curl_exec($ch);
             $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $err = curl_error($ch);
-                $responseTime = round((microtime(true) - $startTime) * 1000, 2);
+            $responseTime = round((microtime(true) - $startTime) * 1000, 2);
 
             if ($body === false || $code >= 400) {
                 return [
