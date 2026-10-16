@@ -33,6 +33,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class WebSpaceDatabaseController
 {
+    /**
+     * GET …/databases — lists databases owned by this WebSpace.
+     */
     public function index(Request $request, string $uuidShort): Response
     {
         $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::DATABASE_READ);
@@ -55,6 +58,9 @@ class WebSpaceDatabaseController
         return ApiResponse::success(['data' => $databases], 'OK', 200);
     }
 
+    /**
+     * GET …/databases/hosts — database hosts available for this WebSpace.
+     */
     public function hosts(Request $request, string $uuidShort): Response
     {
         $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::DATABASE_READ);
@@ -73,6 +79,9 @@ class WebSpaceDatabaseController
         return ApiResponse::success(['hosts' => $sanitized], 'OK', 200);
     }
 
+    /**
+     * POST /api/user/webspaces/{uuidShort}/databases — provisions a new database on a shared host for this WebSpace.
+     */
     public function create(Request $request, string $uuidShort): Response
     {
         $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::DATABASE_CREATE);
@@ -111,7 +120,7 @@ class WebSpaceDatabaseController
             return ApiResponse::error('Database host is not available for this WebSpace node', 'DATABASE_HOST_NODE_MISMATCH', 400);
         }
 
-        if (!in_array($databaseHost['database_type'], ['mysql', 'mariadb', 'postgresql', 'mongodb'], true)) {
+        if (!in_array($databaseHost['database_type'], ['mysql', 'mariadb', 'postgresql', 'mongodb', 'clickhouse'], true)) {
             return ApiResponse::error('Unsupported database type', 'UNSUPPORTED_DATABASE_TYPE', 400);
         }
 
@@ -175,6 +184,9 @@ class WebSpaceDatabaseController
         ], 'Database created', 201);
     }
 
+    /**
+     * DELETE …/databases/{id} — drops the database and user on the remote host.
+     */
     public function delete(Request $request, string $uuidShort, int $databaseId): Response
     {
         $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::DATABASE_DELETE);
@@ -219,6 +231,9 @@ class WebSpaceDatabaseController
         return ApiResponse::success([], 'Deleted', 200);
     }
 
+    /**
+     * POST …/databases/{id}/reset-password — rotates the DB user password.
+     */
     public function resetPassword(Request $request, string $uuidShort, int $databaseId): Response
     {
         $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::DATABASE_UPDATE);
@@ -258,6 +273,9 @@ class WebSpaceDatabaseController
         return ApiResponse::success(['password' => $password], 'Password reset', 200);
     }
 
+    /**
+     * GET …/databases/{id}/dump — exports the database content for download.
+     */
     public function dump(Request $request, string $uuidShort, int $databaseId): Response
     {
         $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::DATABASE_READ);
@@ -304,6 +322,9 @@ class WebSpaceDatabaseController
         ], 'OK', 200);
     }
 
+    /**
+     * POST …/databases/{id}/dump — imports an uploaded dump into the database.
+     */
     public function restoreDump(Request $request, string $uuidShort, int $databaseId): Response
     {
         $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::DATABASE_UPDATE);
@@ -340,6 +361,9 @@ class WebSpaceDatabaseController
         return ApiResponse::success(['database' => $record['database']], 'OK', 200);
     }
 
+    /**
+     * GET …/databases/{id}/pma — checks whether phpMyAdmin is deployed for the host.
+     */
     public function checkPhpMyAdminInstalled(Request $request, string $uuidShort): Response
     {
         $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::DATABASE_READ);
@@ -354,6 +378,9 @@ class WebSpaceDatabaseController
         ], 'OK', 200);
     }
 
+    /**
+     * POST …/databases/{id}/pma — issues a phpMyAdmin SSO token.
+     */
     public function generatePhpMyAdminToken(Request $request, string $uuidShort, int $databaseId): Response
     {
         $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::DATABASE_READ);
@@ -419,6 +446,9 @@ class WebSpaceDatabaseController
         return ApiResponse::success(['url' => $pmaUrl], 'OK', 200);
     }
 
+    /**
+     * GET …/databases/{id}/pgadmin — checks whether phpPgAdmin is deployed for the host.
+     */
     public function checkPhpPgAdminInstalled(Request $request, string $uuidShort): Response
     {
         $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::DATABASE_READ);
@@ -433,6 +463,9 @@ class WebSpaceDatabaseController
         ], 'OK', 200);
     }
 
+    /**
+     * POST …/databases/{id}/pgadmin — issues a phpPgAdmin SSO token.
+     */
     public function generatePhpPgAdminToken(Request $request, string $uuidShort, int $databaseId): Response
     {
         $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::DATABASE_READ);
