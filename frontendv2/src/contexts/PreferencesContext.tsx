@@ -23,6 +23,8 @@ import { useTranslation } from '@/contexts/TranslationContext';
 
 interface UserPreferences {
     timezone?: string | null;
+    /** Per-user switch that masks server IP addresses in the whole panel. */
+    hide_server_ips?: boolean | null;
     [key: string]: unknown;
 }
 
@@ -38,6 +40,9 @@ interface PreferencesContextValue {
     /** Whether the initial fetch + auto-detect cycle has finished. */
     ready: boolean;
     setTimezone: (tz: string | null) => Promise<boolean>;
+    /** True when the user hides server IP addresses throughout the panel. */
+    hideServerIps: boolean;
+    setHideServerIps: (hidden: boolean) => Promise<boolean>;
 }
 
 const PreferencesContext = createContext<PreferencesContextValue | undefined>(undefined);
@@ -135,6 +140,29 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
+    const setHideServerIps = useCallback(async (hidden: boolean): Promise<boolean> => {
+        // Optimistic: the UI flips immediately, the server is the source of truth.
+        setPreferences((prev) => ({ ...prev, hide_server_ips: hidden }));
+        try {
+            const { data } = await axios.patch('/api/user/preferences', { hide_server_ips: hidden });
+            if (data?.success) {
+                const updated: UserPreferences | null =
+                    data.data?.preferences && typeof data.data.preferences === 'object'
+                        ? (data.data.preferences as UserPreferences)
+                        : null;
+                if (updated) {
+                    setPreferences(updated);
+                }
+                return true;
+            }
+            setPreferences((prev) => ({ ...prev, hide_server_ips: !hidden }));
+            return false;
+        } catch {
+            setPreferences((prev) => ({ ...prev, hide_server_ips: !hidden }));
+            return false;
+        }
+    }, []);
+
     const value = useMemo<PreferencesContextValue>(() => {
         const explicit =
             typeof preferences.timezone === 'string' && preferences.timezone.trim() !== ''
@@ -145,8 +173,10 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
             timezone: explicit ?? browserTimezone,
             ready,
             setTimezone,
+            hideServerIps: preferences.hide_server_ips === true,
+            setHideServerIps,
         };
-    }, [preferences, browserTimezone, ready, setTimezone]);
+    }, [preferences, browserTimezone, ready, setTimezone, setHideServerIps]);
 
     return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
 }
@@ -169,6 +199,17 @@ export function useUserTimezone(): string {
     const ctx = useContext(PreferencesContext);
     if (ctx) return ctx.timezone;
     return detectBrowserTimezone();
+}
+
+/**
+ * Whether the signed-in user wants server IP addresses masked in the UI.
+ *
+ * Falls back to `false` outside `PreferencesProvider` (plugins, modals
+ * rendered into a detached tree) instead of throwing.
+ */
+export function useHideServerIps(): boolean {
+    const ctx = useContext(PreferencesContext);
+    return ctx ? ctx.hideServerIps : false;
 }
 
 /**

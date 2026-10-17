@@ -2991,6 +2991,25 @@
 		},
 		"quick_links": {}
 	},
+	"privacy": {
+		"title": "Privacy",
+		"description": "Control what your panel shows on screen. Handy when you share your screen, record a video or stream.",
+		"hideIpsLabel": "Hide server IP addresses",
+		"hideIpsHint": "Shows a placeholder instead of server IPs and IP:port addresses everywhere in the panel. Only your account is affected.",
+		"stateHidden": "IP addresses are hidden",
+		"stateVisible": "IP addresses are visible",
+		"example": "Preview",
+		"exampleAddress": "Address",
+		"exampleHost": "IP",
+		"hideIpsButton": "Hide IP addresses",
+		"showIpsButton": "Show IP addresses",
+		"onlyYouHint": "The switch is stored on your account, so it survives a reload, a new browser and another device. Actions that need the real address (firewall, proxy, allocation changes) keep working.",
+		"enabledToast": "IP addresses are now hidden",
+		"disabledToast": "IP addresses are visible again",
+		"saveFailed": "Could not save the setting",
+		"serverCardTitle": "Privacy",
+		"serverCardDescription": "Hides IP addresses for your account — applies to every server, not just this one."
+	},
 	"navigation": {
 		"groups": {},
 		"items": {

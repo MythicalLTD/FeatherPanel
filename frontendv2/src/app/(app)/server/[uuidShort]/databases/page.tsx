@@ -47,7 +47,9 @@ import {
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useIpMask } from '@/hooks/useIpMask';
 import { appendPmaAuthParams, preparePmaAuthContext, storePmaAuthContext } from '@/lib/pma-auth-context';
+import { maskIpLike } from '@/lib/ip-mask';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { cn, copyToClipboard as copyUtil } from '@/lib/utils';
@@ -73,6 +75,7 @@ import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-err
 
 export default function ServerDatabasesPage() {
     const { t, locale } = useTranslation();
+    const ipMask = useIpMask();
     const { settings } = useSettings();
     const params = useParams();
     const router = useRouter();
@@ -681,7 +684,7 @@ export default function ServerDatabasesPage() {
                                             <div className='text-muted-foreground flex items-center gap-2'>
                                                 <ServerIcon className='h-4 w-4 opacity-50' />
                                                 <span className='font-mono text-sm font-semibold'>
-                                                    {getDatabaseDisplayHost(db)}:{db.database_port}
+                                                    {ipMask.endpointLike(getDatabaseDisplayHost(db), db.database_port)}
                                                 </span>
                                             </div>
                                         </>
@@ -952,13 +955,19 @@ export default function ServerDatabasesPage() {
                                     {[
                                         {
                                             label: t('serverDatabases.host'),
-                                            value: getDatabaseDisplayHost(viewingDatabase),
+                                            value: maskIpLike(getDatabaseDisplayHost(viewingDatabase), ipMask.hidden),
+                                            copyValue: getDatabaseDisplayHost(viewingDatabase),
                                         },
                                         {
                                             label: t('serverDatabases.port'),
                                             value: String(viewingDatabase.database_port),
+                                            copyValue: String(viewingDatabase.database_port),
                                         },
-                                        { label: t('serverDatabases.type'), value: viewingDatabase.database_type },
+                                        {
+                                            label: t('serverDatabases.type'),
+                                            value: viewingDatabase.database_type,
+                                            copyValue: viewingDatabase.database_type,
+                                        },
                                     ].map((item, i) => (
                                         <div key={i} className='space-y-2'>
                                             <label className='text-[10px] font-bold tracking-widest uppercase opacity-40'>
@@ -974,7 +983,7 @@ export default function ServerDatabasesPage() {
                                                     variant='glass'
                                                     size='sm'
                                                     className='absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 bg-white/10 p-0 opacity-0 transition-opacity group-hover:opacity-100'
-                                                    onClick={() => copyToClipboard(item.value || '')}
+                                                    onClick={() => copyToClipboard(item.copyValue || '')}
                                                 >
                                                     <Copy className='h-3.5 w-3.5' />
                                                 </Button>

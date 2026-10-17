@@ -33,6 +33,8 @@ import { cn, isEnabled } from '@/lib/utils';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { useHideServerIps } from '@/contexts/PreferencesContext';
+import { maskEndpoint } from '@/lib/ip-mask';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import type {
     FirewallRule,
@@ -53,6 +55,7 @@ export default function ServerFirewallPage() {
     const uuidShort = params.uuidShort as string;
     const { t } = useTranslation();
     const { settings, loading: settingsLoading } = useSettings();
+    const hideIps = useHideServerIps();
 
     const { hasPermission, loading: permissionsLoading, server } = useServerPermissions(uuidShort);
     const canRead = hasPermission('allocation.read') || hasPermission('firewall.read');
@@ -297,9 +300,9 @@ export default function ServerFirewallPage() {
         () =>
             allocations.map((a) => ({
                 id: a.id.toString(),
-                name: `${a.ip}:${a.port} ${a.is_primary ? `(${t('serverAllocations.primary')})` : ''}`,
+                name: `${maskEndpoint(a.ip, a.port, hideIps)} ${a.is_primary ? `(${t('serverAllocations.primary')})` : ''}`,
             })),
-        [allocations, t],
+        [allocations, t, hideIps],
     );
 
     const typeOptions = [
