@@ -74,6 +74,8 @@ class BPlayerStatusPoller implements TimeTask
 
         foreach ($servers as $row) {
             $server = [
+                'server_id' => (int) $row['server_id'],
+                'node_id' => (int) $row['node_id'],
                 'uuid_short' => $row['uuid_short'],
                 'uuid' => $row['uuid'],
                 'name' => $row['name'],
@@ -131,6 +133,8 @@ class BPlayerStatusPoller implements TimeTask
 
         $stmt = $pdo->prepare('
             SELECT
+                s.id AS server_id,
+                s.node_id,
                 s.uuidShort AS uuid_short,
                 s.uuid,
                 s.name,
