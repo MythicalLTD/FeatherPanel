@@ -471,17 +471,15 @@ export default function ServerAllocationsPage() {
                                 }
                                 actions={
                                     <div className='flex items-center gap-3 sm:self-center'>
-                                        {!ipMask.hidden && (
-                                            <Button
-                                                size='default'
-                                                variant='glass'
-                                                onClick={() => handleCopy(`${allocation.ip}:${allocation.port}`)}
-                                                className='px-6 font-bold'
-                                            >
-                                                <Copy className='mr-2 h-4 w-4' />
-                                                {t('common.copy')}
-                                            </Button>
-                                        )}
+                                        <Button
+                                            size='default'
+                                            variant='glass'
+                                            onClick={() => handleCopy(`${allocation.ip}:${allocation.port}`)}
+                                            className='px-6 font-bold'
+                                        >
+                                            <Copy className='mr-2 h-4 w-4' />
+                                            {t('common.copy')}
+                                        </Button>
 
                                         {!allocation.is_primary && (canUpdate || canDelete) && (
                                             <DropdownMenu>

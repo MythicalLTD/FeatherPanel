@@ -132,7 +132,7 @@ export function VdsNetworkCard({
                         <code className='bg-muted flex-1 truncate rounded px-2 py-1 font-mono text-sm'>
                             {ipAddress ? ipMask.ip(ipAddress) : '—'}
                         </code>
-                        {ipAddress && !ipMask.hidden && (
+                        {ipAddress && (
                             <button
                                 type='button'
                                 onClick={() => void copyText(ipAddress, t)}

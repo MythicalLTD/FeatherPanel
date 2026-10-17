@@ -584,7 +584,6 @@ export default function ServerSettingsPage() {
                                         variant='ghost'
                                         size='sm'
                                         className='text-muted-foreground h-8 w-8 rounded-lg p-0 hover:bg-white/10 hover:text-blue-400'
-                                        disabled={sftpHostHidden}
                                         onClick={() =>
                                             copyToClipboard(resolvedSftpHost ? `sftp://${resolvedSftpHost}` : '')
                                         }
@@ -660,7 +659,6 @@ export default function ServerSettingsPage() {
                                     variant='ghost'
                                     size='sm'
                                     className='text-muted-foreground h-8 w-8 rounded-lg p-0 hover:bg-white/10 hover:text-blue-400'
-                                    disabled={sftpHostHidden}
                                     onClick={() => copyToClipboard(resolvedSftpUrl || '')}
                                 >
                                     <Copy className='h-3.5 w-3.5' />
@@ -669,7 +667,6 @@ export default function ServerSettingsPage() {
                                     variant='ghost'
                                     size='sm'
                                     className='text-muted-foreground h-8 w-8 rounded-lg p-0 hover:bg-white/10 hover:text-blue-400'
-                                    disabled={sftpHostHidden}
                                     onClick={() => {
                                         if (resolvedSftpUrl) {
                                             window.open(resolvedSftpUrl, '_blank');

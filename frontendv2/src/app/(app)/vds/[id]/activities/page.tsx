@@ -671,7 +671,6 @@ export default function VdsActivitiesPage() {
                                             navigator.clipboard.writeText(rawJson);
                                             toast.success(t('vds.activities.payload_copied'));
                                         }}
-                                        disabled={hideIps}
                                     >
                                         <Copy className='mr-2 h-3.5 w-3.5' />
                                         Copy

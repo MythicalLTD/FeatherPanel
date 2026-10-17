@@ -49,7 +49,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useIpMask } from '@/hooks/useIpMask';
 import { appendPmaAuthParams, preparePmaAuthContext, storePmaAuthContext } from '@/lib/pma-auth-context';
-import { looksLikeIp, maskIpLike } from '@/lib/ip-mask';
+import { maskIpLike } from '@/lib/ip-mask';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { cn, copyToClipboard as copyUtil } from '@/lib/utils';
@@ -956,19 +956,17 @@ export default function ServerDatabasesPage() {
                                         {
                                             label: t('serverDatabases.host'),
                                             value: maskIpLike(getDatabaseDisplayHost(viewingDatabase), ipMask.hidden),
-                                            copyable: !(
-                                                ipMask.hidden && looksLikeIp(getDatabaseDisplayHost(viewingDatabase))
-                                            ),
+                                            copyValue: getDatabaseDisplayHost(viewingDatabase),
                                         },
                                         {
                                             label: t('serverDatabases.port'),
                                             value: String(viewingDatabase.database_port),
-                                            copyable: true,
+                                            copyValue: String(viewingDatabase.database_port),
                                         },
                                         {
                                             label: t('serverDatabases.type'),
                                             value: viewingDatabase.database_type,
-                                            copyable: true,
+                                            copyValue: viewingDatabase.database_type,
                                         },
                                     ].map((item, i) => (
                                         <div key={i} className='space-y-2'>
@@ -981,16 +979,14 @@ export default function ServerDatabasesPage() {
                                                     value={item.value || 'N/A'}
                                                     className='bg-card border-border/50 pr-10 font-mono text-xs'
                                                 />
-                                                {item.copyable && (
-                                                    <Button
-                                                        variant='glass'
-                                                        size='sm'
-                                                        className='absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 bg-white/10 p-0 opacity-0 transition-opacity group-hover:opacity-100'
-                                                        onClick={() => copyToClipboard(item.value || '')}
-                                                    >
-                                                        <Copy className='h-3.5 w-3.5' />
-                                                    </Button>
-                                                )}
+                                                <Button
+                                                    variant='glass'
+                                                    size='sm'
+                                                    className='absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 bg-white/10 p-0 opacity-0 transition-opacity group-hover:opacity-100'
+                                                    onClick={() => copyToClipboard(item.copyValue || '')}
+                                                >
+                                                    <Copy className='h-3.5 w-3.5' />
+                                                </Button>
                                             </div>
                                         </div>
                                     ))}

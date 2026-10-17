@@ -815,8 +815,6 @@ export default function ServerActivityPage() {
                                             navigator.clipboard.writeText(rawJson || '');
                                             toast.success(t('serverActivities.details.payloadCopied'));
                                         }}
-                                        disabled={hideIps}
-                                        title={hideIps ? t('privacy.hideIpsLabel') : undefined}
                                     >
                                         <Copy className='mr-2 h-3.5 w-3.5' />
                                         {t('serverActivities.details.copyPayload')}
