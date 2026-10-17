@@ -424,7 +424,7 @@ class PlayerStatusService
             return null;
         }
 
-        $command = sprintf('rcon -t rcon -a 127.0.0.1:%d -p %s ListPlayers', $rconPort, escapeshellarg($rconPassword));
+        $command = sprintf('rcon -t rcon -a 127.0.0.1:%d -p "$ARK_ADMIN_PASSWORD" ListPlayers', $rconPort);
 
         try {
             $wings = new Wings(
