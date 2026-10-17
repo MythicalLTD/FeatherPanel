@@ -70,6 +70,10 @@ class GameTypeResolver
         'ark: survival evolved' => 'arkse',
         'ark survival evolved' => 'arkse',
         'arkse' => 'arkse',
+        'ark: survival ascended' => 'arksa',
+        'ark survival ascended' => 'arksa',
+        'arksa' => 'arksa',
+        'ark ascended' => 'arksa',
         'fivem' => 'fivem',
     ];
 
@@ -208,6 +212,10 @@ class GameTypeResolver
 
         if ($lowerName === 'rust' || str_contains($lowerName, 'rust')) {
             return 'rust';
+        }
+
+        if (str_contains($lowerName, 'ark') && str_contains($lowerName, 'ascended')) {
+            return 'arksa';
         }
 
         if (str_contains($lowerName, 'ark') && str_contains($lowerName, 'survival')) {
