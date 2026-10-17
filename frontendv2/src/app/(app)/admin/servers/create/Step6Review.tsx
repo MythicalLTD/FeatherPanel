@@ -16,6 +16,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useHideServerIps } from '@/contexts/PreferencesContext';
+import { maskEndpoint } from '@/lib/ip-mask';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
@@ -38,6 +40,7 @@ import { StepProps } from './types';
 
 export function Step6Review({ formData, setFormData, selectedEntities }: StepProps) {
     const { t } = useTranslation();
+    const hideIps = useHideServerIps();
 
     const formatResourceValue = (value: number, unlimited: boolean) => {
         if (unlimited || value === 0) return t('admin.servers.form.wizard.review.unlimited');
@@ -131,7 +134,11 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
                                 </span>
                                 <p className='font-medium'>
                                     {selectedEntities.allocation
-                                        ? `${selectedEntities.allocation.ip}:${selectedEntities.allocation.port}`
+                                        ? maskEndpoint(
+                                              selectedEntities.allocation.ip,
+                                              selectedEntities.allocation.port,
+                                              hideIps,
+                                          )
                                         : noValue}
                                 </p>
                             </div>

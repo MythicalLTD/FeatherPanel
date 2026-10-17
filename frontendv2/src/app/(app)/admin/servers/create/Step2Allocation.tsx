@@ -16,6 +16,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useHideServerIps } from '@/contexts/PreferencesContext';
+import { HideIpsToggle } from '@/components/preferences/HideIpsToggle';
+import { maskEndpoint } from '@/lib/ip-mask';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Label } from '@/components/ui/label';
@@ -49,6 +52,7 @@ export function Step2Allocation({
     fetchAllocations,
 }: Step2Props) {
     const { t } = useTranslation();
+    const hideIps = useHideServerIps();
 
     const openLocationModal = () => {
         fetchLocations();
@@ -182,7 +186,11 @@ export function Step2Allocation({
                                     <div className='flex items-center gap-2'>
                                         <Plug className='text-primary h-4 w-4' />
                                         <span className='text-foreground font-medium'>
-                                            {selectedEntities.allocation.ip}:{selectedEntities.allocation.port}
+                                            {maskEndpoint(
+                                                selectedEntities.allocation.ip,
+                                                selectedEntities.allocation.port,
+                                                hideIps,
+                                            )}
                                         </span>
                                     </div>
                                 ) : (
@@ -197,6 +205,8 @@ export function Step2Allocation({
                         </div>
                         <p className='text-muted-foreground text-xs'>{t('admin.servers.form.allocation_help')}</p>
                     </div>
+
+                    <HideIpsToggle />
                 </div>
             </PageCard>
         </div>

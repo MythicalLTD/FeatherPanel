@@ -19,7 +19,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { useDateFormatOptions, useHideServerIps } from '@/contexts/PreferencesContext';
+import { HIDDEN_IP_PLACEHOLDER, maskIpsInText } from '@/lib/ip-mask';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
@@ -118,6 +119,7 @@ export default function VdsActivitiesPage() {
     const pathname = usePathname();
     const { t } = useTranslation();
     const dateOpts = useDateFormatOptions();
+    const hideIps = useHideServerIps();
     const { instance, loading: instanceLoading, hasPermission } = useVmInstance();
     const { fetchWidgets, getWidgets } = usePluginWidgets('vds-activities');
 
@@ -254,6 +256,7 @@ export default function VdsActivitiesPage() {
     };
 
     const rawJson = selectedItem?.metadata ? JSON.stringify(selectedItem.metadata, null, 2) : '';
+    const displayRawJson = maskIpsInText(rawJson, hideIps);
 
     const filterOptions = [
         { id: 'all', name: t('serverActivities.allEvents') },
@@ -466,7 +469,7 @@ export default function VdsActivitiesPage() {
                                             <div className='text-muted-foreground flex items-center gap-2'>
                                                 <Globe className='h-4 w-4 opacity-50' />
                                                 <span className='font-mono text-xs font-bold italic opacity-60'>
-                                                    {activity.ip}
+                                                    {hideIps ? HIDDEN_IP_PLACEHOLDER : activity.ip}
                                                 </span>
                                             </div>
                                         )}
@@ -629,7 +632,9 @@ export default function VdsActivitiesPage() {
                                             <span className='text-primary/50 text-[10px] font-black tracking-widest uppercase'>
                                                 IP Address
                                             </span>
-                                            <span className='font-mono text-lg font-bold'>{selectedItem.ip}</span>
+                                            <span className='font-mono text-lg font-bold'>
+                                                {hideIps ? HIDDEN_IP_PLACEHOLDER : selectedItem.ip}
+                                            </span>
                                         </div>
                                     )}
                                     {selectedItem.metadata &&
@@ -642,7 +647,10 @@ export default function VdsActivitiesPage() {
                                                     {k}
                                                 </span>
                                                 <span className='font-mono text-base leading-tight font-bold break-all opacity-90 group-hover:opacity-100'>
-                                                    {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                                                    {maskIpsInText(
+                                                        typeof v === 'object' ? JSON.stringify(v) : String(v),
+                                                        hideIps,
+                                                    )}
                                                 </span>
                                             </div>
                                         ))}
@@ -663,13 +671,14 @@ export default function VdsActivitiesPage() {
                                             navigator.clipboard.writeText(rawJson);
                                             toast.success(t('vds.activities.payload_copied'));
                                         }}
+                                        disabled={hideIps}
                                     >
                                         <Copy className='mr-2 h-3.5 w-3.5' />
                                         Copy
                                     </Button>
                                 </div>
                                 <pre className='custom-scrollbar max-h-[500px] overflow-x-auto rounded-4xl border border-white/5 bg-black/40 p-8 font-mono text-sm leading-relaxed text-emerald-400 backdrop-blur-3xl'>
-                                    {rawJson || '// No additional metadata'}
+                                    {displayRawJson || '// No additional metadata'}
                                 </pre>
                             </div>
                         </div>

@@ -22,6 +22,9 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { formatBackupLimitLabel } from '@/lib/server-utils';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
+import { HideIpsToggle } from '@/components/preferences/HideIpsToggle';
+import { useHideServerIps } from '@/contexts/PreferencesContext';
+import { HIDDEN_IP_PLACEHOLDER, looksLikeIp } from '@/lib/ip-mask';
 import { Switch } from '@/components/ui/switch';
 import {
     Save,
@@ -39,6 +42,7 @@ import {
     AlertTriangle,
     Loader2,
     Lock,
+    EyeOff,
     Link as LinkIcon,
     OctagonX,
     Power,
@@ -299,6 +303,8 @@ export default function ServerSettingsPage() {
     const resolvedSftpHost = server?.node?.sftp_subdomain || server?.sftp?.host || '';
     const resolvedSftpPort = server?.sftp?.port;
     const resolvedSftpUsername = server?.sftp?.username || '';
+    // The SFTP host is usually the node IP unless a subdomain is configured.
+    const sftpHostHidden = useHideServerIps() && looksLikeIp(resolvedSftpHost);
     const resolvedSftpUrl =
         resolvedSftpUsername && resolvedSftpHost && resolvedSftpPort
             ? `sftp://${resolvedSftpUsername}@${resolvedSftpHost}:${resolvedSftpPort}`
@@ -548,6 +554,14 @@ export default function ServerSettingsPage() {
                     <WidgetRenderer widgets={getWidgets('server-settings', 'after-server-info')} />
 
                     <PageCard
+                        title={t('privacy.serverCardTitle')}
+                        description={t('privacy.serverCardDescription')}
+                        icon={EyeOff}
+                    >
+                        <HideIpsToggle />
+                    </PageCard>
+
+                    <PageCard
                         title={t('serverSettings.sftpDetails')}
                         description={t('serverSettings.sftpDetailsDescription')}
                         icon={FolderOpen}
@@ -560,12 +574,17 @@ export default function ServerSettingsPage() {
                                 </Label>
                                 <div className='bg-secondary/50 border-border/10 group/input flex items-center gap-2 rounded-xl border p-1 pr-1 pl-4 transition-colors hover:border-blue-500/30'>
                                     <code className='text-foreground/80 flex-1 truncate font-mono text-xs'>
-                                        {resolvedSftpHost ? `sftp://${resolvedSftpHost}` : t('common.nA')}
+                                        {resolvedSftpHost
+                                            ? sftpHostHidden
+                                                ? HIDDEN_IP_PLACEHOLDER
+                                                : `sftp://${resolvedSftpHost}`
+                                            : t('common.nA')}
                                     </code>
                                     <Button
                                         variant='ghost'
                                         size='sm'
                                         className='text-muted-foreground h-8 w-8 rounded-lg p-0 hover:bg-white/10 hover:text-blue-400'
+                                        disabled={sftpHostHidden}
                                         onClick={() =>
                                             copyToClipboard(resolvedSftpHost ? `sftp://${resolvedSftpHost}` : '')
                                         }
@@ -635,12 +654,13 @@ export default function ServerSettingsPage() {
                             </Label>
                             <div className='group/input flex items-center gap-2 rounded-xl border border-white/5 bg-white/5 p-1 pr-1 pl-4 transition-colors hover:border-blue-500/30'>
                                 <code className='text-foreground/80 flex-1 truncate font-mono text-xs'>
-                                    {resolvedSftpUrl || t('common.nA')}
+                                    {sftpHostHidden ? HIDDEN_IP_PLACEHOLDER : resolvedSftpUrl || t('common.nA')}
                                 </code>
                                 <Button
                                     variant='ghost'
                                     size='sm'
                                     className='text-muted-foreground h-8 w-8 rounded-lg p-0 hover:bg-white/10 hover:text-blue-400'
+                                    disabled={sftpHostHidden}
                                     onClick={() => copyToClipboard(resolvedSftpUrl || '')}
                                 >
                                     <Copy className='h-3.5 w-3.5' />
@@ -649,6 +669,7 @@ export default function ServerSettingsPage() {
                                     variant='ghost'
                                     size='sm'
                                     className='text-muted-foreground h-8 w-8 rounded-lg p-0 hover:bg-white/10 hover:text-blue-400'
+                                    disabled={sftpHostHidden}
                                     onClick={() => {
                                         if (resolvedSftpUrl) {
                                             window.open(resolvedSftpUrl, '_blank');

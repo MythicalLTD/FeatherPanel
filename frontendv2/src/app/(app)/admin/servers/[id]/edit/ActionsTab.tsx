@@ -19,6 +19,8 @@ import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useHideServerIps } from '@/contexts/PreferencesContext';
+import { maskEndpoint } from '@/lib/ip-mask';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -95,6 +97,7 @@ export function ActionsTab({
     onRefresh,
 }: ActionsTabProps) {
     const { t } = useTranslation();
+    const hideIps = useHideServerIps();
     const router = useRouter();
     const supportsReconcile = supportsDaemonFeature(nodeCapabilities, 'reconcile', daemonType);
     const [suspending, setSuspending] = useState(false);
@@ -669,7 +672,7 @@ export function ActionsTab({
                             >
                                 <span>
                                     {selectedAllocation
-                                        ? `${selectedAllocation.ip}:${selectedAllocation.port}`
+                                        ? maskEndpoint(selectedAllocation.ip, selectedAllocation.port, hideIps)
                                         : t('admin.servers.transfer.select_allocation')}
                                 </span>
                                 <ChevronRight className='h-4 w-4' />
@@ -797,9 +800,7 @@ export function ActionsTab({
                                         setAllocationModalOpen(false);
                                     }}
                                 >
-                                    <div className='font-medium'>
-                                        {a.ip}:{a.port}
-                                    </div>
+                                    <div className='font-medium'>{maskEndpoint(a.ip, a.port, hideIps)}</div>
                                     <div className='text-muted-foreground text-xs'>{a.ip_alias || 'No Alias'}</div>
                                 </button>
                             ))

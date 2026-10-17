@@ -19,6 +19,7 @@ import React from 'react';
 import { Wifi, Cpu, Clock, Activity, HardDrive, Database, ArrowDown, ArrowUp, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useIpMask } from '@/hooks/useIpMask';
 import { formatMib, formatCpu as formatCpuGlobal, cn, formatFileSize } from '@/lib/utils';
 import { getUsagePercentage, getProgressColor } from '@/lib/server-utils';
 import { Progress } from '@/components/ui/progress';
@@ -123,6 +124,7 @@ export default React.memo(function ServerInfoCards({
     className,
 }: ServerInfoCardsProps) {
     const { t } = useTranslation();
+    const ipMask = useIpMask();
     const pendingValue = (
         <span className='bg-muted/40 inline-block h-3.5 w-12 animate-pulse rounded-md align-middle' aria-busy='true' />
     );
@@ -191,28 +193,32 @@ export default React.memo(function ServerInfoCards({
                         <p className='text-muted-foreground mb-1 text-xs'>{t('servers.console.info_cards.address')}</p>
                         <div className='flex items-center gap-2'>
                             <code className='bg-muted flex-1 truncate rounded px-2 py-1 font-mono text-sm'>
-                                {serverIp && serverPort ? `${serverIp}:${serverPort}` : 'N/A'}
+                                {serverIp && serverPort ? ipMask.endpoint(serverIp, serverPort) : 'N/A'}
                             </code>
-                            <button
-                                onClick={() => handleCopy(serverIp && serverPort ? `${serverIp}:${serverPort}` : 'N/A')}
-                                className='hover:bg-muted text-muted-foreground hover:text-foreground rounded-md p-1.5 transition-colors'
-                                title={t('servers.console.info_cards.copy')}
-                            >
-                                <svg
-                                    xmlns='http://www.w3.org/2000/svg'
-                                    width='14'
-                                    height='14'
-                                    viewBox='0 0 24 24'
-                                    fill='none'
-                                    stroke='currentColor'
-                                    strokeWidth='2'
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
+                            {!ipMask.hidden && (
+                                <button
+                                    onClick={() =>
+                                        handleCopy(serverIp && serverPort ? `${serverIp}:${serverPort}` : 'N/A')
+                                    }
+                                    className='hover:bg-muted text-muted-foreground hover:text-foreground rounded-md p-1.5 transition-colors'
+                                    title={t('servers.console.info_cards.copy')}
                                 >
-                                    <rect width='14' height='14' x='8' y='8' rx='2' ry='2' />
-                                    <path d='M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2' />
-                                </svg>
-                            </button>
+                                    <svg
+                                        xmlns='http://www.w3.org/2000/svg'
+                                        width='14'
+                                        height='14'
+                                        viewBox='0 0 24 24'
+                                        fill='none'
+                                        stroke='currentColor'
+                                        strokeWidth='2'
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
+                                    >
+                                        <rect width='14' height='14' x='8' y='8' rx='2' ry='2' />
+                                        <path d='M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2' />
+                                    </svg>
+                                </button>
+                            )}
                         </div>
                     </div>
 

@@ -19,6 +19,7 @@ import { Suspense } from 'react';
 import { Palette } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import AppearanceSettingsPanel from '@/components/preferences/AppearanceSettingsPanel';
+import PrivacySettingsPanel from '@/components/preferences/PrivacySettingsPanel';
 import { useTranslation } from '@/contexts/TranslationContext';
 
 function PreferencesContent() {
@@ -32,6 +33,7 @@ function PreferencesContent() {
                 icon={Palette}
             />
             <AppearanceSettingsPanel />
+            <PrivacySettingsPanel />
         </div>
     );
 }

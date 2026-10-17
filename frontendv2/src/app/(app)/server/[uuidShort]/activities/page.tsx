@@ -19,7 +19,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { useDateFormatOptions, useHideServerIps } from '@/contexts/PreferencesContext';
+import { HIDDEN_IP_PLACEHOLDER, maskIpsInText } from '@/lib/ip-mask';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { Dialog, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -141,6 +142,18 @@ function shouldBlurIpMetadata(key: string, value: string): boolean {
 }
 
 function BlurredIp({ ip, className }: { ip: string; className?: string }) {
+    const hideIps = useHideServerIps();
+
+    // Hard mask for users who switched on "hide IP addresses": no hover reveal,
+    // so a screen recording cannot pick the value up again.
+    if (hideIps) {
+        return (
+            <span className={cn('text-muted-foreground font-mono text-xs font-bold opacity-70', className)}>
+                {HIDDEN_IP_PLACEHOLDER}
+            </span>
+        );
+    }
+
     return (
         <span
             className={cn(
@@ -160,6 +173,7 @@ export default function ServerActivityPage() {
     const router = useRouter();
     const { t } = useTranslation();
     const dateOpts = useDateFormatOptions();
+    const hideIps = useHideServerIps();
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
 
     const [loading, setLoading] = useState(true);
@@ -375,6 +389,9 @@ export default function ServerActivityPage() {
             : [];
 
     const rawJson = selectedItem?.metadata ? JSON.stringify(selectedItem.metadata, null, 2) : '';
+    // Raw payload is shown in a <pre>: mask embedded addresses so the block
+    // cannot be read off a recording either.
+    const displayRawJson = maskIpsInText(rawJson, hideIps);
 
     const changePage = (newPage: number) => {
         if (newPage >= 1 && newPage <= pagination.total_pages) {
@@ -771,11 +788,12 @@ export default function ServerActivityPage() {
                                                 <dd
                                                     className={cn(
                                                         'text-foreground font-mono text-sm break-all',
-                                                        shouldBlurIpMetadata(pair.key, pair.value) &&
+                                                        !hideIps &&
+                                                            shouldBlurIpMetadata(pair.key, pair.value) &&
                                                             'blur-sm transition-all duration-200 hover:blur-none',
                                                     )}
                                                 >
-                                                    {pair.value}
+                                                    {hideIps ? maskIpsInText(pair.value, true) : pair.value}
                                                 </dd>
                                             </div>
                                         ))}
@@ -797,13 +815,15 @@ export default function ServerActivityPage() {
                                             navigator.clipboard.writeText(rawJson || '');
                                             toast.success(t('serverActivities.details.payloadCopied'));
                                         }}
+                                        disabled={hideIps}
+                                        title={hideIps ? t('privacy.hideIpsLabel') : undefined}
                                     >
                                         <Copy className='mr-2 h-3.5 w-3.5' />
                                         {t('serverActivities.details.copyPayload')}
                                     </Button>
                                 </div>
                                 <pre className='border-border/40 bg-background/80 text-muted-foreground custom-scrollbar max-h-56 overflow-auto rounded-xl border px-3 py-3 font-mono text-xs leading-relaxed'>
-                                    {rawJson || t('serverActivities.details.noMetadata')}
+                                    {displayRawJson || t('serverActivities.details.noMetadata')}
                                 </pre>
                             </div>
                         </div>

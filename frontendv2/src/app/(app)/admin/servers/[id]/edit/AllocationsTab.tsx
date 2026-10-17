@@ -18,6 +18,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useHideServerIps } from '@/contexts/PreferencesContext';
+import { maskEndpoint } from '@/lib/ip-mask';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +41,7 @@ export function AllocationsTab({
     refreshTrigger = 0,
 }: AllocationsTabProps) {
     const { t } = useTranslation();
+    const hideIps = useHideServerIps();
     const [loading, setLoading] = useState(false);
     const [serverAllocations, setServerAllocations] = useState<ServerAllocations>({
         allocations: [],
@@ -133,7 +136,11 @@ export function AllocationsTab({
                                 <div className='flex items-center gap-2'>
                                     <Plug className='text-primary h-4 w-4' />
                                     <span className='text-foreground font-mono font-medium'>
-                                        {selectedEntities.allocation.ip}:{selectedEntities.allocation.port}
+                                        {maskEndpoint(
+                                            selectedEntities.allocation.ip,
+                                            selectedEntities.allocation.port,
+                                            hideIps,
+                                        )}
                                     </span>
                                 </div>
                             ) : (
@@ -176,7 +183,7 @@ export function AllocationsTab({
                                     <Plug className='text-muted-foreground h-4 w-4 shrink-0' />
                                     <div className='min-w-0'>
                                         <div className='font-mono font-medium'>
-                                            {allocation.ip}:{allocation.port}
+                                            {maskEndpoint(allocation.ip, allocation.port, hideIps)}
                                         </div>
                                         <div className='text-muted-foreground text-xs'>
                                             {allocation.ip_alias || t('admin.servers.edit.allocations.no_alias')}
