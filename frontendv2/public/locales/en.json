@@ -3001,6 +3001,8 @@
 		"example": "Preview",
 		"exampleAddress": "Address",
 		"exampleHost": "IP",
+		"hideIpsButton": "Hide IP addresses",
+		"showIpsButton": "Show IP addresses",
 		"onlyYouHint": "The switch is stored on your account, so it survives a reload, a new browser and another device. Actions that need the real address (firewall, proxy, allocation changes) keep working.",
 		"enabledToast": "IP addresses are now hidden",
 		"disabledToast": "IP addresses are visible again",

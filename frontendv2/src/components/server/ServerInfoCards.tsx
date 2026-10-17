@@ -20,6 +20,7 @@ import { Wifi, Cpu, Clock, Activity, HardDrive, Database, ArrowDown, ArrowUp, ty
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useIpMask } from '@/hooks/useIpMask';
+import { IpVisibilityButton } from '@/components/common/IpVisibilityButton';
 import { formatMib, formatCpu as formatCpuGlobal, cn, formatFileSize } from '@/lib/utils';
 import { getUsagePercentage, getProgressColor } from '@/lib/server-utils';
 import { Progress } from '@/components/ui/progress';
@@ -195,6 +196,7 @@ export default React.memo(function ServerInfoCards({
                             <code className='bg-muted flex-1 truncate rounded px-2 py-1 font-mono text-sm'>
                                 {serverIp && serverPort ? ipMask.endpoint(serverIp, serverPort) : 'N/A'}
                             </code>
+                            <IpVisibilityButton />
                             {!ipMask.hidden && (
                                 <button
                                     onClick={() =>

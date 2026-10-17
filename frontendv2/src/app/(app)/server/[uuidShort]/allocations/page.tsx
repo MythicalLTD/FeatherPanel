@@ -59,6 +59,7 @@ import { Badge } from '@/components/ui/badge';
 
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useIpMask } from '@/hooks/useIpMask';
+import { IpVisibilityButton } from '@/components/common/IpVisibilityButton';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -450,6 +451,7 @@ export default function ServerAllocationsPage() {
                                             <span className='text-foreground/80 font-mono text-sm font-bold'>
                                                 {ipMask.ip(allocation.ip)}
                                             </span>
+                                            <IpVisibilityButton className='-mr-1' />
                                         </div>
                                         <div className='text-muted-foreground flex items-center gap-2 rounded-lg border border-white/5 bg-black/40 p-1 px-2'>
                                             <span className='text-xs font-bold uppercase opacity-60'>Port</span>
