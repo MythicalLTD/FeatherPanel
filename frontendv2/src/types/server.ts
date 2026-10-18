@@ -182,6 +182,9 @@ export interface Server {
         | 'offline'
         | 'error';
     suspended: number; // 0 = not suspended, 1 = suspended
+    suspension_reason?: string | null;
+    /** When set, the server is removed or suspended after this date. */
+    expires_at?: string | null;
     user_id: number;
     owner_id: number;
     node_id: number;

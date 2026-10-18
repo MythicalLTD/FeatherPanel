@@ -39,7 +39,14 @@ function AnnouncementMessage({ markdown }: { markdown: string }) {
     );
 }
 
-export function AnnouncementBanner({ serverId }: { serverId?: number | null } = {}) {
+export function AnnouncementBanner({
+    serverId,
+    compact = false,
+}: {
+    serverId?: number | null;
+    /** Dashboard side column: tighter cards, no outer margin. */
+    compact?: boolean;
+} = {}) {
     const { notifications, dismissNotification } = useNotifications();
     const { t } = useTranslation();
 
@@ -79,7 +86,7 @@ export function AnnouncementBanner({ serverId }: { serverId?: number | null } = 
     };
 
     return (
-        <div className='mb-6 space-y-4'>
+        <div className={compact ? 'space-y-3' : 'mb-6 space-y-4'}>
             {visibleNotifications.map((notification) => {
                 const Icon = getTypeIcon(notification.type);
                 const styles = getTypeStyles(notification.type);
@@ -88,7 +95,8 @@ export function AnnouncementBanner({ serverId }: { serverId?: number | null } = 
                     <div
                         key={notification.id}
                         className={cn(
-                            'relative overflow-hidden rounded-xl border p-4 shadow-sm transition-all',
+                            'relative overflow-hidden rounded-xl border shadow-sm transition-all',
+                            compact ? 'p-3' : 'p-4',
                             styles,
                         )}
                     >
@@ -96,7 +104,12 @@ export function AnnouncementBanner({ serverId }: { serverId?: number | null } = 
                             <div className='flex-1'>
                                 <div className='mb-1 flex items-center gap-2'>
                                     <Icon className='h-5 w-5 opacity-80' />
-                                    <h3 className='text-sm font-semibold tracking-wide uppercase opacity-90'>
+                                    <h3
+                                        className={cn(
+                                            'text-sm font-semibold opacity-90',
+                                            !compact && 'tracking-wide uppercase',
+                                        )}
+                                    >
                                         {notification.title}
                                     </h3>
                                 </div>

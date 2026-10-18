@@ -127,7 +127,7 @@ export function DashboardRecentMails() {
 
     if (loading) {
         return (
-            <div className='border-border/50 bg-card/50 space-y-4 rounded-xl border p-6 backdrop-blur-xl'>
+            <div className='fp-surface space-y-3 rounded-xl border p-4'>
                 <div className='flex items-center justify-between'>
                     <div className='bg-muted h-6 w-36 animate-pulse rounded' />
                     <div className='bg-muted h-4 w-24 animate-pulse rounded' />
@@ -141,83 +141,67 @@ export function DashboardRecentMails() {
         );
     }
 
+    // No mail yet: hide the widget instead of showing an empty card.
+    if (mails.length === 0) {
+        return null;
+    }
+
     return (
-        <div className='border-border/50 bg-card/50 rounded-xl border backdrop-blur-xl'>
-            <div className='border-border flex min-w-0 flex-col gap-2 border-b p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6'>
+        <section className='fp-surface min-w-0 overflow-hidden rounded-xl border'>
+            <header className='flex min-w-0 items-center justify-between gap-3 px-4 pt-3.5 pb-2.5'>
                 <div className='flex min-w-0 items-center gap-2'>
-                    <Mail className='text-muted-foreground h-5 w-5' />
-                    <h2 className='truncate text-base font-bold sm:text-lg'>{t('dashboard.recent_mails.title')}</h2>
+                    <Mail className='text-muted-foreground h-4 w-4 shrink-0' aria-hidden />
+                    <h2 className='truncate text-sm font-semibold'>{t('dashboard.recent_mails.title')}</h2>
                 </div>
-                <div className='flex items-center gap-3 self-start sm:self-auto'>
+                <div className='flex shrink-0 items-center gap-3'>
                     <button
                         type='button'
                         onClick={() => fetchMails()}
                         title={t('account.mail.refresh')}
-                        className='text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs whitespace-nowrap transition-colors sm:text-sm'
+                        aria-label={t('account.mail.refresh')}
+                        className='text-muted-foreground hover:text-foreground inline-flex items-center transition-colors'
                     >
-                        <RefreshCw className='h-4 w-4' />
-                        <span className='hidden sm:inline'>{t('account.mail.refresh')}</span>
+                        <RefreshCw className='h-3.5 w-3.5' />
                     </button>
                     <Link
                         href='/dashboard/account?tab=mail'
-                        className='text-primary hover:text-primary/80 text-xs font-medium whitespace-nowrap transition-colors sm:text-sm'
+                        className='text-primary hover:text-primary/80 text-xs font-medium whitespace-nowrap'
                     >
                         {t('dashboard.recent_mails.view_all')} &rarr;
                     </Link>
                 </div>
-            </div>
+            </header>
 
-            <div className='divide-border divide-y'>
-                {mails.length > 0 ? (
-                    mails.map((mail) => (
-                        <button
-                            key={mail.id}
-                            type='button'
-                            onClick={() => openMailModal(mail)}
-                            className='hover:bg-muted/50 group w-full p-4 text-left transition-colors'
+            <div className='divide-border/50 border-border/50 divide-y border-t'>
+                {mails.map((mail) => (
+                    <button
+                        key={mail.id}
+                        type='button'
+                        onClick={() => openMailModal(mail)}
+                        className='hover:bg-muted/40 flex w-full min-w-0 items-center gap-3 px-4 py-2.5 text-left transition-colors'
+                    >
+                        <span className='bg-muted text-muted-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-lg'>
+                            <Mail className='h-4 w-4' />
+                        </span>
+                        <span className='min-w-0 flex-1'>
+                            <span className='block truncate text-sm font-medium' title={mail.subject}>
+                                {mail.subject}
+                            </span>
+                            <span className='text-muted-foreground mt-0.5 flex items-center gap-1 text-xs'>
+                                <Clock className='h-3 w-3' />
+                                {formatDate(mail.created_at)}
+                            </span>
+                        </span>
+                        <span
+                            className={cn(
+                                'max-w-28 shrink-0 truncate rounded px-2 py-0.5 text-[10px] font-medium',
+                                getStatusVariant(mail.status),
+                            )}
                         >
-                            <div className='flex min-w-0 flex-col justify-between gap-3 sm:flex-row sm:items-center sm:gap-4'>
-                                <div className='flex min-w-0 items-start gap-3 sm:gap-4'>
-                                    <div className='bg-primary/5 text-primary mt-1 shrink-0 rounded-full p-2 sm:mt-0'>
-                                        <Mail className='h-5 w-5' />
-                                    </div>
-                                    <div className='min-w-0'>
-                                        <h4
-                                            className='text-foreground group-hover:text-primary line-clamp-2 text-sm font-medium wrap-break-word transition-colors sm:text-base'
-                                            title={mail.subject}
-                                        >
-                                            {mail.subject}
-                                        </h4>
-                                        <div className='text-muted-foreground mt-1 flex items-center gap-2 text-xs'>
-                                            <Clock className='h-3 w-3' />
-                                            <span>{formatDate(mail.created_at)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div
-                                    className={cn(
-                                        'max-w-36 shrink-0 truncate rounded px-2 py-1 text-[10px] font-medium',
-                                        getStatusVariant(mail.status),
-                                    )}
-                                >
-                                    {t(`account.mail.status.${mail.status}`)}
-                                </div>
-                            </div>
-                        </button>
-                    ))
-                ) : (
-                    <div className='text-muted-foreground p-8 text-center'>
-                        <Mail className='mx-auto mb-2 h-8 w-8 opacity-50' />
-                        <p>{t('account.mail.noMails')}</p>
-                        <Link
-                            href='/dashboard/account?tab=mail'
-                            className='text-primary mt-4 inline-flex items-center text-sm hover:underline'
-                        >
-                            {t('dashboard.recent_mails.open_mail_tab')}
-                        </Link>
-                    </div>
-                )}
+                            {t(`account.mail.status.${mail.status}`)}
+                        </span>
+                    </button>
+                ))}
             </div>
 
             <Dialog
@@ -260,6 +244,6 @@ export function DashboardRecentMails() {
                     </Button>
                 </DialogFooter>
             </Dialog>
-        </div>
+        </section>
     );
 }
