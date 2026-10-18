@@ -60,6 +60,7 @@ import { Badge } from '@/components/ui/badge';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useIpMask } from '@/hooks/useIpMask';
 import { IpVisibilityButton } from '@/components/common/IpVisibilityButton';
+import { AllocationNote } from '@/components/server/AllocationNote';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -280,7 +281,8 @@ export default function ServerAllocationsPage() {
             alloc.ip.toLowerCase().includes(searchLower) ||
             alloc.port.toString().includes(searchLower) ||
             alloc.ip_alias?.toLowerCase().includes(searchLower) ||
-            alloc.notes?.toLowerCase().includes(searchLower)
+            alloc.notes?.toLowerCase().includes(searchLower) ||
+            alloc.server_notes?.toLowerCase().includes(searchLower)
         );
     });
 
@@ -460,13 +462,31 @@ export default function ServerAllocationsPage() {
                                             </span>
                                         </div>
                                         {allocation.notes && (
-                                            <div className='text-muted-foreground flex items-center gap-2'>
+                                            <div
+                                                className='text-muted-foreground flex items-center gap-2'
+                                                title={t('serverAllocations.notes.adminNote')}
+                                            >
                                                 <div className='h-1 w-1 rounded-full bg-white/20' />
                                                 <span className='text-sm italic opacity-70'>
                                                     &quot;{allocation.notes}&quot;
                                                 </span>
                                             </div>
                                         )}
+                                        <div className='basis-full'>
+                                            <AllocationNote
+                                                uuidShort={uuidShort}
+                                                allocationId={allocation.id}
+                                                note={allocation.server_notes}
+                                                canEdit={canUpdate}
+                                                onSaved={(note) =>
+                                                    setAllocations((prev) =>
+                                                        prev.map((a) =>
+                                                            a.id === allocation.id ? { ...a, server_notes: note } : a,
+                                                        ),
+                                                    )
+                                                }
+                                            />
+                                        </div>
                                     </div>
                                 }
                                 actions={

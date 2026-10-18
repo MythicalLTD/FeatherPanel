@@ -8,6 +8,7 @@
 - Proxmox VNC consoles can now be proxied through the panel, so the Proxmox node is never exposed to the browser (#256). by @Devority
 - ARK: Survival Ascended servers now show their player count, read over RCON (#259). by @Devority
 - Per-user switch to hide server IP addresses in the panel, handy for screen shares and streams (#258). by @redstonerthebest
+- Allocation notes: server users with the allocation update permission can add, edit and remove a short note on each of their server's allocations (up to 255 characters). The note is cleared automatically when the allocation leaves the server, and the admin's own allocation note is left untouched. by @nayskutzu
 
 ### Fixed
 

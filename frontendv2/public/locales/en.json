@@ -2583,7 +2583,20 @@
 		"selectAllocationDescription": "Choose a specific allocation to assign, or select \"Auto\" to randomly assign one.",
 		"noAvailableAllocations": "No available allocations found on this node.",
 		"assignAllocation": "Assign Allocation",
-		"searchAllocations": "Search by IP, port, alias, or notes..."
+		"searchAllocations": "Search by IP, port, alias, or notes...",
+		"notes": {
+			"label": "Allocation note",
+			"add": "Add note",
+			"edit": "Edit note",
+			"placeholder": "What is this port for? e.g. Voice chat, query port",
+			"save": "Save note",
+			"cancel": "Cancel",
+			"counter": "{count}/{max} characters",
+			"saved": "Note saved",
+			"cleared": "Note removed",
+			"saveFailed": "Could not save the note",
+			"adminNote": "Note from the host"
+		}
 	},
 	"tickets": {
 		"title": "Support Tickets",

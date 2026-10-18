@@ -402,7 +402,10 @@ export interface AllocationItem {
     ip: string;
     port: number;
     ip_alias?: string;
+    /** Note set by an administrator (read-only for server users). */
     notes?: string;
+    /** Note kept by the server's users; cleared when the allocation leaves the server. */
+    server_notes?: string | null;
     is_primary: boolean;
 }
 
