@@ -17,6 +17,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback, ReactNode } from 'react';
 import axios from 'axios';
+import { useRealtime } from '@/hooks/useLiveRefresh';
+import { realtimeTopics, REALTIME_RECONNECTED } from '@/lib/realtime';
 import { Server } from '@/types/server';
 import { useSession } from '@/contexts/SessionContext';
 import PermissionsClass from '@/lib/permissions';
@@ -203,6 +205,12 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
             window.removeEventListener('focus', onVisible);
         };
     }, [uuidShort, refreshQuietly]);
+
+    // Install finished, transfer done, ...: Wings tells the panel, the panel pushes an
+    // event and the server details refresh without waiting for a tab switch.
+    useRealtime([uuidShort && realtimeTopics.server(uuidShort)], (event) => {
+        if (event.type === 'server.updated' || event.type === REALTIME_RECONNECTED) void refreshQuietly();
+    });
 
     useEffect(() => {
         if (typeof document === 'undefined' || !uuidShort) return;

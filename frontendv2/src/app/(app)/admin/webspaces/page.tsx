@@ -18,6 +18,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { useLiveRefresh } from '@/hooks/useLiveRefresh';
+import { realtimeTopics } from '@/lib/realtime';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
@@ -212,13 +214,15 @@ export default function WebSpacesPage() {
 
     const hasInstalling = spaces.some((s) => s.status === 'installing' || s.status === 'reinstalling');
 
-    useEffect(() => {
-        if (!hasInstalling) return;
-        const id = setInterval(() => {
-            void fetchSpaces();
-        }, 5000);
-        return () => clearInterval(id);
-    }, [hasInstalling, fetchSpaces]);
+    // Live: the daemon reports install / transfer results and the panel pushes an event.
+    // Polling while something installs is the fallback without the hub.
+    useLiveRefresh({
+        topics: [realtimeTopics.adminWebspaces],
+        types: ['webspaces.updated'],
+        refresh: () => void fetchSpaces(),
+        poll: hasInstalling,
+        pollMs: 5000,
+    });
 
     const handleDeleteClick = (e: React.MouseEvent, uuid: string) => {
         e.stopPropagation();
