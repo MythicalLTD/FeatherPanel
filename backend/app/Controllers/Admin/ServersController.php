@@ -1099,26 +1099,11 @@ class ServersController
         $data['external_id'] = $data['external_id'] ?? null;
         $data['threads'] = $data['threads'] ?? null;
 
-        // Remove variables from data before creating server (variables are handled separately)
-        $serverData = $data;
-        unset($serverData['variables'], $serverData['mount_ids']);
-
-        $serverId = Server::createServer($serverData);
-        if (!$serverId) {
-            return ApiResponse::error('Failed to create server', 'FAILED_TO_CREATE_SERVER', 500);
-        }
-
-        // Claim the allocation for this server
-        $allocationClaimed = Allocation::assignToServer($data['allocation_id'], $serverId);
-        if (!$allocationClaimed) {
-            App::getInstance(true)->getLogger()->error('Failed to claim allocation for server ID: ' . $serverId);
-            // Note: We don't fail the server creation, but log the error
-        }
-
-        // Validate required spell variables
+        // Validate spell variables before anything is written, so an invalid request never
+        // creates a server row or claims the allocation.
         $spellVariables = SpellVariable::getVariablesBySpellId($data['spell_id']);
         $requiredVariables = [];
-        $providedVariables = isset($data['variables']) ? array_keys($data['variables']) : [];
+        $providedVariables = isset($data['variables']) && is_array($data['variables']) ? array_keys($data['variables']) : [];
 
         foreach ($spellVariables as $spellVariable) {
             if (strpos($spellVariable['rules'], 'required') !== false) {
@@ -1128,16 +1113,11 @@ class ServersController
 
         $missingRequiredVariables = array_diff($requiredVariables, $providedVariables);
         if (!empty($missingRequiredVariables)) {
-            Server::hardDeleteServer($serverId);
-
             return ApiResponse::error('Missing required spell variables: ' . implode(', ', $missingRequiredVariables), 'MISSING_REQUIRED_VARIABLES', 400);
         }
 
-        // Handle server variables if provided
-        if (isset($data['variables']) && is_array($data['variables']) && !empty($data['variables'])) {
-            App::getInstance(true)->getLogger()->debug('Processing server variables for server ID: ' . $serverId . ', variables: ' . json_encode($data['variables']));
-
-            $variables = [];
+        $variables = [];
+        if (!empty($providedVariables)) {
             foreach ($data['variables'] as $envVariable => $value) {
                 // Find the spell variable by env_variable
                 $spellVariable = null;
@@ -1157,8 +1137,6 @@ class ServersController
                     if (strpos($spellVariable['rules'], 'required') !== false) {
                         // Check for null or empty string, but allow "0" as a valid value
                         if ($effectiveValue === null || $effectiveValue === '' || trim($effectiveValue) === '') {
-                            Server::hardDeleteServer($serverId);
-
                             return ApiResponse::error('Required variable ' . $spellVariable['name'] . ' cannot be empty', 'REQUIRED_VARIABLE_EMPTY', 400);
                         }
                     }
@@ -1172,26 +1150,34 @@ class ServersController
                     App::getInstance(true)->getLogger()->warning('Spell variable not found for env_variable: ' . $envVariable);
                 }
             }
+        }
 
-            if (!empty($variables)) {
-                App::getInstance(true)->getLogger()->debug('Creating ' . count($variables) . ' server variables for server ID: ' . $serverId);
-                $variablesCreated = ServerVariable::createOrUpdateServerVariables($serverId, $variables);
-                if (!$variablesCreated) {
-                    // Log the error but don't fail the server creation
-                    App::getInstance(true)->getLogger()->error('Failed to create server variables for server ID: ' . $serverId);
-                } else {
-                    App::getInstance(true)->getLogger()->debug('Successfully created server variables for server ID: ' . $serverId);
-                }
+        // Remove variables from data before creating server (variables are handled separately)
+        $serverData = $data;
+        unset($serverData['variables'], $serverData['mount_ids']);
+
+        $serverId = Server::createServer($serverData);
+        if (!$serverId) {
+            return ApiResponse::error('Failed to create server', 'FAILED_TO_CREATE_SERVER', 500);
+        }
+
+        // Claim the allocation for this server
+        $allocationClaimed = Allocation::assignToServer($data['allocation_id'], $serverId);
+        if (!$allocationClaimed) {
+            App::getInstance(true)->getLogger()->error('Failed to claim allocation for server ID: ' . $serverId);
+            // Note: We don't fail the server creation, but log the error
+        }
+
+        if (!empty($variables)) {
+            App::getInstance(true)->getLogger()->debug('Creating ' . count($variables) . ' server variables for server ID: ' . $serverId);
+            $variablesCreated = ServerVariable::createOrUpdateServerVariables($serverId, $variables);
+            if (!$variablesCreated) {
+                // Log the error but don't fail the server creation
+                App::getInstance(true)->getLogger()->error('Failed to create server variables for server ID: ' . $serverId);
             } else {
-                App::getInstance(true)->getLogger()->debug('No valid server variables to create for server ID: ' . $serverId);
+                App::getInstance(true)->getLogger()->debug('Successfully created server variables for server ID: ' . $serverId);
             }
         } else {
-            // Check if there are required variables but no variables provided
-            if (!empty($requiredVariables)) {
-                Server::hardDeleteServer($serverId);
-
-                return ApiResponse::error('Missing required spell variables: ' . implode(', ', $requiredVariables), 'MISSING_REQUIRED_VARIABLES', 400);
-            }
             App::getInstance(true)->getLogger()->info('No server variables provided for server ID: ' . $serverId);
         }
 
