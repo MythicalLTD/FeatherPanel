@@ -8030,6 +8030,30 @@
 					"tags": "Tags",
 					"usage": "Usage"
 				}
+			},
+			"setup": {
+				"title": "Finish setting up this node",
+				"progress": "{done} of {total} done",
+				"dismiss": "Hide setup guide",
+				"stateDone": "Done:",
+				"stateTodo": "To do:",
+				"wings": {
+					"title": "Connect Wings",
+					"description": "Install Wings on the machine and start it with the configuration from the Wings tab. This step completes once the panel can reach it.",
+					"done": "The panel can reach Wings on this node.",
+					"action": "Open Wings setup"
+				},
+				"allocations": {
+					"title": "Add allocations",
+					"description": "Allocations are the IP and port pairs servers listen on. Add a port range or use a game preset.",
+					"done": "{count} allocations ready.",
+					"action": "Add allocations"
+				},
+				"server": {
+					"title": "Create the first server",
+					"description": "Pick this node in the server wizard. When there is only one, it is filled in for you.",
+					"action": "Create server"
+				}
 			}
 		},
 		"mounts": {

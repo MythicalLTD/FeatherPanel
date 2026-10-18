@@ -75,6 +75,7 @@ import {
 } from '@/lib/daemonCapabilities';
 import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { NodeSetupChecklist } from './NodeSetupChecklist';
 
 export interface NodeForm {
     name: string;
@@ -610,6 +611,8 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                 widgets={getWidgets('admin-nodes-edit', 'after-header')}
                 context={{ id: nodeId as string }}
             />
+
+            <NodeSetupChecklist nodeId={nodeId as string} onOpenTab={setActiveTab} refreshKey={activeTab} />
 
             <div className='block'>
                 <Tabs
