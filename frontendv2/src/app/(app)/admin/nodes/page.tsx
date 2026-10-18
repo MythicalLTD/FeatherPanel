@@ -201,8 +201,8 @@ export default function NodesPage() {
         try {
             const { data } = await axios.get(`/api/wings/admin/node/${nodeId}/system`);
             setNodeHealth((prev) => ({ ...prev, [nodeId]: data.success ? 'online' : 'offline' }));
-        } catch (error) {
-            console.error(`Error checking health for node ${nodeId}:`, error);
+        } catch {
+            // An unreachable node is an expected state (503 DAEMON_UNREACHABLE), shown as offline.
             setNodeHealth((prev) => ({ ...prev, [nodeId]: 'offline' }));
         }
     }, []);

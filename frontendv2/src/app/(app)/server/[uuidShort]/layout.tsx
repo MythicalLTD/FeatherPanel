@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import DashboardShell from '@/components/layout/DashboardShell';
 import { Metadata } from 'next';
+import { cache } from 'react';
 import ChatbotWidget from '@/components/ai/ChatbotWidget';
 import { ServerAnnouncementBanner } from '@/components/server/ServerAnnouncementBanner';
 import { ServerNodeConnectionBanner } from '@/components/server/ServerNodeConnectionBanner';
@@ -30,18 +31,20 @@ type Props = {
     params: Promise<{ uuidShort: string }>;
 };
 
-async function getServer(uuidShort: string): Promise<Server | null> {
+/**
+ * Server details for the page title and the initial server context. Best effort: a logged-out
+ * visitor or a server the user cannot see simply gets no metadata. cache() shares one request
+ * between generateMetadata and the layout within a render.
+ */
+const getServer = cache(async (uuidShort: string): Promise<Server | null> => {
     try {
         const cookieStore = await cookies();
+        const cookieHeader = cookieStore
+            .getAll()
+            .map((c) => `${c.name}=${c.value}`)
+            .join('; ');
 
-        const allCookies = cookieStore.getAll();
-        const cookieHeader = allCookies.map((c) => `${c.name}=${c.value}`).join('; ');
-
-        const baseUrl = getBaseUrl();
-        const url = `${baseUrl}/api/user/servers/${uuidShort}`;
-
-        console.log(`[SEO] Fetching server details for uuidShort: '${uuidShort}' using URL: ${url}`);
-
+        const url = `${getBaseUrl()}/api/user/servers/${uuidShort}`;
         const res = await fetch(url, {
             headers: {
                 Cookie: cookieHeader,
@@ -53,18 +56,20 @@ async function getServer(uuidShort: string): Promise<Server | null> {
         });
 
         if (!res.ok) {
-            console.error(`[SEO] Failed to fetch server ${uuidShort} from ${url}: ${res.status} ${res.statusText}`);
+            // 4xx is an expected answer here (signed out, no access, unknown server).
+            if (res.status >= 500) {
+                console.warn(`[SEO] Server ${uuidShort} lookup failed: ${res.status} ${res.statusText}`);
+            }
             return null;
         }
 
         const data = await res.json();
-        console.log(`[SEO] Server fetch response for ${uuidShort}:`, JSON.stringify(data).substring(0, 200));
         return data.success ? data.data : null;
     } catch (error) {
-        console.error('[SEO] Error fetching server for metadata:', error);
+        console.warn('[SEO] Server lookup for metadata failed:', error);
         return null;
     }
-}
+});
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { uuidShort } = await params;

@@ -17,6 +17,7 @@
 
 namespace App\Helpers;
 
+use App\App;
 use App\Chat\UserDevice;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
@@ -36,7 +37,7 @@ class UserDeviceTracker
             return;
         }
 
-        UserDevice::trackVisit(
+        self::track(
             $user['uuid'],
             $clientToken,
             self::extractSignals($request),
@@ -124,12 +125,24 @@ class UserDeviceTracker
             }
         }
 
-        UserDevice::trackVisit(
+        self::track(
             $user['uuid'],
             $clientToken,
             is_array($signals) ? $signals : null,
             CloudFlareRealIP::getRealIP(),
             $_SERVER['HTTP_USER_AGENT'] ?? null,
         );
+    }
+
+    /**
+     * Device tracking is best effort: a database hiccup here must never fail the request it rides on.
+     */
+    private static function track(string $userUuid, string $clientToken, ?array $signals, string $ip, ?string $userAgent): void
+    {
+        try {
+            UserDevice::trackVisit($userUuid, $clientToken, $signals, $ip, $userAgent);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->warning('Device tracking failed: ' . $e->getMessage());
+        }
     }
 }
