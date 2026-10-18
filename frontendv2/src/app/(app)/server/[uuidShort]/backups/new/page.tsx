@@ -22,7 +22,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { Archive, Plus, Lock, FileX, HardDrive, Database, Check, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { FormSection } from '@/components/featherui/FormSection';
@@ -263,7 +263,7 @@ export default function CreateBackupPage() {
     return (
         <div className='mx-auto max-w-4xl space-y-8 pb-16'>
             <WidgetRenderer widgets={getWidgets('server-backups-new', 'top-of-page')} />
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverBackups.createBackup')}
                 description={t('serverBackups.createBackupDescription')}
                 actions={

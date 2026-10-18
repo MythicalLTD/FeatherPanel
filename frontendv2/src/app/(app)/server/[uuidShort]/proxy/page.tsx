@@ -30,7 +30,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn, isEnabled } from '@/lib/utils';
 import type { Proxy, ProxiesResponse } from '@/types/server';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { safeBack } from '@/lib/safe-back';
@@ -161,7 +161,7 @@ export default function ServerProxyPage() {
         <div key={pathname} className='space-y-8 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-proxy', 'top-of-page')} />
 
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverProxy.title')}
                 description={
                     <>

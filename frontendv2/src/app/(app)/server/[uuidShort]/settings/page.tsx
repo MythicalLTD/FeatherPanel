@@ -20,7 +20,7 @@ import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { formatBackupLimitLabel } from '@/lib/server-utils';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { HideIpsToggle } from '@/components/preferences/HideIpsToggle';
 import { Switch } from '@/components/ui/switch';
@@ -392,7 +392,7 @@ export default function ServerSettingsPage() {
     return (
         <div key={pathname} className='mx-auto max-w-6xl space-y-8 pb-16 font-sans'>
             <WidgetRenderer widgets={getWidgets('server-settings', 'top-of-page')} />
-            <PageHeader title={t('serverSettings.title')} description={t('serverSettings.description')} />
+            <ServerPageHeader title={t('serverSettings.title')} description={t('serverSettings.description')} />
             <WidgetRenderer widgets={getWidgets('server-settings', 'after-header')} />
 
             <div className='grid min-w-0 grid-cols-1 gap-8 lg:grid-cols-12'>

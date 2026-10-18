@@ -315,6 +315,32 @@ class ServerActivity
     }
 
     /**
+     * Distinct users that appear in a server's activity log, for the activity user filter.
+     *
+     * @return array{users: array<int, array{id: int, username: string, avatar: ?string}>, has_system: bool}
+     */
+    public static function getActorsForServer(int $serverId, int $limit = 100): array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT DISTINCT u.id, u.username, u.avatar FROM ' . self::$table . ' sa
+            INNER JOIN featherpanel_users u ON sa.user_id = u.id
+            WHERE sa.server_id = :server_id ORDER BY u.username ASC LIMIT :limit');
+        $stmt->bindValue(':server_id', $serverId, \PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+        $users = array_map(static fn (array $row): array => [
+            'id' => (int) $row['id'],
+            'username' => (string) $row['username'],
+            'avatar' => $row['avatar'] ?? null,
+        ], $stmt->fetchAll(\PDO::FETCH_ASSOC));
+
+        $systemStmt = $pdo->prepare('SELECT 1 FROM ' . self::$table . ' WHERE server_id = :server_id AND user_id IS NULL LIMIT 1');
+        $systemStmt->execute(['server_id' => $serverId]);
+
+        return ['users' => $users, 'has_system' => (bool) $systemStmt->fetchColumn()];
+    }
+
+    /**
      * Get all activities with pagination.
      *
      * @param int $page Page number (1-based)
@@ -334,10 +360,37 @@ class ServerActivity
         ?int $nodeId = null,
         ?int $userId = null,
         ?array $serverIds = null,
+        array $filters = [],
     ): array {
         $pdo = Database::getPdoConnection();
         $where = [];
         $params = [];
+
+        // Optional filters: event_patterns (LIKE patterns, OR'ed), actor ('system' or user id), from/to (Y-m-d H:i:s).
+        if (!empty($filters['event_patterns']) && is_array($filters['event_patterns'])) {
+            $likes = [];
+            foreach (array_values($filters['event_patterns']) as $idx => $pattern) {
+                $likes[] = 'sa.event LIKE :ev' . $idx;
+                $params['ev' . $idx] = (string) $pattern;
+            }
+            $where[] = '(' . implode(' OR ', $likes) . ')';
+        }
+        if (isset($filters['actor'])) {
+            if ($filters['actor'] === 'system') {
+                $where[] = 'sa.user_id IS NULL';
+            } elseif (is_int($filters['actor'])) {
+                $where[] = 'sa.user_id = :actor_id';
+                $params['actor_id'] = $filters['actor'];
+            }
+        }
+        if (!empty($filters['from'])) {
+            $where[] = 'sa.timestamp >= :from_ts';
+            $params['from_ts'] = (string) $filters['from'];
+        }
+        if (!empty($filters['to'])) {
+            $where[] = 'sa.timestamp <= :to_ts';
+            $params['to_ts'] = (string) $filters['to'];
+        }
 
         if ($search !== '') {
             $where[] = '(sa.event LIKE :search OR sa.metadata LIKE :search2)';

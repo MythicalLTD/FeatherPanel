@@ -26,7 +26,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { safeBack } from '@/lib/safe-back';
 
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
@@ -166,7 +166,7 @@ export default function CreateDatabasePage() {
     return (
         <div className='mx-auto max-w-4xl space-y-8 pb-16'>
             <WidgetRenderer widgets={getWidgets('server-databases-new', 'top-of-page')} />
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverDatabases.createDatabase')}
                 description={t('serverDatabases.createDatabaseDescription')}
                 actions={

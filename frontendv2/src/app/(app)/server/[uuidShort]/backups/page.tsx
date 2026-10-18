@@ -54,7 +54,7 @@ import { formatBackupLimitLabel, isBackupLimitDisabled } from '@/lib/server-util
 
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
@@ -417,7 +417,7 @@ export default function ServerBackupsPage() {
 
     return (
         <div className='space-y-8 pb-12'>
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverBackups.title')}
                 description={
                     <div className='flex flex-wrap items-center gap-x-3 gap-y-2'>

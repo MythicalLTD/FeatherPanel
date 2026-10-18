@@ -21,7 +21,7 @@ import { EggVariableInput } from '@/components/server/EggVariableInput';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import {
     Zap,
@@ -409,7 +409,7 @@ export default function ServerStartupPage() {
         <div key={pathname} className='mx-auto max-w-6xl space-y-8 pb-16 font-sans'>
             <WidgetRenderer widgets={getWidgets('server-startup', 'top-of-page')} />
 
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverStartup.title')}
                 description={t('serverStartup.description')}
                 actions={

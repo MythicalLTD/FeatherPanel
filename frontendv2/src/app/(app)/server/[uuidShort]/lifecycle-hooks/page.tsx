@@ -42,7 +42,7 @@ import {
 
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { EmptyState } from '@/components/featherui/EmptyState';
@@ -535,7 +535,7 @@ export default function ServerLifecycleHooksPage() {
         <>
             <WidgetRenderer widgets={getWidgets('server-lifecycle-hooks', 'top-of-page')} />
             <div className='space-y-8 pb-12'>
-                <PageHeader
+                <ServerPageHeader
                     title={t('lifecycleHooks.title')}
                     description={t('lifecycleHooks.description')}
                     className='gap-4'

@@ -41,7 +41,7 @@ import { cn, isEnabled } from '@/lib/utils';
 import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { FormSection } from '@/components/featherui/FormSection';
 import { safeBack } from '@/lib/safe-back';
@@ -181,7 +181,7 @@ export default function CreateServerImportPage() {
         <div className='space-y-8 pb-16'>
             <WidgetRenderer widgets={getWidgets('server-import-new', 'top-of-page')} />
 
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverImport.createImport')}
                 description={t('serverImport.drawerDescription')}
                 actions={

@@ -20,7 +20,7 @@ import { useRouter } from 'next/navigation';
 import { useFileManager } from '@/hooks/useFileManager';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { FileActionToolbar } from './components/FileActionToolbar';
 import { FileBreadcrumbs } from './components/FileBreadcrumbs';
 import { FileList } from './components/FileList';
@@ -1274,7 +1274,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     return (
         <div className='relative flex min-h-screen flex-col gap-6 pb-20'>
             <WidgetRenderer widgets={getWidgets('server-files', 'top-of-page')} />
-            <PageHeader
+            <ServerPageHeader
                 title={t('files.title')}
                 description={t('files.manage_description', { directory: currentDirectory || '/' })}
             />

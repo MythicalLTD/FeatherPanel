@@ -38,7 +38,7 @@ import {
     Upload,
 } from 'lucide-react';
 
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
@@ -324,7 +324,7 @@ export default function ServerSchedulesPage() {
         <div key={pathname} className='space-y-8 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-schedules', 'top-of-page')} />
 
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverSchedules.title')}
                 description={t('serverSchedules.description')}
                 actions={

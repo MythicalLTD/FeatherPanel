@@ -19,7 +19,7 @@ import * as React from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import {
     Users,
@@ -339,7 +339,7 @@ export default function ServerSubusersPage() {
         <div key={pathname} className='space-y-8 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-users', 'top-of-page')} />
 
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverSubusers.title')}
                 description={t('serverSubusers.description')}
                 actions={

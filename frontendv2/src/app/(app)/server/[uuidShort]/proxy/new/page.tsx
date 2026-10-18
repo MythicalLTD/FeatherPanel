@@ -45,7 +45,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn, isEnabled } from '@/lib/utils';
 import type { AllocationItem, AllocationsResponse, ProxyCreateRequest, DnsVerifyResponse } from '@/types/server';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { FormSection } from '@/components/featherui/FormSection';
 import { safeBack } from '@/lib/safe-back';
@@ -209,7 +209,7 @@ export default function CreateProxyPage() {
         <div className='mx-auto max-w-6xl space-y-8 pb-16'>
             <WidgetRenderer widgets={getWidgets('server-proxy-new', 'top-of-page')} />
 
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverProxy.createProxy')}
                 description={t('serverProxy.createModalDescription')}
                 actions={

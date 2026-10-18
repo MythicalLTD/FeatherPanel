@@ -22,7 +22,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { Globe, Plus, Trash2, RefreshCw, AlertTriangle, Lock, Loader2 } from 'lucide-react';
 
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -138,7 +138,7 @@ export default function ServerSubdomainsPage() {
         <div key={pathname} className='space-y-8 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-subdomains', 'top-of-page')} />
 
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverSubdomains.title')}
                 description={t('serverSubdomains.description')}
                 actions={

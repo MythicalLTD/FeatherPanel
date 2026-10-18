@@ -21,7 +21,7 @@ import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Calendar, Save, ExternalLink, Lock } from 'lucide-react';
 
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { FormSection } from '@/components/featherui/FormSection';
@@ -167,7 +167,7 @@ export default function EditSchedulePage() {
 
     return (
         <div className='mx-auto max-w-4xl space-y-8 pb-16'>
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverSchedules.editSchedule')}
                 description={t('serverSchedules.editScheduleDescription')}
                 actions={
