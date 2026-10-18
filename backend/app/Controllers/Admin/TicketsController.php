@@ -22,6 +22,7 @@ use App\Chat\User;
 use App\Chat\Server;
 use App\Chat\Ticket;
 use App\Chat\Activity;
+use App\Chat\Database;
 use App\Chat\TicketStatus;
 use App\Chat\TicketMessage;
 use App\Chat\TicketCategory;
@@ -662,6 +663,11 @@ class TicketsController
                     $data['closed_at'] = null;
                 }
             }
+        }
+
+        $unknownFields = Database::unknownColumns(Ticket::getTableName(), $data);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
         }
 
         $updated = Ticket::updateByUuid($uuid, $data);

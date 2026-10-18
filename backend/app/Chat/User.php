@@ -49,6 +49,14 @@ class User
     private static ?array $columnsCache = null;
 
     /**
+     * Get the name of the table.
+     */
+    public static function getTableName(): string
+    {
+        return self::$table;
+    }
+
+    /**
      * Create a new user.
      *
      * @param array $data Associative array of user fields (must include required fields)
@@ -370,7 +378,7 @@ class User
 
                 return false;
             }
-            $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
+            $set = implode(', ', array_map(fn ($f) => "`$f` = :$f", $fields));
             $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE uuid = :uuid';
             $stmt = $pdo->prepare($sql);
             $data['uuid'] = $uuid;

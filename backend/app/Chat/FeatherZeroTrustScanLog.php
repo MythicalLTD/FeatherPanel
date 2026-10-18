@@ -62,7 +62,7 @@ class FeatherZeroTrustScanLog
             return false;
         }
 
-        $sql = 'INSERT INTO ' . self::$table . ' (' . implode(', ', array_keys($insert)) . ') VALUES (:' . implode(', :', array_keys($insert)) . ')';
+        $sql = 'INSERT INTO ' . self::$table . ' (`' . implode('`, `', array_keys($insert)) . '`) VALUES (:' . implode(', :', array_keys($insert)) . ')';
         $stmt = $pdo->prepare($sql);
 
         if ($stmt->execute($insert)) {

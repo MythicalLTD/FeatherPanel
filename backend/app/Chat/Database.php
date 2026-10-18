@@ -32,6 +32,9 @@ class Database
     /** Request-scoped shared PDO — required for transactions that span helper methods. */
     private static ?\PDO $sharedPdo = null;
 
+    /** @var array<string, list<string>> Column names per table, cached for the process lifetime. */
+    private static array $columnCache = [];
+
     /**
      * Database constructor.
      *
@@ -116,6 +119,49 @@ class Database
     }
 
     /**
+     * Get the column names of a table (cached per process).
+     *
+     * @return list<string>
+     */
+    public static function getTableColumns(string $table): array
+    {
+        if (isset(self::$columnCache[$table])) {
+            return self::$columnCache[$table];
+        }
+
+        $stmt = self::getPdoConnection()->query('SHOW COLUMNS FROM ' . self::quoteIdentifier($table));
+        $columns = $stmt === false ? [] : array_map(static fn ($c) => (string) $c['Field'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
+
+        return self::$columnCache[$table] = $columns;
+    }
+
+    /**
+     * Keep only the keys of $data that are real columns of $table.
+     */
+    public static function filterColumns(string $table, array $data): array
+    {
+        return array_intersect_key($data, array_flip(self::getTableColumns($table)));
+    }
+
+    /**
+     * Return the keys of $data that are not columns of $table.
+     *
+     * @return list<string>
+     */
+    public static function unknownColumns(string $table, array $data): array
+    {
+        return array_values(array_diff(array_map('strval', array_keys($data)), self::getTableColumns($table)));
+    }
+
+    /**
+     * Quote an SQL identifier (table or column name) with backticks.
+     */
+    public static function quoteIdentifier(string $identifier): string
+    {
+        return '`' . str_replace('`', '``', $identifier) . '`';
+    }
+
+    /**
      * Get the table row count.
      *
      * @param string $table the table name
@@ -158,14 +204,21 @@ class Database
             }
 
             // Process where conditions
+            $columns = self::getTableColumns($table);
             foreach ($where as $key => $value) {
                 if (is_array($value)) {
                     // Handle special operators like >, <, >=, <=, !=
-                    $conditions[] = "{$value[0]} {$value[1]} ?";
-                    $params[] = $value[2];
+                    if (!in_array((string) ($value[0] ?? ''), $columns, true) || !in_array($value[1] ?? null, ['=', '!=', '<>', '>', '<', '>=', '<='], true)) {
+                        return 0;
+                    }
+                    $conditions[] = self::quoteIdentifier((string) $value[0]) . " {$value[1]} ?";
+                    $params[] = $value[2] ?? null;
                 } else {
                     // Standard equals condition
-                    $conditions[] = "$key = ?";
+                    if (!in_array((string) $key, $columns, true)) {
+                        return 0;
+                    }
+                    $conditions[] = self::quoteIdentifier((string) $key) . ' = ?';
                     $params[] = $value;
                 }
             }

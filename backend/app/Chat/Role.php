@@ -21,6 +21,14 @@ class Role
 {
     private static string $table = 'featherpanel_roles';
 
+    /**
+     * Get the name of the table.
+     */
+    public static function getTableName(): string
+    {
+        return self::$table;
+    }
+
     public static function getAll(?string $search = null, int $limit = 10, int $offset = 0): array
     {
         $pdo = Database::getPdoConnection();
@@ -85,9 +93,13 @@ class Role
             }
         }
         $pdo = Database::getPdoConnection();
+        $data = Database::filterColumns(self::$table, $data);
+        if ($data === []) {
+            return false;
+        }
         $fields = array_keys($data);
         $placeholders = array_map(fn ($f) => ':' . $f, $fields);
-        $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+        $sql = 'INSERT INTO ' . self::$table . ' (`' . implode('`, `', $fields) . '`) VALUES (' . implode(',', $placeholders) . ')';
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute($data)) {
             return (int) $pdo->lastInsertId();
@@ -109,8 +121,12 @@ class Role
         if ($id <= 0 || empty($data)) {
             return false;
         }
+        $data = Database::filterColumns(self::$table, $data);
+        if ($data === []) {
+            return false;
+        }
         $fields = array_keys($data);
-        $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
+        $set = implode(', ', array_map(fn ($f) => "`$f` = :$f", $fields));
         $data['id'] = $id;
         $pdo = Database::getPdoConnection();
         $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE id = :id';

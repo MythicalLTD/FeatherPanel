@@ -20,6 +20,7 @@ namespace App\Controllers\Admin;
 use App\Chat\User;
 use App\Chat\Ticket;
 use App\Chat\Activity;
+use App\Chat\Database;
 use App\Chat\TicketMessage;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -378,6 +379,11 @@ class TicketMessagesController
             if ($value !== null && !is_scalar($value)) {
                 return ApiResponse::error('Field ' . $field . ' must be a string', 'INVALID_DATA_TYPE', 400);
             }
+        }
+
+        $unknownFields = Database::unknownColumns(TicketMessage::getTableName(), $data);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
         }
 
         $updated = TicketMessage::update($id, $data);

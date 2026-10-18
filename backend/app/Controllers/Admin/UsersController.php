@@ -25,6 +25,7 @@ use App\Chat\Spell;
 use App\Chat\Server;
 use App\Chat\WebNode;
 use App\Chat\Activity;
+use App\Chat\Database;
 use App\Chat\MailList;
 use App\Chat\SsoToken;
 use App\Chat\WebSpace;
@@ -972,6 +973,14 @@ class UsersController
             } elseif ($wantsBanned && $wasBanned) {
                 unset($data['banned']);
             }
+        }
+
+        $unknownFields = Database::unknownColumns(User::getTableName(), $data);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
+        }
+        if ($data === []) {
+            return ApiResponse::error('No data to update', 'NO_DATA', 400);
         }
 
         $updated = User::updateUser($user['uuid'], $data);

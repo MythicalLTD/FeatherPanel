@@ -123,6 +123,10 @@ class ServerImport
         }
 
         $pdo = Database::getPdoConnection();
+        $data = Database::filterColumns(self::$table, $data);
+        if ($data === []) {
+            return false;
+        }
         $fields = array_keys($data);
         $set = implode(', ', array_map(fn ($f) => "`$f` = :$f", $fields));
         $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE id = :id';

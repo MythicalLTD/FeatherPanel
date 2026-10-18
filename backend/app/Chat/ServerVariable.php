@@ -96,7 +96,7 @@ class ServerVariable
         $pdo = Database::getPdoConnection();
         $fields = array_keys($filteredData);
         $placeholders = array_map(fn ($f) => ':' . $f, $fields);
-        $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+        $sql = 'INSERT INTO ' . self::$table . ' (`' . implode('`, `', $fields) . '`) VALUES (' . implode(',', $placeholders) . ')';
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute($filteredData)) {
             return (int) $pdo->lastInsertId();
@@ -215,7 +215,7 @@ class ServerVariable
 
         $pdo = Database::getPdoConnection();
         $fields = array_keys($filteredData);
-        $setClause = implode(', ', array_map(fn ($f) => $f . ' = :' . $f, $fields));
+        $setClause = implode(', ', array_map(fn ($f) => '`' . $f . '` = :' . $f, $fields));
         $sql = 'UPDATE ' . self::$table . ' SET ' . $setClause . ' WHERE id = :id';
         $filteredData['id'] = $id;
         $stmt = $pdo->prepare($sql);

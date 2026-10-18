@@ -79,8 +79,9 @@ class VmTask
     {
         $pdo = Database::getPdoConnection();
         $sets = [];
+        $data = Database::filterColumns(self::$table, $data);
         foreach ($data as $key => $value) {
-            $sets[] = "$key = :$key";
+            $sets[] = "`$key` = :$key";
         }
         if (empty($sets)) {
             return false;

@@ -152,7 +152,7 @@ class VmSubuser
 
         foreach ($allowed as $field) {
             if (array_key_exists($field, $data)) {
-                $updates[] = "$field = :$field";
+                $updates[] = "`$field` = :$field";
                 $params[$field] = $field === 'permissions' && is_array($data[$field])
                     ? json_encode($data[$field])
                     : $data[$field];

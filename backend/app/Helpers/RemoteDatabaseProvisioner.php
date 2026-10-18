@@ -225,7 +225,18 @@ class RemoteDatabaseProvisioner
     /**
      * @param array<string, mixed> $databaseHost
      */
-    public static function importDatabase(array $databaseHost, string $databaseName, string $sql): void
+    /**
+     * Imports a SQL/JSON dump into a customer database.
+     *
+     * MySQL/MariaDB/PostgreSQL imports connect with the database's own user
+     * ($username/$password) to that database only, never with the host's
+     * provisioning account, so the dump is limited to that user's grants.
+     *
+     * @param array<string, mixed> $databaseHost
+     *
+     * @throws \InvalidArgumentException when credentials are missing or a statement is not allowed
+     */
+    public static function importDatabase(array $databaseHost, string $databaseName, string $sql, string $username, string $password): void
     {
         if (($databaseHost['database_type'] ?? '') === 'mongodb') {
             self::importMongo(self::connectMongo($databaseHost), $databaseName, $sql);
@@ -237,19 +248,78 @@ class RemoteDatabaseProvisioner
 
             return;
         }
-        $pdo = self::connectToDatabase($databaseHost, $databaseName);
         $sql = trim($sql);
         if ($sql === '') {
             return;
         }
+        if ($username === '') {
+            throw new \InvalidArgumentException('Database credentials are required to import a dump');
+        }
 
+        $type = (string) ($databaseHost['database_type'] ?? '');
         $chunks = preg_split('/;\s*\n/', $sql) ?: [];
+        $statements = [];
         foreach ($chunks as $chunk) {
             $stmt = trim($chunk);
             if ($stmt === '' || str_starts_with($stmt, '--')) {
                 continue;
             }
+            if (self::isUseOfDatabase($stmt, $databaseName)) {
+                // Already connected to this database.
+                continue;
+            }
+            self::assertImportStatementAllowed($stmt, $type);
+            $statements[] = $stmt;
+        }
+
+        $tenantHost = $databaseHost;
+        $tenantHost['database_username'] = $username;
+        $tenantHost['database_password'] = $password;
+        $pdo = self::connectToDatabase($tenantHost, $databaseName);
+        foreach ($statements as $stmt) {
             $pdo->exec($stmt);
+        }
+    }
+
+    /**
+     * Rejects statements a database dump should never need (account, privilege,
+     * database-level, server-wide and file-system operations).
+     *
+     * @throws \InvalidArgumentException
+     */
+    public static function assertImportStatementAllowed(string $statement, string $type): void
+    {
+        $patterns = [
+            '/(^|;)\s*USE\s/i' => 'USE',
+            '/\b(CREATE|DROP|ALTER|RENAME)\s+(USER|ROLE)\b/i' => 'user/role management',
+            '/\bSET\s+(PASSWORD|ROLE|DEFAULT\s+ROLE)\b/i' => 'SET PASSWORD/ROLE',
+            '/\b(GRANT|REVOKE)\b/i' => 'GRANT/REVOKE',
+            '/\b(CREATE|DROP|ALTER)\s+(DATABASE|SCHEMA)\b/i' => 'CREATE/DROP DATABASE',
+            '/\bINTO\s+(OUTFILE|DUMPFILE)\b/i' => 'INTO OUTFILE/DUMPFILE',
+            '/\bLOAD\s+(DATA|XML)\b/i' => 'LOAD DATA',
+            '/\bLOAD_FILE\s*\(/i' => 'LOAD_FILE',
+            '/\bSET\s+(GLOBAL|PERSIST|PERSIST_ONLY)\b|@@(GLOBAL|PERSIST)\./i' => 'SET GLOBAL',
+            '/\b(INSTALL|UNINSTALL)\s+(PLUGIN|SONAME|COMPONENT)\b/i' => 'plugin management',
+        ];
+        if ($type === 'postgresql') {
+            $patterns += [
+                '/^\s*\\\\/m' => 'psql meta-command',
+                '/\bCOPY\b[^;]*\b(FROM|TO)\s+(PROGRAM\b|x\b)/i' => 'COPY to/from a file or program',
+                '/\bALTER\s+SYSTEM\b/i' => 'ALTER SYSTEM',
+                '/\bSET\s+SESSION\s+AUTHORIZATION\b/i' => 'SET SESSION AUTHORIZATION',
+                '/\bCREATE\s+(OR\s+REPLACE\s+)?(EXTENSION|LANGUAGE)\b/i' => 'CREATE EXTENSION/LANGUAGE',
+                '/\b(lo_import|lo_export|pg_read_file|pg_read_binary_file|pg_ls_dir|dblink\w*)\s*\(/i' => 'server file/connection functions',
+            ];
+        }
+
+        // Check both string-escaping interpretations so a session sql_mode change cannot hide a statement.
+        foreach ([true, false] as $backslashEscapes) {
+            $normalized = self::normalizeImportStatement($statement, $type, $backslashEscapes);
+            foreach ($patterns as $pattern => $label) {
+                if (preg_match($pattern, $normalized) === 1) {
+                    throw new \InvalidArgumentException('Dump contains a statement that is not allowed (' . $label . ')');
+                }
+            }
         }
     }
 
@@ -304,6 +374,43 @@ class RemoteDatabaseProvisioner
         }
 
         return 'CREATE TABLE IF NOT EXISTS ' . $target . ' ' . ltrim(substr($ddl, strlen($m[0])));
+    }
+
+    /**
+     * Replaces string literals, quoted identifiers and non-executable comments
+     * with placeholders in one left-to-right pass, so keyword checks cannot be
+     * fooled by quoting or comment-splitting. MySQL executable comments
+     * (`/*! ... *\/`, `/*M! ... *\/`) keep their contents.
+     */
+    private static function normalizeImportStatement(string $statement, string $type, bool $backslashEscapes): string
+    {
+        $string = $backslashEscapes ? "'(?:[^'\\\\]|\\\\.|'')*'" : "'(?:[^']|'')*'";
+        $doubleQuoted = $backslashEscapes ? '"(?:[^"\\\\]|\\\\.|"")*"' : '"(?:[^"]|"")*"';
+        $lineComment = $type === 'postgresql' ? '--[^\n]*' : '--(?=\s|$)[^\n]*|#[^\n]*';
+        $pattern = '~(/\*M?!\d*|\*/)|(/\*.*?\*/|' . $lineComment . ')|(' . $string . '|' . $doubleQuoted . '|`(?:[^`]|``)*`)~s';
+
+        return preg_replace_callback(
+            $pattern,
+            static fn (array $m): string => isset($m[3]) ? ' x ' : ' ',
+            $statement
+        ) ?? $statement;
+    }
+
+    /**
+     * True when the statement is just `USE <databaseName>` (optionally quoted).
+     */
+    private static function isUseOfDatabase(string $statement, string $databaseName): bool
+    {
+        if (!preg_match('/^\s*USE\s+(`(?:[^`]|``)+`|"(?:[^"]|"")+"|[A-Za-z0-9_$]+)\s*;?\s*$/i', $statement, $m)) {
+            return false;
+        }
+        $name = $m[1];
+        if ($name[0] === '`' || $name[0] === '"') {
+            $q = $name[0];
+            $name = str_replace($q . $q, $q, substr($name, 1, -1));
+        }
+
+        return $name === $databaseName;
     }
 
     /**

@@ -275,8 +275,12 @@ class ServerDatabase
         }
 
         $pdo = Database::getPdoConnection();
+        $data = Database::filterColumns(self::$table, $data);
+        if ($data === []) {
+            return false;
+        }
         $fields = array_keys($data);
-        $setClause = implode(', ', array_map(fn ($f) => $f . ' = :' . $f, $fields));
+        $setClause = implode(', ', array_map(fn ($f) => '`' . $f . '` = :' . $f, $fields));
         $sql = 'UPDATE ' . self::$table . ' SET ' . $setClause . ' WHERE id = :id';
         $data['id'] = $id;
         $stmt = $pdo->prepare($sql);
@@ -415,12 +419,15 @@ class ServerDatabase
      */
     public static function count(array $conditions = []): int
     {
+        if (Database::unknownColumns(self::$table, $conditions) !== []) {
+            return 0;
+        }
         if (empty($conditions)) {
             return 0;
         }
 
         $pdo = Database::getPdoConnection();
-        $where = implode(' AND ', array_map(static fn ($k) => "$k = :$k", array_keys($conditions)));
+        $where = implode(' AND ', array_map(static fn ($k) => "`$k` = :$k", array_keys($conditions)));
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . $where);
         $stmt->execute($conditions);
 
