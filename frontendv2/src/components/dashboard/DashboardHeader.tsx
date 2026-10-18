@@ -53,17 +53,17 @@ export function DashboardHeader({
                     {greeting}
                 </h1>
                 {statusLine && (
-                    <p className='text-muted-foreground mt-1 flex min-w-0 items-center gap-2 text-sm'>
+                    <p className='text-muted-foreground mt-1 flex min-w-0 items-start gap-2 text-sm'>
                         <span
                             className={cn(
-                                'h-2 w-2 shrink-0 rounded-full',
+                                'mt-1.5 h-2 w-2 shrink-0 rounded-full',
                                 statusTone === 'good' && 'bg-emerald-500',
                                 statusTone === 'warning' && 'bg-amber-500',
                                 statusTone === 'neutral' && 'bg-muted-foreground/50',
                             )}
                             aria-hidden
                         />
-                        <span className='truncate'>{statusLine}</span>
+                        <span className='min-w-0'>{statusLine}</span>
                     </p>
                 )}
             </div>

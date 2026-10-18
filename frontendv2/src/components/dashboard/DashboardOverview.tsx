@@ -170,7 +170,7 @@ export function DashboardAttention({
                         >
                             <Icon className='mt-0.5 h-4 w-4 shrink-0' aria-hidden />
                             <span className='min-w-0 flex-1'>
-                                <span className='block truncate text-sm font-medium'>{item.title}</span>
+                                <span className='line-clamp-2 text-sm font-medium wrap-break-word'>{item.title}</span>
                                 {item.description && (
                                     <span className='block truncate text-xs opacity-80'>{item.description}</span>
                                 )}

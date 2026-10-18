@@ -90,7 +90,7 @@ function Meter({ label, value, percent }: { label: string; value: string; percen
                 : 'bg-emerald-500';
     return (
         <div className='min-w-0'>
-            <div className='flex items-baseline justify-between gap-1 text-[11px] leading-none'>
+            <div className='flex flex-col gap-0.5 text-[11px] leading-none sm:flex-row sm:items-baseline sm:justify-between sm:gap-1'>
                 <span className='text-muted-foreground font-medium'>{label}</span>
                 <span className='truncate font-medium tabular-nums'>{value}</span>
             </div>
@@ -260,7 +260,7 @@ export function DashboardServerRow({
                     />
                 </Link>
 
-                <div className='flex shrink-0 items-center'>
+                <div className='flex w-24 shrink-0 items-center justify-end'>
                     {accessible && running && (
                         <>
                             {powerButton('restart', <RotateCw className='h-4 w-4' />)}

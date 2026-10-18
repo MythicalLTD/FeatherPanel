@@ -37,7 +37,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
-import { formatRelativeTime } from '@/lib/dateUtils';
+import { formatRelativeTime, parseApiDate } from '@/lib/dateUtils';
 import { getModuleStates } from '@/lib/modules';
 import { formatDisk, getServerDiskLimit } from '@/lib/server-utils';
 import { cn, isEnabled } from '@/lib/utils';
@@ -129,10 +129,9 @@ function orderByRecent(servers: ServerData[]): ServerData[] {
 }
 
 function daysUntil(value?: string | null): number | null {
-    if (!value) return null;
-    const time = new Date(value.includes('T') || value.includes('Z') ? value : value.replace(' ', 'T') + 'Z').getTime();
-    if (Number.isNaN(time)) return null;
-    return Math.ceil((time - Date.now()) / DAY_MS);
+    const date = parseApiDate(value);
+    if (!date) return null;
+    return Math.ceil((date.getTime() - Date.now()) / DAY_MS);
 }
 
 function BlockChrome({
@@ -214,7 +213,17 @@ function BlockChrome({
                     )}
                 </div>
             )}
-            <div className={cn(hidden && isCustomizing && 'opacity-30 grayscale')}>{children}</div>
+            {/* While customizing, a widget with nothing to show keeps a placeholder so it can still be
+                moved or hidden. */}
+            <div
+                className={cn(
+                    hidden && isCustomizing && 'opacity-30 grayscale',
+                    isCustomizing &&
+                        'empty:border-border/60 empty:bg-muted/20 empty:h-14 empty:rounded-xl empty:border empty:border-dashed',
+                )}
+            >
+                {children}
+            </div>
         </div>
     );
 }
@@ -521,37 +530,40 @@ export default function DashboardPage() {
     // ---- Blocks -------------------------------------------------------------------------------
 
     const statTiles = [
-        modules.game && {
-            key: 'game',
-            icon: Gamepad2,
-            label: t('dashboard.home.stats.game'),
-            value: String(serverTotal),
-            hint:
-                serverTotal > 0 && serverStatusCounts.known === serverTotal
-                    ? t('dashboard.home.stats.running', { count: String(serverStatusCounts.running) })
-                    : undefined,
-            href: '/dashboard/servers',
-        },
-        modules.vds && {
-            key: 'vds',
-            icon: MonitorCog,
-            label: t('dashboard.home.stats.vds'),
-            value: String(vmTotal),
-            hint:
-                vmTotal > 0 && vms.length === vmTotal
-                    ? t('dashboard.home.stats.running', {
-                          count: String(vms.filter((vm) => vm.status === 'running').length),
-                      })
-                    : undefined,
-            href: '/dashboard/vms',
-        },
-        modules.web && {
-            key: 'web',
-            icon: Globe,
-            label: t('dashboard.home.stats.web'),
-            value: String(webspaceTotal),
-            href: '/dashboard/webspaces',
-        },
+        modules.game &&
+            serverTotal > 0 && {
+                key: 'game',
+                icon: Gamepad2,
+                label: t('dashboard.home.stats.game'),
+                value: String(serverTotal),
+                hint:
+                    serverTotal > 0 && serverStatusCounts.known === serverTotal
+                        ? t('dashboard.home.stats.running', { count: String(serverStatusCounts.running) })
+                        : undefined,
+                href: '/dashboard/servers',
+            },
+        modules.vds &&
+            vmTotal > 0 && {
+                key: 'vds',
+                icon: MonitorCog,
+                label: t('dashboard.home.stats.vds'),
+                value: String(vmTotal),
+                hint:
+                    vmTotal > 0 && vms.length === vmTotal
+                        ? t('dashboard.home.stats.running', {
+                              count: String(vms.filter((vm) => vm.status === 'running').length),
+                          })
+                        : undefined,
+                href: '/dashboard/vms',
+            },
+        modules.web &&
+            webspaceTotal > 0 && {
+                key: 'web',
+                icon: Globe,
+                label: t('dashboard.home.stats.web'),
+                value: String(webspaceTotal),
+                href: '/dashboard/webspaces',
+            },
         ticketsEnabled && {
             key: 'support',
             icon: LifeBuoy,
@@ -574,6 +586,7 @@ export default function DashboardPage() {
         href: string;
     }[];
 
+    // Modules without resources get no tile; support stays as the way to ask for help.
     const statsBlock = loadingResources ? (
         <div className='grid grid-cols-2 gap-3 lg:grid-cols-4' aria-busy='true'>
             {[0, 1, 2, 3].map((i) => (
@@ -581,12 +594,7 @@ export default function DashboardPage() {
             ))}
         </div>
     ) : statTiles.length > 0 ? (
-        <div
-            className={cn(
-                'grid grid-cols-2 gap-3',
-                statTiles.length >= 4 ? 'lg:grid-cols-4' : statTiles.length === 3 ? 'lg:grid-cols-3' : '',
-            )}
-        >
+        <div className='grid grid-cols-2 gap-3 lg:grid-cols-4'>
             {statTiles.map(({ key, ...tile }) => (
                 <DashboardStatTile key={key} {...tile} />
             ))}
