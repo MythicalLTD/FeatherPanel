@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useHideServerIps } from '@/contexts/PreferencesContext';
+import { Sensitive } from '@/components/common/Sensitive';
 import { maskEndpoint } from '@/lib/ip-mask';
 import { cn } from '@/lib/utils';
 
@@ -26,12 +26,15 @@ interface MaskedIpProps {
 }
 
 /**
- * Renders a server address, or the placeholder while the user hides IPs.
+ * Renders a server address, or a click-to-reveal placeholder in privacy mode.
  *
  * @example
  * <MaskedIp ip={allocation.ip} port={allocation.port} className='font-mono' />
  */
 export function MaskedIp({ ip, port, className }: MaskedIpProps) {
-    const hidden = useHideServerIps();
-    return <span className={cn(className)}>{maskEndpoint(ip, port, hidden)}</span>;
+    return (
+        <span className={cn(className)}>
+            <Sensitive>{maskEndpoint(ip, port, false)}</Sensitive>
+        </span>
+    );
 }

@@ -40,7 +40,7 @@ import { toast } from 'sonner';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useHideServerIps } from '@/contexts/PreferencesContext';
-import { maskEndpoint } from '@/lib/ip-mask';
+import { maskEndpointKeepPort } from '@/lib/ip-mask';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn, isEnabled } from '@/lib/utils';
@@ -291,7 +291,7 @@ export default function CreateProxyPage() {
                                     }}
                                     options={allocations.map((a) => ({
                                         id: String(a.port),
-                                        name: `${maskEndpoint(a.ip, a.port, hideIps)} ${a.is_primary ? t('serverProxy.primary') : ''}`,
+                                        name: `${maskEndpointKeepPort(a.ip, a.port, hideIps)} ${a.is_primary ? t('serverProxy.primary') : ''}`,
                                     }))}
                                     placeholder={t('serverProxy.selectPort')}
                                     disabled={saving}

@@ -182,6 +182,7 @@ export default function CreateUserPage() {
                                     <Input
                                         id='create-email'
                                         type='email'
+                                        data-fp-sensitive=''
                                         value={createForm.email}
                                         onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
                                         placeholder={t('admin.users.create.form.email_placeholder')}

@@ -21,6 +21,7 @@ import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.
 import { CircleUser } from 'lucide-react';
 import { NavbarUserMenu } from '@/components/navbar/NavbarUserMenu';
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer';
+import { PrivacyModeButton } from '@/components/common/PrivacyModeButton';
 import { useGlobalSearch } from '@/contexts/GlobalSearchContext';
 import { SidebarCollapseToggle } from '@/components/sidebar/SidebarCollapseToggle';
 import { GlobalSearchTrigger } from '@/components/global-search/GlobalSearchDialog';
@@ -172,6 +173,7 @@ function NavbarActionsCluster({
                         <div className='bg-border/50 hidden h-6 w-px sm:block xl:hidden' aria-hidden />
                     )}
                     <div className='flex items-center [&>button]:rounded-lg sm:[&>button]:rounded-xl'>
+                        <PrivacyModeButton />
                         <ThemeCustomizer />
                     </div>
                 </div>
@@ -184,6 +186,7 @@ function NavbarActionsCluster({
         <div className='relative z-10 flex shrink-0 items-center gap-x-1.5 sm:gap-x-2 lg:gap-x-3'>
             <NavbarMobileSearchButton t={t} />
             {adminButton}
+            <PrivacyModeButton />
             <ThemeCustomizer />
             <NavbarUserMenu variant='classic' {...userMenuProps} router={router} t={t} />
         </div>

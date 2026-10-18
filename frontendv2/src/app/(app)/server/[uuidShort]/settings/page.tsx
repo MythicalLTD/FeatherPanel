@@ -23,8 +23,6 @@ import { formatBackupLimitLabel } from '@/lib/server-utils';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { HideIpsToggle } from '@/components/preferences/HideIpsToggle';
-import { useHideServerIps } from '@/contexts/PreferencesContext';
-import { HIDDEN_IP_PLACEHOLDER, looksLikeIp } from '@/lib/ip-mask';
 import { Switch } from '@/components/ui/switch';
 import {
     Save,
@@ -72,6 +70,7 @@ import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 import { filesApi } from '@/lib/files-api';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface SftpDetails {
     host: string;
@@ -348,8 +347,6 @@ export default function ServerSettingsPage() {
     const resolvedSftpHost = server?.node?.sftp_subdomain || server?.sftp?.host || '';
     const resolvedSftpPort = server?.sftp?.port;
     const resolvedSftpUsername = server?.sftp?.username || '';
-    // The SFTP host is usually the node IP unless a subdomain is configured.
-    const sftpHostHidden = useHideServerIps() && looksLikeIp(resolvedSftpHost);
     const resolvedSftpUrl =
         resolvedSftpUsername && resolvedSftpHost && resolvedSftpPort
             ? `sftp://${resolvedSftpUsername}@${resolvedSftpHost}:${resolvedSftpPort}`
@@ -619,11 +616,11 @@ export default function ServerSettingsPage() {
                                 </Label>
                                 <div className='bg-secondary/50 border-border/10 group/input flex items-center gap-2 rounded-xl border p-1 pr-1 pl-4 transition-colors hover:border-blue-500/30'>
                                     <code className='text-foreground/80 flex-1 truncate font-mono text-xs'>
-                                        {resolvedSftpHost
-                                            ? sftpHostHidden
-                                                ? HIDDEN_IP_PLACEHOLDER
-                                                : `sftp://${resolvedSftpHost}`
-                                            : t('common.nA')}
+                                        {resolvedSftpHost ? (
+                                            <Sensitive>{`sftp://${resolvedSftpHost}`}</Sensitive>
+                                        ) : (
+                                            t('common.nA')
+                                        )}
                                     </code>
                                     <Button
                                         variant='ghost'
@@ -645,7 +642,11 @@ export default function ServerSettingsPage() {
                                 </Label>
                                 <div className='bg-secondary/50 border-border/10 group/input flex items-center gap-2 rounded-xl border p-1 pr-1 pl-4 transition-colors hover:border-blue-500/30'>
                                     <code className='text-foreground/80 flex-1 truncate font-mono text-xs'>
-                                        {server?.sftp?.port || t('common.nA')}
+                                        {server?.sftp?.port ? (
+                                            <Sensitive>{server.sftp.port}</Sensitive>
+                                        ) : (
+                                            t('common.nA')
+                                        )}
                                     </code>
                                     <Button
                                         variant='ghost'
@@ -665,7 +666,11 @@ export default function ServerSettingsPage() {
                                 </Label>
                                 <div className='bg-secondary/50 border-border/10 group/input flex items-center gap-2 rounded-xl border p-1 pr-1 pl-4 transition-colors hover:border-blue-500/30'>
                                     <code className='text-foreground/80 flex-1 truncate font-mono text-xs'>
-                                        {server?.sftp?.username || t('common.nA')}
+                                        {server?.sftp?.username ? (
+                                            <Sensitive>{server.sftp.username}</Sensitive>
+                                        ) : (
+                                            t('common.nA')
+                                        )}
                                     </code>
                                     <Button
                                         variant='ghost'
@@ -698,7 +703,7 @@ export default function ServerSettingsPage() {
                             </Label>
                             <div className='group/input flex items-center gap-2 rounded-xl border border-white/5 bg-white/5 p-1 pr-1 pl-4 transition-colors hover:border-blue-500/30'>
                                 <code className='text-foreground/80 flex-1 truncate font-mono text-xs'>
-                                    {sftpHostHidden ? HIDDEN_IP_PLACEHOLDER : resolvedSftpUrl || t('common.nA')}
+                                    {resolvedSftpUrl ? <Sensitive>{resolvedSftpUrl}</Sensitive> : t('common.nA')}
                                 </code>
                                 <Button
                                     variant='ghost'

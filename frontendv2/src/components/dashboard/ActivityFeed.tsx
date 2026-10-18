@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { Clock, Globe } from 'lucide-react';
 import type { Activity } from '@/types/activity';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface ActivityFeedProps {
     activities: Activity[];
@@ -55,7 +56,7 @@ export function ActivityFeed({ activities, formatDate }: ActivityFeedProps) {
                                 <div className='text-muted-foreground flex items-center gap-1 text-xs'>
                                     <Globe className='h-3 w-3 shrink-0' />
                                     <span className='font-mono blur-sm transition-all duration-200 hover:blur-none'>
-                                        {activity.ip_address}
+                                        <Sensitive>{activity.ip_address}</Sensitive>
                                     </span>
                                 </div>
                             )}

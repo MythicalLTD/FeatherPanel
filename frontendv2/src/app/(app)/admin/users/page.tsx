@@ -50,6 +50,8 @@ import { toast } from 'sonner';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 import { getRoleBadgeStyles } from '@/components/RoleBadge';
 import { getRoleBadgeLabel } from '@/lib/role-utils';
+import { Sensitive } from '@/components/common/Sensitive';
+import { useIpMask } from '@/hooks/useIpMask';
 
 interface UserRole {
     name: string;
@@ -204,6 +206,7 @@ function filtersFromSearchParams(searchParams: URLSearchParams): Partial<UsersLi
 
 export default function UsersPage() {
     const { t } = useTranslation();
+    const privacyMask = useIpMask();
     const dateOpts = useDateFormatOptions();
     const router = useRouter();
     const pathname = usePathname();
@@ -654,7 +657,7 @@ export default function UsersPage() {
                                 href={userEditHref}
                                 icon={IconComponent}
                                 title={user.username}
-                                subtitle={user.email}
+                                subtitle={privacyMask.text(user.email)}
                                 badges={badges}
                                 description={
                                     <div className='flex flex-col gap-1'>
@@ -688,7 +691,7 @@ export default function UsersPage() {
                                                     <span className='font-semibold'>
                                                         {t('admin.users.edit.account_info.last_ip')}:
                                                     </span>
-                                                    {user.last_ip}
+                                                    <Sensitive>{user.last_ip}</Sensitive>
                                                 </div>
                                             )}
                                         </div>

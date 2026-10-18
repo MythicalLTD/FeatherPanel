@@ -33,6 +33,7 @@ import ActivityTab from '@/components/account/ActivityTab';
 import MailTab from '@/components/account/MailTab';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { Sensitive } from '@/components/common/Sensitive';
 
 export default function AccountPage() {
     const { t } = useTranslation();
@@ -115,7 +116,7 @@ export default function AccountPage() {
                         <div className='min-w-0 space-y-1.5 text-center sm:space-y-2 sm:text-left'>
                             <h2 className='text-foreground text-xl font-bold sm:text-2xl'>{user?.username}</h2>
                             <p className='text-muted-foreground text-sm [overflow-wrap:anywhere] sm:text-base'>
-                                {user?.email}
+                                <Sensitive>{user?.email}</Sensitive>
                             </p>
                             <p className='text-muted-foreground text-xs sm:text-sm'>
                                 {t('account.memberSince')}{' '}

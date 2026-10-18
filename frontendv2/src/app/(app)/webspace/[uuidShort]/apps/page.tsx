@@ -835,6 +835,7 @@ export default function WebSpaceAppsPage() {
                                 <Label>{t('webSpaces.apps.gitToken')}</Label>
                                 <Input
                                     type='password'
+                                    data-fp-sensitive=''
                                     value={git.token}
                                     onChange={(e) => setGit({ ...git, token: e.target.value })}
                                 />

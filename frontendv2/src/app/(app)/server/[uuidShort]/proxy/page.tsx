@@ -25,7 +25,6 @@ import { Button } from '@/components/featherui/Button';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
-import { useIpMask } from '@/hooks/useIpMask';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -38,11 +37,11 @@ import { safeBack } from '@/lib/safe-back';
 import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { Sensitive } from '@/components/common/Sensitive';
 
 export default function ServerProxyPage() {
     const { uuidShort } = useParams();
     const { t } = useTranslation();
-    const ipMask = useIpMask();
     const { settings } = useSettings();
     const { hasPermission, loading: permissionsLoading, server } = useServerPermissions(uuidShort as string);
     const router = useRouter();
@@ -254,7 +253,7 @@ export default function ServerProxyPage() {
                                     <div className='text-muted-foreground flex items-center gap-2'>
                                         <Network className='h-3 w-3 opacity-50' />
                                         <span className='text-foreground/70 text-xs font-bold'>
-                                            {ipMask.ip(proxy.ip)}
+                                            <Sensitive>{proxy.ip}</Sensitive>
                                         </span>
                                     </div>
                                     <div className='text-muted-foreground flex items-center gap-2'>

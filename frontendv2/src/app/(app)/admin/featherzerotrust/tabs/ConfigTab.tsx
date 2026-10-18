@@ -393,6 +393,7 @@ const ConfigTab = () => {
                                         <Label>{t('admin.featherzerotrust.config.malwarebazaar.apiKey')}</Label>
                                         <Input
                                             type='password'
+                                            data-fp-sensitive=''
                                             value={config.malwarebazaar_api_key || ''}
                                             onChange={(e) =>
                                                 setConfig({ ...config, malwarebazaar_api_key: e.target.value })

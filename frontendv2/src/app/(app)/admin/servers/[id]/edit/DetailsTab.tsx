@@ -24,6 +24,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/featherui/Button';
 import { UserCircle, Search } from 'lucide-react';
 import { TabProps, Location, Node, SelectedEntities } from './types';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface DetailsTabProps extends TabProps {
     selectedEntities: SelectedEntities;
@@ -120,7 +121,9 @@ export function DetailsTab({
                                                 {selectedEntities.owner.username}
                                             </span>
                                         )}
-                                        <span className='text-muted-foreground'>({selectedEntities.owner.email})</span>
+                                        <span className='text-muted-foreground'>
+                                            (<Sensitive>{selectedEntities.owner.email}</Sensitive>)
+                                        </span>
                                     </div>
                                 ) : (
                                     <span className='text-muted-foreground'>
@@ -255,7 +258,11 @@ export function DetailsTab({
                             {t('admin.servers.form.node')}
                         </Label>
                         <p className='mt-1 font-medium'>{node?.name || t('common.unknown')}</p>
-                        {node?.fqdn && <p className='text-muted-foreground text-xs'>{node.fqdn}</p>}
+                        {node?.fqdn && (
+                            <p className='text-muted-foreground text-xs'>
+                                <Sensitive>{node.fqdn}</Sensitive>
+                            </p>
+                        )}
                     </div>
                 </div>
             </PageCard>

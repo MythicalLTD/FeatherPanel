@@ -43,6 +43,7 @@ import {
     LayoutTemplate,
     Activity,
 } from 'lucide-react';
+import { useIpMask } from '@/hooks/useIpMask';
 
 interface WebNode {
     id: number;
@@ -89,6 +90,7 @@ const WEB_NODES_LIST_FILTERS_DEFAULTS = {
 
 export default function WebNodesPage() {
     const { t } = useTranslation();
+    const privacyMask = useIpMask();
     const router = useRouter();
     const searchParams = useSearchParams();
     const urlLocationId = searchParams.get('location_id') ?? '';
@@ -353,7 +355,7 @@ export default function WebNodesPage() {
                             <ResourceCard
                                 key={node.id}
                                 title={node.name}
-                                subtitle={`${node.scheme}://${node.fqdn}:${node.daemonListen}`}
+                                subtitle={privacyMask.text(`${node.scheme}://${node.fqdn}:${node.daemonListen}`)}
                                 icon={LayoutTemplate}
                                 badges={badges}
                                 description={

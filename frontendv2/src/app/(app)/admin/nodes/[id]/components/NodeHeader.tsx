@@ -19,6 +19,7 @@ import { Button } from '@/components/featherui/Button';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Database, Network, ArrowLeft, Activity } from 'lucide-react';
 import { NodeData, SystemInfoResponse } from '../types';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface NodeHeaderProps {
     node: NodeData;
@@ -48,7 +49,9 @@ export function NodeHeader({
             title={node.name}
             description={
                 <div className='mt-1 flex items-center gap-2'>
-                    <span className='text-muted-foreground text-sm'>{node.fqdn}</span>
+                    <span className='text-muted-foreground text-sm'>
+                        <Sensitive>{node.fqdn}</Sensitive>
+                    </span>
                     <span className='text-muted-foreground/30'>•</span>
                     <span className='text-muted-foreground text-sm'>{locationName}</span>
                 </div>

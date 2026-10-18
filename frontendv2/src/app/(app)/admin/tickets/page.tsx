@@ -35,6 +35,7 @@ import { AlertCircle } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface User {
     id: number;
@@ -321,7 +322,9 @@ export default function TicketsPage() {
                                         <span className='font-mono text-xs opacity-70'>#{ticket.id}</span>
                                         <span>•</span>
                                         <span className='text-primary/80 font-medium'>{ticket.user?.username}</span>
-                                        <span className='opacity-50'>({ticket.user?.email})</span>
+                                        <span className='opacity-50'>
+                                            (<Sensitive>{ticket.user?.email}</Sensitive>)
+                                        </span>
                                     </div>
                                 }
                                 badges={badges}

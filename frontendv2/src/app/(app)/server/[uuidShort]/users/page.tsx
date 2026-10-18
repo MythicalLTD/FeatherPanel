@@ -53,6 +53,7 @@ import { PageLoading } from '@/components/featherui/PageLoading';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { useFormBaseline } from '@/hooks/useFormBaseline';
 import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
+import { Sensitive } from '@/components/common/Sensitive';
 
 export default function ServerSubusersPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -465,7 +466,9 @@ export default function ServerSubusersPage() {
                                     description={
                                         <div className='text-muted-foreground flex items-center gap-2 text-xs font-medium'>
                                             <Mail className='h-3 w-3' />
-                                            <span>{sub.email}</span>
+                                            <span>
+                                                <Sensitive>{sub.email}</Sensitive>
+                                            </span>
                                         </div>
                                     }
                                     actions={
@@ -659,7 +662,9 @@ export default function ServerSubusersPage() {
                                 <span className='text-muted-foreground text-xs font-black tracking-widest uppercase opacity-50'>
                                     {t('serverSubusers.user')}
                                 </span>
-                                <span className='text-sm font-bold tracking-tight'>{selectedSubuser?.email}</span>
+                                <span className='text-sm font-bold tracking-tight'>
+                                    <Sensitive>{selectedSubuser?.email}</Sensitive>
+                                </span>
                             </div>
                         </div>
                         <Button

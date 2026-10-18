@@ -50,6 +50,7 @@ import {
     ExternalLink,
     WifiOff,
 } from 'lucide-react';
+import { Sensitive } from '@/components/common/Sensitive';
 
 // Types
 
@@ -1010,7 +1011,7 @@ export default function AdminLogsPage() {
                                                                 : 'text-muted-foreground/50',
                                                         )}
                                                     >
-                                                        {node.fqdn}
+                                                        <Sensitive>{node.fqdn}</Sensitive>
                                                     </div>
                                                 </div>
                                             </button>
@@ -1063,7 +1064,7 @@ export default function AdminLogsPage() {
                                 <div className='text-muted-foreground/70 hidden items-center gap-3 text-[11px] font-medium lg:flex'>
                                     <span className='flex items-center gap-1'>
                                         <Globe className='h-3 w-3' />
-                                        {selectedNode.fqdn}
+                                        <Sensitive>{selectedNode.fqdn}</Sensitive>
                                     </span>
                                     <span className='flex items-center gap-1'>
                                         <Clock className='h-3 w-3' />
@@ -1156,7 +1157,9 @@ export default function AdminLogsPage() {
                             {selectedNode && (
                                 <>
                                     <span>·</span>
-                                    <span>{selectedNode.fqdn}</span>
+                                    <span>
+                                        <Sensitive>{selectedNode.fqdn}</Sensitive>
+                                    </span>
                                 </>
                             )}
                             <div className='flex-1' />
@@ -1215,7 +1218,7 @@ export default function AdminLogsPage() {
                                                 )}
                                             </div>
                                             <div className='text-muted-foreground/60 mt-0.5 truncate text-[11px]'>
-                                                {node.fqdn}
+                                                <Sensitive>{node.fqdn}</Sensitive>
                                             </div>
                                         </div>
                                     </button>

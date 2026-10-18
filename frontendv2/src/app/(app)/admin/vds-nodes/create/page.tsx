@@ -409,6 +409,7 @@ export default function CreateVdsNodePage() {
                                     <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.token_id')}</Label>
                                     <Input
                                         placeholder='mytokenid'
+                                        data-fp-sensitive=''
                                         value={form.token_id}
                                         onChange={(e) => setForm({ ...form, token_id: e.target.value })}
                                         error={!!errors.token_id}
@@ -424,6 +425,7 @@ export default function CreateVdsNodePage() {
                                     <Input
                                         type='password'
                                         placeholder='********'
+                                        data-fp-sensitive=''
                                         value={form.secret}
                                         onChange={(e) => setForm({ ...form, secret: e.target.value })}
                                         error={!!errors.secret}
@@ -445,6 +447,7 @@ export default function CreateVdsNodePage() {
                                     <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.fqdn')}</Label>
                                     <Input
                                         placeholder='proxmox.example.com'
+                                        data-fp-sensitive=''
                                         value={form.fqdn}
                                         onChange={(e) => setForm({ ...form, fqdn: e.target.value })}
                                         error={!!errors.fqdn}

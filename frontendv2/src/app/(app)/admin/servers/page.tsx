@@ -81,6 +81,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { TransferServerDialog } from '@/components/admin/TransferServerDialog';
 import { ServerPowerMenu, sendServerPowerAction } from '@/components/admin/ServerPowerMenu';
+import { Sensitive } from '@/components/common/Sensitive';
+import { useIpMask } from '@/hooks/useIpMask';
 
 function resolveAvatarSrc(avatar?: string): string | undefined {
     if (avatar && (avatar.startsWith('http') || avatar.startsWith('/'))) {
@@ -115,6 +117,7 @@ const SERVERS_LIST_FILTERS_DEFAULTS = {
 
 export default function ServersPage() {
     const { t } = useTranslation();
+    const privacyMask = useIpMask();
     const dateOpts = useDateFormatOptions();
     const router = useRouter();
 
@@ -1165,7 +1168,7 @@ export default function ServersPage() {
                                                         ? `/admin/users/${selectedServer.owner.uuid}/edit`
                                                         : undefined
                                                 }
-                                                detail={selectedServer?.owner?.email}
+                                                detail={privacyMask.text(selectedServer?.owner?.email)}
                                                 secondary={
                                                     selectedServer?.owner?.last_seen
                                                         ? `${t('admin.users.last_seen')}: ${formatRelativeTime(selectedServer.owner.last_seen, dateOpts)}`
@@ -1181,7 +1184,7 @@ export default function ServersPage() {
                                                 icon={Network}
                                                 title={t('admin.servers.details.labels.node')}
                                                 name={selectedServer?.node?.name}
-                                                detail={selectedServer?.node?.fqdn}
+                                                detail={privacyMask.text(selectedServer?.node?.fqdn)}
                                             />
                                             <RelationCard
                                                 icon={Layers}
@@ -1353,7 +1356,9 @@ export default function ServersPage() {
                                     <div className='flex items-center justify-between'>
                                         <div>
                                             <p className='text-sm font-bold'>{user.username}</p>
-                                            <p className='text-muted-foreground text-xs'>{user.email}</p>
+                                            <p className='text-muted-foreground text-xs'>
+                                                <Sensitive>{user.email}</Sensitive>
+                                            </p>
                                         </div>
                                         {filterOwner?.id === user.id && (
                                             <ShieldCheck className='text-primary h-5 w-5' />
@@ -1433,7 +1438,9 @@ export default function ServersPage() {
                                     <div className='flex items-center justify-between'>
                                         <div>
                                             <p className='text-sm font-bold'>{node.name}</p>
-                                            <p className='text-muted-foreground text-xs'>{node.fqdn}</p>
+                                            <p className='text-muted-foreground text-xs'>
+                                                <Sensitive>{node.fqdn}</Sensitive>
+                                            </p>
                                         </div>
                                         {filterNode?.id === node.id && <ShieldCheck className='text-primary h-5 w-5' />}
                                     </div>

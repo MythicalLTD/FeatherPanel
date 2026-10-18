@@ -65,6 +65,7 @@ import {
 import { Select } from '@/components/ui/select-native';
 import { Dialog, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface VmInstance {
     id: number;
@@ -755,7 +756,9 @@ export default function VmInstancesPage() {
                                 >
                                     <div className='flex flex-col'>
                                         <span className='font-semibold'>{user.username}</span>
-                                        <span className='text-muted-foreground text-xs'>{user.email}</span>
+                                        <span className='text-muted-foreground text-xs'>
+                                            <Sensitive>{user.email}</Sensitive>
+                                        </span>
                                     </div>
                                 </button>
                             ))

@@ -73,6 +73,7 @@ import {
 } from '../../types';
 import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { useIpMask } from '@/hooks/useIpMask';
 
 const WEB_NODE_EDIT_TABS = new Set([
     'status',
@@ -101,6 +102,7 @@ interface Location {
 
 export default function EditWebNodePage() {
     const { t } = useTranslation();
+    const privacyMask = useIpMask();
     const router = useRouter();
     const params = useParams();
     const searchParams = useSearchParams();
@@ -377,7 +379,7 @@ export default function EditWebNodePage() {
                 title={form.name || t('admin.webNodes.form.edit_title')}
                 description={
                     form.fqdn
-                        ? `${t('admin.webNodes.form.edit_description')} · ${form.fqdn}`
+                        ? `${t('admin.webNodes.form.edit_description')} · ${privacyMask.text(form.fqdn)}`
                         : t('admin.webNodes.form.edit_description')
                 }
                 icon={Server}

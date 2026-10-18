@@ -28,6 +28,8 @@ import { AlertTriangle, ArrowLeftRight, ChevronRight, Loader2, Search, ShieldChe
 import { ApiAllocation, ApiNode, ApiServer } from '@/types/adminServerTypes';
 import { supportsDaemonFeature, type DaemonCapabilitiesMap, type DaemonType } from '@/lib/daemonCapabilities';
 import { useIpMask } from '@/hooks/useIpMask';
+import { Sensitive } from '@/components/common/Sensitive';
+import { maskEndpoint } from '@/lib/ip-mask';
 
 interface TransferServerDialogProps {
     server: ApiServer | null;
@@ -271,9 +273,13 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                             disabled={submitting}
                         >
                             <span className={selectedNode ? 'text-foreground font-medium' : 'text-muted-foreground'}>
-                                {selectedNode
-                                    ? `${selectedNode.name} (${selectedNode.fqdn})`
-                                    : t('admin.servers.transfer.select_node')}
+                                {selectedNode ? (
+                                    <>
+                                        {selectedNode.name} (<Sensitive>{selectedNode.fqdn}</Sensitive>)
+                                    </>
+                                ) : (
+                                    t('admin.servers.transfer.select_node')
+                                )}
                             </span>
                             <ChevronRight className='text-muted-foreground h-4 w-4' />
                         </Button>
@@ -422,9 +428,11 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                                         selectedAllocation ? 'text-foreground font-medium' : 'text-muted-foreground'
                                     }
                                 >
-                                    {selectedAllocation
-                                        ? `${selectedAllocation.ip}:${selectedAllocation.port}`
-                                        : t('admin.servers.transfer.select_allocation')}
+                                    {selectedAllocation ? (
+                                        <Sensitive>{`${selectedAllocation.ip}:${selectedAllocation.port}`}</Sensitive>
+                                    ) : (
+                                        t('admin.servers.transfer.select_allocation')
+                                    )}
                                 </span>
                                 <ChevronRight className='text-muted-foreground h-4 w-4' />
                             </Button>
@@ -512,7 +520,9 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                                     <div className='flex items-center justify-between'>
                                         <div>
                                             <p className='text-sm font-bold'>{node.name}</p>
-                                            <p className='text-muted-foreground text-xs'>{node.fqdn}</p>
+                                            <p className='text-muted-foreground text-xs'>
+                                                <Sensitive>{node.fqdn}</Sensitive>
+                                            </p>
                                         </div>
                                         {selectedNode?.id === node.id && (
                                             <ShieldCheck className='text-primary h-5 w-5' />
@@ -575,7 +585,9 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                                 >
                                     <div className='flex items-center justify-between'>
                                         <div>
-                                            <p className='text-sm font-bold'>{ipMask.endpoint(allc.ip, allc.port)}</p>
+                                            <p className='text-sm font-bold'>
+                                                <Sensitive>{maskEndpoint(allc.ip, allc.port, false)}</Sensitive>
+                                            </p>
                                             <p className='text-muted-foreground text-xs'>
                                                 {ipMask.ipLike(allc.ip_alias) || 'No Alias'}
                                             </p>

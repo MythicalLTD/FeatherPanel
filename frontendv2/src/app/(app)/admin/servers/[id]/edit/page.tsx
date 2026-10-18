@@ -80,6 +80,7 @@ import {
     CustomVariable,
 } from './types';
 import { safeBack } from '@/lib/safe-back';
+import { Sensitive } from '@/components/common/Sensitive';
 
 const initialFormData: ServerFormData = {
     name: '',
@@ -1306,7 +1307,7 @@ export default function EditServerPage() {
                                                     {user.role && <RoleBadge role={user.role} size='sm' />}
                                                 </div>
                                                 <div className='text-muted-foreground truncate text-sm'>
-                                                    {user.email}
+                                                    <Sensitive>{user.email}</Sensitive>
                                                 </div>
                                                 {user.last_seen && (
                                                     <div className='text-muted-foreground mt-1 text-xs'>

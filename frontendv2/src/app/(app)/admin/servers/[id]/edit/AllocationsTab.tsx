@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Plug, Search, Trash2, RefreshCw, Star } from 'lucide-react';
 import { Allocation, ServerAllocations, SelectedEntities } from './types';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface AllocationsTabProps {
     serverId: string;
@@ -140,11 +141,13 @@ export function AllocationsTab({
                                 <div className='flex items-center gap-2'>
                                     <Plug className='text-primary h-4 w-4' />
                                     <span className='text-foreground font-mono font-medium'>
-                                        {maskEndpoint(
-                                            selectedEntities.allocation.ip,
-                                            selectedEntities.allocation.port,
-                                            hideIps,
-                                        )}
+                                        <Sensitive>
+                                            {maskEndpoint(
+                                                selectedEntities.allocation.ip,
+                                                selectedEntities.allocation.port,
+                                                false,
+                                            )}
+                                        </Sensitive>
                                     </span>
                                 </div>
                             ) : (
@@ -187,7 +190,7 @@ export function AllocationsTab({
                                     <Plug className='text-muted-foreground h-4 w-4 shrink-0' />
                                     <div className='min-w-0'>
                                         <div className='font-mono font-medium'>
-                                            {maskEndpoint(allocation.ip, allocation.port, hideIps)}
+                                            <Sensitive>{maskEndpoint(allocation.ip, allocation.port, false)}</Sensitive>
                                         </div>
                                         <div className='text-muted-foreground text-xs'>
                                             {maskIpLike(allocation.ip_alias, hideIps) ||
