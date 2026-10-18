@@ -39,6 +39,7 @@ use App\Helpers\FeatherWingsConfigBuilder;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Servers\ServerTransferInitiator;
+use App\Services\Wings\Exceptions\WingsConnectionException;
 
 #[OA\Schema(
     schema: 'Node',
@@ -1903,6 +1904,10 @@ class NodesController
                 'github_owner' => $githubOwner,
                 'github_repo' => $githubRepo,
             ], 'Version status retrieved successfully', 200);
+        } catch (WingsConnectionException $e) {
+            App::getInstance(true)->getLogger()->warning('Version check: node ' . $id . ' unreachable: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to reach the node', 'DAEMON_UNREACHABLE', 502);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Failed to check version status for node ' . $id . ': ' . $e->getMessage());
 
