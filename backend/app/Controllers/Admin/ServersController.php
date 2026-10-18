@@ -1966,7 +1966,11 @@ class ServersController
 
                     // If spell changed, trigger reinstall instead of just sync
                     if ($spellChanged) {
+                        $reinstallRequestedAt = new \DateTimeImmutable();
                         $response = $wings->getServer()->reinstallServer($server['uuid']);
+                        if ($response->isSuccessful()) {
+                            Server::markInstalling((int) $server['id'], $reinstallRequestedAt);
+                        }
 
                         // Emit reinstall event
                         global $eventManager;

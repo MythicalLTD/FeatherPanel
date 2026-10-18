@@ -1557,6 +1557,7 @@ class ServerUserController
                     $this->wipeServerFiles($wings, $server['uuid']);
                 }
 
+                $reinstallRequestedAt = new \DateTimeImmutable();
                 $response = $wings->getServer()->reinstallServer($server['uuid']);
             } else {
                 $response = $wings->getServer()->syncServer($server['uuid']);
@@ -1579,6 +1580,8 @@ class ServerUserController
 
             // Emit event if spell changed (reinstall)
             if ($spellChanged) {
+                Server::markInstalling((int) $server['id'], $reinstallRequestedAt);
+
                 global $eventManager;
                 if (isset($eventManager) && $eventManager !== null) {
                     $eventManager->emit(
@@ -1852,6 +1855,7 @@ class ServerUserController
                 $this->wipeServerFiles($wings, $server['uuid']);
             }
 
+            $reinstallRequestedAt = new \DateTimeImmutable();
             $response = $wings->getServer()->reinstallServer($server['uuid']);
 
             if (!$response->isSuccessful()) {
@@ -1868,6 +1872,9 @@ class ServerUserController
 
                 return ApiResponse::error('Failed to send power action to Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
             }
+
+            // Track the reinstall so a daemon restart mid-install ends up as install_failed.
+            Server::markInstalling((int) $server['id'], $reinstallRequestedAt);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to send power action to Wings: ' . $e->getMessage());
 
