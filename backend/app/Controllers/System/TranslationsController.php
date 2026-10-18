@@ -280,12 +280,19 @@ class TranslationsController
     private function getLanguageMapping(): array
     {
         static $mapping = null;
+        static $mappingMtime = null;
 
-        if ($mapping !== null) {
+        $mappingPath = APP_PUBLIC . '/translations/mapping.json';
+
+        // Cached for the process lifetime, which spans many requests under
+        // FrankenPHP worker mode: re-read the file when it changed.
+        clearstatcache(true, $mappingPath);
+        $mtime = @filemtime($mappingPath);
+        if ($mapping !== null && $mtime === $mappingMtime) {
             return $mapping;
         }
 
-        $mappingPath = APP_PUBLIC . '/translations/mapping.json';
+        $mappingMtime = $mtime;
         $mapping = [];
 
         if (file_exists($mappingPath)) {
