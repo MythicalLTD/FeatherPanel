@@ -19,6 +19,8 @@ import React from 'react';
 import { Wifi, Cpu, Clock, Activity, HardDrive, Database, ArrowDown, ArrowUp, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useIpMask } from '@/hooks/useIpMask';
+import { IpVisibilityButton } from '@/components/common/IpVisibilityButton';
 import { formatMib, formatCpu as formatCpuGlobal, cn, formatFileSize } from '@/lib/utils';
 import { getUsagePercentage, getProgressColor } from '@/lib/server-utils';
 import { Progress } from '@/components/ui/progress';
@@ -123,6 +125,7 @@ export default React.memo(function ServerInfoCards({
     className,
 }: ServerInfoCardsProps) {
     const { t } = useTranslation();
+    const ipMask = useIpMask();
     const pendingValue = (
         <span className='bg-muted/40 inline-block h-3.5 w-12 animate-pulse rounded-md align-middle' aria-busy='true' />
     );
@@ -191,8 +194,9 @@ export default React.memo(function ServerInfoCards({
                         <p className='text-muted-foreground mb-1 text-xs'>{t('servers.console.info_cards.address')}</p>
                         <div className='flex items-center gap-2'>
                             <code className='bg-muted flex-1 truncate rounded px-2 py-1 font-mono text-sm'>
-                                {serverIp && serverPort ? `${serverIp}:${serverPort}` : 'N/A'}
+                                {serverIp && serverPort ? ipMask.endpoint(serverIp, serverPort) : 'N/A'}
                             </code>
+                            <IpVisibilityButton />
                             <button
                                 onClick={() => handleCopy(serverIp && serverPort ? `${serverIp}:${serverPort}` : 'N/A')}
                                 className='hover:bg-muted text-muted-foreground hover:text-foreground rounded-md p-1.5 transition-colors'

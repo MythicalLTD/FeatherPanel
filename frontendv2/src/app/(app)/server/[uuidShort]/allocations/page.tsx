@@ -58,6 +58,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 import { useServerPermissions } from '@/hooks/useServerPermissions';
+import { useIpMask } from '@/hooks/useIpMask';
+import { IpVisibilityButton } from '@/components/common/IpVisibilityButton';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -86,6 +88,7 @@ export default function ServerAllocationsPage() {
     const [isAutoAllocating, setIsAutoAllocating] = useState(false);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('server-allocations');
+    const ipMask = useIpMask();
 
     useEffect(() => {
         fetchWidgets();
@@ -430,7 +433,7 @@ export default function ServerAllocationsPage() {
                                         : 'bg-card/40 border-border/60',
                                 )}
                                 iconClassName={cn(allocation.is_primary ? 'text-primary' : 'text-muted-foreground')}
-                                title={`${allocation.ip_alias || allocation.ip}:${allocation.port}`}
+                                title={ipMask.endpoint(allocation.ip_alias || allocation.ip, allocation.port)}
                                 badges={
                                     allocation.is_primary && (
                                         <Badge
@@ -446,8 +449,9 @@ export default function ServerAllocationsPage() {
                                         <div className='text-muted-foreground flex items-center gap-2 rounded-lg border border-white/5 bg-black/40 p-1 px-2'>
                                             <span className='text-xs font-bold uppercase opacity-60'>IP</span>
                                             <span className='text-foreground/80 font-mono text-sm font-bold'>
-                                                {allocation.ip}
+                                                {ipMask.ip(allocation.ip)}
                                             </span>
+                                            <IpVisibilityButton className='-mr-1' />
                                         </div>
                                         <div className='text-muted-foreground flex items-center gap-2 rounded-lg border border-white/5 bg-black/40 p-1 px-2'>
                                             <span className='text-xs font-bold uppercase opacity-60'>Port</span>
@@ -551,9 +555,7 @@ export default function ServerAllocationsPage() {
 
                             <div className='rounded-2xl border border-red-500/20 bg-red-500/5 p-4 backdrop-blur-sm'>
                                 <div className='flex items-center justify-between font-mono text-sm'>
-                                    <span>
-                                        {selectedAllocation?.ip}:{selectedAllocation?.port}
-                                    </span>
+                                    <span>{ipMask.endpoint(selectedAllocation?.ip, selectedAllocation?.port)}</span>
                                 </div>
                             </div>
 
@@ -600,7 +602,7 @@ export default function ServerAllocationsPage() {
 
                             <div className='bg-primary/10 border-primary/20 flex items-center justify-between rounded-2xl border p-4'>
                                 <span className='font-mono text-sm font-bold'>
-                                    {selectedAllocation?.ip}:{selectedAllocation?.port}
+                                    {ipMask.endpoint(selectedAllocation?.ip, selectedAllocation?.port)}
                                 </span>
                                 <Badge variant='outline' className='border-primary/50 text-primary bg-primary/10'>
                                     New Primary
@@ -690,10 +692,10 @@ export default function ServerAllocationsPage() {
                                                 </div>
                                                 <div className='flex flex-col'>
                                                     <span className='font-mono text-sm font-bold tracking-tight'>
-                                                        {item.ip}:{item.port}
+                                                        {ipMask.endpoint(item.ip, item.port)}
                                                     </span>
                                                     <span className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
-                                                        {item.ip_alias || 'No Alias'}
+                                                        {item.ip_alias ? ipMask.ipLike(item.ip_alias) : 'No Alias'}
                                                     </span>
                                                 </div>
                                             </div>

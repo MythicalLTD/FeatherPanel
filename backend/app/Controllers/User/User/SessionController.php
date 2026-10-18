@@ -82,6 +82,11 @@ use Symfony\Component\HttpFoundation\Response;
     schema: 'UserPreferences',
     type: 'object',
     description: 'User preferences stored as localStorage key-value pairs',
+    properties: [
+        new OA\Property(property: 'timezone', type: 'string', nullable: true, description: 'IANA timezone identifier used for date rendering; null means browser default'),
+        new OA\Property(property: 'favorite_server_uuids', type: 'array', items: new OA\Items(type: 'string', format: 'uuid'), description: 'Pinned server UUIDs (max 50)'),
+        new OA\Property(property: 'hide_server_ips', type: 'boolean', description: 'Mask server IP addresses in the panel UI for this account only'),
+    ],
     additionalProperties: true
 )]
 #[OA\Schema(
@@ -740,6 +745,27 @@ class SessionController
         }
     }
 
+    /**
+     * Adds effective defaults for preferences that hold no stored value yet.
+     *
+     * `hide_server_ips` follows the administrator-wide setting until the user
+     * flips the switch themselves, so a global opt-in stays respected and GET
+     * and PATCH responses always agree.
+     *
+     * @param array $preferences the stored preferences
+     *
+     * @return array the preferences with defaults applied
+     */
+    private function applyPreferenceDefaults(array $preferences): array
+    {
+        if (!array_key_exists('hide_server_ips', $preferences)) {
+            $preferences['hide_server_ips'] =
+                App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_HIDE_IPS, 'false') === 'true';
+        }
+
+        return $preferences;
+    }
+
     #[OA\Get(
         path: '/api/user/preferences',
         summary: 'Get user preferences',
@@ -762,7 +788,7 @@ class SessionController
             return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
         }
 
-        $preferences = UserPreference::getPreferences($user['uuid']);
+        $preferences = $this->applyPreferenceDefaults(UserPreference::getPreferences($user['uuid']));
 
         return ApiResponse::success([
             'preferences' => $preferences,
@@ -828,6 +854,12 @@ class SessionController
             $data['favorite_server_uuids'] = $cleanFavorites;
         }
 
+        if (array_key_exists('hide_server_ips', $data)) {
+            if (!is_bool($data['hide_server_ips'])) {
+                return ApiResponse::error('hide_server_ips must be a boolean', 'INVALID_PREFERENCES', 400, []);
+            }
+        }
+
         if (array_key_exists('timezone', $data)) {
             if ($data['timezone'] === null || $data['timezone'] === '') {
                 // Treat empty value as "clear preference, fall back to browser/global default"
@@ -845,7 +877,7 @@ class SessionController
         }
 
         // Get updated preferences to return
-        $updatedPreferences = UserPreference::getPreferences($user['uuid']);
+        $updatedPreferences = $this->applyPreferenceDefaults(UserPreference::getPreferences($user['uuid']));
 
         return ApiResponse::success([
             'preferences' => $updatedPreferences,
