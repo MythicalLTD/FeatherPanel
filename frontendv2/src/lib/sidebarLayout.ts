@@ -32,7 +32,7 @@ export function getChromeGlowClass(glow: SidebarGlow): string {
 }
 
 export function getSidebarSurfaceClass(sidebarStyle: SidebarStyle, sidebarGlow: SidebarGlow): string {
-    const base = sidebarStyle === 'solid' ? 'border-border/50 bg-card' : 'border-border/40 bg-card/55 backdrop-blur-xl';
+    const base = sidebarStyle === 'solid' ? 'border-border/50 bg-card' : 'fp-chrome-surface';
 
     const glowClass = getChromeGlowClass(sidebarGlow);
     if (glowClass) {

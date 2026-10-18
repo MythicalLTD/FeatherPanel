@@ -27,8 +27,13 @@
     /* Glass surfaces (cards): light needs more body so text stays crisp over the backdrop. */
     --fp-surface-alpha: 0.72;
     --fp-surface-highlight: 0 0% 100% / 0.6;
+    /* Tint under the glass, its edge and how much the backdrop colour is boosted. */
+    --fp-surface-tint: var(--card);
+    --fp-surface-border: hsl(var(--border) / 0.8);
+    --fp-surface-saturate: 1.35;
+    --fp-chrome-alpha: 0.62;
     --input: 0 0% 90%;
-    --ring: 262 83% 58%;
+    --ring: var(--primary);
     --radius: 0.5rem;
     /* Default UI font (can be overridden via theme). --font-inter comes from next/font/local. */
     --app-font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -79,10 +84,19 @@
     --destructive-foreground: 0 0% 98%;
     /* Visible but quiet: cards and inputs need an edge against --card (9%) to read as surfaces. */
     --border: 220 13% 17%;
-    --fp-surface-alpha: 0.42;
-    --fp-surface-highlight: 0 0% 100% / 0.045;
+    /* Dark glass: a near black tint so bright backgrounds read through darkened, never washed
+       out, with a faint light hairline instead of a grey border. */
+    --fp-surface-alpha: 0.66;
+    --fp-surface-highlight: 0 0% 100% / 0.04;
+    --fp-surface-tint: 225 20% 4%;
+    --fp-surface-border: rgb(255 255 255 / 0.07);
+    --fp-surface-saturate: 1;
+    --fp-chrome-alpha: 0.76;
+    /* Panels nested in a card: a slightly lighter wash, not a grey slab. */
+    --fp-inset-bg: rgb(255 255 255 / 0.035);
+    --fp-inset-border: rgb(255 255 255 / 0.06);
     --input: 220 13% 19%;
-    --ring: 262 83% 58%;
+    --ring: var(--primary);
 }
 
 body {
@@ -808,19 +822,27 @@ html.fp-privacy [data-fp-sensitive]:not(:focus) {
    fp-surface-inset is for panels nested inside a surface (no second blur layer).
    --------------------------------------------------------------------------------------------- */
 @utility fp-surface {
-    background-color: hsl(var(--card) / var(--fp-surface-alpha));
-    border-color: hsl(var(--border) / 0.8);
+    background-color: hsl(var(--fp-surface-tint) / var(--fp-surface-alpha));
+    border-color: var(--fp-surface-border);
     box-shadow:
         inset 0 1px 0 0 hsl(var(--fp-surface-highlight)),
         0 1px 2px 0 rgb(0 0 0 / 0.06),
         0 8px 24px -12px rgb(0 0 0 / 0.25);
-    -webkit-backdrop-filter: blur(14px) saturate(1.35);
-    backdrop-filter: blur(14px) saturate(1.35);
+    -webkit-backdrop-filter: blur(14px) saturate(var(--fp-surface-saturate));
+    backdrop-filter: blur(14px) saturate(var(--fp-surface-saturate));
 }
 
 @utility fp-surface-inset {
-    background-color: hsl(var(--muted) / 0.35);
-    border-color: hsl(var(--border) / 0.65);
+    background-color: var(--fp-inset-bg, hsl(var(--muted) / 0.35));
+    border-color: var(--fp-inset-border, hsl(var(--border) / 0.65));
+}
+
+/* Glass for the sidebar and floating top bar: same tint as cards, a little denser. */
+@utility fp-chrome-surface {
+    background-color: hsl(var(--fp-surface-tint) / var(--fp-chrome-alpha));
+    border-color: var(--fp-surface-border);
+    -webkit-backdrop-filter: blur(24px) saturate(var(--fp-surface-saturate));
+    backdrop-filter: blur(24px) saturate(var(--fp-surface-saturate));
 }
 
 @utility fp-surface-interactive {
@@ -831,7 +853,7 @@ html.fp-privacy [data-fp-sensitive]:not(:focus) {
         transform 150ms ease;
     &:hover {
         border-color: hsl(var(--primary) / 0.45);
-        background-color: hsl(var(--card) / calc(var(--fp-surface-alpha) + 0.12));
+        background-color: hsl(var(--fp-surface-tint) / calc(var(--fp-surface-alpha) + 0.12));
         box-shadow:
             inset 0 1px 0 0 hsl(var(--fp-surface-highlight)),
             0 0 0 1px hsl(var(--primary) / 0.12),
