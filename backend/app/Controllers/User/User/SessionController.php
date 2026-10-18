@@ -264,7 +264,8 @@ class SessionController
                     return ApiResponse::error($domainRejection['message'], $domainRejection['code'], 400);
                 }
                 $existingUser = User::getUserByEmail($data['email']);
-                if ($existingUser) {
+                // Lookups are case-insensitive, so a case-only change finds the current user itself.
+                if ($existingUser && ($existingUser['uuid'] ?? null) !== $user['uuid']) {
                     return ApiResponse::error('Email already exists', 'EMAIL_ALREADY_EXISTS', 409);
                 }
             }
@@ -274,7 +275,7 @@ class SessionController
             // Only check for duplicate username if it's different from the current user's username
             if ($data['username'] !== $user['username']) {
                 $existingUser = User::getUserByUsername($data['username']);
-                if ($existingUser) {
+                if ($existingUser && ($existingUser['uuid'] ?? null) !== $user['uuid']) {
                     return ApiResponse::error('Username already exists', 'USERNAME_ALREADY_EXISTS', 409);
                 }
             }
