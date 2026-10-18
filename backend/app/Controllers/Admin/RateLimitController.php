@@ -117,7 +117,7 @@ class RateLimitController
     {
         $data = json_decode($request->getContent(), true);
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON data', 'INVALID_JSON', 400);
         }
 
@@ -322,7 +322,7 @@ class RateLimitController
     {
         $data = json_decode($request->getContent(), true);
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON data', 'INVALID_JSON', 400);
         }
 
@@ -514,7 +514,7 @@ class RateLimitController
     {
         $data = json_decode($request->getContent(), true);
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON data', 'INVALID_JSON', 400);
         }
 

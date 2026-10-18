@@ -118,7 +118,7 @@ class DatabaseSnapshotsController
 
             return ApiResponse::success(['snapshots' => $snapshots], 'Snapshots retrieved successfully');
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to list snapshots: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to list snapshots: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -184,11 +184,11 @@ class DatabaseSnapshotsController
             $filepath = self::BACKUPS_DIR . '/' . $filename;
 
             // Get database configuration
-            $host = $_ENV['DATABASE_HOST'] ?? '127.0.0.1';
-            $database = $_ENV['DATABASE_DATABASE'] ?? '';
-            $username = $_ENV['DATABASE_USER'] ?? '';
-            $password = $_ENV['DATABASE_PASSWORD'] ?? '';
-            $port = (int) ($_ENV['DATABASE_PORT'] ?? 3306);
+            $host = App::env('DATABASE_HOST', '127.0.0.1');
+            $database = App::env('DATABASE_DATABASE', '');
+            $username = App::env('DATABASE_USER', '');
+            $password = App::env('DATABASE_PASSWORD', '');
+            $port = (int) App::env('DATABASE_PORT', '3306');
 
             if (empty($database) || empty($username)) {
                 return ApiResponse::error('Database configuration is incomplete', 'INVALID_CONFIG', 500);
@@ -254,7 +254,7 @@ class DatabaseSnapshotsController
                 'size_formatted' => $this->formatBytes($size),
             ], 'Snapshot created successfully');
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to create snapshot: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to create snapshot: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -354,7 +354,7 @@ class DatabaseSnapshotsController
                 'X-File-Extension' => 'fpb',
             ]);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to download snapshot: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to download snapshot: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -484,7 +484,7 @@ class DatabaseSnapshotsController
 
             return $restoreResult;
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to restore database: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to restore database: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -592,7 +592,7 @@ class DatabaseSnapshotsController
 
             return ApiResponse::success(['message' => 'Snapshot deleted successfully'], 'Snapshot deleted successfully');
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to delete snapshot: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to delete snapshot: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -686,7 +686,7 @@ class DatabaseSnapshotsController
 
             return $this->performRestore($sql);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to restore database: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to restore database: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -779,11 +779,11 @@ class DatabaseSnapshotsController
             ];
 
             // Get database configuration
-            $host = $_ENV['DATABASE_HOST'] ?? '127.0.0.1';
-            $database = $_ENV['DATABASE_DATABASE'] ?? '';
-            $username = $_ENV['DATABASE_USER'] ?? '';
-            $dbPassword = $_ENV['DATABASE_PASSWORD'] ?? '';
-            $port = (int) ($_ENV['DATABASE_PORT'] ?? 3306);
+            $host = App::env('DATABASE_HOST', '127.0.0.1');
+            $database = App::env('DATABASE_DATABASE', '');
+            $username = App::env('DATABASE_USER', '');
+            $dbPassword = App::env('DATABASE_PASSWORD', '');
+            $port = (int) App::env('DATABASE_PORT', '3306');
 
             if (empty($database) || empty($username)) {
                 return ApiResponse::error('Database configuration is incomplete', 'INVALID_CONFIG', 500);
@@ -845,7 +845,7 @@ class DatabaseSnapshotsController
                 throw $e;
             }
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to perform fresh restore: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to perform fresh restore: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -992,11 +992,11 @@ class DatabaseSnapshotsController
         }
 
         // Get database configuration
-        $host = $_ENV['DATABASE_HOST'] ?? '127.0.0.1';
-        $database = $_ENV['DATABASE_DATABASE'] ?? '';
-        $username = $_ENV['DATABASE_USER'] ?? '';
-        $password = $_ENV['DATABASE_PASSWORD'] ?? '';
-        $port = (int) ($_ENV['DATABASE_PORT'] ?? 3306);
+        $host = App::env('DATABASE_HOST', '127.0.0.1');
+        $database = App::env('DATABASE_DATABASE', '');
+        $username = App::env('DATABASE_USER', '');
+        $password = App::env('DATABASE_PASSWORD', '');
+        $port = (int) App::env('DATABASE_PORT', '3306');
 
         if (empty($database) || empty($username)) {
             return ApiResponse::error('Database configuration is incomplete', 'INVALID_CONFIG', 500);

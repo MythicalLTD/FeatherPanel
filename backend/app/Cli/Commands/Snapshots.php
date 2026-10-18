@@ -168,11 +168,11 @@ class Snapshots extends App implements CommandBuilder
             $filepath = self::BACKUPS_DIR . '/' . $filename;
 
             // Get database configuration
-            $host = $_ENV['DATABASE_HOST'] ?? '127.0.0.1';
-            $database = $_ENV['DATABASE_DATABASE'] ?? '';
-            $username = $_ENV['DATABASE_USER'] ?? '';
-            $password = $_ENV['DATABASE_PASSWORD'] ?? '';
-            $port = (int) ($_ENV['DATABASE_PORT'] ?? 3306);
+            $host = \App\App::env('DATABASE_HOST', '127.0.0.1');
+            $database = \App\App::env('DATABASE_DATABASE', '');
+            $username = \App\App::env('DATABASE_USER', '');
+            $password = \App\App::env('DATABASE_PASSWORD', '');
+            $port = (int) \App\App::env('DATABASE_PORT', '3306');
 
             if (empty($database) || empty($username)) {
                 $app->send('&cDatabase configuration is incomplete');
@@ -335,11 +335,11 @@ class Snapshots extends App implements CommandBuilder
             $app->send($app->color1 . 'Restoring database...');
 
             // Get database configuration
-            $host = $_ENV['DATABASE_HOST'] ?? '127.0.0.1';
-            $database = $_ENV['DATABASE_DATABASE'] ?? '';
-            $username = $_ENV['DATABASE_USER'] ?? '';
-            $password = $_ENV['DATABASE_PASSWORD'] ?? '';
-            $port = (int) ($_ENV['DATABASE_PORT'] ?? 3306);
+            $host = \App\App::env('DATABASE_HOST', '127.0.0.1');
+            $database = \App\App::env('DATABASE_DATABASE', '');
+            $username = \App\App::env('DATABASE_USER', '');
+            $password = \App\App::env('DATABASE_PASSWORD', '');
+            $port = (int) \App\App::env('DATABASE_PORT', '3306');
 
             if (empty($database) || empty($username)) {
                 $app->send('&cDatabase configuration is incomplete');

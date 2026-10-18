@@ -664,7 +664,7 @@ class UsersController
         $requiredFields = ['username', 'first_name', 'last_name', 'email', 'password'];
         $missingFields = [];
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 $missingFields[] = $field;
             }
         }
@@ -694,6 +694,10 @@ class UsersController
             if ($len > $max) {
                 return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . " must be less than $max characters long", 'INVALID_DATA_LENGTH');
             }
+        }
+        // Same charset as registration; login only accepts usernames matching it.
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $data['username'])) {
+            return ApiResponse::error('Username can only contain letters, numbers, and underscores', 'INVALID_USERNAME_FORMAT');
         }
         // Validate email format
         if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
@@ -891,6 +895,11 @@ class UsersController
                     return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . " must be less than $max characters long", 'INVALID_DATA_LENGTH');
                 }
             }
+        }
+        // Same charset as registration; login only accepts usernames matching it. Existing
+        // (e.g. LDAP-provisioned) names are left alone unless they are being changed.
+        if (isset($data['username']) && $data['username'] !== $user['username'] && !preg_match('/^[a-zA-Z0-9_]+$/', $data['username'])) {
+            return ApiResponse::error('Username can only contain letters, numbers, and underscores', 'INVALID_USERNAME_FORMAT');
         }
         // Validate email format if updating email
         if (isset($data['email'])) {

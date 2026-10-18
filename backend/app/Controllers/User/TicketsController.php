@@ -481,7 +481,7 @@ class TicketsController
         }
 
         $data = json_decode($request->getContent(), true);
-        if (!$data || !isset($data['message']) || trim($data['message']) === '') {
+        if (!$data || !isset($data['message']) || !is_scalar($data['message']) || trim((string) $data['message']) === '') {
             return ApiResponse::error('Message is required', 'MISSING_MESSAGE', 400);
         }
 

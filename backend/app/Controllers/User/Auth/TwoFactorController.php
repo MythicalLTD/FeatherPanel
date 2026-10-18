@@ -24,6 +24,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use PragmaRX\Google2FA\Google2FA;
+use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\SessionCookieHelper;
 use App\Helpers\AccountLockoutHelper;
@@ -109,7 +110,7 @@ class TwoFactorController
         }
         global $eventManager;
         if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
-            if (!isset($data['turnstile_token']) || trim($data['turnstile_token']) === '') {
+            if (!isset($data['turnstile_token']) || !is_scalar($data['turnstile_token']) || trim((string) $data['turnstile_token']) === '') {
                 return ApiResponse::error('Captcha token is required', 'CAPTCHA_TOKEN_REQUIRED');
             }
             if (!\App\Helpers\CaptchaHelper::validate($data['turnstile_token'], CloudFlareRealIP::getRealIP())) {
@@ -121,7 +122,7 @@ class TwoFactorController
         $requiredFields = ['code', 'secret'];
         $missingFields = [];
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 $missingFields[] = $field;
             }
         }
@@ -152,7 +153,10 @@ class TwoFactorController
             }
         }
 
-        $userInfo = User::getUserByRememberToken($_COOKIE['remember_token']);
+        $userInfo = AuthMiddleware::getCurrentUser($request);
+        if ($userInfo === null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 401);
+        }
 
         // Verify code
         $google2fa = new Google2FA();
@@ -207,7 +211,10 @@ class TwoFactorController
         $app = App::getInstance(true);
         $config = $app->getConfig();
         $data = json_decode($request->getContent(), true);
-        $userInfo = User::getUserByRememberToken($_COOKIE['remember_token']);
+        $userInfo = AuthMiddleware::getCurrentUser($request);
+        if ($userInfo === null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 401);
+        }
 
         if ($userInfo['two_fa_enabled'] == 'true') {
             return ApiResponse::error('Two factor authentication is enabled', 'TWO_FACTOR_AUTH_ENABLED');

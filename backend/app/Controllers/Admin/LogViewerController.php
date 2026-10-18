@@ -173,6 +173,7 @@ class LogViewerController
         } catch (\Exception $e) {
             return ApiResponse::error(
                 'Failed to fetch logs: ' . $e->getMessage(),
+                'INTERNAL_SERVER_ERROR',
                 500,
             );
         }
@@ -241,6 +242,7 @@ class LogViewerController
         } catch (\Exception $e) {
             return ApiResponse::error(
                 'Failed to clear logs: ' . $e->getMessage(),
+                'INTERNAL_SERVER_ERROR',
                 500,
             );
         }
@@ -318,6 +320,7 @@ class LogViewerController
         } catch (\Exception $e) {
             return ApiResponse::error(
                 'Failed to fetch log files: ' . $e->getMessage(),
+                'INTERNAL_SERVER_ERROR',
                 500,
             );
         }
@@ -509,6 +512,7 @@ class LogViewerController
         } catch (\Exception $e) {
             return ApiResponse::error(
                 'Failed to upload logs: ' . $e->getMessage(),
+                'INTERNAL_SERVER_ERROR',
                 500,
             );
         }

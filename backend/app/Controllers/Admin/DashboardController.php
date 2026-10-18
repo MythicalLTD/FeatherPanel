@@ -420,6 +420,7 @@ class DashboardController
         } catch (\Exception $e) {
             return ApiResponse::error(
                 'Failed to fetch dashboard statistics: ' . $e->getMessage(),
+                'INTERNAL_SERVER_ERROR',
                 500,
             );
         }
@@ -483,6 +484,7 @@ class DashboardController
         } catch (\Exception $e) {
             return ApiResponse::error(
                 'Failed to clear system cache: ' . $e->getMessage(),
+                'INTERNAL_SERVER_ERROR',
                 500,
             );
         }

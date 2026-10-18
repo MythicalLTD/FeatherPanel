@@ -2485,7 +2485,7 @@ class ServerFilesController
             }
 
             // Get the filename from query parameters or use a default
-            $filename = $_GET['filename'] ?? 'uploaded_file';
+            $filename = isset($_GET['filename']) && is_string($_GET['filename']) && $_GET['filename'] !== '' ? $_GET['filename'] : 'uploaded_file';
 
             // Combine path and filename
             $fullPath = rtrim($path, '/') . '/' . $filename;
@@ -2966,7 +2966,9 @@ class ServerFilesController
      */
     private function getPathFromQuery(string $default = '/'): string
     {
-        return $_GET['path'] ?? $default;
+        $path = $_GET['path'] ?? null;
+
+        return is_string($path) && $path !== '' ? $path : $default;
     }
 
     /**

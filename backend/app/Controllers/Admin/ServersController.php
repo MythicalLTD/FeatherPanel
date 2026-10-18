@@ -887,11 +887,15 @@ class ServersController
     public function create(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
-        $user = User::getUserById($data['owner_id']);
+        if (!isset($data['owner_id']) || !is_numeric($data['owner_id'])) {
+            return ApiResponse::error('Missing required field: owner_id', 'MISSING_REQUIRED_FIELDS', 400);
+        }
+
+        $user = User::getUserById((int) $data['owner_id']);
         if (!$user) {
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
         }
@@ -1342,7 +1346,7 @@ class ServersController
         }
 
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
@@ -2920,7 +2924,7 @@ class ServersController
     public function initiateTransfer(Request $request, int $id): Response
     {
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
