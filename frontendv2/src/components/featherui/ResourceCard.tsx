@@ -97,8 +97,8 @@ export function ResourceCard({
     };
 
     const cardClassName = cn(
-        'group bg-card border-border relative overflow-hidden rounded-xl border shadow-xs transition-colors',
-        (href || onClick) && 'hover:border-primary/40 hover:bg-accent/40 cursor-pointer',
+        'group fp-surface relative overflow-hidden rounded-xl border',
+        (href || onClick) && 'fp-surface-interactive cursor-pointer',
         className,
     );
 
@@ -117,7 +117,7 @@ export function ResourceCard({
             >
                 <div
                     className={cn(
-                        'bg-primary/10 relative z-10 flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg',
+                        'fp-icon-tile relative z-10 flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg',
                         iconWrapperClassName,
                     )}
                 >
@@ -133,7 +133,7 @@ export function ResourceCard({
                     <div className='flex flex-wrap items-center gap-2'>
                         <h3
                             className={cn(
-                                'text-foreground max-w-full min-w-0 text-base font-semibold tracking-tight sm:text-lg',
+                                'text-foreground max-w-full min-w-0 text-base font-semibold tracking-tight',
                                 titleClassName,
                             )}
                         >

@@ -138,13 +138,10 @@ export function NodeSetupChecklist({ nodeId, onOpenTab, refreshKey }: NodeSetupC
     ];
 
     return (
-        <section
-            aria-labelledby='node-setup-title'
-            className='bg-card border-border rounded-xl border p-4 shadow-xs sm:p-5'
-        >
+        <section aria-labelledby='node-setup-title' className='fp-surface rounded-xl border p-4 sm:p-5'>
             <div className='mb-3 flex items-start justify-between gap-3'>
                 <div className='flex min-w-0 items-center gap-3'>
-                    <div className='bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
+                    <div className='fp-icon-tile flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
                         <ListChecks className='h-5 w-5' />
                     </div>
                     <div className='min-w-0'>

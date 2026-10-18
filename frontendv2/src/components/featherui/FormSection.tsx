@@ -23,14 +23,11 @@ export interface FormSectionProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 /**
- * Shared wizard/form shell: plain card surface, same radius and edge as PageCard.
+ * Shared wizard/form shell: same glass surface, radius and edge as PageCard.
  */
 export function FormSection({ children, className, ...props }: FormSectionProps) {
     return (
-        <div
-            className={cn('bg-card border-border space-y-6 rounded-xl border p-4 shadow-xs sm:p-6', className)}
-            {...props}
-        >
+        <div className={cn('fp-surface space-y-6 rounded-xl border p-4 sm:p-6', className)} {...props}>
             {children}
         </div>
     );
