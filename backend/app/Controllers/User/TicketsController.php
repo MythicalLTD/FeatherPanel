@@ -707,7 +707,9 @@ class TicketsController
 
         // Generate unique filename with sanitized extension
         $sanitizedBase = preg_replace('/[^a-zA-Z0-9._-]/', '_', pathinfo($originalName, PATHINFO_FILENAME));
-        $filename = uniqid() . '_ticket_' . $sanitizedBase . '.' . $originalExtension;
+        // Attachments are served from public/: the name must not be guessable
+        // (uniqid() is just the upload time in microseconds).
+        $filename = bin2hex(random_bytes(16)) . '_ticket_' . $sanitizedBase . '.' . $originalExtension;
         $filePath = $attachmentsDir . $filename;
 
         // Move uploaded file
