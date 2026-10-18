@@ -3167,11 +3167,11 @@ This plugin includes:
 
             // Connect to database using env loaded by kernel
             $db = new \App\Chat\Database(
-                $_ENV['DATABASE_HOST'] ?? '127.0.0.1',
-                $_ENV['DATABASE_DATABASE'] ?? '',
-                $_ENV['DATABASE_USER'] ?? '',
-                $_ENV['DATABASE_PASSWORD'] ?? '',
-                (int) ($_ENV['DATABASE_PORT'] ?? 3306)
+                App::env('DATABASE_HOST', '127.0.0.1'),
+                App::env('DATABASE_DATABASE', ''),
+                App::env('DATABASE_USER', ''),
+                App::env('DATABASE_PASSWORD', ''),
+                (int) App::env('DATABASE_PORT', '3306')
             );
             $pdo = $db->getPdo();
 

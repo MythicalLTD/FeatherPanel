@@ -4299,8 +4299,8 @@ class SettingsController
             );
         }
 
-        $updaterUrl = trim((string) ($_ENV['DOCKER_UPDATER_URL'] ?? ''));
-        $updaterToken = trim((string) ($_ENV['DOCKER_UPDATER_TOKEN'] ?? ''));
+        $updaterUrl = trim((string) App::env('DOCKER_UPDATER_URL', ''));
+        $updaterToken = trim((string) App::env('DOCKER_UPDATER_TOKEN', ''));
 
         if ($updaterUrl === '' || $updaterToken === '') {
             return ApiResponse::error(
@@ -4447,7 +4447,7 @@ class SettingsController
 
     private function isDockerDeployment(): bool
     {
-        $flag = strtolower(trim((string) ($_ENV['PANEL_DOCKER_DEPLOYMENT'] ?? 'false')));
+        $flag = strtolower(trim((string) App::env('PANEL_DOCKER_DEPLOYMENT', 'false')));
 
         return in_array($flag, ['1', 'true', 'yes', 'on'], true);
     }

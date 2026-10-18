@@ -17,6 +17,7 @@
 
 namespace App\Controllers\Admin;
 
+use App\App;
 use App\Chat\Database;
 use App\Helpers\PhpMyAdmin;
 use App\Helpers\ApiResponse;
@@ -74,11 +75,11 @@ class DatabaseManagmentController
         try {
             // Connect using env configuration already loaded by the app kernel
             $db = new Database(
-                $_ENV['DATABASE_HOST'] ?? '127.0.0.1',
-                $_ENV['DATABASE_DATABASE'] ?? '',
-                $_ENV['DATABASE_USER'] ?? '',
-                $_ENV['DATABASE_PASSWORD'] ?? '',
-                (int) ($_ENV['DATABASE_PORT'] ?? 3306)
+                App::env('DATABASE_HOST', '127.0.0.1'),
+                App::env('DATABASE_DATABASE', ''),
+                App::env('DATABASE_USER', ''),
+                App::env('DATABASE_PASSWORD', ''),
+                (int) App::env('DATABASE_PORT', '3306')
             );
 
             $pdo = $db->getPdo();
@@ -142,15 +143,15 @@ class DatabaseManagmentController
             $startTime = microtime(true);
 
             // Load env
-            \App\App::getInstance(true)->loadEnv();
-            $lines[] = '⏳ Connecting to database... ' . ($_ENV['DATABASE_HOST'] ?? 'localhost') . ':' . (string) ($_ENV['DATABASE_PORT'] ?? '3306');
+            App::getInstance(true)->loadEnv();
+            $lines[] = '⏳ Connecting to database... ' . App::env('DATABASE_HOST', 'localhost') . ':' . (string) App::env('DATABASE_PORT', '3306');
 
             $db = new Database(
-                $_ENV['DATABASE_HOST'] ?? '127.0.0.1',
-                $_ENV['DATABASE_DATABASE'] ?? '',
-                $_ENV['DATABASE_USER'] ?? '',
-                $_ENV['DATABASE_PASSWORD'] ?? '',
-                (int) ($_ENV['DATABASE_PORT'] ?? 3306)
+                App::env('DATABASE_HOST', '127.0.0.1'),
+                App::env('DATABASE_DATABASE', ''),
+                App::env('DATABASE_USER', ''),
+                App::env('DATABASE_PASSWORD', ''),
+                (int) App::env('DATABASE_PORT', '3306')
             );
 
             $pdo = $db->getPdo();

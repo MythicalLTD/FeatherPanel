@@ -110,9 +110,9 @@ class App
             // Initialize Redis connection for rate limiting
             try {
                 $this->redisConnection = new \Redis();
-                $host = $_ENV['REDIS_HOST'] ?? '127.0.0.1';
-                $port = (int) ($_ENV['REDIS_PORT'] ?? 6379);
-                $password = $_ENV['REDIS_PASSWORD'] ?? null;
+                $host = self::env('REDIS_HOST', '127.0.0.1');
+                $port = (int) self::env('REDIS_PORT', '6379');
+                $password = self::env('REDIS_PASSWORD', null);
 
                 if ($password) {
                     $this->redisConnection->connect($host, $port);
@@ -978,7 +978,7 @@ class App
 
     public function getEnvValue(string $key): string
     {
-        return $_ENV[$key];
+        return (string) self::env($key, '');
     }
 
     public function encryptValue(string $value): string
