@@ -855,7 +855,12 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
         sidebarTogglePlacement,
     } = useSidebarPreferences();
     const { t } = useTranslation();
-    const [collapsed, setCollapsed] = useState(() => (typeof window === 'undefined' ? false : readSidebarCollapsed()));
+    // Start expanded like the server render, then apply the stored choice before paint.
+    // Reading storage during the first render caused a hydration mismatch.
+    const [collapsed, setCollapsed] = useState(false);
+    useLayoutEffect(() => {
+        setCollapsed(readSidebarCollapsed());
+    }, []);
     // Prefer the last settled list (session + plugins). Until then, show the live
     // base items so the sidebar is never an empty chrome shell.
     const [settledItems, setSettledItems] = useState<NavigationItem[] | null>(null);
