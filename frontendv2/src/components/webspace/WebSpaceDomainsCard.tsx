@@ -63,7 +63,7 @@ export function WebSpaceDomainsCard({ domains = [], ssl, backendPort, dnsStatus 
                 <div>
                     <p className='text-muted-foreground mb-1 flex items-center gap-1 text-xs'>
                         <ShieldCheck className='h-3 w-3' />
-                        SSL
+                        {t('ui.components.webspace.webSpaceDomainsCard.sSL')}
                     </p>
                     <p className='font-medium'>
                         {ssl ? t('webSpaces.overview.sslEnabled') : t('webSpaces.overview.sslDisabled')}

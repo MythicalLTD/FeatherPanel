@@ -493,7 +493,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 {
                                     label:
                                         db.healthy === undefined
-                                            ? 'Unknown'
+                                            ? t('common.unknown')
                                             : db.healthy
                                               ? t('admin.node_databases.status.healthy')
                                               : t('admin.node_databases.status.unhealthy'),
@@ -542,7 +542,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                         size='sm'
                                         variant='ghost'
                                         onClick={() => handleHealthCheck(db)}
-                                        title='Check Health'
+                                        title={t('ui.admin.databases.nodes.nodeDatabases.checkHealth')}
                                     >
                                         <Activity className='h-4 w-4' />
                                     </Button>
@@ -763,9 +763,11 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                             )}
                         </div>
                         <div className='space-y-2'>
-                            <Label>Web node (optional)</Label>
+                            <Label>{t('ui.admin.databases.nodes.nodeDatabases.webNodeOptional')}</Label>
                             <Select value={webNodeId} onChange={(e) => setWebNodeId(e.target.value)}>
-                                <option value=''>All web nodes (global)</option>
+                                <option value=''>
+                                    {t('ui.admin.databases.nodes.nodeDatabases.allWebNodesGlobal')}
+                                </option>
                                 {webNodes.map((n) => (
                                     <option key={n.id} value={String(n.id)}>
                                         {n.name}
@@ -773,7 +775,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 ))}
                             </Select>
                             <p className='text-muted-foreground text-xs'>
-                                Scope this host to a FeatherQuilld web node, or leave global.
+                                {t('ui.admin.databases.nodes.nodeDatabases.scopeThisHostToAFeatherQuilld')}
                             </p>
                         </div>
                         <SheetFooter>
@@ -913,9 +915,11 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 )}
                             </div>
                             <div className='space-y-2'>
-                                <Label>Web node (optional)</Label>
+                                <Label>{t('ui.admin.databases.nodes.nodeDatabases.webNodeOptional')}</Label>
                                 <Select value={webNodeId} onChange={(e) => setWebNodeId(e.target.value)}>
-                                    <option value=''>All web nodes (global)</option>
+                                    <option value=''>
+                                        {t('ui.admin.databases.nodes.nodeDatabases.allWebNodesGlobal')}
+                                    </option>
                                     {webNodes.map((n) => (
                                         <option key={n.id} value={String(n.id)}>
                                             {n.name}
@@ -923,7 +927,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                     ))}
                                 </Select>
                                 <p className='text-muted-foreground text-xs'>
-                                    Scope this host to a FeatherQuilld web node, or leave global.
+                                    {t('ui.admin.databases.nodes.nodeDatabases.scopeThisHostToAFeatherQuilld')}
                                 </p>
                             </div>
                             <SheetFooter>
@@ -1003,7 +1007,9 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                     </div>
                                 </div>
                                 <div className='space-y-1'>
-                                    <Label className='text-muted-foreground text-xs uppercase'>Updated</Label>
+                                    <Label className='text-muted-foreground text-xs uppercase'>
+                                        {t('ui.admin.databases.nodes.nodeDatabases.updated')}
+                                    </Label>
                                     <div className='text-muted-foreground text-sm'>
                                         {new Date(selectedDatabase.updated_at).toLocaleString()}
                                     </div>

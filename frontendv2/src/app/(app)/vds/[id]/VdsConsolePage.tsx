@@ -408,7 +408,7 @@ export default function VdsConsolePage() {
                     <div className='mt-1 flex flex-wrap items-center gap-2'>
                         <StatusBadge status={liveStatus} t={t} />
                         <span className='text-muted-foreground/70 border-border/30 rounded-md border px-2 py-0.5 text-xs font-medium'>
-                            VMID {instance.vmid}
+                            {t('ui.vds.vdsConsolePage.vMIDVmid', { vmid: String(instance.vmid) })}
                         </span>
                         <span className='text-muted-foreground/70 border-border/30 rounded-md border px-2 py-0.5 text-xs font-medium'>
                             {instance.vm_type?.toUpperCase() ?? 'QEMU'}

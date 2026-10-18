@@ -569,7 +569,7 @@ export default function SpellsPage() {
                         <ResourceCard
                             key={spell.id}
                             title={spell.name}
-                            subtitle={spell.realm_name || 'No realm'}
+                            subtitle={spell.realm_name || t('ui.admin.spells.noRealm')}
                             icon={Sparkles}
                             badges={
                                 spell.author
@@ -583,7 +583,7 @@ export default function SpellsPage() {
                             }
                             description={
                                 <div className='text-muted-foreground mt-1 line-clamp-2 text-sm'>
-                                    {spell.description || 'No description'}
+                                    {spell.description || t('ui.admin.spells.noDescription')}
                                 </div>
                             }
                             actions={
@@ -701,7 +701,7 @@ export default function SpellsPage() {
                     </div>
                     <DialogFooter>
                         <Button variant='outline' onClick={() => setImportDialogOpen(false)} disabled={importing}>
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button onClick={handleImportDialogSubmit} loading={importing}>
                             {t('admin.spells.import')}

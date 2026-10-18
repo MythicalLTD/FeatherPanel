@@ -142,16 +142,16 @@ export default function VmInstancesCreatePage() {
 
     const wizardSteps = [
         {
-            title: t('admin.vmInstances.wizard.step1_title') ?? 'Node & template',
-            subtitle: t('admin.vmInstances.wizard.step1_subtitle') ?? 'Choose node, template, and IP',
+            title: t('admin.vmInstances.wizard.step1_title'),
+            subtitle: t('admin.vmInstances.wizard.step1_subtitle'),
         },
         {
-            title: t('admin.vmInstances.wizard.step2_title') ?? 'Resources',
-            subtitle: t('admin.vmInstances.wizard.step2_subtitle') ?? 'CPU, memory, disk, and network',
+            title: t('admin.vmInstances.wizard.step2_title'),
+            subtitle: t('admin.vmInstances.wizard.step2_subtitle'),
         },
         {
-            title: t('admin.vmInstances.wizard.step3_title') ?? 'Details & owner',
-            subtitle: t('admin.vmInstances.wizard.step3_subtitle') ?? 'Hostname and assign owner',
+            title: t('admin.vmInstances.wizard.step3_title'),
+            subtitle: t('admin.vmInstances.wizard.step3_subtitle'),
         },
         {
             title: t('admin.vmInstances.wizard.step4_title'),
@@ -354,7 +354,7 @@ export default function VmInstancesCreatePage() {
         }
         if (currentStep === 1) {
             if (nodeId <= 0) {
-                toast.error(t('admin.vmInstances.select_node') ?? 'Select a node first.');
+                toast.error(t('admin.vmInstances.select_node'));
                 return;
             }
             if (!pveNode) {
@@ -362,7 +362,7 @@ export default function VmInstancesCreatePage() {
                 return;
             }
             if (templateId <= 0) {
-                toast.error(t('admin.vmInstances.select_template') ?? 'Select a template.');
+                toast.error(t('admin.vmInstances.select_template'));
                 return;
             }
         }
@@ -372,7 +372,7 @@ export default function VmInstancesCreatePage() {
                 return;
             }
             if (primaryNetwork?.vm_ip_id == null) {
-                toast.error(t('admin.vmInstances.select_ip') ?? 'Select a primary IP.');
+                toast.error(t('admin.vmInstances.select_ip'));
                 return;
             }
             const selectedIps = networks.map((row) => row.vm_ip_id).filter((id): id is number => id != null);
@@ -581,39 +581,37 @@ export default function VmInstancesCreatePage() {
             return;
         }
         if (!canProceedStep1) {
-            toast.error(
-                t('admin.vmInstances.select_node_template') ?? 'Select a node, template, and ensure IPs are available',
-            );
+            toast.error(t('admin.vmInstances.select_node_template'));
             return;
         }
         if (templateId <= 0) {
-            toast.error(t('admin.vmInstances.select_template') ?? 'Select a template');
+            toast.error(t('admin.vmInstances.select_template'));
             return;
         }
         if (freeIps.length === 0) {
-            toast.error(t('admin.vmInstances.no_free_ips') ?? 'No free IPs for this node.');
+            toast.error(t('admin.vmInstances.no_free_ips'));
             return;
         }
         if (primaryNetwork?.vm_ip_id == null) {
-            toast.error(t('admin.vmInstances.no_free_ips') ?? 'No free IPs for this node.');
+            toast.error(t('admin.vmInstances.no_free_ips'));
             return;
         }
         if (!hostname.trim()) {
-            toast.error(t('admin.vmInstances.errors.hostname_required') ?? 'Hostname is required.');
+            toast.error(t('admin.vmInstances.errors.hostname_required'));
             return;
         }
         if (!isLxcTemplate) {
             if (!ciUser.trim()) {
-                toast.error(t('admin.vmInstances.errors.ci_user_required') ?? 'Cloud-init username is required.');
+                toast.error(t('admin.vmInstances.errors.ci_user_required'));
                 return;
             }
             if (!ciPassword.trim()) {
-                toast.error(t('admin.vmInstances.errors.ci_password_required') ?? 'Cloud-init password is required.');
+                toast.error(t('admin.vmInstances.errors.ci_password_required'));
                 return;
             }
         }
         if (!selectedOwner) {
-            toast.error(t('admin.vmInstances.errors.owner_required') ?? 'You must select an owner for this VM.');
+            toast.error(t('admin.vmInstances.errors.owner_required'));
             return;
         }
         setSubmitting(true);
@@ -650,12 +648,12 @@ export default function VmInstancesCreatePage() {
 
             if (res.status === 202 && creationId) {
                 toast.loading(t('admin.vmInstances.creating_clone'), { id: toastId });
-                setCreatingMessage(t('admin.vmInstances.creating_clone') ?? 'Cloning template…');
+                setCreatingMessage(t('admin.vmInstances.creating_clone'));
                 await pollCreationStatus(creationId, toastId);
                 return;
             }
 
-            toast.success(t('admin.vmInstances.create_success') ?? 'VM instance created successfully', { id: toastId });
+            toast.success(t('admin.vmInstances.create_success'), { id: toastId });
             router.push('/admin/vm-instances');
         } catch (err) {
             toast.error(getApiErrorMessage(err, t, 'admin.vmInstances.errors.fetch_failed'), { id: toastId });
@@ -679,7 +677,7 @@ export default function VmInstancesCreatePage() {
                 }
 
                 if (status === 'active' || status === 'completed') {
-                    toast.success(t('admin.vmInstances.create_success') ?? 'VM instance created successfully', {
+                    toast.success(t('admin.vmInstances.create_success'), {
                         id: toastId,
                     });
                     router.push('/admin/vm-instances');
@@ -712,7 +710,7 @@ export default function VmInstancesCreatePage() {
             }
             await new Promise((r) => setTimeout(r, intervalMs));
         }
-        toast.error(t('admin.vmInstances.creating_timeout') ?? 'Creation timed out', { id: toastId });
+        toast.error(t('admin.vmInstances.creating_timeout'), { id: toastId });
         setSubmitting(false);
         setCreatingMessage(null);
     };
@@ -722,8 +720,8 @@ export default function VmInstancesCreatePage() {
             <WidgetRenderer widgets={getWidgets('admin-vm-instances-create', 'top-of-page')} />
 
             <PageHeader
-                title={t('admin.vmInstances.create') ?? 'Create VM instance'}
-                description={t('admin.vmInstances.create_desc') ?? 'Provision a new VPS from a plan and template'}
+                title={t('admin.vmInstances.create')}
+                description={t('admin.vmInstances.create_desc')}
                 icon={Server}
                 actions={
                     <Button variant='outline' onClick={() => router.push('/admin/vm-instances')}>
@@ -778,12 +776,12 @@ export default function VmInstancesCreatePage() {
                                     {infraGate.vpsLocations === 0 ? (
                                         <>
                                             <MapPin className='h-4 w-4 shrink-0' />
-                                            Add VPS location
+                                            {t('ui.admin.vmInstances.create.addVPSLocation')}
                                         </>
                                     ) : (
                                         <>
                                             <Server className='h-4 w-4 shrink-0' />
-                                            Create node
+                                            {t('ui.admin.vmInstances.create.createNode')}
                                         </>
                                     )}
                                 </Link>
@@ -798,7 +796,7 @@ export default function VmInstancesCreatePage() {
                 {loadingPlans && (
                     <p className='text-muted-foreground mt-4 flex items-center gap-2 text-sm'>
                         <Loader2 className='h-4 w-4 animate-spin' />
-                        {t('common.loading') ?? 'Loading nodes…'}
+                        {t('common.loading')}
                     </p>
                 )}
             </div>
@@ -807,14 +805,14 @@ export default function VmInstancesCreatePage() {
                 {currentStep === 1 && (
                     <div className='space-y-8'>
                         <PageCard
-                            title={t('admin.vmInstances.wizard.step1_title') ?? 'Node & template'}
+                            title={t('admin.vmInstances.wizard.step1_title')}
                             icon={Settings}
                             className='animate-in fade-in-0 slide-in-from-right-4 duration-300'
                         >
                             <div className='space-y-6'>
                                 <div className='space-y-3'>
                                     <Label className='flex items-center gap-1.5'>
-                                        {t('admin.vmInstances.node') ?? 'VDS Node'}
+                                        {t('admin.vmInstances.node')}
                                         <span className='font-bold text-red-500'>*</span>
                                     </Label>
                                     <PickerTrigger
@@ -824,15 +822,12 @@ export default function VmInstancesCreatePage() {
                                         disabled={loadingPlans || nodes.length === 0}
                                         onClick={() => setChoicePicker('node')}
                                     />
-                                    <p className='text-muted-foreground text-xs'>
-                                        {t('admin.vmInstances.node_help') ??
-                                            'Proxmox node where the VM will be created.'}
-                                    </p>
+                                    <p className='text-muted-foreground text-xs'>{t('admin.vmInstances.node_help')}</p>
                                 </div>
 
                                 {loadingMeta && (
                                     <p className='text-muted-foreground flex items-center gap-2 text-sm'>
-                                        <Loader2 className='h-4 w-4 animate-spin' /> {t('common.loading') ?? 'Loading…'}
+                                        <Loader2 className='h-4 w-4 animate-spin' /> {t('common.loading')}
                                     </p>
                                 )}
 
@@ -840,7 +835,7 @@ export default function VmInstancesCreatePage() {
                                     <>
                                         <div className='space-y-3'>
                                             <Label className='flex items-center gap-1.5'>
-                                                {t('admin.vmInstances.proxmox_node') ?? 'Proxmox Node'}
+                                                {t('admin.vmInstances.proxmox_node')}
                                                 <span className='font-bold text-red-500'>*</span>
                                             </Label>
                                             <PickerTrigger
@@ -851,13 +846,12 @@ export default function VmInstancesCreatePage() {
                                                 onClick={() => setChoicePicker('pveNode')}
                                             />
                                             <p className='text-muted-foreground text-xs'>
-                                                {t('admin.vmInstances.proxmox_node_help') ??
-                                                    'Exact Proxmox cluster node where this VM will be created.'}
+                                                {t('admin.vmInstances.proxmox_node_help')}
                                             </p>
                                         </div>
                                         <div className='space-y-3'>
                                             <Label className='flex items-center gap-1.5'>
-                                                {t('admin.vmInstances.template') ?? 'Template'}
+                                                {t('admin.vmInstances.template')}
                                                 <span className='font-bold text-red-500'>*</span>
                                             </Label>
                                             <div className='flex gap-2'>
@@ -879,7 +873,8 @@ export default function VmInstancesCreatePage() {
                                                                 {selectedTemplate.name}
                                                             </div>
                                                             <div className='text-muted-foreground truncate font-mono text-xs'>
-                                                                VMID {selectedTemplate.template_file ?? '-'} ·{' '}
+                                                                {t('ui.admin.vmInstances.create.vMID')}{' '}
+                                                                {selectedTemplate.template_file ?? '-'} ·{' '}
                                                                 {selectedTemplate.guest_type === 'lxc'
                                                                     ? 'LXC'
                                                                     : 'QEMU/KVM'}
@@ -887,8 +882,7 @@ export default function VmInstancesCreatePage() {
                                                         </div>
                                                     ) : (
                                                         <span className='text-muted-foreground'>
-                                                            {t('admin.vmInstances.select_template') ??
-                                                                'Select template'}
+                                                            {t('admin.vmInstances.select_template')}
                                                         </span>
                                                     )}
                                                 </div>
@@ -910,12 +904,10 @@ export default function VmInstancesCreatePage() {
                                         {noFreeIpsAvailable && (
                                             <div className='rounded-xl border border-amber-500/30 bg-amber-500/10 p-4'>
                                                 <p className='text-sm font-medium text-amber-700 dark:text-amber-300'>
-                                                    {t('admin.vmInstances.no_free_ips') ??
-                                                        'No free IPs found for this node.'}
+                                                    {t('admin.vmInstances.no_free_ips')}
                                                 </p>
                                                 <p className='mt-1 text-xs text-amber-700/90 dark:text-amber-300/90'>
-                                                    {t('admin.vmInstances.ip_pool_required') ??
-                                                        'Configure at least one IP in the node IP pool, then try again.'}
+                                                    {t('admin.vmInstances.ip_pool_required')}
                                                 </p>
                                                 <Button
                                                     type='button'
@@ -939,18 +931,18 @@ export default function VmInstancesCreatePage() {
                 {currentStep === 2 && (
                     <div className='space-y-8'>
                         <PageCard
-                            title={t('admin.vmInstances.wizard.step2_title') ?? 'Resources'}
+                            title={t('admin.vmInstances.wizard.step2_title')}
                             icon={Database}
                             className='animate-in fade-in-0 slide-in-from-right-4 duration-300'
                         >
                             <p className='text-muted-foreground mb-6 text-sm'>
-                                {t('admin.vmInstances.wizard.step2_subtitle') ?? 'CPU, memory, disk, and network'}
+                                {t('admin.vmInstances.wizard.step2_subtitle')}
                             </p>
                             <div className='grid grid-cols-1 gap-6 sm:grid-cols-2'>
                                 <div className='space-y-3'>
                                     <Label className='flex items-center gap-1.5'>
                                         <Database className='h-4 w-4' />
-                                        {t('admin.vmInstances.memory') ?? 'Memory (MB)'}
+                                        {t('admin.vmInstances.memory')}
                                     </Label>
                                     <SizeInput
                                         value={memory}
@@ -966,7 +958,7 @@ export default function VmInstancesCreatePage() {
                                 <div className='space-y-3'>
                                     <Label className='flex items-center gap-1.5'>
                                         <Cpu className='h-4 w-4' />
-                                        {t('admin.vmInstances.cpus') ?? 'CPUs'}
+                                        {t('admin.vmInstances.cpus')}
                                     </Label>
                                     <Input
                                         type='number'
@@ -977,7 +969,7 @@ export default function VmInstancesCreatePage() {
                                     />
                                 </div>
                                 <div className='space-y-3'>
-                                    <Label>{t('admin.vmInstances.cores') ?? 'Cores per CPU'}</Label>
+                                    <Label>{t('admin.vmInstances.cores')}</Label>
                                     <Input
                                         type='number'
                                         min={1}
@@ -989,7 +981,7 @@ export default function VmInstancesCreatePage() {
                                 <div className='space-y-3'>
                                     <Label className='flex items-center gap-1.5'>
                                         <HardDrive className='h-4 w-4' />
-                                        {t('admin.vmInstances.disk') ?? 'Disk (GB)'}
+                                        {t('admin.vmInstances.disk')}
                                     </Label>
                                     <SizeInput
                                         value={disk}
@@ -1003,11 +995,10 @@ export default function VmInstancesCreatePage() {
                                     />
                                 </div>
                                 <div className='space-y-3'>
-                                    <Label>{t('admin.vmInstances.storage') ?? 'Storage'}</Label>
+                                    <Label>{t('admin.vmInstances.storage')}</Label>
                                     {loadingStorage ? (
                                         <p className='text-muted-foreground flex items-center gap-2 py-2 text-sm'>
-                                            <Loader2 className='h-4 w-4 animate-spin' />{' '}
-                                            {t('common.loading') ?? 'Loading…'}
+                                            <Loader2 className='h-4 w-4 animate-spin' /> {t('common.loading')}
                                         </p>
                                     ) : storageList.length > 0 ? (
                                         <PickerTrigger
@@ -1025,11 +1016,10 @@ export default function VmInstancesCreatePage() {
                                     )}
                                 </div>
                                 <div className='space-y-3'>
-                                    <Label>{t('admin.vmInstances.bridge') ?? 'Bridge'}</Label>
+                                    <Label>{t('admin.vmInstances.bridge')}</Label>
                                     {loadingBridges ? (
                                         <p className='text-muted-foreground flex items-center gap-2 py-2 text-sm'>
-                                            <Loader2 className='h-4 w-4 animate-spin' />{' '}
-                                            {t('common.loading') ?? 'Loading…'}
+                                            <Loader2 className='h-4 w-4 animate-spin' /> {t('common.loading')}
                                         </p>
                                     ) : bridges.length > 0 ? (
                                         <PickerTrigger
@@ -1049,14 +1039,12 @@ export default function VmInstancesCreatePage() {
                                 <div className='space-y-3 sm:col-span-2'>
                                     <Label className='flex items-center gap-1.5'>
                                         <Network className='h-4 w-4' />
-                                        {t('admin.vmInstances.network') ?? 'Network'}
+                                        {t('admin.vmInstances.network')}
                                     </Label>
                                     <p className='text-muted-foreground text-xs'>
                                         {isLxcTemplate
-                                            ? (t('admin.vmInstances.network_multi_hint') ??
-                                              'Add or remove IPs (Proxmox net0, net1, …). Select one pool IP for each interface.')
-                                            : (t('admin.vmInstances.network_multi_qemu_hint') ??
-                                              'Add or remove IPs for this VM. FeatherPanel will keep NICs and cloud-init network config aligned automatically.')}
+                                            ? t('admin.vmInstances.network_multi_hint')
+                                            : t('admin.vmInstances.network_multi_qemu_hint')}
                                     </p>
                                     <div className='space-y-3'>
                                         {networks.map((row, index) => (
@@ -1068,8 +1056,8 @@ export default function VmInstancesCreatePage() {
                                                     <div className='font-mono text-sm font-semibold'>{row.key}</div>
                                                     <div className='text-muted-foreground text-xs'>
                                                         {index === 0
-                                                            ? (t('admin.vmInstances.primary_ip') ?? 'Primary')
-                                                            : (t('admin.vmInstances.secondary_ip') ?? 'Secondary')}
+                                                            ? t('admin.vmInstances.primary_ip')
+                                                            : t('admin.vmInstances.secondary_ip')}
                                                     </div>
                                                 </div>
                                                 <div
@@ -1088,7 +1076,7 @@ export default function VmInstancesCreatePage() {
                                                         <div className='min-w-0'>
                                                             <div className='truncate font-mono font-medium'>
                                                                 {freeIps.find((ip) => ip.id === row.vm_ip_id)?.ip ||
-                                                                    (t('admin.vmInstances.select_ip') ?? 'Select IP')}
+                                                                    t('admin.vmInstances.select_ip')}
                                                             </div>
                                                             <div className='text-muted-foreground font-mono text-xs'>
                                                                 {(() => {
@@ -1096,13 +1084,13 @@ export default function VmInstancesCreatePage() {
                                                                         (ip) => ip.id === row.vm_ip_id,
                                                                     );
                                                                     if (!selected) return '';
-                                                                    return `${selected.cidr !== null ? `/${selected.cidr}` : 'No CIDR'} · ${selected.gateway || 'No gateway'}`;
+                                                                    return `${selected.cidr !== null ? `/${selected.cidr}` : t('ui.admin.vmInstances.create.noCIDR')} · ${selected.gateway || t('ui.admin.vmInstances.create.noGateway')}`;
                                                                 })()}
                                                             </div>
                                                         </div>
                                                     ) : (
                                                         <span className='text-muted-foreground'>
-                                                            {t('admin.vmInstances.select_ip') ?? 'Select IP'}
+                                                            {t('admin.vmInstances.select_ip')}
                                                         </span>
                                                     )}
                                                 </div>
@@ -1121,7 +1109,7 @@ export default function VmInstancesCreatePage() {
                                                     variant='ghost'
                                                     size='icon'
                                                     onClick={() => openIpPickerForRow(row.key, 'browse')}
-                                                    title={t('admin.vmInstances.select_ip') ?? 'Select IP'}
+                                                    title={t('admin.vmInstances.select_ip')}
                                                     className='self-end sm:self-auto'
                                                 >
                                                     <SearchIcon className='h-4 w-4' />
@@ -1141,8 +1129,7 @@ export default function VmInstancesCreatePage() {
                                     </div>
                                     <div className='flex items-center justify-between gap-3'>
                                         <p className='text-muted-foreground text-xs'>
-                                            {t('admin.vmInstances.ip_help') ??
-                                                'Leave on Auto to assign the first free IP from the node pool.'}
+                                            {t('admin.vmInstances.ip_help')}
                                         </p>
                                         <div className='flex items-center gap-2'>
                                             <Button
@@ -1152,11 +1139,11 @@ export default function VmInstancesCreatePage() {
                                                 onClick={() => openIpPickerForRow(networks[0]?.key || 'net0', 'create')}
                                             >
                                                 <Plus className='mr-2 h-4 w-4' />
-                                                Create IP
+                                                {t('ui.admin.vmInstances.create.createIP')}
                                             </Button>
                                             <Button type='button' variant='outline' size='sm' onClick={addNetworkRow}>
                                                 <Plus className='mr-2 h-4 w-4' />
-                                                {t('admin.vmInstances.add_ip') ?? 'Add IP'}
+                                                {t('admin.vmInstances.add_ip')}
                                             </Button>
                                         </div>
                                     </div>
@@ -1172,7 +1159,7 @@ export default function VmInstancesCreatePage() {
                                 <div className='space-y-3'>
                                     <Label className='flex items-center gap-1.5'>
                                         <Database className='h-4 w-4' />
-                                        {t('admin.vmInstances.backups.limit_label_create') ?? 'Backup limit'}
+                                        {t('admin.vmInstances.backups.limit_label_create')}
                                     </Label>
                                     <Input
                                         type='number'
@@ -1187,14 +1174,11 @@ export default function VmInstancesCreatePage() {
                                         className='bg-muted/30 h-11'
                                     />
                                     <p className='text-muted-foreground text-xs'>
-                                        {t('admin.vmInstances.backups.limit_help') ??
-                                            'Maximum number of backups allowed for this instance (0 = no backups).'}
+                                        {t('admin.vmInstances.backups.limit_help')}
                                     </p>
                                 </div>
                                 <div className='space-y-3'>
-                                    <Label>
-                                        {t('admin.vmInstances.backups.retention_label_create') ?? 'Backup retention'}
-                                    </Label>
+                                    <Label>{t('admin.vmInstances.backups.retention_label_create')}</Label>
                                     <PickerTrigger
                                         value={t(
                                             backupRetentionMode === 'hard_limit'
@@ -1207,8 +1191,7 @@ export default function VmInstancesCreatePage() {
                                         onClick={() => setChoicePicker('retention')}
                                     />
                                     <p className='text-muted-foreground text-xs'>
-                                        {t('admin.vmInstances.backups.retention_help_create') ??
-                                            'Inherit uses the panel default. FIFO rolls the oldest backup when full.'}
+                                        {t('admin.vmInstances.backups.retention_help_create')}
                                     </p>
                                 </div>
                             </div>
@@ -1219,17 +1202,17 @@ export default function VmInstancesCreatePage() {
                 {currentStep === 3 && (
                     <div className='space-y-8'>
                         <PageCard
-                            title={t('admin.vmInstances.wizard.step3_title') ?? 'Details & owner'}
+                            title={t('admin.vmInstances.wizard.step3_title')}
                             icon={UserCircle}
                             className='animate-in fade-in-0 slide-in-from-right-4 duration-300'
                         >
                             <p className='text-muted-foreground mb-6 text-sm'>
-                                {t('admin.vmInstances.wizard.step3_subtitle') ?? 'Hostname and assign owner'}
+                                {t('admin.vmInstances.wizard.step3_subtitle')}
                             </p>
                             <div className='space-y-6'>
                                 <div className='space-y-3'>
                                     <Label className='flex items-center gap-1.5'>
-                                        {t('admin.vmInstances.hostname') ?? 'Hostname'}
+                                        {t('admin.vmInstances.hostname')}
                                         <span className='font-bold text-red-500'>*</span>
                                     </Label>
                                     <Input
@@ -1239,8 +1222,7 @@ export default function VmInstancesCreatePage() {
                                         className='bg-muted/30 h-11'
                                     />
                                     <p className='text-muted-foreground text-xs'>
-                                        {t('admin.vmInstances.hostname_help') ??
-                                            'Valid DNS name: only letters, numbers, and hyphens (e.g. my-vm). Required.'}
+                                        {t('admin.vmInstances.hostname_help')}
                                     </p>
                                 </div>
 
@@ -1248,7 +1230,7 @@ export default function VmInstancesCreatePage() {
                                     <div className='grid grid-cols-1 gap-6 sm:grid-cols-2'>
                                         <div className='space-y-3'>
                                             <Label className='flex items-center gap-1.5'>
-                                                {t('admin.vmInstances.ci_user_label') ?? 'Cloud-init user'}
+                                                {t('admin.vmInstances.ci_user_label')}
                                                 <span className='font-bold text-red-500'>*</span>
                                             </Label>
                                             <Input
@@ -1258,25 +1240,23 @@ export default function VmInstancesCreatePage() {
                                                 className='bg-muted/30 h-11'
                                             />
                                             <p className='text-muted-foreground text-xs'>
-                                                {t('admin.vmInstances.ci_user_help') ??
-                                                    'This user will be created inside the VM as the cloud-init ciuser. On Debian/Ubuntu images this user normally has passwordless sudo.'}
+                                                {t('admin.vmInstances.ci_user_help')}
                                             </p>
                                         </div>
                                         <div className='space-y-3'>
                                             <Label className='flex items-center gap-1.5'>
-                                                {t('admin.vmInstances.ci_password_label') ?? 'Cloud-init password'}
+                                                {t('admin.vmInstances.ci_password_label')}
                                                 <span className='font-bold text-red-500'>*</span>
                                             </Label>
                                             <Input
                                                 type='password'
                                                 value={ciPassword}
                                                 onChange={(e) => setCiPassword(e.target.value)}
-                                                placeholder='Strong password for VM login'
+                                                placeholder={t('ui.admin.vmInstances.create.strongPasswordForVMLogin')}
                                                 className='bg-muted/30 h-11'
                                             />
                                             <p className='text-muted-foreground text-xs'>
-                                                {t('admin.vmInstances.ci_password_help') ??
-                                                    'This is written to the cloud-init cipassword and lets you log in via console/SSH. Store it somewhere safe; the panel only shows it during creation.'}
+                                                {t('admin.vmInstances.ci_password_help')}
                                             </p>
                                         </div>
                                     </div>
@@ -1284,7 +1264,7 @@ export default function VmInstancesCreatePage() {
 
                                 <div className='space-y-3'>
                                     <Label className='flex items-center gap-1.5'>
-                                        {t('admin.vmInstances.owner') ?? 'Owner'}
+                                        {t('admin.vmInstances.owner')}
                                         <span className='font-bold text-red-500'>*</span>
                                     </Label>
                                     <div className='flex gap-2'>
@@ -1301,15 +1281,13 @@ export default function VmInstancesCreatePage() {
                                                 variant='ghost'
                                                 onClick={() => setSelectedOwner(null)}
                                                 className='h-11 w-11'
-                                                title={t('admin.vmInstances.clear_owner') ?? 'Clear owner'}
+                                                title={t('admin.vmInstances.clear_owner')}
                                             >
                                                 ×
                                             </Button>
                                         )}
                                     </div>
-                                    <p className='text-muted-foreground text-xs'>
-                                        {t('admin.vmInstances.owner_help') ?? 'Assign this VM to a user. Required.'}
-                                    </p>
+                                    <p className='text-muted-foreground text-xs'>{t('admin.vmInstances.owner_help')}</p>
                                 </div>
                             </div>
                         </PageCard>
@@ -1411,11 +1389,11 @@ export default function VmInstancesCreatePage() {
                             data-fp-save-shortcut
                         >
                             {submitting ? (
-                                <>{t('admin.vmInstances.creating_clone') ?? 'Creating…'}</>
+                                <>{t('admin.vmInstances.creating_clone')}</>
                             ) : (
                                 <>
                                     <Plus className='h-4 w-4' />
-                                    {t('admin.vmInstances.create') ?? 'Create instance'}
+                                    {t('admin.vmInstances.create')}
                                 </>
                             )}
                         </Button>

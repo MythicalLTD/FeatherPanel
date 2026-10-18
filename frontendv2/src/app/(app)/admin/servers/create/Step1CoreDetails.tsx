@@ -64,7 +64,7 @@ export function Step1CoreDetails({
                         <Input
                             value={formData.name}
                             onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                            placeholder='My Server'
+                            placeholder={t('ui.admin.servers.create.step1CoreDetails.myServer')}
                             className='bg-muted/30 h-11'
                         />
                         <p className='text-muted-foreground text-xs'>{t('admin.servers.form.name_help')}</p>
@@ -75,7 +75,7 @@ export function Step1CoreDetails({
                         <Input
                             value={formData.description}
                             onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-                            placeholder='A brief description'
+                            placeholder={t('ui.admin.servers.create.step1CoreDetails.aBriefDescription')}
                             className='bg-muted/30 h-11'
                         />
                         <p className='text-muted-foreground text-xs'>{t('admin.servers.form.description_help')}</p>

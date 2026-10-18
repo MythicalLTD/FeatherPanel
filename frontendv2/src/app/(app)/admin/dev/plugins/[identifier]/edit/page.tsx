@@ -430,7 +430,7 @@ export default function EditPluginPage() {
                                             >
                                                 {availableFlag}
                                                 {flag !== availableFlag && form.flags.includes(availableFlag)
-                                                    ? ' (already selected)'
+                                                    ? t('ui.admin.dev.plugins.edit.alreadySelected')
                                                     : ''}
                                             </option>
                                         ))}
@@ -655,7 +655,7 @@ export default function EditPluginPage() {
                                                     };
                                                     setForm((prev) => ({ ...prev, requiredConfigs: newConfigs }));
                                                 }}
-                                                placeholder='API Key'
+                                                placeholder={t('ui.admin.dev.plugins.edit.aPIKey')}
                                                 className='text-sm'
                                             />
                                         </div>

@@ -17,10 +17,12 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { Suspense } from 'react';
 import RegisterForm from './RegisterForm';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export default function RegisterPage() {
+    const { t } = useTranslation();
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div>{t('common.loading')}</div>}>
             <RegisterForm />
         </Suspense>
     );

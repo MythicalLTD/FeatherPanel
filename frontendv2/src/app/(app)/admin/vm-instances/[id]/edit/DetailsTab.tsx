@@ -65,10 +65,10 @@ export function DetailsTab({
 
     return (
         <form onSubmit={onSave} data-fp-save-shortcut>
-            <PageCard title={t('admin.vmInstances.edit_tabs.details') ?? 'Details'} icon={Server}>
+            <PageCard title={t('admin.vmInstances.edit_tabs.details')} icon={Server}>
                 <div className='space-y-4'>
                     <div>
-                        <Label>{t('admin.vmInstances.hostname') ?? 'Hostname'}</Label>
+                        <Label>{t('admin.vmInstances.hostname')}</Label>
                         <Input
                             value={hostname}
                             onChange={(e) => setHostname(e.target.value)}
@@ -77,31 +77,28 @@ export function DetailsTab({
                         />
                     </div>
                     <div>
-                        <Label>{t('admin.vmInstances.notes') ?? 'Notes'}</Label>
+                        <Label>{t('admin.vmInstances.notes')}</Label>
                         <Input
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
-                            placeholder='Optional notes'
+                            placeholder={t('ui.admin.vmInstances.edit.detailsTab.optionalNotes')}
                             className='bg-muted/30 mt-1 min-h-[80px] rounded-xl'
                         />
                     </div>
                     <div>
-                        <Label>{t('admin.vmInstances.expires_at') ?? 'Expiry Date'}</Label>
+                        <Label>{t('admin.vmInstances.expires_at')}</Label>
                         <Input
                             type='datetime-local'
                             value={expiresAt || ''}
                             onChange={(e) => setExpiresAt(e.target.value || null)}
                             className='bg-muted/30 mt-1 h-11 rounded-xl'
                         />
-                        <p className='text-muted-foreground mt-1 text-xs'>
-                            {t('admin.vmInstances.expires_at_help') ??
-                                'VM will be automatically suspended on this date. Leave empty for no expiration.'}
-                        </p>
+                        <p className='text-muted-foreground mt-1 text-xs'>{t('admin.vmInstances.expires_at_help')}</p>
                     </div>
                     {isLxc && setDnsNameserver != null && setDnsSearchDomain != null && (
                         <>
                             <div>
-                                <Label>{t('admin.vmInstances.dns_server') ?? 'DNS server(s)'}</Label>
+                                <Label>{t('admin.vmInstances.dns_server')}</Label>
                                 <Input
                                     value={dnsNameserver}
                                     onChange={(e) => setDnsNameserver(e.target.value)}
@@ -110,7 +107,7 @@ export function DetailsTab({
                                 />
                             </div>
                             <div>
-                                <Label>{t('admin.vmInstances.dns_domain') ?? 'DNS search domain'}</Label>
+                                <Label>{t('admin.vmInstances.dns_domain')}</Label>
                                 <Input
                                     value={dnsSearchDomain}
                                     onChange={(e) => setDnsSearchDomain(e.target.value)}
@@ -121,7 +118,7 @@ export function DetailsTab({
                         </>
                     )}
                     <div>
-                        <Label>{t('admin.vmInstances.owner') ?? 'Owner'}</Label>
+                        <Label>{t('admin.vmInstances.owner')}</Label>
                         <div className='mt-1 flex gap-2'>
                             <div className='bg-muted/30 border-border/50 text-foreground flex h-11 flex-1 items-center rounded-xl border px-3 text-sm'>
                                 {selectedOwner ? (
@@ -136,7 +133,7 @@ export function DetailsTab({
                                     </span>
                                 ) : (
                                     <span className='text-muted-foreground'>
-                                        {t('admin.vmInstances.no_owner_assigned') ?? 'No owner assigned'}
+                                        {t('admin.vmInstances.no_owner_assigned')}
                                     </span>
                                 )}
                             </div>

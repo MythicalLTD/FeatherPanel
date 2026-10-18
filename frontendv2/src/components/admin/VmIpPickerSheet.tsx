@@ -235,7 +235,7 @@ export function VmIpPickerSheet({
                         )}
                     >
                         <SearchIcon className='h-4 w-4' />
-                        Existing
+                        {t('ui.components.admin.vmIpPickerSheet.existing')}
                     </button>
                     <button
                         type='button'
@@ -248,7 +248,7 @@ export function VmIpPickerSheet({
                         )}
                     >
                         <Plus className='h-4 w-4' />
-                        Create new
+                        {t('ui.components.admin.vmIpPickerSheet.createNew')}
                     </button>
                 </div>
             }
@@ -385,7 +385,8 @@ export function VmIpPickerSheet({
                                     <Sensitive>{ip.ip}</Sensitive>
                                 </div>
                                 <div className='text-muted-foreground font-mono text-xs'>
-                                    {ip.cidr !== null ? `/${ip.cidr}` : 'No CIDR'} · {ip.gateway || 'No gateway'}
+                                    {ip.cidr !== null ? `/${ip.cidr}` : t('ui.components.admin.vmIpPickerSheet.noCIDR')}{' '}
+                                    · {ip.gateway || t('ui.components.admin.vmIpPickerSheet.noGateway')}
                                 </div>
                             </div>
                         </div>

@@ -196,7 +196,7 @@ export function VmTemplatePickerSheet({
                         )}
                     >
                         <SearchIcon className='h-4 w-4' />
-                        Existing
+                        {t('ui.components.admin.vmTemplatePickerSheet.existing')}
                     </button>
                     <button
                         type='button'
@@ -209,7 +209,7 @@ export function VmTemplatePickerSheet({
                         )}
                     >
                         <Plus className='h-4 w-4' />
-                        Create new
+                        {t('ui.components.admin.vmTemplatePickerSheet.createNew')}
                     </button>
                 </div>
             }
@@ -233,7 +233,8 @@ export function VmTemplatePickerSheet({
                                 <option value=''>{t('admin.vdsNodes.templates.select_vm_placeholder')}</option>
                                 {proxmoxVms.map((vm) => (
                                     <option key={vm.vmid} value={vm.vmid}>
-                                        {vm.name} (VMID {vm.vmid}){vm.template ? ' Template' : ''}
+                                        {vm.name} (VMID {vm.vmid})
+                                        {vm.template ? t('ui.components.admin.vmTemplatePickerSheet.template') : ''}
                                     </option>
                                 ))}
                             </Select>
@@ -328,7 +329,8 @@ export function VmTemplatePickerSheet({
                             <div>
                                 <div className='font-semibold'>{tpl.name}</div>
                                 <div className='text-muted-foreground font-mono text-xs'>
-                                    VMID {tpl.template_file ?? '-'} · {tpl.guest_type === 'lxc' ? 'LXC' : 'QEMU/KVM'}
+                                    {t('ui.components.admin.vmTemplatePickerSheet.vMID')} {tpl.template_file ?? '-'} ·{' '}
+                                    {tpl.guest_type === 'lxc' ? 'LXC' : 'QEMU/KVM'}
                                 </div>
                             </div>
                         </div>

@@ -30,56 +30,63 @@ export function TutorialLXC() {
                     <ShieldAlert className='h-4 w-4' />
                     <AlertTitle>{t('admin.vdsNodes.tutorial.lxc.security_warning')}</AlertTitle>
                     <AlertDescription>
-                        LXC containers are not recommended if you plan to provide public hosting services. They lack KVM
-                        virtualization, which often causes issues with Docker and advanced networking. Additionally,
-                        exploits that escape containers to reach the host are more common with LXC. We strongly advise
-                        using
-                        <strong>QEMU/KVM Virtual Machines</strong> for hosting.
+                        {t('ui.admin.vdsNodes.edit.tutorialLXC.lXCContainersAreNotRecommendedIf')}
+                        <strong>{t('ui.admin.vdsNodes.edit.tutorialLXC.qEMUKVMVirtualMachines')}</strong> for hosting.
                     </AlertDescription>
                 </Alert>
 
                 <p className='font-medium'>{t('admin.vdsNodes.tutorial.lxc.step1')}</p>
                 <p>
-                    In the Proxmox web interface, navigate to your storage (e.g., <code>local</code>), click on
-                    <code>CT Templates</code>, and then click <code>Templates</code>. Choose your preferred distribution
-                    (e.g., Debian 12, Ubuntu 24.04) and click <code>Download</code>.
+                    {t('ui.admin.vdsNodes.edit.tutorialLXC.inTheProxmoxWebInterfaceNavigate')} <code>local</code>),
+                    click on
+                    <code>{t('ui.admin.vdsNodes.edit.tutorialLXC.cTTemplates')}</code>, and then click{' '}
+                    <code>{t('ui.admin.vdsNodes.edit.tutorialLXC.templates')}</code>. Choose your preferred distribution
+                    (e.g., Debian 12, Ubuntu 24.04) and click{' '}
+                    <code>{t('ui.admin.vdsNodes.edit.tutorialLXC.download')}</code>.
                 </p>
 
                 <p className='font-medium'>{t('admin.vdsNodes.tutorial.lxc.step2')}</p>
-                <p>Click &quot;Create CT&quot; in the top right corner and follow the wizard:</p>
+                <p>{t('ui.admin.vdsNodes.edit.tutorialLXC.clickCreateCTInTheTop')}</p>
                 <ul className='list-inside list-disc space-y-1 text-xs'>
                     <li>
-                        <span className='font-semibold'>General:</span> Set a VMID (e.g., <code>8000</code>) and a
-                        hostname. Set a root password.
+                        <span className='font-semibold'>{t('ui.admin.vdsNodes.edit.tutorialLXC.general')}</span>{' '}
+                        {t('ui.admin.vdsNodes.edit.tutorialLXC.setAVMIDEG')} <code>8000</code>) and a hostname. Set a
+                        root password.
                     </li>
                     <li>
-                        <span className='font-semibold'>Template:</span> Select the template you just downloaded.
+                        <span className='font-semibold'>{t('ui.admin.vdsNodes.edit.tutorialLXC.template')}</span>{' '}
+                        {t('ui.admin.vdsNodes.edit.tutorialLXC.selectTheTemplateYouJustDownloaded')}
                     </li>
                     <li>
-                        <span className='font-semibold'>Disks:</span> Choose your storage and a suitable disk size.
+                        <span className='font-semibold'>{t('ui.admin.vdsNodes.edit.tutorialLXC.disks')}</span>{' '}
+                        {t('ui.admin.vdsNodes.edit.tutorialLXC.chooseYourStorageAndASuitable')}
                     </li>
                     <li>
-                        <span className='font-semibold'>CPU / Memory:</span> Keep defaults or adjust as needed.
+                        <span className='font-semibold'>{t('ui.admin.vdsNodes.edit.tutorialLXC.cPUMemory')}</span>{' '}
+                        {t('ui.admin.vdsNodes.edit.tutorialLXC.keepDefaultsOrAdjustAsNeeded')}
                     </li>
                     <li>
-                        <span className='font-semibold'>Network:</span> Set <code>Bridge = vmbr0</code> and leave IP
-                        settings as <code>Static</code> (FeatherPanel will override these settings during cloning).
+                        <span className='font-semibold'>{t('ui.admin.vdsNodes.edit.tutorialLXC.network')}</span>{' '}
+                        {t('ui.admin.vdsNodes.edit.tutorialLXC.set')} <code>Bridge = vmbr0</code> and leave IP settings
+                        as <code>{t('ui.admin.vdsNodes.edit.tutorialLXC.static')}</code>{' '}
+                        {t('ui.admin.vdsNodes.edit.tutorialLXC.featherPanelWillOverrideTheseSettingsDuring')}
                     </li>
                     <li>
-                        <span className='font-semibold'>Confirm:</span> Review settings and click <code>Finish</code>.
+                        <span className='font-semibold'>{t('ui.admin.vdsNodes.edit.tutorialLXC.confirm')}</span>{' '}
+                        {t('ui.admin.vdsNodes.edit.tutorialLXC.reviewSettingsAndClick')}{' '}
+                        <code>{t('ui.admin.vdsNodes.edit.tutorialLXC.finish')}</code>.
                     </li>
                 </ul>
 
                 <p className='font-medium'>{t('admin.vdsNodes.tutorial.lxc.step3')}</p>
                 <p className='text-xs'>
-                    Before you convert this CT to a template, start it once and configure SSH so deployed clients can
-                    actually connect. Open <code>/etc/ssh/sshd_config</code> and make sure
-                    <code> PasswordAuthentication yes</code> is enabled (and if you use direct root login,
-                    <code> PermitRootLogin yes</code>). Then restart SSH.
+                    {t('ui.admin.vdsNodes.edit.tutorialLXC.beforeYouConvertThisCTTo')} <code>/etc/ssh/sshd_config</code>{' '}
+                    and make sure
+                    <code> {t('ui.admin.vdsNodes.edit.tutorialLXC.passwordAuthenticationYes')}</code> is enabled (and if
+                    you use direct root login,
+                    <code> {t('ui.admin.vdsNodes.edit.tutorialLXC.permitRootLoginYes')}</code>). Then restart SSH.
                 </p>
-                <p className='text-xs'>
-                    Once SSH settings are correct, ensure the container also has the needed tools for FeatherPanel. Run:
-                </p>
+                <p className='text-xs'>{t('ui.admin.vdsNodes.edit.tutorialLXC.onceSSHSettingsAreCorrectEnsure')}</p>
                 <pre className='bg-muted/60 overflow-x-auto rounded-md p-3 text-xs'>
                     <code>{`apt update && apt install -y openssh-server curl
 
@@ -95,14 +102,14 @@ apt upgrade -y
 
                 <p className='font-medium'>{t('admin.vdsNodes.tutorial.lxc.step4')}</p>
                 <p className='text-xs'>
-                    Stop the container. Right-click it in the Proxmox tree and select <code>Convert to template</code>.
+                    {t('ui.admin.vdsNodes.edit.tutorialLXC.stopTheContainerRightClickIt')}{' '}
+                    <code>{t('ui.admin.vdsNodes.edit.tutorialLXC.convertToTemplate')}</code>.
                 </p>
 
                 <p className='font-medium'>{t('admin.vdsNodes.tutorial.lxc.step5')}</p>
                 <p>
-                    In the Templates tab of your VDS Node, add a new template using the VMID of the LXC template you
-                    just created. Ensure you select <code>LXC</code> as the Guest Type. FeatherPanel will now be able to
-                    clone this template when creating new LXC instances.
+                    {t('ui.admin.vdsNodes.edit.tutorialLXC.inTheTemplatesTabOfYour')} <code>LXC</code> as the Guest
+                    Type. FeatherPanel will now be able to clone this template when creating new LXC instances.
                 </p>
             </div>
         </PageCard>

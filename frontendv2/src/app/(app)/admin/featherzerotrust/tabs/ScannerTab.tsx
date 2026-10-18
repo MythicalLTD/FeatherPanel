@@ -162,7 +162,7 @@ const ScannerTab = () => {
 
                 const results = data.data.results.map((r: BatchScanResult & Record<string, unknown>) => ({
                     server_uuid: r.server_uuid,
-                    server_name: selectedServers.find((s) => s.uuid === r.server_uuid)?.name || 'Unknown',
+                    server_name: selectedServers.find((s) => s.uuid === r.server_uuid)?.name || t('common.unknown'),
                     result: r.detections || r.detections_count ? r : null,
                     error: r.error || null,
                 }));
@@ -458,7 +458,7 @@ const ScannerTab = () => {
                                                     </div>
                                                     <div className='min-w-0'>
                                                         <div className='text-sm font-bold text-red-200'>
-                                                            {detection.file_name || 'Unknown'}
+                                                            {detection.file_name || t('common.unknown')}
                                                         </div>
                                                         <div className='truncate font-mono text-[10px] text-red-500/80'>
                                                             {detection.file_path || 'N/A'}
@@ -504,7 +504,7 @@ const ScannerTab = () => {
                                             <div className='mt-2 flex items-center gap-6'>
                                                 <div className='flex flex-col'>
                                                     <span className='text-muted-foreground text-[10px] uppercase'>
-                                                        Files
+                                                        {t('ui.admin.featherzerotrust.tabs.scannerTab.files')}
                                                     </span>
                                                     <span className='text-xs font-bold'>
                                                         {r.result?.files_scanned || 0}
@@ -512,7 +512,7 @@ const ScannerTab = () => {
                                                 </div>
                                                 <div className='flex flex-col'>
                                                     <span className='text-muted-foreground text-[10px] uppercase'>
-                                                        Detections
+                                                        {t('ui.admin.featherzerotrust.tabs.scannerTab.detections')}
                                                     </span>
                                                     <span
                                                         className={cn(

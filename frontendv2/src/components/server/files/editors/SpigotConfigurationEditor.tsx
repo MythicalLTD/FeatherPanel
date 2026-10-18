@@ -273,12 +273,40 @@ export function SpigotConfigurationEditor({
 
                     <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
                         {[
-                            { key: 'bungeecord', label: 'Enable BungeeCord support' },
-                            { key: 'saveUserCacheOnStopOnly', label: 'Save user cache on stop only' },
-                            { key: 'restartOnCrash', label: 'Restart on crash' },
-                            { key: 'logVillagerDeaths', label: 'Log villager deaths' },
-                            { key: 'logNamedDeaths', label: 'Log named entity deaths' },
-                            { key: 'debug', label: 'Enable debug logging' },
+                            {
+                                key: 'bungeecord',
+                                label: t(
+                                    'ui.components.server.files.editors.spigotConfigurationEditor.enableBungeeCordSupport',
+                                ),
+                            },
+                            {
+                                key: 'saveUserCacheOnStopOnly',
+                                label: t(
+                                    'ui.components.server.files.editors.spigotConfigurationEditor.saveUserCacheOnStopOnly',
+                                ),
+                            },
+                            {
+                                key: 'restartOnCrash',
+                                label: t('ui.components.server.files.editors.spigotConfigurationEditor.restartOnCrash'),
+                            },
+                            {
+                                key: 'logVillagerDeaths',
+                                label: t(
+                                    'ui.components.server.files.editors.spigotConfigurationEditor.logVillagerDeaths',
+                                ),
+                            },
+                            {
+                                key: 'logNamedDeaths',
+                                label: t(
+                                    'ui.components.server.files.editors.spigotConfigurationEditor.logNamedEntityDeaths',
+                                ),
+                            },
+                            {
+                                key: 'debug',
+                                label: t(
+                                    'ui.components.server.files.editors.spigotConfigurationEditor.enableDebugLogging',
+                                ),
+                            },
                         ].map((field) => (
                             <div key={field.key} className='bg-muted/20 space-y-3 rounded-lg border-0 p-4'>
                                 <div className='flex items-start justify-between gap-4'>
@@ -299,13 +327,47 @@ export function SpigotConfigurationEditor({
 
                     <div className='grid grid-cols-1 gap-4 lg:grid-cols-3'>
                         {[
-                            { key: 'sampleCount', label: 'Sample count', step: 1 },
-                            { key: 'playerShuffle', label: 'Player shuffle interval', step: 1 },
-                            { key: 'userCacheSize', label: 'User cache size', step: 1 },
-                            { key: 'movedWronglyThreshold', label: 'Moved wrongly threshold', step: 0.0001 },
-                            { key: 'movedTooQuicklyMultiplier', label: 'Moved too quickly multiplier', step: 0.1 },
-                            { key: 'timeoutTime', label: 'Timeout time', step: 1 },
-                            { key: 'nettyThreads', label: 'Netty threads', step: 1 },
+                            {
+                                key: 'sampleCount',
+                                label: t('ui.components.server.files.editors.spigotConfigurationEditor.sampleCount'),
+                                step: 1,
+                            },
+                            {
+                                key: 'playerShuffle',
+                                label: t(
+                                    'ui.components.server.files.editors.spigotConfigurationEditor.playerShuffleInterval',
+                                ),
+                                step: 1,
+                            },
+                            {
+                                key: 'userCacheSize',
+                                label: t('ui.components.server.files.editors.spigotConfigurationEditor.userCacheSize'),
+                                step: 1,
+                            },
+                            {
+                                key: 'movedWronglyThreshold',
+                                label: t(
+                                    'ui.components.server.files.editors.spigotConfigurationEditor.movedWronglyThreshold',
+                                ),
+                                step: 0.0001,
+                            },
+                            {
+                                key: 'movedTooQuicklyMultiplier',
+                                label: t(
+                                    'ui.components.server.files.editors.spigotConfigurationEditor.movedTooQuicklyMultiplier',
+                                ),
+                                step: 0.1,
+                            },
+                            {
+                                key: 'timeoutTime',
+                                label: t('ui.components.server.files.editors.spigotConfigurationEditor.timeoutTime'),
+                                step: 1,
+                            },
+                            {
+                                key: 'nettyThreads',
+                                label: t('ui.components.server.files.editors.spigotConfigurationEditor.nettyThreads'),
+                                step: 1,
+                            },
                         ].map((field) => (
                             <div key={field.key} className='bg-muted/20 space-y-2 rounded-lg border-0 p-4'>
                                 <Label className='text-sm font-semibold'>{field.label}</Label>
@@ -328,10 +390,32 @@ export function SpigotConfigurationEditor({
                         </h4>
                         <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                             {[
-                                { key: 'maxAbsorption', label: 'Max absorption', step: 1 },
-                                { key: 'maxHealth', label: 'Max health', step: 1 },
-                                { key: 'movementSpeed', label: 'Max movement speed', step: 0.1 },
-                                { key: 'attackDamage', label: 'Max attack damage', step: 1 },
+                                {
+                                    key: 'maxAbsorption',
+                                    label: t(
+                                        'ui.components.server.files.editors.spigotConfigurationEditor.maxAbsorption',
+                                    ),
+                                    step: 1,
+                                },
+                                {
+                                    key: 'maxHealth',
+                                    label: t('ui.components.server.files.editors.spigotConfigurationEditor.maxHealth'),
+                                    step: 1,
+                                },
+                                {
+                                    key: 'movementSpeed',
+                                    label: t(
+                                        'ui.components.server.files.editors.spigotConfigurationEditor.maxMovementSpeed',
+                                    ),
+                                    step: 0.1,
+                                },
+                                {
+                                    key: 'attackDamage',
+                                    label: t(
+                                        'ui.components.server.files.editors.spigotConfigurationEditor.maxAttackDamage',
+                                    ),
+                                    step: 1,
+                                },
                             ].map((field) => (
                                 <div key={field.key} className='space-y-3'>
                                     <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
@@ -375,12 +459,40 @@ export function SpigotConfigurationEditor({
                     </div>
                     <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
                         {[
-                            { key: 'whitelist', label: 'Whitelist message' },
-                            { key: 'unknownCommand', label: 'Unknown command message' },
-                            { key: 'serverFull', label: 'Server full message' },
-                            { key: 'outdatedClient', label: 'Outdated client message' },
-                            { key: 'outdatedServer', label: 'Outdated server message' },
-                            { key: 'restart', label: 'Restart message' },
+                            {
+                                key: 'whitelist',
+                                label: t(
+                                    'ui.components.server.files.editors.spigotConfigurationEditor.whitelistMessage',
+                                ),
+                            },
+                            {
+                                key: 'unknownCommand',
+                                label: t(
+                                    'ui.components.server.files.editors.spigotConfigurationEditor.unknownCommandMessage',
+                                ),
+                            },
+                            {
+                                key: 'serverFull',
+                                label: t(
+                                    'ui.components.server.files.editors.spigotConfigurationEditor.serverFullMessage',
+                                ),
+                            },
+                            {
+                                key: 'outdatedClient',
+                                label: t(
+                                    'ui.components.server.files.editors.spigotConfigurationEditor.outdatedClientMessage',
+                                ),
+                            },
+                            {
+                                key: 'outdatedServer',
+                                label: t(
+                                    'ui.components.server.files.editors.spigotConfigurationEditor.outdatedServerMessage',
+                                ),
+                            },
+                            {
+                                key: 'restart',
+                                label: t('ui.components.server.files.editors.spigotConfigurationEditor.restartMessage'),
+                            },
                         ].map((field) => (
                             <div key={field.key} className='space-y-3'>
                                 <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>

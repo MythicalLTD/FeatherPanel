@@ -579,7 +579,7 @@ export default function VmInstancesPage() {
                                                             `/admin/vm-instances/${inst.id}/edit?tab=details&assign=1`,
                                                         )
                                                     }
-                                                    title={t('admin.vmInstances.assign_owner') ?? 'Assign owner'}
+                                                    title={t('admin.vmInstances.assign_owner')}
                                                 >
                                                     <UserPlus className='h-4 w-4' />
                                                 </Button>

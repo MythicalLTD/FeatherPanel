@@ -286,14 +286,14 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                         className='data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-primary/10 flex items-center gap-2 rounded-xl border border-transparent py-3'
                     >
                         <Monitor className='h-4 w-4' />
-                        QEMU/KVM Tutorial
+                        {t('ui.admin.vdsNodes.edit.templatesTab.qEMUKVMTutorial')}
                     </TabsTrigger>
                     <TabsTrigger
                         value='lxc'
                         className='data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-primary/10 flex items-center gap-2 rounded-xl border border-transparent py-3'
                     >
                         <Cpu className='h-4 w-4' />
-                        LXC Tutorial
+                        {t('ui.admin.vdsNodes.edit.templatesTab.lXCTutorial')}
                     </TabsTrigger>
                 </TabsList>
                 <TabsContent value='qemu'>
@@ -330,7 +330,8 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                     <option value=''>{t('admin.vdsNodes.templates.select_vm_placeholder')}</option>
                                     {proxmoxVms.map((vm) => (
                                         <option key={vm.vmid} value={vm.vmid}>
-                                            {vm.name} (VMID {vm.vmid}){vm.template ? ' Template' : ''}
+                                            {vm.name} (VMID {vm.vmid})
+                                            {vm.template ? t('ui.admin.vdsNodes.edit.templatesTab.template') : ''}
                                         </option>
                                     ))}
                                 </Select>
@@ -367,10 +368,11 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                         {createForm.guest_type === 'lxc' && (
                             <Alert variant='warning' className='px-3 py-2'>
                                 <ShieldAlert className='h-4 w-4' />
-                                <AlertTitle className='text-xs'>Security Recommendation</AlertTitle>
+                                <AlertTitle className='text-xs'>
+                                    {t('ui.admin.vdsNodes.edit.templatesTab.securityRecommendation')}
+                                </AlertTitle>
                                 <AlertDescription className='text-[10px] leading-tight'>
-                                    LXC is not recommended for public hosting due to security risks and lack of KVM
-                                    virtualization. Use QEMU/KVM for better isolation and stability.
+                                    {t('ui.admin.vdsNodes.edit.templatesTab.lXCIsNotRecommendedForPublic')}
                                 </AlertDescription>
                             </Alert>
                         )}
@@ -379,7 +381,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                             <Input
                                 value={createForm.description}
                                 onChange={(e) => setCreateForm((f) => ({ ...f, description: e.target.value }))}
-                                placeholder='Optional'
+                                placeholder={t('common.optional')}
                             />
                         </div>
                         {createForm.guest_type === 'lxc' && (

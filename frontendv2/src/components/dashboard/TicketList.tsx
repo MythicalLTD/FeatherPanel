@@ -179,7 +179,7 @@ export function TicketList({ t }: TicketListProps) {
                                             variant='destructive'
                                             className='max-w-[9rem] truncate px-1.5 py-0.5 text-[10px]'
                                         >
-                                            NEW REPLY
+                                            {t('ui.components.dashboard.ticketList.nEWREPLY')}
                                         </Badge>
                                     )}
                                     {ticket.priority && (

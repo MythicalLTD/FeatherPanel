@@ -460,7 +460,11 @@ export default function ImagesPage() {
                                 <div className='space-y-2'>
                                     <Label>{t('admin.images.form.preview')}</Label>
                                     <div className='bg-card/50 h-48 w-full overflow-hidden rounded-xl border'>
-                                        <img src={filePreview} alt='Preview' className='h-full w-full object-contain' />
+                                        <img
+                                            src={filePreview}
+                                            alt={t('common.preview')}
+                                            className='h-full w-full object-contain'
+                                        />
                                     </div>
                                 </div>
                             )}

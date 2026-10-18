@@ -85,7 +85,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
                             </div>
 
                             <p className='text-muted-foreground mb-2 font-mono text-xs tracking-[0.25em] uppercase'>
-                                {staleVersion ? 'Update' : '500'}
+                                {staleVersion ? t('ui.error.update') : '500'}
                             </p>
                             <h1 className='text-foreground mb-3 text-2xl font-bold tracking-tight sm:text-3xl'>
                                 {staleVersion ? t('errors.500.stale_version_title') : t('errors.500.title')}

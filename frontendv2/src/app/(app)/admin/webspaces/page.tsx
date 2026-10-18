@@ -551,7 +551,7 @@ export default function WebSpacesPage() {
                                             {space.ssl && (
                                                 <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
                                                     <Shield className='h-3.5 w-3.5' />
-                                                    <span>SSL</span>
+                                                    <span>{t('ui.admin.webspaces.sSL')}</span>
                                                 </div>
                                             )}
                                         </div>

@@ -64,7 +64,9 @@ export function EulaDialog({ isOpen, onClose, server, onAccepted }: EulaDialogPr
             console.error('Failed to accept EULA:', error);
             if (axios.isAxiosError(error) && error.response?.status === 415) {
                 toast.error(
-                    `${getApiErrorMessage(error, t, 'features.eula.failedToAccept')} (Invalid upload content-type)`,
+                    t('features.eula.invalidUploadContentType', {
+                        message: getApiErrorMessage(error, t, 'features.eula.failedToAccept'),
+                    }),
                 );
             } else {
                 toast.error(getApiErrorMessage(error, t, 'features.eula.failedToAccept'));

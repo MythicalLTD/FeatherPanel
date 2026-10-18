@@ -321,7 +321,7 @@ export default function ProfileTab() {
                                     <div className='mt-3'>
                                         <Image
                                             src={formData.avatar}
-                                            alt='Avatar preview'
+                                            alt={t('ui.components.account.profileTab.avatarPreview')}
                                             width={80}
                                             height={80}
                                             className='border-primary/20 h-20 w-20 rounded-full border-2 object-cover'

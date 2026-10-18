@@ -860,7 +860,7 @@ export default function ServerSettingsPage() {
                     <DialogHeader>
                         <DialogTitle className='flex items-center gap-2 text-red-500'>
                             <AlertTriangle className='h-5 w-5' />
-                            {t('serverSettings.deleteServer')} (Step {deleteStep}/4)
+                            {t('serverSettings.deleteServer')} {t('ui.server.settings.step')} {deleteStep}/4)
                         </DialogTitle>
                     </DialogHeader>
 
@@ -908,7 +908,7 @@ export default function ServerSettingsPage() {
                                         type='number'
                                         value={mathAnswer}
                                         onChange={(e) => setMathAnswer(e.target.value)}
-                                        placeholder='Answer'
+                                        placeholder={t('ui.server.settings.answer')}
                                     />
                                 </div>
                             </div>

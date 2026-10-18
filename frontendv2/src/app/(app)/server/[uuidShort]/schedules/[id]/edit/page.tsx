@@ -211,7 +211,7 @@ export default function EditSchedulePage() {
                                 {t('serverSchedules.name')}
                             </h2>
                             <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                Basic Info
+                                {t('ui.server.schedules.edit.basicInfo')}
                             </p>
                         </div>
                     </div>
@@ -246,7 +246,7 @@ export default function EditSchedulePage() {
                                     {t('serverSchedules.cronExpression')}
                                 </h2>
                                 <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                    Schedule Timing
+                                    {t('ui.server.schedules.edit.scheduleTiming')}
                                 </p>
                             </div>
                         </div>
@@ -396,8 +396,11 @@ export default function EditSchedulePage() {
                                 value={String(formData.is_active)}
                                 onChange={(val) => setFormData({ ...formData, is_active: Number(val) })}
                                 options={[
-                                    { id: '1', name: 'Enabled - Schedule will run automatically' },
-                                    { id: '0', name: 'Disabled - Schedule will not run' },
+                                    {
+                                        id: '1',
+                                        name: t('ui.server.schedules.edit.enabledScheduleWillRunAutomatically'),
+                                    },
+                                    { id: '0', name: t('ui.server.schedules.edit.disabledScheduleWillNotRun') },
                                 ]}
                                 disabled={saving}
                                 buttonClassName='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all'

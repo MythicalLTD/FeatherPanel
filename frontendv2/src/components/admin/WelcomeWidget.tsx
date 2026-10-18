@@ -51,7 +51,7 @@ export function WelcomeWidget({ version, chips = [], updateAvailable }: WelcomeW
 
     const userLoading = sessionLoading && !user;
     const versionLoading = version === undefined;
-    const userName = user ? `${user.first_name} ${user.last_name}` : 'Admin';
+    const userName = user ? `${user.first_name} ${user.last_name}` : t('ui.components.admin.welcomeWidget.admin');
 
     return (
         <FormSection className='space-y-3 p-4 sm:p-4'>

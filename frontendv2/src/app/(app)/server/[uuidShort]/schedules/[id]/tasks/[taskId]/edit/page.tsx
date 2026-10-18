@@ -325,7 +325,7 @@ export default function EditTaskPage() {
                                 {form.action === 'backup' ? t('serverTasks.backupSettings') : t('serverTasks.payload')}
                             </h2>
                             <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                Configuration
+                                {t('ui.server.schedules.tasks.edit.configuration')}
                             </p>
                         </div>
                     </div>
@@ -387,9 +387,11 @@ export default function EditTaskPage() {
                             <ListCheck className='text-primary h-5 w-5' />
                         </div>
                         <div className='space-y-0.5'>
-                            <h2 className='text-xl font-black tracking-tight uppercase italic'>Options</h2>
+                            <h2 className='text-xl font-black tracking-tight uppercase italic'>
+                                {t('ui.server.schedules.tasks.edit.options')}
+                            </h2>
                             <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                Execution
+                                {t('ui.server.schedules.tasks.edit.execution')}
                             </p>
                         </div>
                     </div>

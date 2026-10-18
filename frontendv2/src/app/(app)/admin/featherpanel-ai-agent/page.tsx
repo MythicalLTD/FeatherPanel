@@ -643,7 +643,7 @@ export default function FeatherAiAgentPage() {
                                             </p>
                                         </div>
                                         <Textarea
-                                            placeholder='You are a helpful assistant for FeatherPanel...'
+                                            placeholder={t('ui.admin.featherpanelAiAgent.youAreAHelpfulAssistantFor')}
                                             maxLength={1000}
                                             className='focus:ring-primary border-primary/20 min-h-[120px]'
                                             value={String(getSettingValue('chatbot_system_prompt') || '')}
@@ -663,7 +663,7 @@ export default function FeatherAiAgentPage() {
                                             </p>
                                         </div>
                                         <Textarea
-                                            placeholder='User is an admin with full access...'
+                                            placeholder={t('ui.admin.featherpanelAiAgent.userIsAnAdminWithFull')}
                                             maxLength={1000}
                                             className='focus:ring-primary border-primary/20 min-h-[120px]'
                                             value={String(getSettingValue('chatbot_user_prompt') || '')}
@@ -676,11 +676,11 @@ export default function FeatherAiAgentPage() {
 
                         <div className='flex items-center justify-end gap-3 border-t pt-8'>
                             <Button variant='outline' className='h-12 px-8' onClick={resetSettings}>
-                                Reset
+                                {t('ui.admin.featherpanelAiAgent.reset')}
                             </Button>
                             <Button type='submit' size='lg' className='h-12 gap-2 px-8' disabled={saving}>
                                 {saving ? <RefreshCw className='h-4 w-4 animate-spin' /> : <Save className='h-4 w-4' />}
-                                {saving ? 'Saving...' : 'Save Changes'}
+                                {saving ? t('common.saving') : t('common.saveChanges')}
                             </Button>
                         </div>
                     </form>
@@ -695,7 +695,7 @@ export default function FeatherAiAgentPage() {
                         </div>
                         <Button onClick={fetchChatbotSettings} variant='outline' className='mt-4'>
                             <RefreshCw className='mr-2 h-4 w-4' />
-                            Try Again
+                            {t('ui.admin.featherpanelAiAgent.tryAgain')}
                         </Button>
                     </div>
                 )}

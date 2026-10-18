@@ -249,8 +249,8 @@ export default function CreateServerImportPage() {
                                             }));
                                         }}
                                         options={[
-                                            { id: 'sftp', name: 'SFTP (Secure / SSH)' },
-                                            { id: 'ftp', name: 'FTP (Standard)' },
+                                            { id: 'sftp', name: t('ui.server.import.new.sFTPSecureSSH') },
+                                            { id: 'ftp', name: t('ui.server.import.new.fTPStandard') },
                                         ]}
                                         disabled={saving}
                                         buttonClassName='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all w-full'
@@ -445,7 +445,7 @@ export default function CreateServerImportPage() {
                                     {t('serverImport.options')}
                                 </h2>
                                 <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase italic opacity-50'>
-                                    Configuration
+                                    {t('ui.server.import.new.configuration')}
                                 </p>
                             </div>
                         </div>

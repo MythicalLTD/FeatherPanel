@@ -382,7 +382,7 @@ export default function TicketCategoriesPage() {
                                 <Input
                                     value={formData.open_hours}
                                     onChange={(e) => setFormData({ ...formData, open_hours: e.target.value })}
-                                    placeholder='Mon-Fri 9AM-5PM'
+                                    placeholder={t('ui.admin.tickets.categories.monFri9AM5PM')}
                                 />
                             </div>
                             <SheetFooter>
@@ -457,7 +457,7 @@ export default function TicketCategoriesPage() {
                                 <Input
                                     value={formData.open_hours}
                                     onChange={(e) => setFormData({ ...formData, open_hours: e.target.value })}
-                                    placeholder='Mon-Fri 9AM-5PM'
+                                    placeholder={t('ui.admin.tickets.categories.monFri9AM5PM')}
                                 />
                             </div>
                             <SheetFooter>

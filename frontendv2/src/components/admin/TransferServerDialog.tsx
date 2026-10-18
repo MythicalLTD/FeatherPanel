@@ -257,7 +257,7 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                         <p className='text-muted-foreground text-sm'>
                             <span className='text-foreground font-medium'>{server.name}</span>
                             <span className='text-muted-foreground/50 mx-2'>·</span>
-                            {server.node?.name || 'Unknown'}
+                            {server.node?.name || t('common.unknown')}
                         </p>
                     )}
 
@@ -589,7 +589,8 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                                                 <Sensitive>{maskEndpoint(allc.ip, allc.port, false)}</Sensitive>
                                             </p>
                                             <p className='text-muted-foreground text-xs'>
-                                                {ipMask.ipLike(allc.ip_alias) || 'No Alias'}
+                                                {ipMask.ipLike(allc.ip_alias) ||
+                                                    t('ui.components.admin.transferServerDialog.noAlias')}
                                             </p>
                                         </div>
                                         {selectedAllocation?.id === allc.id && (

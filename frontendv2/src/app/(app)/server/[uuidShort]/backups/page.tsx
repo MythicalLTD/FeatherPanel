@@ -728,7 +728,7 @@ export default function ServerBackupsPage() {
                                                         {backup.disk === 'pbs'
                                                             ? 'PBS'
                                                             : backup.disk === 'wings'
-                                                              ? 'Local'
+                                                              ? t('ui.server.backups.local')
                                                               : backup.disk}
                                                     </span>
                                                 </div>

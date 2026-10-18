@@ -90,11 +90,11 @@ export function ResourcesTab({
 
     return (
         <form onSubmit={onSave} data-fp-save-shortcut>
-            <PageCard title={t('admin.vmInstances.edit_tabs.resources') ?? 'Resources'} icon={Cpu}>
+            <PageCard title={t('admin.vmInstances.edit_tabs.resources')} icon={Cpu}>
                 {config ? (
                     <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                         <div>
-                            <Label>{t('admin.vmInstances.memory') ?? 'Memory (MB)'}</Label>
+                            <Label>{t('admin.vmInstances.memory')}</Label>
                             <SizeInput
                                 min={128}
                                 value={memory}
@@ -105,7 +105,7 @@ export function ResourcesTab({
                             />
                         </div>
                         <div>
-                            <Label>{t('admin.vmInstances.cpus') ?? 'CPUs'}</Label>
+                            <Label>{t('admin.vmInstances.cpus')}</Label>
                             <Input
                                 type='number'
                                 min={1}
@@ -115,7 +115,7 @@ export function ResourcesTab({
                             />
                         </div>
                         <div>
-                            <Label>{t('admin.vmInstances.cores') ?? 'Cores'}</Label>
+                            <Label>{t('admin.vmInstances.cores')}</Label>
                             <Input
                                 type='number'
                                 min={1}
@@ -132,24 +132,28 @@ export function ResourcesTab({
                                 onChange={(e) => setOnBoot(e.target.checked)}
                                 className='h-4 w-4 rounded'
                             />
-                            <Label htmlFor='onboot'>{t('admin.vmInstances.on_boot') ?? 'Start on boot'}</Label>
+                            <Label htmlFor='onboot'>{t('admin.vmInstances.on_boot')}</Label>
                         </div>
 
                         {isQemu && (
                             <>
                                 <div className='space-y-2'>
-                                    <Label>{t('admin.vmInstances.bios_mode') ?? 'BIOS / Firmware'}</Label>
+                                    <Label>{t('admin.vmInstances.bios_mode')}</Label>
                                     <select
                                         className='bg-muted/30 mt-1 h-11 rounded-xl px-3 text-sm'
                                         value={biosMode}
                                         onChange={(e) => setBiosMode(e.target.value)}
                                     >
-                                        <option value='seabios'>Legacy (SeaBIOS)</option>
-                                        <option value='ovmf'>UEFI (OVMF)</option>
+                                        <option value='seabios'>
+                                            {t('ui.admin.vmInstances.edit.resourcesTab.legacySeaBIOS')}
+                                        </option>
+                                        <option value='ovmf'>
+                                            {t('ui.admin.vmInstances.edit.resourcesTab.uEFIOVMF')}
+                                        </option>
                                     </select>
                                 </div>
                                 <div className='space-y-2'>
-                                    <Label>{t('admin.vmInstances.efi_settings') ?? 'EFI disk'}</Label>
+                                    <Label>{t('admin.vmInstances.efi_settings')}</Label>
                                     <div className='flex items-center gap-2'>
                                         <input
                                             type='checkbox'
@@ -158,9 +162,7 @@ export function ResourcesTab({
                                             onChange={(e) => setEfiEnabled(e.target.checked)}
                                             className='h-4 w-4 rounded'
                                         />
-                                        <Label htmlFor='efi-enabled'>
-                                            {t('admin.vmInstances.efi_enable') ?? 'Enable EFI disk'}
-                                        </Label>
+                                        <Label htmlFor='efi-enabled'>{t('admin.vmInstances.efi_enable')}</Label>
                                     </div>
                                     {efiEnabled && (
                                         <select
@@ -180,7 +182,7 @@ export function ResourcesTab({
                                     )}
                                 </div>
                                 <div className='space-y-2'>
-                                    <Label>{t('admin.vmInstances.tpm_settings') ?? 'TPM'}</Label>
+                                    <Label>{t('admin.vmInstances.tpm_settings')}</Label>
                                     <div className='flex items-center gap-2'>
                                         <input
                                             type='checkbox'
@@ -189,9 +191,7 @@ export function ResourcesTab({
                                             onChange={(e) => setTpmEnabled(e.target.checked)}
                                             className='h-4 w-4 rounded'
                                         />
-                                        <Label htmlFor='tpm-enabled'>
-                                            {t('admin.vmInstances.tpm_enable') ?? 'Enable TPM 2.0'}
-                                        </Label>
+                                        <Label htmlFor='tpm-enabled'>{t('admin.vmInstances.tpm_enable')}</Label>
                                     </div>
                                     {tpmEnabled && (
                                         <select
@@ -217,11 +217,11 @@ export function ResourcesTab({
                             <>
                                 <div className='border-border/40 mt-2 border-t pt-4 sm:col-span-2'>
                                     <p className='mb-3 text-sm font-medium'>
-                                        {t('admin.vmInstances.backups.policy_section') ?? 'Backup policy'}
+                                        {t('admin.vmInstances.backups.policy_section')}
                                     </p>
                                 </div>
                                 <div className='space-y-3'>
-                                    <Label>{t('admin.vmInstances.backups.limit_label_create') ?? 'Backup limit'}</Label>
+                                    <Label>{t('admin.vmInstances.backups.limit_label_create')}</Label>
                                     <Input
                                         type='number'
                                         min={0}
@@ -239,9 +239,7 @@ export function ResourcesTab({
                                     </p>
                                 </div>
                                 <div className='space-y-3'>
-                                    <Label>
-                                        {t('admin.vmInstances.backups.retention_label_edit') ?? 'Retention override'}
-                                    </Label>
+                                    <Label>{t('admin.vmInstances.backups.retention_label_edit')}</Label>
                                     <select
                                         className='border-input bg-muted/30 h-11 w-full rounded-xl border px-3 text-sm'
                                         value={vmBackupRetention}

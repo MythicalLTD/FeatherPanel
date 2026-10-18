@@ -125,9 +125,7 @@ export default function CloudManagementFinishPage() {
                 }
                 setPhase('success');
                 if (!cloudApiKey || !cloudApiSecret) {
-                    toast.message(
-                        'Linked Mythic may stay Pending until cloud_api_key/secret are present on the OAuth redirect.',
-                    );
+                    toast.message(t('ui.admin.cloudManagement.finish.pendingUntilCredentials'));
                 } else {
                     toast.success(t('admin.cloud_management.finish.linked_toast'));
                 }

@@ -735,7 +735,7 @@ export function ActionsTab({
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
-                            placeholder='Search nodes...'
+                            placeholder={t('ui.admin.servers.edit.actionsTab.searchNodes')}
                             className='pl-10'
                             value={nodeSearch}
                             onChange={(e) => {
@@ -787,7 +787,7 @@ export function ActionsTab({
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
-                            placeholder='Search allocations...'
+                            placeholder={t('ui.admin.servers.edit.actionsTab.searchAllocations')}
                             className='pl-10'
                             value={allocationSearch}
                             onChange={(e) => {
@@ -815,7 +815,8 @@ export function ActionsTab({
                                         <Sensitive>{maskEndpoint(a.ip, a.port, false)}</Sensitive>
                                     </div>
                                     <div className='text-muted-foreground text-xs'>
-                                        {maskIpLike(a.ip_alias, hideIps) || 'No Alias'}
+                                        {maskIpLike(a.ip_alias, hideIps) ||
+                                            t('ui.admin.servers.edit.actionsTab.noAlias')}
                                     </div>
                                 </button>
                             ))

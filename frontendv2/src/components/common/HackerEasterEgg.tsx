@@ -76,6 +76,7 @@ function LockScreen() {
 }
 
 export default function HackerEasterEgg({ children }: { children: React.ReactNode }) {
+    const { t } = useTranslation();
     const [locked, setLocked] = useState(false);
     const [showTriggerMessage, setShowTriggerMessage] = useState(false);
     const bufferRef = useRef('');
@@ -121,10 +122,14 @@ export default function HackerEasterEgg({ children }: { children: React.ReactNod
                 >
                     <div className='max-w-md space-y-4'>
                         <p className='text-foreground text-xl font-medium'>
-                            Hahahah how funny you are you think you&apos;re a hacker or something?
+                            {t('ui.components.common.hackerEasterEgg.hahahahHowFunnyYouAreYou')}
                         </p>
-                        <p className='text-foreground'>Okay then, let&apos;s see how you get rid of me.</p>
-                        <p className='text-muted-foreground text-sm'>(Redirecting you to your new home in 3…)</p>
+                        <p className='text-foreground'>
+                            {t('ui.components.common.hackerEasterEgg.okayThenLetSSeeHow')}
+                        </p>
+                        <p className='text-muted-foreground text-sm'>
+                            {t('ui.components.common.hackerEasterEgg.redirectingYouToYourNewHome')}
+                        </p>
                     </div>
                 </div>
             )}

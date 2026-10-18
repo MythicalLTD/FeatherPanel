@@ -218,13 +218,13 @@ function SettingFieldRow({
                         if (translated !== optKey) {
                             label = translated;
                         } else if (opt === 'true') {
-                            label = 'Enabled';
+                            label = t('common.enabled');
                         } else if (opt === 'false') {
-                            label = 'Disabled';
+                            label = t('common.disabled');
                         } else if (opt === 'hard_limit') {
-                            label = 'Hard limit (block at max)';
+                            label = t('admin.settings.optionLabels.hardLimit');
                         } else if (opt === 'fifo_rolling') {
-                            label = 'FIFO rolling (drop oldest)';
+                            label = t('admin.settings.optionLabels.fifoRolling');
                         } else {
                             label = opt;
                         }
@@ -784,7 +784,7 @@ export default function SettingsPage() {
                                                         <div className='rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20'>
                                                             <p className='font-mono text-xs text-amber-900 dark:text-amber-200'>
                                                                 <strong className='font-semibold'>
-                                                                    Troubleshooting:
+                                                                    {t('ui.admin.settings.troubleshooting')}
                                                                 </strong>{' '}
                                                                 {t('admin.settings.email_test.troubleshooting')}
                                                             </p>

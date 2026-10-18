@@ -275,7 +275,7 @@ export default function RealmsPage() {
                             icon={Sparkles}
                             description={
                                 <div className='text-muted-foreground mt-1 text-sm'>
-                                    {realm.description || 'No description'}
+                                    {realm.description || t('ui.admin.realms.noDescription')}
                                 </div>
                             }
                             actions={

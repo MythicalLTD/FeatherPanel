@@ -114,10 +114,13 @@ export function StorageConfigurationTab({ nodeId, form, setForm, errors }: Stora
                 </TabSection>
 
                 <div className='border-border/40 bg-muted/30 rounded-lg border p-4'>
-                    <p className='text-foreground text-sm font-medium'>Tip: prevent qemu-img resize timeouts</p>
+                    <p className='text-foreground text-sm font-medium'>
+                        {t('ui.admin.vdsNodes.edit.storageConfigurationTab.tipPreventQemuImgResizeTimeouts')}
+                    </p>
                     <p className='text-muted-foreground mt-1 text-xs'>
-                        If VM creates fail with <code className='text-foreground'>qemu-img resize … got timeout</code>,
-                        disable metadata preallocation on the Proxmox storage that holds VM disks (replace{' '}
+                        {t('ui.admin.vdsNodes.edit.storageConfigurationTab.ifVMCreatesFailWith')}{' '}
+                        <code className='text-foreground'>qemu-img resize … got timeout</code>, disable metadata
+                        preallocation on the Proxmox storage that holds VM disks (replace{' '}
                         <code className='text-foreground'>raid1</code> with your storage ID from{' '}
                         <code className='text-foreground'>pvesm status</code>):
                     </p>

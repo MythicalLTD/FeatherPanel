@@ -164,7 +164,7 @@ export function PremiumSidebarEditor({ config, onConfigChange }: Props) {
         const slug = `link-${Date.now().toString(36)}`;
         links.push({
             id: slug,
-            name: 'Custom link',
+            name: t('ui.admin.featherpanelPremium.premiumSidebarEditor.customLink'),
             url: 'https://',
             group: 'overview',
             icon: 'external-link',
@@ -244,7 +244,7 @@ export function PremiumSidebarEditor({ config, onConfigChange }: Props) {
                                         className='text-muted-foreground hover:text-foreground p-0.5'
                                         onClick={() => moveItem(row.id, -1)}
                                         disabled={index === 0}
-                                        aria-label='Move up'
+                                        aria-label={t('common.moveUp')}
                                     >
                                         <ChevronUp className='h-3.5 w-3.5' />
                                     </button>
@@ -253,7 +253,7 @@ export function PremiumSidebarEditor({ config, onConfigChange }: Props) {
                                         className='text-muted-foreground hover:text-foreground p-0.5'
                                         onClick={() => moveItem(row.id, 1)}
                                         disabled={index === orderedCatalog.length - 1}
-                                        aria-label='Move down'
+                                        aria-label={t('common.moveDown')}
                                     >
                                         <ChevronDown className='h-3.5 w-3.5' />
                                     </button>

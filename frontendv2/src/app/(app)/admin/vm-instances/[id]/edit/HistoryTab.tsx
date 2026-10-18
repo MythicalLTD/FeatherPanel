@@ -80,20 +80,16 @@ export function HistoryTab({ instanceId }: HistoryTabProps) {
 
     return (
         <PageCard
-            title={t('admin.vmInstances.edit_tabs.history') ?? 'Task history'}
+            title={t('admin.vmInstances.edit_tabs.history')}
             icon={History}
-            description={
-                t('admin.vmInstances.history_desc') ?? 'Recent create, update, and delete events for this instance'
-            }
+            description={t('admin.vmInstances.history_desc')}
         >
             {loading ? (
                 <div className='flex items-center justify-center py-12'>
                     <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
                 </div>
             ) : activities.length === 0 ? (
-                <p className='text-muted-foreground py-6 text-center'>
-                    {t('admin.vmInstances.no_task_history') ?? 'No activity recorded yet.'}
-                </p>
+                <p className='text-muted-foreground py-6 text-center'>{t('admin.vmInstances.no_task_history')}</p>
             ) : (
                 <ul className='space-y-3'>
                     {activities.map((a) => (

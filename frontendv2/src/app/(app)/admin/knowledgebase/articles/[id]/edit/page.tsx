@@ -804,7 +804,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                     {iconPreview ? (
                                         <Image
                                             src={iconPreview}
-                                            alt='Preview'
+                                            alt={t('common.preview')}
                                             width={64}
                                             height={64}
                                             className='h-full w-full object-cover'

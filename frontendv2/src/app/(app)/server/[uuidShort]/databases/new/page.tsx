@@ -270,7 +270,7 @@ export default function CreateDatabasePage() {
                                 {t('serverDatabases.databaseCredentials')}
                             </h2>
                             <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                Configuration
+                                {t('ui.server.databases.new.configuration')}
                             </p>
                         </div>
                     </div>
