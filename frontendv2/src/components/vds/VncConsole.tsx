@@ -30,21 +30,23 @@ interface VncConsoleProps {
 
 /**
  * Embedded noVNC console. Connects the browser to a VNC-over-WebSocket
- * endpoint (FeatherPanel /vnc-proxy relay or a direct Proxmox vncwebsocket URL)
- * and renders the screen into a canvas.
- */
-/**
- * Embedded noVNC client for the panel-proxied Proxmox console.
+ * endpoint (FeatherPanel `/vnc-proxy/{token}` relay or a direct Proxmox
+ * vncwebsocket URL) and renders the screen into a canvas.
  *
- * Connects the RFB session to `wss://{panel}/vnc-proxy/{token}` — the
- * token is single-use and expires in ~5 minutes; the upstream
- * Proxmox address never reaches the browser.
+ * Proxy tokens are single-use and short-lived, so the session must only be
+ * (re)opened when `url` changes, never on a plain parent re-render.
  */
 export function VncConsole({ url, className, onDisconnect }: VncConsoleProps) {
     const { t } = useTranslation();
     const containerRef = useRef<HTMLDivElement>(null);
     const rfbRef = useRef<RFB | null>(null);
     const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+    // Keep the latest callback in a ref so an unstable (inline) prop does not
+    // tear down the RFB session on every parent render.
+    const onDisconnectRef = useRef(onDisconnect);
+    useEffect(() => {
+        onDisconnectRef.current = onDisconnect;
+    }, [onDisconnect]);
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -56,11 +58,10 @@ export function VncConsole({ url, className, onDisconnect }: VncConsoleProps) {
         rfb.addEventListener('connect', () => {
             if (!disposed) setStatus('connected');
         });
-        rfb.addEventListener('disconnect', (e) => {
+        rfb.addEventListener('disconnect', () => {
             if (disposed) return;
             setStatus('disconnected');
-            onDisconnect?.();
-            void e;
+            onDisconnectRef.current?.();
         });
         rfb.addEventListener('securityfailure', () => {
             if (!disposed) setStatus('disconnected');
@@ -76,7 +77,7 @@ export function VncConsole({ url, className, onDisconnect }: VncConsoleProps) {
             }
             rfbRef.current = null;
         };
-    }, [url, onDisconnect]);
+    }, [url]);
 
     return (
         <div className={cn('bg-background relative overflow-hidden rounded-lg border', className)}>
