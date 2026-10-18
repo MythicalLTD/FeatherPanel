@@ -117,10 +117,11 @@ export function getDesktopSidebarPanelClass(options: {
               ? DOCK_PANEL_LABELS_CLASS[dockSize]
               : DOCK_PANEL_EXPANDED_CLASS[dockSize];
         return cn(
-            'pointer-events-auto flex h-full min-h-0 w-full flex-col items-center justify-center overflow-visible rounded-2xl border transition-[height] duration-200 ease-out',
+            // w-auto: the dock hugs its items and the shell centres it; long docks cap at max-w and scroll.
+            'pointer-events-auto flex h-full min-h-0 w-auto min-w-0 flex-col items-center justify-center overflow-visible rounded-2xl border transition-[height] duration-200 ease-out',
             glassPanel,
             heightClass,
-            'max-w-[min(100vw-1.5rem,64rem)]',
+            'max-w-[min(100vw-1.5rem,72rem)]',
             'py-1',
         );
     }

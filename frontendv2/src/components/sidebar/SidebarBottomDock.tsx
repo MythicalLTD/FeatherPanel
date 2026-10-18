@@ -242,7 +242,7 @@ export function SidebarBottomDock({
             compact={collapsed}
             showItemLabels={showItemLabels}
             sidebarGlow={sidebarGlow}
-            className='fp-mac-dock-shell w-full gap-1 px-1.5 py-0.5'
+            className='fp-mac-dock-shell max-w-full gap-1 px-1.5 py-0.5'
         >
             <MacDockItem label={appName}>
                 <Link
@@ -285,26 +285,24 @@ export function SidebarBottomDock({
                         className='from-primary/25 mx-0.5 h-6 w-px shrink-0 self-center bg-gradient-to-b to-transparent'
                         aria-hidden
                     />
-                    <MacDockItem label={collapseLabel} active={false}>
-                        <button
-                            type='button'
-                            className='text-muted-foreground hover:text-primary flex h-full w-full items-center justify-center outline-none'
-                            title={collapseLabel}
-                            aria-label={t('navbar.toggleSidebar')}
-                            aria-pressed={collapsed}
-                            onClick={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                handleToggleCollapsed();
-                            }}
-                        >
-                            {collapsed ? (
-                                <ChevronsUp className='h-5 w-5' aria-hidden />
-                            ) : (
-                                <ChevronsDown className='h-5 w-5' aria-hidden />
-                            )}
-                        </button>
-                    </MacDockItem>
+                    <button
+                        type='button'
+                        className='text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:ring-ring flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-lg transition-colors outline-none focus-visible:ring-2'
+                        title={collapseLabel}
+                        aria-label={collapseLabel}
+                        aria-pressed={collapsed}
+                        onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            handleToggleCollapsed();
+                        }}
+                    >
+                        {collapsed ? (
+                            <ChevronsUp className='h-4 w-4' aria-hidden />
+                        ) : (
+                            <ChevronsDown className='h-4 w-4' aria-hidden />
+                        )}
+                    </button>
                 </>
             )}
         </MacDockProvider>
