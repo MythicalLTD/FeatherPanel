@@ -16,33 +16,20 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import type { ReactNode } from 'react';
-import { ArrowLeftRight, Check, LayoutDashboard, MoreHorizontal, RotateCcw } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 export function DashboardHeader({
     greeting,
     statusLine,
     statusTone = 'neutral',
-    isCustomizing,
-    onToggleCustomizing,
-    onSwapColumns,
-    onReset,
+    onCustomize,
 }: {
     greeting: ReactNode;
     statusLine?: ReactNode;
     statusTone?: 'neutral' | 'good' | 'warning';
-    isCustomizing: boolean;
-    onToggleCustomizing: () => void;
-    onSwapColumns: () => void;
-    onReset: () => void;
+    onCustomize: () => void;
 }) {
     const { t } = useTranslation();
 
@@ -67,44 +54,16 @@ export function DashboardHeader({
                     </p>
                 )}
             </div>
-            <div className='flex shrink-0 items-center gap-2'>
-                {isCustomizing && (
-                    <button
-                        type='button'
-                        onClick={onToggleCustomizing}
-                        className='bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium'
-                    >
-                        <Check className='h-4 w-4' />
-                        {t('dashboard.layout.stop')}
-                    </button>
-                )}
-                <DropdownMenu as='div' className='relative'>
-                    <DropdownMenuTrigger
-                        className='fp-surface hover:text-foreground text-muted-foreground inline-flex h-9 w-9 items-center justify-center rounded-lg border'
-                        title={t('dashboard.layout.menu')}
-                        aria-label={t('dashboard.layout.menu')}
-                    >
-                        <MoreHorizontal className='h-4 w-4' />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className='w-56'>
-                        <DropdownMenuItem onClick={onToggleCustomizing}>
-                            <LayoutDashboard className='mr-2 h-4 w-4' />
-                            {isCustomizing
-                                ? t('dashboard.layout.stop_customizing')
-                                : t('dashboard.layout.customize_layout')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={onSwapColumns}>
-                            <ArrowLeftRight className='mr-2 h-4 w-4' />
-                            {t('dashboard.layout.swap_columns')}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={onReset}>
-                            <RotateCcw className='mr-2 h-4 w-4' />
-                            {t('dashboard.layout.reset')}
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
+            <button
+                type='button'
+                onClick={onCustomize}
+                title={t('dashboard.customize.open')}
+                aria-label={t('dashboard.customize.open')}
+                className='fp-surface hover:text-foreground text-muted-foreground inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border px-2.5 text-sm font-medium sm:px-3'
+            >
+                <SlidersHorizontal className='h-4 w-4' aria-hidden />
+                <span className='hidden sm:inline'>{t('dashboard.customize.open')}</span>
+            </button>
         </header>
     );
 }

@@ -1841,33 +1841,12 @@
 			"open_mail_tab": "Open mail inbox"
 		},
 		"layout": {
-			"customize": "Customize",
-			"customize_layout": "Customize layout",
-			"stop_customizing": "Stop customizing",
-			"stop": "Done",
-			"swap_columns": "Swap columns",
 			"move_up": "Move up",
 			"move_down": "Move down",
 			"remove_block": "Remove from layout",
-			"add_to_main": "Add to main column",
-			"add_to_side": "Add to side column",
-			"available_widgets": "Available widgets",
 			"reset": "Reset layout",
 			"hide_plugin_widget": "Hide plugin widget",
-			"show_plugin_widget": "Show plugin widget",
-			"feature_disabled": "This section is turned off for your panel. Remove it from the layout or ask an administrator to enable it.",
-			"block_labels": {
-				"stats": "Quick stats",
-				"attention": "Needs attention",
-				"announcements": "Announcements",
-				"recent_mails": "Recent mail",
-				"resources": "Resources",
-				"tickets": "Support tickets",
-				"knowledgebase": "Knowledge base",
-				"profile": "Profile card",
-				"activity": "Recent activity"
-			},
-			"menu": "Dashboard options"
+			"show_plugin_widget": "Show plugin widget"
 		},
 		"home": {
 			"greeting_morning": "Good morning, {name}",
@@ -1925,13 +1904,160 @@
 				"expires_today": "{name} expires today",
 				"expires_in": "{name} expires in {days} days",
 				"expires_hint": "Renew it to keep it running.",
-				"ticket_reply": "New reply on ticket #{id}"
+				"ticket_reply": "New reply on ticket #{id}",
+				"backup_failed": "A backup of {name} failed"
 			},
 			"support": {
 				"title": "Support",
 				"empty": "No tickets yet. If something is not working, our team can help.",
 				"new_replies": "{count} new"
+			},
+			"group_no_folder": "No folder",
+			"group_unknown_node": "Other",
+			"onboarding": {
+				"title": "Nothing here yet",
+				"description": "When a server, VDS or web space is added to your account, it shows up here with its status and usage.",
+				"contact": "Contact support",
+				"guides": "Read the guides",
+				"account": "Account settings"
 			}
+		},
+		"widgets": {
+			"names": {
+				"stats": "Summary tiles",
+				"attention": "Needs attention",
+				"servers": "Game servers",
+				"vds": "VDS",
+				"webspaces": "Web spaces",
+				"usage": "Resource usage",
+				"status": "Server status",
+				"uptime": "Uptime",
+				"network": "Network",
+				"backups": "Recent backups",
+				"schedules": "Upcoming schedules",
+				"quick_actions": "Quick actions",
+				"announcements": "Announcements",
+				"activity": "Recent activity",
+				"tickets": "Support",
+				"knowledgebase": "Knowledge base",
+				"recent_mails": "Recent emails",
+				"profile": "Profile card"
+			},
+			"descriptions": {
+				"stats": "Counts of your servers, VDS, web spaces and tickets.",
+				"attention": "Suspensions, failed installs, expiring services, full disks and new replies.",
+				"servers": "Your game servers with status, usage and power controls.",
+				"vds": "Your virtual servers.",
+				"webspaces": "Your websites and hosting.",
+				"usage": "CPU, memory and disk used across everything, against what you are allowed.",
+				"status": "How many servers are running, offline or installing.",
+				"uptime": "How long your running servers have been up.",
+				"network": "Traffic in and out of your servers since they started.",
+				"backups": "The latest backups and whether they worked.",
+				"schedules": "Scheduled tasks that run next.",
+				"quick_actions": "Shortcuts to the things you do most.",
+				"announcements": "News from your host.",
+				"activity": "What changed on your account lately.",
+				"tickets": "Your latest support tickets.",
+				"knowledgebase": "Guides and answers.",
+				"recent_mails": "The newest messages in your mailboxes.",
+				"profile": "Your name, avatar and role."
+			},
+			"usage": {
+				"title": "Resource usage",
+				"unlimited": "Unlimited",
+				"game_servers": "Game servers ({count})",
+				"partial": "Live data from {reporting} of {total} servers.",
+				"webspaces": "Web spaces ({count})",
+				"bandwidth": "Bandwidth this period",
+				"allocated_disk": "{disk} of disk allocated",
+				"vds": "VDS ({count})",
+				"allocated_vds": "{cpu} vCPU, {ram} RAM, {disk} disk allocated"
+			},
+			"status": {
+				"title": "Server status"
+			},
+			"uptime": {
+				"title": "Uptime",
+				"days_hours": "{days}d {hours}h",
+				"hours_minutes": "{hours}h {minutes}m",
+				"minutes": "{minutes}m",
+				"online_of": "of {total} online",
+				"none_running": "No server is running right now."
+			},
+			"network": {
+				"title": "Network",
+				"inbound": "In",
+				"outbound": "Out",
+				"since_start": "Since each server last started.",
+				"web_bandwidth": "Web spaces used {used} this period."
+			},
+			"backups": {
+				"title": "Recent backups",
+				"empty": "No backups yet.",
+				"locked": "Locked",
+				"state_completed": "Done",
+				"state_failed": "Failed",
+				"state_running": "Running"
+			},
+			"schedules": {
+				"title": "Upcoming schedules",
+				"empty": "Nothing scheduled.",
+				"only_online": "only when online",
+				"running_now": "Running now"
+			},
+			"quick_actions": {
+				"title": "Quick actions",
+				"all_servers": "All servers",
+				"new_ticket": "Open a ticket",
+				"guides": "Guides",
+				"account": "Account",
+				"ssh_keys": "SSH keys",
+				"activity": "Activity log"
+			}
+		},
+		"customize": {
+			"title": "Customize dashboard",
+			"description": "Pick what you see and how it looks. Changes save as you go.",
+			"open": "Customize",
+			"widgets": "Widgets",
+			"widgets_hint": "Drag to reorder, or use the arrows. Medium widgets sit in the wide column, small ones beside them.",
+			"drag": "Drag to reorder",
+			"size": "Size",
+			"size_small": "S",
+			"size_medium": "M",
+			"size_full": "Full",
+			"remove": "Remove {name}",
+			"no_widgets": "Your dashboard is empty. Add a widget below.",
+			"add_widgets": "Add widgets",
+			"add": "Add",
+			"stat_tiles": "Summary tiles",
+			"servers": "Game servers",
+			"view": "View",
+			"view_list": "List",
+			"view_grid": "Cards",
+			"view_detailed": "Detailed",
+			"sort": "Sort",
+			"sort_recent": "Recent",
+			"sort_name": "Name",
+			"sort_status": "Status",
+			"group": "Group",
+			"group_none": "None",
+			"group_node": "Node",
+			"group_folder": "Folder",
+			"limit": "Show",
+			"favorites_first": "Favourites on top",
+			"favorites_first_hint": "Starred servers are pinned first.",
+			"images": "Server images",
+			"meters": "Meters",
+			"layout": "Layout",
+			"density": "Density",
+			"density_comfortable": "Comfortable",
+			"density_compact": "Compact",
+			"side_first": "Small widgets on the left",
+			"side_first_hint": "On wide screens.",
+			"done": "Done",
+			"synced_hint": "Your layout is saved to your account and follows you to other devices."
 		}
 	},
 	"account": {
