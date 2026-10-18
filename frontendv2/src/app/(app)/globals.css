@@ -860,15 +860,23 @@ html.fp-privacy [data-fp-sensitive]:not(:focus) {
     }
 }
 
-/* Dashboard: when one column of a widget run has nothing to show, the other takes the full width. */
-@media (min-width: 64rem) {
-    .fp-dash-run:not(:has(> .fp-dash-side * * * *)) > .fp-dash-main {
-        grid-column: 1 / -1;
-    }
-    .fp-dash-run:not(:has(> .fp-dash-main * * * *)) > .fp-dash-side {
-        grid-column: 1 / -1;
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        align-items: start;
-    }
+/* Dashboard packed grid: each card fills the space it was given (DashboardPackedGrid measures
+   natural heights with .fp-pack-measuring on, then places and stretches the cards). */
+.fp-pack-grid [data-pack-id] > .fp-pack-cell {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+}
+.fp-pack-grid [data-pack-id] > .fp-pack-cell > * {
+    min-height: 0;
+    flex: 1 1 auto;
+}
+.fp-pack-grid.fp-pack-measuring [data-pack-id] > .fp-pack-cell {
+    height: auto;
+}
+.fp-pack-grid.fp-pack-measuring [data-pack-id] > .fp-pack-cell > * {
+    flex: none;
+}
+.fp-pack-grid [data-pack-id] > .fp-pack-cell:not(:has(* * *)) {
+    display: none;
 }

@@ -2093,7 +2093,7 @@
 			"description": "Pick what you see and how it looks. Changes save as you go.",
 			"open": "Customize",
 			"widgets": "Widgets",
-			"widgets_hint": "Drag to reorder, or use the arrows. Medium widgets sit in the wide column, small ones beside them.",
+			"widgets_hint": "Drag to reorder, or use the arrows. Cards pack together without gaps, and a card left alone in a row widens to fill it.",
 			"drag": "Drag to reorder",
 			"size": "Size",
 			"size_small": "S",
