@@ -20,6 +20,7 @@ namespace App;
 use RateLimit\Rate;
 use App\Chat\Database;
 use App\Helpers\XChaCha20;
+use App\Helpers\ModuleGate;
 use App\Routing\RouteCache;
 use Random\RandomException;
 use App\Helpers\ApiResponse;
@@ -442,6 +443,15 @@ class App
                 } else {
                     $request->attributes->set($key, $value);
                 }
+            }
+
+            // Disabled panel modules refuse their API before any controller runs.
+            $moduleRefusal = ModuleGate::check($request->getPathInfo());
+            if ($moduleRefusal !== null) {
+                $moduleRefusal->headers->set('X-Request-ID', RequestContext::id());
+                SentryTelemetry::finishRequest($moduleRefusal->getStatusCode());
+
+                return $moduleRefusal;
             }
 
             // Per-route middleware support

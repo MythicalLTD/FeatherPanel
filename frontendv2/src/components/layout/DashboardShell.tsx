@@ -17,6 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import { ModuleRouteGuard } from '@/components/layout/ModuleRouteGuard';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
 import { cn } from '@/lib/utils';
@@ -189,7 +190,9 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                                                     <AdminBreadcrumbs className='mb-1 shrink-0' />
                                                 ) : null}
                                             </PluginSlot>
-                                            <PluginPageOverrideGate>{children}</PluginPageOverrideGate>
+                                            <ModuleRouteGuard>
+                                                <PluginPageOverrideGate>{children}</PluginPageOverrideGate>
+                                            </ModuleRouteGuard>
                                             {!useFullBleedLayout ? (
                                                 <footer className='border-border/40 mt-6 shrink-0 border-t pt-4 pb-2'>
                                                     <ConfiguredLinks variant='compact' />

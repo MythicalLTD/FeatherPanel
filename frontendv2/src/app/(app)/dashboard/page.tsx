@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { toast } from 'sonner';
 import { getApiErrorMessage } from '@/lib/api-errors';
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useMemo, type ReactNode } from 'react';
 import {
     Server,
     Clock,
@@ -51,6 +51,8 @@ import { TicketList } from '@/components/dashboard/TicketList';
 import { KnowledgeBaseList } from '@/components/dashboard/KnowledgeBaseList';
 import { DashboardRecentMails } from '@/components/dashboard/DashboardRecentMails';
 import { useSettings } from '@/contexts/SettingsContext';
+import { getModuleStates } from '@/lib/modules';
+import { ModuleBadge } from '@/components/ui/module-badge';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
@@ -164,12 +166,12 @@ export default function DashboardPage() {
     const { t } = useTranslation();
     const { user, isLoading: sessionLoading } = useSession();
     const dateOpts = useDateFormatOptions();
-    const [allServers, setAllServers] = useState<ServerData[]>([]);
-    const [vms, setVms] = useState<VmInstance[]>([]);
-    const [webspaces, setWebspaces] = useState<DashboardWebSpace[]>([]);
-    const [serverTotal, setServerTotal] = useState(0);
-    const [vmTotal, setVmTotal] = useState(0);
-    const [webspaceTotal, setWebspaceTotal] = useState(0);
+    const [rawServers, setAllServers] = useState<ServerData[]>([]);
+    const [rawVms, setVms] = useState<VmInstance[]>([]);
+    const [rawWebspaces, setWebspaces] = useState<DashboardWebSpace[]>([]);
+    const [rawServerTotal, setServerTotal] = useState(0);
+    const [rawVmTotal, setVmTotal] = useState(0);
+    const [rawWebspaceTotal, setWebspaceTotal] = useState(0);
     const [activities, setActivities] = useState<Activity[]>([]);
     const [loadingServers, setLoadingServers] = useState(true);
     const [loadingVms, setLoadingVms] = useState(true);
@@ -178,6 +180,14 @@ export default function DashboardPage() {
     const [resourceFilter, setResourceFilter] = useState<ResourceFilter>('all');
     const { settings } = useSettings();
     const { fetchWidgets, getWidgets } = usePluginWidgets('dashboard');
+    // Resources of a disabled module are left out (its API refuses anyway).
+    const modules = getModuleStates(settings);
+    const allServers = useMemo(() => (modules.game ? rawServers : []), [modules.game, rawServers]);
+    const vms = useMemo(() => (modules.vds ? rawVms : []), [modules.vds, rawVms]);
+    const webspaces = useMemo(() => (modules.web ? rawWebspaces : []), [modules.web, rawWebspaces]);
+    const serverTotal = modules.game ? rawServerTotal : 0;
+    const vmTotal = modules.vds ? rawVmTotal : 0;
+    const webspaceTotal = modules.web ? rawWebspaceTotal : 0;
 
     const { serverLiveData, isServerConnected, connectServers, disconnectAll } = useServersWebSocket();
 
@@ -528,8 +538,22 @@ export default function DashboardPage() {
                                                           ? (resource.data as VmInstance).id
                                                           : (resource.data as DashboardWebSpace).uuid
                                                 }`}
-                                                className='stagger-child'
+                                                className='stagger-child relative'
                                             >
+                                                {resourceTypeCount >= 2 && (
+                                                    // Mixed list: tag each row with its module.
+                                                    <span className='bg-background absolute -top-2 right-4 z-10 rounded-full'>
+                                                        <ModuleBadge
+                                                            module={
+                                                                resource.type === 'server'
+                                                                    ? 'game'
+                                                                    : resource.type === 'vm'
+                                                                      ? 'vds'
+                                                                      : 'web'
+                                                            }
+                                                        />
+                                                    </span>
+                                                )}
                                                 {resource.type === 'server' ? (
                                                     <ServerCard {...serverCardProps(resource.data as ServerData)} />
                                                 ) : resource.type === 'vm' ? (

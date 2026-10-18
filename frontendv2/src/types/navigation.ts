@@ -15,6 +15,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import type { LucideIcon } from 'lucide-react';
 
+/** Admin-toggleable panel modules. */
+export type PanelModule = 'game' | 'web' | 'vds';
+
 export interface NavigationItem {
     id: string;
     name: string;
@@ -38,6 +41,8 @@ export interface NavigationItem {
     priority?: number;
     sidebarOrderIndex?: number;
     badge?: string;
+    /** Module the item belongs to: hidden when that module is off, and badged GAME / WEB / VDS. */
+    module?: PanelModule;
     children?: NavigationItem[]; // Optional submenu items
     /** Premium custom / external link */
     openInNewTab?: boolean;

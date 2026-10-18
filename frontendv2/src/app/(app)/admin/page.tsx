@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { cn } from '@/lib/utils';
+import { isModuleEnabled } from '@/lib/modules';
 import axios from 'axios';
 
 import { WelcomeWidget, type WelcomeChip } from '@/components/admin/WelcomeWidget';
@@ -60,6 +61,7 @@ export default function AdminDashboardPage() {
         refresh: refreshHealth,
     } = useSystemHealth();
     const { settings } = useSettings();
+    const gameModuleEnabled = isModuleEnabled(settings, 'game');
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-home');
 
@@ -137,7 +139,7 @@ export default function AdminDashboardPage() {
     const welcomeChips = useMemo(() => {
         const chips: WelcomeChip[] = [];
 
-        if (!healthLoading && healthStats) {
+        if (gameModuleEnabled && !healthLoading && healthStats) {
             chips.push({
                 id: 'nodes',
                 label: t('admin.welcome.chip_nodes', {
@@ -168,7 +170,7 @@ export default function AdminDashboardPage() {
         }
 
         return chips;
-    }, [healthLoading, healthStats, healthSelftest, systemsOk, updateAvailable, latestVersion, t]);
+    }, [gameModuleEnabled, healthLoading, healthStats, healthSelftest, systemsOk, updateAvailable, latestVersion, t]);
 
     const frameProps = {
         isCustomizing,
@@ -347,13 +349,22 @@ export default function AdminDashboardPage() {
                         />
                     </AdminWidgetFrame>
 
-                    <AdminWidgetFrame widgetId='nodes' {...frameProps}>
-                        <NodesOverviewWidget nodes={healthNodes} loading={healthLoading} unavailable={!healthStats} />
-                    </AdminWidgetFrame>
+                    {/* Wings nodes and game servers belong to the game servers module. */}
+                    {gameModuleEnabled && (
+                        <>
+                            <AdminWidgetFrame widgetId='nodes' {...frameProps}>
+                                <NodesOverviewWidget
+                                    nodes={healthNodes}
+                                    loading={healthLoading}
+                                    unavailable={!healthStats}
+                                />
+                            </AdminWidgetFrame>
 
-                    <AdminWidgetFrame widgetId='servers' {...frameProps}>
-                        <RecentServersWidget />
-                    </AdminWidgetFrame>
+                            <AdminWidgetFrame widgetId='servers' {...frameProps}>
+                                <RecentServersWidget />
+                            </AdminWidgetFrame>
+                        </>
+                    )}
 
                     <AdminWidgetFrame widgetId='links' {...frameProps}>
                         <QuickLinksWidget onClearCache={clearCache} isClearingCache={isClearingCache} />

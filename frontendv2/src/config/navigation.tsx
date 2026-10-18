@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import Permissions from '@/lib/permissions';
 import { NavigationItem } from '@/types/navigation';
+import { applyModulesToNavigation } from '@/lib/modules';
 import type { AppSettings } from '@/types/settings';
 import {
     Home,
@@ -73,7 +74,15 @@ import { supportsDaemonFeature, type DaemonFeature } from '@/lib/daemonCapabilit
 
 type TFunction = (key: string) => string;
 
+/** Admin sidebar items, without the ones belonging to disabled modules. */
 export const getAdminNavigationItems = (
+    t: TFunction,
+    settings: AppSettings | null,
+    isDeveloperModeEnabled?: boolean | null,
+): NavigationItem[] =>
+    applyModulesToNavigation(buildAdminNavigationItems(t, settings, isDeveloperModeEnabled), settings);
+
+const buildAdminNavigationItems = (
     t: TFunction,
     settings: AppSettings | null,
     isDeveloperModeEnabled?: boolean | null,
@@ -171,6 +180,7 @@ export const getAdminNavigationItems = (
         },
         {
             id: 'admin-servers',
+            module: 'game',
             name: t('navigation.items.servers'),
             title: t('navigation.items.servers'),
             url: '/admin/servers',
@@ -182,6 +192,7 @@ export const getAdminNavigationItems = (
         },
         {
             id: 'admin-vm-instances',
+            module: 'vds',
             name: t('navigation.items.virtualServersVds'),
             title: t('navigation.items.virtualServersVds'),
             url: '/admin/vm-instances',
@@ -193,6 +204,7 @@ export const getAdminNavigationItems = (
         },
         {
             id: 'admin-webspaces',
+            module: 'web',
             name: t('navigation.items.webSpaces'),
             title: t('navigation.items.webSpaces'),
             url: '/admin/webspaces',
@@ -201,10 +213,10 @@ export const getAdminNavigationItems = (
             category: 'admin',
             permission: Permissions.ADMIN_WEBSPACES_VIEW,
             group: 'servers',
-            badge: 'WEB',
         },
         {
             id: 'admin-backup-schedules',
+            module: 'game',
             name: t('navigation.items.backupSchedules'),
             title: t('navigation.items.backupSchedules'),
             url: '/admin/backup-schedules',
@@ -216,6 +228,7 @@ export const getAdminNavigationItems = (
         },
         {
             id: 'admin-wings-backups',
+            module: 'game',
             name: t('navigation.items.wingsBackups'),
             title: t('navigation.items.wingsBackups'),
             url: '/admin/wings-backups',
@@ -238,6 +251,7 @@ export const getAdminNavigationItems = (
         },
         {
             id: 'admin-nodes',
+            module: 'game',
             name: t('navigation.items.nodes'),
             title: t('navigation.items.nodes'),
             url: '/admin/nodes',
@@ -246,10 +260,10 @@ export const getAdminNavigationItems = (
             category: 'admin',
             permission: Permissions.ADMIN_NODES_VIEW,
             group: 'infrastructure',
-            badge: 'GAME',
         },
         {
             id: 'admin-nodes-status',
+            module: 'game',
             name: t('navigation.items.nodeStatus'),
             title: t('navigation.items.nodeStatus'),
             url: '/admin/nodes/status',
@@ -261,6 +275,7 @@ export const getAdminNavigationItems = (
         },
         {
             id: 'admin-vds-nodes',
+            module: 'vds',
             name: t('navigation.items.vdsNodes'),
             title: t('navigation.items.vdsNodes'),
             url: '/admin/vds-nodes',
@@ -269,10 +284,10 @@ export const getAdminNavigationItems = (
             category: 'admin',
             permission: Permissions.ADMIN_NODES_VIEW,
             group: 'infrastructure',
-            badge: 'VPS',
         },
         {
             id: 'admin-web-nodes',
+            module: 'web',
             name: t('navigation.items.webNodes'),
             title: t('navigation.items.webNodes'),
             url: '/admin/web-nodes',
@@ -281,10 +296,10 @@ export const getAdminNavigationItems = (
             category: 'admin',
             permission: Permissions.ADMIN_NODES_VIEW,
             group: 'infrastructure',
-            badge: 'WEB',
         },
         {
             id: 'admin-mail-hosts',
+            module: 'web',
             name: t('navigation.items.mailHosts'),
             title: t('navigation.items.mailHosts'),
             url: '/admin/mail-hosts',
@@ -293,10 +308,10 @@ export const getAdminNavigationItems = (
             category: 'admin',
             permission: Permissions.ADMIN_WEBSPACES_VIEW,
             group: 'infrastructure',
-            badge: 'WEB',
         },
         {
             id: 'admin-dns-hosts',
+            module: 'web',
             name: t('navigation.items.dnsHosts'),
             title: t('navigation.items.dnsHosts'),
             url: '/admin/dns-hosts',
@@ -305,10 +320,10 @@ export const getAdminNavigationItems = (
             category: 'admin',
             permission: Permissions.ADMIN_WEBSPACES_VIEW,
             group: 'infrastructure',
-            badge: 'WEB',
         },
         {
             id: 'admin-mounts',
+            module: 'game',
             name: t('navigation.items.mounts'),
             title: t('navigation.items.mounts'),
             url: '/admin/mounts',
@@ -331,6 +346,7 @@ export const getAdminNavigationItems = (
         },
         {
             id: 'admin-realms',
+            module: 'game',
             name: t('navigation.items.realms'),
             title: t('navigation.items.realms'),
             url: '/admin/realms',
@@ -342,6 +358,7 @@ export const getAdminNavigationItems = (
         },
         {
             id: 'admin-spells',
+            module: 'game',
             name: t('navigation.items.spells'),
             title: t('navigation.items.spells'),
             url: '/admin/spells',
@@ -353,6 +370,7 @@ export const getAdminNavigationItems = (
         },
         {
             id: 'admin-webplates',
+            module: 'web',
             name: t('navigation.items.webPlates'),
             title: t('navigation.items.webPlates'),
             url: '/admin/webplates',
@@ -361,7 +379,6 @@ export const getAdminNavigationItems = (
             category: 'admin',
             permission: Permissions.ADMIN_WEBPLATES_VIEW,
             group: 'templates',
-            badge: 'WEB',
         },
         {
             id: 'admin-notifications',
@@ -464,6 +481,7 @@ export const getAdminNavigationItems = (
         },
         {
             id: 'admin-subdomains',
+            module: 'game',
             name: t('navigation.items.subdomains'),
             title: t('navigation.items.subdomains'),
             url: '/admin/subdomains',
@@ -552,6 +570,7 @@ export const getAdminNavigationItems = (
         },
         {
             id: 'admin-pterodactyl-importer',
+            module: 'game',
             name: t('navigation.items.pterodactylImporter'),
             title: t('navigation.items.pterodactylImporter'),
             url: '/admin/pterodactyl-importer',
@@ -991,7 +1010,14 @@ export const getServerNavigationItems = (
     return items;
 };
 
+/** Main sidebar items, without the ones belonging to disabled modules. */
 export const getMainNavigationItems = (
+    t: TFunction,
+    settings: AppSettings | null,
+    hasPermission: (permission: string) => boolean,
+): NavigationItem[] => applyModulesToNavigation(buildMainNavigationItems(t, settings, hasPermission), settings);
+
+const buildMainNavigationItems = (
     t: TFunction,
     settings: AppSettings | null,
     hasPermission: (permission: string) => boolean,
@@ -1009,6 +1035,7 @@ export const getMainNavigationItems = (
         },
         {
             id: 'servers',
+            module: 'game',
             name: t('navigation.items.servers'),
             title: t('navigation.items.servers'),
             url: '/dashboard/servers',
@@ -1019,6 +1046,7 @@ export const getMainNavigationItems = (
         },
         {
             id: 'vms',
+            module: 'vds',
             name: t('navigation.items.virtualServersVds'),
             title: t('navigation.items.virtualServersVds'),
             url: '/dashboard/vms',
@@ -1029,6 +1057,7 @@ export const getMainNavigationItems = (
         },
         {
             id: 'webspaces',
+            module: 'web',
             name: t('navigation.items.webSpaces'),
             title: t('navigation.items.webSpaces'),
             url: '/dashboard/webspaces',

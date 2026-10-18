@@ -24,6 +24,10 @@ export interface AppSettings {
     chatbot_enabled: string;
     knowledgebase_enabled: string;
     knowledgebase_public_enabled: string;
+    /** Panel modules, 'false' turns a module off. Missing means enabled. */
+    module_game_enabled?: string;
+    module_web_enabled?: string;
+    module_vds_enabled?: string;
     server_allow_allocation_select: string;
     server_allow_egg_change: string;
     server_allow_user_made_firewall: string;

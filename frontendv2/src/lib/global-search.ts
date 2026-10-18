@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import type { LucideIcon } from 'lucide-react';
 import { isReactIconComponent, lucideComponentToSlug } from '@/lib/iconLibrary';
 import type { NavigationItem } from '@/types/navigation';
+import { MODULE_BADGES, type PanelModule } from '@/lib/modules';
 
 export type GlobalSearchMode = 'search' | 'debug';
 
@@ -79,6 +80,8 @@ export interface GlobalSearchResult {
     score?: number;
     /** Entity name badge for context-scoped results (current webspace/server/VDS). */
     contextTag?: string;
+    /** Module the result belongs to (GAME / WEB / VDS badge). */
+    module?: PanelModule;
     isCurrentContext?: boolean;
 }
 
@@ -230,9 +233,16 @@ export function navigationToSearchResults(
             href: item.pluginRedirect ?? item.url,
             category,
             ...icons,
-            keywords: [item.name, item.title, item.description, item.group, label, item.pluginName].filter(
-                Boolean,
-            ) as string[],
+            module: item.module,
+            keywords: [
+                item.name,
+                item.title,
+                item.description,
+                item.group,
+                label,
+                item.pluginName,
+                item.module ? MODULE_BADGES[item.module] : undefined,
+            ].filter(Boolean) as string[],
         };
     });
 }

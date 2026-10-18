@@ -31,6 +31,7 @@ import { groupGlobalSearchResults, type GlobalSearchCategory, type GlobalSearchR
 import { isReactIconComponent } from '@/lib/iconLibrary';
 import type { GlobalSearchEntityContext } from '@/lib/global-search-context';
 import { cn } from '@/lib/utils';
+import { ModuleBadge } from '@/components/ui/module-badge';
 
 function formatGroupLabel(value?: string): string | undefined {
     if (!value) return undefined;
@@ -356,6 +357,9 @@ export default function GlobalSearchDialog() {
                                                             <p className='text-foreground truncate text-sm font-medium'>
                                                                 {result.title}
                                                             </p>
+                                                            {result.module ? (
+                                                                <ModuleBadge module={result.module} />
+                                                            ) : null}
                                                             {result.contextTag ? (
                                                                 <span className='border-primary/20 bg-background/80 text-primary max-w-[8rem] shrink-0 truncate rounded-full border px-2 py-0.5 text-[10px] font-medium'>
                                                                     {result.contextTag}
