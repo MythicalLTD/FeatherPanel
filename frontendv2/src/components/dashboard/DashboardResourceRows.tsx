@@ -19,7 +19,21 @@ import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Globe, Loader2, MonitorCog, Play, RotateCw, Server as ServerIcon, Square, Star } from 'lucide-react';
+import {
+    Check,
+    Cpu,
+    Globe,
+    HardDrive,
+    Loader2,
+    MemoryStick,
+    MonitorCog,
+    Play,
+    RotateCw,
+    Server as ServerIcon,
+    Square,
+    Star,
+    type LucideIcon,
+} from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import {
@@ -169,7 +183,7 @@ function Thumb({ banner, icon, small }: { banner?: string | null; icon: ReactNod
 export type ServerRowMeter = 'cpu' | 'ram' | 'disk';
 
 export interface DashboardServerDisplay {
-    /** list: name and status only; detailed: with meters; grid: card (see DashboardServerCard). */
+    /** list: name and status only; detailed: with meters; grid: card (see DashboardServerGaugeCard). */
     view?: 'list' | 'detailed' | 'grid';
     images?: boolean;
     meters?: ServerRowMeter[];
@@ -267,7 +281,15 @@ function useServerPresentation(server: Server, live?: ServerLiveData) {
         </>
     );
 
-    return { t, status, accessible, href, meter, powerButtons };
+    return {
+        t,
+        status,
+        accessible,
+        href,
+        meter,
+        powerButtons,
+        usage: { cpu, memory, disk, cpuLimit, memoryLimit, diskLimit },
+    };
 }
 
 function FavoriteButton({ isFavorite, onToggle }: { isFavorite: boolean; onToggle: () => void }) {
@@ -292,13 +314,19 @@ export function DashboardServerRow({
     images = true,
     meters = ALL_METERS,
     compact = false,
+    selectable = false,
+    selected = false,
+    onToggleSelect,
 }: {
     server: Server;
     live?: ServerLiveData;
     isFavorite: boolean;
     onToggleFavorite: () => void;
+    selectable?: boolean;
+    selected?: boolean;
+    onToggleSelect?: () => void;
 } & DashboardServerDisplay) {
-    const { status, accessible, href, meter, powerButtons } = useServerPresentation(server, live);
+    const { t, status, accessible, href, meter, powerButtons } = useServerPresentation(server, live);
     const shownMeters = view === 'list' ? [] : ALL_METERS.filter((m) => meters.includes(m));
     const meterCols = ['grid-cols-1', 'grid-cols-1', 'grid-cols-2', 'grid-cols-3'][shownMeters.length];
     const meterWidth = ['', 'md:w-28', 'md:w-48', 'md:w-72'][shownMeters.length];
@@ -310,9 +338,30 @@ export function DashboardServerRow({
                 compact ? 'py-2' : 'py-3',
                 shownMeters.length > 0 ? 'flex-col md:flex-row' : 'flex-row items-center',
                 !accessible && 'opacity-70',
+                selected && 'bg-primary/8',
             )}
         >
+            {selectable && (
+                <button
+                    type='button'
+                    onClick={onToggleSelect}
+                    aria-pressed={selected}
+                    aria-label={t('dashboard.home.select_server', { name: server.name })}
+                    className='absolute inset-0 z-10 cursor-pointer'
+                />
+            )}
             <Link href={href} className='flex min-w-0 flex-1 items-center gap-3 focus-visible:outline-none'>
+                {selectable && (
+                    <span
+                        className={cn(
+                            'flex h-5 w-5 shrink-0 items-center justify-center rounded-md border',
+                            selected ? 'bg-primary border-primary text-primary-foreground' : 'border-border',
+                        )}
+                        aria-hidden
+                    >
+                        {selected && <Check className='h-3.5 w-3.5' strokeWidth={3} />}
+                    </span>
+                )}
                 {images && (
                     <Thumb small={compact} banner={server.spell?.banner} icon={<ServerIcon className='h-5 w-5' />} />
                 )}
@@ -342,64 +391,212 @@ export function DashboardServerRow({
                     </Link>
                 )}
 
-                <div className='flex w-24 shrink-0 items-center justify-end'>
-                    {powerButtons}
-                    <FavoriteButton isFavorite={isFavorite} onToggle={onToggleFavorite} />
-                </div>
+                {!selectable && (
+                    <div className='flex w-24 shrink-0 items-center justify-end'>
+                        {powerButtons}
+                        <FavoriteButton isFavorite={isFavorite} onToggle={onToggleFavorite} />
+                    </div>
+                )}
             </div>
         </div>
     );
 }
 
-/** Card for the grid view: banner strip, name, status, chosen meters and actions. */
-export function DashboardServerCard({
+function Gauge({
+    icon: Icon,
+    label,
+    value,
+    limit,
+    percent,
+}: {
+    icon: LucideIcon;
+    label: string;
+    value: string;
+    limit: string;
+    percent: number | null;
+}) {
+    const radius = 18;
+    const circumference = 2 * Math.PI * radius;
+    const clamped = percent === null ? 0 : Math.min(100, Math.max(percent, 0));
+    const tone =
+        percent === null
+            ? 'text-primary/50'
+            : percent >= 90
+              ? 'text-rose-500'
+              : percent >= 70
+                ? 'text-amber-500'
+                : 'text-emerald-500';
+    return (
+        <div className='flex min-w-0 flex-col items-center text-center' title={label}>
+            <span className='relative flex h-12 w-12 items-center justify-center'>
+                <svg viewBox='0 0 44 44' className='absolute inset-0 h-full w-full -rotate-90' aria-hidden>
+                    <circle cx='22' cy='22' r={radius} fill='none' strokeWidth='3.5' className='stroke-muted' />
+                    <circle
+                        cx='22'
+                        cy='22'
+                        r={radius}
+                        fill='none'
+                        strokeWidth='3.5'
+                        strokeLinecap='round'
+                        stroke='currentColor'
+                        strokeDasharray={circumference}
+                        strokeDashoffset={circumference * (1 - clamped / 100)}
+                        className={cn('transition-[stroke-dashoffset] duration-500', tone)}
+                    />
+                </svg>
+                <Icon className='text-muted-foreground h-4 w-4' aria-hidden />
+            </span>
+            <span className='mt-1.5 max-w-full truncate text-xs font-semibold tabular-nums'>{value}</span>
+            <span className='text-muted-foreground max-w-full truncate text-[10px]'>{limit}</span>
+        </div>
+    );
+}
+
+/** Grid card: banner with a tag and the favourite star, name, address, status, description,
+ * three usage gauges against the limits, uptime and quick power buttons. */
+export function DashboardServerGaugeCard({
     server,
     live,
     isFavorite,
     onToggleFavorite,
     images = true,
-    meters = ALL_METERS,
-    compact = false,
+    tag,
+    uptime,
+    selectable = false,
+    selected = false,
+    onToggleSelect,
 }: {
     server: Server;
     live?: ServerLiveData;
     isFavorite: boolean;
     onToggleFavorite: () => void;
-} & DashboardServerDisplay) {
-    const { status, accessible, href, meter, powerButtons } = useServerPresentation(server, live);
+    images?: boolean;
+    tag?: string | null;
+    uptime?: string | null;
+    selectable?: boolean;
+    selected?: boolean;
+    onToggleSelect?: () => void;
+}) {
+    const { t, status, accessible, href, powerButtons, usage } = useServerPresentation(server, live);
     const banner = server.spell?.banner;
-    const shownMeters = ALL_METERS.filter((m) => meters.includes(m));
+    const address = server.allocation
+        ? `${server.allocation.ip_alias || server.allocation.alias || server.allocation.ip}:${server.allocation.port}`
+        : null;
+    const pct = (used: number, limit: number) => (limit > 0 ? getUsagePercentage(used, limit) : null);
+    const ofLimit = (limit: number, format: (n: number) => string) =>
+        limit > 0 ? t('dashboard.home.gauges.of', { limit: format(limit) }) : t('dashboard.home.gauges.unlimited');
+
+    const toggle = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onToggleSelect?.();
+    };
+
     return (
         <div
             className={cn(
-                'fp-surface fp-surface-interactive relative flex min-w-0 flex-col overflow-hidden rounded-xl border',
-                !accessible && 'opacity-70',
+                'fp-surface group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border transition-colors',
+                selected ? 'border-primary ring-primary/30 ring-2' : 'hover:border-primary/40',
+                !accessible && 'opacity-75',
             )}
         >
-            {images && (
-                <Link
-                    href={href}
-                    tabIndex={-1}
-                    aria-hidden
-                    className={cn('bg-muted block bg-cover bg-center', compact ? 'h-12' : 'h-20')}
-                    style={banner ? { backgroundImage: safeCssUrl(resolveAttachmentUrl(banner) || banner) } : undefined}
+            {selectable && (
+                <button
+                    type='button'
+                    onClick={toggle}
+                    className='absolute inset-0 z-10 cursor-pointer'
+                    aria-pressed={selected}
+                    aria-label={t('dashboard.home.select_server', { name: server.name })}
                 />
             )}
-            <div className={cn('flex min-w-0 flex-1 flex-col gap-3', compact ? 'p-3' : 'p-4')}>
+            <div
+                className={cn(
+                    'from-primary/30 via-primary/10 to-muted relative bg-linear-to-br bg-cover bg-center',
+                    images ? 'h-24' : 'h-10',
+                )}
+                style={
+                    images && banner
+                        ? { backgroundImage: safeCssUrl(resolveAttachmentUrl(banner) || banner) }
+                        : undefined
+                }
+            >
+                <span className='from-card/90 absolute inset-0 bg-linear-to-t to-transparent' aria-hidden />
+                {tag && (
+                    <span className='bg-background/70 absolute top-2.5 left-2.5 max-w-[60%] truncate rounded-md px-2 py-0.5 text-[11px] font-medium backdrop-blur-sm'>
+                        {tag}
+                    </span>
+                )}
+                <span className='absolute top-1.5 right-1.5 z-20 flex items-center gap-1'>
+                    {selectable ? (
+                        <button
+                            type='button'
+                            onClick={toggle}
+                            aria-pressed={selected}
+                            aria-label={t('dashboard.home.select_server', { name: server.name })}
+                            className={cn(
+                                'flex h-7 w-7 items-center justify-center rounded-lg border backdrop-blur-sm transition-colors',
+                                selected
+                                    ? 'bg-primary border-primary text-primary-foreground'
+                                    : 'bg-background/70 border-border/70',
+                            )}
+                        >
+                            {selected && <Check className='h-4 w-4' strokeWidth={3} />}
+                        </button>
+                    ) : (
+                        <span className='bg-background/70 rounded-lg backdrop-blur-sm'>
+                            <FavoriteButton isFavorite={isFavorite} onToggle={onToggleFavorite} />
+                        </span>
+                    )}
+                </span>
+            </div>
+            <div className='relative flex min-w-0 flex-1 flex-col gap-3 px-4 pb-3'>
+                <div className='-mt-5 flex min-w-0 items-end gap-3'>
+                    <span className='fp-icon-tile border-background flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2'>
+                        <ServerIcon className='h-5 w-5' aria-hidden />
+                    </span>
+                    <span className='mb-0.5 ml-auto'>
+                        <span className='border-border/60 bg-background/60 inline-flex items-center rounded-full border px-2 py-0.5'>
+                            <StatusLabel status={status} />
+                        </span>
+                    </span>
+                </div>
                 <Link href={href} className='min-w-0 focus-visible:outline-none'>
                     <span className='block truncate text-sm font-semibold'>{server.name}</span>
-                    <span className='mt-0.5 flex min-w-0 items-center gap-2'>
-                        <StatusLabel status={status} />
-                    </span>
+                    {address && (
+                        <span className='text-muted-foreground block truncate font-mono text-[11px]'>{address}</span>
+                    )}
                 </Link>
-                {shownMeters.length > 0 && (
-                    <Link href={href} tabIndex={-1} className='grid min-w-0 grid-cols-1 gap-2'>
-                        {shownMeters.map(meter)}
-                    </Link>
+                {server.description && (
+                    <p className='text-muted-foreground line-clamp-2 text-xs'>{server.description}</p>
                 )}
-                <div className='mt-auto -mr-1.5 -mb-1.5 flex items-center justify-end'>
-                    {powerButtons}
-                    <FavoriteButton isFavorite={isFavorite} onToggle={onToggleFavorite} />
+                <div className='grid grid-cols-3 gap-2'>
+                    <Gauge
+                        icon={Cpu}
+                        label={t('dashboard.home.meters.cpu')}
+                        value={formatCpu(usage.cpu)}
+                        limit={ofLimit(usage.cpuLimit, (n) => formatCpu(n))}
+                        percent={pct(usage.cpu, usage.cpuLimit)}
+                    />
+                    <Gauge
+                        icon={MemoryStick}
+                        label={t('dashboard.home.meters.ram')}
+                        value={formatMemory(usage.memory)}
+                        limit={ofLimit(usage.memoryLimit, formatMemory)}
+                        percent={pct(usage.memory, usage.memoryLimit)}
+                    />
+                    <Gauge
+                        icon={HardDrive}
+                        label={t('dashboard.home.meters.disk')}
+                        value={formatDisk(usage.disk)}
+                        limit={ofLimit(usage.diskLimit, formatDisk)}
+                        percent={pct(usage.disk, usage.diskLimit)}
+                    />
+                </div>
+                <div className='mt-auto -mr-1.5 flex min-h-8 items-center justify-between gap-2'>
+                    <span className='text-muted-foreground truncate text-xs'>
+                        {uptime ? t('dashboard.home.gauges.up', { time: uptime }) : null}
+                    </span>
+                    {!selectable && <span className='flex shrink-0 items-center'>{powerButtons}</span>}
                 </div>
             </div>
         </div>
