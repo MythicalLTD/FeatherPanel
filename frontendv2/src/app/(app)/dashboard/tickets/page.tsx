@@ -36,6 +36,7 @@ import { useSession } from '@/contexts/SessionContext';
 import Permissions from '@/lib/permissions';
 import { toast } from 'sonner';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface Category {
     id: number;
@@ -365,31 +366,12 @@ export default function TicketsPage() {
 
             <WidgetRenderer widgets={getWidgets('dashboard-tickets', 'before-tickets-list')} />
             {!loading && tickets.length > 0 && (pagination.hasNext || pagination.hasPrev) && (
-                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
-                        className='gap-1.5'
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {pagination.page} / {Math.ceil(pagination.total / pagination.pageSize) || 1}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
-                        className='gap-1.5'
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={pagination.page}
+                    totalPages={Math.ceil(pagination.total / pagination.pageSize) || 1}
+                    onPageChange={(nextPage) => setPagination((prev) => ({ ...prev, page: nextPage }))}
+                    className='mb-4'
+                />
             )}
             {loading ? (
                 <div className='space-y-4'>

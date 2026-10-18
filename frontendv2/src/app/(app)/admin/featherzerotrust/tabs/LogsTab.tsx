@@ -39,6 +39,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { cn } from '@/lib/utils';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface CronLog {
     id: number;
@@ -191,31 +192,12 @@ const LogsTab = () => {
             ) : (
                 <>
                     {pagination.totalPages > 1 && (
-                        <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={pagination.page === 1}
-                                onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
-                                className='gap-1.5'
-                            >
-                                <ChevronLeft className='h-4 w-4' />
-                                {t('common.previous')}
-                            </Button>
-                            <span className='text-sm font-medium'>
-                                {pagination.page} / {pagination.totalPages}
-                            </span>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={pagination.page === pagination.totalPages}
-                                onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
-                                className='gap-1.5'
-                            >
-                                {t('common.next')}
-                                <ChevronRight className='h-4 w-4' />
-                            </Button>
-                        </div>
+                        <ListPagination
+                            page={pagination.page}
+                            totalPages={pagination.totalPages}
+                            onPageChange={(nextPage) => setPagination({ ...pagination, page: nextPage })}
+                            className='mb-4'
+                        />
                     )}
                     <div className='grid grid-cols-1 gap-6'>
                         {logs.map((log) => (

@@ -55,6 +55,7 @@ import axios from 'axios';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 export interface SubdomainSpellMapping {
     spell_id: number;
@@ -597,31 +598,12 @@ export default function AdminSubdomainsPage() {
             ) : domains.length > 0 ? (
                 <>
                     {pagination.totalPages > 1 && (
-                        <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={page === 1}
-                                onClick={() => patchFilters({ page: page - 1 })}
-                                className='gap-1.5'
-                            >
-                                <ChevronLeft className='h-4 w-4' />
-                                {t('common.previous')}
-                            </Button>
-                            <span className='text-sm font-medium'>
-                                {page} / {pagination.totalPages}
-                            </span>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={page === pagination.totalPages}
-                                onClick={() => patchFilters({ page: page + 1 })}
-                                className='gap-1.5'
-                            >
-                                {t('common.next')}
-                                <ChevronRight className='h-4 w-4' />
-                            </Button>
-                        </div>
+                        <ListPagination
+                            page={page}
+                            totalPages={pagination.totalPages}
+                            onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                            className='mb-4'
+                        />
                     )}
                     <div className='grid grid-cols-1 gap-4'>
                         <WidgetRenderer widgets={getWidgets('admin-subdomains', 'before-list')} />

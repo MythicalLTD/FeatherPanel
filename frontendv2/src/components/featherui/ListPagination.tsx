@@ -15,12 +15,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { reportPanelInteraction } from '@/lib/panel-analytics';
-import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { Button } from '@/components/featherui/Button';
-import { Input } from '@/components/featherui/Input';
+import { reportPanelInteraction } from '@/lib/panel-analytics';
 import { cn } from '@/lib/utils';
 
 interface ListPaginationProps {
@@ -29,91 +26,145 @@ interface ListPaginationProps {
     disabled?: boolean;
     onPageChange: (page: number) => void;
     className?: string;
+    /** When given, shows "Showing 21 to 40 of 312" on wider screens. */
+    totalItems?: number;
+    pageSize?: number;
 }
 
-export function ListPagination({ page, totalPages, disabled, onPageChange, className }: ListPaginationProps) {
+type PageItem = number | 'gap-start' | 'gap-end';
+
+/** First, last, current ± `siblings`, with an ellipsis for each hidden run (never hides a single page). */
+export function getPageItems(page: number, totalPages: number, siblings = 1): PageItem[] {
+    const window = siblings * 2 + 5; // first + last + current + siblings + 2 gaps
+    if (totalPages <= window) return Array.from({ length: totalPages }, (_, i) => i + 1);
+
+    const start = Math.max(2, page - siblings);
+    const end = Math.min(totalPages - 1, page + siblings);
+    const showStartGap = start > 3;
+    const showEndGap = end < totalPages - 2;
+
+    const items: PageItem[] = [1];
+    if (showStartGap) items.push('gap-start');
+    else for (let p = 2; p < start; p++) items.push(p);
+    for (let p = start; p <= end; p++) items.push(p);
+    if (showEndGap) items.push('gap-end');
+    else for (let p = end + 1; p < totalPages; p++) items.push(p);
+    items.push(totalPages);
+
+    // Keep the row a constant width while paging: pad the side without a gap.
+    if (!showStartGap && showEndGap) {
+        for (let p = end + 1; items.length < window; p++) items.splice(items.length - 2, 0, p);
+    } else if (showStartGap && !showEndGap) {
+        for (let p = start - 1; items.length < window; p--) items.splice(2, 0, p);
+    }
+    return items;
+}
+
+const navButton =
+    'inline-flex h-9 min-w-9 items-center justify-center gap-1 rounded-lg px-2.5 text-sm font-medium transition-colors focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-40';
+
+export function ListPagination({
+    page,
+    totalPages,
+    disabled,
+    onPageChange,
+    className,
+    totalItems,
+    pageSize,
+}: ListPaginationProps) {
     const { t } = useTranslation();
-    const [pageInput, setPageInput] = useState(String(page));
-
-    useEffect(() => {
-        setPageInput(String(page));
-    }, [page]);
-
-    const clampPage = (value: number) => Math.min(Math.max(1, value), totalPages);
-
-    const commitPageInput = () => {
-        const parsed = Number.parseInt(pageInput, 10);
-        if (Number.isNaN(parsed)) {
-            setPageInput(String(page));
-            return;
-        }
-
-        const nextPage = clampPage(parsed);
-        setPageInput(String(nextPage));
-        if (nextPage !== page) {
-            reportPanelInteraction('panel.pagination', 'jump');
-            onPageChange(nextPage);
-        }
-    };
 
     if (totalPages <= 1) {
         return null;
     }
 
+    const go = (target: number, kind: 'previous' | 'next' | 'jump') => {
+        const next = Math.min(Math.max(1, target), totalPages);
+        if (next === page || disabled) return;
+        reportPanelInteraction('panel.pagination', kind);
+        onPageChange(next);
+    };
+
+    const showSummary = typeof totalItems === 'number' && typeof pageSize === 'number' && pageSize > 0;
+    const from = showSummary ? (page - 1) * pageSize! + 1 : 0;
+    const to = showSummary ? Math.min(page * pageSize!, totalItems!) : 0;
+
     return (
-        <div
-            className={cn(
-                'border-border bg-card/50 flex flex-wrap items-center justify-between gap-4 rounded-xl border px-4 py-3',
-                className,
-            )}
+        <nav
+            aria-label={t('common.pagination.label')}
+            className={cn('flex items-center justify-between gap-3', !showSummary && 'justify-center', className)}
         >
-            <Button
-                variant='outline'
-                size='sm'
-                disabled={disabled || page <= 1}
-                onClick={() => {
-                    reportPanelInteraction('panel.pagination', 'previous');
-                    onPageChange(page - 1);
-                }}
-                className='gap-1.5'
-            >
-                <ChevronLeft className='h-4 w-4' />
-                {t('common.previous')}
-            </Button>
+            {showSummary && (
+                <p className='text-muted-foreground hidden text-sm sm:block'>
+                    {t('common.pagination.showing', {
+                        from: String(from),
+                        to: String(to),
+                        total: String(totalItems),
+                    })}
+                </p>
+            )}
 
-            <div className='flex items-center gap-2'>
-                <Input
-                    type='number'
-                    min={1}
-                    max={totalPages}
-                    value={pageInput}
-                    disabled={disabled}
-                    onChange={(e) => setPageInput(e.target.value)}
-                    onBlur={commitPageInput}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                            commitPageInput();
-                        }
-                    }}
-                    className='h-9 w-16 text-center'
-                    aria-label={t('common.pagination.page', { current: String(page), total: String(totalPages) })}
-                />
-                <span className='text-sm font-medium'>{`/ ${totalPages}`}</span>
+            <div className='fp-surface flex w-full items-center justify-between gap-1 rounded-xl border p-1 sm:w-auto sm:justify-start'>
+                <button
+                    type='button'
+                    className={cn(navButton, 'hover:bg-accent text-muted-foreground hover:text-foreground')}
+                    disabled={disabled || page <= 1}
+                    onClick={() => go(page - 1, 'previous')}
+                    aria-label={t('common.pagination.previousPage')}
+                >
+                    <ChevronLeft className='h-4 w-4' />
+                    <span className='hidden pr-1 md:inline'>{t('common.previous')}</span>
+                </button>
+
+                {/* Phones: compact "Page 3 of 12" */}
+                <span className='text-muted-foreground px-2 text-sm tabular-nums sm:hidden' aria-live='polite'>
+                    {t('common.pagination.page', { current: String(page), total: String(totalPages) })}
+                </span>
+
+                <ul className='hidden items-center gap-1 sm:flex'>
+                    {getPageItems(page, totalPages).map((item) =>
+                        typeof item === 'number' ? (
+                            <li key={item}>
+                                <button
+                                    type='button'
+                                    className={cn(
+                                        navButton,
+                                        'tabular-nums',
+                                        item === page
+                                            ? 'bg-primary text-primary-foreground shadow-sm'
+                                            : 'hover:bg-accent text-foreground/80 hover:text-foreground',
+                                    )}
+                                    aria-current={item === page ? 'page' : undefined}
+                                    aria-label={t('common.pagination.goToPage', { page: String(item) })}
+                                    disabled={disabled && item !== page}
+                                    onClick={() => go(item, 'jump')}
+                                >
+                                    {item}
+                                </button>
+                            </li>
+                        ) : (
+                            <li
+                                key={item}
+                                aria-hidden
+                                className='text-muted-foreground flex h-9 w-6 items-center justify-center'
+                            >
+                                <MoreHorizontal className='h-4 w-4' />
+                            </li>
+                        ),
+                    )}
+                </ul>
+
+                <button
+                    type='button'
+                    className={cn(navButton, 'hover:bg-accent text-muted-foreground hover:text-foreground')}
+                    disabled={disabled || page >= totalPages}
+                    onClick={() => go(page + 1, 'next')}
+                    aria-label={t('common.pagination.nextPage')}
+                >
+                    <span className='hidden pl-1 md:inline'>{t('common.next')}</span>
+                    <ChevronRight className='h-4 w-4' />
+                </button>
             </div>
-
-            <Button
-                variant='outline'
-                size='sm'
-                disabled={disabled || page >= totalPages}
-                onClick={() => {
-                    reportPanelInteraction('panel.pagination', 'next');
-                    onPageChange(page + 1);
-                }}
-                className='gap-1.5'
-            >
-                {t('common.next')}
-                <ChevronRight className='h-4 w-4' />
-            </Button>
-        </div>
+        </nav>
     );
 }

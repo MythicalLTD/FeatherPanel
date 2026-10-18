@@ -1647,7 +1647,11 @@
 		"actions": "Actions",
 		"pagination": {
 			"showing": "Showing {from} to {to} of {total} results",
-			"page": "Page {current} of {total}"
+			"page": "Page {current} of {total}",
+			"label": "Pagination",
+			"previousPage": "Previous page",
+			"nextPage": "Next page",
+			"goToPage": "Go to page {page}"
 		},
 		"primary": "Primary",
 		"active": "Active",

@@ -38,8 +38,6 @@ import {
     Loader2,
     Search as SearchIcon,
     Box,
-    ChevronLeft,
-    ChevronRight,
     HardDrive,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsTrigger } from '@/components/ui/tabs';
@@ -81,6 +79,7 @@ import {
 } from './types';
 import { safeBack } from '@/lib/safe-back';
 import { Sensitive } from '@/components/common/Sensitive';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 const initialFormData: ServerFormData = {
     name: '',
@@ -1254,35 +1253,13 @@ export default function EditServerPage() {
                         </div>
 
                         {ownerPagination.total_pages > 1 && (
-                            <div className='border-border bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!ownerPagination.has_prev}
-                                    onClick={() =>
-                                        setOwnerPagination((prev) => ({ ...prev, current_page: prev.current_page - 1 }))
-                                    }
-                                    className='h-8 gap-1'
-                                >
-                                    <ChevronLeft className='h-3 w-3' />
-                                    {t('common.previous')}
-                                </Button>
-                                <span className='text-xs font-medium'>
-                                    {ownerPagination.current_page} / {ownerPagination.total_pages}
-                                </span>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!ownerPagination.has_next}
-                                    onClick={() =>
-                                        setOwnerPagination((prev) => ({ ...prev, current_page: prev.current_page + 1 }))
-                                    }
-                                    className='h-8 gap-1'
-                                >
-                                    {t('common.next')}
-                                    <ChevronRight className='h-3 w-3' />
-                                </Button>
-                            </div>
+                            <ListPagination
+                                page={ownerPagination.current_page}
+                                totalPages={ownerPagination.total_pages}
+                                onPageChange={(nextPage) =>
+                                    setOwnerPagination((prev) => ({ ...prev, current_page: nextPage }))
+                                }
+                            />
                         )}
 
                         <div className='max-h-[calc(100vh-300px)] space-y-2 overflow-y-auto'>
@@ -1399,41 +1376,16 @@ export default function EditServerPage() {
                         </div>
 
                         {realmPagination.total_pages > 1 && (
-                            <div className='border-border bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!realmPagination.has_prev}
-                                    onClick={() =>
-                                        setRealmPagination((prev) => ({
-                                            ...prev,
-                                            current_page: prev.current_page - 1,
-                                        }))
-                                    }
-                                    className='h-8 gap-1'
-                                >
-                                    <ChevronLeft className='h-3 w-3' />
-                                    {t('common.previous')}
-                                </Button>
-                                <span className='text-xs font-medium'>
-                                    {realmPagination.current_page} / {realmPagination.total_pages}
-                                </span>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!realmPagination.has_next}
-                                    onClick={() =>
-                                        setRealmPagination((prev) => ({
-                                            ...prev,
-                                            current_page: prev.current_page + 1,
-                                        }))
-                                    }
-                                    className='h-8 gap-1'
-                                >
-                                    {t('common.next')}
-                                    <ChevronRight className='h-3 w-3' />
-                                </Button>
-                            </div>
+                            <ListPagination
+                                page={realmPagination.current_page}
+                                totalPages={realmPagination.total_pages}
+                                onPageChange={(nextPage) =>
+                                    setRealmPagination((prev) => ({
+                                        ...prev,
+                                        current_page: nextPage,
+                                    }))
+                                }
+                            />
                         )}
 
                         <div className='max-h-[calc(100vh-300px)] space-y-2 overflow-y-auto'>

@@ -36,8 +36,6 @@ import {
     MailX,
     ShieldCheck,
     Search,
-    ChevronLeft,
-    ChevronRight,
     X,
     AlertCircle,
 } from 'lucide-react';
@@ -49,6 +47,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface BlockedRow {
     id: number;
@@ -377,35 +376,14 @@ export default function BlockedEmailDomainsPage() {
     const bottomWidgets = getWidgets(WIDGET_PAGE, 'bottom-of-page');
 
     const paginationBar = (
-        <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3 shadow-sm'>
-            <Button
-                variant='outline'
-                size='sm'
-                disabled={page <= 1 || loading}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className='gap-1.5'
-            >
-                <ChevronLeft className='h-4 w-4' />
-                {t('common.previous')}
-            </Button>
-            <span className='text-sm font-medium'>
-                {t('admin.blocked_email_domains.pagination', {
-                    total: String(total),
-                    page: String(page),
-                    pages: String(totalPages),
-                })}
-            </span>
-            <Button
-                variant='outline'
-                size='sm'
-                disabled={page >= totalPages || loading}
-                onClick={() => setPage((p) => p + 1)}
-                className='gap-1.5'
-            >
-                {t('common.next')}
-                <ChevronRight className='h-4 w-4' />
-            </Button>
-        </div>
+        <ListPagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={total}
+            pageSize={limit}
+            disabled={loading}
+            onPageChange={setPage}
+        />
     );
 
     const isFilteredEmpty = !loading && rows.length === 0 && debouncedSearch.length > 0;

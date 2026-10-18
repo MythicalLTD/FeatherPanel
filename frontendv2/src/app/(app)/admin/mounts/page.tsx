@@ -36,8 +36,9 @@ import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-import { HardDrive, Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { HardDrive, Plus, Search, Pencil, Trash2, RefreshCw } from 'lucide-react';
 import { Sensitive } from '@/components/common/Sensitive';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 export interface AdminMount {
     id: number;
@@ -431,29 +432,11 @@ export default function AdminMountsPage() {
             </div>
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={page === 1}
-                        onClick={() => patchFilters({ page: page - 1 })}
-                    >
-                        <ChevronLeft className='mr-1 h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm'>
-                        {page} / {pagination.totalPages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={page === pagination.totalPages}
-                        onClick={() => patchFilters({ page: page + 1 })}
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='ml-1 h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                />
             )}
 
             {loading ? (

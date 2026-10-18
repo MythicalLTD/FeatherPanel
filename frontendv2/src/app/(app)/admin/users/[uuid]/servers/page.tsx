@@ -47,6 +47,7 @@ import {
     Network,
 } from 'lucide-react';
 import { Sensitive } from '@/components/common/Sensitive';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface UserServersPagination {
     current_page: number;
@@ -268,31 +269,12 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                 ) : (
                     <>
                         {pagination.total_pages > 1 && (
-                            <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!pagination.has_prev}
-                                    onClick={() => changePage(pagination.current_page - 1)}
-                                    className='gap-1.5'
-                                >
-                                    <ChevronLeft className='h-4 w-4' />
-                                    {t('common.previous')}
-                                </Button>
-                                <span className='text-sm font-medium'>
-                                    {pagination.current_page} / {pagination.total_pages}
-                                </span>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!pagination.has_next}
-                                    onClick={() => changePage(pagination.current_page + 1)}
-                                    className='gap-1.5'
-                                >
-                                    {t('common.next')}
-                                    <ChevronRight className='h-4 w-4' />
-                                </Button>
-                            </div>
+                            <ListPagination
+                                page={pagination.current_page}
+                                totalPages={pagination.total_pages}
+                                onPageChange={(nextPage) => changePage(nextPage)}
+                                className='mb-4'
+                            />
                         )}
                         {servers.length === 0 ? (
                             <EmptyState
