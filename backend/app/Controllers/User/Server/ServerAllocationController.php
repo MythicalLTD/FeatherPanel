@@ -466,6 +466,98 @@ class ServerAllocationController
         ], 'Primary allocation updated successfully');
     }
 
+    #[OA\Patch(
+        path: '/api/user/servers/{uuidShort}/allocations/{allocationId}/notes',
+        summary: 'Update allocation note',
+        description: 'Set or clear the note the server\'s users keep on one of its allocations. The note is removed automatically when the allocation leaves the server.',
+        tags: ['User - Server Allocations'],
+        parameters: [
+            new OA\Parameter(name: 'uuidShort', in: 'path', description: 'Server short UUID', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'allocationId', in: 'path', description: 'Allocation ID', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'notes', type: 'string', nullable: true, maxLength: 255, description: 'Note text; empty or null clears it'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Note updated'),
+            new OA\Response(response: 400, description: 'Invalid note or allocation mismatch'),
+            new OA\Response(response: 403, description: 'Missing allocation.update permission'),
+            new OA\Response(response: 404, description: 'Server or allocation not found'),
+        ]
+    )]
+    public function updateAllocationNotes(Request $request, int $serverId, int $allocationId): Response
+    {
+        $user = $request->attributes->get('user');
+        if (!$user) {
+            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+        }
+
+        $server = Server::getServerById($serverId);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::ALLOCATION_UPDATE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
+        $allocation = Allocation::getById($allocationId);
+        if (!$allocation) {
+            return ApiResponse::error('Allocation not found', 'ALLOCATION_NOT_FOUND', 404);
+        }
+        if ((int) $allocation['server_id'] !== $serverId) {
+            return ApiResponse::error('Allocation does not belong to this server', 'ALLOCATION_MISMATCH', 400);
+        }
+
+        $body = json_decode($request->getContent(), true);
+        if (!is_array($body) || !array_key_exists('notes', $body)) {
+            return ApiResponse::error('Field "notes" is required (use null or an empty string to clear it)', 'MISSING_NOTES', 400);
+        }
+
+        $notes = $body['notes'];
+        if ($notes !== null && !is_string($notes)) {
+            return ApiResponse::error('Notes must be a string or null', 'INVALID_NOTES', 400);
+        }
+        if ($notes !== null) {
+            if (!mb_check_encoding($notes, 'UTF-8')) {
+                return ApiResponse::error('Notes must be valid UTF-8 text', 'INVALID_NOTES', 400);
+            }
+            // Single line of plain text: fold line breaks and tabs, drop other control characters.
+            $notes = preg_replace('/[\r\n\t]+/u', ' ', $notes) ?? '';
+            $notes = preg_replace('/[\p{Cc}\p{Cf}]/u', '', $notes) ?? '';
+            $notes = trim($notes);
+            if (mb_strlen($notes) > Allocation::SERVER_NOTES_MAX_LENGTH) {
+                return ApiResponse::error('Notes can be at most ' . Allocation::SERVER_NOTES_MAX_LENGTH . ' characters', 'NOTES_TOO_LONG', 400);
+            }
+            if ($notes === '') {
+                $notes = null;
+            }
+        }
+
+        if (!Allocation::updateServerNotes($allocationId, $serverId, $notes)) {
+            return ApiResponse::error('Failed to update allocation note', 'ALLOCATION_NOTES_UPDATE_FAILED', 500);
+        }
+
+        $node = Node::getNodeById((int) $server['node_id']);
+        if ($node) {
+            $this->logActivity($server, $node, $notes === null ? 'allocation_note_cleared' : 'allocation_note_updated', [
+                'allocation_ip' => $allocation['ip'],
+                'allocation_port' => $allocation['port'],
+            ], $user);
+        }
+
+        return ApiResponse::success([
+            'allocation_id' => $allocationId,
+            'server_notes' => $notes,
+        ], $notes === null ? 'Allocation note cleared' : 'Allocation note saved');
+    }
+
     /**
      * Get available allocations for selection.
      */
