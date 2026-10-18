@@ -56,7 +56,8 @@ export type DashboardWidgetId =
     | 'quick_links'
     | 'clock'
     | 'players'
-    | 'heatmap';
+    | 'heatmap'
+    | 'trends';
 
 export type DashboardWidgetSize = 'small' | 'medium' | 'full';
 
@@ -138,6 +139,7 @@ export const WIDGET_SIZES: Record<DashboardWidgetId, DashboardWidgetSize[]> = {
     clock: ['small', 'medium'],
     players: ['small', 'medium', 'full'],
     heatmap: ['medium', 'full', 'small'],
+    trends: ['medium', 'full', 'small'],
 };
 
 export const SIZE_ORDER: DashboardWidgetSize[] = ['small', 'medium', 'full'];
@@ -167,6 +169,7 @@ export const DEFAULT_WIDGETS: DashboardWidgetPlacement[] = [
     place('attention'),
     place('servers', 'full'),
     place('usage'),
+    place('trends'),
     place('vds'),
     place('webspaces'),
     place('quick_actions'),

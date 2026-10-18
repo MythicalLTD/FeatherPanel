@@ -19,7 +19,7 @@ import { Button } from '@/components/featherui/Button';
 import { Play, Square, RotateCw, Skull, Loader2, Clock, Gamepad2, Server as ServerIcon } from 'lucide-react';
 import ServerAddressChip from '@/components/server/ServerAddressChip';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -52,6 +52,8 @@ interface ServerHeaderProps {
     onStop?: () => void;
     onRestart?: () => void;
     onKill?: () => void;
+    /** Optional 24 hour usage history shown above the power buttons. */
+    trend?: ReactNode;
 }
 
 export default function ServerHeader({
@@ -76,6 +78,7 @@ export default function ServerHeader({
     onStop,
     onRestart,
     onKill,
+    trend,
 }: ServerHeaderProps) {
     const { t } = useTranslation();
     const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -320,7 +323,14 @@ export default function ServerHeader({
                     </div>
                     {metaRow}
                 </div>
-                {powerButtons}
+                {trend ? (
+                    <div className='flex min-w-0 flex-col gap-3 lg:items-end'>
+                        <div className='w-full lg:w-80'>{trend}</div>
+                        {powerButtons}
+                    </div>
+                ) : (
+                    powerButtons
+                )}
             </div>
             {killDialog}
         </div>

@@ -465,6 +465,7 @@ export function DashboardServerGaugeCard({
     selectable = false,
     selected = false,
     onToggleSelect,
+    trend,
 }: {
     server: Server;
     live?: ServerLiveData;
@@ -476,6 +477,8 @@ export function DashboardServerGaugeCard({
     selectable?: boolean;
     selected?: boolean;
     onToggleSelect?: () => void;
+    /** Optional 24 hour history under the gauges. */
+    trend?: ReactNode;
 }) {
     const { t, status, accessible, href, powerButtons, usage } = useServerPresentation(server, live);
     const banner = server.spell?.banner;
@@ -592,6 +595,7 @@ export function DashboardServerGaugeCard({
                         percent={pct(usage.disk, usage.diskLimit)}
                     />
                 </div>
+                {trend}
                 <div className='mt-auto -mr-1.5 flex min-h-8 items-center justify-between gap-2'>
                     <span className='text-muted-foreground truncate text-xs'>
                         {uptime ? t('dashboard.home.gauges.up', { time: uptime }) : null}

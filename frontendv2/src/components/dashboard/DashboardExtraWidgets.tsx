@@ -29,7 +29,6 @@ import {
     Star,
     Trash2,
     Users,
-    type LucideIcon,
 } from 'lucide-react';
 
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -555,13 +554,3 @@ export function HeatmapWidget({ cells, loading }: { cells: HeatmapCell[]; loadin
         </section>
     );
 }
-
-export const EXTRA_WIDGET_ICONS: Record<string, LucideIcon> = {
-    pinned: Star,
-    recent: History,
-    notes: NotebookPen,
-    quick_links: Link2,
-    clock: Clock3,
-    players: Users,
-    heatmap: Flame,
-};

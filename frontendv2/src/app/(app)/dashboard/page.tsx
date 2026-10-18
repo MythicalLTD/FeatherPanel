@@ -54,6 +54,8 @@ import {
     RecentServersWidget,
     type HeatmapCell,
 } from '@/components/dashboard/DashboardExtraWidgets';
+import { TrendsWidget } from '@/components/dashboard/ResourceTrends';
+import { toSeries, useDashboardResourceHistory, type ServerTrendSeries } from '@/lib/resource-history';
 import {
     DashboardAttention,
     DashboardPanel,
@@ -283,6 +285,32 @@ export default function DashboardPage() {
             window.clearInterval(timer);
         };
     }, [modules.game]);
+
+    // 24 hour history, only fetched when something on the dashboard shows it.
+    const wantsHistory =
+        modules.game &&
+        config.widgets.some((w) => w.id === 'trends' || (w.id === 'servers' && config.servers.view === 'grid'));
+    const { data: history, loading: loadingHistory } = useDashboardResourceHistory(wantsHistory);
+    const historyByShort = useMemo(() => {
+        const map = new Map<string, ServerTrendSeries>();
+        if (!history) return map;
+        for (const [uuidShort, points] of Object.entries(history.servers)) {
+            map.set(uuidShort, {
+                cpu: toSeries(points, history, 'cpu'),
+                memory: toSeries(points, history, 'memory'),
+            });
+        }
+        return map;
+    }, [history]);
+    const historyFor = useCallback((uuidShort: string) => historyByShort.get(uuidShort) ?? null, [historyByShort]);
+    const trendLimits = useMemo(() => {
+        const usage = overview?.servers.usage;
+        return {
+            cpu: usage && usage.unlimited.cpu === 0 ? usage.cpu_limit_percent : 0,
+            memory: usage && usage.unlimited.memory === 0 ? usage.memory_limit_bytes : 0,
+            disk: usage && usage.unlimited.disk === 0 ? usage.disk_limit_bytes : 0,
+        };
+    }, [overview]);
 
     const fetchTickets = useCallback(async () => {
         try {
@@ -705,6 +733,7 @@ export default function DashboardPage() {
                 compact={compact}
                 wide={serversSize === 'full'}
                 connectServers={connectShown}
+                historyFor={historyFor}
             />
         );
 
@@ -838,7 +867,8 @@ export default function DashboardPage() {
         if (modules.vds) ids.push('vds');
         if (modules.web) ids.push('webspaces');
         if (modules.game || modules.vds || modules.web) ids.push('usage');
-        if (modules.game) ids.push('status', 'uptime', 'network', 'backups', 'schedules', 'players', 'heatmap');
+        if (modules.game)
+            ids.push('status', 'uptime', 'network', 'backups', 'schedules', 'players', 'heatmap', 'trends');
         ids.push('quick_actions', 'announcements', 'activity', 'notes', 'quick_links', 'clock');
         if (ticketsEnabled) ids.push('tickets');
         if (kbEnabled) ids.push('knowledgebase');
@@ -878,6 +908,8 @@ export default function DashboardPage() {
                 return <PlayersWidget items={overview?.servers.items ?? []} loading={loadingOverview} />;
             case 'heatmap':
                 return <HeatmapWidget cells={heatmapCells} loading={loadingResources} />;
+            case 'trends':
+                return <TrendsWidget history={history} loading={loadingHistory} limits={trendLimits} />;
             case 'stats':
                 return statsBlock;
             case 'attention':
