@@ -41,9 +41,7 @@ export function PidLimitDialog({ isOpen, onClose, server, onRestarted }: PidLimi
     const handleRestart = async () => {
         try {
             setRestarting(true);
-            await axios.post(`/api/user/servers/${server.uuidShort}/power`, {
-                action: 'restart',
-            });
+            await axios.post(`/api/user/servers/${server.uuidShort}/power/restart`);
 
             toast.success(t('features.pidLimit.serverRestarted'));
             if (onRestarted) onRestarted();
