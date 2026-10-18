@@ -27,6 +27,7 @@ use App\Chat\VmNode;
 use App\Chat\Database;
 use App\Chat\TimedTask;
 use App\Chat\VmInstance;
+use App\Routing\RouteCache;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
@@ -472,6 +473,8 @@ class DashboardController
     {
         try {
             Cache::clear();
+            // Compiled routes are rebuilt on the next request.
+            RouteCache::default()->clear();
 
             // Clear timed tasks because they are not cleared by the cache clear
             Database::runSQL('TRUNCATE TABLE `featherpanel_timed_tasks`');
