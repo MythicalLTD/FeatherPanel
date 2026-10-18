@@ -203,6 +203,9 @@ class ApiClientController
         if ($page < 1) {
             $page = 1;
         }
+        if ($limit < 1) {
+            $limit = 150;
+        }
 
         // Get user's API clients with pagination and search
         $apiClients = ApiClient::searchApiClients(
