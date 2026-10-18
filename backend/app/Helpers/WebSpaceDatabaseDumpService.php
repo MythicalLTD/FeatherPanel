@@ -104,7 +104,13 @@ class WebSpaceDatabaseDumpService
             }
 
             try {
-                RemoteDatabaseProvisioner::importDatabase($host, $name, $sql);
+                RemoteDatabaseProvisioner::importDatabase(
+                    $host,
+                    $name,
+                    $sql,
+                    (string) ($record['username'] ?? ''),
+                    (string) ($record['password'] ?? ''),
+                );
                 $results[] = ['database' => $name, 'file' => $file];
             } catch (\Throwable $e) {
                 $results[] = ['database' => $name, 'file' => $file, 'error' => $e->getMessage()];

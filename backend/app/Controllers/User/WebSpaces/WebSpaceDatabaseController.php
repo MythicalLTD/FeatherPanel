@@ -350,7 +350,15 @@ class WebSpaceDatabaseController
         }
 
         try {
-            RemoteDatabaseProvisioner::importDatabase($databaseHost, (string) $record['database'], $sql);
+            RemoteDatabaseProvisioner::importDatabase(
+                $databaseHost,
+                (string) $record['database'],
+                $sql,
+                (string) ($record['username'] ?? ''),
+                (string) ($record['password'] ?? ''),
+            );
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error('Restore failed: ' . $e->getMessage(), 'RESTORE_REJECTED', 400);
         } catch (\Throwable $e) {
             return ApiResponse::error('Restore failed: ' . $e->getMessage(), 'RESTORE_FAILED', 500);
         }
