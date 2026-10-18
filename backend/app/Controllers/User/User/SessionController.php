@@ -140,7 +140,7 @@ class SessionController
         $data = json_decode($request->getContent(), true);
 
         if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
-            if (!isset($data['turnstile_token']) || trim($data['turnstile_token']) === '') {
+            if (!isset($data['turnstile_token']) || !is_scalar($data['turnstile_token']) || trim((string) $data['turnstile_token']) === '') {
                 return ApiResponse::error('Captcha token is required', 'CAPTCHA_TOKEN_REQUIRED');
             }
             if (!CaptchaHelper::validate($data['turnstile_token'], CloudFlareRealIP::getRealIP())) {
@@ -745,27 +745,6 @@ class SessionController
         }
     }
 
-    /**
-     * Adds effective defaults for preferences that hold no stored value yet.
-     *
-     * `hide_server_ips` follows the administrator-wide setting until the user
-     * flips the switch themselves, so a global opt-in stays respected and GET
-     * and PATCH responses always agree.
-     *
-     * @param array $preferences the stored preferences
-     *
-     * @return array the preferences with defaults applied
-     */
-    private function applyPreferenceDefaults(array $preferences): array
-    {
-        if (!array_key_exists('hide_server_ips', $preferences)) {
-            $preferences['hide_server_ips'] =
-                App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_HIDE_IPS, 'false') === 'true';
-        }
-
-        return $preferences;
-    }
-
     #[OA\Get(
         path: '/api/user/preferences',
         summary: 'Get user preferences',
@@ -1259,5 +1238,26 @@ class SessionController
             'signature' => $signature,
             'api_key' => $apiKey,
         ], 'API key signed successfully', 200);
+    }
+
+    /**
+     * Adds effective defaults for preferences that hold no stored value yet.
+     *
+     * `hide_server_ips` follows the administrator-wide setting until the user
+     * flips the switch themselves, so a global opt-in stays respected and GET
+     * and PATCH responses always agree.
+     *
+     * @param array $preferences the stored preferences
+     *
+     * @return array the preferences with defaults applied
+     */
+    private function applyPreferenceDefaults(array $preferences): array
+    {
+        if (!array_key_exists('hide_server_ips', $preferences)) {
+            $preferences['hide_server_ips'] =
+                App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_HIDE_IPS, 'false') === 'true';
+        }
+
+        return $preferences;
     }
 }
