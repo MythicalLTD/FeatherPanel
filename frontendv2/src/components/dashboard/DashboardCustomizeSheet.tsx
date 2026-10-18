@@ -62,6 +62,7 @@ export const WIDGET_LABEL_KEYS: Record<DashboardWidgetId, string> = {
     clock: 'dashboard.widgets.names.clock',
     players: 'dashboard.widgets.names.players',
     heatmap: 'dashboard.widgets.names.heatmap',
+    trends: 'dashboard.widgets.names.trends',
 };
 
 export const WIDGET_DESCRIPTION_KEYS: Record<DashboardWidgetId, string> = {
@@ -91,6 +92,7 @@ export const WIDGET_DESCRIPTION_KEYS: Record<DashboardWidgetId, string> = {
     clock: 'dashboard.widgets.descriptions.clock',
     players: 'dashboard.widgets.descriptions.players',
     heatmap: 'dashboard.widgets.descriptions.heatmap',
+    trends: 'dashboard.widgets.descriptions.trends',
 };
 
 const SIZE_LABEL_KEYS: Record<DashboardWidgetSize, string> = {

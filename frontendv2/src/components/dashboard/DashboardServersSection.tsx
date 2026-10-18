@@ -34,6 +34,8 @@ import {
 import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
 import { serversApi } from '@/lib/servers-api';
+import { getServerCpuLimit, getServerMemoryLimit } from '@/lib/server-utils';
+import type { ServerTrendSeries } from '@/lib/resource-history';
 import type { Server as ServerData } from '@/types/server';
 import type { ServerLiveData } from '@/hooks/useServersWebSocket';
 import type { DashboardServerOptions, DashboardServerSort, DashboardServerView } from '@/hooks/useDashboardConfig';
@@ -45,6 +47,7 @@ import {
 } from '@/components/dashboard/DashboardResourceRows';
 import { formatUptime } from '@/components/dashboard/DashboardWidgets';
 import { BulkServerActions } from '@/components/servers/BulkServerActions';
+import { ResourceTrendStrip } from '@/components/dashboard/ResourceTrends';
 
 const RECENT_SERVERS_KEY = 'featherpanel_recent_servers_v1';
 
@@ -203,6 +206,8 @@ export interface DashboardServersSectionProps {
     /** Wide placement: more cards per row. */
     wide: boolean;
     connectServers: (uuidShorts: string[]) => void;
+    /** Last 24 hours of CPU and RAM per server, when history is available. */
+    historyFor?: (uuidShort: string) => ServerTrendSeries | null;
 }
 
 /** "Your servers": search, filter chips, scope, select mode, folders, view and sort, then the servers. */
@@ -219,6 +224,7 @@ export function DashboardServersSection({
     compact,
     wide,
     connectServers,
+    historyFor,
 }: DashboardServersSectionProps) {
     const { t } = useTranslation();
     const [search, setSearch] = useState('');
@@ -353,6 +359,7 @@ export function DashboardServersSection({
 
     const card = (s: ServerData) => {
         const uptimeMs = uptimeFor(s);
+        const history = historyFor?.(s.uuidShort);
         return (
             <DashboardServerGaugeCard
                 key={s.uuid}
@@ -366,6 +373,16 @@ export function DashboardServersSection({
                 selectable={selecting}
                 selected={selected.includes(s.uuidShort)}
                 onToggleSelect={() => toggleSelected(s.uuidShort)}
+                trend={
+                    history ? (
+                        <ResourceTrendStrip
+                            cpu={history.cpu}
+                            memory={history.memory}
+                            cpuLimit={getServerCpuLimit(s)}
+                            memoryLimit={getServerMemoryLimit(s)}
+                        />
+                    ) : null
+                }
             />
         );
     };

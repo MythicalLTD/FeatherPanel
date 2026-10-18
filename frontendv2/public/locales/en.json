@@ -1962,7 +1962,8 @@
 				"quick_links": "Quick links",
 				"clock": "Clock",
 				"players": "Players online",
-				"heatmap": "Resource heatmap"
+				"heatmap": "Resource heatmap",
+				"trends": "Resource trends"
 			},
 			"descriptions": {
 				"stats": "Counts of your servers, VDS, web spaces and tickets.",
@@ -1990,7 +1991,8 @@
 				"quick_links": "Your own links to sites and panel pages.",
 				"clock": "The time and date in your time zone.",
 				"players": "Who is playing on your running game servers.",
-				"heatmap": "Every server as a tile coloured by how busy it is."
+				"heatmap": "Every server as a tile coloured by how busy it is.",
+				"trends": "Total CPU, RAM and disk across your servers over the last 24 hours."
 			},
 			"usage": {
 				"title": "Resource usage",
@@ -2179,6 +2181,20 @@
 			"none_others": "No servers here.",
 			"clear_filters": "Clear search and filter",
 			"more": "Show all servers (another {count})"
+		},
+		"trends": {
+			"last_24h": "Last 24 hours",
+			"cpu_24h": "CPU, 24h",
+			"ram_24h": "RAM, 24h",
+			"peak": "Peak {value}",
+			"peak_label": "Peak",
+			"average": "Average",
+			"now": "Now",
+			"ago_24h": "24h ago",
+			"ago_12h": "12h ago",
+			"scale": "Scale: up to {limit}",
+			"chart_label": "{metric} over the last 24 hours: peak {peak}, average {average}",
+			"empty": "History builds up while your servers run. Check back in a few minutes."
 		}
 	},
 	"account": {

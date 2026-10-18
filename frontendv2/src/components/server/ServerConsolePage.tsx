@@ -45,6 +45,8 @@ import { toast } from 'sonner';
 import { copyToClipboard } from '@/lib/utils';
 import { getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { resolveServerSpellBannerStyle } from '@/lib/server-spell-banner';
+import { useServerResourceHistory } from '@/lib/resource-history';
+import { ResourceTrendStrip } from '@/components/dashboard/ResourceTrends';
 
 interface WingsStats {
     uptime?: number;
@@ -95,6 +97,7 @@ export default function ServerConsolePage() {
     const params = useParams();
     const searchParams = useSearchParams();
     const serverUuid = params.uuidShort as string;
+    const { series: history } = useServerResourceHistory(serverUuid);
     const terminalRef = useRef<ServerTerminalRef>(null);
     const pendingActionResolveRef = useRef<(() => void) | null>(null);
     const hasRequestedLogsRef = useRef(false);
@@ -810,6 +813,17 @@ export default function ServerConsolePage() {
                 onStop={() => handlePowerAction('stop')}
                 onRestart={() => handlePowerAction('restart')}
                 onKill={() => handlePowerAction('kill')}
+                trend={
+                    history ? (
+                        <ResourceTrendStrip
+                            cpu={history.cpu}
+                            memory={history.memory}
+                            cpuLimit={server.cpu || 0}
+                            memoryLimit={(server.memory || 0) * 1024 * 1024}
+                            size='header'
+                        />
+                    ) : null
+                }
             />
 
             <PluginSlot id='toolbar.server-header' showActions className='w-full' />
