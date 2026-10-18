@@ -20,7 +20,11 @@ import { useNotifications } from '@/contexts/NotificationContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import type { Notification } from '@/types/notification';
 import { cn } from '@/lib/utils';
-import ReactMarkdown from 'react-markdown';
+import dynamic from 'next/dynamic';
+
+// Markdown renderer is only needed when an announcement is actually shown; keep it out of the
+// dashboard and server layout bundles.
+const ReactMarkdown = dynamic(() => import('react-markdown'));
 
 export function AnnouncementBanner({ serverId }: { serverId?: number | null } = {}) {
     const { notifications, dismissNotification } = useNotifications();

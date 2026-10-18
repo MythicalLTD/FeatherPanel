@@ -24,6 +24,11 @@ import localFont from 'next/font/local';
  * a weight range. Regenerate with: node scripts/vendor-panel-fonts.mjs
  *
  * next/font requires each localFont() call to be a module-scope const (no wrappers).
+ *
+ * Only the default family (Inter) is preloaded. Every other family has
+ * `preload: false`: its @font-face is still registered, so the browser fetches
+ * the files on demand the first time a user picks that font, instead of every
+ * page preloading ~40 font files nobody is using.
  */
 const inter = localFont({
     src: [
@@ -46,6 +51,7 @@ const nunito = localFont({
     ],
     variable: '--font-nunito',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -58,6 +64,7 @@ const poppins = localFont({
     ],
     variable: '--font-poppins',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -67,6 +74,7 @@ const roboto = localFont({
     style: 'normal',
     variable: '--font-roboto',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -76,6 +84,7 @@ const openSans = localFont({
     style: 'normal',
     variable: '--font-open-sans',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -85,6 +94,7 @@ const dmSans = localFont({
     style: 'normal',
     variable: '--font-dm-sans',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -94,6 +104,7 @@ const outfit = localFont({
     style: 'normal',
     variable: '--font-outfit',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -103,6 +114,7 @@ const spaceGrotesk = localFont({
     style: 'normal',
     variable: '--font-space-grotesk',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -112,6 +124,7 @@ const manrope = localFont({
     style: 'normal',
     variable: '--font-manrope',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -122,6 +135,7 @@ const lato = localFont({
     ],
     variable: '--font-lato',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -131,6 +145,7 @@ const montserrat = localFont({
     style: 'normal',
     variable: '--font-montserrat',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -140,6 +155,7 @@ const raleway = localFont({
     style: 'normal',
     variable: '--font-raleway',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -149,6 +165,7 @@ const workSans = localFont({
     style: 'normal',
     variable: '--font-work-sans',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -158,6 +175,7 @@ const lexend = localFont({
     style: 'normal',
     variable: '--font-lexend',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -167,6 +185,7 @@ const figtree = localFont({
     style: 'normal',
     variable: '--font-figtree',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -176,6 +195,7 @@ const sora = localFont({
     style: 'normal',
     variable: '--font-sora',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -185,6 +205,7 @@ const plusJakarta = localFont({
     style: 'normal',
     variable: '--font-plus-jakarta',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -194,6 +215,7 @@ const ibmPlexSans = localFont({
     style: 'normal',
     variable: '--font-ibm-plex-sans',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -206,6 +228,7 @@ const firaSans = localFont({
     ],
     variable: '--font-fira-sans',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -215,6 +238,7 @@ const rubik = localFont({
     style: 'normal',
     variable: '--font-rubik',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -226,6 +250,7 @@ const ubuntu = localFont({
     ],
     variable: '--font-ubuntu',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -235,6 +260,7 @@ const quicksand = localFont({
     style: 'normal',
     variable: '--font-quicksand',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -244,6 +270,7 @@ const archivo = localFont({
     style: 'normal',
     variable: '--font-archivo',
     display: 'swap',
+    preload: false,
     fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 });
 
@@ -253,6 +280,7 @@ const jetbrainsMono = localFont({
     style: 'normal',
     variable: '--font-jetbrains-mono',
     display: 'swap',
+    preload: false,
     fallback: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
 });
 
@@ -262,6 +290,7 @@ const firaCode = localFont({
     style: 'normal',
     variable: '--font-fira-code',
     display: 'swap',
+    preload: false,
     fallback: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
 });
 
@@ -274,6 +303,7 @@ const ibmPlexMono = localFont({
     ],
     variable: '--font-ibm-plex-mono',
     display: 'swap',
+    preload: false,
     fallback: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
 });
 
@@ -283,6 +313,7 @@ const sourceSerif = localFont({
     style: 'normal',
     variable: '--font-source-serif',
     display: 'swap',
+    preload: false,
     fallback: ['Georgia', 'Cambria', 'Times New Roman', 'serif'],
 });
 
@@ -292,6 +323,7 @@ const merriweather = localFont({
     style: 'normal',
     variable: '--font-merriweather',
     display: 'swap',
+    preload: false,
     fallback: ['Georgia', 'Cambria', 'Times New Roman', 'serif'],
 });
 
@@ -301,6 +333,7 @@ const lora = localFont({
     style: 'normal',
     variable: '--font-lora',
     display: 'swap',
+    preload: false,
     fallback: ['Georgia', 'Cambria', 'Times New Roman', 'serif'],
 });
 
@@ -310,6 +343,7 @@ const playfair = localFont({
     style: 'normal',
     variable: '--font-playfair',
     display: 'swap',
+    preload: false,
     fallback: ['Georgia', 'Cambria', 'Times New Roman', 'serif'],
 });
 

@@ -22,7 +22,7 @@ import { useWingsWebSocket, type CommandSuggestResponse } from '@/hooks/useWings
 import ServerHeader from '@/components/server/ServerHeader';
 import ServerInfoCards from '@/components/server/ServerInfoCards';
 import ServerTerminal, { ServerTerminalRef, ConsoleFilterRule } from '@/components/server/ServerTerminal';
-import ServerPerformance from '@/components/server/ServerPerformance';
+import ServerPerformance from '@/components/server/ServerPerformanceLazy';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
