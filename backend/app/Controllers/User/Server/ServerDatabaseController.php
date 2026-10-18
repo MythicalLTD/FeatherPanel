@@ -408,6 +408,9 @@ class ServerDatabaseController
                 return ApiResponse::error("Missing required field: {$field}", 'MISSING_REQUIRED_FIELD', 400);
             }
         }
+        if (isset($body['remote']) && !is_string($body['remote'])) {
+            return ApiResponse::error('Remote must be a string', 'INVALID_DATA_TYPE', 400);
+        }
 
         // Get database host info
         $databaseHost = DatabaseInstance::getDatabaseById($body['database_host_id']);
@@ -595,6 +598,9 @@ class ServerDatabaseController
         // Prepare update data
         $updateData = [];
         if (isset($body['remote'])) {
+            if (!is_string($body['remote'])) {
+                return ApiResponse::error('Remote must be a string', 'INVALID_DATA_TYPE', 400);
+            }
             $updateData['remote'] = $body['remote'];
         }
         if (isset($body['max_connections'])) {
@@ -1567,6 +1573,9 @@ class ServerDatabaseController
         }
 
         $body = json_decode($request->getContent(), true);
+        if (isset($body['query']) && !is_string($body['query'])) {
+            return ApiResponse::error('Query must be a string', 'INVALID_DATA_TYPE', 400);
+        }
         $query = trim($body['query'] ?? '');
         if ($query === '') {
             return ApiResponse::error('Missing query', 'MISSING_QUERY', 400);
