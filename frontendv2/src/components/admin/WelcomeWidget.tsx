@@ -15,13 +15,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { UserPlus, HardDrive, CheckCircle2, AlertTriangle, Download, Server } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/featherui/Button';
-import { FormSection } from '@/components/featherui/FormSection';
 import { CreateServerAction } from './CreateServerAction';
 
 export interface WelcomeChip {
@@ -39,88 +40,126 @@ interface WelcomeWidgetProps {
 }
 
 const chipStyles = {
-    ok: 'text-emerald-700 dark:text-emerald-400',
-    warn: 'text-amber-800 dark:text-amber-400',
-    info: 'text-foreground',
-    neutral: 'text-muted-foreground',
+    ok: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+    warn: 'border-amber-500/25 bg-amber-500/10 text-amber-800 dark:text-amber-400',
+    info: 'border-primary/25 bg-primary/10 text-foreground',
+    neutral: 'border-border/60 bg-background/40 text-muted-foreground',
 };
 
+const NAME_MARK = '\u0000';
+
+function greetingKey(hour: number): string {
+    if (hour >= 5 && hour < 12) return 'dashboard.home.greeting_morning';
+    if (hour >= 12 && hour < 18) return 'dashboard.home.greeting_afternoon';
+    return 'dashboard.home.greeting_evening';
+}
+
+/** Admin home hero: greeting, panel version and health chips, and the main admin shortcuts. */
 export function WelcomeWidget({ version, chips = [], updateAvailable }: WelcomeWidgetProps) {
     const { user, isLoading: sessionLoading } = useSession();
     const { t } = useTranslation();
+    const { settings } = useSettings();
+    const [hour, setHour] = useState<number | null>(null);
+
+    useEffect(() => {
+        const update = () => setHour(new Date().getHours());
+        update();
+        const id = setInterval(update, 60_000);
+        return () => clearInterval(id);
+    }, []);
 
     const userLoading = sessionLoading && !user;
+    const name = user?.first_name?.trim() || user?.username?.trim() || '';
+    const [before, after] = name ? t(greetingKey(hour ?? 12), { name: NAME_MARK }).split(NAME_MARK) : ['', ''];
     const versionLoading = version === undefined;
-    const userName = user ? `${user.first_name} ${user.last_name}` : t('ui.components.admin.welcomeWidget.admin');
 
     return (
-        <FormSection className='space-y-3 p-4 sm:p-4'>
-            <div className='flex flex-col justify-between gap-4 xl:flex-row xl:items-center'>
-                <div className='max-w-2xl min-w-0 space-y-1.5'>
-                    <h2 className='text-sm font-semibold wrap-break-word'>
-                        {t('admin.welcome.welcome_back')}{' '}
-                        {userLoading ? (
+        <section className='fp-surface from-primary/25 via-primary/10 relative min-w-0 overflow-hidden rounded-2xl border bg-linear-to-br p-5 sm:p-6'>
+            <span
+                className='bg-primary/15 pointer-events-none absolute -top-24 -right-16 h-64 w-64 rounded-full blur-2xl'
+                aria-hidden
+            />
+            <div className='relative flex min-w-0 flex-col gap-5 lg:flex-row lg:items-end lg:justify-between'>
+                <div className='min-w-0'>
+                    <p className='text-muted-foreground truncate text-xs font-medium'>
+                        {settings?.app_name || t('admin.dashboard.title')}
+                    </p>
+                    <h1 className='mt-1 text-2xl font-semibold tracking-tight wrap-break-word sm:text-3xl'>
+                        {userLoading || hour === null ? (
                             <span
-                                className='bg-primary/20 inline-block h-[0.85em] w-36 animate-pulse rounded-md align-middle sm:w-44'
+                                className='bg-muted/50 inline-block h-8 w-64 animate-pulse rounded-md align-middle'
                                 aria-busy='true'
                             />
+                        ) : name ? (
+                            <>
+                                {before}
+                                <span className='text-primary'>{name}</span>
+                                {after}
+                            </>
                         ) : (
-                            <span className='wrap-break-word'>{userName}</span>
+                            t('dashboard.home.greeting_fallback')
                         )}
-                    </h2>
+                    </h1>
+                    <div className='mt-3 flex flex-wrap items-center gap-2 text-xs'>
+                        <span
+                            className={cn(
+                                'inline-flex items-center rounded-full border px-2.5 py-1',
+                                chipStyles.neutral,
+                            )}
+                        >
+                            {t('admin.welcome.running_version', {
+                                version: versionLoading ? t('common.loading') : version || t('common.unknown'),
+                            })}
+                        </span>
+                        {chips.map((chip) => {
+                            const Icon =
+                                chip.icon === 'warn'
+                                    ? AlertTriangle
+                                    : chip.icon === 'info'
+                                      ? Download
+                                      : chip.icon === 'nodes'
+                                        ? Server
+                                        : CheckCircle2;
+                            return (
+                                <span
+                                    key={chip.id}
+                                    className={cn(
+                                        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium',
+                                        chipStyles[chip.tone || 'neutral'],
+                                    )}
+                                >
+                                    <Icon className='h-3.5 w-3.5 shrink-0' aria-hidden />
+                                    <span>{chip.label}</span>
+                                </span>
+                            );
+                        })}
+                    </div>
                 </div>
 
-                <div className='flex flex-wrap items-center gap-2'>
+                <div className='flex shrink-0 flex-wrap items-center gap-2'>
                     <CreateServerAction />
                     <Button asChild variant='secondary' className='gap-2'>
                         <Link href='/admin/users/create'>
-                            <UserPlus className='h-3.5 w-3.5 shrink-0 md:h-4 md:w-4' />
+                            <UserPlus className='h-4 w-4 shrink-0' />
                             <span className='truncate'>{t('admin.welcome.add_user')}</span>
                         </Link>
                     </Button>
-                    <Button asChild variant='ghost' className='text-muted-foreground gap-2'>
+                    <Button asChild variant='secondary' className='gap-2'>
                         <Link href='/admin/nodes'>
-                            <HardDrive className='h-3.5 w-3.5 shrink-0 md:h-4 md:w-4' />
+                            <HardDrive className='h-4 w-4 shrink-0' />
                             <span className='truncate'>{t('admin.welcome.manage_nodes')}</span>
                         </Link>
                     </Button>
                     {updateAvailable && (
-                        <Link
-                            href='/admin/updates'
-                            className='inline-flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-amber-800 transition-colors hover:bg-amber-500/10 dark:text-amber-400'
-                        >
-                            <Download className='h-3.5 w-3.5 shrink-0 md:h-4 md:w-4' />
-                            <span className='truncate'>{t('admin.welcome.view_updates')}</span>
-                        </Link>
+                        <Button asChild variant='secondary' className='gap-2 text-amber-800 dark:text-amber-400'>
+                            <Link href='/admin/updates'>
+                                <Download className='h-4 w-4 shrink-0' />
+                                <span className='truncate'>{t('admin.welcome.view_updates')}</span>
+                            </Link>
+                        </Button>
                     )}
                 </div>
             </div>
-            <div className='flex flex-wrap items-center gap-x-5 gap-y-2 text-xs'>
-                <span className='text-muted-foreground'>
-                    {t('admin.welcome.running_version', {
-                        version: versionLoading ? t('common.loading') : version || t('common.unknown'),
-                    })}
-                </span>
-                {chips.map((chip) => {
-                    const Icon =
-                        chip.icon === 'warn'
-                            ? AlertTriangle
-                            : chip.icon === 'info'
-                              ? Download
-                              : chip.icon === 'nodes'
-                                ? Server
-                                : CheckCircle2;
-                    return (
-                        <span
-                            key={chip.id}
-                            className={cn('inline-flex items-center gap-1.5', chipStyles[chip.tone || 'neutral'])}
-                        >
-                            <Icon className='h-3.5 w-3.5 shrink-0' aria-hidden />
-                            <span>{chip.label}</span>
-                        </span>
-                    );
-                })}
-            </div>
-        </FormSection>
+        </section>
     );
 }

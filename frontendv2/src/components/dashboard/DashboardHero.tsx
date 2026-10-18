@@ -191,7 +191,7 @@ export function DashboardHero({ panelName, name, subtitle, subtitleTone = 'neutr
 
     return (
         <div className='grid min-w-0 gap-4 lg:grid-cols-3'>
-            <section className='border-primary/25 from-primary/25 via-primary/10 to-card/60 relative min-w-0 overflow-hidden rounded-2xl border bg-linear-to-br p-5 sm:p-6 lg:col-span-2'>
+            <section className='fp-surface from-primary/25 via-primary/10 relative min-w-0 overflow-hidden rounded-2xl border bg-linear-to-br p-5 sm:p-6 lg:col-span-2'>
                 <span
                     className='bg-primary/15 pointer-events-none absolute -top-24 -right-16 h-64 w-64 rounded-full blur-2xl'
                     aria-hidden
