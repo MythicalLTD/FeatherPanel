@@ -195,12 +195,12 @@ export default function SshKeysTab() {
 
     return (
         <div className='space-y-5'>
-            <div className='flex items-center justify-between'>
-                <div className='border-border/50 bg-muted/20 flex-1 rounded-xl border p-4'>
+            <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+                <div className='border-border/50 bg-muted/20 min-w-0 flex-1 rounded-xl border p-4'>
                     <h3 className='text-foreground text-lg font-semibold'>{t('account.sshKeys.title')}</h3>
                     <p className='text-muted-foreground mt-1 text-sm'>{t('account.sshKeys.description')}</p>
                 </div>
-                <div className='ml-3 flex gap-2'>
+                <div className='flex flex-wrap gap-2 sm:ml-3 sm:shrink-0 sm:justify-end'>
                     <Button onClick={fetchKeys} variant='outline' size='sm'>
                         <RefreshCw className='mr-2 h-4 w-4' />
                         {t('account.sshKeys.refresh')}
