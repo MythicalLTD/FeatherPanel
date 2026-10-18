@@ -1146,6 +1146,12 @@ class ServerUserController
         }
 
         // Validate and sanitize input
+        foreach (['name', 'description', 'startup', 'image'] as $field) {
+            if (isset($data[$field]) && !is_scalar($data[$field])) {
+                return ApiResponse::error("Field {$field} must be a string", 'INVALID_DATA_TYPE', 400);
+            }
+        }
+
         $updateData = [];
         $spellChanged = false;
         $oldSpellId = (int) $server['spell_id'];
