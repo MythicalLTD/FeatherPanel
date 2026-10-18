@@ -239,7 +239,7 @@ export default function RolesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-roles', 'after-header')} />
 
-            <div className='bg-card/50 border-border flex flex-col items-center gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -290,7 +290,7 @@ export default function RolesPage() {
                             <div
                                 key={role.id}
                                 className={cn(
-                                    'group bg-card/50 border-border/70 relative flex flex-col overflow-hidden rounded-2xl border shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-md',
+                                    'fp-surface group relative flex flex-col overflow-hidden rounded-2xl border transition-all hover:-translate-y-0.5 hover:shadow-md',
                                     isYours && 'ring-primary/30 ring-2',
                                 )}
                                 style={{ borderColor: `${role.color}44` }}

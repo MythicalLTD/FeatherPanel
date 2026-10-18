@@ -959,7 +959,7 @@ export default function CreateServerPage() {
             <WidgetRenderer widgets={getWidgets('admin-servers-create', 'after-header')} />
 
             {infraGate.status === 'blocked' && (
-                <div className='border-border/50 bg-card/70 mt-6 rounded-2xl border shadow-sm backdrop-blur-md'>
+                <div className='fp-surface mt-6 rounded-2xl border'>
                     <div className='flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6'>
                         <div className='flex min-w-0 flex-1 gap-3'>
                             <div className='bg-primary/12 text-primary ring-primary/20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1'>

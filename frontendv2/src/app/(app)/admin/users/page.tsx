@@ -449,7 +449,7 @@ export default function UsersPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-users', 'after-header')} />
 
-            <div className='bg-card/50 border-border flex flex-col gap-3 rounded-2xl border p-3 shadow-sm backdrop-blur-md sm:p-4'>
+            <div className='fp-surface flex flex-col gap-3 rounded-2xl border p-3 sm:p-4'>
                 <div className='group relative w-full min-w-0 flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
