@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Button } from '@/components/featherui/Button';
@@ -332,7 +332,7 @@ export default function TicketStatusesPage() {
                         onClearFilters={() => setSearchQuery('')}
                     />
                 ) : (
-                    <div className='grid grid-cols-1 gap-4'>
+                    <ResourceTable>
                         {filteredStatuses.map((status, index) => (
                             <ResourceCard
                                 key={status.id}
@@ -391,7 +391,7 @@ export default function TicketStatusesPage() {
                                 }
                             />
                         ))}
-                    </div>
+                    </ResourceTable>
                 )}
 
                 <Sheet open={createOpen} onOpenChange={setCreateOpen}>

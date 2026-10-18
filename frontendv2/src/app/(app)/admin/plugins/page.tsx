@@ -25,6 +25,7 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/featherui/EmptyState';
+import { DataTable, RowActionsMenu, StatusDot, TableIdentity } from '@/components/featherui/DataTable';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import {
     Dialog,
@@ -51,7 +52,6 @@ import {
     ChevronRight,
     Store,
     Download,
-    CheckCircle2,
     Loader2,
     EyeOff,
 } from 'lucide-react';
@@ -172,6 +172,53 @@ function updateVisibilityEntry(
         publicPages: update(payload.publicPages),
         uiPacks: update(payload.uiPacks),
     };
+}
+
+function PluginVersion({ plugin, update }: { plugin: Plugin; update?: PluginStoreUpdate }) {
+    return (
+        <span className='text-muted-foreground font-mono text-xs whitespace-nowrap'>
+            v{plugin.version || '?'}
+            {update?.update_available ? (
+                <span className='text-amber-600 dark:text-amber-400'> → v{update.latest_version}</span>
+            ) : null}
+        </span>
+    );
+}
+
+function PluginStatus({ plugin, update }: { plugin: Plugin; update?: PluginStoreUpdate }) {
+    const { t } = useTranslation();
+    const issues = [
+        ...(plugin.unmetDependencies ?? []).map((dep) => (
+            <Badge
+                key={`dep-${dep}`}
+                variant='outline'
+                className='border-amber-500/40 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-400'
+            >
+                {t('admin.plugins.grid.missing_badge', { dep })}
+            </Badge>
+        )),
+        ...(plugin.missingConfigs ?? []).map((cfg) => (
+            <Badge
+                key={`cfg-${String(cfg)}`}
+                variant='outline'
+                className='border-orange-500/40 bg-orange-500/10 text-[10px] text-orange-700 dark:text-orange-400'
+            >
+                {t('admin.plugins.grid.config_badge', { cfg: String(cfg) })}
+            </Badge>
+        )),
+    ];
+    return (
+        <div className='flex flex-wrap items-center gap-1.5'>
+            {!plugin.loaded ? (
+                <StatusDot tone='muted'>{t('admin.plugins.grid.not_loaded')}</StatusDot>
+            ) : update?.update_available ? (
+                <StatusDot tone='warning'>{t('admin.plugins.actions.update')}</StatusDot>
+            ) : (
+                <StatusDot tone='success'>{t('admin.plugins.table.active')}</StatusDot>
+            )}
+            {issues}
+        </div>
+    );
 }
 
 export default function PluginsPage() {
@@ -908,155 +955,124 @@ export default function PluginsPage() {
                     icon={Puzzle}
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3'>
-                    {filteredPlugins.map((plugin) => {
+                <DataTable
+                    rows={filteredPlugins}
+                    rowKey={(plugin) => plugin.identifier}
+                    onRowClick={(plugin) => router.push(`/admin/plugins/${encodeURIComponent(plugin.identifier)}`)}
+                    columns={[
+                        {
+                            key: 'plugin',
+                            header: t('admin.plugins.table.plugin'),
+                            className: 'w-[34%]',
+                            cell: (plugin) => (
+                                <div className='min-w-0'>
+                                    <TableIdentity
+                                        title={plugin.name || plugin.identifier}
+                                        subtitle={<span className='font-mono'>{plugin.identifier}</span>}
+                                        avatarUrl={plugin.icon}
+                                        icon={Puzzle}
+                                    />
+                                </div>
+                            ),
+                        },
+                        {
+                            key: 'version',
+                            header: t('admin.plugins.table.version'),
+                            cell: (plugin) => (
+                                <PluginVersion plugin={plugin} update={storeUpdates[plugin.identifier]} />
+                            ),
+                        },
+                        {
+                            key: 'author',
+                            header: t('admin.plugins.table.author'),
+                            cell: (plugin) => (
+                                <div className='text-muted-foreground flex min-w-0 items-center gap-2 text-xs'>
+                                    <span className='truncate'>
+                                        {plugin.author || t('admin.plugins.grid.author_unknown')}
+                                    </span>
+                                    {plugin.website ? (
+                                        <a
+                                            href={plugin.website}
+                                            target='_blank'
+                                            rel='noreferrer'
+                                            onClick={(e) => e.stopPropagation()}
+                                            className='text-primary inline-flex items-center gap-1 hover:underline'
+                                        >
+                                            <Globe className='h-3 w-3' />
+                                        </a>
+                                    ) : null}
+                                </div>
+                            ),
+                        },
+                        {
+                            key: 'status',
+                            header: t('admin.plugins.table.status'),
+                            cell: (plugin) => <PluginStatus plugin={plugin} update={storeUpdates[plugin.identifier]} />,
+                        },
+                    ]}
+                    mobileCard={(plugin) => (
+                        <div className='space-y-2.5'>
+                            <TableIdentity
+                                title={plugin.name || plugin.identifier}
+                                subtitle={<span className='font-mono'>{plugin.identifier}</span>}
+                                avatarUrl={plugin.icon}
+                                icon={Puzzle}
+                            />
+                            <p className='text-muted-foreground line-clamp-2 text-xs'>
+                                {plugin.description || t('admin.plugins.grid.no_description')}
+                            </p>
+                            <div className='flex flex-wrap items-center gap-3'>
+                                <PluginVersion plugin={plugin} update={storeUpdates[plugin.identifier]} />
+                                <PluginStatus plugin={plugin} update={storeUpdates[plugin.identifier]} />
+                            </div>
+                        </div>
+                    )}
+                    actions={(plugin) => {
                         const update = storeUpdates[plugin.identifier];
                         const needsUpdate = Boolean(update?.update_available);
-                        const hasIssue =
-                            (plugin.unmetDependencies && plugin.unmetDependencies.length > 0) ||
-                            (plugin.missingConfigs && plugin.missingConfigs.length > 0) ||
-                            !plugin.loaded;
                         const busy = installingUpdateId === plugin.identifier || bulkUpdatingPlugins;
-
                         return (
-                            <article
-                                key={plugin.identifier}
-                                className={cn(
-                                    'bg-card/80 flex flex-col overflow-hidden rounded-2xl shadow-sm ring-1 ring-transparent transition',
-                                    'hover:bg-card hover:shadow-md',
-                                    hasIssue ? 'ring-amber-500/30' : 'ring-border/40',
-                                )}
-                            >
-                                <div className='flex flex-1 flex-col space-y-3 p-4'>
-                                    <div className='flex items-start gap-3'>
-                                        <div className='bg-muted flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl'>
-                                            {plugin.icon ? (
-                                                // eslint-disable-next-line @next/next/no-img-element
-                                                <img src={plugin.icon} alt='' className='h-full w-full object-cover' />
-                                            ) : (
-                                                <Puzzle className='text-muted-foreground h-5 w-5' />
-                                            )}
-                                        </div>
-                                        <div className='min-w-0 flex-1'>
-                                            <h3 className='truncate text-sm font-semibold'>
-                                                {plugin.name || plugin.identifier}
-                                            </h3>
-                                            <p className='text-muted-foreground truncate font-mono text-[11px]'>
-                                                {plugin.identifier}
-                                            </p>
-                                        </div>
-                                        <div className='flex shrink-0 flex-col items-end gap-1'>
-                                            {needsUpdate ? (
-                                                <span className='rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400'>
-                                                    {t('admin.plugins.actions.update')}
-                                                </span>
-                                            ) : update ? (
-                                                <span className='text-muted-foreground inline-flex items-center gap-1 text-[10px]'>
-                                                    <CheckCircle2 className='h-3 w-3 text-emerald-500' />
-                                                    {t('admin.plugins.grid.current')}
-                                                </span>
-                                            ) : null}
-                                        </div>
-                                    </div>
-
-                                    <p className='text-muted-foreground line-clamp-2 min-h-10 text-xs'>
-                                        {plugin.description || t('admin.plugins.grid.no_description')}
-                                    </p>
-
-                                    <div className='text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 text-[11px]'>
-                                        <span>
-                                            v{plugin.version || '?'}
-                                            {needsUpdate ? (
-                                                <span className='text-amber-600 dark:text-amber-400'>
-                                                    {' '}
-                                                    → v{update?.latest_version}
-                                                </span>
-                                            ) : null}
-                                        </span>
-                                        <span className='truncate'>
-                                            {plugin.author || t('admin.plugins.grid.author_unknown')}
-                                        </span>
-                                        {plugin.website ? (
-                                            <a
-                                                href={plugin.website}
-                                                target='_blank'
-                                                rel='noreferrer'
-                                                className='text-primary inline-flex items-center gap-1 hover:underline'
-                                            >
-                                                {t('ui.admin.plugins.site')} <Globe className='h-3 w-3' />
-                                            </a>
-                                        ) : null}
-                                    </div>
-
-                                    {(plugin.unmetDependencies?.length ||
-                                        plugin.missingConfigs?.length ||
-                                        !plugin.loaded) && (
-                                        <div className='flex flex-wrap gap-1.5'>
-                                            {plugin.unmetDependencies?.map((dep) => (
-                                                <Badge
-                                                    key={dep}
-                                                    variant='outline'
-                                                    className='border-amber-500/40 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-400'
-                                                >
-                                                    {t('admin.plugins.grid.missing_badge', { dep })}
-                                                </Badge>
-                                            ))}
-                                            {plugin.missingConfigs?.map((cfg) => (
-                                                <Badge
-                                                    key={String(cfg)}
-                                                    variant='outline'
-                                                    className='border-orange-500/40 bg-orange-500/10 text-[10px] text-orange-700 dark:text-orange-400'
-                                                >
-                                                    {t('admin.plugins.grid.config_badge', { cfg: String(cfg) })}
-                                                </Badge>
-                                            ))}
-                                            {!plugin.loaded ? (
-                                                <Badge variant='secondary' className='text-[10px]'>
-                                                    {t('admin.plugins.grid.not_loaded')}
-                                                </Badge>
-                                            ) : null}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className='flex items-center gap-2 px-4 pb-4'>
+                            <>
+                                {needsUpdate ? (
                                     <Button
                                         size='sm'
-                                        variant='outline'
-                                        className='flex-1'
-                                        onClick={() =>
-                                            router.push(`/admin/plugins/${encodeURIComponent(plugin.identifier)}`)
-                                        }
+                                        disabled={busy || update?.can_download === false}
+                                        onClick={() => openUpdateDialog(plugin)}
                                     >
-                                        <Settings className='mr-1.5 h-3.5 w-3.5' />
-                                        {t('admin.plugins.actions.configure')}
+                                        {installingUpdateId === plugin.identifier ? (
+                                            <Loader2 className='mr-1.5 h-3.5 w-3.5 animate-spin' />
+                                        ) : (
+                                            <Download className='mr-1.5 h-3.5 w-3.5' />
+                                        )}
+                                        {t('admin.plugins.actions.update')}
                                     </Button>
-                                    {needsUpdate ? (
-                                        <Button
-                                            size='sm'
-                                            disabled={busy || update?.can_download === false}
-                                            onClick={() => openUpdateDialog(plugin)}
-                                        >
-                                            {installingUpdateId === plugin.identifier ? (
-                                                <Loader2 className='h-3.5 w-3.5 animate-spin' />
-                                            ) : (
-                                                <Download className='h-3.5 w-3.5' />
-                                            )}
-                                        </Button>
-                                    ) : null}
-                                    <Button
-                                        size='sm'
-                                        variant='ghost'
-                                        className='text-muted-foreground hover:text-destructive h-8 w-8 p-0'
-                                        onClick={() => requestUninstall(plugin)}
-                                    >
-                                        <Trash2 className='h-3.5 w-3.5' />
-                                    </Button>
-                                </div>
-                            </article>
+                                ) : null}
+                                <RowActionsMenu
+                                    items={[
+                                        {
+                                            label: t('admin.plugins.actions.configure'),
+                                            icon: Settings,
+                                            href: `/admin/plugins/${encodeURIComponent(plugin.identifier)}`,
+                                        },
+                                        {
+                                            label: t('ui.admin.plugins.site'),
+                                            icon: Globe,
+                                            hidden: !plugin.website,
+                                            onClick: () => window.open(plugin.website, '_blank', 'noopener'),
+                                        },
+                                        {
+                                            label: t('common.delete'),
+                                            icon: Trash2,
+                                            destructive: true,
+                                            separated: true,
+                                            onClick: () => requestUninstall(plugin),
+                                        },
+                                    ]}
+                                />
+                            </>
                         );
-                    })}
-                </div>
+                    }}
+                />
             )}
 
             <Sheet open={configDrawerOpen} onOpenChange={setConfigDrawerOpen} className='max-w-2xl'>

@@ -14,8 +14,18 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 'use client';
 
-import type { ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import type { ReactNode, ComponentType, MouseEvent } from 'react';
+import { MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/contexts/TranslationContext';
+import {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 
 export interface DataTableColumn<T> {
     key: string;
@@ -137,6 +147,130 @@ export function ColorPill({ color, children }: { color?: string | null; children
             style={{ backgroundColor: `${c}1f`, color: c, borderColor: `${c}40` }}
         >
             <span className='h-1.5 w-1.5 rounded-full' style={{ backgroundColor: c }} aria-hidden />
+            {children}
+        </span>
+    );
+}
+
+export interface RowAction {
+    label: string;
+    icon?: ComponentType<{ className?: string }>;
+    onClick?: () => void;
+    href?: string;
+    destructive?: boolean;
+    disabled?: boolean;
+    /** Draw a divider above this item. */
+    separated?: boolean;
+    hidden?: boolean;
+}
+
+/** Three-dot menu for a table row. */
+export function RowActionsMenu({ items }: { items: RowAction[] }) {
+    const { t } = useTranslation();
+    const router = useRouter();
+    const visible = items.filter((i) => !i.hidden);
+    if (visible.length === 0) return null;
+    return (
+        <DropdownMenu as='div' className='relative inline-block text-left'>
+            <DropdownMenuTrigger
+                aria-label={t('common.more_actions')}
+                title={t('common.more_actions')}
+                onClick={(e: MouseEvent) => e.stopPropagation()}
+                className='text-muted-foreground hover:text-foreground hover:bg-primary/10 focus-visible:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none'
+            >
+                <MoreHorizontal className='h-4 w-4' />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className='fp-surface min-w-44 border'>
+                {visible.map((item, i) => {
+                    const Icon = item.icon;
+                    const inner = (
+                        <>
+                            {Icon ? <Icon className='mr-2 h-4 w-4 shrink-0' /> : null}
+                            {item.label}
+                        </>
+                    );
+                    const cls = cn(item.destructive && 'text-destructive hover:text-destructive');
+                    return (
+                        <div key={item.label + i}>
+                            {item.separated && i > 0 ? <DropdownMenuSeparator /> : null}
+                            <DropdownMenuItem
+                                className={cls}
+                                disabled={item.disabled}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (item.href) router.push(item.href);
+                                    else item.onClick?.();
+                                }}
+                            >
+                                {inner}
+                            </DropdownMenuItem>
+                        </div>
+                    );
+                })}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
+/** First column of a row: avatar or icon, a title and a muted subtitle. */
+export function TableIdentity({
+    title,
+    subtitle,
+    avatarUrl,
+    icon: Icon,
+    fallback,
+    rounded = 'lg',
+}: {
+    title: ReactNode;
+    subtitle?: ReactNode;
+    avatarUrl?: string | null;
+    icon?: ComponentType<{ className?: string }>;
+    /** Initials shown when there is no avatar or icon. */
+    fallback?: string;
+    rounded?: 'lg' | 'full';
+}) {
+    return (
+        <div className='flex min-w-0 items-center gap-3'>
+            <div
+                className={cn(
+                    'fp-icon-tile flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden',
+                    rounded === 'full' ? 'rounded-full' : 'rounded-lg',
+                )}
+            >
+                {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatarUrl} alt='' className='h-full w-full object-cover' />
+                ) : Icon ? (
+                    <Icon className='text-primary h-4 w-4' />
+                ) : (
+                    <span className='text-primary text-xs font-semibold uppercase'>{fallback?.slice(0, 2)}</span>
+                )}
+            </div>
+            <div className='min-w-0'>
+                <div className='text-foreground truncate font-medium'>{title}</div>
+                {subtitle ? <div className='text-muted-foreground truncate text-xs'>{subtitle}</div> : null}
+            </div>
+        </div>
+    );
+}
+
+/** Small status dot with a label, for online/offline or active/suspended style columns. */
+export function StatusDot({
+    tone,
+    children,
+}: {
+    tone: 'success' | 'warning' | 'danger' | 'muted';
+    children: ReactNode;
+}) {
+    const dot = {
+        success: 'bg-emerald-500',
+        warning: 'bg-amber-500',
+        danger: 'bg-red-500',
+        muted: 'bg-muted-foreground/50',
+    }[tone];
+    return (
+        <span className='inline-flex items-center gap-2 text-xs font-medium whitespace-nowrap'>
+            <span className={cn('h-2 w-2 rounded-full', dot)} aria-hidden />
             {children}
         </span>
     );

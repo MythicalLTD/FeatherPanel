@@ -43,7 +43,7 @@ import {
     X,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
@@ -580,7 +580,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 </div>
             ) : (
                 // Normal Mode UI
-                <div className='grid grid-cols-1 gap-6'>
+                <ResourceTable>
                     {articles.map((article) => {
                         const IconComponent = ({ className }: { className?: string }) => (
                             <div
@@ -664,7 +664,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                             />
                         );
                     })}
-                </div>
+                </ResourceTable>
             )}
 
             {pagination.totalPages > 1 && !isReorderMode && (
