@@ -18,7 +18,9 @@
 namespace App\Controllers\System;
 
 use App\Helpers\ApiResponse;
+
 use OpenApi\Attributes as OA;
+use App\Runtime\RequestContext;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -58,9 +60,7 @@ class DebugController
             $headers[$name] = is_array($values) ? implode(', ', $values) : $values;
         }
 
-        if (defined('REQUEST_ID')) {
-            $headers['REQUEST_ID'] = REQUEST_ID;
-        }
+        $headers['REQUEST_ID'] = RequestContext::id();
 
         // Get relevant server variables
         $serverVars = [
@@ -76,7 +76,7 @@ class DebugController
             'SERVER_NAME' => $_SERVER['SERVER_NAME'] ?? '',
             'SERVER_ADDR' => $_SERVER['SERVER_ADDR'] ?? '',
             'HTTPS' => $_SERVER['HTTPS'] ?? '',
-            'REQUEST_ID' => defined('REQUEST_ID') ? REQUEST_ID : '',
+            'REQUEST_ID' => RequestContext::id(),
         ];
 
         return ApiResponse::success([

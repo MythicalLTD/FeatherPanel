@@ -20,11 +20,21 @@ namespace App\Helpers;
 use App\Chat\User;
 use App\Cache\Cache;
 use App\Chat\Permission;
+use App\Runtime\RequestContext;
 
 class PermissionHelper
 {
-    /** @var array<int, list<string>> Request-scoped permission node cache keyed by role_id */
+    /**
+     * Request-scoped memo of role permissions. The shared Cache entry (Redis or
+     * file, invalidated on every permission change) is the cross-process source;
+     * this memo only avoids repeated lookups within one request and is cleared
+     * when a new request starts, so a long-running FrankenPHP worker never keeps
+     * serving revoked permissions.
+     *
+     * @var array<int, list<string>> permission nodes keyed by role_id
+     */
     private static array $rolePermissionCache = [];
+    private static int $cacheGeneration = -1;
 
     /**
      * Checks if a user has a specific permission.
@@ -57,6 +67,10 @@ class PermissionHelper
             return [];
         }
 
+        if (self::$cacheGeneration !== RequestContext::generation()) {
+            self::resetRequestCache();
+        }
+
         if (isset(self::$rolePermissionCache[$roleId])) {
             return self::$rolePermissionCache[$roleId];
         }
@@ -74,9 +88,18 @@ class PermissionHelper
         ));
 
         self::$rolePermissionCache[$roleId] = $permissionNodes;
-        Cache::put($cacheKey, $permissionNodes, 5);
+        Cache::put($cacheKey, $permissionNodes, 1);
 
         return $permissionNodes;
+    }
+
+    /**
+     * Clear the request-scoped memo (called when a new request starts).
+     */
+    public static function resetRequestCache(): void
+    {
+        self::$rolePermissionCache = [];
+        self::$cacheGeneration = RequestContext::generation();
     }
 
     /**

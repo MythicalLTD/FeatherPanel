@@ -1,0 +1,11 @@
+# Classic mode: every request boots public/index.php.
+php_server {
+	root {$FEATHERPANEL_ROOT:/var/www/html}/public
+
+	# Also try <dir>/index.php (FrankenPHP's own php_server default) so
+	# directory-style URLs such as the Roundcube webmail under /webmail/
+	# resolve to that directory's index.php. Without it every
+	# subdirectory app falls through to the main router and returns
+	# API_ROUTE_NOT_FOUND.
+	try_files {path} {path}/index.php index.php
+}

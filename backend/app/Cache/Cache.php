@@ -29,10 +29,14 @@ use App\Config\ConfigInterface;
  */
 class Cache
 {
+    private const DRIVER_TTL = 30.0;
     protected static $cacheDir = \APP_CACHE_DIR . '/other';
     protected static $cacheExt = '.fpc';
     protected static $driver;
     protected static $redisInstance;
+
+    /** When the driver was resolved; re-resolved after DRIVER_TTL seconds in long-running workers. */
+    protected static float $driverResolvedAt = 0.0;
 
     /**
      * Stores a value in the cache with a specified expiration time.
@@ -81,13 +85,13 @@ class Cache
      */
     public static function forget($key)
     {
-        $driver = self::getDriver();
-
-        if ($driver === 'redis') {
+        if (self::getDriver() === 'redis') {
             self::forgetRedis($key);
-        } else {
-            self::forgetFile($key);
         }
+
+        // Always drop the file entry too: a thread that fell back to the file
+        // cache during a Redis outage must not keep serving a stale value.
+        self::forgetFile($key);
     }
 
     /**
@@ -151,6 +155,18 @@ class Cache
     }
 
     /**
+     * Re-resolve the cache driver now and then, so a long-running FrankenPHP
+     * worker picks up a changed cache_driver setting or a Redis that came back.
+     */
+    public static function resetForRequest(): void
+    {
+        if (self::$driver !== null && microtime(true) - self::$driverResolvedAt >= self::DRIVER_TTL) {
+            self::$driver = null;
+            self::$redisInstance = null;
+        }
+    }
+
+    /**
      * Gets the cache driver (file or redis) based on configuration.
      *
      * @return string the cache driver ('file' or 'redis')
@@ -173,7 +189,7 @@ class Cache
 
             // If Redis is requested, verify it's available
             if ($driver === 'redis') {
-                if (!defined('REDIS_ENABLED') || !REDIS_ENABLED) {
+                if (!$app->isRedisEnabled()) {
                     $app->getLogger()->warning('Redis cache requested but Redis is not enabled, falling back to file cache');
                     $driver = 'file';
                 } else {
@@ -195,6 +211,7 @@ class Cache
             }
 
             self::$driver = $driver;
+            self::$driverResolvedAt = microtime(true);
 
             return $driver;
         } catch (\Exception $e) {
@@ -215,7 +232,7 @@ class Cache
     protected static function putFile($key, $value, $minutes = 60)
     {
         if (!is_dir(self::$cacheDir)) {
-            mkdir(self::$cacheDir, 0777, true);
+            @mkdir(self::$cacheDir, 0777, true); // may race with a concurrent request
         }
         $filename = self::$cacheDir . '/' . md5($key) . self::$cacheExt;
         $data = [

@@ -17,6 +17,8 @@
 
 namespace App\Chat;
 
+use App\Helpers\PermissionHelper;
+
 class Permission
 {
     private static string $table = 'featherpanel_permissions';
@@ -98,7 +100,10 @@ class Permission
         $sql = 'INSERT INTO ' . self::$table . ' (`' . implode('`, `', $fields) . '`) VALUES (' . implode(',', $placeholders) . ')';
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute($data)) {
-            return (int) $pdo->lastInsertId();
+            $id = (int) $pdo->lastInsertId();
+            PermissionHelper::clearRolePermissionCache((int) ($data['role_id'] ?? 0));
+
+            return $id;
         }
 
         return false;
@@ -116,11 +121,22 @@ class Permission
         $fields = array_keys($data);
         $set = implode(', ', array_map(fn ($f) => "`$f` = :$f", $fields));
         $data['id'] = $id;
+        $previous = self::getById($id);
         $pdo = Database::getPdoConnection();
         $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE id = :id';
         $stmt = $pdo->prepare($sql);
 
-        return $stmt->execute($data);
+        $success = $stmt->execute($data);
+        if ($success) {
+            // Invalidate here rather than in the controllers so every caller
+            // (plugins, CLI) keeps the shared permission cache consistent.
+            PermissionHelper::clearRolePermissionCache((int) ($previous['role_id'] ?? 0));
+            if (isset($data['role_id'])) {
+                PermissionHelper::clearRolePermissionCache((int) $data['role_id']);
+            }
+        }
+
+        return $success;
     }
 
     public static function deletePermission(int $id): bool
@@ -128,10 +144,16 @@ class Permission
         if ($id <= 0) {
             return false;
         }
+        $previous = self::getById($id);
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id');
 
-        return $stmt->execute(['id' => $id]);
+        $success = $stmt->execute(['id' => $id]);
+        if ($success) {
+            PermissionHelper::clearRolePermissionCache((int) ($previous['role_id'] ?? 0));
+        }
+
+        return $success;
     }
 
     public static function getPermissionsByRoleId(int $roleId, int $limit = 10000, int $offset = 0): array

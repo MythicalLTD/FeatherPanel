@@ -67,6 +67,8 @@ RUN --mount=type=cache,target=/root/.composer/cache \
 COPY --chown=www-data:www-data . .
 
 # Custom PHP configuration (same limits as before)
+# memory_limit stays unlimited for the CLI and cron; web requests get the
+# bounded PHP_MEMORY_LIMIT from the Caddyfile (FrankenPHP php_ini).
 RUN echo 'memory_limit = -1\n\
 upload_max_filesize = 100M\n\
 post_max_size = 100M\n\
@@ -79,15 +81,28 @@ log_errors = On\n\
 error_log = /var/log/php_errors.log\n\
 allow_url_fopen = On\n\
 date.timezone = UTC\n\
+realpath_cache_size = 4096K\n\
+realpath_cache_ttl = 600\n\
 opcache.enable = 1\n\
-opcache.memory_consumption = 128\n\
-opcache.interned_strings_buffer = 8\n\
-opcache.max_accelerated_files = 4000\n\
-opcache.revalidate_freq = 2\n\
-opcache.fast_shutdown = 1' > /usr/local/etc/php/conf.d/custom.ini
+opcache.enable_cli = 0\n\
+opcache.memory_consumption = 256\n\
+opcache.interned_strings_buffer = 32\n\
+opcache.max_accelerated_files = 20000\n\
+opcache.validate_timestamps = 1\n\
+opcache.revalidate_freq = 2' > /usr/local/etc/php/conf.d/custom.ini
+
+# Web runtime defaults (see the Caddyfile header). /api/* is served by the
+# FrankenPHP worker (boot/worker.php); FRANKENPHP_WORKER=false switches back to
+# classic mode.
+ENV PHP_MEMORY_LIMIT=512M \
+    FRANKENPHP_MAX_THREADS=auto \
+    FRANKENPHP_MAX_WAIT_TIME=30s \
+    FRANKENPHP_WORKER=true \
+    FEATHERPANEL_WORKER_MAX_REQUESTS=1000
 
 # Caddy/FrankenPHP configuration (replaces nginx.conf)
 COPY Caddyfile /etc/caddy/Caddyfile
+COPY caddy/ /etc/caddy/caddy/
 
 # Configure supervisor (frankenphp + cron only)
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
@@ -116,6 +131,11 @@ RUN chmod +x /usr/local/bin/cron-runner.sh
 
 # Expose port 80
 EXPOSE 80
+
+# Liveness: PHP answers and the database is reachable (start period covers
+# composer install and migrations in init.sh).
+HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=5 \
+    CMD curl -fsS -o /dev/null http://127.0.0.1/api/system/health || exit 1
 
 # Start with init script (migrations, then supervisord runs frankenphp + cron)
 CMD ["/usr/local/bin/init.sh"]

@@ -39,6 +39,8 @@ class RateLimitConfig
         'public-webhooks',
     ];
     private static ?array $config = null;
+    /** mtime/size of the config file when it was loaded, to notice edits by other processes. */
+    private static ?string $configSignature = null;
     private static string $configPath = __DIR__ . '/../../storage/config/ratelimit.json';
 
     /**
@@ -344,6 +346,23 @@ class RateLimitConfig
     }
 
     /**
+     * Load the rate limit configuration from JSON file.
+     *
+     * @return array The configuration array
+     */
+    /**
+     * Drop the cached config when the file changed since it was loaded (an
+     * admin edit handled by another worker or php-fpm process). Called once
+     * per request; costs one stat().
+     */
+    public static function refreshIfChanged(): void
+    {
+        if (self::$config !== null && self::fileSignature() !== self::$configSignature) {
+            self::$config = null;
+        }
+    }
+
+    /**
      * Resolve the developer default for namespaces that are enforced without
      * a config entry.
      *
@@ -369,16 +388,22 @@ class RateLimitConfig
         ];
     }
 
-    /**
-     * Load the rate limit configuration from JSON file.
-     *
-     * @return array The configuration array
-     */
+    private static function fileSignature(): string
+    {
+        clearstatcache(true, self::$configPath);
+        $mtime = @filemtime(self::$configPath);
+        $size = @filesize(self::$configPath);
+
+        return $mtime === false ? 'missing' : $mtime . ':' . (int) $size;
+    }
+
     private static function loadConfig(): array
     {
         if (self::$config !== null) {
             return self::$config;
         }
+
+        self::$configSignature = self::fileSignature();
 
         // Absent `_enabled` means enabled-by-default (see isGloballyEnabled()).
         self::$config = [

@@ -17,6 +17,8 @@
 
 namespace App\Chat;
 
+use App\Helpers\PermissionHelper;
+
 class Role
 {
     private static string $table = 'featherpanel_roles';
@@ -143,6 +145,11 @@ class Role
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id');
 
-        return $stmt->execute(['id' => $id]);
+        $success = $stmt->execute(['id' => $id]);
+        if ($success) {
+            PermissionHelper::clearRolePermissionCache($id);
+        }
+
+        return $success;
     }
 }
