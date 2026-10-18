@@ -55,6 +55,11 @@ export interface DashboardOverviewServerItem {
     uptime_ms: number | null;
     rx_bytes: number | null;
     tx_bytes: number | null;
+    cpu_limit?: number;
+    memory_limit_bytes?: number;
+    disk_limit_bytes?: number;
+    /** From the player poller's cache; null when not running or not supported. */
+    players?: { count: number; max: number } | null;
 }
 
 export interface DashboardOverview {
@@ -153,7 +158,7 @@ function percentOf(used: number, limit: number): number | null {
     return limit > 0 ? (used / limit) * 100 : null;
 }
 
-function WidgetSkeleton({ rows = 3 }: { rows?: number }) {
+export function WidgetSkeleton({ rows = 3 }: { rows?: number }) {
     return (
         <div className='fp-surface space-y-3 rounded-xl border p-4' aria-busy='true'>
             <div className='bg-muted h-4 w-28 animate-pulse rounded' />
@@ -164,7 +169,7 @@ function WidgetSkeleton({ rows = 3 }: { rows?: number }) {
     );
 }
 
-function Quiet({ children }: { children: ReactNode }) {
+export function Quiet({ children }: { children: ReactNode }) {
     return <p className='text-muted-foreground py-1 text-sm'>{children}</p>;
 }
 

@@ -19,7 +19,7 @@ import { useCallback, useEffect, useMemo, useState, type CSSProperties, type Rea
 import Link from 'next/link';
 import Image from 'next/image';
 import axios from 'axios';
-import { BookOpen, Gamepad2, Globe, History, LifeBuoy, MonitorCog, Server, Settings2 } from 'lucide-react';
+import { BookOpen, Gamepad2, Globe, History, LayoutGrid, LifeBuoy, MonitorCog, Server, Settings2 } from 'lucide-react';
 
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
@@ -27,7 +27,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { formatRelativeTime, parseApiDate } from '@/lib/dateUtils';
 import { getModuleStates } from '@/lib/modules';
-import { formatDisk, getServerDiskLimit } from '@/lib/server-utils';
+import { formatDisk, getServerCpuLimit, getServerDiskLimit, getServerMemoryLimit } from '@/lib/server-utils';
 import { cn, isEnabled } from '@/lib/utils';
 import { serversApi } from '@/lib/servers-api';
 import { vmsApi, type VmInstance } from '@/lib/vms-api';
@@ -41,20 +41,26 @@ import { AnnouncementBanner } from '@/components/dashboard/AnnouncementBanner';
 import { TicketList, type DashboardTicket } from '@/components/dashboard/TicketList';
 import { KnowledgeBaseList } from '@/components/dashboard/KnowledgeBaseList';
 import { DashboardRecentMails } from '@/components/dashboard/DashboardRecentMails';
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { DashboardHero } from '@/components/dashboard/DashboardHero';
+import { DashboardServersSection } from '@/components/dashboard/DashboardServersSection';
+import { ArrangeBar, ArrangeFrame, ArrangePlaceholder, HiddenTray } from '@/components/dashboard/DashboardArrange';
+import {
+    ClockWidget,
+    HeatmapWidget,
+    NotesWidget,
+    PinnedServersWidget,
+    PlayersWidget,
+    QuickLinksWidget,
+    RecentServersWidget,
+    type HeatmapCell,
+} from '@/components/dashboard/DashboardExtraWidgets';
 import {
     DashboardAttention,
     DashboardPanel,
     DashboardStatTile,
     type AttentionItem,
 } from '@/components/dashboard/DashboardOverview';
-import {
-    DashboardServerCard,
-    DashboardServerRow,
-    DashboardVmRow,
-    DashboardWebSpaceRow,
-    serverRowStatus,
-} from '@/components/dashboard/DashboardResourceRows';
+import { DashboardVmRow, DashboardWebSpaceRow, serverRowStatus } from '@/components/dashboard/DashboardResourceRows';
 import {
     BackupsWidget,
     NetworkWidget,
@@ -68,73 +74,43 @@ import {
     type QuickAction,
     type WebSpaceUsageFields,
 } from '@/components/dashboard/DashboardWidgets';
-import { DashboardCustomizeSheet } from '@/components/dashboard/DashboardCustomizeSheet';
+import { DashboardCustomizeSheet, WIDGET_LABEL_KEYS } from '@/components/dashboard/DashboardCustomizeSheet';
 import { DashboardRun } from '@/components/dashboard/DashboardRun';
 import { RoleBadge } from '@/components/RoleBadge';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { useServersWebSocket, type ServerLiveData } from '@/hooks/useServersWebSocket';
 import { useFavoriteServerUuids } from '@/hooks/useFavoriteServerUuids';
-import { useDashboardConfig, type DashboardWidgetId, type DashboardWidgetSize } from '@/hooks/useDashboardConfig';
+import {
+    stepWidgetSize,
+    useDashboardConfig,
+    type DashboardConfig,
+    type DashboardWidgetId,
+    type DashboardWidgetSize,
+} from '@/hooks/useDashboardConfig';
+import Permissions from '@/lib/permissions';
+import { getApiErrorMessage } from '@/lib/api-errors';
+import { toast } from 'sonner';
 
 /** Rows shown per VDS / web space section; the rest is one click away on the full list. */
 const SECTION_LIMIT = 6;
 const RECENT_SERVERS_KEY = 'featherpanel_recent_servers_v1';
+
+/** Servers the user opened lately, newest first, from the console's history in this browser. */
+function readRecent(): { uuidShort: string; lastViewedAt?: string }[] {
+    try {
+        const raw = JSON.parse(window.localStorage.getItem(RECENT_SERVERS_KEY) || '[]') as unknown;
+        return Array.isArray(raw)
+            ? raw.filter((e): e is { uuidShort: string; lastViewedAt?: string } => typeof e?.uuidShort === 'string')
+            : [];
+    } catch {
+        return [];
+    }
+}
 const DAY_MS = 86_400_000;
 const EXPIRY_WARNING_DAYS = 7;
 const DISK_WARNING_PERCENT = 90;
 const OVERVIEW_REFRESH_MS = 30_000;
-
-/** Running first, then the ones that need a look, offline last. */
-const STATUS_RANK: Record<string, number> = {
-    running: 0,
-    starting: 1,
-    stopping: 2,
-    install_failed: 3,
-    installing: 4,
-    restoring_backup: 5,
-    transferring: 6,
-    suspended: 7,
-    offline: 8,
-    stopped: 8,
-    unknown: 9,
-};
-
-/** Servers in the order the user last opened them, unknown ones after. */
-function orderByRecent(servers: ServerData[]): ServerData[] {
-    try {
-        const raw = window.localStorage.getItem(RECENT_SERVERS_KEY);
-        const recent = raw ? (JSON.parse(raw) as { uuidShort?: string }[]) : [];
-        if (!Array.isArray(recent) || recent.length === 0) return servers;
-        const rank = new Map<string, number>();
-        recent.forEach((entry, i) => {
-            if (entry?.uuidShort && !rank.has(entry.uuidShort)) rank.set(entry.uuidShort, i);
-        });
-        return [...servers].sort(
-            (a, b) =>
-                (rank.get(a.uuidShort) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.uuidShort) ?? Number.MAX_SAFE_INTEGER),
-        );
-    } catch {
-        return servers;
-    }
-}
-
-/** Folder names and assignments from the server list page (stored in this browser, synced with the account). */
-function readFolders(): { names: Map<number, string>; assignments: Record<string, number> } {
-    const names = new Map<number, string>();
-    let assignments: Record<string, number> = {};
-    try {
-        const folders = JSON.parse(localStorage.getItem('server_folders') || '[]') as { id?: number; name?: string }[];
-        if (Array.isArray(folders)) {
-            for (const f of folders) if (typeof f?.id === 'number' && f.name) names.set(f.id, f.name);
-        }
-        const parsed = JSON.parse(localStorage.getItem('server_folder_assignments') || '{}');
-        if (parsed && typeof parsed === 'object') assignments = parsed as Record<string, number>;
-    } catch {
-        // Corrupt storage: no folders.
-    }
-    return { names, assignments };
-}
 
 function daysUntil(value?: string | null): number | null {
     const date = parseApiDate(value);
@@ -168,7 +144,7 @@ function toRuns(widgets: PlacedWidget[]): Run[] {
 
 export default function DashboardPage() {
     const { t } = useTranslation();
-    const { user, isLoading: sessionLoading } = useSession();
+    const { user, isLoading: sessionLoading, hasPermission } = useSession();
     const { settings } = useSettings();
     const dateOpts = useDateFormatOptions();
     const { fetchWidgets, getWidgets } = usePluginWidgets('dashboard');
@@ -191,6 +167,9 @@ export default function DashboardPage() {
     const [loadingTickets, setLoadingTickets] = useState(true);
     const [loadingOverview, setLoadingOverview] = useState(true);
     const [customizeOpen, setCustomizeOpen] = useState(false);
+    const [arranging, setArranging] = useState(false);
+    const [arrangeSnapshot, setArrangeSnapshot] = useState<DashboardConfig | null>(null);
+    const [savingDefault, setSavingDefault] = useState(false);
 
     // A disabled module's resources are left out (its API refuses anyway).
     const servers = useMemo(() => (modules.game ? rawServers : []), [modules.game, rawServers]);
@@ -206,8 +185,31 @@ export default function DashboardPage() {
     const { config } = dashboard;
     const compact = config.density === 'compact';
 
+    const canViewOthers = hasPermission(Permissions.ADMIN_SERVERS_VIEW);
+    const canSaveDefault = hasPermission(Permissions.ADMIN_SETTINGS_EDIT);
+
+    const startArranging = () => {
+        setArrangeSnapshot(config);
+        setArranging(true);
+    };
+    const cancelArranging = () => {
+        if (arrangeSnapshot) dashboard.replace(arrangeSnapshot);
+        setArranging(false);
+    };
+    const saveDefault = async () => {
+        setSavingDefault(true);
+        try {
+            await dashboard.saveAsPanelDefault(config);
+            toast.success(t('dashboard.arrange.saved_default'));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'dashboard.arrange.save_default_failed'));
+        } finally {
+            setSavingDefault(false);
+        }
+    };
+
     const pluginWidgetProps = {
-        isCustomizing: customizeOpen,
+        isCustomizing: customizeOpen || arranging,
         hiddenWidgets: config.hiddenPluginWidgets,
         onToggleHidden: dashboard.toggleHiddenPluginWidget,
     };
@@ -218,7 +220,7 @@ export default function DashboardPage() {
             await Promise.allSettled([
                 serversApi.getServers(false, 1, 50).then((res) => {
                     const list = Array.isArray(res.servers) ? res.servers : [];
-                    setServers(orderByRecent(list));
+                    setServers(list);
                     setServerTotal(
                         typeof res.pagination?.total_records === 'number' ? res.pagination.total_records : list.length,
                     );
@@ -331,52 +333,51 @@ export default function DashboardPage() {
         [serverLiveData, overviewByShort],
     );
 
-    const { sort, favoritesFirst, limit, group } = config.servers;
-    const shownServers = useMemo(() => {
-        let list = [...servers];
-        if (sort === 'name') list.sort((a, b) => a.name.localeCompare(b.name));
-        if (sort === 'status') {
-            list.sort(
-                (a, b) =>
-                    (STATUS_RANK[serverRowStatus(a, liveFor(a))] ?? 9) -
-                    (STATUS_RANK[serverRowStatus(b, liveFor(b))] ?? 9),
-            );
-        }
-        if (favoritesFirst) {
-            const favorites = favoriteUuids
-                .map((uuid) => list.find((s) => s.uuid === uuid))
-                .filter((s): s is ServerData => Boolean(s));
-            list = [...favorites, ...list.filter((s) => !favoriteUuids.includes(s.uuid))];
-        }
-        return list.slice(0, limit);
-    }, [servers, sort, favoritesFirst, favoriteUuids, limit, liveFor]);
+    const pinnedItems = useMemo(
+        () =>
+            favoriteUuids
+                .map((uuid) => servers.find((s) => s.uuid === uuid))
+                .filter((s): s is ServerData => Boolean(s))
+                .map((s) => ({ uuidShort: s.uuidShort, name: s.name, status: serverRowStatus(s, liveFor(s)) })),
+        [favoriteUuids, servers, liveFor],
+    );
 
-    const serverGroups = useMemo(() => {
-        if (group === 'none') return [{ key: 'all', label: null as string | null, servers: shownServers }];
-        const folders = group === 'folder' ? readFolders() : null;
-        const groups = new Map<string, { key: string; label: string; servers: ServerData[] }>();
-        for (const s of shownServers) {
-            let key: string;
-            let label: string;
-            if (folders) {
-                const folderId = folders.assignments[s.uuidShort] ?? s.folder_id;
-                const name = typeof folderId === 'number' ? folders.names.get(folderId) : undefined;
-                key = name ? `f-${folderId}` : 'f-none';
-                label = name ?? t('dashboard.home.group_no_folder');
-            } else {
-                key = `n-${s.node?.id ?? s.node_id ?? 'none'}`;
-                label = s.node?.name || t('dashboard.home.group_unknown_node');
-            }
-            if (!groups.has(key)) groups.set(key, { key, label, servers: [] });
-            groups.get(key)!.servers.push(s);
-        }
-        return [...groups.values()].sort((a, b) => (a.key.endsWith('none') ? 1 : b.key.endsWith('none') ? -1 : 0));
-    }, [group, shownServers, t]);
+    const recentItems = useMemo(() => {
+        if (servers.length === 0) return [];
+        return readRecent()
+            .map((entry) => {
+                const s = servers.find((x) => x.uuidShort === entry.uuidShort);
+                return s
+                    ? {
+                          uuidShort: s.uuidShort,
+                          name: s.name,
+                          status: serverRowStatus(s, liveFor(s)),
+                          viewedAt: entry.lastViewedAt,
+                      }
+                    : null;
+            })
+            .filter((x): x is NonNullable<typeof x> => x !== null)
+            .slice(0, 6);
+    }, [servers, liveFor]);
 
-    useEffect(() => {
-        if (shownServers.length === 0) return;
-        void connectServers(shownServers.map((s) => s.uuidShort));
-    }, [shownServers, connectServers]);
+    const heatmapCells = useMemo<HeatmapCell[]>(
+        () =>
+            servers.map((s) => {
+                const live = liveFor(s);
+                const stats = live?.stats;
+                const pct = (used: number | undefined, limit: number) =>
+                    stats && typeof used === 'number' && limit > 0 ? Math.min(100, (used / limit) * 100) : null;
+                return {
+                    uuidShort: s.uuidShort,
+                    name: s.name,
+                    status: serverRowStatus(s, live),
+                    cpu: pct(stats?.cpuUsage, getServerCpuLimit(s)),
+                    ram: pct(stats?.memoryUsage, getServerMemoryLimit(s)),
+                    disk: pct(stats?.diskUsage, getServerDiskLimit(s)),
+                };
+            }),
+        [servers, liveFor],
+    );
 
     const serverStatusCounts = useMemo(() => {
         let running = 0;
@@ -514,22 +515,6 @@ export default function DashboardPage() {
 
     const unreadTickets = tickets.filter((ticket) => ticket.has_unread_messages_since_last_reply).length;
     const resourceTotal = serverTotal + vmTotal + webspaceTotal;
-
-    // Greeting + one-line summary.
-    const hour = new Date().getHours();
-    const greetingKey =
-        hour < 12
-            ? 'dashboard.home.greeting_morning'
-            : hour < 18
-              ? 'dashboard.home.greeting_afternoon'
-              : 'dashboard.home.greeting_evening';
-    const greeting = user ? (
-        t(greetingKey, { name: user.first_name || user.username })
-    ) : sessionLoading ? (
-        <span className='bg-muted/50 inline-block h-7 w-56 animate-pulse rounded-md align-middle' aria-busy='true' />
-    ) : (
-        t('dashboard.home.greeting_fallback')
-    );
 
     let statusLine: string | null = null;
     let statusTone: 'neutral' | 'good' | 'warning' = 'neutral';
@@ -696,82 +681,31 @@ export default function DashboardPage() {
         </section>
     );
 
-    const serverRow = (s: ServerData) => (
-        <DashboardServerRow
-            key={s.uuid}
-            server={s}
-            live={liveFor(s)}
-            isFavorite={isFavorite(s.uuid)}
-            onToggleFavorite={() => toggleFavorite(s.uuid)}
-            view={config.servers.view === 'list' ? 'list' : 'detailed'}
-            images={config.servers.images}
-            meters={config.servers.meters}
-            compact={compact}
-        />
-    );
-
     const serversSize = config.widgets.find((w) => w.id === 'servers')?.size ?? 'medium';
+    const uptimeFor = useCallback(
+        (server: ServerData) => {
+            const item = overview?.servers.items.find((i) => i.uuidShort === server.uuidShort);
+            return item?.uptime_ms ?? liveFor(server)?.stats?.uptime ?? null;
+        },
+        [overview, liveFor],
+    );
+    const connectShown = useCallback((uuidShorts: string[]) => void connectServers(uuidShorts), [connectServers]);
     const serversBlock =
-        serverTotal === 0 ? null : config.servers.view === 'grid' ? (
-            <DashboardPanel
-                title={t('dashboard.home.sections.game')}
-                icon={Gamepad2}
-                count={serverTotal}
-                action={{ label: t('dashboard.resources.view_all'), href: '/dashboard/servers' }}
-            >
-                <div className='space-y-4'>
-                    {serverGroups.map((g) => (
-                        <div key={g.key} className='space-y-2'>
-                            {g.label && (
-                                <p className='text-muted-foreground text-[11px] font-semibold tracking-wide uppercase'>
-                                    {g.label}
-                                </p>
-                            )}
-                            <div
-                                className={cn(
-                                    'grid grid-cols-1 sm:grid-cols-2',
-                                    serversSize === 'full' ? 'lg:grid-cols-3 2xl:grid-cols-4' : 'xl:grid-cols-3',
-                                    compact ? 'gap-2' : 'gap-3',
-                                )}
-                            >
-                                {g.servers.map((s) => (
-                                    <DashboardServerCard
-                                        key={s.uuid}
-                                        server={s}
-                                        live={liveFor(s)}
-                                        isFavorite={isFavorite(s.uuid)}
-                                        onToggleFavorite={() => toggleFavorite(s.uuid)}
-                                        images={config.servers.images}
-                                        meters={config.servers.meters}
-                                        compact={compact}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </DashboardPanel>
-        ) : (
-            <DashboardPanel
-                title={t('dashboard.home.sections.game')}
-                icon={Gamepad2}
-                count={serverTotal}
-                action={{ label: t('dashboard.resources.view_all'), href: '/dashboard/servers' }}
-                flush
-            >
-                {serverGroups.map((g) =>
-                    g.label ? (
-                        <div key={g.key}>
-                            <p className='text-muted-foreground bg-muted/30 px-4 py-1.5 text-[11px] font-semibold tracking-wide uppercase'>
-                                {g.label}
-                            </p>
-                            <div className='divide-border/50 divide-y'>{g.servers.map(serverRow)}</div>
-                        </div>
-                    ) : (
-                        g.servers.map(serverRow)
-                    ),
-                )}
-            </DashboardPanel>
+        serverTotal === 0 ? null : (
+            <DashboardServersSection
+                servers={servers}
+                total={serverTotal}
+                liveFor={liveFor}
+                uptimeFor={uptimeFor}
+                isFavorite={isFavorite}
+                toggleFavorite={toggleFavorite}
+                options={config.servers}
+                onOptionsChange={dashboard.updateServers}
+                canViewOthers={canViewOthers}
+                compact={compact}
+                wide={serversSize === 'full'}
+                connectServers={connectShown}
+            />
         );
 
     const vdsBlock =
@@ -899,13 +833,13 @@ export default function DashboardPage() {
 
     /** Widgets that make sense on this panel (disabled modules and features are not offered). */
     const availableWidgets = useMemo<DashboardWidgetId[]>(() => {
-        const ids: DashboardWidgetId[] = ['stats', 'attention'];
-        if (modules.game) ids.push('servers');
+        const ids: DashboardWidgetId[] = ['greeting', 'stats', 'attention'];
+        if (modules.game) ids.push('servers', 'pinned', 'recent');
         if (modules.vds) ids.push('vds');
         if (modules.web) ids.push('webspaces');
         if (modules.game || modules.vds || modules.web) ids.push('usage');
-        if (modules.game) ids.push('status', 'uptime', 'network', 'backups', 'schedules');
-        ids.push('quick_actions', 'announcements', 'activity');
+        if (modules.game) ids.push('status', 'uptime', 'network', 'backups', 'schedules', 'players', 'heatmap');
+        ids.push('quick_actions', 'announcements', 'activity', 'notes', 'quick_links', 'clock');
         if (ticketsEnabled) ids.push('tickets');
         if (kbEnabled) ids.push('knowledgebase');
         if (modules.web) ids.push('recent_mails');
@@ -915,6 +849,35 @@ export default function DashboardPage() {
 
     const renderWidget = (id: DashboardWidgetId): ReactNode => {
         switch (id) {
+            case 'greeting':
+                return (
+                    <DashboardHero
+                        panelName={settings?.app_name || 'FeatherPanel'}
+                        name={user ? user.first_name || user.username : sessionLoading ? null : ''}
+                        subtitle={statusLine ?? t('dashboard.hero.subtitle')}
+                        subtitleTone={statusTone}
+                        onArrange={arranging ? undefined : startArranging}
+                    />
+                );
+            case 'pinned':
+                return <PinnedServersWidget items={pinnedItems} />;
+            case 'recent':
+                return <RecentServersWidget items={recentItems} />;
+            case 'notes':
+                return <NotesWidget value={config.notes} onChange={(notes) => dashboard.update({ notes })} />;
+            case 'quick_links':
+                return (
+                    <QuickLinksWidget
+                        links={config.quickLinks}
+                        onChange={(quickLinks) => dashboard.update({ quickLinks })}
+                    />
+                );
+            case 'clock':
+                return <ClockWidget />;
+            case 'players':
+                return <PlayersWidget items={overview?.servers.items ?? []} loading={loadingOverview} />;
+            case 'heatmap':
+                return <HeatmapWidget cells={heatmapCells} loading={loadingResources} />;
             case 'stats':
                 return statsBlock;
             case 'attention':
@@ -961,12 +924,62 @@ export default function DashboardPage() {
         }
     };
 
+    const visibleIds = config.widgets.map((w) => w.id).filter((id) => availableWidgets.includes(id));
+
+    const moveBy = (id: DashboardWidgetId, direction: -1 | 1) => {
+        const at = visibleIds.indexOf(id);
+        const neighbour = visibleIds[at + direction];
+        if (!neighbour) return;
+        dashboard.moveWidget(
+            id,
+            config.widgets.findIndex((w) => w.id === neighbour),
+        );
+    };
+
+    const dropOn = (targetId: DashboardWidgetId, draggedId: string, after: boolean) => {
+        const from = config.widgets.findIndex((w) => w.id === draggedId);
+        const target = config.widgets.findIndex((w) => w.id === targetId);
+        if (from < 0 || target < 0) return;
+        let to = after ? target + 1 : target;
+        if (from < to) to -= 1;
+        dashboard.moveWidget(draggedId as DashboardWidgetId, to);
+    };
+
     const placed: PlacedWidget[] = config.widgets
         .filter((w) => availableWidgets.includes(w.id))
-        .map((w, order) => ({ ...w, order, node: renderWidget(w.id) }))
-        .filter((w) => w.node !== null && w.node !== undefined && w.node !== false);
+        .map((w, order) => {
+            const node = renderWidget(w.id);
+            const empty = node === null || node === undefined || node === false;
+            if (!arranging) return { ...w, order, node: empty ? null : node };
+            const index = visibleIds.indexOf(w.id);
+            return {
+                ...w,
+                order,
+                node: (
+                    <ArrangeFrame
+                        id={w.id}
+                        label={t(WIDGET_LABEL_KEYS[w.id])}
+                        size={w.size}
+                        canShrink={stepWidgetSize(w.id, w.size, -1) !== null}
+                        canGrow={stepWidgetSize(w.id, w.size, 1) !== null}
+                        isFirst={index === 0}
+                        isLast={index === visibleIds.length - 1}
+                        onMove={(direction) => moveBy(w.id, direction)}
+                        onResize={(direction) => dashboard.stepSize(w.id, direction)}
+                        onHide={() => dashboard.removeWidget(w.id)}
+                        onDropWidget={(dragged, after) => dropOn(w.id, dragged, after)}
+                    >
+                        {empty ? <ArrangePlaceholder /> : node}
+                    </ArrangeFrame>
+                ),
+            };
+        })
+        .filter((w) => w.node !== null);
 
-    // Hidden until the stored layout is read, so the default layout never flashes first.
+    const hiddenItems = availableWidgets
+        .filter((id) => !config.widgets.some((w) => w.id === id))
+        .map((id) => ({ id, label: t(WIDGET_LABEL_KEYS[id]) }));
+
     const gap = compact ? 'gap-3' : 'gap-4 lg:gap-5';
     // Inside a run the order style keeps list order on mobile, where both columns flow as one.
     const wrap = (w: PlacedWidget, inRun = true) => (
@@ -985,12 +998,16 @@ export default function DashboardPage() {
         <div className={cn(compact ? 'space-y-3' : 'space-y-5')}>
             <WidgetRenderer widgets={getWidgets('dashboard', 'top-of-page')} {...pluginWidgetProps} />
 
-            <DashboardHeader
-                greeting={greeting}
-                statusLine={statusLine}
-                statusTone={statusTone}
-                onCustomize={() => setCustomizeOpen(true)}
-            />
+            {arranging && (
+                <ArrangeBar
+                    onOptions={() => setCustomizeOpen(true)}
+                    onReset={dashboard.reset}
+                    onSaveDefault={canSaveDefault ? () => void saveDefault() : undefined}
+                    savingDefault={savingDefault}
+                    onCancel={cancelArranging}
+                    onDone={() => setArranging(false)}
+                />
+            )}
 
             <WidgetRenderer widgets={getWidgets('dashboard', 'before-server-list')} {...pluginWidgetProps} />
 
@@ -1027,6 +1044,21 @@ export default function DashboardPage() {
                     );
                 })}
             </div>
+
+            {arranging ? (
+                <HiddenTray items={hiddenItems} onAdd={(id) => dashboard.addWidget(id as DashboardWidgetId)} />
+            ) : (
+                <div className='flex justify-end'>
+                    <button
+                        type='button'
+                        onClick={startArranging}
+                        className='text-muted-foreground hover:text-primary inline-flex items-center gap-1.5 text-xs font-medium transition-colors'
+                    >
+                        <LayoutGrid className='h-3.5 w-3.5' aria-hidden />
+                        {t('dashboard.arrange.open_long')}
+                    </button>
+                </div>
+            )}
 
             <WidgetRenderer widgets={getWidgets('dashboard', 'after-server-list')} {...pluginWidgetProps} />
             <WidgetRenderer widgets={getWidgets('dashboard', 'bottom-of-page')} {...pluginWidgetProps} />

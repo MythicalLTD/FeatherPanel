@@ -1515,7 +1515,9 @@
 			"INVALID_BULK_ACTION": "That action cannot be run on several servers.",
 			"BULK_NO_SERVERS": "Select at least one server.",
 			"BULK_TOO_MANY_SERVERS": "Too many servers selected for this action.",
-			"BULK_ACTION_FAILED": "The action failed on this server."
+			"BULK_ACTION_FAILED": "The action failed on this server.",
+			"DASHBOARD_LAYOUT_TOO_LARGE": "That dashboard layout is too large to save.",
+			"INVALID_DASHBOARD_LAYOUT": "That dashboard layout is not valid."
 		},
 		"global": {}
 	},
@@ -1687,7 +1689,8 @@
 		},
 		"scrollLeft": "Scroll left",
 		"scrollRight": "Scroll right",
-		"goToStep": "Go back to step {step}: {title}"
+		"goToStep": "Go back to step {step}: {title}",
+		"done": "Done"
 	},
 	"pwa": {
 		"installTitle": "Install {name}",
@@ -1924,7 +1927,13 @@
 				"contact": "Contact support",
 				"guides": "Read the guides",
 				"account": "Account settings"
-			}
+			},
+			"gauges": {
+				"of": "of {limit}",
+				"unlimited": "no limit",
+				"up": "Up {time}"
+			},
+			"select_server": "Select {name}"
 		},
 		"widgets": {
 			"names": {
@@ -1945,7 +1954,15 @@
 				"tickets": "Support",
 				"knowledgebase": "Knowledge base",
 				"recent_mails": "Recent emails",
-				"profile": "Profile card"
+				"profile": "Profile card",
+				"greeting": "Greeting and what's new",
+				"pinned": "Pinned servers",
+				"recent": "Recently opened",
+				"notes": "Notes",
+				"quick_links": "Quick links",
+				"clock": "Clock",
+				"players": "Players online",
+				"heatmap": "Resource heatmap"
 			},
 			"descriptions": {
 				"stats": "Counts of your servers, VDS, web spaces and tickets.",
@@ -1965,7 +1982,15 @@
 				"tickets": "Your latest support tickets.",
 				"knowledgebase": "Guides and answers.",
 				"recent_mails": "The newest messages in your mailboxes.",
-				"profile": "Your name, avatar and role."
+				"profile": "Your name, avatar and role.",
+				"greeting": "A hello, the time and the latest news from your host.",
+				"pinned": "The servers you starred, one click away.",
+				"recent": "Servers you opened lately.",
+				"notes": "A private note in Markdown, saved to your account.",
+				"quick_links": "Your own links to sites and panel pages.",
+				"clock": "The time and date in your time zone.",
+				"players": "Who is playing on your running game servers.",
+				"heatmap": "Every server as a tile coloured by how busy it is."
 			},
 			"usage": {
 				"title": "Resource usage",
@@ -2018,6 +2043,47 @@
 				"account": "Account",
 				"ssh_keys": "SSH keys",
 				"activity": "Activity log"
+			},
+			"clock": {
+				"zone": "Time zone: {zone}",
+				"utc": "UTC {time}"
+			},
+			"heatmap": {
+				"metric": "Metric",
+				"empty": "No servers yet.",
+				"no_data": "no live data",
+				"percent": "{value}%",
+				"dash": "-",
+				"legend_low": "Idle",
+				"legend_high": "Busy"
+			},
+			"notes": {
+				"edit": "Edit note",
+				"empty": "Write a note for yourself. Markdown works, and it follows you to every device.",
+				"placeholder": "Ideas, to-dos, IPs to remember...",
+				"counter": "{used} / {max}"
+			},
+			"pinned": {
+				"empty": "Star a server to pin it here."
+			},
+			"players": {
+				"online": "players online",
+				"none": "Player counts show up for running game servers that answer status queries.",
+				"of_max": "{count} / {max}"
+			},
+			"quick_links": {
+				"edit": "Edit links",
+				"empty": "Add links to the sites and panel pages you use most.",
+				"add": "Add link",
+				"invalid_url": "Use a full https:// address or a panel path like /dashboard/servers.",
+				"label": "Label",
+				"label_placeholder": "Label (optional)",
+				"url": "Address",
+				"url_placeholder": "https://example.com or /dashboard",
+				"remove": "Remove {label}"
+			},
+			"recent": {
+				"empty": "Servers you open show up here."
 			}
 		},
 		"customize": {
@@ -2062,6 +2128,57 @@
 			"side_first_hint": "On wide screens.",
 			"done": "Done",
 			"synced_hint": "Your layout is saved to your account and follows you to other devices."
+		},
+		"arrange": {
+			"open": "Arrange",
+			"open_long": "Arrange your dashboard",
+			"title": "Arrange your dashboard",
+			"hint": "Drag a card by its handle, or focus the handle and use the arrow keys. + and - resize, Delete hides.",
+			"options": "Options",
+			"reset": "Reset",
+			"save_default": "Save as default",
+			"saved_default": "Saved as the default dashboard for everyone who has not arranged their own.",
+			"save_default_failed": "Could not save the default dashboard.",
+			"handle": "Move {name}",
+			"handle_hint": "Drag, or use the arrow keys. + and - resize, Delete hides.",
+			"smaller": "Smaller",
+			"larger": "Larger",
+			"hide": "Hide card",
+			"nothing_now": "Nothing to show here right now. The card appears when there is.",
+			"hidden_cards": "Hidden cards",
+			"hidden_none": "Every card is on your dashboard."
+		},
+		"hero": {
+			"subtitle": "Your services, at a glance.",
+			"jump": "Jump to anything",
+			"jump_shortcut": "Ctrl+D",
+			"whats_new": "What's new",
+			"whats_new_empty": "Nothing new right now. Announcements from your host show up here.",
+			"whats_new_more": "More announcements: {count}"
+		},
+		"servers_section": {
+			"title": "Your servers",
+			"others_title": "Other users' servers",
+			"select": "Select",
+			"select_hint": "Tap servers to select them, then pick an action.",
+			"folders": "Folders",
+			"scope": "Whose servers",
+			"scope_mine": "Mine",
+			"scope_others": "Others",
+			"view": "View",
+			"view_grid": "Grid",
+			"view_list": "List",
+			"view_compact": "Compact",
+			"search": "Search by name, address, node...",
+			"filter_all": "All",
+			"filter_online": "Online",
+			"filter_offline": "Offline",
+			"filter_favorites": "Favourites",
+			"sort": "Sort",
+			"no_match": "No servers match your search or filter.",
+			"none_others": "No servers here.",
+			"clear_filters": "Clear search and filter",
+			"more": "Show all servers (another {count})"
 		}
 	},
 	"account": {

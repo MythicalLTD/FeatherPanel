@@ -54,9 +54,17 @@ export const WIDGET_LABEL_KEYS: Record<DashboardWidgetId, string> = {
     knowledgebase: 'dashboard.widgets.names.knowledgebase',
     recent_mails: 'dashboard.widgets.names.recent_mails',
     profile: 'dashboard.widgets.names.profile',
+    greeting: 'dashboard.widgets.names.greeting',
+    pinned: 'dashboard.widgets.names.pinned',
+    recent: 'dashboard.widgets.names.recent',
+    notes: 'dashboard.widgets.names.notes',
+    quick_links: 'dashboard.widgets.names.quick_links',
+    clock: 'dashboard.widgets.names.clock',
+    players: 'dashboard.widgets.names.players',
+    heatmap: 'dashboard.widgets.names.heatmap',
 };
 
-const WIDGET_DESCRIPTION_KEYS: Record<DashboardWidgetId, string> = {
+export const WIDGET_DESCRIPTION_KEYS: Record<DashboardWidgetId, string> = {
     stats: 'dashboard.widgets.descriptions.stats',
     attention: 'dashboard.widgets.descriptions.attention',
     servers: 'dashboard.widgets.descriptions.servers',
@@ -75,6 +83,14 @@ const WIDGET_DESCRIPTION_KEYS: Record<DashboardWidgetId, string> = {
     knowledgebase: 'dashboard.widgets.descriptions.knowledgebase',
     recent_mails: 'dashboard.widgets.descriptions.recent_mails',
     profile: 'dashboard.widgets.descriptions.profile',
+    greeting: 'dashboard.widgets.descriptions.greeting',
+    pinned: 'dashboard.widgets.descriptions.pinned',
+    recent: 'dashboard.widgets.descriptions.recent',
+    notes: 'dashboard.widgets.descriptions.notes',
+    quick_links: 'dashboard.widgets.descriptions.quick_links',
+    clock: 'dashboard.widgets.descriptions.clock',
+    players: 'dashboard.widgets.descriptions.players',
+    heatmap: 'dashboard.widgets.descriptions.heatmap',
 };
 
 const SIZE_LABEL_KEYS: Record<DashboardWidgetSize, string> = {
