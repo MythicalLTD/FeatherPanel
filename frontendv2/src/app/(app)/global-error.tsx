@@ -25,6 +25,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { backgroundFitToCssSize } from '@/lib/backgroundImageFit';
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer';
 import { Home, RefreshCw, AlertTriangle } from 'lucide-react';
+import { safeCssUrl } from '@/lib/safe-css-url';
 
 /** Detect errors caused by stale cached assets after a new deploy (chunk load failures). */
 function isStaleVersionError(error: Error): boolean {
@@ -101,7 +102,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                     <div
                         className='absolute inset-0 bg-center bg-no-repeat'
                         style={{
-                            backgroundImage: `url(${backgroundImage})`,
+                            backgroundImage: safeCssUrl(backgroundImage),
                             backgroundSize: backgroundFitToCssSize(backgroundImageFit),
                         }}
                     />

@@ -55,6 +55,7 @@ import { formatCustomAccent, getCustomAccentHex, isCustomAccent } from '@/lib/ac
 import { isRtlLocale } from '@/lib/locale-flags';
 import LocaleFlag from '@/components/preferences/LocaleFlag';
 import { cn } from '@/lib/utils';
+import { safeCssUrl } from '@/lib/safe-css-url';
 
 const PREFERENCES_PATH = '/dashboard/preferences';
 
@@ -806,8 +807,8 @@ export default function AppearanceSettingsPanel() {
                                             active={backgroundType === 'image'}
                                             onClick={() => setBackgroundType('image')}
                                             preview={
-                                                backgroundImage && !backgroundImage.startsWith('#')
-                                                    ? `url(${backgroundImage}) center/cover`
+                                                backgroundImage && safeCssUrl(backgroundImage)
+                                                    ? `${safeCssUrl(backgroundImage)} center/cover`
                                                     : undefined
                                             }
                                             label={t('appearance.background.customImage')}

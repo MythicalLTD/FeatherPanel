@@ -70,7 +70,7 @@ class RateLimitMiddleware implements MiddlewareInterface
         // The file-backed limiter keeps those counters working instead.
         if (!$redisConnection) {
             if (!(new FileRateLimiter($rate, $namespace))->limit($identifier)) {
-                return self::tooManyRequests($app, $clientIP, null);
+                return self::tooManyRequests($app, $clientIP, $rate->getInterval());
             }
 
             return $next($request);
@@ -84,7 +84,8 @@ class RateLimitMiddleware implements MiddlewareInterface
             $limiter->limit($identifier);
         } catch (LimitExceeded $e) {
             // The retry-after value is in the LimitExceeded exception
-            $retryAfter = method_exists($e, 'getRetryAfter') ? $e->getRetryAfter() : null;
+            // The limiter does not expose the remaining window; the rate's interval is a safe upper bound.
+            $retryAfter = method_exists($e, 'getRetryAfter') ? $e->getRetryAfter() : $rate->getInterval();
 
             return self::tooManyRequests($app, $clientIP, $retryAfter, $e->getMessage());
         } catch (\Exception $e) {
@@ -105,8 +106,10 @@ class RateLimitMiddleware implements MiddlewareInterface
     {
         $app->getLogger()->warning('Rate limit exceeded for IP: ' . $clientIP . ($context !== null ? ' - ' . $context : ''));
 
-        return ApiResponse::error(
-            'You are being rate limited! Retry after ' . ($retryAfter !== null ? $retryAfter : 'a few') . ' minutes or try again later.',
+        $response = ApiResponse::error(
+            $retryAfter !== null
+                ? 'You are being rate limited! Retry after ' . max(1, $retryAfter) . ' seconds.'
+                : 'You are being rate limited! Please try again in a few seconds.',
             'RATE_LIMITED',
             429,
             [
@@ -114,5 +117,9 @@ class RateLimitMiddleware implements MiddlewareInterface
                 'retry_after' => $retryAfter,
             ]
         );
+        // Standard header (seconds) so clients can back off without parsing the body.
+        $response->headers->set('Retry-After', (string) max(1, $retryAfter ?? 1));
+
+        return $response;
     }
 }

@@ -36,6 +36,7 @@ import { StatusBadge } from './StatusBadge';
 import { ResourceBar } from './ResourceBar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { OverflowText } from '@/components/featherui/OverflowText';
+import { safeCssUrl } from '@/lib/safe-css-url';
 
 interface ServerCardProps {
     server: Server;
@@ -107,7 +108,9 @@ export function ServerCard({
                         <div
                             className='h-full w-full bg-cover bg-center'
                             style={{
-                                backgroundImage: `url(${resolveAttachmentUrl(server.spell.banner) || server.spell.banner})`,
+                                backgroundImage: safeCssUrl(
+                                    resolveAttachmentUrl(server.spell.banner) || server.spell.banner,
+                                ),
                             }}
                         />
                     </Link>
@@ -286,7 +289,9 @@ export function ServerCard({
                         <div
                             className='absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105'
                             style={{
-                                backgroundImage: `url(${resolveAttachmentUrl(server.spell.banner) || server.spell.banner})`,
+                                backgroundImage: safeCssUrl(
+                                    resolveAttachmentUrl(server.spell.banner) || server.spell.banner,
+                                ),
                             }}
                         />
                         <div className='from-card via-card/60 absolute inset-0 bg-linear-to-t to-transparent' />

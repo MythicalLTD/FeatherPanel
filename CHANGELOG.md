@@ -12,6 +12,10 @@
 
 ### Fixed
 
+- Dashboard no longer fires duplicate requests on load (which hit the rate limit and logged `429` errors): the background wrapper stopped remounting the whole page after hydration, identical in-flight GETs are shared, and `429` responses are retried after the `Retry-After` delay the API now sends. by @nayskutzu
+- Aurora background handles WebGL context loss/restore, pauses in hidden tabs, respects reduced motion and frees its context on unmount. by @nayskutzu
+- Service worker ignores non-GET, cross-origin, API and non-http(s) requests instead of failing them, and is no longer registered in development. by @nayskutzu
+- Background and banner images only accept http(s), relative, `data:image` and `blob:` URLs, so pasted `file:///` paths no longer trigger browser security errors. by @nayskutzu
 - Web node setup no longer suggests invalid `bash -s -- featherquilld`. Panel install command now uses `FP_COMPONENT=featherquilld` like Wings. Installer accepts `--quilld-install-only` and positional `featherquilld`. Args are validated before any apt work. Early unconditional `apt upgrade`/`purge`/`autoremove` was removed. Cleanup is opt-in via `--system-cleanup`. by @nayskutzu
 - WebSpace `/sync` and `/reinstall` create on the daemon when it returns 404. Failed first pushes (e.g. `daemon_sync_failed`) can be retried without DELETE + recreate. by @nayskutzu
 - Task updates no longer accept `sequence_id`. Reordering stays on the sequence endpoint. by @nayskutzu

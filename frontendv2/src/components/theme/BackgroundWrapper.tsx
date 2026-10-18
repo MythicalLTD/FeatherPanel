@@ -25,6 +25,7 @@ import { backgroundFitToCssSize } from '@/lib/backgroundImageFit';
 import BackgroundAnimatedLayer from '@/components/theme/BackgroundAnimatedLayer';
 import { resolveServerSpellBannerBackground, resolveSpellBannerUrl } from '@/lib/server-spell-banner';
 import { cn } from '@/lib/utils';
+import { safeCssUrl } from '@/lib/safe-css-url';
 
 export default function BackgroundWrapper({
     children,
@@ -101,10 +102,6 @@ export default function BackgroundWrapper({
         isLight,
     ]);
 
-    if (!mounted) {
-        return <>{children}</>;
-    }
-
     const getBackgroundStyle = (): React.CSSProperties => {
         const opaqueBase: React.CSSProperties = {
             backgroundColor: 'hsl(var(--background))',
@@ -113,7 +110,7 @@ export default function BackgroundWrapper({
         if (useSpellReplace && spellBannerUrl) {
             return {
                 ...opaqueBase,
-                backgroundImage: `url(${spellBannerUrl})`,
+                backgroundImage: safeCssUrl(spellBannerUrl),
                 backgroundSize: backgroundFitToCssSize(backgroundImageFit),
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
@@ -123,7 +120,7 @@ export default function BackgroundWrapper({
         if (effectiveBackgroundType === 'image' && backgroundImage) {
             return {
                 ...opaqueBase,
-                backgroundImage: `url(${backgroundImage})`,
+                backgroundImage: safeCssUrl(backgroundImage),
                 backgroundSize: backgroundFitToCssSize(backgroundImageFit),
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
@@ -177,8 +174,11 @@ export default function BackgroundWrapper({
                 fillViewport ? 'flex h-svh max-h-svh flex-col overflow-hidden' : 'min-h-svh',
             )}
         >
-            {/* Background layer: Aurora or gradient/solid/pattern/image (or spell replace on server pages) */}
-            {useAurora ? (
+            {/* Background layer: Aurora or gradient/solid/pattern/image (or spell replace on server pages).
+                Painted only after mount (theme prefs live in localStorage), but the wrapper and the
+                children slot below never change shape: swapping `<>{children}</>` for this tree used
+                to remount the whole page right after load, re-running every fetch and WebGL setup. */}
+            {!mounted ? null : useAurora ? (
                 <>
                     <div
                         className='auth-aurora-wrap pointer-events-none fixed inset-0 z-0'
@@ -205,15 +205,15 @@ export default function BackgroundWrapper({
             )}
 
             {/* Soft spell banner over the existing theme background on server pages */}
-            {useSpellBlend && spellBannerUrl ? (
+            {mounted && useSpellBlend && spellBannerUrl ? (
                 <div
                     className='pointer-events-none fixed inset-0 z-[1] bg-cover bg-center bg-no-repeat opacity-45 transition-all duration-500'
-                    style={{ backgroundImage: `url(${spellBannerUrl})` }}
+                    style={{ backgroundImage: safeCssUrl(spellBannerUrl) }}
                     aria-hidden
                 />
             ) : null}
 
-            {hasOverlay && (
+            {mounted && hasOverlay && (
                 <div
                     className='pointer-events-none fixed inset-0 z-[2] transition-all duration-500'
                     style={overlayStyle}
