@@ -21,6 +21,7 @@ use Sentry\Event;
 use Sentry\Severity;
 use Sentry\Breadcrumb;
 use Sentry\State\Scope;
+use App\Runtime\RequestContext;
 use Sentry\Tracing\Transaction;
 use Sentry\Tracing\TransactionSource;
 use Sentry\Tracing\TransactionContext;
@@ -95,9 +96,7 @@ final class SentryTelemetry
             $context = new TransactionContext($name);
             $context->setOp('http.server');
             $context->getMetadata()->setSource(TransactionSource::route());
-            if (defined('APP_START')) {
-                $context->setStartTimestamp(APP_START);
-            }
+            $context->setStartTimestamp(RequestContext::startTime());
             self::$transaction = \Sentry\startTransaction($context);
             \Sentry\configureScope(static function (Scope $scope) use (
                 $route,
@@ -123,6 +122,28 @@ final class SentryTelemetry
             $transaction->finish();
             \Sentry\configureScope(static function (Scope $scope): void {
                 $scope->setSpan(null);
+            });
+        } catch (\Throwable) {
+            // Best effort.
+        }
+    }
+
+    /**
+     * Forget everything the previous request attached (user, tags, span), so a
+     * long-running FrankenPHP worker never reports one request with another
+     * request's user.
+     */
+    public static function resetRequestScope(): void
+    {
+        self::$transaction = null;
+        self::$route = null;
+        self::$method = null;
+        if (!self::$enabled) {
+            return;
+        }
+        try {
+            \Sentry\configureScope(static function (Scope $scope): void {
+                $scope->clear();
             });
         } catch (\Throwable) {
             // Best effort.
