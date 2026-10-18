@@ -316,11 +316,12 @@ class PluginsController
                 return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
             }
 
-            if (!isset($data['key']) || empty($data['key'])) {
+            if (!isset($data['key']) || !is_string($data['key']) || $data['key'] === '') {
                 return ApiResponse::error('Missing key parameter', 'MISSING_KEY', 400);
             }
 
-            if (!isset($data['value']) || empty($data['value'])) {
+            // '' and '0' are valid values (cleared field, numeric zero); only a missing value is an error.
+            if (!array_key_exists('value', $data) || !is_scalar($data['value'])) {
                 return ApiResponse::error('Missing value parameter', 'MISSING_VALUE', 400);
             }
 
