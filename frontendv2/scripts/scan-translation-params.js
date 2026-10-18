@@ -174,7 +174,9 @@ for (const file of walk(SRC_DIR)) {
         const missing = [...needed].filter((n) => !passed.has(n));
         if (missing.length) {
             const line = src.slice(0, m.index).split('\n').length;
-            problems.push(`${path.relative(path.join(__dirname, '..'), file)}:${line}  t('${m[2]}') missing ${missing.map((n) => `{${n}}`).join(', ')}`);
+            problems.push(
+                `${path.relative(path.join(__dirname, '..'), file)}:${line}  t('${m[2]}') missing ${missing.map((n) => `{${n}}`).join(', ')}`,
+            );
         }
     }
 }

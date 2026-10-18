@@ -446,7 +446,9 @@ export default function TicketsPage() {
                                                 <Badge
                                                     variant='destructive'
                                                     className='inline-flex items-center gap-1 rounded-md border-0 px-2 py-0.5 font-medium'
-                                                    title={t('tickets.newMessages', { count: String(ticket.unread_count ?? '') }).trim()}
+                                                    title={t('tickets.newMessages', {
+                                                        count: String(ticket.unread_count ?? ''),
+                                                    }).trim()}
                                                 >
                                                     <MessageCircle className='h-3 w-3' />
                                                     {ticket.unread_count && ticket.unread_count > 0
