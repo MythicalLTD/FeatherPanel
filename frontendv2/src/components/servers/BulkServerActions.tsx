@@ -82,16 +82,20 @@ export function BulkSelectionRow({
                 className,
             )}
         >
-            <label className='flex cursor-pointer items-center gap-2.5'>
+            <div className='flex items-center gap-2.5'>
                 <Checkbox
                     checked={allSelected}
                     onCheckedChange={(checked) => (checked ? onSelectAll() : onClear())}
                     aria-label={t('servers.bulk.selectAllPage')}
                 />
-                <span className='text-foreground text-xs font-medium sm:text-sm'>
+                <button
+                    type='button'
+                    onClick={() => (allSelected ? onClear() : onSelectAll())}
+                    className='text-foreground hover:text-primary text-xs font-medium transition-colors sm:text-sm'
+                >
                     {t('servers.bulk.selectAllPage')}
-                </span>
-            </label>
+                </button>
+            </div>
             <span className='text-muted-foreground text-xs sm:text-sm'>
                 {selectedCount > 0
                     ? t('servers.bulk.selectedCount', { count: String(selectedCount) })
@@ -156,7 +160,7 @@ export function BulkServerActions({ selected, onClear, onFinished, className }: 
                 lines.length > 0 ? <span className='block whitespace-pre-line'>{lines.join('\n')}</span> : undefined;
 
             if (failures.length === 0) {
-                toast.success(t(DONE_KEYS[action], { count: String(response.succeeded) }));
+                toast.success(t(DONE_KEYS[action]));
             } else if (response.succeeded === 0) {
                 toast.error(t('servers.bulk.all_failed'), { description });
             } else {
@@ -308,11 +312,7 @@ export function BulkServerActions({ selected, onClear, onFinished, className }: 
                 onOpenChange={(open) => {
                     if (!open) setConfirm(null);
                 }}
-                title={
-                    confirm === 'reinstall'
-                        ? t('servers.bulk.reinstall_title', { count: String(count) })
-                        : t('servers.bulk.kill_title', { count: String(count) })
-                }
+                title={confirm === 'reinstall' ? t('servers.bulk.reinstall_title') : t('servers.bulk.kill_title')}
                 description={
                     confirm === 'reinstall'
                         ? t('servers.bulk.reinstall_description')

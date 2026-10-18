@@ -2624,7 +2624,7 @@
 		},
 		"bulk": {
 			"title": "Bulk power actions",
-			"selectedCount": "{count} servers selected",
+			"selectedCount": "Selected: {count}",
 			"selectAllPage": "Select all on this page",
 			"clearSelection": "Clear selection",
 			"kill": "Kill servers",
@@ -2632,22 +2632,22 @@
 			"error": "Failed to send power actions. Please try again.",
 			"hint": "Select servers to start, stop, restart or reinstall them together.",
 			"more": "More actions",
-			"kill_title": "Kill {count} servers?",
+			"kill_title": "Kill the selected servers?",
 			"reinstall": "Reinstall servers",
-			"reinstall_title": "Reinstall {count} servers?",
+			"reinstall_title": "Reinstall the selected servers?",
 			"reinstall_description": "Each server stops and runs its install script again. Files are kept. Servers you do not have reinstall permission for are skipped.",
 			"and_more": "and {count} more",
 			"limit": "Select at most {count} servers for this action.",
 			"done": {
-				"start": "Start sent to {count} servers.",
-				"stop": "Stop sent to {count} servers.",
-				"restart": "Restart sent to {count} servers.",
-				"kill": "Kill sent to {count} servers.",
-				"reinstall": "Reinstall started on {count} servers."
+				"start": "Start sent to the selected servers.",
+				"stop": "Stop sent to the selected servers.",
+				"restart": "Restart sent to the selected servers.",
+				"kill": "Kill sent to the selected servers.",
+				"reinstall": "Reinstall started on the selected servers."
 			},
-			"partial": "Done on {succeeded} of {total} servers. The others are still selected.",
+			"partial": "Done on {succeeded} of {total}. The others are still selected.",
 			"all_failed": "The action failed on every selected server.",
-			"more_failed": "{count} more failed."
+			"more_failed": "More failed: {count}"
 		},
 		"console": {
 			"loading": "Loading server...",
