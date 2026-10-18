@@ -1717,7 +1717,7 @@ class WebSpacesController
                 $tokenId,
                 $token,
                 \App\Services\Quilld\QuilldConsoleJwt::DEFAULT_TTL_SECONDS,
-                ['*'],
+                self::adminConsolePermissions($request),
                 (string) ($request->attributes->get('user')['uuid'] ?? ''),
             );
             $socket = \App\Services\Quilld\QuilldConsoleJwt::buildSocketUrl($webNode, (string) $space['uuid']);
@@ -1788,5 +1788,23 @@ class WebSpacesController
         ));
 
         return ApiResponse::success(['webspace' => $space], 'WebSpace unsuspended', 200);
+    }
+
+    /**
+     * Console rights for an admin: the route only needs view access, so only
+     * admins who may also edit WebSpaces get the full console (send commands,
+     * power); view-only admins can watch the output.
+     *
+     * @return list<string>
+     */
+    private static function adminConsolePermissions(Request $request): array
+    {
+        $user = $request->attributes->get('user');
+        $userUuid = is_array($user) ? (string) ($user['uuid'] ?? '') : '';
+        if ($userUuid !== '' && \App\Helpers\PermissionHelper::hasPermission($userUuid, \App\Permissions::ADMIN_WEBSPACES_EDIT)) {
+            return ['*'];
+        }
+
+        return [\App\WebSpaceSubuserPermissions::CONSOLE_OUTPUT];
     }
 }
