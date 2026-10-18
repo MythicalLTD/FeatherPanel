@@ -241,7 +241,7 @@ export function DashboardHero({ panelName, name, subtitle, subtitleTone = 'neutr
                             >
                                 <Search className='h-4 w-4' aria-hidden />
                                 {t('dashboard.hero.jump')}
-                                <kbd className='border-border/70 bg-muted/60 text-muted-foreground rounded border px-1.5 py-0.5 font-mono text-[10px]'>
+                                <kbd className='border-border/70 bg-muted/60 text-muted-foreground hidden rounded border px-1.5 py-0.5 font-mono text-[10px] sm:inline'>
                                     {t('dashboard.hero.jump_shortcut')}
                                 </kbd>
                             </button>

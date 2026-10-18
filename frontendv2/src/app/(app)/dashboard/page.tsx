@@ -980,7 +980,6 @@ export default function DashboardPage() {
         .filter((id) => !config.widgets.some((w) => w.id === id))
         .map((id) => ({ id, label: t(WIDGET_LABEL_KEYS[id]) }));
 
-    // Hidden until the stored layout is read, so the default layout never flashes first.
     const gap = compact ? 'gap-3' : 'gap-4 lg:gap-5';
     // Inside a run the order style keeps list order on mobile, where both columns flow as one.
     const wrap = (w: PlacedWidget, inRun = true) => (

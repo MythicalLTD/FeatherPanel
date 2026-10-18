@@ -65,7 +65,7 @@ function SmallButton({
             aria-label={label}
             title={label}
             className={cn(
-                'inline-flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors',
+                'inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-medium whitespace-nowrap transition-colors',
                 tone === 'primary'
                     ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                     : tone === 'danger'

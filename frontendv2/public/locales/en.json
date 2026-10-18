@@ -2133,7 +2133,7 @@
 			"open": "Arrange",
 			"open_long": "Arrange your dashboard",
 			"title": "Arrange your dashboard",
-			"hint": "Drag cards by the handle, resize with - and +, or focus a handle and use the arrow keys (+ and - resize, Delete hides). Hidden cards wait at the bottom.",
+			"hint": "Drag a card by its handle, or focus the handle and use the arrow keys. + and - resize, Delete hides.",
 			"options": "Options",
 			"reset": "Reset",
 			"save_default": "Save as default",

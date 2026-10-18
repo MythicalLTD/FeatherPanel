@@ -345,6 +345,20 @@ function withPersonal(base: DashboardConfig, personal: DashboardConfig): Dashboa
     };
 }
 
+let panelDefaultRequest: { at: number; promise: Promise<unknown> } | null = null;
+
+/** One request per page load for every component that reads the dashboard config. */
+function fetchPanelDefault(): Promise<unknown> {
+    if (!panelDefaultRequest || Date.now() - panelDefaultRequest.at > 60_000) {
+        const promise = axios.get('/api/user/dashboard/default-layout').then(({ data }) => data?.data?.layout ?? null);
+        promise.catch(() => {
+            panelDefaultRequest = null;
+        });
+        panelDefaultRequest = { at: Date.now(), promise };
+    }
+    return panelDefaultRequest.promise;
+}
+
 export function useDashboardConfig() {
     const [config, setConfig] = useState<DashboardConfig>(defaultDashboardConfig);
     const [loaded, setLoaded] = useState(false);
@@ -363,10 +377,8 @@ export function useDashboardConfig() {
     // Users who never arranged their dashboard start from the panel default, if an admin set one.
     useEffect(() => {
         let cancelled = false;
-        axios
-            .get('/api/user/dashboard/default-layout')
-            .then(({ data }) => {
-                const layout = data?.data?.layout;
+        fetchPanelDefault()
+            .then((layout) => {
                 if (cancelled || !layout || typeof layout !== 'object') return;
                 const parsed = parseDashboardConfig(JSON.stringify(layout));
                 setPanelDefault(parsed);
@@ -498,7 +510,10 @@ export function useDashboardConfig() {
     const saveAsPanelDefault = useCallback(async (current: DashboardConfig) => {
         const { data } = await axios.put('/api/admin/dashboard/default-layout', { layout: current });
         const layout = data?.data?.layout;
-        if (layout) setPanelDefault(parseDashboardConfig(JSON.stringify(layout)));
+        if (layout) {
+            panelDefaultRequest = { at: Date.now(), promise: Promise.resolve(layout) };
+            setPanelDefault(parseDashboardConfig(JSON.stringify(layout)));
+        }
     }, []);
 
     return {
