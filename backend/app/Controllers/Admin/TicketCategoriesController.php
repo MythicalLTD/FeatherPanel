@@ -247,6 +247,12 @@ class TicketCategoriesController
             return ApiResponse::error('Invalid JSON data', 'INVALID_JSON', 400);
         }
 
+        foreach ($data as $field => $value) {
+            if ($value !== null && !is_scalar($value)) {
+                return ApiResponse::error('Field ' . $field . ' must be a string', 'INVALID_DATA_TYPE', 400);
+            }
+        }
+
         $requiredFields = ['name'];
         $missingFields = [];
         foreach ($requiredFields as $field) {
@@ -339,6 +345,12 @@ class TicketCategoriesController
 
         if (!$data) {
             return ApiResponse::error('Invalid JSON data', 'INVALID_JSON', 400);
+        }
+
+        foreach ($data as $field => $value) {
+            if ($value !== null && !is_scalar($value)) {
+                return ApiResponse::error('Field ' . $field . ' must be a string', 'INVALID_DATA_TYPE', 400);
+            }
         }
 
         if (empty($data)) {
