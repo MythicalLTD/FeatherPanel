@@ -17,6 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface StepIndicatorProps {
     steps: {
@@ -24,9 +25,12 @@ interface StepIndicatorProps {
         subtitle: string;
     }[];
     currentStep: number;
+    /** When set, completed steps become buttons that jump back to them. */
+    onStepClick?: (step: number) => void;
 }
 
-export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
+export function StepIndicator({ steps, currentStep, onStepClick }: StepIndicatorProps) {
+    const { t } = useTranslation();
     return (
         <div className='w-full'>
             <div className='flex items-center justify-between'>
@@ -35,13 +39,28 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
                     const isActive = stepNumber === currentStep;
                     const isCompleted = stepNumber < currentStep;
                     const isLast = index === steps.length - 1;
+                    const clickable = Boolean(onStepClick) && isCompleted;
+                    const Circle = clickable ? 'button' : 'div';
 
                     return (
                         <div key={index} className='flex flex-1 items-center'>
                             <div className='flex flex-col items-center'>
-                                <div
+                                <Circle
+                                    {...(clickable
+                                        ? {
+                                              type: 'button' as const,
+                                              onClick: () => onStepClick?.(stepNumber),
+                                              'aria-label': t('common.goToStep', {
+                                                  step: String(stepNumber),
+                                                  title: step.title,
+                                              }),
+                                              title: step.title,
+                                          }
+                                        : {})}
                                     className={cn(
                                         'flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all',
+                                        clickable &&
+                                            'hover:ring-primary/30 focus-visible:ring-ring cursor-pointer hover:ring-4 focus-visible:ring-2 focus-visible:outline-none',
                                         isCompleted && 'border-primary bg-primary text-white',
                                         isActive && 'border-primary bg-background text-primary',
                                         !isActive && !isCompleted && 'border-border bg-muted text-muted-foreground',
@@ -52,7 +71,7 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
                                     ) : (
                                         <span className='text-sm font-semibold'>{stepNumber}</span>
                                     )}
-                                </div>
+                                </Circle>
 
                                 <div className='mt-2 hidden max-w-[120px] flex-col items-center text-center lg:flex'>
                                     <span

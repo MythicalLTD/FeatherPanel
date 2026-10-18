@@ -38,6 +38,8 @@ import {
     AlertTriangle,
     RefreshCw,
     MapPin,
+    Sparkles,
+    FastForward,
 } from 'lucide-react';
 import {
     ServerFormData,
@@ -101,6 +103,9 @@ const initialFormData: ServerFormData = {
     spellVariables: {},
 };
 
+type AutoFillKey = 'location' | 'node' | 'allocation' | 'realm' | 'spell';
+const AUTO_FILL_STEP: Record<AutoFillKey, number> = { location: 2, node: 2, allocation: 2, realm: 3, spell: 3 };
+
 const initialSelectedEntities: SelectedEntities = {
     owner: null,
     location: null,
@@ -119,6 +124,12 @@ export default function CreateServerPage() {
 
     const [formData, setFormData] = useState<ServerFormData>(initialFormData);
     const [sizeValidity, setSizeValidity] = useState({ memory: true, swap: true, disk: true });
+    // Choices filled in automatically (only option / first free allocation), shown as a note on the step.
+    const [autoFilled, setAutoFilled] = useState<AutoFillKey[]>([]);
+    const markAutoFilled = useCallback(
+        (key: AutoFillKey) => setAutoFilled((prev) => (prev.includes(key) ? prev : [...prev, key])),
+        [],
+    );
     const [selectedEntities, setSelectedEntities] = useState<SelectedEntities>(initialSelectedEntities);
 
     const [spellDetails, setSpellDetails] = useState<Spell | null>(null);
@@ -699,6 +710,19 @@ export default function CreateServerPage() {
         setCurrentStep((prev) => Math.max(prev - 1, 1));
     };
 
+    // Resources and feature limits have working defaults; let admins go straight to the review.
+    const handleSkipToReview = () => {
+        if (wizardBlockedByInfra || wizardNavWaitingInfra) return;
+        if (!validateCurrentStep()) return;
+        const sizeError = getSizeInputError();
+        if (sizeError) {
+            toast.error(sizeError);
+            setCurrentStep(4);
+            return;
+        }
+        setCurrentStep(totalSteps);
+    };
+
     const handleSubmit = async () => {
         if (wizardBlockedByInfra || wizardNavWaitingInfra) {
             if (wizardBlockedByInfra) {
@@ -752,6 +776,115 @@ export default function CreateServerPage() {
         }
     };
 
+    // Smart defaults: when there is only one location, node, realm or spell, pick it; preselect the
+    // first free allocation. Saves several picker round-trips on small panels; everything stays editable.
+    useEffect(() => {
+        if (currentStep !== 2 || formData.locationId) return;
+        let cancelled = false;
+        axios
+            .get('/api/admin/locations', { params: { type: 'game', page: 1, limit: 2 } })
+            .then(({ data }) => {
+                const list: Location[] = data?.data?.locations || [];
+                if (cancelled || list.length !== 1) return;
+                setSelectedEntities((prev) => ({ ...prev, location: list[0], node: null, allocation: null }));
+                setFormData((prev) =>
+                    prev.locationId ? prev : { ...prev, locationId: list[0].id, nodeId: null, allocationId: null },
+                );
+                markAutoFilled('location');
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, [currentStep, formData.locationId, markAutoFilled]);
+
+    useEffect(() => {
+        if (currentStep !== 2 || !formData.locationId || formData.nodeId) return;
+        let cancelled = false;
+        const locationId = formData.locationId;
+        axios
+            .get('/api/admin/nodes', { params: { location_id: locationId, page: 1, limit: 2 } })
+            .then(({ data }) => {
+                const list: Node[] = data?.data?.nodes || [];
+                if (cancelled || list.length !== 1) return;
+                setSelectedEntities((prev) => ({ ...prev, node: list[0], allocation: null }));
+                setFormData((prev) =>
+                    prev.locationId !== locationId || prev.nodeId
+                        ? prev
+                        : { ...prev, nodeId: list[0].id, allocationId: null },
+                );
+                markAutoFilled('node');
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, [currentStep, formData.locationId, formData.nodeId, markAutoFilled]);
+
+    useEffect(() => {
+        if (currentStep !== 2 || !formData.nodeId || formData.allocationId) return;
+        let cancelled = false;
+        const nodeId = formData.nodeId;
+        axios
+            .get('/api/admin/allocations', { params: { node_id: nodeId, not_used: true, page: 1, limit: 1 } })
+            .then(({ data }) => {
+                const first: Allocation | undefined = data?.data?.allocations?.[0];
+                if (cancelled || !first) return;
+                setSelectedEntities((prev) => ({ ...prev, allocation: first }));
+                setFormData((prev) =>
+                    prev.nodeId !== nodeId || prev.allocationId ? prev : { ...prev, allocationId: first.id },
+                );
+                markAutoFilled('allocation');
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, [currentStep, formData.nodeId, formData.allocationId, markAutoFilled]);
+
+    useEffect(() => {
+        if (currentStep !== 3 || formData.realmId) return;
+        let cancelled = false;
+        axios
+            .get('/api/admin/realms', { params: { page: 1, limit: 2 } })
+            .then(({ data }) => {
+                const list: Realm[] = data?.data?.realms || [];
+                if (cancelled || list.length !== 1) return;
+                setSelectedEntities((prev) => ({ ...prev, realm: list[0], spell: null }));
+                setFormData((prev) =>
+                    prev.realmId ? prev : { ...prev, realmId: list[0].id, spellId: null, dockerImage: '', startup: '' },
+                );
+                markAutoFilled('realm');
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, [currentStep, formData.realmId, markAutoFilled]);
+
+    useEffect(() => {
+        if (currentStep !== 3 || !formData.realmId || formData.spellId) return;
+        let cancelled = false;
+        const realmId = formData.realmId;
+        axios
+            .get('/api/admin/spells', { params: { realm_id: realmId, page: 1, limit: 2 } })
+            .then(({ data }) => {
+                const list: Spell[] = data?.data?.spells || [];
+                if (cancelled || list.length !== 1) return;
+                setSelectedEntities((prev) => ({ ...prev, spell: list[0] }));
+                setFormData((prev) =>
+                    prev.realmId !== realmId || prev.spellId ? prev : { ...prev, spellId: list[0].id },
+                );
+                markAutoFilled('spell');
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, [currentStep, formData.realmId, formData.spellId, markAutoFilled]);
+
+    const autoFilledOnStep = autoFilled.filter((key) => AUTO_FILL_STEP[key] === currentStep);
+
     const handleSelectOwner = (owner: User) => {
         setSelectedEntities((prev) => ({ ...prev, owner }));
         setFormData((prev) => ({ ...prev, ownerId: owner.id }));
@@ -762,30 +895,37 @@ export default function CreateServerPage() {
         setSelectedEntities((prev) => ({ ...prev, location, node: null, allocation: null }));
         setFormData((prev) => ({ ...prev, locationId: location.id, nodeId: null, allocationId: null }));
         setLocationModalOpen(false);
+        setAutoFilled((prev) =>
+            prev.filter((key) => !(['location', 'node', 'allocation'] as AutoFillKey[]).includes(key)),
+        );
     };
 
     const handleSelectNode = (node: Node) => {
         setSelectedEntities((prev) => ({ ...prev, node, allocation: null }));
         setFormData((prev) => ({ ...prev, nodeId: node.id, allocationId: null }));
         setNodeModalOpen(false);
+        setAutoFilled((prev) => prev.filter((key) => !(['node', 'allocation'] as AutoFillKey[]).includes(key)));
     };
 
     const handleSelectAllocation = (allocation: Allocation) => {
         setSelectedEntities((prev) => ({ ...prev, allocation }));
         setFormData((prev) => ({ ...prev, allocationId: allocation.id }));
         setAllocationModalOpen(false);
+        setAutoFilled((prev) => prev.filter((key) => !(['allocation'] as AutoFillKey[]).includes(key)));
     };
 
     const handleSelectRealm = (realm: Realm) => {
         setSelectedEntities((prev) => ({ ...prev, realm, spell: null }));
         setFormData((prev) => ({ ...prev, realmId: realm.id, spellId: null, dockerImage: '', startup: '' }));
         setRealmModalOpen(false);
+        setAutoFilled((prev) => prev.filter((key) => !(['realm', 'spell'] as AutoFillKey[]).includes(key)));
     };
 
     const handleSelectSpell = (spell: Spell) => {
         setSelectedEntities((prev) => ({ ...prev, spell }));
         setFormData((prev) => ({ ...prev, spellId: spell.id }));
         setSpellModalOpen(false);
+        setAutoFilled((prev) => prev.filter((key) => !(['spell'] as AutoFillKey[]).includes(key)));
     };
 
     const stepProps = {
@@ -875,9 +1015,22 @@ export default function CreateServerPage() {
                 </div>
             )}
 
-            <div className='bg-card/50 border-border/50 mt-8 mb-12 rounded-2xl border p-6 backdrop-blur-xl'>
-                <StepIndicator steps={wizardSteps} currentStep={currentStep} />
+            <div className='bg-card border-border mt-6 mb-8 rounded-xl border p-4 sm:p-6'>
+                <StepIndicator steps={wizardSteps} currentStep={currentStep} onStepClick={setCurrentStep} />
             </div>
+
+            {autoFilledOnStep.length > 0 ? (
+                <div className='border-primary/30 bg-primary/5 mb-6 flex items-start gap-3 rounded-xl border p-4 text-sm'>
+                    <Sparkles className='text-primary mt-0.5 h-4 w-4 shrink-0' aria-hidden />
+                    <p>
+                        {t('admin.servers.form.wizard.autofill.note', {
+                            items: autoFilledOnStep
+                                .map((key) => t(`admin.servers.form.wizard.autofill.${key}`))
+                                .join(', '),
+                        })}
+                    </p>
+                </div>
+            ) : null}
 
             <div className='min-h-[400px]'>
                 {currentStep === 1 && (
@@ -933,7 +1086,7 @@ export default function CreateServerPage() {
                 {currentStep === 6 && <Step6Review {...stepProps} />}
             </div>
 
-            <div className='bg-card/50 border-border/50 mt-8 flex items-center justify-between rounded-2xl border p-6 backdrop-blur-xl'>
+            <div className='bg-card border-border mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 sm:p-6'>
                 <Button variant='outline' onClick={handlePrevious} disabled={currentStep === 1} className='gap-2'>
                     <ChevronLeft className='h-4 w-4' />
                     {t('admin.servers.form.wizard.previous')}
@@ -944,10 +1097,24 @@ export default function CreateServerPage() {
                 </span>
 
                 {currentStep < totalSteps ? (
-                    <Button onClick={handleNext} disabled={navDisabled} className='gap-2'>
-                        {t('admin.servers.form.wizard.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
+                    <div className='flex flex-wrap items-center justify-end gap-2'>
+                        {currentStep >= 3 && currentStep < totalSteps - 1 ? (
+                            <Button
+                                variant='ghost'
+                                onClick={handleSkipToReview}
+                                disabled={navDisabled}
+                                className='gap-2'
+                                title={t('admin.servers.form.wizard.skip_to_review_hint')}
+                            >
+                                <FastForward className='h-4 w-4' />
+                                {t('admin.servers.form.wizard.skip_to_review')}
+                            </Button>
+                        ) : null}
+                        <Button onClick={handleNext} disabled={navDisabled} className='gap-2'>
+                            {t('admin.servers.form.wizard.next')}
+                            <ChevronRight className='h-4 w-4' />
+                        </Button>
+                    </div>
                 ) : (
                     <Button
                         onClick={handleSubmit}
