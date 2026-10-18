@@ -21,6 +21,8 @@ import { useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useNavigation } from '@/hooks/useNavigation';
+import { useSettings } from '@/contexts/SettingsContext';
+import { getAdminNavigationItems } from '@/config/navigation';
 import { buildAdminBreadcrumbs } from '@/lib/admin-breadcrumbs';
 import { cn } from '@/lib/utils';
 
@@ -29,8 +31,14 @@ export function AdminBreadcrumbs({ className }: { className?: string }) {
     const pathname = usePathname() || '';
     const { t } = useTranslation();
     const { navigationItems } = useNavigation();
+    const { settings } = useSettings();
 
-    const crumbs = useMemo(() => buildAdminBreadcrumbs(pathname, navigationItems, t), [pathname, navigationItems, t]);
+    // The sidebar can leave pages out (a dismissed Pterodactyl importer, for instance) that should
+    // still get a proper trail, so the full admin list backs it up. Sidebar entries win on ties.
+    const crumbs = useMemo(
+        () => buildAdminBreadcrumbs(pathname, [...navigationItems, ...getAdminNavigationItems(t, settings)], t),
+        [pathname, navigationItems, settings, t],
+    );
     if (crumbs.length < 2) return null;
 
     return (

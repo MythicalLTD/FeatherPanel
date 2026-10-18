@@ -21,6 +21,13 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
+import { useSettings } from '@/contexts/SettingsContext';
+import {
+    getPterodactylImporterVisibility,
+    rememberPterodactylImporterRequirements,
+    type PterodactylImporterVisibility,
+} from '@/hooks/usePterodactylImporterVisibility';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -46,6 +53,9 @@ import {
     Key,
     BookOpen,
     MessageCircle,
+    Eye,
+    EyeOff,
+    Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -93,6 +103,28 @@ interface SingleApiClientResponse {
 
 export default function PterodactylImporterPage() {
     const { t, translations } = useTranslation();
+    const router = useRouter();
+    const { settings, refetch: refetchSettings } = useSettings();
+    const visibility = getPterodactylImporterVisibility(settings?.pterodactyl_importer_visibility);
+    const [savingVisibility, setSavingVisibility] = useState(false);
+
+    const setVisibility = async (value: PterodactylImporterVisibility) => {
+        setSavingVisibility(true);
+        try {
+            await axios.patch('/api/admin/settings', { pterodactyl_importer_visibility: value });
+            await refetchSettings();
+            if (value === 'hidden') {
+                toast.success(t('admin.pterodactyl_importer.visibility.hidden_toast'));
+                router.push('/admin');
+            } else {
+                toast.success(t('admin.pterodactyl_importer.visibility.shown_toast'));
+            }
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'admin.pterodactyl_importer.visibility.failed'));
+        } finally {
+            setSavingVisibility(false);
+        }
+    };
 
     const getTranslationObject = (key: string): Record<string, string> => {
         const keys = key.split('.');
@@ -146,6 +178,7 @@ export default function PterodactylImporterPage() {
             const response = await axios.get<PrerequisitesResponse>('/api/admin/pterodactyl-importer/prerequisites');
             if (response.data.success && response.data.data) {
                 setPrerequisites(response.data.data);
+                rememberPterodactylImporterRequirements(Boolean(response.data.data.panel_clean));
             } else {
                 toast.error(t('admin.pterodactyl_importer.prerequisites.failed'));
             }
@@ -266,7 +299,70 @@ export default function PterodactylImporterPage() {
                 title={t('admin.pterodactyl_importer.title')}
                 description={t('admin.pterodactyl_importer.description')}
                 icon={Database}
+                actions={
+                    visibility !== 'hidden' ? (
+                        <Button
+                            variant='glass'
+                            onClick={() => setVisibility('hidden')}
+                            disabled={savingVisibility}
+                            className='gap-2'
+                        >
+                            <EyeOff className='h-4 w-4' />
+                            {t('admin.pterodactyl_importer.visibility.hide')}
+                        </Button>
+                    ) : undefined
+                }
             />
+
+            {visibility === 'hidden' ? (
+                <div className='fp-surface flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between'>
+                    <div className='flex items-start gap-3'>
+                        <Info className='text-primary mt-0.5 h-5 w-5 shrink-0' />
+                        <div className='space-y-0.5'>
+                            <p className='text-sm font-medium'>
+                                {t('admin.pterodactyl_importer.visibility.hidden_title')}
+                            </p>
+                            <p className='text-muted-foreground text-sm'>
+                                {t('admin.pterodactyl_importer.visibility.hidden_description')}
+                            </p>
+                        </div>
+                    </div>
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => setVisibility('auto')}
+                        disabled={savingVisibility}
+                        className='shrink-0 gap-2'
+                    >
+                        <Eye className='h-4 w-4' />
+                        {t('admin.pterodactyl_importer.visibility.show_again')}
+                    </Button>
+                </div>
+            ) : visibility === 'auto' && prerequisites && !prerequisites.panel_clean ? (
+                <div className='fp-surface flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between'>
+                    <div className='flex items-start gap-3'>
+                        <Info className='text-primary mt-0.5 h-5 w-5 shrink-0' />
+                        <div className='space-y-0.5'>
+                            <p className='text-sm font-medium'>
+                                {t('admin.pterodactyl_importer.visibility.auto_title')}
+                            </p>
+                            <p className='text-muted-foreground text-sm'>
+                                {t('admin.pterodactyl_importer.visibility.auto_description')}
+                            </p>
+                        </div>
+                    </div>
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => setVisibility('always')}
+                        disabled={savingVisibility}
+                        className='shrink-0 gap-2'
+                    >
+                        <Eye className='h-4 w-4' />
+                        {t('admin.pterodactyl_importer.visibility.always_show')}
+                    </Button>
+                </div>
+            ) : null}
 
             <WidgetRenderer widgets={getWidgets('admin-pterodactyl-importer', 'after-header')} />
 

@@ -28,6 +28,8 @@ export interface AppSettings {
     module_game_enabled?: string;
     module_web_enabled?: string;
     module_vds_enabled?: string;
+    /** 'auto' (default), 'always' or 'hidden'. */
+    pterodactyl_importer_visibility?: string;
     server_allow_allocation_select: string;
     server_allow_egg_change: string;
     server_allow_user_made_firewall: string;
