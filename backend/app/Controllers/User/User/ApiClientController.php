@@ -326,14 +326,9 @@ class ApiClientController
             return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
         }
 
-        // Check if API key creation is allowed (unless user has bypass permission)
-        $app = App::getInstance(true);
-        $config = $app->getConfig();
-        $allowApiKeysCreate = $config->getSetting(ConfigInterface::USER_ALLOW_API_KEYS_CREATE, 'true') === 'true';
-        $hasBypassPermission = PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_API_BYPASS_RESTRICTIONS);
-
-        if (!$allowApiKeysCreate && !$hasBypassPermission) {
-            return ApiResponse::error('You are not allowed to create API keys!', 'API_KEY_CREATION_NOT_ALLOWED', 403, []);
+        $notAllowed = $this->ensureApiKeyCreationAllowed($user);
+        if ($notAllowed !== null) {
+            return $notAllowed;
         }
 
         $data = json_decode($request->getContent(), true);
@@ -431,13 +426,9 @@ class ApiClientController
             return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
         }
 
-        $app = App::getInstance(true);
-        $config = $app->getConfig();
-        $allowApiKeysCreate = $config->getSetting(ConfigInterface::USER_ALLOW_API_KEYS_CREATE, 'true') === 'true';
-        $hasBypassPermission = PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_API_BYPASS_RESTRICTIONS);
-
-        if (!$allowApiKeysCreate && !$hasBypassPermission) {
-            return ApiResponse::error('You are not allowed to create API keys!', 'API_KEY_CREATION_NOT_ALLOWED', 403, []);
+        $notAllowed = $this->ensureApiKeyCreationAllowed($user);
+        if ($notAllowed !== null) {
+            return $notAllowed;
         }
 
         $data = json_decode($request->getContent(), true);
@@ -1643,13 +1634,19 @@ class ApiClientController
         ], 'Authorization code exchanged', 200);
     }
 
+    /**
+     * Personal API keys (including the ones used for MCP) follow the panel-wide
+     * `user_allow_api_keys_create` setting. When an admin turns that off, the
+     * dedicated `user.api_keys.create` permission still allows it for a role.
+     * `admin.api.bypass_restrictions` only lifts rate limits and is not used here;
+     * what a key can do on admin routes is still limited by the owner's permissions.
+     */
     private function ensureApiKeyCreationAllowed(array $user): ?Response
     {
         $app = App::getInstance(true);
         $config = $app->getConfig();
         $allowApiKeysCreate = $config->getSetting(ConfigInterface::USER_ALLOW_API_KEYS_CREATE, 'true') === 'true';
-        $hasBypassPermission = PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_API_BYPASS_RESTRICTIONS);
-        if (!$allowApiKeysCreate && !$hasBypassPermission) {
+        if (!$allowApiKeysCreate && !PermissionHelper::hasPermission($user['uuid'], Permissions::USER_API_KEYS_CREATE, $user)) {
             return ApiResponse::error('You are not allowed to create API keys!', 'API_KEY_CREATION_NOT_ALLOWED', 403, []);
         }
 

@@ -291,6 +291,9 @@ class Permissions
     /** Bypass API rate limits and restrictions */
     public const ADMIN_API_BYPASS_RESTRICTIONS = 'admin.api.bypass_restrictions';
 
+    /** Create personal API keys even when user API key creation is disabled panel-wide */
+    public const USER_API_KEYS_CREATE = 'user.api_keys.create';
+
     // Admin Tickets Permissions
     /** View support tickets */
     public const ADMIN_TICKETS_VIEW = 'admin.tickets.view';
@@ -998,6 +1001,12 @@ class Permissions
                 'value' => self::ADMIN_API_BYPASS_RESTRICTIONS,
                 'category' => 'Admin API',
                 'description' => 'Bypass API rate limits and restrictions',
+            ],
+            [
+                'constant' => 'USER_API_KEYS_CREATE',
+                'value' => self::USER_API_KEYS_CREATE,
+                'category' => 'User API',
+                'description' => 'Create personal API keys even when user API key creation is disabled panel-wide',
             ],
             [
                 'constant' => 'ADMIN_TICKETS_VIEW',

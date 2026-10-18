@@ -4,6 +4,7 @@
 
 ### Added
 
+- New `user.api_keys.create` role permission: lets a role create personal API keys (including MCP keys) when "Allow users to create API keys" is turned off panel-wide. by @nayskutzu
 - Compact server console: slim page header with address chip, server hero with status, address, uptime and node chips, a full-height console with a single-row toolbar (filters, quick rules, search, auto-scroll, clear, fullscreen) and CPU, memory, disk and network cards with sparklines. by @nayskutzu
 - ClickHouse can now be used as a remote database host, including WebSpace database provisioning, dumps and restores (#255). by @Devority
 - Proxmox VNC consoles can now be proxied through the panel, so the Proxmox node is never exposed to the browser (#256). by @Devority
@@ -13,6 +14,7 @@
 
 ### Fixed
 
+- API key creation no longer depends on the admin `admin.api.bypass_restrictions` permission. Creation follows the "Allow users to create API keys" setting (or the new `user.api_keys.create` permission), and `admin.api.bypass_restrictions` now does what it says: authenticated users with it skip per-route rate limits, everyone else keeps them. The account page also read the `'true'`/`'false'` setting strings as truthy, so the create button and the profile field toggles ignored a disabled setting. by @nayskutzu
 - Bottom dock: the dock is now centered at every icon size and only as wide as its items; icons sit in fixed-width slots and hover magnification scales the icon in place, so neighbours no longer shift; long labels truncate cleanly with a tooltip (icons-only mode shows tooltips on hover); section pills are replaced by slim dividers and the collapse toggle is a compact icon button. by @nayskutzu
 - Translation placeholders render their values again (`{{name}}` and `{name}`, zero and empty values), e.g. the file manager upload progress showing `UPLOADING {FILE}`. A new `scan:translation-params` step fails the build when a call misses a placeholder value. by @nayskutzu
 - Tab bars that overflow (admin settings, user, node, server, spell and webplate editors) keep every tab reachable with scroll fades, arrow buttons and the active tab kept in view; admin settings uses a dropdown on phones. by @nayskutzu

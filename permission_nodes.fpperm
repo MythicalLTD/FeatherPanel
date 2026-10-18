@@ -157,6 +157,7 @@ ADMIN_KNOWLEDGEBASE_ARTICLES_EDIT=admin.knowledgebase.articles.edit | Admin Know
 ADMIN_KNOWLEDGEBASE_ARTICLES_DELETE=admin.knowledgebase.articles.delete | Admin Knowledgebase Articles | Delete knowledgebase articles
 
 ADMIN_API_BYPASS_RESTRICTIONS=admin.api.bypass_restrictions | Admin API | Bypass API rate limits and restrictions
+USER_API_KEYS_CREATE=user.api_keys.create | User API | Create personal API keys even when user API key creation is disabled panel-wide
 
 
 ADMIN_TICKETS_VIEW=admin.tickets.view | Admin Tickets | View support tickets
