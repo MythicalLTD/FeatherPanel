@@ -31,7 +31,7 @@ import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-import { cn, formatDate } from '@/lib/utils';
+import { cn, formatDate, isEnabled } from '@/lib/utils';
 import type { SubdomainOverview, SubdomainEntry } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { PageLoading } from '@/components/featherui/PageLoading';
@@ -42,7 +42,9 @@ export default function ServerSubdomainsPage() {
     const router = useRouter();
     const pathname = usePathname();
     const { t } = useTranslation();
-    const { loading: settingsLoading } = useSettings();
+    const { settings, loading: settingsLoading } = useSettings();
+    // The sidebar hides this page when admins turn the feature off; reached by URL it says so instead of erroring.
+    const subdomainsEnabled = isEnabled(settings?.server_allow_user_made_subdomains);
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
     const { getWidgets } = usePluginWidgets('server-subdomains');
 
@@ -79,12 +81,13 @@ export default function ServerSubdomainsPage() {
     }, [uuidShort, t]);
 
     React.useEffect(() => {
-        if (canManage) {
+        if (settingsLoading) return;
+        if (canManage && subdomainsEnabled) {
             fetchData();
         } else {
             setLoading(false);
         }
-    }, [fetchData, canManage]);
+    }, [fetchData, canManage, subdomainsEnabled, settingsLoading]);
 
     const handleDelete = async () => {
         if (!selectedSubdomain) return;
@@ -105,6 +108,24 @@ export default function ServerSubdomainsPage() {
 
     if (permissionsLoading || settingsLoading) {
         return <PageLoading />;
+    }
+
+    if (!subdomainsEnabled) {
+        return (
+            <div className='space-y-6'>
+                <ServerPageHeader title={t('serverSubdomains.title')} description={t('serverSubdomains.description')} />
+                <EmptyState
+                    icon={Globe}
+                    title={t('serverSubdomains.disabled')}
+                    description={t('serverSubdomains.disabledDescription')}
+                    action={
+                        <Button variant='outline' onClick={() => safeBack(router)}>
+                            {t('common.goBack')}
+                        </Button>
+                    }
+                />
+            </div>
+        );
     }
 
     if (loading && subdomains.length === 0) {

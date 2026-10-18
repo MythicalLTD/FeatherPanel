@@ -38,7 +38,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { PoweredByFeatherPanel } from '@/components/branding/PoweredByFeatherPanel';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { getApiErrorCode, getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { formatMemory, formatDisk } from '@/lib/server-utils';
 import { cn } from '@/lib/utils';
 
@@ -227,6 +227,7 @@ export default function StatusPage() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [disabled, setDisabled] = useState(false);
     const [statusData, setStatusData] = useState<StatusData | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedNodeId, setExpandedNodeId] = useState<number | null>(null);
@@ -250,11 +251,14 @@ export default function StatusPage() {
                     setError(getApiErrorMessageFromPayload(data, t, 'dashboard.status.failedToFetchStatus'));
                 }
             } catch (err: unknown) {
+                // A disabled status page is a setting, not a failure: show the notice and stop polling.
+                if (getApiErrorCode(err) === 'STATUS_PAGE_DISABLED') {
+                    setDisabled(true);
+                    return;
+                }
                 const errorMessage = getApiErrorMessage(err, t, 'dashboard.status.failedToFetchStatus');
                 setError(errorMessage);
-                if (errorMessage !== 'Status page is disabled') {
-                    toast.error(errorMessage);
-                }
+                toast.error(errorMessage);
             } finally {
                 setLoading(false);
                 setRefreshing(false);
@@ -270,9 +274,13 @@ export default function StatusPage() {
 
     useEffect(() => {
         fetchNodes();
+    }, [fetchNodes]);
+
+    useEffect(() => {
+        if (disabled) return;
         const interval = setInterval(() => fetchNodes(true), 30000);
         return () => clearInterval(interval);
-    }, [fetchNodes]);
+    }, [fetchNodes, disabled]);
 
     const filteredNodes =
         statusData?.data?.nodes?.filter(
@@ -296,7 +304,7 @@ export default function StatusPage() {
     }
 
     //  Disabled
-    if (statusData && !statusData.enabled) {
+    if (disabled || (statusData && !statusData.enabled)) {
         return (
             <div className='mx-auto max-w-4xl p-4 md:p-8'>
                 <Alert>

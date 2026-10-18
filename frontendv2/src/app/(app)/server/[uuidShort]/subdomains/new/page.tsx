@@ -29,6 +29,8 @@ import { HeadlessSelect } from '@/components/ui/headless-select';
 import { toast } from 'sonner';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useSettings } from '@/contexts/SettingsContext';
+import { EmptyState } from '@/components/featherui/EmptyState';
+import { isEnabled } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import type { SubdomainCreateRequest, SubdomainOverview } from '@/types/server';
@@ -40,7 +42,9 @@ export default function CreateSubdomainPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
     const router = useRouter();
     const { t } = useTranslation();
-    const { loading: settingsLoading } = useSettings();
+    const { settings, loading: settingsLoading } = useSettings();
+    // The sidebar hides this page when admins turn the feature off; reached by URL it says so instead of erroring.
+    const subdomainsEnabled = isEnabled(settings?.server_allow_user_made_subdomains);
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
     const { getWidgets } = usePluginWidgets('server-subdomains-new');
 
@@ -77,12 +81,13 @@ export default function CreateSubdomainPage() {
     }, [uuidShort, formData.domain_uuid]);
 
     React.useEffect(() => {
-        if (canManage) {
+        if (settingsLoading) return;
+        if (canManage && subdomainsEnabled) {
             fetchData();
         } else {
             setLoading(false);
         }
-    }, [fetchData, canManage]);
+    }, [fetchData, canManage, subdomainsEnabled, settingsLoading]);
 
     const handleCreate = async () => {
         if (!formData.domain_uuid || !formData.subdomain.trim()) {
@@ -114,6 +119,27 @@ export default function CreateSubdomainPage() {
 
     if (permissionsLoading || settingsLoading || loading) {
         return <PageLoading />;
+    }
+
+    if (!subdomainsEnabled) {
+        return (
+            <div className='space-y-6'>
+                <ServerPageHeader
+                    title={t('serverSubdomains.createButton')}
+                    description={t('serverSubdomains.newSubdomainDescription')}
+                />
+                <EmptyState
+                    icon={Globe}
+                    title={t('serverSubdomains.disabled')}
+                    description={t('serverSubdomains.disabledDescription')}
+                    action={
+                        <Button variant='outline' onClick={() => safeBack(router)}>
+                            {t('common.goBack')}
+                        </Button>
+                    }
+                />
+            </div>
+        );
     }
 
     if (!canManage) {

@@ -4292,7 +4292,9 @@
 		"helpfulTips": "Helpful Tips",
 		"guide": "Guide",
 		"guide_custom_address": "Subdomains allow you to give your server a custom address, like",
-		"guide_multiple": "You can create multiple subdomains for different purposes."
+		"guide_multiple": "You can create multiple subdomains for different purposes.",
+		"disabled": "Subdomains are turned off",
+		"disabledDescription": "An administrator has disabled subdomain management on this panel."
 	},
 	"serverSchedules": {
 		"title": "Schedules",
