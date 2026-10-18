@@ -23,6 +23,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\AccountLockoutHelper;
 use App\Mail\templates\EmailLoginCode;
 use App\Plugins\Events\Events\AuthEvent;
 use App\Helpers\PasswordResetTokenHelper;
@@ -305,7 +306,27 @@ class EmailLoginController
             return ApiResponse::error('No active login code found. Please request a new code.', 'NO_ACTIVE_CODE', 401);
         }
 
-        if ($storedCode !== $code) {
+        // A 6-digit code is only 10^6 guesses: cap wrong guesses per account
+        // (the per-IP rate limit alone does not stop a distributed attack).
+        // The attempt is reserved before comparing so parallel requests count too.
+        $lockoutId = 'email_login:' . $userInfo['uuid'];
+        if (!AccountLockoutHelper::reserveHardLockAttempt($lockoutId, maxAttempts: 5, lockoutSeconds: 900)) {
+            // Burn the code: the owner has to request a new one after the lockout.
+            User::updateUser($userInfo['uuid'], [
+                'email_login_code' => null,
+                'email_login_expires' => null,
+            ]);
+            $retryAfter = max(1, AccountLockoutHelper::getLockoutRemaining($lockoutId));
+
+            return ApiResponse::error(
+                'Too many invalid codes. Try again in ' . (int) ceil($retryAfter / 60) . ' minute(s).',
+                'ACCOUNT_LOCKED',
+                429,
+                ['retry_after' => $retryAfter]
+            );
+        }
+
+        if (!hash_equals((string) $storedCode, $code)) {
             // Emit failed login event
             global $eventManager;
             if (isset($eventManager) && $eventManager !== null) {
@@ -332,6 +353,8 @@ class EmailLoginController
 
             return ApiResponse::error('Code has expired. Please request a new code.', 'CODE_EXPIRED', 401);
         }
+
+        AccountLockoutHelper::clear($lockoutId);
 
         // Check if 2FA is enabled
         if (isset($userInfo['two_fa_enabled']) && $userInfo['two_fa_enabled'] == 'true') {
