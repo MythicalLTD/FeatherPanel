@@ -92,8 +92,11 @@ class ConsoleController
                 }
 
                 if (is_array($data) && !empty($data['command'])) {
+                    if (!is_string($data['command'])) {
+                        return ApiResponse::error('Command must be a string', 'INVALID_DATA_TYPE', 400);
+                    }
                     $command = trim($data['command']);
-                    $workingDirectory = $data['cwd'] ?? getcwd();
+                    $workingDirectory = isset($data['cwd']) && is_string($data['cwd']) ? $data['cwd'] : getcwd();
                 }
             }
 
