@@ -794,7 +794,7 @@ class ServerFirewallController
         }
 
         if (isset($payload['remote_ip'])) {
-            $remoteIp = trim($payload['remote_ip']);
+            $remoteIp = is_string($payload['remote_ip']) ? trim($payload['remote_ip']) : '';
 
             // Basic type and empty check
             if (!is_string($payload['remote_ip']) || $remoteIp === '') {
