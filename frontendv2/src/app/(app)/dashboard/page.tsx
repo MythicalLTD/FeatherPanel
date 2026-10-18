@@ -69,6 +69,7 @@ import {
     type WebSpaceUsageFields,
 } from '@/components/dashboard/DashboardWidgets';
 import { DashboardCustomizeSheet } from '@/components/dashboard/DashboardCustomizeSheet';
+import { DashboardRun } from '@/components/dashboard/DashboardRun';
 import { RoleBadge } from '@/components/RoleBadge';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -1015,31 +1016,14 @@ export default function DashboardPage() {
                             </div>
                         );
                     }
-                    // Mobile: one column in list order (columns use display: contents).
                     return (
-                        <div
+                        <DashboardRun
                             key={`run-${i}`}
-                            className={cn('fp-dash-run flex flex-col lg:grid lg:grid-cols-3 lg:items-start', gap)}
-                        >
-                            <div
-                                className={cn(
-                                    'fp-dash-main contents lg:col-span-2 lg:flex lg:flex-col',
-                                    gap,
-                                    config.sideFirst ? 'lg:order-2' : 'lg:order-1',
-                                )}
-                            >
-                                {main.map((w) => wrap(w))}
-                            </div>
-                            <div
-                                className={cn(
-                                    'fp-dash-side contents lg:flex lg:flex-col',
-                                    compact ? 'gap-3' : 'gap-4',
-                                    config.sideFirst ? 'lg:order-1' : 'lg:order-2',
-                                )}
-                            >
-                                {side.map((w) => wrap(w))}
-                            </div>
-                        </div>
+                            main={main}
+                            side={side}
+                            sideFirst={config.sideFirst}
+                            compact={compact}
+                        />
                     );
                 })}
             </div>
