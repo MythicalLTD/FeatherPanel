@@ -41,6 +41,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class TicketsController
 {
+    /** @var array<string, array<int|string, array|null>> lookups of this request (one controller per request) */
+    private array $lookups = [];
+
     #[OA\Get(
         path: '/api/user/tickets',
         summary: 'Get user tickets',
@@ -161,9 +164,10 @@ class TicketsController
         );
 
         // Enrich tickets with related data
+        $unread = TicketMessage::getUnreadSinceLastReplyForTickets(array_column($tickets, 'id'), (string) $user['uuid']);
         foreach ($tickets as &$ticket) {
             $ticket = $this->enrichTicketData($ticket, $isAdminView);
-            $unreadMeta = TicketMessage::getUnreadSinceLastReply((int) $ticket['id'], $user['uuid']);
+            $unreadMeta = $unread[(int) $ticket['id']] ?? ['unread_count' => 0, 'has_unread' => false];
             $ticket['unread_count'] = $unreadMeta['unread_count'];
             $ticket['has_unread_messages_since_last_reply'] = $unreadMeta['has_unread'];
         }
@@ -1104,13 +1108,31 @@ class TicketsController
     }
 
     /**
+     * Memoised row lookup: a ticket list or thread repeats the same
+     * categories, statuses and users, so each is fetched once.
+     *
+     * @template K of int|string
+     *
+     * @param K $key
+     * @param callable(K): (array|null) $loader
+     */
+    private function lookup(string $type, int | string $key, callable $loader): ?array
+    {
+        if (!array_key_exists($type, $this->lookups) || !array_key_exists($key, $this->lookups[$type])) {
+            $this->lookups[$type][$key] = $loader($key);
+        }
+
+        return $this->lookups[$type][$key];
+    }
+
+    /**
      * Enrich ticket data with related information.
      */
     private function enrichTicketData(array $ticket, bool $includeUser = false): array
     {
         // Add category
         if (isset($ticket['category_id'])) {
-            $category = TicketCategory::getById((int) $ticket['category_id']);
+            $category = $this->lookup('category', (int) $ticket['category_id'], static fn (int $id) => TicketCategory::getById($id));
             $ticket['category'] = $category ? [
                 'id' => (int) $category['id'],
                 'name' => $category['name'],
@@ -1121,7 +1143,7 @@ class TicketsController
 
         // Add priority
         if (isset($ticket['priority_id'])) {
-            $priority = TicketPriority::getById((int) $ticket['priority_id']);
+            $priority = $this->lookup('priority', (int) $ticket['priority_id'], static fn (int $id) => TicketPriority::getById($id));
             $ticket['priority'] = $priority ? [
                 'id' => (int) $priority['id'],
                 'name' => $priority['name'],
@@ -1131,7 +1153,7 @@ class TicketsController
 
         // Add status
         if (isset($ticket['status_id'])) {
-            $status = TicketStatus::getById((int) $ticket['status_id']);
+            $status = $this->lookup('status', (int) $ticket['status_id'], static fn (int $id) => TicketStatus::getById($id));
             $ticket['status'] = $status ? [
                 'id' => (int) $status['id'],
                 'name' => $status['name'],
@@ -1141,7 +1163,7 @@ class TicketsController
 
         // Add server
         if (isset($ticket['server_id']) && $ticket['server_id'] !== null) {
-            $server = Server::getServerById((int) $ticket['server_id']);
+            $server = $this->lookup('server', (int) $ticket['server_id'], static fn (int $id) => Server::getServerById($id));
             $ticket['server'] = $server ? [
                 'id' => (int) $server['id'],
                 'uuid' => $server['uuid'],
@@ -1153,7 +1175,7 @@ class TicketsController
         }
 
         if ($includeUser && !empty($ticket['user_uuid'])) {
-            $ticketUser = User::getUserByUuid((string) $ticket['user_uuid']);
+            $ticketUser = $this->lookup('user', (string) $ticket['user_uuid'], static fn (string $uuid) => User::getUserByUuid($uuid));
             $ticket['user'] = $ticketUser ? [
                 'uuid' => $ticketUser['uuid'],
                 'username' => $ticketUser['username'],
@@ -1171,7 +1193,7 @@ class TicketsController
     private function enrichMessageData(array $message): array
     {
         if (isset($message['user_uuid']) && $message['user_uuid']) {
-            $user = User::getUserByUuid($message['user_uuid']);
+            $user = $this->lookup('user', (string) $message['user_uuid'], static fn (string $uuid) => User::getUserByUuid($uuid));
             if ($user) {
                 $message['user'] = [
                     'uuid' => $user['uuid'],

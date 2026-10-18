@@ -17,6 +17,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import axios from 'axios';
+import { useLiveRefresh } from '@/hooks/useLiveRefresh';
+import { realtimeTopics } from '@/lib/realtime';
 import type { Notification, NotificationsResponse } from '@/types/notification';
 
 interface NotificationContextType {
@@ -98,20 +100,23 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (typeof window !== 'undefined' && !checkIsAuthPage() && !checkIsPublicNoAuthPage()) {
             fetchNotifications();
-
-            const interval = setInterval(
-                () => {
-                    if (!checkIsAuthPage()) {
-                        fetchNotifications();
-                    }
-                },
-                5 * 60 * 1000,
-            );
-            return () => clearInterval(interval);
         } else {
             setLoading(false);
         }
     }, [fetchNotifications, checkIsAuthPage, checkIsPublicNoAuthPage]);
+
+    // Admins creating / editing / deleting a notification push an event; the
+    // 5-minute poll only runs while the live stream is unavailable.
+    const liveEnabled = typeof window !== 'undefined' && !checkIsAuthPage() && !checkIsPublicNoAuthPage();
+    useLiveRefresh({
+        topics: [realtimeTopics.notifications],
+        types: ['notifications.updated'],
+        refresh: () => {
+            if (!checkIsAuthPage()) void fetchNotifications();
+        },
+        pollMs: 5 * 60 * 1000,
+        enabled: liveEnabled,
+    });
 
     const dismissNotification = useCallback((id: number) => {
         setDismissedIds((prev) => {

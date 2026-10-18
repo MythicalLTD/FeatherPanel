@@ -5,6 +5,7 @@ set -euo pipefail
 PANEL_DIR="${PANEL_DIR:-/var/www/featherpanel}"
 NEXT_SERVICE_NAME="${NEXT_SERVICE_NAME:-featherpanel-next}"
 RUNNER_SERVICE_NAME="${RUNNER_SERVICE_NAME:-featherpanel-async-runner}"
+BACKEND_SERVICE_NAME="${BACKEND_SERVICE_NAME:-featherpanel-backend}"
 NGINX_SITE_NAME="${NGINX_SITE_NAME:-FeatherPanel.conf}"
 NGINX_SITE_AVAILABLE="/etc/nginx/sites-available/${NGINX_SITE_NAME}"
 NGINX_SITE_ENABLED="/etc/nginx/sites-enabled/${NGINX_SITE_NAME}"
@@ -30,9 +31,13 @@ stop_disable_service() {
 remove_services() {
     stop_disable_service "$NEXT_SERVICE_NAME"
     stop_disable_service "$RUNNER_SERVICE_NAME"
+    stop_disable_service "$BACKEND_SERVICE_NAME"
 
     rm -f "/etc/systemd/system/${NEXT_SERVICE_NAME}.service"
     rm -f "/etc/systemd/system/${RUNNER_SERVICE_NAME}.service"
+    rm -f "/etc/systemd/system/${BACKEND_SERVICE_NAME}.service"
+    rm -f /etc/featherpanel/backend.env /etc/php-zts/conf.d/99-featherpanel.ini
+    rmdir /etc/featherpanel 2>/dev/null || true
     systemctl daemon-reload
 }
 

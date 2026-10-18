@@ -16,6 +16,7 @@
  */
 
 use App\App;
+use App\Realtime\Events;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
@@ -114,7 +115,10 @@ return function (RouteCollection $routes): void {
                 return ApiResponse::error('Missing server UUID', 'MISSING_SERVER_UUID', 400);
             }
 
-            return (new WingsServerInstallController())->postServerInstall($request, $uuid);
+            return Events::onSuccess(
+                (new WingsServerInstallController())->postServerInstall($request, $uuid),
+                static fn () => Events::serverChanged((string) $uuid, 'install')
+            );
         },
         ['POST']
     );
@@ -180,7 +184,10 @@ return function (RouteCollection $routes): void {
                 return ApiResponse::error('Missing backup UUID', 'MISSING_BACKUP_UUID', 400);
             }
 
-            return (new WingsBackupController())->reportBackupCompletion($request, $backupUuid);
+            return Events::onSuccess(
+                (new WingsBackupController())->reportBackupCompletion($request, $backupUuid),
+                static fn () => Events::backupChanged((string) $backupUuid)
+            );
         },
         ['POST']
     );
@@ -195,7 +202,10 @@ return function (RouteCollection $routes): void {
                 return ApiResponse::error('Missing backup UUID', 'MISSING_BACKUP_UUID', 400);
             }
 
-            return (new WingsBackupController())->reportBackupRestoration($request, $backupUuid);
+            return Events::onSuccess(
+                (new WingsBackupController())->reportBackupRestoration($request, $backupUuid),
+                static fn () => Events::backupChanged((string) $backupUuid)
+            );
         },
         ['POST']
     );
@@ -211,7 +221,10 @@ return function (RouteCollection $routes): void {
                 return ApiResponse::error('Missing server UUID', 'MISSING_SERVER_UUID', 400);
             }
 
-            return (new WingsTransferStatusController())->setTransferStatus($request, $uuid);
+            return Events::onSuccess(
+                (new WingsTransferStatusController())->setTransferStatus($request, $uuid),
+                static fn () => Events::serverChanged((string) $uuid, 'transfer')
+            );
         },
         ['POST']
     );
@@ -241,7 +254,10 @@ return function (RouteCollection $routes): void {
                 return ApiResponse::error('Missing server UUID', 'MISSING_SERVER_UUID', 400);
             }
 
-            return (new WingsTransferStatusController())->transferFailure($request, $uuid);
+            return Events::onSuccess(
+                (new WingsTransferStatusController())->transferFailure($request, $uuid),
+                static fn () => Events::serverChanged((string) $uuid, 'transfer')
+            );
         },
         ['POST']
     );
@@ -257,7 +273,10 @@ return function (RouteCollection $routes): void {
                 return ApiResponse::error('Missing server UUID', 'MISSING_SERVER_UUID', 400);
             }
 
-            return (new WingsTransferStatusController())->transferSuccess($request, $uuid);
+            return Events::onSuccess(
+                (new WingsTransferStatusController())->transferSuccess($request, $uuid),
+                static fn () => Events::serverChanged((string) $uuid, 'transfer')
+            );
         },
         ['POST']
     );

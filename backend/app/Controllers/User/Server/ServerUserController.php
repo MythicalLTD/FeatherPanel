@@ -417,15 +417,7 @@ class ServerUserController
         $realmsById = \App\Chat\Realm::getByIds(array_keys($realmIds));
         $spellsById = Spell::getSpellsByIds(array_keys($spellIds));
         $allocationsById = Allocation::getAllocationsByIds(array_keys($allocationIds));
-        $ownersById = [];
-        if ($ownerIds !== []) {
-            foreach (array_keys($ownerIds) as $ownerId) {
-                $owner = \App\Chat\User::getUserById($ownerId);
-                if ($owner) {
-                    $ownersById[$ownerId] = $owner;
-                }
-            }
-        }
+        $ownersById = $ownerIds !== [] ? \App\Chat\User::getUsersByIds(array_keys($ownerIds)) : [];
 
         // Add related data to each server.
         foreach ($servers as &$server) {
@@ -587,11 +579,17 @@ class ServerUserController
             status: $statusFilter,
         );
 
+        $owners = \App\Chat\User::getUsersByIds(array_column($servers, 'owner_id'));
+        $nodes = Node::getNodesByIds(array_column($servers, 'node_id'));
+        $locations = Location::getByIds(array_column($nodes, 'location_id'));
+        $realms = \App\Chat\Realm::getByIds(array_column($servers, 'realms_id'));
+        $spells = Spell::getSpellsByIds(array_column($servers, 'spell_id'));
+        $allocations = Allocation::getAllocationsByIds(array_column($servers, 'allocation_id'));
         foreach ($servers as &$server) {
             $server['is_subuser'] = false;
             $server['subuser_permissions'] = [];
             $server['subuser_id'] = null;
-            $owner = \App\Chat\User::getUserById($server['owner_id']);
+            $owner = $owners[(int) $server['owner_id']] ?? null;
             $server['owner'] = $owner ? [
                 'id' => $owner['id'],
                 'username' => $owner['username'],
@@ -599,7 +597,7 @@ class ServerUserController
                 'avatar' => $owner['avatar'] ?? null,
             ] : null;
 
-            $node = Node::getNodeById($server['node_id']);
+            $node = $nodes[(int) $server['node_id']] ?? null;
             $caps = DaemonCapabilities::fromNode($node ?? []);
             $server['node'] = [
                 'name' => $node['name'] ?? null,
@@ -612,7 +610,7 @@ class ServerUserController
 
             $location = null;
             if (isset($node['location_id']) && $node['location_id'] > 0) {
-                $locationData = Location::getById((int) $node['location_id']);
+                $locationData = $locations[(int) $node['location_id']] ?? null;
                 if ($locationData) {
                     $location = [
                         'id' => $locationData['id'] ?? null,
@@ -624,19 +622,19 @@ class ServerUserController
             }
             $server['location'] = $location;
 
-            $server['realm'] = \App\Chat\Realm::getById($server['realms_id']);
+            $server['realm'] = $realms[(int) $server['realms_id']] ?? null;
             $server['realm'] = [
                 'name' => $server['realm']['name'] ?? null,
                 'description' => $server['realm']['description'] ?? null,
                 'logo' => $server['realm']['logo'] ?? null,
             ];
-            $server['spell'] = Spell::getSpellById($server['spell_id']);
+            $server['spell'] = $spells[(int) $server['spell_id']] ?? null;
             $server['spell'] = [
                 'name' => $server['spell']['name'] ?? null,
                 'description' => $server['spell']['description'] ?? null,
                 'banner' => $server['spell']['banner'] ?? null,
             ];
-            $server['allocation'] = Allocation::getAllocationById($server['allocation_id']);
+            $server['allocation'] = $allocations[(int) $server['allocation_id']] ?? null;
             $server['allocation'] = [
                 'ip' => $server['allocation']['ip'] ?? null,
                 'port' => $server['allocation']['port'] ?? null,

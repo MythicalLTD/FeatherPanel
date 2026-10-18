@@ -17,6 +17,7 @@
 
 use App\App;
 use App\Permissions;
+use App\Realtime\Events;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
@@ -53,7 +54,7 @@ return function (RouteCollection $routes): void {
         'admin-notifications-create',
         '/api/admin/notifications',
         function (Request $request) {
-            return (new NotificationsController())->create($request);
+            return Events::onSuccess((new NotificationsController())->create($request), [Events::class, 'notificationsChanged']);
         },
         Permissions::ADMIN_NOTIFICATIONS_CREATE,
         ['PUT']
@@ -69,7 +70,7 @@ return function (RouteCollection $routes): void {
                 return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
             }
 
-            return (new NotificationsController())->update($request, (int) $id);
+            return Events::onSuccess((new NotificationsController())->update($request, (int) $id), [Events::class, 'notificationsChanged']);
         },
         Permissions::ADMIN_NOTIFICATIONS_EDIT,
         ['PATCH']
@@ -85,7 +86,7 @@ return function (RouteCollection $routes): void {
                 return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
             }
 
-            return (new NotificationsController())->delete($request, (int) $id);
+            return Events::onSuccess((new NotificationsController())->delete($request, (int) $id), [Events::class, 'notificationsChanged']);
         },
         Permissions::ADMIN_NOTIFICATIONS_DELETE,
         ['DELETE']

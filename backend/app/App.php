@@ -20,6 +20,7 @@ namespace App;
 use RateLimit\Rate;
 use App\Chat\Database;
 use App\Helpers\XChaCha20;
+use App\Routing\RouteCache;
 use Random\RandomException;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigFactory;
@@ -70,6 +71,20 @@ class App
     private int $handledRequests = 0;
     private array | false | null $compiledRoutes = null;
     private int $compiledRouteCount = 0;
+
+    /**
+     * Route cache state (see App\Routing\RouteCache): false = not usable in
+     * this process, null = not loaded yet.
+     *
+     * @var array{files: list<string>, compiled: array}|false|null
+     */
+    private array | false | null $routeCache = null;
+
+    /** @var list<string>|null route files of this boot, in registration order */
+    private ?array $routeFiles = null;
+
+    /** @var array<string, RouteCollection> routes of single route files, loaded on demand */
+    private array $routeFileCollections = [];
 
     /**
      * Boot the application.
@@ -213,8 +228,21 @@ class App
         // frontend, where it belongs. Storage is always UTC.
         date_default_timezone_set('UTC');
 
-        $this->routes = new RouteCollection();
-        $this->registerApiRoutes($this->routes);
+        // With the route cache the full collection is only built when
+        // something asks for it (a plugin listening to onRouterReady that
+        // touches the router, or code reading App::$routes); requests are
+        // matched against the compiled cache instead.
+        $this->routeFiles = null;
+        $this->routeFileCollections = [];
+        $this->routeCache = RouteCache::isEnabled() ? null : false;
+        if ($this->routeCache === null) {
+            $this->routes = self::lazyRouteCollection(function (RouteCollection $routes): void {
+                $this->registerApiRoutes($routes);
+            });
+        } else {
+            $this->routes = new RouteCollection();
+            $this->registerApiRoutes($this->routes);
+        }
         if (isset($eventManager)) {
             $eventManager->emit(
                 AppEvent::onRouterReady(),
@@ -272,23 +300,38 @@ class App
      */
     public function registerApiRoutes(RouteCollection $routes): void
     {
-        // Load core application routes
+        foreach ($this->getRouteFiles() as $file) {
+            $this->registerRouteFile($routes, $file);
+        }
+    }
+
+    /**
+     * Every route file in registration order: the core routes, then the routes
+     * of each addon (backend/storage/addons/<addon>/Routes/).
+     *
+     * @return list<string>
+     */
+    public function getRouteFiles(): array
+    {
+        if ($this->routeFiles !== null) {
+            return $this->routeFiles;
+        }
+
+        $files = [];
+
+        // Core application routes
         $routesDir = __DIR__ . '/routes';
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($routesDir, \FilesystemIterator::SKIP_DOTS),
             \RecursiveIteratorIterator::SELF_FIRST
         );
-
         foreach ($iterator as $file) {
             if ($file->isFile() && $file->getExtension() === 'php') {
-                $register = require $file->getPathname();
-                if (is_callable($register)) {
-                    $register($routes);
-                }
+                $files[] = $file->getPathname();
             }
         }
 
-        // Load plugin routes from backend/storage/addons/*/Routes/
+        // Plugin routes from backend/storage/addons/*/Routes/
         $addonsDir = __DIR__ . '/../storage/addons';
         if (is_dir($addonsDir)) {
             $addonIdentifiers = [];
@@ -326,19 +369,34 @@ class App
 
                                     continue;
                                 }
-                                try {
-                                    $register = require $file->getPathname();
-                                    if (is_callable($register)) {
-                                        $register($routes);
-                                    }
-                                } catch (\Throwable $e) {
-                                    self::getLogger()->error('Failed to load plugin routes from ' . $file->getPathname() . ': ' . $e->getMessage());
-                                }
+                                $files[] = $file->getPathname();
                             }
                         }
                     }
                 }
             }
+        }
+
+        return $this->routeFiles = $files;
+    }
+
+    /**
+     * Run one route file against a collection. A broken plugin route file is
+     * logged and skipped; a broken core route file is a bug and throws.
+     */
+    public function registerRouteFile(RouteCollection $routes, string $file): void
+    {
+        $isCore = str_starts_with($file, __DIR__ . '/routes');
+        try {
+            $register = require $file;
+            if (is_callable($register)) {
+                $register($routes);
+            }
+        } catch (\Throwable $e) {
+            if ($isCore) {
+                throw $e;
+            }
+            self::getLogger()->error('Failed to load plugin routes from ' . $file . ': ' . $e->getMessage());
         }
     }
 
@@ -370,8 +428,8 @@ class App
         $context->fromRequest($request);
 
         try {
-            $parameters = $this->getUrlMatcher($context)->match($request->getPathInfo());
-            SentryTelemetry::startRequest($request, $this->routes->get($parameters['_route'])->getPath());
+            [$parameters, $routePath] = $this->matchRoute($context, $request->getPathInfo());
+            SentryTelemetry::startRequest($request, $routePath);
             $controller = $parameters['_controller'];
             unset($parameters['_controller'], $parameters['_route']);
 
@@ -1319,6 +1377,175 @@ class App
             [], // schemes
             $methods
         ));
+    }
+
+    /**
+     * Match a path to a route.
+     *
+     * @return array{0: array<string, mixed>, 1: string} the route parameters and the route path
+     */
+    private function matchRoute(RoutingContext $context, string $path): array
+    {
+        $cache = $this->getRouteCache();
+        if ($cache !== null) {
+            $parameters = (new CompiledUrlMatcher($cache['compiled'], $context))->match($path);
+            $resolved = $this->resolveCachedRoute($parameters, $cache['files']);
+            if ($resolved !== null) {
+                return $resolved;
+            }
+
+            // The route file no longer defines the cached route: stop trusting the cache in this process.
+            self::getLogger()->warning('Route cache is out of date for route ' . ($parameters['_route'] ?? '?') . ', using the full route collection.');
+            $this->routeCache = false;
+        }
+
+        $parameters = $this->getUrlMatcher($context)->match($path);
+
+        return [$parameters, (string) $this->routes->get($parameters['_route'])?->getPath()];
+    }
+
+    /**
+     * The compiled route cache, or null when this process uses the full route collection.
+     *
+     * @return array{files: list<string>, compiled: array}|null
+     */
+    private function getRouteCache(): ?array
+    {
+        if ($this->routeCache === false) {
+            return null;
+        }
+        if (!self::isUninitializedLazyObject($this->routes)) {
+            // A plugin listening to onRouterReady (or other code) used the
+            // full collection; it may have changed it, so match against it.
+            $this->routeCache = false;
+
+            return null;
+        }
+        if (is_array($this->routeCache)) {
+            return $this->routeCache;
+        }
+
+        $files = $this->getRouteFiles();
+        $fingerprint = RouteCache::fingerprint($files, defined('APP_VERSION') ? (string) APP_VERSION : '');
+        $store = RouteCache::default();
+
+        $cache = $store->load($fingerprint);
+        if ($cache === null) {
+            try {
+                $cache = $this->buildRouteCache($store, $fingerprint, $files);
+            } catch (\Throwable $e) {
+                self::getLogger()->warning('Building the route cache failed, using the full route collection: ' . $e->getMessage());
+                $cache = null;
+            }
+        }
+
+        $this->routeCache = $cache ?? false;
+
+        return $cache;
+    }
+
+    /**
+     * Register every route file, remember which file registered which route
+     * and write the compiled cache.
+     *
+     * @param list<string> $files
+     *
+     * @return array{files: list<string>, compiled: array}|null
+     */
+    private function buildRouteCache(RouteCache $store, string $fingerprint, array $files): ?array
+    {
+        $routes = new RouteCollection();
+        $sources = [];
+        foreach ($files as $index => $file) {
+            $fileRoutes = new RouteCollection();
+            $this->registerRouteFile($fileRoutes, $file);
+            foreach (array_keys($fileRoutes->all()) as $name) {
+                $sources[$name] = $index;
+            }
+            $routes->addCollection($fileRoutes);
+        }
+
+        // Route files are loaded one at a time when matching, so the result
+        // must not depend on what other files registered before (a file that
+        // removes or reads another file's routes). Compare with a normal build.
+        $reference = new RouteCollection();
+        $this->registerApiRoutes($reference);
+        if (self::routeSignature($reference) !== self::routeSignature($routes)) {
+            self::getLogger()->warning('Route files depend on each other, the route cache is disabled.');
+
+            return null;
+        }
+
+        return $store->build($fingerprint, $routes, $files, $sources);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function routeSignature(RouteCollection $routes): array
+    {
+        $signature = [];
+        foreach ($routes->all() as $name => $route) {
+            $signature[] = $name . ' ' . implode('|', $route->getMethods()) . ' ' . $route->getHost() . $route->getPath();
+        }
+
+        return $signature;
+    }
+
+    /**
+     * Turn a match from the compiled cache into the parameters of the real
+     * route: its controller and middleware come from its route file, loaded
+     * once per process.
+     *
+     * @param array<string, mixed> $parameters
+     * @param list<string> $files
+     *
+     * @return array{0: array<string, mixed>, 1: string}|null null when the route file does not define the route
+     */
+    private function resolveCachedRoute(array $parameters, array $files): ?array
+    {
+        $index = $parameters[RouteCache::SOURCE_KEY] ?? null;
+        $name = $parameters['_route'] ?? null;
+        if (!is_int($index) || !isset($files[$index]) || !is_string($name)) {
+            return null;
+        }
+
+        $file = $files[$index];
+        if (!isset($this->routeFileCollections[$file])) {
+            $collection = new RouteCollection();
+            $this->registerRouteFile($collection, $file);
+            $this->routeFileCollections[$file] = $collection;
+        }
+        $route = $this->routeFileCollections[$file]->get($name);
+        if ($route === null) {
+            return null;
+        }
+
+        unset($parameters[RouteCache::SOURCE_KEY]);
+        // Same merge as Symfony's matchers: matched values win over defaults.
+        $resolved = $route->getDefaults();
+        foreach ($parameters as $key => $value) {
+            if ($value !== null) {
+                $resolved[$key] = $value;
+            }
+        }
+
+        return [$resolved, $route->getPath()];
+    }
+
+    /**
+     * A RouteCollection that registers the routes the first time it is used.
+     *
+     * @param \Closure(RouteCollection): void $initializer
+     */
+    private static function lazyRouteCollection(\Closure $initializer): RouteCollection
+    {
+        return (new \ReflectionClass(RouteCollection::class))->newLazyGhost($initializer);
+    }
+
+    private static function isUninitializedLazyObject(object $object): bool
+    {
+        return (new \ReflectionClass($object))->isUninitializedLazyObject($object);
     }
 
     /**

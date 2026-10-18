@@ -18,6 +18,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
+import { useLiveRefresh } from '@/hooks/useLiveRefresh';
+import { realtimeTopics } from '@/lib/realtime';
 import {
     Plus,
     Trash2,
@@ -201,15 +203,17 @@ export default function ServerBackupsPage() {
         }
     }, [canRead, permissionsLoading, fetchBackups, uuidShort, router, t]);
 
-    useEffect(() => {
-        const hasCreating = backups.some((b) => !b.completed_at && !b.is_successful && !b.is_stale);
-        if (hasCreating) {
-            const interval = setInterval(() => {
-                if (document.visibilityState !== 'hidden') void fetchBackups(page, true);
-            }, 10000);
-            return () => clearInterval(interval);
-        }
-    }, [backups, fetchBackups, page]);
+    // Live: Wings reports a finished backup / restore and the panel pushes an event.
+    // Polling (only while a backup is running) is the fallback without the hub.
+    const hasCreating = backups.some((b) => !b.completed_at && !b.is_successful && !b.is_stale);
+    useLiveRefresh({
+        topics: [uuidShort && realtimeTopics.server(uuidShort)],
+        types: ['backups.updated'],
+        refresh: () => void fetchBackups(page, true),
+        poll: hasCreating,
+        pollMs: 10000,
+        enabled: canRead,
+    });
 
     const handleRestoreBackup = async (e: React.FormEvent) => {
         e.preventDefault();

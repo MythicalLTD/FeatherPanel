@@ -89,7 +89,8 @@ opcache.memory_consumption = 256\n\
 opcache.interned_strings_buffer = 32\n\
 opcache.max_accelerated_files = 20000\n\
 opcache.validate_timestamps = 1\n\
-opcache.revalidate_freq = 2' > /usr/local/etc/php/conf.d/custom.ini
+opcache.revalidate_freq = 2\n\
+zend.assertions = -1' > /usr/local/etc/php/conf.d/custom.ini
 
 # Web runtime defaults (see the Caddyfile header). /api/* is served by the
 # FrankenPHP worker (boot/worker.php); FRANKENPHP_WORKER=false switches back to

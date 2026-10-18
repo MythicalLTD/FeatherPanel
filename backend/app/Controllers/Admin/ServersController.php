@@ -391,13 +391,18 @@ class ServersController
             externalId: $externalId ?: null,
         );
 
-        // Add related data to each server
+        // Add related data to each server (one query per relation, not per row)
+        $owners = User::getUsersByIds(array_column($servers, 'owner_id'));
+        $nodes = Node::getNodesByIds(array_column($servers, 'node_id'));
+        $realms = Realm::getByIds(array_column($servers, 'realms_id'));
+        $spells = Spell::getSpellsByIds(array_column($servers, 'spell_id'));
+        $allocations = Allocation::getAllocationsByIds(array_column($servers, 'allocation_id'));
         foreach ($servers as &$server) {
-            $server['owner'] = User::getUserById($server['owner_id']);
-            $server['node'] = Node::getNodeById($server['node_id']);
-            $server['realm'] = Realm::getById($server['realms_id']);
-            $server['spell'] = Spell::getSpellById($server['spell_id']);
-            $server['allocation'] = Allocation::getAllocationById($server['allocation_id']);
+            $server['owner'] = $owners[(int) $server['owner_id']] ?? null;
+            $server['node'] = $nodes[(int) $server['node_id']] ?? null;
+            $server['realm'] = $realms[(int) $server['realms_id']] ?? null;
+            $server['spell'] = $spells[(int) $server['spell_id']] ?? null;
+            $server['allocation'] = $allocations[(int) $server['allocation_id']] ?? null;
 
             // Remove sensitive data from owner
             if ($server['owner']) {

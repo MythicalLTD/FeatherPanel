@@ -19,6 +19,7 @@ namespace App\Runtime;
 
 use App\Cache\Cache;
 use App\Chat\Database;
+use App\Config\ConfigFactory;
 use App\Helpers\RateLimitConfig;
 use App\Helpers\PermissionHelper;
 use App\Telemetry\SentryTelemetry;
@@ -75,6 +76,7 @@ final class RequestLifecycle
         date_default_timezone_set('UTC');
 
         PermissionHelper::resetRequestCache();
+        ConfigFactory::resetRequestCache();
         RateLimitConfig::refreshIfChanged();
         Cache::resetForRequest();
         SentryTelemetry::resetRequestScope();

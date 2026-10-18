@@ -161,11 +161,18 @@ class WorkerSafeAppTest extends TestCase
         $old = self::$app->db->getPdo();
         $connectionId = (int) $old->query('SELECT CONNECTION_ID()')->fetchColumn();
 
+        // Models share the application's connection (other tests may have left their own behind).
+        (new ReflectionProperty(Database::class, 'sharedPdo'))->setValue(null, null);
+        $this->assertSame($old, Database::getPdoConnection());
+
         // Kill it from a second connection, like a database restart or wait_timeout would.
-        $killer = Database::getPdoConnection();
-        if ((int) $killer->query('SELECT CONNECTION_ID()')->fetchColumn() === $connectionId) {
-            $this->markTestSkipped('shared and app connections are the same PDO');
-        }
+        $killer = (new Database(
+            (string) App::env('DATABASE_HOST', '127.0.0.1'),
+            (string) App::env('DATABASE_DATABASE', ''),
+            (string) App::env('DATABASE_USER', ''),
+            (string) App::env('DATABASE_PASSWORD', ''),
+            (int) App::env('DATABASE_PORT', '3306'),
+        ))->getPdo();
         $killer->exec('KILL ' . $connectionId);
         usleep(100000);
         $this->assertFalse(Database::isAlive($old));
@@ -179,6 +186,7 @@ class WorkerSafeAppTest extends TestCase
         $this->assertSame(200, $response->getStatusCode());
         $this->assertNotSame($old, self::$app->db->getPdo());
         $this->assertTrue(Database::isAlive(self::$app->db->getPdo()));
+        $this->assertSame(self::$app->db->getPdo(), Database::getPdoConnection(), 'models follow the reconnected connection');
     }
 
     /**

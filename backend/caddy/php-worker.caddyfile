@@ -3,7 +3,8 @@
 # phpPgAdmin, addon PHP files, static files) stays in classic mode.
 #
 # Pool sizes (sized by caddy/frankenphp-env.sh so they fit FRANKENPHP_MAX_THREADS):
-#   FEATHERPANEL_WORKERS              {2 x CPUs}  API worker threads
+#   FEATHERPANEL_WORKERS              {2 x CPUs}  API worker threads started at boot
+#   FEATHERPANEL_WORKER_MAX_THREADS   {4 x CPUs}  the API pool may scale up to this under load
 #   FEATHERPANEL_SLOW_WORKERS         {2}         threads for streams and downloads
 #   FEATHERPANEL_SLOW_MAX_THREADS     {16}        the slow pool may scale up to this (2 without frankenphp-env.sh)
 #   FEATHERPANEL_WORKER_MAX_REQUESTS  {1000}      requests before a worker restarts (0 = never)
@@ -32,6 +33,9 @@ php_server {
 		file {$FEATHERPANEL_ROOT:/var/www/html}/boot/worker.php
 		name featherpanel-api
 		num {$FEATHERPANEL_WORKERS:8}
+		# Scale up when requests queue (threads blocked on Wings/HTTP calls),
+		# back down after max_idle_time. Sized by caddy/frankenphp-env.sh.
+		max_threads {$FEATHERPANEL_WORKER_MAX_THREADS:8}
 		match /api/*
 		env FEATHERPANEL_WORKER_MAX_REQUESTS {$FEATHERPANEL_WORKER_MAX_REQUESTS:1000}
 		watch {$FEATHERPANEL_ROOT:/var/www/html}/storage/caches/runtime/*.stamp
