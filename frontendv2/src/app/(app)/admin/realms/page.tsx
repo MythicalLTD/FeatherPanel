@@ -27,7 +27,7 @@ import { Textarea } from '@/components/featherui/Textarea';
 import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
@@ -68,7 +68,7 @@ export default function RealmsPage() {
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-realms');
     const [loading, setLoading] = useState(true);
     const [realms, setRealms] = useState<Realm[]>([]);
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         REALMS_LIST_FILTERS_KEY,
         REALMS_LIST_FILTERS_DEFAULTS,
     );
@@ -258,11 +258,13 @@ export default function RealmsPage() {
             {loading ? (
                 <TableSkeleton count={5} />
             ) : realms.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={Sparkles}
-                    title={t('admin.realms.no_results')}
-                    description={t('admin.realms.search_placeholder')}
+                    title={t('emptyStates.realms.title')}
+                    description={t('emptyStates.realms.description')}
                     action={<Button onClick={() => setCreateOpen(true)}>{t('admin.realms.create')}</Button>}
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-4'>

@@ -26,7 +26,7 @@ import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Select } from '@/components/ui/select-native';
 import {
     Dialog,
@@ -110,7 +110,7 @@ export default function SpellsPage() {
     const urlRealmId = searchParams?.get('realm_id') ?? '';
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         SPELLS_LIST_FILTERS_KEY,
         SPELLS_LIST_FILTERS_DEFAULTS,
     );
@@ -505,13 +505,15 @@ export default function SpellsPage() {
             {loading ? (
                 <TableSkeleton count={5} />
             ) : spells.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={Sparkles}
-                    title={t('admin.spells.no_results')}
-                    description={t('admin.spells.search_placeholder')}
+                    title={t('emptyStates.spells.title')}
+                    description={t('emptyStates.spells.description')}
                     action={
                         <Button onClick={() => router.push('/admin/spells/create')}>{t('admin.spells.create')}</Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : isReorderMode ? (
                 <div className='space-y-6'>

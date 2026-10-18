@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { getAnalyticsConsent } from '@/lib/analytics-cookie';
 import { reportPanelInteraction, analyticsListChanges } from '@/lib/panel-analytics';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 function mergeFilters<T extends Record<string, unknown>>(defaults: T, stored: Partial<T> | null): T {
     if (!stored || typeof stored !== 'object') {
@@ -120,8 +120,34 @@ export function usePersistedListFilters<T extends Record<string, unknown>>(stora
         setFilters({ ...defaultsRef.current });
     }, []);
 
-    return { filters, setFilters, patchFilters, resetFilters, hydrated };
+    // A search or filter is narrowing the list (paging, page size, sort and view don't count).
+    // Lets empty states tell "nothing matches" apart from "nothing created yet".
+    const isFiltered = useMemo(
+        () =>
+            Object.keys(filters).some((key) => {
+                if (NON_FILTER_KEYS.has(key)) return false;
+                const value = filters[key];
+                const initial = defaultsRef.current[key];
+                if (typeof value === 'string' && typeof initial === 'string') return value.trim() !== initial.trim();
+                return value !== initial;
+            }),
+        [filters],
+    );
+
+    return { filters, setFilters, patchFilters, resetFilters, hydrated, isFiltered };
 }
+
+const NON_FILTER_KEYS = new Set([
+    'page',
+    'pageSize',
+    'sortBy',
+    'sortOrder',
+    'sort',
+    'order',
+    'view',
+    'viewMode',
+    'layout',
+]);
 
 export interface SearchListFilters {
     searchQuery: string;

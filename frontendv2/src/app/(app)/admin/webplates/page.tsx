@@ -26,7 +26,7 @@ import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { toast } from 'sonner';
 import {
     LayoutTemplate,
@@ -71,7 +71,10 @@ export default function WebPlatesPage() {
     const { t } = useTranslation();
     const router = useRouter();
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-webplates');
-    const { filters, patchFilters, resetFilters, hydrated } = usePersistedListFilters(FILTERS_KEY, FILTERS_DEFAULTS);
+    const { filters, patchFilters, resetFilters, hydrated, isFiltered } = usePersistedListFilters(
+        FILTERS_KEY,
+        FILTERS_DEFAULTS,
+    );
     const { searchQuery, runtime, page, pageSize } = filters;
 
     const [loading, setLoading] = useState(true);
@@ -249,15 +252,17 @@ export default function WebPlatesPage() {
             {loading ? (
                 <TableSkeleton count={5} />
             ) : plates.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={LayoutTemplate}
-                    title={t('admin.webPlates.no_results')}
-                    description={t('admin.webPlates.search_placeholder')}
+                    title={t('emptyStates.webplates.title')}
+                    description={t('emptyStates.webplates.description')}
                     action={
                         <Button onClick={() => router.push('/admin/webplates/create')}>
                             {t('admin.webPlates.create')}
                         </Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-4'>

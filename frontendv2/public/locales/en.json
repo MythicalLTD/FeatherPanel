@@ -15526,5 +15526,112 @@
 			"feathercloud": "FeatherCloud",
 			"hosting-packages": "Hosting packages"
 		}
+	},
+	"emptyStates": {
+		"filtered": {
+			"title": "No matches",
+			"description": "Nothing matches your search or filters. Try a different term or clear them.",
+			"clear": "Clear search and filters"
+		},
+		"users": {
+			"title": "No users yet",
+			"description": "People who register or that you create show up here. Create an account to give someone access to the panel."
+		},
+		"roles": {
+			"title": "No roles yet",
+			"description": "Roles bundle permissions so staff can reach parts of the admin area. Create one, then assign it to users."
+		},
+		"servers": {
+			"title": "No servers yet",
+			"description": "Servers run on your nodes from a spell. Create one to choose its owner, node, spell and resources."
+		},
+		"vmInstances": {
+			"title": "No virtual servers yet",
+			"description": "VDS instances are full virtual machines on your Proxmox nodes. Create one and assign it to a user."
+		},
+		"webspaces": {
+			"title": "No web spaces yet",
+			"description": "Web spaces are hosting accounts for websites, mail and databases on your web nodes. Create one for a user."
+		},
+		"locations": {
+			"title": "No locations yet",
+			"description": "Locations group nodes by region or data center. Start with one, then add nodes to it."
+		},
+		"nodes": {
+			"title": "No nodes yet",
+			"description": "A node is a machine running Wings that hosts your servers. Add one, then install Wings on it with the generated configuration."
+		},
+		"vdsNodes": {
+			"title": "No VDS nodes yet",
+			"description": "VDS nodes are Proxmox hosts for virtual servers. Connect one to start creating VDS instances."
+		},
+		"webNodes": {
+			"title": "No web nodes yet",
+			"description": "Web nodes run FeatherQuilld for website hosting. Connect one to start creating web spaces."
+		},
+		"mounts": {
+			"title": "No mounts yet",
+			"description": "Mounts share a folder on the node with servers, such as a shared mod pack. Create one and link it to nodes."
+		},
+		"realms": {
+			"title": "No realms yet",
+			"description": "Realms group spells by game or app type, for example Minecraft. Create a realm, then add spells to it."
+		},
+		"spells": {
+			"title": "No spells yet",
+			"description": "Spells are server templates: Docker image, startup command and install script. Create one or import it."
+		},
+		"webplates": {
+			"title": "No webplates yet",
+			"description": "Webplates are one-click website templates for web spaces, such as WordPress. Create one to offer it to users."
+		},
+		"announcements": {
+			"title": "No announcements yet",
+			"description": "Announcements appear as banners for your users, for maintenance windows or news."
+		},
+		"images": {
+			"title": "No images yet",
+			"description": "Upload logos, backgrounds and other images, then use their links anywhere in the panel."
+		},
+		"subdomains": {
+			"title": "No subdomain domains yet",
+			"description": "Add a domain so users can give their servers a subdomain of it, like play.example.com."
+		},
+		"mailTemplates": {
+			"title": "No mail templates yet",
+			"description": "Mail templates control the emails the panel sends, such as password resets and welcome mails."
+		},
+		"tickets": {
+			"title": "No tickets yet",
+			"description": "Support tickets from your users show up here. Nothing needs your attention right now."
+		},
+		"kbCategories": {
+			"title": "No categories yet",
+			"description": "Categories organise knowledge base articles. Create one, then add articles to it."
+		},
+		"ticketCategories": {
+			"title": "No ticket categories yet",
+			"description": "Categories help users pick the right topic when they open a ticket."
+		},
+		"ticketPriorities": {
+			"title": "No ticket priorities yet",
+			"description": "Priorities let users and staff mark how urgent a ticket is."
+		},
+		"ticketStatuses": {
+			"title": "No ticket statuses yet",
+			"description": "Statuses track where a ticket stands, for example Open, Waiting or Closed."
+		},
+		"oidcProviders": {
+			"title": "No OIDC providers yet",
+			"description": "Let users sign in with an identity provider they already use, such as Authentik, Keycloak or Google."
+		},
+		"ldapProviders": {
+			"title": "No LDAP providers yet",
+			"description": "Let users sign in with their LDAP or Active Directory account."
+		},
+		"hostingPackages": {
+			"title": "No hosting packages yet",
+			"description": "Packages are presets for disk, CPU, memory, mailboxes and databases. Create one with the form above, then pick it when creating a web space."
+		}
 	}
 }

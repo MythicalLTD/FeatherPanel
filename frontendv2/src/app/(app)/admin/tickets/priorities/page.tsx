@@ -23,7 +23,7 @@ import { Flag, Plus, Pencil, Trash2, Search, Zap, Palette, AlertTriangle, Chevro
 import { PageCard } from '@/components/featherui/PageCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -283,12 +283,10 @@ export default function TicketPrioritiesPage() {
                 {loading ? (
                     <TableSkeleton count={3} />
                 ) : filteredPriorities.length === 0 ? (
-                    <EmptyState
+                    <ListEmptyState
                         icon={Flag}
-                        title={t('admin.tickets.priorities.no_results') || t('admin.tickets.no_results')}
-                        description={
-                            t('admin.tickets.priorities.search_placeholder') || t('admin.tickets.search_placeholder')
-                        }
+                        title={t('emptyStates.ticketPriorities.title')}
+                        description={t('emptyStates.ticketPriorities.description')}
                         action={
                             <Button
                                 onClick={() => {
@@ -299,6 +297,8 @@ export default function TicketPrioritiesPage() {
                                 {t('admin.tickets.priorities.create')}
                             </Button>
                         }
+                        filtered={Boolean(searchQuery.trim())}
+                        onClearFilters={() => setSearchQuery('')}
                     />
                 ) : (
                     <div className='grid grid-cols-1 gap-4'>

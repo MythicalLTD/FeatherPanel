@@ -26,7 +26,7 @@ import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Switch } from '@/components/ui/switch';
@@ -121,7 +121,7 @@ export default function AdminMountsPage() {
 
     const [loading, setLoading] = useState(true);
     const [mounts, setMounts] = useState<AdminMount[]>([]);
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         MOUNTS_LIST_FILTERS_KEY,
         MOUNTS_LIST_FILTERS_DEFAULTS,
     );
@@ -459,16 +459,18 @@ export default function AdminMountsPage() {
             {loading ? (
                 <TableSkeleton count={5} />
             ) : mounts.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={HardDrive}
-                    title={t('admin.mounts.no_results')}
-                    description={t('admin.mounts.description')}
+                    title={t('emptyStates.mounts.title')}
+                    description={t('emptyStates.mounts.description')}
                     action={
                         <Button onClick={openCreate}>
                             <Plus className='mr-2 h-4 w-4' />
                             {t('admin.mounts.create')}
                         </Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-4'>

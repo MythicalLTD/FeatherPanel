@@ -24,7 +24,7 @@ import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Label } from '@/components/ui/label';
 import { FeatherIDE } from '@/components/featherui/FeatherIDE';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -82,7 +82,7 @@ export default function MailTemplatesPage() {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
     const [templates, setTemplates] = useState<MailTemplate[]>([]);
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         MAIL_TEMPLATES_LIST_FILTERS_KEY,
         MAIL_TEMPLATES_LIST_FILTERS_DEFAULTS,
     );
@@ -437,16 +437,18 @@ export default function MailTemplatesPage() {
                     )}
                 </>
             ) : (
-                <EmptyState
-                    title={t('admin.mail_templates.no_results')}
-                    description={t('admin.mail_templates.subtitle')}
+                <ListEmptyState
                     icon={Mail}
+                    title={t('emptyStates.mailTemplates.title')}
+                    description={t('emptyStates.mailTemplates.description')}
                     action={
                         <Button onClick={openCreate}>
                             <Plus className='mr-2 h-4 w-4' />
                             {t('admin.mail_templates.create')}
                         </Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             )}
 

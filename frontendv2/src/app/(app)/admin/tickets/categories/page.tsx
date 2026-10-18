@@ -24,7 +24,7 @@ import Image from 'next/image';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Sheet, SheetDescription, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
@@ -244,12 +244,10 @@ export default function TicketCategoriesPage() {
                 {loading ? (
                     <TableSkeleton count={5} />
                 ) : filteredCategories.length === 0 ? (
-                    <EmptyState
+                    <ListEmptyState
                         icon={Tags}
-                        title={t('admin.tickets.categories.no_results') || t('admin.tickets.no_results')}
-                        description={
-                            t('admin.tickets.categories.search_placeholder') || t('admin.tickets.search_placeholder')
-                        }
+                        title={t('emptyStates.ticketCategories.title')}
+                        description={t('emptyStates.ticketCategories.description')}
                         action={
                             <Button
                                 onClick={() => {
@@ -260,6 +258,8 @@ export default function TicketCategoriesPage() {
                                 {t('admin.tickets.categories.create')}
                             </Button>
                         }
+                        filtered={Boolean(search.trim())}
+                        onClearFilters={() => setSearch('')}
                     />
                 ) : (
                     <div className='grid grid-cols-1 gap-4'>

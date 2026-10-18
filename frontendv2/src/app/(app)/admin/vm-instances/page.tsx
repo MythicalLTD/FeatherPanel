@@ -24,7 +24,7 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { PageCard } from '@/components/featherui/PageCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
@@ -139,7 +139,7 @@ export default function VmInstancesPage() {
     const { t } = useTranslation();
     const router = useRouter();
 
-    const { filters, patchFilters, resetFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, resetFilters, hydrated, isFiltered } = usePersistedListFilters(
         VM_INSTANCES_LIST_FILTERS_KEY,
         VM_INSTANCES_LIST_FILTERS_DEFAULTS,
     );
@@ -451,16 +451,18 @@ export default function VmInstancesPage() {
             {loading ? (
                 <TableSkeleton count={5} />
             ) : instances.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={Server}
-                    title={t('admin.vmInstances.no_results')}
-                    description={t('admin.vmInstances.empty_desc')}
+                    title={t('emptyStates.vmInstances.title')}
+                    description={t('emptyStates.vmInstances.description')}
                     action={
                         <Button size='sm' onClick={() => router.push('/admin/vm-instances/create')}>
                             <Plus className='mr-2 h-4 w-4' />
                             {t('admin.vmInstances.create')}
                         </Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
                 <>

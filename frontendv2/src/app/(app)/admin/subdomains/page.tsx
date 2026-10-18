@@ -25,7 +25,7 @@ import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -162,7 +162,7 @@ export default function AdminSubdomainsPage() {
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-subdomains');
     const [loading, setLoading] = useState(true);
     const [domains, setDomains] = useState<SubdomainDomain[]>([]);
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         SUBDOMAINS_LIST_FILTERS_KEY,
         SUBDOMAINS_LIST_FILTERS_DEFAULTS,
     );
@@ -717,16 +717,18 @@ export default function AdminSubdomainsPage() {
                     )}
                 </>
             ) : (
-                <EmptyState
-                    title={t('admin.subdomains.noSubdomains')}
-                    description={t('admin.subdomains.description')}
+                <ListEmptyState
                     icon={Globe}
+                    title={t('emptyStates.subdomains.title')}
+                    description={t('emptyStates.subdomains.description')}
                     action={
                         <Button onClick={openCreate}>
                             <Plus className='mr-2 h-4 w-4' />
                             {t('admin.subdomains.newDomain')}
                         </Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             )}
 

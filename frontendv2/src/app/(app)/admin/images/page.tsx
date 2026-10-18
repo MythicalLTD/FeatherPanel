@@ -40,7 +40,7 @@ import { Input } from '@/components/featherui/Input';
 import { Button } from '@/components/featherui/Button';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { PageCard } from '@/components/featherui/PageCard';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Sheet, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -76,7 +76,7 @@ export default function ImagesPage() {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
     const [images, setImages] = useState<Image[]>([]);
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         IMAGES_LIST_FILTERS_KEY,
         IMAGES_LIST_FILTERS_DEFAULTS,
     );
@@ -384,16 +384,18 @@ export default function ImagesPage() {
                         />
                     ))
                 ) : (
-                    <EmptyState
+                    <ListEmptyState
                         icon={ImageIcon}
-                        title={t('admin.images.no_results')}
-                        description={t('admin.images.search_placeholder')}
+                        title={t('emptyStates.images.title')}
+                        description={t('emptyStates.images.description')}
                         action={
                             <Button onClick={openCreate}>
                                 <Upload className='mr-2 h-4 w-4' />
                                 {t('admin.images.create')}
                             </Button>
                         }
+                        filtered={isFiltered}
+                        onClearFilters={resetFilters}
                     />
                 )}
             </div>

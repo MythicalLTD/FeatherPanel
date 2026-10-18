@@ -34,7 +34,7 @@ import {
 import { PageCard } from '@/components/featherui/PageCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -314,10 +314,10 @@ export default function TicketStatusesPage() {
                 {loading ? (
                     <TableSkeleton count={3} />
                 ) : filteredStatuses.length === 0 ? (
-                    <EmptyState
+                    <ListEmptyState
                         icon={Activity}
-                        title={t('admin.tickets.statuses.no_results') || t('admin.tickets.no_results')}
-                        description={t('admin.tickets.statuses.search_placeholder')}
+                        title={t('emptyStates.ticketStatuses.title')}
+                        description={t('emptyStates.ticketStatuses.description')}
                         action={
                             <Button
                                 onClick={() => {
@@ -328,6 +328,8 @@ export default function TicketStatusesPage() {
                                 {t('admin.tickets.statuses.create')}
                             </Button>
                         }
+                        filtered={Boolean(searchQuery.trim())}
+                        onClearFilters={() => setSearchQuery('')}
                     />
                 ) : (
                     <div className='grid grid-cols-1 gap-4'>

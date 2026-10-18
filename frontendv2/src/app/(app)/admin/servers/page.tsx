@@ -27,7 +27,7 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { PageCard } from '@/components/featherui/PageCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
@@ -124,7 +124,7 @@ export default function ServersPage() {
     const [loading, setLoading] = useState(true);
     const [servers, setServers] = useState<ApiServer[]>([]);
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-    const { filters, patchFilters, resetFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, resetFilters, hydrated, isFiltered } = usePersistedListFilters(
         SERVERS_LIST_FILTERS_KEY,
         SERVERS_LIST_FILTERS_DEFAULTS,
     );
@@ -639,16 +639,18 @@ export default function ServersPage() {
             {loading ? (
                 <TableSkeleton count={5} />
             ) : servers.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={Server}
-                    title={t('admin.servers.no_results')}
-                    description={t('admin.servers.search_placeholder')}
+                    title={t('emptyStates.servers.title')}
+                    description={t('emptyStates.servers.description')}
                     action={
                         <Button onClick={() => router.push('/admin/servers/create')}>
                             <Plus className='mr-2 h-4 w-4' />
                             {t('admin.servers.create')}
                         </Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
                 <>

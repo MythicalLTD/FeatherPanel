@@ -24,7 +24,7 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { PageCard } from '@/components/featherui/PageCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
@@ -97,7 +97,7 @@ export default function VdsNodesPage() {
     const searchParams = useSearchParams();
     const urlLocationId = searchParams.get('location_id') ?? '';
 
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         VDS_NODES_LIST_FILTERS_KEY,
         VDS_NODES_LIST_FILTERS_DEFAULTS,
     );
@@ -336,10 +336,18 @@ export default function VdsNodesPage() {
             {loading ? (
                 <TableSkeleton count={5} />
             ) : vmNodes.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={Server}
-                    title={t('admin.vdsNodes.no_results')}
-                    description={t('admin.vdsNodes.search_placeholder')}
+                    title={t('emptyStates.vdsNodes.title')}
+                    description={t('emptyStates.vdsNodes.description')}
+                    action={
+                        <Button onClick={() => router.push('/admin/vds-nodes/create')}>
+                            <Server className='mr-2 h-4 w-4' />
+                            {t('admin.vdsNodes.form.create_short')}
+                        </Button>
+                    }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-4'>
