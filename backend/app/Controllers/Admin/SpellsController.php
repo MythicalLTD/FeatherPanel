@@ -1643,7 +1643,7 @@ class SpellsController
                 'source' => 'pterodactyl',
             ], 'Online spells fetched', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch online spells: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch online spells: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -1865,7 +1865,7 @@ class SpellsController
 
             return ApiResponse::success(['spell' => $spell], 'Spell installed successfully from online repository', 201);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to install spell from online repository: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to install spell from online repository: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 

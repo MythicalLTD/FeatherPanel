@@ -274,7 +274,7 @@ class CloudPluginsController
                 'plugins' => $plugins,
             ], 'Previously installed plugins retrieved successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch previously installed plugins: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch previously installed plugins: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 

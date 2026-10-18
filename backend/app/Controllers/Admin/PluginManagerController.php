@@ -196,7 +196,7 @@ class PluginManagerController
     {
         $config = App::getInstance(true)->getConfig();
         if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-            return ApiResponse::error('You are not allowed to view plugins in non-developer mode', 403);
+            return ApiResponse::error('You are not allowed to view plugins in non-developer mode', 'FORBIDDEN', 403);
         }
         try {
             $plugins = [];
@@ -225,7 +225,7 @@ class PluginManagerController
 
             return ApiResponse::success($plugins, 'Plugins fetched successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch plugins: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch plugins: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -277,7 +277,7 @@ class PluginManagerController
 
         $config = App::getInstance(true)->getConfig();
         if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-            return ApiResponse::error('You are not allowed to create plugins in non-developer mode', 403);
+            return ApiResponse::error('You are not allowed to create plugins in non-developer mode', 'FORBIDDEN', 403);
         }
         try {
             $data = json_decode($request->getContent(), true);
@@ -294,27 +294,27 @@ class PluginManagerController
             $configSchema = $data['configSchema'] ?? [];
 
             if (empty($identifier) || empty($name)) {
-                return ApiResponse::error('Identifier and name are required', 400);
+                return ApiResponse::error('Identifier and name are required', 'BAD_REQUEST', 400);
             }
 
             // Validate template
             if (!in_array($template, ['empty', 'starter', 'fresh', 'theme', 'ui-pack'], true)) {
-                return ApiResponse::error('Invalid template. Must be one of: empty, starter, fresh, theme, ui-pack', 400);
+                return ApiResponse::error('Invalid template. Must be one of: empty, starter, fresh, theme, ui-pack', 'BAD_REQUEST', 400);
             }
 
             if (!PluginConfig::isValidIdentifier($identifier)) {
-                return ApiResponse::error('Invalid plugin identifier', 400);
+                return ApiResponse::error('Invalid plugin identifier', 'BAD_REQUEST', 400);
             }
 
             $pluginPath = $this->pluginsDir . '/' . $identifier;
 
             if (is_dir($pluginPath)) {
-                return ApiResponse::error('Plugin already exists', 409);
+                return ApiResponse::error('Plugin already exists', 'CONFLICT', 409);
             }
 
             // Create plugin directory
             if (!mkdir($pluginPath, 0755, true)) {
-                return ApiResponse::error('Failed to create plugin directory', 500);
+                return ApiResponse::error('Failed to create plugin directory', 'INTERNAL_SERVER_ERROR', 500);
             }
 
             // Create conf.yml with enhanced config support
@@ -427,7 +427,7 @@ class PluginManagerController
                 'migration_result' => $migrationResult,
             ], 'Plugin created successfully', 201);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to create plugin: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to create plugin: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -472,29 +472,29 @@ class PluginManagerController
         try {
             $config = App::getInstance(true)->getConfig();
             if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to update plugins in non-developer mode', 403);
+                return ApiResponse::error('You are not allowed to update plugins in non-developer mode', 'FORBIDDEN', 403);
             }
             $identifier = $request->attributes->get('identifier');
             $data = json_decode($request->getContent(), true);
 
             if (empty($identifier)) {
-                return ApiResponse::error('Plugin identifier is required', 400);
+                return ApiResponse::error('Plugin identifier is required', 'BAD_REQUEST', 400);
             }
 
             $pluginPath = $this->pluginsDir . '/' . $identifier;
             if (!is_dir($pluginPath)) {
-                return ApiResponse::error('Plugin not found', 404);
+                return ApiResponse::error('Plugin not found', 'NOT_FOUND', 404);
             }
 
             $configPath = $pluginPath . '/conf.yml';
             if (!file_exists($configPath)) {
-                return ApiResponse::error('Plugin configuration not found', 404);
+                return ApiResponse::error('Plugin configuration not found', 'NOT_FOUND', 404);
             }
 
             // Load existing config
             $existingConfig = PluginHelper::getPluginConfig($identifier);
             if (empty($existingConfig)) {
-                return ApiResponse::error('Invalid plugin configuration', 400);
+                return ApiResponse::error('Invalid plugin configuration', 'BAD_REQUEST', 400);
             }
 
             $pluginConfig = $existingConfig['plugin'];
@@ -537,7 +537,7 @@ class PluginManagerController
 
             // Validate updated config
             if (!PluginConfig::isConfigValid($newConfig)) {
-                return ApiResponse::error('Invalid plugin configuration', 400);
+                return ApiResponse::error('Invalid plugin configuration', 'BAD_REQUEST', 400);
             }
 
             // Save updated config
@@ -562,7 +562,7 @@ class PluginManagerController
                 'config' => $pluginConfig,
             ], 'Plugin updated successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to update plugin: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to update plugin: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -598,17 +598,17 @@ class PluginManagerController
         try {
             $config = App::getInstance(true)->getConfig();
             if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to get plugin details in non-developer mode', 403);
+                return ApiResponse::error('You are not allowed to get plugin details in non-developer mode', 'FORBIDDEN', 403);
             }
             $identifier = $request->attributes->get('identifier');
 
             if (empty($identifier)) {
-                return ApiResponse::error('Plugin identifier is required', 400);
+                return ApiResponse::error('Plugin identifier is required', 'BAD_REQUEST', 400);
             }
 
             $config = PluginHelper::getPluginConfig($identifier);
             if (empty($config)) {
-                return ApiResponse::error('Plugin not found', 404);
+                return ApiResponse::error('Plugin not found', 'NOT_FOUND', 404);
             }
 
             $plugin = $config['plugin'];
@@ -625,7 +625,7 @@ class PluginManagerController
 
             return ApiResponse::success($plugin, 'Plugin details fetched successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch plugin details: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch plugin details: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -669,17 +669,17 @@ class PluginManagerController
         try {
             $config = App::getInstance(true)->getConfig();
             if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to update plugin settings in non-developer mode', 403);
+                return ApiResponse::error('You are not allowed to update plugin settings in non-developer mode', 'FORBIDDEN', 403);
             }
             $identifier = $request->attributes->get('identifier');
             $data = json_decode($request->getContent(), true);
 
             if (empty($identifier)) {
-                return ApiResponse::error('Plugin identifier is required', 400);
+                return ApiResponse::error('Plugin identifier is required', 'BAD_REQUEST', 400);
             }
 
             if (!isset($data['settings']) || !is_array($data['settings'])) {
-                return ApiResponse::error('Settings data is required', 400);
+                return ApiResponse::error('Settings data is required', 'BAD_REQUEST', 400);
             }
 
             // Update each setting
@@ -705,7 +705,7 @@ class PluginManagerController
                 'updated_settings' => array_keys($data['settings']),
             ], 'Plugin settings updated successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to update plugin settings: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to update plugin settings: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -735,7 +735,7 @@ class PluginManagerController
 
             return ApiResponse::success($flags, 'Available flags fetched successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch flags: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch flags: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -771,17 +771,17 @@ class PluginManagerController
         try {
             $config = App::getInstance(true)->getConfig();
             if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to get available flags in non-developer mode', 403);
+                return ApiResponse::error('You are not allowed to get available flags in non-developer mode', 'FORBIDDEN', 403);
             }
             $identifier = $request->attributes->get('identifier');
 
             if (empty($identifier)) {
-                return ApiResponse::error('Plugin identifier is required', 400);
+                return ApiResponse::error('Plugin identifier is required', 'BAD_REQUEST', 400);
             }
 
             $config = PluginHelper::getPluginConfig($identifier);
             if (empty($config)) {
-                return ApiResponse::error('Plugin not found', 404);
+                return ApiResponse::error('Plugin not found', 'NOT_FOUND', 404);
             }
 
             $validation = [
@@ -797,7 +797,7 @@ class PluginManagerController
 
             return ApiResponse::success($validation, 'Plugin validation completed', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to validate plugin: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to validate plugin: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -842,7 +842,7 @@ class PluginManagerController
         try {
             $config = App::getInstance(true)->getConfig();
             if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to create plugin files in non-developer mode', 403);
+                return ApiResponse::error('You are not allowed to create plugin files in non-developer mode', 'FORBIDDEN', 403);
             }
 
             $pluginId = trim($request->request->get('plugin_id', ''));
@@ -852,23 +852,23 @@ class PluginManagerController
             $schedule = trim($request->request->get('schedule', '1H'));
 
             if (empty($pluginId) || empty($fileType)) {
-                return ApiResponse::error('Plugin ID and file type are required', 400);
+                return ApiResponse::error('Plugin ID and file type are required', 'BAD_REQUEST', 400);
             }
 
             // For file uploads, name is not required as it comes from the uploaded file
             if ($fileType !== 'public_file' && empty($name)) {
-                return ApiResponse::error('Name is required for this file type', 400);
+                return ApiResponse::error('Name is required for this file type', 'BAD_REQUEST', 400);
             }
 
             // Verify plugin exists
             $pluginPath = $this->pluginsDir . '/' . $pluginId;
             if (!is_dir($pluginPath)) {
-                return ApiResponse::error('Plugin not found', 404);
+                return ApiResponse::error('Plugin not found', 'NOT_FOUND', 404);
             }
 
             $pluginConfig = PluginHelper::getPluginConfig($pluginId);
             if (empty($pluginConfig)) {
-                return ApiResponse::error('Plugin configuration not found', 404);
+                return ApiResponse::error('Plugin configuration not found', 'NOT_FOUND', 404);
             }
 
             $className = $this->toCamelCase($pluginConfig['plugin']['name']);
@@ -893,7 +893,7 @@ class PluginManagerController
                     $result = $this->handlePluginPublicFileUpload($request, $pluginPath, $pluginId);
                     break;
                 default:
-                    return ApiResponse::error('Unsupported file type', 400);
+                    return ApiResponse::error('Unsupported file type', 'BAD_REQUEST', 400);
             }
 
             if ($result['success']) {
@@ -914,9 +914,9 @@ class PluginManagerController
                 return ApiResponse::success($result, ucfirst($fileType) . ' created successfully');
             }
 
-            return ApiResponse::error($result['message'], 500);
+            return ApiResponse::error($result['message'], 'INTERNAL_SERVER_ERROR', 500);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to create plugin file: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to create plugin file: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -941,7 +941,7 @@ class PluginManagerController
         try {
             $config = App::getInstance(true)->getConfig();
             if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to access dev tools in non-developer mode', 403);
+                return ApiResponse::error('You are not allowed to access dev tools in non-developer mode', 'FORBIDDEN', 403);
             }
 
             $options = [
@@ -1026,7 +1026,7 @@ class PluginManagerController
 
             return ApiResponse::success($options, 'Plugin creation options retrieved successfully');
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to get creation options: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to get creation options: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -1065,18 +1065,18 @@ class PluginManagerController
         try {
             $config = App::getInstance(true)->getConfig();
             if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to get plugin widgets in non-developer mode', 403);
+                return ApiResponse::error('You are not allowed to get plugin widgets in non-developer mode', 'FORBIDDEN', 403);
             }
 
             $identifier = $request->attributes->get('identifier');
 
             if (empty($identifier)) {
-                return ApiResponse::error('Plugin identifier is required', 400);
+                return ApiResponse::error('Plugin identifier is required', 'BAD_REQUEST', 400);
             }
 
             $pluginPath = $this->pluginsDir . '/' . $identifier;
             if (!is_dir($pluginPath)) {
-                return ApiResponse::error('Plugin not found', 404);
+                return ApiResponse::error('Plugin not found', 'NOT_FOUND', 404);
             }
 
             $widgetsJsonPath = $pluginPath . '/Frontend/widgets.json';
@@ -1091,7 +1091,7 @@ class PluginManagerController
 
             return ApiResponse::success($widgets, 'Widgets fetched successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch widgets: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch widgets: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -1139,35 +1139,35 @@ class PluginManagerController
         try {
             $config = App::getInstance(true)->getConfig();
             if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to update plugin widgets in non-developer mode', 403);
+                return ApiResponse::error('You are not allowed to update plugin widgets in non-developer mode', 'FORBIDDEN', 403);
             }
 
             $identifier = $request->attributes->get('identifier');
             $data = json_decode($request->getContent(), true);
 
             if (empty($identifier)) {
-                return ApiResponse::error('Plugin identifier is required', 400);
+                return ApiResponse::error('Plugin identifier is required', 'BAD_REQUEST', 400);
             }
 
             if (!is_array($data)) {
-                return ApiResponse::error('Widgets must be an array', 400);
+                return ApiResponse::error('Widgets must be an array', 'BAD_REQUEST', 400);
             }
 
             $pluginPath = $this->pluginsDir . '/' . $identifier;
             if (!is_dir($pluginPath)) {
-                return ApiResponse::error('Plugin not found', 404);
+                return ApiResponse::error('Plugin not found', 'NOT_FOUND', 404);
             }
 
             // Validate widgets
             foreach ($data as $widget) {
                 if (!isset($widget['id']) || !isset($widget['component']) || !isset($widget['page']) || !isset($widget['location'])) {
-                    return ApiResponse::error('Invalid widget configuration: id, component, page, and location are required', 400);
+                    return ApiResponse::error('Invalid widget configuration: id, component, page, and location are required', 'BAD_REQUEST', 400);
                 }
 
                 // Check if component file exists
                 $componentPath = $pluginPath . '/Frontend/Components/' . $widget['component'];
                 if (!file_exists($componentPath)) {
-                    return ApiResponse::error('Widget component file not found: ' . $widget['component'], 400);
+                    return ApiResponse::error('Widget component file not found: ' . $widget['component'], 'BAD_REQUEST', 400);
                 }
             }
 
@@ -1181,7 +1181,7 @@ class PluginManagerController
             $widgetsJsonPath = $frontendDir . '/widgets.json';
             $jsonContent = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
             if (file_put_contents($widgetsJsonPath, $jsonContent) === false) {
-                return ApiResponse::error('Failed to save widgets.json', 500);
+                return ApiResponse::error('Failed to save widgets.json', 'INTERNAL_SERVER_ERROR', 500);
             }
 
             // Emit event
@@ -1203,7 +1203,7 @@ class PluginManagerController
                 'widgets' => $data,
             ], 'Widgets updated successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to update widgets: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to update widgets: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -1252,29 +1252,29 @@ class PluginManagerController
         try {
             $config = App::getInstance(true)->getConfig();
             if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to delete plugin widgets in non-developer mode', 403);
+                return ApiResponse::error('You are not allowed to delete plugin widgets in non-developer mode', 'FORBIDDEN', 403);
             }
 
             $identifier = $request->attributes->get('identifier');
             $widgetId = $request->attributes->get('widget_id');
 
             if (empty($identifier) || empty($widgetId)) {
-                return ApiResponse::error('Plugin identifier and widget ID are required', 400);
+                return ApiResponse::error('Plugin identifier and widget ID are required', 'BAD_REQUEST', 400);
             }
 
             $pluginPath = $this->pluginsDir . '/' . $identifier;
             if (!is_dir($pluginPath)) {
-                return ApiResponse::error('Plugin not found', 404);
+                return ApiResponse::error('Plugin not found', 'NOT_FOUND', 404);
             }
 
             $widgetsJsonPath = $pluginPath . '/Frontend/widgets.json';
             if (!file_exists($widgetsJsonPath)) {
-                return ApiResponse::error('Widgets configuration not found', 404);
+                return ApiResponse::error('Widgets configuration not found', 'NOT_FOUND', 404);
             }
 
             $widgets = json_decode(file_get_contents($widgetsJsonPath), true);
             if (!is_array($widgets)) {
-                return ApiResponse::error('Invalid widgets configuration', 400);
+                return ApiResponse::error('Invalid widgets configuration', 'BAD_REQUEST', 400);
             }
 
             // Find and remove widget
@@ -1289,13 +1289,13 @@ class PluginManagerController
             }
 
             if ($widgetToDelete === null) {
-                return ApiResponse::error('Widget not found', 404);
+                return ApiResponse::error('Widget not found', 'NOT_FOUND', 404);
             }
 
             // Save updated widgets.json
             $jsonContent = json_encode($updatedWidgets, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
             if (file_put_contents($widgetsJsonPath, $jsonContent) === false) {
-                return ApiResponse::error('Failed to update widgets.json', 500);
+                return ApiResponse::error('Failed to update widgets.json', 'INTERNAL_SERVER_ERROR', 500);
             }
 
             // Optionally delete component file
@@ -1327,7 +1327,7 @@ class PluginManagerController
                 'component_deleted' => $componentDeleted,
             ], 'Widget deleted successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to delete widget: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to delete widget: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 

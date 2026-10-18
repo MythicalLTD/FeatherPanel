@@ -118,7 +118,7 @@ class DatabaseSnapshotsController
 
             return ApiResponse::success(['snapshots' => $snapshots], 'Snapshots retrieved successfully');
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to list snapshots: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to list snapshots: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -254,7 +254,7 @@ class DatabaseSnapshotsController
                 'size_formatted' => $this->formatBytes($size),
             ], 'Snapshot created successfully');
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to create snapshot: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to create snapshot: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -354,7 +354,7 @@ class DatabaseSnapshotsController
                 'X-File-Extension' => 'fpb',
             ]);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to download snapshot: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to download snapshot: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -484,7 +484,7 @@ class DatabaseSnapshotsController
 
             return $restoreResult;
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to restore database: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to restore database: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -592,7 +592,7 @@ class DatabaseSnapshotsController
 
             return ApiResponse::success(['message' => 'Snapshot deleted successfully'], 'Snapshot deleted successfully');
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to delete snapshot: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to delete snapshot: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -686,7 +686,7 @@ class DatabaseSnapshotsController
 
             return $this->performRestore($sql);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to restore database: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to restore database: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -845,7 +845,7 @@ class DatabaseSnapshotsController
                 throw $e;
             }
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to perform fresh restore: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to perform fresh restore: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 

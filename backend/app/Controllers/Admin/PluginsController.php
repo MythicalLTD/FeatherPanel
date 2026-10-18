@@ -141,7 +141,7 @@ class PluginsController
 
             return ApiResponse::success(['plugins' => $pluginsList], 'Successfully fetched plugins overview', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch plugins statistics: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch plugins statistics: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -220,7 +220,7 @@ class PluginsController
                 'allowedOnlyOnSpells' => $allowedSpellIds,
             ], 'Plugin config fetched successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch plugin config: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch plugin config: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -261,7 +261,7 @@ class PluginsController
                 'visibility' => $this->buildVisibilityPayload($identifier, $settingsList),
             ], 'Plugin visibility controls fetched successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch plugin visibility controls: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch plugin visibility controls: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -625,7 +625,7 @@ class PluginsController
 
             return ApiResponse::success([], 'Addon uninstalled successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to uninstall addon: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to uninstall addon: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -707,7 +707,7 @@ class PluginsController
                 ]
             );
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to export addon: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to export addon: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -791,7 +791,7 @@ class PluginsController
 
             return CloudPluginsController::getInstance()->performAddonInstall($tempDir, null);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to upload install addon: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to upload install addon: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -860,7 +860,7 @@ class PluginsController
 
             return CloudPluginsController::getInstance()->performAddonInstall($tempDir, null);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to install from URL: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to install from URL: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -970,7 +970,7 @@ class PluginsController
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to resync symlinks for ' . $identifier . ': ' . $e->getMessage());
 
-            return ApiResponse::error('Failed to resync symlinks: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to resync symlinks: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 

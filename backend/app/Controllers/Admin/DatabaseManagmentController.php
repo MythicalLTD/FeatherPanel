@@ -109,7 +109,7 @@ class DatabaseManagmentController
                 'bytes_sent' => (int) ($vars['Bytes_sent'] ?? 0),
             ], 'Database status fetched', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch database status: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch database status: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -253,7 +253,7 @@ class DatabaseManagmentController
                 'output' => implode("\n", $lines),
             ], $failed > 0 ? 'Migrations finished with errors' : 'Migrations executed', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to run migrations: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to run migrations: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -299,7 +299,7 @@ class DatabaseManagmentController
                 'already_installed' => false,
             ], 'phpMyAdmin installed successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to install phpMyAdmin: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to install phpMyAdmin: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -333,7 +333,7 @@ class DatabaseManagmentController
                 'installed' => $isInstalled,
             ], 'phpMyAdmin status retrieved', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to check phpMyAdmin status: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to check phpMyAdmin status: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -373,7 +373,7 @@ class DatabaseManagmentController
                 'message' => 'phpMyAdmin deleted successfully',
             ], 'phpMyAdmin deleted successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to delete phpMyAdmin: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to delete phpMyAdmin: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
