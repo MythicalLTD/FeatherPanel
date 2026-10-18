@@ -39,6 +39,8 @@ import type { ScheduleCreateRequest } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export default function CreateSchedulePage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -63,6 +65,7 @@ export default function CreateSchedulePage() {
         only_when_online: 0,
         is_active: 1,
     });
+    const { dirty: unsaved, restore: restoreForm } = useFormBaseline(formData, { trackFromStart: true });
 
     React.useEffect(() => {
         // Reflect a late-arriving user preference (PreferencesContext loads
@@ -79,8 +82,8 @@ export default function CreateSchedulePage() {
 
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-schedules-new');
 
-    const handleCreate = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleCreate = async (e?: React.FormEvent) => {
+        e?.preventDefault();
 
         if (!formData.name.trim()) {
             toast.error(t('serverSchedules.nameRequired'));
@@ -401,6 +404,17 @@ export default function CreateSchedulePage() {
                     </Button>
                 </div>
             </form>
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleCreate()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setFormData(saved);
+                }}
+                saveLabel={t('common.create')}
+            />
         </div>
     );
 }

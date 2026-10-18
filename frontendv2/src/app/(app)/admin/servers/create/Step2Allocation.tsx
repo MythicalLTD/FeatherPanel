@@ -16,7 +16,6 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useTranslation } from '@/contexts/TranslationContext';
-import { useHideServerIps } from '@/contexts/PreferencesContext';
 import { HideIpsToggle } from '@/components/preferences/HideIpsToggle';
 import { maskEndpoint } from '@/lib/ip-mask';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -25,6 +24,7 @@ import { Label } from '@/components/ui/label';
 import { Network, Search, MapPin, Server, Plug } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StepProps, Location, Node, Allocation } from './types';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface Step2Props extends StepProps {
     locations: Location[];
@@ -52,7 +52,6 @@ export function Step2Allocation({
     fetchAllocations,
 }: Step2Props) {
     const { t } = useTranslation();
-    const hideIps = useHideServerIps();
 
     const openLocationModal = () => {
         fetchLocations();
@@ -146,7 +145,7 @@ export function Step2Allocation({
                                             {selectedEntities.node.name}
                                         </span>
                                         <span className='text-muted-foreground text-xs'>
-                                            ({selectedEntities.node.fqdn})
+                                            (<Sensitive>{selectedEntities.node.fqdn}</Sensitive>)
                                         </span>
                                     </div>
                                 ) : (
@@ -186,11 +185,13 @@ export function Step2Allocation({
                                     <div className='flex items-center gap-2'>
                                         <Plug className='text-primary h-4 w-4' />
                                         <span className='text-foreground font-medium'>
-                                            {maskEndpoint(
-                                                selectedEntities.allocation.ip,
-                                                selectedEntities.allocation.port,
-                                                hideIps,
-                                            )}
+                                            <Sensitive>
+                                                {maskEndpoint(
+                                                    selectedEntities.allocation.ip,
+                                                    selectedEntities.allocation.port,
+                                                    false,
+                                                )}
+                                            </Sensitive>
                                         </span>
                                     </div>
                                 ) : (

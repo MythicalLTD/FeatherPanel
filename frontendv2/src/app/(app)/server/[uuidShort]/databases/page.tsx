@@ -47,9 +47,7 @@ import {
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { useIpMask } from '@/hooks/useIpMask';
 import { appendPmaAuthParams, preparePmaAuthContext, storePmaAuthContext } from '@/lib/pma-auth-context';
-import { maskIpLike } from '@/lib/ip-mask';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { cn, copyToClipboard as copyUtil } from '@/lib/utils';
@@ -72,10 +70,10 @@ import {
 
 import { Database, DatabasesResponse, Server } from '@/types/server';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { Sensitive } from '@/components/common/Sensitive';
 
 export default function ServerDatabasesPage() {
     const { t, locale } = useTranslation();
-    const ipMask = useIpMask();
     const { settings } = useSettings();
     const params = useParams();
     const router = useRouter();
@@ -679,12 +677,14 @@ export default function ServerDatabasesPage() {
                                         <>
                                             <div className='text-muted-foreground flex items-center gap-2'>
                                                 <User className='h-4 w-4 opacity-50' />
-                                                <span className='text-sm font-semibold'>{db.username}</span>
+                                                <span className='text-sm font-semibold'>
+                                                    <Sensitive>{db.username}</Sensitive>
+                                                </span>
                                             </div>
                                             <div className='text-muted-foreground flex items-center gap-2'>
                                                 <ServerIcon className='h-4 w-4 opacity-50' />
                                                 <span className='font-mono text-sm font-semibold'>
-                                                    {ipMask.endpointLike(getDatabaseDisplayHost(db), db.database_port)}
+                                                    <Sensitive>{`${getDatabaseDisplayHost(db)}:${db.database_port}`}</Sensitive>
                                                 </span>
                                             </div>
                                         </>
@@ -955,7 +955,7 @@ export default function ServerDatabasesPage() {
                                     {[
                                         {
                                             label: t('serverDatabases.host'),
-                                            value: maskIpLike(getDatabaseDisplayHost(viewingDatabase), ipMask.hidden),
+                                            value: getDatabaseDisplayHost(viewingDatabase),
                                             copyValue: getDatabaseDisplayHost(viewingDatabase),
                                         },
                                         {
@@ -976,6 +976,7 @@ export default function ServerDatabasesPage() {
                                             <div className='group relative'>
                                                 <Input
                                                     readOnly
+                                                    data-fp-sensitive={i < 2 ? '' : undefined}
                                                     value={item.value || 'N/A'}
                                                     className='bg-card border-border/50 pr-10 font-mono text-xs'
                                                 />
@@ -1006,6 +1007,7 @@ export default function ServerDatabasesPage() {
                                         <div className='group relative'>
                                             <Input
                                                 readOnly
+                                                data-fp-sensitive=''
                                                 value={viewingDatabase.username}
                                                 className='bg-card border-border/50 pr-10 font-mono text-xs'
                                             />
@@ -1035,6 +1037,7 @@ export default function ServerDatabasesPage() {
                                             <Input
                                                 readOnly
                                                 type={showPassword ? 'text' : 'password'}
+                                                data-fp-sensitive=''
                                                 value={viewingDatabase.password || ''}
                                                 className='bg-card border-border/50 pr-10 font-mono text-xs'
                                             />

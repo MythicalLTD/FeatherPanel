@@ -29,6 +29,7 @@ import { Settings2, Save, RotateCw, AlertTriangle, Loader2 } from 'lucide-react'
 import { NodeData } from '../types';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { SensitiveBlock } from '@/components/common/Sensitive';
 
 interface WingsConfigTabProps {
     node: NodeData;
@@ -142,30 +143,32 @@ export function WingsConfigTab({ node }: WingsConfigTabProps) {
                         </div>
                     ) : (
                         <>
-                            <div className='border-border/50 bg-card relative h-[500px] overflow-hidden rounded-2xl border shadow-xl'>
-                                {loading && (
-                                    <div className='bg-background/50 absolute inset-0 z-10 flex items-center justify-center backdrop-blur-sm'>
-                                        <Loader2 className='text-primary h-8 w-8 animate-spin' />
-                                    </div>
-                                )}
-                                <Editor
-                                    height='100%'
-                                    defaultLanguage='yaml'
-                                    value={content}
-                                    theme={theme === 'dark' ? 'vs-dark' : 'light'}
-                                    onChange={(value) => setContent(value || '')}
-                                    options={{
-                                        minimap: { enabled: true },
-                                        fontSize: 14,
-                                        lineNumbers: 'on',
-                                        scrollBeyondLastLine: false,
-                                        automaticLayout: true,
-                                        padding: { top: 20 },
-                                        fontFamily: APP_MONO_FONT_STACK,
-                                        fontLigatures: true,
-                                    }}
-                                />
-                            </div>
+                            <SensitiveBlock className='h-[500px]'>
+                                <div className='border-border/50 bg-card relative h-[500px] overflow-hidden rounded-2xl border shadow-xl'>
+                                    {loading && (
+                                        <div className='bg-background/50 absolute inset-0 z-10 flex items-center justify-center backdrop-blur-sm'>
+                                            <Loader2 className='text-primary h-8 w-8 animate-spin' />
+                                        </div>
+                                    )}
+                                    <Editor
+                                        height='100%'
+                                        defaultLanguage='yaml'
+                                        value={content}
+                                        theme={theme === 'dark' ? 'vs-dark' : 'light'}
+                                        onChange={(value) => setContent(value || '')}
+                                        options={{
+                                            minimap: { enabled: true },
+                                            fontSize: 14,
+                                            lineNumbers: 'on',
+                                            scrollBeyondLastLine: false,
+                                            automaticLayout: true,
+                                            padding: { top: 20 },
+                                            fontFamily: APP_MONO_FONT_STACK,
+                                            fontLigatures: true,
+                                        }}
+                                    />
+                                </div>
+                            </SensitiveBlock>
 
                             <div className='border-border/50 bg-muted/30 rounded-2xl border p-4'>
                                 <div className='flex items-center space-x-3'>

@@ -48,6 +48,8 @@ import {
 } from '../../types';
 import { WebPlateDefaultSchedulesEditor } from '@/components/webspace/WebPlateDefaultSchedulesEditor';
 import type { WebSpaceScheduleDraft } from '@/lib/webspace-schedules';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export default function EditWebPlatePage() {
     const { t } = useTranslation();
@@ -60,6 +62,7 @@ export default function EditWebPlatePage() {
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState('general');
     const [form, setForm] = useState<WebPlateFormState>(emptyWebPlateForm);
+    const { dirty: unsaved, markClean, restore: restoreForm } = useFormBaseline(form);
 
     useEffect(() => {
         fetchWidgets();
@@ -78,6 +81,7 @@ export default function EditWebPlatePage() {
                 const { data } = await axios.get(`/api/admin/webplates/${id}`);
                 const plate = (data.data?.webplate ?? data.data) as WebPlate;
                 setForm(webPlateToForm(plate));
+                markClean();
             } catch (error) {
                 console.error(error);
                 toast.error(getApiErrorMessage(error, t, 'admin.webPlates.messages.load_failed'));
@@ -88,7 +92,7 @@ export default function EditWebPlatePage() {
         };
 
         load();
-    }, [id, router, t]);
+    }, [id, router, t, markClean]);
 
     const runtimeLabel = (value: string) => {
         const key = `admin.webPlates.runtimes.${value}`;
@@ -323,6 +327,16 @@ export default function EditWebPlatePage() {
             </Tabs>
 
             <WidgetRenderer widgets={getWidgets('admin-webplates-edit', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleSave()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+            />
         </div>
     );
 }

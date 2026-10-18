@@ -23,6 +23,7 @@ import { SettingToggleCard } from '@/components/admin/SettingToggleCard';
 import { Label } from '@/components/ui/label';
 import { Settings, Search, UserCircle } from 'lucide-react';
 import { StepProps, User } from './types';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface Step1Props extends StepProps {
     owners: User[];
@@ -104,7 +105,9 @@ export function Step1CoreDetails({
                                         <span className='text-foreground font-medium'>
                                             {selectedEntities.owner.username}
                                         </span>
-                                        <span className='text-muted-foreground'>({selectedEntities.owner.email})</span>
+                                        <span className='text-muted-foreground'>
+                                            (<Sensitive>{selectedEntities.owner.email}</Sensitive>)
+                                        </span>
                                     </div>
                                 ) : (
                                     <span className='text-muted-foreground'>

@@ -14,7 +14,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 /**
- * Helpers for the per-user "hide server IP addresses" preference.
+ * Helpers for the per-user privacy mode (stored as the `hide_server_ips`
+ * preference, so accounts that hid IPs before keep it on).
  *
  * The masking happens in the UI only: the API keeps returning the real
  * allocation data so actions that need it (firewall rules, proxies,
@@ -56,12 +57,18 @@ export function looksLikeIp(value: string | null | undefined): boolean {
 }
 
 /**
- * Mask a value only when it actually is an IP address, so readable hostnames
- * stay visible for users who hide addresses.
+ * Mask a host value (IP or hostname). Privacy mode hides hostnames too, since
+ * a node FQDN or SFTP host identifies the machine just as well as its IP.
  */
 export function maskIpLike(value: string | null | undefined, hidden: boolean): string {
-    if (hidden && looksLikeIp(value)) return HIDDEN_IP_PLACEHOLDER;
+    if (hidden && value) return HIDDEN_IP_PLACEHOLDER;
     return value ?? '';
+}
+
+/** Mask any sensitive string (email, key, token, password, host). Empty values stay empty. */
+export function maskSensitive(value: string | number | null | undefined, hidden: boolean): string {
+    if (value === null || value === undefined || value === '') return '';
+    return hidden ? HIDDEN_IP_PLACEHOLDER : String(value);
 }
 
 /**
@@ -76,22 +83,23 @@ export function maskIp(value: string | null | undefined, hidden: boolean): strin
 }
 
 /**
- * Like `maskEndpoint`, but only masks when the host part really is an IP —
- * used for SFTP/database hosts, which are either a node IP or a domain.
+ * Same as `maskEndpoint`; kept for callers that pass SFTP/database hosts,
+ * which are either a node IP or a domain (both are masked in privacy mode).
  */
 export function maskEndpointIpLike(
     ip: string | null | undefined,
     port: number | string | null | undefined,
     hidden: boolean,
 ): string {
-    return maskEndpoint(ip, port, hidden && looksLikeIp(ip));
+    return maskEndpoint(ip, port, hidden);
 }
 
 /**
  * Mask an `ip:port` pair (or a bare host when no port is given).
  *
- * Only the host is masked: the port stays visible so allocations on the same
- * IP remain distinguishable in lists and pickers.
+ * Host and port are both hidden in privacy mode: the port of a game server is
+ * enough to find it once the host is known. Use `<Sensitive>` where a value
+ * should be revealable on click.
  *
  * @param ip     the real host/IP value
  * @param port   optional port
@@ -103,8 +111,22 @@ export function maskEndpoint(
     hidden: boolean,
 ): string {
     const hasPort = port !== null && port !== undefined && port !== '';
-    if (hidden) return hasPort ? `${HIDDEN_IP_PLACEHOLDER}:${port}` : HIDDEN_IP_PLACEHOLDER;
+    if (hidden) return HIDDEN_IP_PLACEHOLDER;
     const host = ip ?? '';
     if (!host) return hasPort ? String(port) : '';
     return hasPort ? `${host}:${port}` : host;
+}
+
+/**
+ * Label for allocation pickers (native selects, option lists): the host is
+ * hidden but the port stays, otherwise every option would read the same.
+ */
+export function maskEndpointKeepPort(
+    ip: string | null | undefined,
+    port: number | string | null | undefined,
+    hidden: boolean,
+): string {
+    const hasPort = port !== null && port !== undefined && port !== '';
+    if (hidden) return hasPort ? `${HIDDEN_IP_PLACEHOLDER}:${port}` : HIDDEN_IP_PLACEHOLDER;
+    return maskEndpoint(ip, port, false);
 }

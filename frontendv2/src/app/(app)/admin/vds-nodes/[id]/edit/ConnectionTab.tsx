@@ -57,6 +57,7 @@ export function ConnectionTab({ form, setForm, errors }: ConnectionTabProps) {
                             </Label>
                             <Input
                                 placeholder='mytoken'
+                                data-fp-sensitive=''
                                 value={form.token_id}
                                 onChange={(e) => setForm({ ...form, token_id: e.target.value })}
                                 error={!!errors.token_id}
@@ -77,6 +78,7 @@ export function ConnectionTab({ form, setForm, errors }: ConnectionTabProps) {
                             <Input
                                 type='password'
                                 placeholder='••••••••'
+                                data-fp-sensitive=''
                                 value={form.secret}
                                 onChange={(e) => setForm({ ...form, secret: e.target.value })}
                                 className='text-base'
@@ -93,6 +95,7 @@ export function ConnectionTab({ form, setForm, errors }: ConnectionTabProps) {
                                 </Label>
                                 <Input
                                     placeholder='proxmox.example.com'
+                                    data-fp-sensitive=''
                                     value={form.fqdn}
                                     onChange={(e) => setForm({ ...form, fqdn: e.target.value })}
                                     error={!!errors.fqdn}

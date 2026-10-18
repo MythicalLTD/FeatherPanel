@@ -38,6 +38,8 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { SpellInheritanceField } from '@/components/admin/SpellInheritanceField';
 import { SpellConfigField } from '@/components/admin/SpellConfigField';
 import { spellConfigPayload } from '@/lib/spellConfig';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface Realm {
     id: number;
@@ -77,6 +79,7 @@ export default function CreateSpellPage() {
         script_is_privileged: false,
         startup: '',
     });
+    const { dirty: unsaved, restore: restoreForm } = useFormBaseline(form, { trackFromStart: true });
 
     const [dockerImages, setDockerImages] = useState<{ name: string; value: string }[]>([]);
     const [defaultDockerImage, setDefaultDockerImage] = useState('');
@@ -504,6 +507,17 @@ export default function CreateSpellPage() {
             </Tabs>
 
             <WidgetRenderer widgets={getWidgets('admin-spells-create', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleCreate()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+                saveLabel={t('common.create')}
+            />
         </div>
     );
 }

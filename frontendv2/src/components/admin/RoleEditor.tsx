@@ -52,6 +52,7 @@ import { RoleBadge, RoleIconAvatar } from '@/components/RoleBadge';
 import { ROLE_COLOR_PRESETS, randomRoleColor, isDefaultRole, type RoleForm } from '@/lib/role-utils';
 import { toast } from 'sonner';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 
 interface PermissionNode {
     constant: string;
@@ -74,7 +75,10 @@ interface RoleEditorProps {
     roleId: number | null;
     isYourRole: boolean;
     isSubmitting: boolean;
-    onSave: (e: React.FormEvent) => void;
+    onSave: (e?: React.FormEvent) => void;
+    /** Form fields differ from the saved role (drives the sticky save bar). */
+    unsaved?: boolean;
+    onDiscard?: () => void;
     onDelete?: () => void;
     loadingPermissions: boolean;
     assignedPermissionMap: Map<string, number>;
@@ -99,6 +103,8 @@ export function RoleEditor({
     isYourRole,
     isSubmitting,
     onSave,
+    unsaved = false,
+    onDiscard,
     onDelete,
     loadingPermissions,
     assignedPermissionMap,
@@ -724,6 +730,14 @@ export function RoleEditor({
                     </PageCard>
                 </TabsContent>
             </Tabs>
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={isSubmitting}
+                onSave={() => onSave()}
+                onDiscard={onDiscard}
+                saveLabel={mode === 'create' ? t('admin.roles.form.submit_create') : undefined}
+            />
         </div>
     );
 }

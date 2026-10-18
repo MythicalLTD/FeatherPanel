@@ -176,6 +176,7 @@ export function AllocationCreateForm({ nodeId, onCreated, onCancel, showFooter =
                     <div className='flex gap-2'>
                         <Input
                             placeholder='0.0.0.0'
+                            data-fp-sensitive=''
                             value={createForm.ip}
                             className='h-11 font-mono'
                             onChange={(e) => setCreateForm((prev) => ({ ...prev, ip: e.target.value }))}

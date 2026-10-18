@@ -23,7 +23,6 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
-import { useIpMask } from '@/hooks/useIpMask';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -46,6 +45,7 @@ import {
     Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface VmStatus {
     status?: string;
@@ -144,7 +144,6 @@ export default function VdsConsolePage() {
     const { id } = useParams() as { id: string };
     const router = useRouter();
     const { t } = useTranslation();
-    const ipMask = useIpMask();
     const { instance, loading: instanceLoading, refreshInstance, hasPermission } = useVmInstance();
     const { fetchWidgets, getWidgets } = usePluginWidgets('vds-console');
 
@@ -417,7 +416,7 @@ export default function VdsConsolePage() {
                         {ip && (
                             <span className='text-muted-foreground/70 flex items-center gap-1 font-mono text-xs'>
                                 <Globe className='h-3.5 w-3.5' />
-                                {ipMask.ip(ip)}
+                                <Sensitive>{ip}</Sensitive>
                             </span>
                         )}
                     </div>

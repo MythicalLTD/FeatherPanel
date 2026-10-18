@@ -33,12 +33,12 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { useIpMask } from '@/hooks/useIpMask';
 import { cn, formatFileSize } from '@/lib/utils';
 import { getUsagePercentage, getProgressColor } from '@/lib/server-utils';
 import { Progress } from '@/components/ui/progress';
 import { OverflowText } from '@/components/featherui/OverflowText';
 import { Button } from '@/components/featherui/Button';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface ThroughputRowProps {
     icon: LucideIcon;
@@ -113,7 +113,6 @@ export function VdsNetworkCard({
     className?: string;
 }) {
     const { t } = useTranslation();
-    const ipMask = useIpMask();
     const pendingValue = (
         <span className='bg-muted/40 inline-block h-3.5 w-12 animate-pulse rounded-md align-middle' aria-busy='true' />
     );
@@ -130,7 +129,7 @@ export function VdsNetworkCard({
                     <p className='text-muted-foreground mb-1 text-xs'>{t('vds.console.details.ip')}</p>
                     <div className='flex items-center gap-2'>
                         <code className='bg-muted flex-1 truncate rounded px-2 py-1 font-mono text-sm'>
-                            {ipAddress ? ipMask.ip(ipAddress) : '—'}
+                            {ipAddress ? <Sensitive>{ipAddress}</Sensitive> : '—'}
                         </code>
                         {ipAddress && (
                             <button

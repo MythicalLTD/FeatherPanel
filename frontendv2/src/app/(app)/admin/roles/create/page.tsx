@@ -75,6 +75,8 @@ export default function CreateRolePage() {
                 isYourRole={editor.isYourRole}
                 isSubmitting={editor.isSubmitting}
                 onSave={editor.handleSaveRole}
+                unsaved={editor.unsaved}
+                onDiscard={editor.discardChanges}
                 loadingPermissions={editor.loadingPermissions}
                 assignedPermissionMap={editor.assignedPermissionMap}
                 onTogglePermission={editor.togglePermission}

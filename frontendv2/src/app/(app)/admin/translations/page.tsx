@@ -55,6 +55,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
 
 interface TranslationFile {
     code: string;
@@ -78,7 +79,11 @@ export default function TranslationsPage() {
     const [createOpen, setCreateOpen] = useState(false);
     const [selectedLang, setSelectedLang] = useState<string | null>(null);
     const [editingContent, setEditingContent] = useState('');
-    const [, setOriginalContent] = useState('');
+    const [originalContent, setOriginalContent] = useState('');
+    const guardEditClose = useDiscardConfirm(
+        editOpen && editingContent !== originalContent,
+        t('common.unsavedChanges.leaveConfirm'),
+    );
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
@@ -474,7 +479,7 @@ export default function TranslationsPage() {
                 </PageCard>
             </div>
 
-            <Sheet open={editOpen} onOpenChange={setEditOpen} className='max-w-6xl'>
+            <Sheet open={editOpen} onOpenChange={guardEditClose(setEditOpen)} className='max-w-6xl'>
                 <div className='space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.translations.form.edit_title')}</SheetTitle>

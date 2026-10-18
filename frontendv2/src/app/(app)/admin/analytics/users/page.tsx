@@ -26,6 +26,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Users, UserX, UserCheck, ShieldCheck, ArrowUpRight, ShieldAlert, UserMinus } from 'lucide-react';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface UserOverview {
     total: number;
@@ -324,7 +325,9 @@ export default function UserAnalyticsPage() {
                                                 </span>
                                                 <div className='space-y-0.5'>
                                                     <p className='text-sm leading-none font-medium'>{user.username}</p>
-                                                    <p className='text-muted-foreground text-xs'>{user.email}</p>
+                                                    <p className='text-muted-foreground text-xs'>
+                                                        <Sensitive>{user.email}</Sensitive>
+                                                    </p>
                                                 </div>
                                             </div>
                                             <div className='bg-secondary rounded-full px-2.5 py-0.5 text-sm font-medium'>

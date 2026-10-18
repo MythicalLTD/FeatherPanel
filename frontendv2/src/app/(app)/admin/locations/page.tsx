@@ -55,6 +55,8 @@ import {
     Info,
 } from 'lucide-react';
 import NextImage from 'next/image';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
 
 type LocationType = 'game' | 'vps' | 'web';
 
@@ -278,6 +280,12 @@ export default function LocationsPage() {
         type: LocationType;
     }>({ name: '', description: '', flag_code: '', type: 'game' });
     const [webHostingAccepted, setWebHostingAccepted] = useState(false);
+    const { dirty: editFormDirty, commit: commitEditForm } = useFormBaseline(editForm);
+    const { dirty: createFormDirty } = useFormBaseline(createForm, { trackFromStart: true });
+    const guardClose = useDiscardConfirm(
+        (editOpen && editFormDirty) || (createOpen && createFormDirty),
+        t('common.unsavedChanges.leaveConfirm'),
+    );
 
     const [refreshKey, setRefreshKey] = useState(0);
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
@@ -354,12 +362,14 @@ export default function LocationsPage() {
             const { data } = await axios.get(`/api/admin/locations/${location.id}`);
             const loc = data.data.location as Location;
             setEditingLocation(loc);
-            setEditForm({
+            const loaded = {
                 name: loc.name || '',
                 description: loc.description || '',
                 flag_code: loc.flag_code || '__NONE__',
                 type: (loc.type as LocationType) || 'game',
-            });
+            };
+            setEditForm(loaded);
+            commitEditForm(loaded);
             setEditOpen(true);
         } catch (error) {
             toast.error(getApiErrorMessage(error, t, 'admin.locations.messages.fetch_details_failed'));
@@ -655,7 +665,7 @@ export default function LocationsPage() {
             </div>
 
             {/* Edit Sheet */}
-            <Sheet open={editOpen} onOpenChange={setEditOpen}>
+            <Sheet open={editOpen} onOpenChange={guardClose(setEditOpen)}>
                 <SheetContent>
                     <SheetHeader>
                         <SheetTitle>{t('admin.locations.form.edit_title')}</SheetTitle>
@@ -721,10 +731,10 @@ export default function LocationsPage() {
             {/* Create Sheet */}
             <Sheet
                 open={createOpen}
-                onOpenChange={(open) => {
+                onOpenChange={guardClose((open) => {
                     setCreateOpen(open);
                     if (!open) setWebHostingAccepted(false);
-                }}
+                })}
             >
                 <SheetContent>
                     <SheetHeader>

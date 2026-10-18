@@ -28,9 +28,9 @@ import { toast } from 'sonner';
 import { Globe, Loader2, Lock, Network, RefreshCw, Server, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
-import { useIpMask } from '@/hooks/useIpMask';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface AssignedIp {
     id: number;
@@ -59,7 +59,6 @@ export default function VdsNetworkingPage() {
     const { t } = useTranslation();
     const { instance, loading: instanceLoading, hasPermission, refreshInstance } = useVmInstance();
     const { fetchWidgets, getWidgets } = usePluginWidgets('vds-network');
-    const ipMask = useIpMask();
 
     const [networking, setNetworking] = React.useState<NetworkingResponse | null>(null);
     const [loading, setLoading] = React.useState(false);
@@ -208,7 +207,9 @@ export default function VdsNetworkingPage() {
                                             {ip.interface_name ?? (networking.vm_type === 'lxc' ? 'eth0' : 'virtio')}
                                         </span>
                                     </div>
-                                    <div className='font-mono text-xl font-black break-all'>{ipMask.ip(ip.ip)}</div>
+                                    <div className='font-mono text-xl font-black break-all'>
+                                        <Sensitive>{ip.ip}</Sensitive>
+                                    </div>
                                     <div className='grid grid-cols-1 gap-3 text-sm sm:grid-cols-3'>
                                         <div className='border-border/20 bg-background/30 rounded-xl border px-3 py-2'>
                                             <div className='text-muted-foreground/60 text-[10px] font-black tracking-widest uppercase'>
@@ -220,7 +221,9 @@ export default function VdsNetworkingPage() {
                                             <div className='text-muted-foreground/60 text-[10px] font-black tracking-widest uppercase'>
                                                 {t('vds.networking.assigned_ips.gateway') ?? 'Gateway'}
                                             </div>
-                                            <div className='mt-1 font-mono'>{ipMask.ip(ip.gateway || '-')}</div>
+                                            <div className='mt-1 font-mono'>
+                                                <Sensitive>{ip.gateway || '-'}</Sensitive>
+                                            </div>
                                         </div>
                                         <div className='border-border/20 bg-background/30 rounded-xl border px-3 py-2'>
                                             <div className='text-muted-foreground/60 text-[10px] font-black tracking-widest uppercase'>

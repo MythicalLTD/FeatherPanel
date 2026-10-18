@@ -16,10 +16,17 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useHideServerIps } from '@/contexts/PreferencesContext';
-import { HIDDEN_IP_PLACEHOLDER, maskEndpoint, maskEndpointIpLike, maskIp, maskIpLike } from '@/lib/ip-mask';
+import {
+    HIDDEN_IP_PLACEHOLDER,
+    maskEndpoint,
+    maskEndpointIpLike,
+    maskIp,
+    maskIpLike,
+    maskSensitive,
+} from '@/lib/ip-mask';
 
 export interface IpMask {
-    /** True when the signed-in user asked to hide server IP addresses. */
+    /** True when the signed-in user has privacy mode on. */
     hidden: boolean;
     /** Placeholder shown instead of an IP while hiding is on. */
     placeholder: string;
@@ -31,6 +38,8 @@ export interface IpMask {
     endpoint: (ip: string | null | undefined, port: number | string | null | undefined) => string;
     /** Mask an `ip:port` pair only when the host really is an IP (domains stay readable). */
     endpointLike: (ip: string | null | undefined, port: number | string | null | undefined) => string;
+    /** Mask any sensitive string (email, hostname, key, credential). */
+    text: (value: string | number | null | undefined) => string;
 }
 
 /**
@@ -50,5 +59,6 @@ export function useIpMask(): IpMask {
         ipLike: (value) => maskIpLike(value, hidden),
         endpoint: (ip, port) => maskEndpoint(ip, port, hidden),
         endpointLike: (ip, port) => maskEndpointIpLike(ip, port, hidden),
+        text: (value) => maskSensitive(value, hidden),
     };
 }

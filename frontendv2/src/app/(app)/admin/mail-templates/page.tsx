@@ -49,6 +49,8 @@ import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
 
 interface MailTemplate {
     id: number;
@@ -102,6 +104,11 @@ export default function MailTemplatesPage() {
 
     const [selectedTemplate, setSelectedTemplate] = useState<MailTemplate | null>(null);
     const [formData, setFormData] = useState({ name: '', subject: '', body: '' });
+    const { dirty: templateFormDirty, commit: commitTemplateForm } = useFormBaseline(formData);
+    const guardClose = useDiscardConfirm(
+        (createOpen || editOpen) && templateFormDirty,
+        t('common.unsavedChanges.leaveConfirm'),
+    );
     const [massEmailData, setMassEmailData] = useState({ subject: '', body: '' });
     const [testEmailData, setTestEmailData] = useState({ email: '', subject: '', body: '' });
 
@@ -252,13 +259,17 @@ export default function MailTemplatesPage() {
 
     const openCreate = () => {
         setSelectedTemplate(null);
-        setFormData({ name: '', subject: '', body: '' });
+        const empty = { name: '', subject: '', body: '' };
+        setFormData(empty);
+        commitTemplateForm(empty);
         setCreateOpen(true);
     };
 
     const openEdit = (template: MailTemplate) => {
         setSelectedTemplate(template);
-        setFormData({ name: template.name, subject: template.subject, body: template.body });
+        const loaded = { name: template.name, subject: template.subject, body: template.body };
+        setFormData(loaded);
+        commitTemplateForm(loaded);
         setEditOpen(true);
     };
 
@@ -457,7 +468,7 @@ export default function MailTemplatesPage() {
                 </PageCard>
             </div>
 
-            <Sheet open={createOpen} onOpenChange={setCreateOpen} className='max-w-7xl'>
+            <Sheet open={createOpen} onOpenChange={guardClose(setCreateOpen)} className='max-w-7xl'>
                 <div className='flex h-full flex-col space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.mail_templates.form.create_title')}</SheetTitle>
@@ -526,7 +537,7 @@ export default function MailTemplatesPage() {
                 </div>
             </Sheet>
 
-            <Sheet open={editOpen} onOpenChange={setEditOpen} className='max-w-7xl'>
+            <Sheet open={editOpen} onOpenChange={guardClose(setEditOpen)} className='max-w-7xl'>
                 <div className='flex h-full flex-col space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.mail_templates.form.edit_title')}</SheetTitle>
@@ -707,6 +718,7 @@ export default function MailTemplatesPage() {
                                     id='test-email'
                                     type='email'
                                     placeholder='admin@example.com'
+                                    data-fp-sensitive=''
                                     value={testEmailData.email}
                                     onChange={(e) => setTestEmailData({ ...testEmailData, email: e.target.value })}
                                     required

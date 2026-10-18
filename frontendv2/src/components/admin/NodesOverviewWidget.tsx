@@ -25,6 +25,7 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
 import type { HealthNode } from '@/hooks/useSystemHealth';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface NodesOverviewWidgetProps {
     nodes: HealthNode[];
@@ -84,7 +85,9 @@ export function NodesOverviewWidget({ nodes, loading, unavailable }: NodesOvervi
                             >
                                 <div className='min-w-0 flex-1 basis-36 space-y-1'>
                                     <p className='text-sm font-medium wrap-break-word'>{node.name}</p>
-                                    <p className='text-muted-foreground text-xs wrap-break-word'>{node.fqdn}</p>
+                                    <p className='text-muted-foreground text-xs wrap-break-word'>
+                                        <Sensitive>{node.fqdn}</Sensitive>
+                                    </p>
                                     {typeof node.server_count === 'number' && (
                                         <p className='text-muted-foreground text-xs'>
                                             {t('admin.nodes_overview.servers_count', {

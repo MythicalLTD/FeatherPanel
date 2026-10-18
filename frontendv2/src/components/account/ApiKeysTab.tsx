@@ -33,6 +33,7 @@ import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface ApiClient {
     id: number;
@@ -505,7 +506,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                             </span>
                             <div className='bg-muted mt-2 rounded-md p-3'>
                                 <pre className='font-mono text-xs break-all whitespace-pre-wrap'>
-                                    {selectedClient.public_key}
+                                    <Sensitive>{selectedClient.public_key}</Sensitive>
                                 </pre>
                                 <Button
                                     variant='outline'
@@ -525,7 +526,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                                 </span>
                                 <div className='bg-muted mt-2 rounded-md p-3'>
                                     <pre className='custom-scrollbar max-h-64 overflow-auto font-mono text-xs break-all whitespace-pre-wrap'>
-                                        {selectedClient.private_key}
+                                        <Sensitive>{selectedClient.private_key}</Sensitive>
                                     </pre>
                                     <Button
                                         variant='outline'

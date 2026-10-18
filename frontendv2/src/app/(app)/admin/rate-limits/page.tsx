@@ -28,6 +28,7 @@ import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 
 interface RateLimitConfig {
     _enabled?: boolean;
@@ -436,6 +437,13 @@ export default function RateLimitsPage() {
                 </div>
             </PageCard>
             <WidgetRenderer widgets={getWidgets('admin-rate-limits', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={changedRoutes.size > 0}
+                saving={saving}
+                onSave={() => void handleSaveAll()}
+                onDiscard={() => void fetchRateLimits()}
+            />
         </div>
     );
 }

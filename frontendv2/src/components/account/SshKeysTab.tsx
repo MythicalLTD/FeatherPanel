@@ -27,6 +27,7 @@ import { Key, Plus, Trash2, Eye, Pencil, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface SshKey {
     id: number;
@@ -378,7 +379,7 @@ export default function SshKeysTab() {
                             </span>
                             <div className='bg-muted custom-scrollbar mt-2 max-h-64 overflow-auto rounded-md p-3'>
                                 <pre className='font-mono text-xs break-all whitespace-pre-wrap'>
-                                    {selectedKey.public_key}
+                                    <Sensitive>{selectedKey.public_key}</Sensitive>
                                 </pre>
                             </div>
                         </div>

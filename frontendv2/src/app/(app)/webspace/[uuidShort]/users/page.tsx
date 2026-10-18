@@ -31,6 +31,7 @@ import { WebSpaceSubuserPermissions } from '@/lib/webspace-permissions';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface SubuserRow {
     id: number;
@@ -202,7 +203,9 @@ export default function WebSpaceUsersPage() {
                                 description={
                                     <div className='text-muted-foreground flex items-center gap-2 text-xs font-medium'>
                                         <Mail className='h-3 w-3' />
-                                        <span>{su.email}</span>
+                                        <span>
+                                            <Sensitive>{su.email}</Sensitive>
+                                        </span>
                                     </div>
                                 }
                                 actions={
@@ -290,7 +293,9 @@ export default function WebSpaceUsersPage() {
                     </DialogHeader>
                     {editUser && (
                         <div className='space-y-3 px-1'>
-                            <p className='text-sm'>{editUser.email || editUser.username}</p>
+                            <p className='text-sm'>
+                                {editUser.email ? <Sensitive>{editUser.email}</Sensitive> : editUser.username}
+                            </p>
                             <div className='flex max-h-60 flex-wrap gap-2 overflow-y-auto'>
                                 {allPermissions.map((perm) => (
                                     <label

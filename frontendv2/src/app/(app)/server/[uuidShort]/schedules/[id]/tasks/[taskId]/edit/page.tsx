@@ -53,6 +53,8 @@ import {
 } from '@/components/server/backup/backup-payload';
 import { parseContainerShellFields } from '@/components/server/schedule/container-shell-payload';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export default function EditTaskPage() {
     const {
@@ -84,6 +86,7 @@ export default function EditTaskPage() {
     });
     const [backup, setBackup] = React.useState<BackupFields>(emptyBackupFields());
     const [containerShell, setContainerShell] = React.useState<ContainerShellFields>(emptyContainerShellFields());
+    const { dirty: unsaved, markClean, restore: restoreSaved } = useFormBaseline({ form, backup, containerShell });
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-tasks-edit');
 
     // Container Shell runs arbitrary commands in the container: it needs the admin switch and console access.
@@ -148,6 +151,7 @@ export default function EditTaskPage() {
                 });
                 setBackup(parseBackupFields(task.action, task.payload || ''));
                 setContainerShell(parseContainerShellFields(task.payload || ''));
+                markClean();
                 setTaskCount(tasksRes.data?.data?.data?.length || 1);
                 if (databasesRes.data?.success && databasesRes.data?.data) {
                     setDatabases(databasesRes.data.data.data || []);
@@ -161,7 +165,7 @@ export default function EditTaskPage() {
             }
         };
         load();
-    }, [uuidShort, scheduleId, taskId, router, t]);
+    }, [uuidShort, scheduleId, taskId, router, t, markClean]);
 
     const handleUpdate = async (e?: React.FormEvent) => {
         e?.preventDefault();
@@ -425,6 +429,19 @@ export default function EditTaskPage() {
                 </FormSection>
             </form>
             <WidgetRenderer widgets={getWidgets('server-tasks-edit', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleUpdate()}
+                onDiscard={() => {
+                    const saved = restoreSaved();
+                    if (!saved) return;
+                    setForm(saved.form);
+                    setBackup(saved.backup);
+                    setContainerShell(saved.containerShell);
+                }}
+            />
         </div>
     );
 }

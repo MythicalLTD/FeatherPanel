@@ -510,6 +510,7 @@ export default function AdminMailHostsPage() {
                                             <Input
                                                 id='mail-ext-key'
                                                 type='password'
+                                                data-fp-sensitive=''
                                                 value={externalForm.provision_api_key}
                                                 onChange={(e) =>
                                                     setExternalForm({
@@ -556,6 +557,7 @@ export default function AdminMailHostsPage() {
                                             <Label htmlFor='mail-ext-imap'>{t('admin.mailHosts.form.imapHost')}</Label>
                                             <Input
                                                 id='mail-ext-imap'
+                                                data-fp-sensitive=''
                                                 value={externalForm.imap_host}
                                                 onChange={(e) =>
                                                     setExternalForm({
@@ -570,6 +572,7 @@ export default function AdminMailHostsPage() {
                                             <Label htmlFor='mail-ext-smtp'>{t('admin.mailHosts.form.smtpHost')}</Label>
                                             <Input
                                                 id='mail-ext-smtp'
+                                                data-fp-sensitive=''
                                                 value={externalForm.smtp_host}
                                                 onChange={(e) =>
                                                     setExternalForm({

@@ -262,6 +262,7 @@ export default function ProfileTab() {
                                 <Label className='text-foreground text-sm font-medium'>{t('account.email')}</Label>
                                 <Input
                                     type='email'
+                                    data-fp-sensitive=''
                                     value={formData.email}
                                     onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
                                     disabled={isSubmitting}

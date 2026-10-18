@@ -33,6 +33,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { MessageSquare, Settings as SettingsIcon, Sparkles, Zap, Save, AlertCircle, RefreshCw } from 'lucide-react';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 
 export default function FeatherAiAgentPage() {
     const { t } = useTranslation();
@@ -91,6 +92,17 @@ export default function FeatherAiAgentPage() {
         fetchChatbotSettings();
         fetchSystemPrompt();
     }, [fetchChatbotSettings, fetchSystemPrompt, fetchWidgets]);
+
+    // Same comparison as saveSettings: masked or empty passwords are not an edit.
+    const unsaved =
+        !!chatbotSettings &&
+        !!originalSettings &&
+        Object.entries(chatbotSettings).some(([key, setting]) => {
+            const originalSetting = originalSettings[key];
+            if (originalSetting && String(originalSetting.value) === String(setting.value)) return false;
+            if (setting.type === 'password' && (setting.value === '••••••••' || setting.value === '')) return false;
+            return true;
+        });
 
     const saveSettings = async () => {
         if (!chatbotSettings || !originalSettings) return;
@@ -351,6 +363,7 @@ export default function FeatherAiAgentPage() {
                                                     type='password'
                                                     placeholder={t('admin.featherai_agent.config.api_key_placeholder')}
                                                     className='h-12'
+                                                    data-fp-sensitive=''
                                                     value={String(getSettingValue('chatbot_google_ai_api_key') || '')}
                                                     onChange={(e) =>
                                                         updateSettingValue('chatbot_google_ai_api_key', e.target.value)
@@ -383,6 +396,7 @@ export default function FeatherAiAgentPage() {
                                                     type='password'
                                                     placeholder={t('admin.featherai_agent.config.api_key_placeholder')}
                                                     className='h-12'
+                                                    data-fp-sensitive=''
                                                     value={String(getSettingValue('chatbot_openai_api_key') || '')}
                                                     onChange={(e) =>
                                                         updateSettingValue('chatbot_openai_api_key', e.target.value)
@@ -428,6 +442,7 @@ export default function FeatherAiAgentPage() {
                                                     type='password'
                                                     placeholder={t('admin.featherai_agent.config.api_key_placeholder')}
                                                     className='h-12'
+                                                    data-fp-sensitive=''
                                                     value={String(getSettingValue('chatbot_openrouter_api_key') || '')}
                                                     onChange={(e) =>
                                                         updateSettingValue('chatbot_openrouter_api_key', e.target.value)
@@ -490,6 +505,7 @@ export default function FeatherAiAgentPage() {
                                                 <Input
                                                     type='password'
                                                     className='h-12'
+                                                    data-fp-sensitive=''
                                                     value={String(getSettingValue('chatbot_grok_api_key') || '')}
                                                     onChange={(e) =>
                                                         updateSettingValue('chatbot_grok_api_key', e.target.value)
@@ -522,6 +538,7 @@ export default function FeatherAiAgentPage() {
                                                     type='password'
                                                     placeholder={t('admin.featherai_agent.config.api_key_placeholder')}
                                                     className='h-12'
+                                                    data-fp-sensitive=''
                                                     value={String(getSettingValue('chatbot_perplexity_api_key') || '')}
                                                     onChange={(e) =>
                                                         updateSettingValue('chatbot_perplexity_api_key', e.target.value)
@@ -685,6 +702,13 @@ export default function FeatherAiAgentPage() {
             </PageCard>
 
             <WidgetRenderer widgets={getWidgets('admin-ai-agent', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void saveSettings()}
+                onDiscard={() => setChatbotSettings(originalSettings)}
+            />
         </div>
     );
 }

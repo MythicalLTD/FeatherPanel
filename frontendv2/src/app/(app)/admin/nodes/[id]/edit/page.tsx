@@ -73,6 +73,8 @@ import {
     supportsDaemonFeature,
     type DaemonType,
 } from '@/lib/daemonCapabilities';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export interface NodeForm {
     name: string;
@@ -157,6 +159,7 @@ export default function EditNodePage() {
         public_ip_v6: '',
         sftp_subdomain: '',
     });
+    const { dirty: unsaved, commit: commitForm, restore: restoreForm } = useFormBaseline(form);
 
     const [systemInfo, setSystemInfo] = useState<{
         data: SystemInfoResponse | null;
@@ -206,7 +209,7 @@ export default function EditNodePage() {
             }
 
             const daemonType = normalizeDaemonType(node.daemon_type);
-            setForm({
+            const loadedForm: NodeForm = {
                 name: node.name,
                 description: node.description || '',
                 fqdn: node.fqdn,
@@ -228,14 +231,16 @@ export default function EditNodePage() {
                 public_ip_v4: node.public_ip_v4 || '',
                 public_ip_v6: node.public_ip_v6 || '',
                 sftp_subdomain: node.sftp_subdomain || '',
-            });
+            };
+            setForm(loadedForm);
+            commitForm(loadedForm);
         } catch (error) {
             console.error('Error fetching node data:', error);
             toast.error(getApiErrorMessage(error, t, 'admin.node.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
-    }, [nodeId, router, t]);
+    }, [nodeId, router, t, commitForm]);
 
     const fetchSystemInfo = useCallback(async () => {
         setSystemInfo((prev) => ({ ...prev, loading: true, error: null }));
@@ -397,8 +402,8 @@ export default function EditNodePage() {
             : '';
         const yaml = `debug: false
 uuid: ${nodeData.uuid}
-token_id: ${nodeData.daemon_token_id}
-token: ${nodeData.daemon_token}
+token_id: ${nodeData.daemon_token_id ?? '<token_id>'}
+token: ${nodeData.daemon_token ?? '<token>'}
 api:
   host: 0.0.0.0
   port: ${form.daemonListen || 8443}
@@ -943,6 +948,16 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                     onOpenChange={setMassTransferOpen}
                 />
             ) : null}
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+            />
         </div>
     );
 }

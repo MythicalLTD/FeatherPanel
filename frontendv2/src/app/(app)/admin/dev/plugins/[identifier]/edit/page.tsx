@@ -34,6 +34,8 @@ import { useDeveloperMode } from '@/hooks/useDeveloperMode';
 import { toast } from 'sonner';
 import { Code, ArrowLeft, Save, Loader2, Lock } from 'lucide-react';
 import { safeBack } from '@/lib/safe-back';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface DependencyItem {
     type: 'php' | 'php-ext' | 'plugin';
@@ -88,6 +90,7 @@ export default function EditPluginPage() {
         dependencies: [],
         requiredConfigs: [],
     });
+    const { dirty: unsaved, markClean, restore: restoreForm } = useFormBaseline(form);
 
     const pluginFlags = [
         'hasInstallScript',
@@ -170,6 +173,7 @@ export default function EditPluginPage() {
                               }))
                             : [],
                 });
+                markClean();
             } else {
                 toast.error(
                     getApiErrorMessageFromPayload(response.data, t, 'admin.dev.plugins.edit.messages.load_failed'),
@@ -183,7 +187,7 @@ export default function EditPluginPage() {
         } finally {
             setLoadingPlugin(false);
         }
-    }, [identifier, router, t]);
+    }, [identifier, router, t, markClean]);
 
     useEffect(() => {
         if (isDeveloperModeEnabled === true) {
@@ -827,6 +831,16 @@ export default function EditPluginPage() {
                 </form>
             </div>
             <WidgetRenderer widgets={getWidgets('admin-dev-plugins-edit', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={loading}
+                onSave={() => void updatePlugin()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+            />
         </>
     );
 }
