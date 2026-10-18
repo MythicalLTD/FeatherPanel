@@ -711,7 +711,7 @@
 			"INVALID_DATABASE_PORT": "Database port must be between 1 and 65535",
 			"INVALID_DATABASE_SUBDOMAIN": "database_subdomain must be a valid DNS hostname",
 			"INVALID_DATA_LENGTH": "ID must be a positive integer",
-			"INVALID_DATA_TYPE": "Name must be a string",
+			"INVALID_DATA_TYPE": "One or more fields have an invalid value.",
 			"INVALID_DATETIME_FORMAT": "Expires at must be in format YYYY-MM-DDTHH:MM",
 			"INVALID_DAYS_PARAMETER": "Days must be between 1 and 90",
 			"INVALID_DELETE_KEY": "delete_key must be at least 8 characters",
@@ -1625,6 +1625,13 @@
 		"hacker_easter_egg": {
 			"title": "Look what you have done script kiddy.",
 			"description": "Hahahah how funny you are you think you're a hacker or something? Okay then, let's see how you get rid of me."
+		},
+		"unsavedChanges": {
+			"title": "You have unsaved changes",
+			"description": "Save to apply them, or discard to go back to the current values.",
+			"invalidDescription": "Fix the highlighted fields before saving.",
+			"discard": "Discard",
+			"leaveConfirm": "You have unsaved changes. Leave this page and lose them?"
 		}
 	},
 	"pwa": {

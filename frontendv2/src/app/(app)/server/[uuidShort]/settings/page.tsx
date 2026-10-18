@@ -71,6 +71,7 @@ import { isEnabled } from '@/lib/utils';
 import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 import { filesApi } from '@/lib/files-api';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 
 interface SftpDetails {
     host: string;
@@ -249,7 +250,7 @@ export default function ServerSettingsPage() {
         }
     };
 
-    const hasChanges = server?.name !== name || (server?.description || '') !== description;
+    const hasChanges = Boolean(server) && (server?.name !== name || (server?.description || '') !== description);
     const canEditBackupPolicy =
         Boolean(server && !server.is_subuser) && isEnabled(settings?.server_allow_user_backup_policy_edit ?? 'true');
     const canEditAutoStart = canRename && isEnabled(settings?.server_allow_user_auto_start ?? 'false');
@@ -300,6 +301,50 @@ export default function ServerSettingsPage() {
             setSavingAutoStart(false);
         }
     };
+    const generalDirty = canRename && hasChanges;
+    const backupDirty = canEditBackupPolicy && Boolean(hasBackupPolicyChanges);
+    const autoStartDirty = canEditAutoStart && Boolean(hasAutoStartChanges);
+    const unsaved = generalDirty || backupDirty || autoStartDirty;
+    const savingAny = saving || savingBackupPolicy || savingAutoStart;
+
+    // One request for every pending section: saving them one by one would refetch in between and
+    // drop the edits of the sections not saved yet.
+    const handleSaveAllPending = async () => {
+        if (!server || !unsaved) return;
+        const payload: Record<string, unknown> = {};
+        if (generalDirty) Object.assign(payload, { name, description });
+        if (backupDirty) payload.backup_retention_mode = backupRetentionMode === 'inherit' ? null : backupRetentionMode;
+        if (autoStartDirty) {
+            Object.assign(payload, {
+                auto_start: autoStart,
+                auto_start_delay: Math.max(0, Math.min(3600, autoStartDelay)),
+            });
+        }
+        setSaving(true);
+        try {
+            const { data } = await axios.put(`/api/user/servers/${uuidShort}`, payload);
+            if (data.success) {
+                toast.success(t('serverSettings.saveSuccess'));
+                await fetchData();
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error(getApiErrorMessage(error, t, 'serverSettings.saveError'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDiscardAll = () => {
+        if (!server) return;
+        setName(server.name);
+        setDescription(server.description || '');
+        const br = server.backup_retention_mode;
+        setBackupRetentionMode(br === 'fifo_rolling' || br === 'hard_limit' ? br : 'inherit');
+        setAutoStart(Boolean(server.auto_start));
+        setAutoStartDelay(Number(server.auto_start_delay) || 0);
+    };
+
     const resolvedSftpHost = server?.node?.sftp_subdomain || server?.sftp?.host || '';
     const resolvedSftpPort = server?.sftp?.port;
     const resolvedSftpUsername = server?.sftp?.username || '';
@@ -915,6 +960,13 @@ export default function ServerSettingsPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                onSave={() => void handleSaveAllPending()}
+                onDiscard={handleDiscardAll}
+                saving={savingAny}
+            />
         </div>
     );
 }

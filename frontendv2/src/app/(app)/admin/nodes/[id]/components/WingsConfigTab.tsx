@@ -23,6 +23,7 @@ import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-err
 import { useTheme } from '@/contexts/ThemeContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Settings2, Save, RotateCw, AlertTriangle, Loader2 } from 'lucide-react';
 import { NodeData } from '../types';
@@ -207,6 +208,13 @@ export function WingsConfigTab({ node }: WingsConfigTabProps) {
                     </div>
                 </div>
             </div>
+
+            <UnsavedChangesBar
+                dirty={isDirty && !loading}
+                onSave={() => void handleSave()}
+                onDiscard={() => setContent(originalContent)}
+                saving={saving}
+            />
         </div>
     );
 }

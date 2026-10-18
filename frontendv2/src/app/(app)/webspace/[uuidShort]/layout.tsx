@@ -33,7 +33,7 @@ async function getWebSpace(uuidShort: string): Promise<WebSpace | null> {
         const baseUrl = getBaseUrl();
         const res = await fetch(`${baseUrl}/api/user/webspaces/${uuidShort}`, {
             headers: { Cookie: cookieHeader, Accept: 'application/json' },
-            next: { revalidate: 10 },
+            cache: 'no-store', // per-user data, never cached
         });
         if (!res.ok) return null;
         const data = await res.json();

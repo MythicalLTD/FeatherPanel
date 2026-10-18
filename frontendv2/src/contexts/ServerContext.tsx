@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback, ReactNode } from 'react';
 import axios from 'axios';
 import { Server } from '@/types/server';
 import { useSession } from '@/contexts/SessionContext';
@@ -102,6 +102,20 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
         }
     }, [uuidShort, server]);
 
+    const lastRefreshRef = useRef(0);
+
+    /** Background refresh: no loading state, errors are ignored (the current copy stays). */
+    const refreshQuietly = useCallback(async () => {
+        if (!uuidShort) return;
+        lastRefreshRef.current = Date.now();
+        try {
+            const { data } = await axios.get<{ success: boolean; data: Server }>(`/api/user/servers/${uuidShort}`);
+            if (data.success && data.data) setServer(data.data);
+        } catch {
+            // Keep the existing server object; the full fetch path handles errors and suspension.
+        }
+    }, [uuidShort]);
+
     const fetchServer = useCallback(async () => {
         if (!uuidShort) return;
 
@@ -167,8 +181,28 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
         } else {
             setServer(initialServer);
             setLoading(false);
+            // The server-rendered copy can be older than the database (limits changed by an
+            // admin, renamed, etc.): refresh it in the background without a loading state.
+            void refreshQuietly();
         }
-    }, [uuidShort, initialServer, fetchServer]);
+    }, [uuidShort, initialServer, fetchServer, refreshQuietly]);
+
+    // Keep the server details current when the user comes back to the tab, so limits and other
+    // settings changed elsewhere show up without a hard reload. Throttled to once every 30s.
+    useEffect(() => {
+        if (typeof window === 'undefined' || !uuidShort) return;
+        const onVisible = () => {
+            if (document.visibilityState !== 'visible') return;
+            if (Date.now() - lastRefreshRef.current < 30_000) return;
+            void refreshQuietly();
+        };
+        document.addEventListener('visibilitychange', onVisible);
+        window.addEventListener('focus', onVisible);
+        return () => {
+            document.removeEventListener('visibilitychange', onVisible);
+            window.removeEventListener('focus', onVisible);
+        };
+    }, [uuidShort, refreshQuietly]);
 
     useEffect(() => {
         if (typeof document === 'undefined' || !uuidShort) return;

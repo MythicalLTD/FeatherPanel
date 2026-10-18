@@ -1405,7 +1405,13 @@ class ServersController
 
         // Validate data types for numeric fields
         $numericFields = ['node_id', 'owner_id', 'memory', 'swap', 'disk', 'io', 'cpu', 'allocation_id', 'realms_id', 'spell_id', 'allocation_limit', 'database_limit', 'backup_limit'];
+        // Nullable columns: servers created without these limits store NULL, and the edit form sends
+        // that back unchanged. Rejecting it made every save of such a server fail.
+        $nullableNumericFields = ['allocation_limit', 'database_limit'];
         foreach ($data as $field => $value) {
+            if ($value === null && in_array($field, $nullableNumericFields, true)) {
+                continue;
+            }
             if (in_array($field, $numericFields)) {
                 if ($field === 'swap') {
                     if (!is_numeric($value) || (int) $value < -1) {

@@ -24,6 +24,7 @@ import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 import {
     Save,
     Server,
@@ -146,6 +147,9 @@ export default function EditServerPage() {
     const [sizeValidity, setSizeValidity] = useState<Record<string, boolean>>({});
 
     const [form, setForm] = useState<ServerFormData>(initialFormData);
+    // Snapshot of the form as loaded from the API; null until the server has loaded.
+    const [formBaseline, setFormBaseline] = useState<string | null>(null);
+    const unsaved = formBaseline !== null && JSON.stringify(form) !== formBaseline;
     const [selectedEntities, setSelectedEntities] = useState<SelectedEntities>(initialSelectedEntities);
     const [isSuspended, setIsSuspended] = useState(false);
     const [suspensionReason, setSuspensionReason] = useState<string | null>(null);
@@ -415,7 +419,7 @@ export default function EditServerPage() {
                 }
                 spellBaselineForMounts.current = server.spell_id ?? null;
 
-                setForm({
+                const loadedForm: typeof form = {
                     name: server.name || '',
                     description: server.description || '',
                     owner_id: server.owner_id,
@@ -449,7 +453,9 @@ export default function EditServerPage() {
                     allocation_id: server.allocation_id,
                     variables: variablesMap,
                     mount_ids: mountIds,
-                });
+                };
+                setForm(loadedForm);
+                setFormBaseline(JSON.stringify(loadedForm));
 
                 setIsSuspended(Boolean(server.suspended));
                 setSuspensionReason(server.suspension_reason ?? null);
@@ -1546,6 +1552,13 @@ export default function EditServerPage() {
             )}
 
             <WidgetRenderer widgets={getWidgets('admin-servers-edit', 'bottom-of-page')} context={{ id: serverId }} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => void fetchServerData()}
+                saving={saving}
+            />
         </div>
     );
 }

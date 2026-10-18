@@ -82,14 +82,14 @@ export function PageCard({
         <div
             id={id}
             className={cn(
-                'group relative space-y-6 overflow-visible rounded-2xl border p-8 backdrop-blur-sm transition-all',
+                'group relative space-y-6 overflow-visible rounded-2xl border p-5 backdrop-blur-sm transition-all sm:p-8',
                 styles.bg,
                 styles.border,
                 className,
             )}
         >
-            <div className='border-border/10 relative z-10 flex min-w-0 items-start justify-between gap-4 border-b pb-6'>
-                <div className='flex min-w-0 flex-1 items-center gap-4'>
+            <div className='border-border/10 relative z-10 flex min-w-0 flex-wrap items-start justify-between gap-4 border-b pb-6'>
+                <div className='flex min-w-48 flex-1 items-center gap-4'>
                     {(Icon || iconSrc) && (
                         <div
                             className={cn(
