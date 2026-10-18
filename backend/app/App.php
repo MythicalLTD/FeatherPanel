@@ -46,6 +46,7 @@ use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\Matcher\CompiledUrlMatcher;
 use Symfony\Component\Routing\Matcher\UrlMatcherInterface;
+use App\Services\Wings\Exceptions\WingsConnectionException;
 use Symfony\Component\Routing\RequestContext as RoutingContext;
 use Symfony\Component\Routing\Exception\MethodNotAllowedException;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
@@ -499,6 +500,13 @@ class App
         } catch (BadRequestException $e) {
             // Malformed client input (e.g. ?search[]=x where a scalar is expected) is a 400, not a server error.
             $response = ApiResponse::error('Invalid request: ' . $e->getMessage(), 'INVALID_REQUEST', 400, null);
+        } catch (WingsConnectionException $e) {
+            // An offline or unreachable node is an infrastructure state, not a panel bug: answer 502
+            // with a stable code instead of a generic 500, and keep it out of the error tracker.
+            self::getLogger()->warning('Node unreachable on ' . $request->getPathInfo() . ': ' . $e->getMessage());
+            $response = ApiResponse::error('Failed to reach the node', 'DAEMON_UNREACHABLE', 502, [
+                'request_id' => RequestContext::id(),
+            ]);
         } catch (\Throwable $e) {
             $eventId = SentryTelemetry::captureException($e);
             self::getLogger()->error(
