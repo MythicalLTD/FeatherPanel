@@ -19,9 +19,21 @@ use App\App;
 use App\Permissions;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\Admin\KPI\OverviewController;
 use App\Controllers\Admin\KPI\AnalyticsController;
 
 return function (RouteCollection $routes): void {
+    // Cross-module KPI overview for a date range
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-analytics-overview',
+        '/api/admin/analytics/overview',
+        function (Request $request) {
+            return (new OverviewController())->getOverview($request);
+        },
+        Permissions::ADMIN_DASHBOARD_VIEW,
+    );
+
     // User Analytics Overview
     App::getInstance(true)->registerAdminRoute(
         $routes,

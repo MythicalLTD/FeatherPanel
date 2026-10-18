@@ -62,6 +62,7 @@ class ModuleGate
         '/api/admin/backup-schedules' => self::GAME,
         '/api/admin/subdomains' => self::GAME,
         '/api/admin/pterodactyl-importer' => self::GAME,
+        '/api/admin/analytics/servers' => self::GAME,
         '/api/user/webspaces' => self::WEB,
         '/api/admin/webspaces' => self::WEB,
         '/api/admin/web-nodes' => self::WEB,
@@ -74,6 +75,7 @@ class ModuleGate
         '/api/admin/vm-instances' => self::VDS,
         '/api/admin/vm-nodes' => self::VDS,
         '/api/admin/vm-templates' => self::VDS,
+        '/api/admin/analytics/vds' => self::VDS,
     ];
 
     public static function moduleForPath(string $path): ?string
