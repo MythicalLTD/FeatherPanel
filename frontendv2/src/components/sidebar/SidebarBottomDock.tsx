@@ -32,6 +32,7 @@ import {
 import { setSidebarCollapsed } from '@/lib/sidebarChrome';
 import { runPluginJs } from '@/lib/run-plugin-js';
 import { cn } from '@/lib/utils';
+import { compareNavGroups } from '@/lib/navigationGroups';
 
 type SidebarBottomDockProps = {
     collapsed: boolean;
@@ -47,23 +48,6 @@ type SidebarBottomDockProps = {
     adminOpenTicketCount: number;
     showCollapseToggle?: boolean;
 };
-
-const GROUP_ORDER = [
-    'overview',
-    'management',
-    'files',
-    'networking',
-    'automation',
-    'configuration',
-    'feathercloud',
-    'users',
-    'tickets',
-    'infrastructure',
-    'content',
-    'system',
-    'support',
-    'plugins',
-];
 
 export function SidebarBottomDock({
     collapsed,
@@ -82,14 +66,7 @@ export function SidebarBottomDock({
     const [openSubmenuId, setOpenSubmenuId] = useState<string | null>(null);
 
     const sortedGroups = useMemo(() => {
-        return Object.keys(groupedItems).sort((a, b) => {
-            const indexA = GROUP_ORDER.indexOf(a.toLowerCase());
-            const indexB = GROUP_ORDER.indexOf(b.toLowerCase());
-            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-            if (indexA !== -1) return -1;
-            if (indexB !== -1) return 1;
-            return a.localeCompare(b);
-        });
+        return Object.keys(groupedItems).sort(compareNavGroups);
     }, [groupedItems]);
 
     const itemCount = useMemo(

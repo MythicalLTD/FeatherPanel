@@ -3104,7 +3104,29 @@
 		"reveal": "Reveal"
 	},
 	"navigation": {
-		"groups": {},
+		"groups": {
+			"overview": "Overview",
+			"management": "Management",
+			"files": "Files",
+			"networking": "Networking",
+			"automation": "Automation",
+			"configuration": "Configuration",
+			"account": "Account",
+			"users": "Users & access",
+			"servers": "Servers",
+			"infrastructure": "Infrastructure",
+			"templates": "Templates",
+			"support": "Support",
+			"security": "Security",
+			"settings": "Settings",
+			"system": "System",
+			"myfeatherpanel": "MyFeatherPanel",
+			"developer": "Developer",
+			"feathercloud": "FeatherCloud",
+			"tickets": "Tickets",
+			"content": "Content",
+			"plugins": "Plugins"
+		},
 		"items": {
 			"dashboard": "Dashboard",
 			"adminHome": "Admin Home",

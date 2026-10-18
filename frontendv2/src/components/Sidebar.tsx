@@ -49,6 +49,7 @@ import { shouldShowVersion } from '@/lib/branding';
 import { SidebarBottomDock } from '@/components/sidebar/SidebarBottomDock';
 import { SidebarCollapseToggle } from '@/components/sidebar/SidebarCollapseToggle';
 import { SidebarCollapsedTooltipLayer, sidebarTooltipProps } from '@/components/sidebar/SidebarCollapsedTooltipLayer';
+import { compareNavGroups } from '@/lib/navigationGroups';
 
 interface SidebarProps {
     mobileOpen: boolean;
@@ -314,23 +315,6 @@ function SidebarContent({
               ? 'h-5 w-5'
               : 'h-[18px] w-[18px]';
 
-    const groupOrder = [
-        'overview',
-        'management',
-        'files',
-        'networking',
-        'automation',
-        'configuration',
-        'feathercloud',
-        'users',
-        'tickets',
-        'infrastructure',
-        'content',
-        'system',
-        'support',
-        'plugins',
-    ];
-
     const sortedGroups = Object.keys(groupedItems).sort((a, b) => {
         const customIndex = (group: string) => {
             const indexes = groupedItems[group]
@@ -346,14 +330,7 @@ function SidebarContent({
             if (customA !== customB) return customA - customB;
         }
 
-        const indexA = groupOrder.indexOf(a.toLowerCase());
-        const indexB = groupOrder.indexOf(b.toLowerCase());
-
-        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-        if (indexA !== -1) return -1;
-        if (indexB !== -1) return 1;
-
-        return a.localeCompare(b);
+        return compareNavGroups(a, b);
     });
 
     const modernBrandInner = (

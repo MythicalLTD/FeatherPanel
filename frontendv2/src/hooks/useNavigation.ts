@@ -34,6 +34,29 @@ import { useDeveloperMode } from '@/hooks/useDeveloperMode';
 import { applySidebarCustomization, parseSidebarNavigationConfig, type SidebarScope } from '@/lib/sidebarCustomization';
 import { WebSpaceSubuserPermissions } from '@/lib/webspace-permissions';
 
+/**
+ * Keep items the user may open. Children are checked too (they carry their own permission),
+ * and a parent whose children were all filtered out is dropped instead of rendering an empty
+ * submenu.
+ */
+export function filterNavigationByPermission(
+    items: NavigationItem[],
+    allowed: (permission: string) => boolean,
+): NavigationItem[] {
+    const out: NavigationItem[] = [];
+    for (const item of items) {
+        if (item.permission && !allowed(item.permission)) continue;
+        if (item.children?.length) {
+            const children = filterNavigationByPermission(item.children, allowed);
+            if (children.length === 0) continue;
+            out.push({ ...item, children });
+            continue;
+        }
+        out.push(item);
+    }
+    return out;
+}
+
 const normalizeSpellId = (spellId: number | string | null | undefined): number | null => {
     if (spellId === null || spellId === undefined) return null;
     const parsed = Number(spellId);
@@ -172,13 +195,19 @@ export function useNavigation() {
                         webspace: ['management', 'files', 'networking', 'automation', 'configuration'],
                         admin: [
                             'overview',
-                            'feathercloud',
                             'users',
+                            'servers',
+                            'infrastructure',
+                            'templates',
+                            'support',
+                            'security',
+                            'settings',
+                            'system',
+                            'myfeatherpanel',
+                            'feathercloud',
                             'tickets',
                             'networking',
-                            'infrastructure',
                             'content',
-                            'system',
                         ],
                         main: ['overview', 'support'],
                     };
@@ -252,7 +281,7 @@ export function useNavigation() {
                 items.push(...pluginItems);
             }
 
-            const filtered = items.filter((item) => !item.permission || hasPermission(item.permission));
+            const filtered = filterNavigationByPermission(items, (permission) => hasPermission(permission));
             return applySidebarCustomization(
                 filtered,
                 parseSidebarNavigationConfig(settings?.sidebar_navigation_config),
@@ -286,7 +315,7 @@ export function useNavigation() {
                 items.push(...serverPlugins);
             }
 
-            const filtered = items.filter((item) => !item.permission || hasServerPermission(item.permission));
+            const filtered = filterNavigationByPermission(items, (permission) => hasServerPermission(permission));
             return applySidebarCustomization(
                 filtered,
                 parseSidebarNavigationConfig(settings?.sidebar_navigation_config),
@@ -307,7 +336,7 @@ export function useNavigation() {
                 items.push(...vdsPlugins);
             }
 
-            const filtered = items.filter((item) => !item.permission || hasVdsPermission(item.permission));
+            const filtered = filterNavigationByPermission(items, (permission) => hasVdsPermission(permission));
             return applySidebarCustomization(
                 filtered,
                 parseSidebarNavigationConfig(settings?.sidebar_navigation_config),
@@ -335,13 +364,11 @@ export function useNavigation() {
                 items.push(...webspacePlugins);
             }
 
-            const filtered = items.filter((item) => {
-                if (!item.permission) return true;
-                const perm =
-                    WebSpaceSubuserPermissions[item.permission as keyof typeof WebSpaceSubuserPermissions] ||
-                    item.permission;
-                return hasWebSpacePermission(perm);
-            });
+            const filtered = filterNavigationByPermission(items, (permission) =>
+                hasWebSpacePermission(
+                    WebSpaceSubuserPermissions[permission as keyof typeof WebSpaceSubuserPermissions] || permission,
+                ),
+            );
             return applySidebarCustomization(
                 filtered,
                 parseSidebarNavigationConfig(settings?.sidebar_navigation_config),
@@ -364,7 +391,7 @@ export function useNavigation() {
             items.push(...pluginItems);
         }
 
-        const filtered = items.filter((item) => !item.permission || hasPermission(item.permission));
+        const filtered = filterNavigationByPermission(items, (permission) => hasPermission(permission));
         return applySidebarCustomization(
             filtered,
             parseSidebarNavigationConfig(settings?.sidebar_navigation_config),
