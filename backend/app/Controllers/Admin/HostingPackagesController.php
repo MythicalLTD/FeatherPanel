@@ -52,6 +52,9 @@ class HostingPackagesController
         if (!is_array($content)) {
             return ApiResponse::error('Invalid JSON payload', 'INVALID_JSON', 400);
         }
+        if (!is_string($content['name'] ?? null) || trim($content['name']) === '') {
+            return ApiResponse::error('Missing required field: name', 'MISSING_REQUIRED_FIELD', 400);
+        }
 
         $id = HostingPackage::create($content);
         if ($id === false) {
