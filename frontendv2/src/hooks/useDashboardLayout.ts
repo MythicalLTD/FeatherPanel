@@ -17,21 +17,24 @@ import { useCallback, useEffect, useState } from 'react';
 
 export const DASHBOARD_LAYOUT_STORAGE_KEY = 'featherpanel_dashboard_layout_v1';
 
-const LAYOUT_VERSION = 5;
+/**
+ * 6: dashboard redesign. Announcements, support and the knowledge base moved to the side column,
+ * the welcome hero became a fixed header and the profile card is opt-in. Stored orders from
+ * earlier versions are reset to the new defaults; hidden blocks and plugin widgets are kept.
+ */
+const LAYOUT_VERSION = 6;
 
-export type DashboardLeftBlockId = 'announcements' | 'recent_mails' | 'resources' | 'tickets' | 'knowledgebase';
-export type DashboardRightBlockId = 'profile' | 'activity';
-export type DashboardBlockId = 'hero' | DashboardLeftBlockId | DashboardRightBlockId;
+export type DashboardLeftBlockId = 'resources' | 'recent_mails';
+export type DashboardRightBlockId = 'announcements' | 'activity' | 'tickets' | 'knowledgebase' | 'profile';
+export type DashboardBlockId = 'stats' | 'attention' | DashboardLeftBlockId | DashboardRightBlockId;
 
-/** Default order: recent mail last in the main column (under knowledge base). */
-const LEFT_POOL: DashboardLeftBlockId[] = ['announcements', 'resources', 'tickets', 'knowledgebase', 'recent_mails'];
+const LEFT_POOL: DashboardLeftBlockId[] = ['resources', 'recent_mails'];
+const RIGHT_POOL: DashboardRightBlockId[] = ['announcements', 'activity', 'tickets', 'knowledgebase', 'profile'];
 
-const RIGHT_POOL: DashboardRightBlockId[] = ['profile', 'activity'];
+const LEFT_DEFAULT: DashboardLeftBlockId[] = ['resources', 'recent_mails'];
+const RIGHT_DEFAULT: DashboardRightBlockId[] = ['announcements', 'activity', 'tickets', 'knowledgebase'];
 
-const LEFT_DEFAULT: DashboardLeftBlockId[] = [...LEFT_POOL];
-const RIGHT_DEFAULT: DashboardRightBlockId[] = [...RIGHT_POOL];
-
-const ALL_BLOCK_IDS: DashboardBlockId[] = ['hero', ...LEFT_POOL, ...RIGHT_POOL];
+const ALL_BLOCK_IDS: DashboardBlockId[] = ['stats', 'attention', ...LEFT_POOL, ...RIGHT_POOL];
 
 export interface DashboardLayoutState {
     hidden: DashboardBlockId[];
@@ -40,7 +43,6 @@ export interface DashboardLayoutState {
     leftOrder: DashboardLeftBlockId[];
     rightOrder: DashboardRightBlockId[];
     columnsReversed: boolean;
-    heroAtBottom: boolean;
     layoutVersion: number;
 }
 
@@ -50,102 +52,30 @@ const DEFAULT_STATE: DashboardLayoutState = {
     leftOrder: [...LEFT_DEFAULT],
     rightOrder: [...RIGHT_DEFAULT],
     columnsReversed: false,
-    heroAtBottom: false,
     layoutVersion: LAYOUT_VERSION,
 };
 
-/** Normalize ids from older stored layouts (drops removed blocks). */
-function normalizeLegacyLeftRaw(raw: unknown): unknown {
-    if (!Array.isArray(raw)) return raw;
-    return raw.flatMap((x) => {
-        if (x === 'quick_stats') return ['recent_mails'];
-        if (x === 'shortcuts' || x === 'account_hub') return [];
-        return [x];
-    });
-}
-
-function insertAfterBlock(
-    order: DashboardLeftBlockId[],
-    after: DashboardLeftBlockId,
-    inserts: DashboardLeftBlockId[],
-): DashboardLeftBlockId[] {
-    const toAdd = inserts.filter((id) => !order.includes(id));
-    if (toAdd.length === 0) return order;
-    const next: DashboardLeftBlockId[] = [...order];
-    const idx = next.indexOf(after);
-    if (idx >= 0) {
-        next.splice(idx + 1, 0, ...toAdd);
-    } else {
-        next.push(...toAdd);
-    }
-    return next;
-}
-
-/** Ensure recent_mails sits directly after knowledgebase (default target). */
-function migrateMailAfterKnowledgebase(order: DashboardLeftBlockId[]): DashboardLeftBlockId[] {
-    const mi = order.indexOf('recent_mails');
-    const ki = order.indexOf('knowledgebase');
-    if (mi < 0) return order;
-    if (ki < 0) {
-        const next: DashboardLeftBlockId[] = order.filter((id) => id !== 'recent_mails');
-        next.push('recent_mails');
-        return next;
-    }
-    if (mi > ki) return order;
-    const without = order.filter((id) => id !== 'recent_mails') as DashboardLeftBlockId[];
-    const newKi = without.indexOf('knowledgebase');
-    if (newKi < 0) {
-        without.push('recent_mails');
-        return without;
-    }
-    without.splice(newKi + 1, 0, 'recent_mails');
-    return without;
-}
-
-function parseLeftOrder(raw: unknown): DashboardLeftBlockId[] {
-    if (!Array.isArray(raw)) return [...LEFT_DEFAULT];
-    const out: DashboardLeftBlockId[] = [];
-    const seen = new Set<DashboardLeftBlockId>();
+function parseOrder<T extends string>(raw: unknown, pool: T[], fallback: T[]): T[] {
+    if (!Array.isArray(raw)) return [...fallback];
+    const out: T[] = [];
     for (const x of raw) {
-        if (LEFT_POOL.includes(x as DashboardLeftBlockId) && !seen.has(x as DashboardLeftBlockId)) {
-            seen.add(x as DashboardLeftBlockId);
-            out.push(x as DashboardLeftBlockId);
-        }
-    }
-    return out;
-}
-
-function parseRightOrder(raw: unknown): DashboardRightBlockId[] {
-    if (!Array.isArray(raw)) return [...RIGHT_DEFAULT];
-    const out: DashboardRightBlockId[] = [];
-    const seen = new Set<DashboardRightBlockId>();
-    for (const x of raw) {
-        if (RIGHT_POOL.includes(x as DashboardRightBlockId) && !seen.has(x as DashboardRightBlockId)) {
-            seen.add(x as DashboardRightBlockId);
-            out.push(x as DashboardRightBlockId);
-        }
+        if (pool.includes(x as T) && !out.includes(x as T)) out.push(x as T);
     }
     return out;
 }
 
 function parseHidden(raw: unknown): DashboardBlockId[] {
     if (!Array.isArray(raw)) return [];
-    const mapped = raw.map((x) => {
-        if (x === 'quick_stats') return 'recent_mails';
-        if (x === 'shortcuts' || x === 'account_hub') return null;
-        return x;
-    });
-    return mapped.filter((x): x is DashboardBlockId => x != null && ALL_BLOCK_IDS.includes(x as DashboardBlockId));
+    return raw.filter(
+        (x, i): x is DashboardBlockId => ALL_BLOCK_IDS.includes(x as DashboardBlockId) && raw.indexOf(x) === i,
+    );
 }
 
 function parseHiddenPluginWidgets(raw: unknown): string[] {
     if (!Array.isArray(raw)) return [];
     const out: string[] = [];
-    const seen = new Set<string>();
     for (const x of raw) {
-        if (typeof x !== 'string' || !x || seen.has(x)) continue;
-        seen.add(x);
-        out.push(x);
+        if (typeof x === 'string' && x && !out.includes(x)) out.push(x);
     }
     return out;
 }
@@ -157,24 +87,14 @@ function loadState(): DashboardLayoutState {
         if (!raw) return DEFAULT_STATE;
         const parsed = JSON.parse(raw) as Partial<DashboardLayoutState>;
         const storedVersion = typeof parsed.layoutVersion === 'number' ? parsed.layoutVersion : 1;
-        const rawLeft = normalizeLegacyLeftRaw(parsed.leftOrder);
-        let leftOrder = parseLeftOrder(rawLeft);
-
-        if (storedVersion < 2) {
-            leftOrder = insertAfterBlock(leftOrder, 'knowledgebase', ['recent_mails']);
-        }
-
-        if (storedVersion < LAYOUT_VERSION) {
-            leftOrder = migrateMailAfterKnowledgebase(leftOrder);
-        }
+        const current = storedVersion >= LAYOUT_VERSION;
 
         return {
             hidden: parseHidden(parsed.hidden),
             hiddenPluginWidgets: parseHiddenPluginWidgets(parsed.hiddenPluginWidgets),
-            leftOrder,
-            rightOrder: parseRightOrder(parsed.rightOrder),
+            leftOrder: current ? parseOrder(parsed.leftOrder, LEFT_POOL, LEFT_DEFAULT) : [...LEFT_DEFAULT],
+            rightOrder: current ? parseOrder(parsed.rightOrder, RIGHT_POOL, RIGHT_DEFAULT) : [...RIGHT_DEFAULT],
             columnsReversed: Boolean(parsed.columnsReversed),
-            heroAtBottom: Boolean(parsed.heroAtBottom),
             layoutVersion: LAYOUT_VERSION,
         };
     } catch {
@@ -269,10 +189,6 @@ export function useDashboardLayout() {
         setState((s) => ({ ...s, columnsReversed: !s.columnsReversed }));
     }, []);
 
-    const toggleHeroAtBottom = useCallback(() => {
-        setState((s) => ({ ...s, heroAtBottom: !s.heroAtBottom }));
-    }, []);
-
     const resetLayout = useCallback(() => {
         setState(DEFAULT_STATE);
     }, []);
@@ -297,7 +213,6 @@ export function useDashboardLayout() {
         addToLeft,
         addToRight,
         toggleColumnsReversed,
-        toggleHeroAtBottom,
         resetLayout,
         isVisible,
         leftAvailable,

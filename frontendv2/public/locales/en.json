@@ -1844,8 +1844,6 @@
 			"stop_customizing": "Stop customizing",
 			"stop": "Done",
 			"swap_columns": "Swap columns",
-			"hero_bottom": "Banner at bottom",
-			"hero_top": "Banner at top",
 			"move_up": "Move up",
 			"move_down": "Move down",
 			"remove_block": "Remove from layout",
@@ -1857,7 +1855,8 @@
 			"show_plugin_widget": "Show plugin widget",
 			"feature_disabled": "This section is turned off for your panel. Remove it from the layout or ask an administrator to enable it.",
 			"block_labels": {
-				"hero": "Welcome banner",
+				"stats": "Quick stats",
+				"attention": "Needs attention",
 				"announcements": "Announcements",
 				"recent_mails": "Recent mail",
 				"resources": "Resources",
@@ -1865,6 +1864,71 @@
 				"knowledgebase": "Knowledge base",
 				"profile": "Profile card",
 				"activity": "Recent activity"
+			},
+			"menu": "Dashboard options"
+		},
+		"home": {
+			"greeting_morning": "Good morning, {name}",
+			"greeting_afternoon": "Good afternoon, {name}",
+			"greeting_evening": "Good evening, {name}",
+			"greeting_fallback": "Welcome back",
+			"status": {
+				"servers_running": "{running} of {total} servers running",
+				"attention_one": "1 item needs your attention",
+				"attention_many": "{count} items need your attention",
+				"all_good": "Everything looks good",
+				"empty": "No services on your account yet"
+			},
+			"stats": {
+				"game": "Game servers",
+				"vds": "Virtual servers",
+				"web": "Web hosting",
+				"support": "Support tickets",
+				"running": "{count} running",
+				"new_replies": "{count} with new replies",
+				"no_new_replies": "No new replies"
+			},
+			"sections": {
+				"game": "Game servers",
+				"vds": "Virtual servers",
+				"web": "Web hosting"
+			},
+			"no_resources_hint": "Services added to your account will show up here.",
+			"meters": {
+				"cpu": "CPU",
+				"ram": "RAM",
+				"disk": "Disk"
+			},
+			"power": {
+				"start": "Start",
+				"stop": "Stop",
+				"restart": "Restart",
+				"sent_start": "Start sent to {name}",
+				"sent_stop": "Stop sent to {name}",
+				"sent_restart": "Restart sent to {name}",
+				"failed": "Could not send the power action"
+			},
+			"attention": {
+				"title": "Needs attention",
+				"more": "+{count} more",
+				"suspended": "{name} is suspended",
+				"suspended_hint": "Contact support to restore access.",
+				"install_failed": "{name} failed to install",
+				"install_failed_hint": "Open the server to check the log or reinstall it.",
+				"maintenance": "Node of {name} is in maintenance",
+				"maintenance_hint": "Some actions are unavailable until maintenance ends.",
+				"disk_full": "{name} is almost out of disk space",
+				"disk_full_hint": "{used} of {limit} used",
+				"expired": "{name} has expired",
+				"expires_today": "{name} expires today",
+				"expires_in": "{name} expires in {days} days",
+				"expires_hint": "Renew it to keep it running.",
+				"ticket_reply": "New reply on ticket #{id}"
+			},
+			"support": {
+				"title": "Support",
+				"empty": "No tickets yet. If something is not working, our team can help.",
+				"new_replies": "{count} new"
 			}
 		}
 	},
