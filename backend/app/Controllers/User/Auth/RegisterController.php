@@ -417,7 +417,7 @@ class RegisterController
 
         // Return user info and preferences (same format as login)
         return ApiResponse::success([
-            'user' => $createdUser,
+            'user' => User::stripSensitiveFields($createdUser),
             'preferences' => $preferences,
             'requires_email_verification' => false,
         ], 'User registered successfully and logged in', 200);

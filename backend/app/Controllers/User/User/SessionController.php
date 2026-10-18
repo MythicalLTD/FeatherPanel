@@ -371,7 +371,7 @@ class SessionController
             'color' => $role ? ($role['color'] ?? '#666666') : '#666666',
         ];
 
-        unset($user['password'], $user['two_fa_key']);
+        $user = User::stripSensitiveFields($user);
 
         if ($app->isDemoMode()) {
             $user['first_ip'] = $app->getIPIntoFBIFormat();

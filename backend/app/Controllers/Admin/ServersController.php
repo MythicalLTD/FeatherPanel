@@ -401,7 +401,7 @@ class ServersController
 
             // Remove sensitive data from owner
             if ($server['owner']) {
-                unset($server['owner']['password'], $server['owner']['remember_token'], $server['owner']['two_fa_key']);
+                $server['owner'] = User::stripSensitiveFields($server['owner']);
                 $server['owner'] = TimeHelper::normaliseRow($server['owner'], ['last_seen', 'first_seen']);
             }
 
@@ -577,7 +577,7 @@ class ServersController
 
         // Remove sensitive data from related objects
         if ($server['owner']) {
-            unset($server['owner']['password'], $server['owner']['remember_token'], $server['owner']['two_fa_key']);
+            $server['owner'] = User::stripSensitiveFields($server['owner']);
             $server['owner'] = TimeHelper::normaliseRow($server['owner'], ['last_seen', 'first_seen']);
         }
 
@@ -834,7 +834,7 @@ class ServersController
 
         // Remove sensitive data from related objects
         if ($server['owner']) {
-            unset($server['owner']['password'], $server['owner']['remember_token'], $server['owner']['two_fa_key']);
+            $server['owner'] = User::stripSensitiveFields($server['owner']);
         }
 
         // Remove sensitive node data

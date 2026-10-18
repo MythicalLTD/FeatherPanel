@@ -491,7 +491,7 @@ class UsersController
         ];
 
         $user['email_verified'] = !isset($user['mail_verify']) || trim((string) $user['mail_verify']) === '';
-        unset($user['password'], $user['mail_verify']);
+        $user = User::stripSensitiveFields($user);
 
         $user['activities'] = array_map(function ($activity) use ($app) {
             unset($activity['user_uuid'], $activity['id'], $activity['updated_at']);
@@ -592,7 +592,7 @@ class UsersController
         ];
 
         $user['email_verified'] = !isset($user['mail_verify']) || trim((string) $user['mail_verify']) === '';
-        unset($user['password'], $user['mail_verify']);
+        $user = User::stripSensitiveFields($user);
 
         $user['activities'] = array_map(function ($activity) use ($app) {
             unset($activity['user_uuid'], $activity['id'], $activity['updated_at']);
@@ -1482,7 +1482,7 @@ class UsersController
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
         }
 
-        return ApiResponse::success(['user' => $user], 'User fetched successfully', 200);
+        return ApiResponse::success(['user' => User::stripSensitiveFields($user)], 'User fetched successfully', 200);
     }
 
     #[OA\Post(

@@ -936,7 +936,7 @@ class PterodactylImporterController
             }
 
             // Remove sensitive information from response
-            unset($createdUser['password'], $createdUser['remember_token'], $createdUser['two_fa_key']);
+            $createdUser = User::stripSensitiveFields($createdUser);
 
             // Log activity
             $admin = $request->attributes->get('user');
