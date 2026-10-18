@@ -111,7 +111,6 @@ main() {
     fi
 
     install_if_missing \
-        "php${PHP_VERSION}" \
         "php${PHP_VERSION}-common" \
         "php${PHP_VERSION}-cli" \
         "php${PHP_VERSION}-gd" \
@@ -119,7 +118,6 @@ main() {
         "php${PHP_VERSION}-mbstring" \
         "php${PHP_VERSION}-bcmath" \
         "php${PHP_VERSION}-xml" \
-        "php${PHP_VERSION}-fpm" \
         "php${PHP_VERSION}-curl" \
         "php${PHP_VERSION}-zip" \
         "php${PHP_VERSION}-redis" \
