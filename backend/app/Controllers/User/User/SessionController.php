@@ -175,6 +175,11 @@ class SessionController
             if (!is_bool($data['two_fa_enabled'])) {
                 return ApiResponse::error('two_fa_enabled must be a boolean value', 'INVALID_2FA_VALUE');
             }
+            // Enabling must go through PUT /api/user/auth/two-factor, which stores the secret after
+            // verifying a code. Turning the flag on here without a secret locks the account out.
+            if ($data['two_fa_enabled'] && ($user['two_fa_enabled'] ?? 'false') !== 'true') {
+                return ApiResponse::error('Use the two-factor setup to enable 2FA', 'INVALID_2FA_VALUE', 400);
+            }
             $data['two_fa_enabled'] = $data['two_fa_enabled'] ? 'true' : 'false';
         }
 
