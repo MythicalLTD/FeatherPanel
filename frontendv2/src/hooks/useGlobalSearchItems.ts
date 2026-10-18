@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { getModuleStates } from '@/lib/modules';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useDeveloperMode } from '@/hooks/useDeveloperMode';
 import { usePluginRoutes } from '@/hooks/usePluginRoutes';
@@ -236,8 +237,12 @@ export function useGlobalSearchItems(open: boolean, query: string) {
 
     const parsedQuery = useMemo(() => parseGlobalSearchQuery(query), [query]);
 
-    const { servers, loading: serversLoading } = useUserServersList(enabled);
-    const { webspaces, loading: webspacesLoading } = useUserWebSpacesList(enabled);
+    const modules = getModuleStates(settings);
+    const { servers: rawServers, loading: serversLoading } = useUserServersList(enabled && modules.game);
+    const { webspaces: rawWebspaces, loading: webspacesLoading } = useUserWebSpacesList(enabled && modules.web);
+    // Lists can still hold entries fetched before a module was switched off.
+    const servers = useMemo(() => (modules.game ? rawServers : []), [modules.game, rawServers]);
+    const webspaces = useMemo(() => (modules.web ? rawWebspaces : []), [modules.web, rawWebspaces]);
     const [vms, setVms] = useState<VmInstance[]>([]);
     const [vmsLoading, setVmsLoading] = useState(false);
     const [adminSettingsOrganized, setAdminSettingsOrganized] = useState<OrganizedSettings | null>(null);
@@ -276,8 +281,12 @@ export function useGlobalSearchItems(open: boolean, query: string) {
 
     useEffect(() => {
         if (!enabled) return;
+        if (!modules.vds) {
+            setVms([]);
+            return;
+        }
         void fetchVms();
-    }, [enabled, fetchVms]);
+    }, [enabled, modules.vds, fetchVms]);
 
     useEffect(() => {
         if (!enabled || !canViewAdminSettings) {
@@ -403,6 +412,7 @@ export function useGlobalSearchItems(open: boolean, query: string) {
                 subtitle: server.spell?.name ?? routeId,
                 href: `/server/${routeId}`,
                 category: 'servers',
+                module: 'game',
                 icon: consoleNav?.icon && typeof consoleNav.icon === 'function' ? consoleNav.icon : ServerIcon,
                 lucideIcon: consoleNav?.lucideIcon,
                 panelIcon: consoleNav?.panelIcon,
@@ -426,6 +436,7 @@ export function useGlobalSearchItems(open: boolean, query: string) {
                 subtitle: routeId,
                 href: `/webspace/${routeId}`,
                 category: 'webspaces',
+                module: 'web',
                 icon: consoleNav?.icon && typeof consoleNav.icon === 'function' ? consoleNav.icon : Globe,
                 lucideIcon: consoleNav?.lucideIcon,
                 panelIcon: consoleNav?.panelIcon,
@@ -443,6 +454,7 @@ export function useGlobalSearchItems(open: boolean, query: string) {
                 subtitle: vm.node_name ?? vm.pve_node,
                 href: `/vds/${vm.id}`,
                 category: 'vms',
+                module: 'vds',
                 icon: vdsNav?.icon && typeof vdsNav.icon === 'function' ? vdsNav.icon : HardDrive,
                 lucideIcon: vdsNav?.lucideIcon,
                 panelIcon: vdsNav?.panelIcon,

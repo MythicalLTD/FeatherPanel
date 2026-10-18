@@ -35,6 +35,9 @@ import {
     HardDrive,
 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { getModuleForPath, getModuleStates } from '@/lib/modules';
+import { ModuleBadge } from '@/components/ui/module-badge';
 import { PageCard } from '@/components/featherui/PageCard';
 import type { LucideIcon } from 'lucide-react';
 
@@ -56,6 +59,13 @@ interface QuickLink {
 
 export function QuickLinksWidget({ onClearCache, isClearingCache }: QuickLinksWidgetProps) {
     const { t } = useTranslation();
+    const { settings } = useSettings();
+    const modules = getModuleStates(settings);
+    const moduleOf = (link: QuickLink) => (link.external ? null : getModuleForPath(link.href));
+    const visible = (link: QuickLink) => {
+        const owner = moduleOf(link);
+        return !owner || modules[owner];
+    };
 
     const manage: QuickLink[] = [
         {
@@ -194,7 +204,10 @@ export function QuickLinksWidget({ onClearCache, isClearingCache }: QuickLinksWi
                 <link.icon className='h-4 w-4' aria-hidden />
             </div>
             <div className='min-w-0 flex-1 space-y-1'>
-                <p className='text-sm font-medium'>{link.name}</p>
+                <p className='flex items-center gap-1.5 text-sm font-medium'>
+                    {link.name}
+                    {moduleOf(link) && <ModuleBadge module={moduleOf(link)!} />}
+                </p>
                 <p className='text-muted-foreground text-xs leading-relaxed'>{link.description}</p>
             </div>
             {link.external && <ExternalLink className='text-muted-foreground mt-1 h-3.5 w-3.5 shrink-0' aria-hidden />}
@@ -223,12 +236,16 @@ export function QuickLinksWidget({ onClearCache, isClearingCache }: QuickLinksWi
             <div className='space-y-4'>
                 <div className='space-y-3'>
                     <h3 className='text-muted-foreground text-sm font-medium'>{t('admin.quick_links.group_manage')}</h3>
-                    <div className='grid grid-cols-1 gap-x-5 sm:grid-cols-2'>{manage.map(renderLink)}</div>
+                    <div className='grid grid-cols-1 gap-x-5 sm:grid-cols-2'>
+                        {manage.filter(visible).map(renderLink)}
+                    </div>
                 </div>
 
                 <div className='space-y-3'>
                     <h3 className='text-muted-foreground text-sm font-medium'>{t('admin.quick_links.group_system')}</h3>
-                    <div className='grid grid-cols-1 gap-x-5 sm:grid-cols-2'>{system.map(renderLink)}</div>
+                    <div className='grid grid-cols-1 gap-x-5 sm:grid-cols-2'>
+                        {system.filter(visible).map(renderLink)}
+                    </div>
                 </div>
             </div>
         </PageCard>

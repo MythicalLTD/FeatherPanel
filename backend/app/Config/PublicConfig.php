@@ -225,6 +225,9 @@ class PublicConfig extends ConfigFactory
 
             // Knowledgebase settings
             ConfigInterface::KNOWLEDGEBASE_ENABLED => 'true',
+            ConfigInterface::MODULE_GAME_ENABLED => 'true',
+            ConfigInterface::MODULE_WEB_ENABLED => 'true',
+            ConfigInterface::MODULE_VDS_ENABLED => 'true',
             ConfigInterface::KNOWLEDGEBASE_PUBLIC_ENABLED => 'true',
             ConfigInterface::KNOWLEDGEBASE_SHOW_CATEGORIES => 'true',
             ConfigInterface::KNOWLEDGEBASE_SHOW_ARTICLES => 'true',

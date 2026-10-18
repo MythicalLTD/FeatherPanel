@@ -54,6 +54,7 @@ import {
     Link2,
     Lock,
     Smartphone,
+    Boxes,
 } from 'lucide-react';
 import { copyToClipboard, cn } from '@/lib/utils';
 import { ImageAttachmentField } from '@/components/featherui/ImageAttachmentField';
@@ -530,6 +531,8 @@ export default function SettingsPage() {
                 return Search;
             case 'pwa':
                 return Smartphone;
+            case 'modules':
+                return Boxes;
             case 'advanced':
                 return Globe;
             default:

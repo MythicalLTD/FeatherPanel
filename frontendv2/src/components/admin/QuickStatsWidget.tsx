@@ -18,6 +18,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import Link from 'next/link';
 import { SkeletonLine } from './AdminWidgetLoading';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { getModuleForPath, getModuleStates } from '@/lib/modules';
+import { ModuleBadge } from '@/components/ui/module-badge';
 
 interface QuickStatsWidgetProps {
     stats?: {
@@ -33,8 +36,10 @@ interface QuickStatsWidgetProps {
 
 export function QuickStatsWidget({ stats, loading }: QuickStatsWidgetProps) {
     const { t } = useTranslation();
+    const { settings } = useSettings();
+    const modules = getModuleStates(settings);
 
-    const items = [
+    const allItems = [
         {
             name: t('admin.stats.total_servers'),
             value: stats?.servers,
@@ -66,6 +71,9 @@ export function QuickStatsWidget({ stats, loading }: QuickStatsWidgetProps) {
             href: '/admin/vm-instances',
         },
     ];
+    const items = allItems
+        .map((item) => ({ ...item, module: getModuleForPath(item.href) }))
+        .filter((item) => !item.module || modules[item.module]);
 
     return (
         <div className='border-border/50 bg-card/50 grid grid-cols-2 overflow-hidden rounded-2xl border backdrop-blur-sm sm:grid-cols-3 xl:grid-cols-6'>
@@ -76,8 +84,9 @@ export function QuickStatsWidget({ stats, loading }: QuickStatsWidgetProps) {
                     className='group border-border/30 hover:bg-primary/5 min-w-0 border-r border-b px-4 py-3 transition-colors sm:py-4'
                 >
                     <div className='min-w-0 space-y-1.5'>
-                        <p className='text-muted-foreground group-hover:text-foreground text-xs leading-relaxed'>
-                            {item.name}
+                        <p className='text-muted-foreground group-hover:text-foreground flex min-w-0 items-center gap-1.5 text-xs leading-relaxed'>
+                            <span className='truncate'>{item.name}</span>
+                            {item.module && <ModuleBadge module={item.module} />}
                         </p>
                         <p
                             className='text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl'

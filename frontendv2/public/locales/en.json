@@ -1506,7 +1506,8 @@
 			"RUN_NOT_FOUND": "Run not found.",
 			"WEBHOSTING_ALPHA_ACCEPTANCE_REQUIRED": "Accept the WebHosting alpha notice before creating a Web Hosting location.",
 			"INVALID_DATE": "Invalid date, use the YYYY-MM-DD format.",
-			"INVALID_USER_FILTER": "Invalid user filter."
+			"INVALID_USER_FILTER": "Invalid user filter.",
+			"MODULE_DISABLED": "This module is disabled by the administrator."
 		},
 		"global": {}
 	},
@@ -10980,6 +10981,18 @@
 						"ssl": "SSL / SMTPS (port 465)",
 						"none": "None (no encryption)"
 					}
+				},
+				"module_game_enabled": {
+					"label": "Game servers",
+					"description": "Wings nodes, game servers, spells and realms. When off, it is hidden everywhere and its API refuses requests."
+				},
+				"module_web_enabled": {
+					"label": "Web hosting (WebSpaces)",
+					"description": "WebSpaces, web nodes, webplates, mail and DNS hosts. When off, it is hidden everywhere and its API refuses requests."
+				},
+				"module_vds_enabled": {
+					"label": "VDS (Proxmox)",
+					"description": "Virtual servers on Proxmox nodes. When off, it is hidden everywhere and its API refuses requests."
 				}
 			},
 			"category_select": "Settings category",
@@ -15708,5 +15721,15 @@
 			"title": "No hosting packages yet",
 			"description": "Packages are presets for disk, CPU, memory, mailboxes and databases. Create one with the form above, then pick it when creating a web space."
 		}
+	},
+	"modules": {
+		"names": {
+			"game": "Game servers",
+			"web": "Web hosting",
+			"vds": "VDS"
+		},
+		"disabledTitle": "Module disabled",
+		"disabledDescription": "{module} is turned off on this panel.",
+		"disabledToast": "{module} is turned off on this panel."
 	}
 }

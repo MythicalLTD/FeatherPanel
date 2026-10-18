@@ -27,6 +27,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn, isEnabled } from '@/lib/utils';
+import { ModuleBadge } from '@/components/ui/module-badge';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import type { NavigationItem } from '@/types/navigation';
@@ -680,8 +681,13 @@ function SidebarContent({
                                                             <span className='truncate'>{item.name}</span>
                                                         )}
 
-                                                        {item.badge && (!collapsed || mobile) && (
-                                                            <span className={badgeClass}>{item.badge}</span>
+                                                        {item.module && (!collapsed || mobile) ? (
+                                                            <ModuleBadge module={item.module} className='ml-auto' />
+                                                        ) : (
+                                                            item.badge &&
+                                                            (!collapsed || mobile) && (
+                                                                <span className={badgeClass}>{item.badge}</span>
+                                                            )
                                                         )}
                                                         {isTicketsItem &&
                                                             unreadTicketCount > 0 &&
@@ -730,8 +736,13 @@ function SidebarContent({
                                                         {(!collapsed || mobile) && (
                                                             <span className='truncate'>{item.name}</span>
                                                         )}
-                                                        {item.badge && (!collapsed || mobile) && (
-                                                            <span className={badgeClass}>{item.badge}</span>
+                                                        {item.module && (!collapsed || mobile) ? (
+                                                            <ModuleBadge module={item.module} className='ml-auto' />
+                                                        ) : (
+                                                            item.badge &&
+                                                            (!collapsed || mobile) && (
+                                                                <span className={badgeClass}>{item.badge}</span>
+                                                            )
                                                         )}
                                                     </a>
                                                 );
@@ -756,8 +767,13 @@ function SidebarContent({
                                                         <span className='truncate'>{item.name}</span>
                                                     )}
 
-                                                    {item.badge && (!collapsed || mobile) && (
-                                                        <span className={badgeClass}>{item.badge}</span>
+                                                    {item.module && (!collapsed || mobile) ? (
+                                                        <ModuleBadge module={item.module} className='ml-auto' />
+                                                    ) : (
+                                                        item.badge &&
+                                                        (!collapsed || mobile) && (
+                                                            <span className={badgeClass}>{item.badge}</span>
+                                                        )
                                                     )}
                                                     {isTicketsItem &&
                                                         unreadTicketCount > 0 &&

@@ -207,6 +207,16 @@ class SettingsController
                 ConfigInterface::TEMP_FILES_API_TOKEN,
             ],
         ],
+        'modules' => [
+            'name' => 'Modules',
+            'description' => 'Turn whole panel modules on or off. A disabled module disappears from sidebars, dashboard and search, and its API refuses requests.',
+            'icon' => 'boxes',
+            'settings' => [
+                ConfigInterface::MODULE_GAME_ENABLED,
+                ConfigInterface::MODULE_WEB_ENABLED,
+                ConfigInterface::MODULE_VDS_ENABLED,
+            ],
+        ],
         'links' => [
             'name' => 'Links',
             'description' => 'Public links shown across the panel footer (support, social media, legal)',
@@ -477,6 +487,54 @@ class SettingsController
     {
         $this->app = App::getInstance(true);
         $this->settings = [
+            ConfigInterface::MODULE_GAME_ENABLED => [
+                'name' => ConfigInterface::MODULE_GAME_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::MODULE_GAME_ENABLED,
+                        'true',
+                    ),
+                'description' => 'Game servers module (Wings nodes, servers, spells and realms)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'modules',
+            ],
+            ConfigInterface::MODULE_WEB_ENABLED => [
+                'name' => ConfigInterface::MODULE_WEB_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::MODULE_WEB_ENABLED,
+                        'true',
+                    ),
+                'description' => 'Web hosting module (WebSpaces, web nodes, mail and DNS hosts)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'modules',
+            ],
+            ConfigInterface::MODULE_VDS_ENABLED => [
+                'name' => ConfigInterface::MODULE_VDS_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::MODULE_VDS_ENABLED,
+                        'true',
+                    ),
+                'description' => 'VDS module (virtual servers on Proxmox)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'modules',
+            ],
             ConfigInterface::APP_NAME => [
                 'name' => ConfigInterface::APP_NAME,
                 'value' => $this->app

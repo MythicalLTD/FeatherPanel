@@ -474,6 +474,13 @@ interface ConfigInterface
      * Knowledgebase Settings.
      */
     public const KNOWLEDGEBASE_ENABLED = 'knowledgebase_enabled';
+
+    /**
+     * Panel modules. Each one can be switched off by an admin; missing values mean enabled.
+     */
+    public const MODULE_GAME_ENABLED = 'module_game_enabled';
+    public const MODULE_WEB_ENABLED = 'module_web_enabled';
+    public const MODULE_VDS_ENABLED = 'module_vds_enabled';
     public const KNOWLEDGEBASE_PUBLIC_ENABLED = 'knowledgebase_public_enabled';
     public const KNOWLEDGEBASE_SHOW_CATEGORIES = 'knowledgebase_show_categories';
     public const KNOWLEDGEBASE_SHOW_ARTICLES = 'knowledgebase_show_articles';
