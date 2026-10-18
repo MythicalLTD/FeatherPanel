@@ -242,13 +242,10 @@ class WingsServerInstallController
             $status = 'installed'; // Default to installed for successful installations
             $installedAt = new \DateTimeImmutable();
 
-            // Make sure the type of failure is accurate
+            // Use the canonical failure status the frontend, auto-start and daemon state checks
+            // understand; whether it was a reinstall is still passed along in the event below.
             if (!$successful) {
-                $status = 'installation_failed';
-
-                if ($reinstall) {
-                    $status = 'reinstall_failed';
-                }
+                $status = Server::STATUS_INSTALL_FAILED;
             }
 
             // Keep the server suspended if it's already suspended

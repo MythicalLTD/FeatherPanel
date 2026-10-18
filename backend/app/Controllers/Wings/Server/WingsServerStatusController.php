@@ -152,6 +152,18 @@ class WingsServerStatusController
 
         $oldState = (string) ($server['status'] ?? 'offline');
 
+        // A pending or failed install is tracked by the install endpoints, not by power state.
+        // Do not let runtime reports (e.g. "offline" after a daemon reboot) turn such a server back
+        // into a normal one; only a new install result or reinstall may change it.
+        $installPending = $oldState === Server::STATUS_INSTALLING || in_array($oldState, Server::INSTALL_FAILED_STATUSES, true);
+        if ($installPending && !in_array($state, [Server::STATUS_INSTALLING, Server::STATUS_INSTALL_FAILED], true)) {
+            return ApiResponse::success([
+                'message' => 'Server install state preserved',
+                'state' => $oldState,
+                'server_uuid' => $uuid,
+            ]);
+        }
+
         // Update server status
         $updateData = [
             'status' => $state,

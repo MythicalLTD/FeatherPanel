@@ -27,6 +27,21 @@ use App\Config\ConfigInterface;
 class User
 {
     /**
+     * Columns that hold secrets (password hash, session token, TOTP secret, one-time codes,
+     * third-party access tokens) and must never be returned to API clients.
+     *
+     * @var string[]
+     */
+    public const SENSITIVE_FIELDS = [
+        'password',
+        'remember_token',
+        'two_fa_key',
+        'mail_verify',
+        'email_login_code',
+        'account_deletion_otp',
+        'discord_oauth2_access_token',
+    ];
+    /**
      * @var string The users table name
      */
     private static string $table = 'featherpanel_users';
@@ -480,6 +495,26 @@ class User
         $stmt->execute(['remember_token' => $rememberToken]);
 
         return AvatarHelper::enrichUser($stmt->fetch(\PDO::FETCH_ASSOC) ?: null);
+    }
+
+    /**
+     * Remove secret columns from a user row before it is serialized into an API response.
+     *
+     * @param array|null $user The user row
+     *
+     * @return array|null The user row without sensitive fields
+     */
+    public static function stripSensitiveFields(?array $user): ?array
+    {
+        if ($user === null) {
+            return null;
+        }
+
+        foreach (self::SENSITIVE_FIELDS as $field) {
+            unset($user[$field]);
+        }
+
+        return $user;
     }
 
     public static function getColumns(): array

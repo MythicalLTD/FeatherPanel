@@ -183,7 +183,7 @@ class TwoFactorController
             );
         }
 
-        return ApiResponse::success($userInfo, 'Two factor authentication enabled', 200);
+        return ApiResponse::success(User::stripSensitiveFields($userInfo), 'Two factor authentication enabled', 200);
     }
 
     #[OA\Get(
@@ -371,6 +371,6 @@ class TwoFactorController
             );
         }
 
-        return ApiResponse::success($userInfo, '2FA verified, user logged in', 200);
+        return ApiResponse::success(User::stripSensitiveFields($userInfo), '2FA verified, user logged in', 200);
     }
 }

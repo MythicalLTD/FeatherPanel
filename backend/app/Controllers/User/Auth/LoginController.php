@@ -352,7 +352,7 @@ class LoginController
         }
 
         // Unset stuff thats dangerous
-        unset($userInfo['password']);
+        $userInfo = User::stripSensitiveFields($userInfo);
 
         if ($app->isDemoMode()) {
             $userInfo['first_ip'] = $app->getIPIntoFBIFormat();
