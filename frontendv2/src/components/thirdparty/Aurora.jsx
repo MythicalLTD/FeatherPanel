@@ -14,7 +14,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import { Renderer, Program, Mesh, Color, Triangle } from 'ogl';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import './Aurora.css';
 
@@ -130,17 +130,31 @@ export default function Aurora(props) {
     propsRef.current = props;
 
     const ctnDom = useRef(null);
+    // Bumped when the browser restores a lost context, so the effect rebuilds the scene.
+    const [generation, setGeneration] = useState(0);
 
     useEffect(() => {
         const ctn = ctnDom.current;
         if (!ctn) return;
 
-        const renderer = new Renderer({
-            alpha: true,
-            premultipliedAlpha: true,
-            antialias: true,
-        });
+        let renderer;
+        try {
+            renderer = new Renderer({
+                alpha: true,
+                premultipliedAlpha: true,
+                antialias: true,
+            });
+        } catch {
+            // No WebGL (blocked, GPU blocklisted, too many contexts): the container keeps the
+            // plain theme background from Aurora.css.
+            return;
+        }
         const gl = renderer.gl;
+        if (!gl) return;
+        const reduceMotion =
+            typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let contextLost = false;
+        let disposed = false;
         gl.clearColor(0, 0, 0, 0);
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -186,7 +200,9 @@ export default function Aurora(props) {
 
         let animateId = 0;
         const update = (t) => {
-            animateId = requestAnimationFrame(update);
+            if (contextLost || disposed) return;
+            // Reduced motion: draw one still frame. Hidden tab: stop until it is visible again.
+            if (!reduceMotion && !document.hidden) animateId = requestAnimationFrame(update);
             const { time = t * 0.01, speed = 1.0 } = propsRef.current;
             program.uniforms.uTime.value = time * speed * 0.1;
             program.uniforms.uAmplitude.value = propsRef.current.amplitude ?? 1.0;
@@ -198,20 +214,43 @@ export default function Aurora(props) {
             });
             renderer.render({ scene: mesh });
         };
-        animateId = requestAnimationFrame(update);
+        const onContextLost = (event) => {
+            // preventDefault lets the browser restore the context instead of giving up on it.
+            event.preventDefault();
+            contextLost = true;
+            cancelAnimationFrame(animateId);
+        };
+        const onContextRestored = () => setGeneration((g) => g + 1);
+        const onVisibility = () => {
+            if (!document.hidden && !contextLost && !disposed && !reduceMotion) {
+                cancelAnimationFrame(animateId);
+                animateId = requestAnimationFrame(update);
+            }
+        };
+        gl.canvas.addEventListener('webglcontextlost', onContextLost);
+        gl.canvas.addEventListener('webglcontextrestored', onContextRestored);
+        document.addEventListener('visibilitychange', onVisibility);
 
         resize();
+        animateId = requestAnimationFrame(update);
 
         return () => {
+            disposed = true;
             cancelAnimationFrame(animateId);
             window.removeEventListener('resize', resize);
+            document.removeEventListener('visibilitychange', onVisibility);
+            gl.canvas.removeEventListener('webglcontextlost', onContextLost);
+            gl.canvas.removeEventListener('webglcontextrestored', onContextRestored);
             if (ctn && gl.canvas.parentNode === ctn) {
                 ctn.removeChild(gl.canvas);
             }
-            gl.getExtension('WEBGL_lose_context')?.loseContext();
+            // Free the GPU context right away (browsers cap live contexts). Chrome logs
+            // "WebGL context was lost" for this call; it is expected on unmount.
+            if (!contextLost) gl.getExtension('WEBGL_lose_context')?.loseContext();
         };
+        // amplitude, blend and colors are read live from propsRef; only a restored context rebuilds.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [amplitude]);
+    }, [generation]);
 
     return <div ref={ctnDom} className='aurora-container' />;
 }

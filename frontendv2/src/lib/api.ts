@@ -20,6 +20,7 @@ import { isCloudflareChallengeAxios } from '@/lib/cloudflare-challenge';
 import { acquireWingsSlot, isWingsAdminNodeRequest, releaseWingsSlot } from '@/lib/wingsRequestQueue';
 import { attachPanelApiHistoryInterceptor } from '@/lib/panel-api-history';
 import { attachPanelAnalyticsInterceptor } from '@/lib/panel-analytics';
+import { attachRequestResilience } from '@/lib/request-resilience';
 
 type WingsQueuedAxiosRequestConfig = InternalAxiosRequestConfig & {
     _wingsQueued?: boolean;
@@ -171,6 +172,8 @@ const attachCommonResponseInterceptor = (client: AxiosInstance) => {
 };
 
 // Attach to both the custom API client and the global axios instance used across the app.
+attachRequestResilience(api);
+attachRequestResilience(axios);
 attachClientSyncRequestInterceptor(api);
 attachClientSyncRequestInterceptor(axios);
 attachWingsQueueInterceptor(api);

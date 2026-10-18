@@ -86,24 +86,31 @@ export function PwaInstaller() {
     useEffect(() => {
         if (typeof window === 'undefined' || typeof navigator === 'undefined') return;
 
-        if (!enabled) {
-            if ('serviceWorker' in navigator) {
-                void navigator.serviceWorker.getRegistrations().then((regs) => {
-                    for (const reg of regs) {
-                        const script =
-                            reg.active?.scriptURL || reg.installing?.scriptURL || reg.waiting?.scriptURL || '';
-                        if (script.includes('/sw.js')) {
-                            void reg.unregister();
-                        }
+        const unregisterPanelWorker = () => {
+            if (!('serviceWorker' in navigator)) return;
+            void navigator.serviceWorker.getRegistrations().then((regs) => {
+                for (const reg of regs) {
+                    const script = reg.active?.scriptURL || reg.installing?.scriptURL || reg.waiting?.scriptURL || '';
+                    if (script.includes('/sw.js')) {
+                        void reg.unregister();
                     }
-                });
-            }
+                }
+            });
+        };
+
+        if (!enabled) {
+            unregisterPanelWorker();
             return;
         }
 
+        // In development the worker would sit between the browser and hot reload / dev chunks;
+        // drop any worker left over from a production build instead of registering one.
+        const isDev = process.env.NODE_ENV !== 'production';
+        if (isDev) unregisterPanelWorker();
+
         if (isStandaloneDisplay()) return;
 
-        if ('serviceWorker' in navigator) {
+        if (!isDev && 'serviceWorker' in navigator) {
             void navigator.serviceWorker.register(SW_PATH).catch((error) => {
                 console.warn('SW register failed', error);
             });

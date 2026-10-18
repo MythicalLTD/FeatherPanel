@@ -14,7 +14,7 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-const CACHE = 'fp-pwa-v1';
+const CACHE = 'fp-pwa-v2';
 const PRECACHE = ['/offline.html'];
 
 self.addEventListener('install', (event) => {
@@ -37,33 +37,53 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
     const req = event.request;
-    if (req.method !== 'GET') return;
+    if (req.method !== 'GET' || !req.url) return;
 
-    const url = new URL(req.url);
-    if (url.origin !== self.location.origin) return;
-
-    // Never cache API / auth traffic.
-    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/')) {
+    let url;
+    try {
+        url = new URL(req.url);
+    } catch {
         return;
     }
+    // Only same-origin http(s): file:, data:, blob:, chrome-extension: and cross-origin requests
+    // go straight to the network (or fail there) without the worker in between.
+    if ((url.protocol !== 'http:' && url.protocol !== 'https:') || url.origin !== self.location.origin) return;
+
+    // Never touch API / auth traffic, dev-server internals or range requests (media seeking).
+    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/')) return;
+    if (url.pathname.startsWith('/_next/webpack-hmr') || url.pathname.includes('.hot-update.')) return;
+    if (req.headers.has('range')) return;
+
+    // Only page loads (offline fallback) and immutable build assets (cache) are worth handling;
+    // everything else passes through untouched instead of failing inside the worker.
+    const isNavigation = req.mode === 'navigate';
+    const isStaticAsset = url.pathname.startsWith('/_next/static/');
+    if (!isNavigation && !isStaticAsset) return;
 
     event.respondWith(
-        fetch(req)
-            .then((res) => {
-                if (res.ok && (req.mode === 'navigate' || url.pathname.startsWith('/_next/static/'))) {
+        (async () => {
+            try {
+                const res = await fetch(req);
+                // Cache immutable build assets only; pages carry per-user data and are not stored.
+                if (isStaticAsset && res.ok && res.type === 'basic') {
                     const copy = res.clone();
-                    caches.open(CACHE).then((cache) => cache.put(req, copy)).catch(() => undefined);
+                    caches
+                        .open(CACHE)
+                        .then((cache) => cache.put(req, copy))
+                        .catch(() => undefined);
                 }
                 return res;
-            })
-            .catch(async () => {
-                const cached = await caches.match(req);
-                if (cached) return cached;
-                if (req.mode === 'navigate') {
-                    const offline = await caches.match('/offline.html');
+            } catch {
+                if (isStaticAsset) {
+                    const cached = await caches.match(req).catch(() => undefined);
+                    if (cached) return cached;
+                }
+                if (isNavigation) {
+                    const offline = await caches.match('/offline.html').catch(() => undefined);
                     if (offline) return offline;
                 }
-                return Response.error();
-            }),
+                return new Response('', { status: 504, statusText: 'Offline' });
+            }
+        })(),
     );
 });
