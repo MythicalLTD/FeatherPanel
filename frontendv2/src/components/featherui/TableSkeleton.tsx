@@ -28,9 +28,9 @@ export function TableSkeleton({ count = 5, className }: TableSkeletonProps) {
             {Array.from({ length: count }).map((_, i) => (
                 <div
                     key={i}
-                    className='group bg-card/30 border-border/50 relative flex flex-col gap-6 overflow-hidden rounded-3xl border p-6 backdrop-blur-sm md:flex-row md:items-center'
+                    className='fp-surface relative flex flex-col gap-4 overflow-hidden rounded-xl border p-4 sm:p-5 md:flex-row md:items-center'
                 >
-                    <div className='bg-secondary/50 h-16 w-16 shrink-0 animate-pulse rounded-2xl' />
+                    <div className='bg-secondary/50 h-11 w-11 shrink-0 animate-pulse rounded-lg' />
 
                     <div className='min-w-0 flex-1 space-y-3'>
                         <div className='flex flex-wrap items-center gap-3'>

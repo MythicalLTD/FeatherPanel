@@ -24,6 +24,9 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 90%;
+    /* Glass surfaces (cards): light needs more body so text stays crisp over the backdrop. */
+    --fp-surface-alpha: 0.72;
+    --fp-surface-highlight: 0 0% 100% / 0.6;
     --input: 0 0% 90%;
     --ring: 262 83% 58%;
     --radius: 0.5rem;
@@ -76,6 +79,8 @@
     --destructive-foreground: 0 0% 98%;
     /* Visible but quiet: cards and inputs need an edge against --card (9%) to read as surfaces. */
     --border: 220 13% 17%;
+    --fp-surface-alpha: 0.42;
+    --fp-surface-highlight: 0 0% 100% / 0.045;
     --input: 220 13% 19%;
     --ring: 262 83% 58%;
 }
@@ -793,5 +798,64 @@ html.fp-privacy [data-fp-sensitive]:not(:focus) {
 @supports not (-webkit-text-security: disc) {
     html.fp-privacy [data-fp-sensitive]:not(:focus) {
         filter: blur(5px);
+    }
+}
+
+/* ---------------------------------------------------------------------------------------------
+   Card surfaces. One definition for every shared building block (PageCard, ResourceCard,
+   FormSection, EmptyState, ui/card...), so the panel reads as a single material: translucent
+   glass that lets the theme background through, a hairline edge and a faint top highlight.
+   fp-surface-inset is for panels nested inside a surface (no second blur layer).
+   --------------------------------------------------------------------------------------------- */
+@utility fp-surface {
+    background-color: hsl(var(--card) / var(--fp-surface-alpha));
+    border-color: hsl(var(--border) / 0.8);
+    box-shadow:
+        inset 0 1px 0 0 hsl(var(--fp-surface-highlight)),
+        0 1px 2px 0 rgb(0 0 0 / 0.06),
+        0 8px 24px -12px rgb(0 0 0 / 0.25);
+    -webkit-backdrop-filter: blur(14px) saturate(1.35);
+    backdrop-filter: blur(14px) saturate(1.35);
+}
+
+@utility fp-surface-inset {
+    background-color: hsl(var(--muted) / 0.35);
+    border-color: hsl(var(--border) / 0.65);
+}
+
+@utility fp-surface-interactive {
+    transition:
+        border-color 150ms ease,
+        background-color 150ms ease,
+        box-shadow 150ms ease,
+        transform 150ms ease;
+    &:hover {
+        border-color: hsl(var(--primary) / 0.45);
+        background-color: hsl(var(--card) / calc(var(--fp-surface-alpha) + 0.12));
+        box-shadow:
+            inset 0 1px 0 0 hsl(var(--fp-surface-highlight)),
+            0 0 0 1px hsl(var(--primary) / 0.12),
+            0 12px 28px -14px hsl(var(--primary) / 0.35);
+    }
+    &:focus-visible {
+        outline: 2px solid hsl(var(--ring));
+        outline-offset: 2px;
+    }
+}
+
+/* Icon tile used in card and page headers: soft accent gradient with an inner ring. */
+@utility fp-icon-tile {
+    background-image: linear-gradient(135deg, hsl(var(--primary) / 0.22), hsl(var(--primary) / 0.06));
+    box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.22);
+    color: hsl(var(--primary));
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    :root {
+        --fp-surface-alpha: 0.97;
+    }
+    .fp-surface {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
     }
 }
