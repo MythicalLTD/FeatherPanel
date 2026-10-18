@@ -17,19 +17,20 @@
 
 namespace App\Cron;
 
+use App\App;
+use App\Chat\SsoToken;
+use App\Chat\MailTemplate;
+use App\Chat\UserNotification;
+use App\Cli\Utils\MinecraftColorCodeSupport;
+
 /**
  * DeleteOldData - Cron task for cleaning up old data.
  *
  * This cron job runs every minute and handles:
  * - Deleting old/expired/used SSO tokens
  * - Hard deleting soft-deleted mail templates
+ * - Pruning old user inbox notifications
  */
-
-use App\App;
-use App\Chat\SsoToken;
-use App\Chat\MailTemplate;
-use App\Cli\Utils\MinecraftColorCodeSupport;
-
 class ZDeleteOldData implements TimeTask
 {
     /**
@@ -57,6 +58,16 @@ class ZDeleteOldData implements TimeTask
         $app = App::getInstance(false, true);
         $logger = $app->getLogger();
         MinecraftColorCodeSupport::sendOutputWithNewLine('&aProcessing DeleteOldData...');
+
+        // Notification centre: read items after 30 days, everything after 90.
+        try {
+            $deletedNotifications = UserNotification::prune();
+            if ($deletedNotifications > 0) {
+                $logger->info('Deleted ' . $deletedNotifications . ' old user notification(s)');
+            }
+        } catch (\Exception $e) {
+            $logger->error('Failed to delete old user notifications: ' . $e->getMessage());
+        }
 
         // Delete old SSO tokens (expired, used, or older than 7 days)
         try {

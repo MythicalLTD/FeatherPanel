@@ -86,9 +86,9 @@
     --border: 220 13% 17%;
     /* Dark glass: a near black tint so bright backgrounds read through darkened, never washed
        out, with a faint light hairline instead of a grey border. */
-    --fp-surface-alpha: 0.66;
+    --fp-surface-alpha: 0.74;
     --fp-surface-highlight: 0 0% 100% / 0.04;
-    --fp-surface-tint: 225 20% 4%;
+    --fp-surface-tint: 0 0% 3%;
     --fp-surface-border: rgb(255 255 255 / 0.07);
     --fp-surface-saturate: 1;
     --fp-chrome-alpha: 0.76;

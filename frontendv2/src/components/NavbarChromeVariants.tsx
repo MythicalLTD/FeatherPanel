@@ -20,6 +20,7 @@ import { Menu as MenuIcon, Search, ShieldCheck } from 'lucide-react';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { CircleUser } from 'lucide-react';
 import { NavbarUserMenu } from '@/components/navbar/NavbarUserMenu';
+import { NotificationBell } from '@/components/navbar/NotificationBell';
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer';
 import { PrivacyModeButton } from '@/components/common/PrivacyModeButton';
 import { useGlobalSearch } from '@/contexts/GlobalSearchContext';
@@ -175,14 +176,17 @@ function NavbarActionsCluster({
         return (
             <div className='relative z-10 flex shrink-0 items-center gap-1 sm:gap-2'>
                 <NavbarMobileSearchButton t={t} compact={compactSearch} />
-                <div className='bg-muted/20 hidden items-center gap-0.5 rounded-xl p-1 sm:flex'>
+                <div className='sm:bg-muted/20 flex items-center gap-0.5 rounded-xl sm:p-1'>
                     {adminButton}
                     {showAdminAreaButton && (
                         <div className='bg-border/50 hidden h-6 w-px sm:block xl:hidden' aria-hidden />
                     )}
-                    <div className='flex items-center [&>button]:rounded-lg sm:[&>button]:rounded-xl'>
-                        <PrivacyModeButton />
-                        <ThemeCustomizer />
+                    <div className='flex items-center [&>button]:rounded-lg sm:[&>button]:rounded-xl [&>div>button]:rounded-lg sm:[&>div>button]:rounded-xl'>
+                        <NotificationBell />
+                        <PrivacyModeButton className='hidden sm:flex' />
+                        <div className='hidden sm:contents'>
+                            <ThemeCustomizer />
+                        </div>
                     </div>
                 </div>
                 <NavbarUserMenu
@@ -200,6 +204,7 @@ function NavbarActionsCluster({
         <div className='relative z-10 flex shrink-0 items-center gap-x-1.5 sm:gap-x-2 lg:gap-x-3'>
             <NavbarMobileSearchButton t={t} compact={compactSearch} />
             {adminButton}
+            <NotificationBell />
             <PrivacyModeButton className='hidden sm:flex' />
             <div className='hidden sm:flex'>
                 <ThemeCustomizer />
