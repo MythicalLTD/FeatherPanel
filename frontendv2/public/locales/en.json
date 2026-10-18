@@ -15480,5 +15480,51 @@
 				"suspendedServer": "Suspended Server"
 			}
 		}
+	},
+	"breadcrumbs": {
+		"label": "Breadcrumb",
+		"admin": "Admin",
+		"details": "Details",
+		"segments": {
+			"create": "Create",
+			"new": "New",
+			"edit": "Edit",
+			"activity": "Activity",
+			"allocations": "Allocations",
+			"articles": "Articles",
+			"categories": "Categories",
+			"console": "Console",
+			"content": "Content",
+			"databases": "Databases",
+			"destinations": "Destinations",
+			"finish": "Finish",
+			"install": "Install",
+			"issues": "Issues",
+			"languages": "Languages",
+			"logs": "Logs",
+			"management": "Management",
+			"marketplace": "Marketplace",
+			"nodes": "Nodes",
+			"plugins": "Plugins",
+			"policies": "Policies",
+			"priorities": "Priorities",
+			"products": "Products",
+			"runs": "Runs",
+			"servers": "Servers",
+			"spells": "Spells",
+			"status": "Status",
+			"statuses": "Statuses",
+			"suggestions": "Suggestions",
+			"system": "System",
+			"tickets": "Tickets",
+			"translations": "Translations",
+			"users": "Users",
+			"vds": "VDS",
+			"infrastructure": "Infrastructure",
+			"knowledgebase": "Knowledge base",
+			"dev": "Developer",
+			"feathercloud": "FeatherCloud",
+			"hosting-packages": "Hosting packages"
+		}
 	}
 }

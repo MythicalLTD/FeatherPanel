@@ -218,18 +218,19 @@ export function flattenNavigationItems(items: NavigationItem[]): NavigationItem[
 export function navigationToSearchResults(
     items: NavigationItem[],
     category: GlobalSearchCategory,
-    groupLabel?: string,
+    groupLabel?: string | ((item: NavigationItem) => string | undefined),
 ): GlobalSearchResult[] {
     return flattenNavigationItems(items).map((item) => {
         const icons = extractNavItemIcons(item);
+        const label = typeof groupLabel === 'function' ? groupLabel(item) : groupLabel;
         return {
             id: `nav-${category}-${item.id}`,
             title: item.title || item.name,
-            subtitle: groupLabel ?? item.group,
+            subtitle: label ?? item.group,
             href: item.pluginRedirect ?? item.url,
             category,
             ...icons,
-            keywords: [item.name, item.title, item.description, item.group, item.pluginName].filter(
+            keywords: [item.name, item.title, item.description, item.group, label, item.pluginName].filter(
                 Boolean,
             ) as string[],
         };
