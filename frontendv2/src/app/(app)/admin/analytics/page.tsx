@@ -232,26 +232,15 @@ export default function AnalyticsDashboardPage() {
                     title={t('admin.analytics.title')}
                     description={t('admin.analytics.subtitle')}
                     icon={Activity}
-                    actions={
-                        <button
-                            type='button'
-                            onClick={() => void load()}
-                            disabled={loading}
-                            aria-label={t('admin.analytics.overview.retry')}
-                            className='border-border/60 bg-background/40 hover:bg-muted/50 inline-flex h-9 w-9 items-center justify-center rounded-lg border transition-colors disabled:opacity-60'
-                        >
-                            <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
-                        </button>
-                    }
                 />
 
-                <div className='fp-surface flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between'>
-                    <div className='flex min-w-0 items-center gap-2'>
+                <div className='fp-surface grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl border p-3 sm:flex sm:items-center'>
+                    <div className='flex min-w-0 flex-1 items-center gap-2'>
                         <CalendarRange className='text-muted-foreground hidden h-4 w-4 shrink-0 sm:block' />
                         <div
                             role='group'
                             aria-label={t('admin.analytics.overview.range.label')}
-                            className='-mx-1 flex min-w-0 gap-1.5 overflow-x-auto px-1 pb-0.5'
+                            className='flex min-w-0 flex-wrap gap-1.5'
                         >
                             {KPI_PRESETS.map((p) => (
                                 <RangeChip key={p.id} active={preset === p.id} onClick={() => choosePreset(p.id)}>
@@ -263,8 +252,17 @@ export default function AnalyticsDashboardPage() {
                             </RangeChip>
                         </div>
                     </div>
+                    <button
+                        type='button'
+                        onClick={() => void load()}
+                        disabled={loading}
+                        aria-label={t('admin.analytics.overview.retry')}
+                        className='border-border/60 bg-background/40 hover:bg-muted/50 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors disabled:opacity-60 sm:order-last'
+                    >
+                        <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
+                    </button>
                     {preset === 'custom' ? (
-                        <div className='flex min-w-0 items-center gap-2'>
+                        <div className='col-span-2 flex min-w-0 items-center gap-2'>
                             <input
                                 type='date'
                                 aria-label={t('admin.analytics.overview.range.from')}
@@ -287,7 +285,7 @@ export default function AnalyticsDashboardPage() {
                         </div>
                     ) : (
                         data && (
-                            <span className='text-muted-foreground truncate text-xs'>
+                            <span className='text-muted-foreground col-span-2 truncate text-xs'>
                                 {t('admin.analytics.overview.range.comparing', {
                                     from: formatRangeDay(data.range.previous_from),
                                     to: formatRangeDay(data.range.previous_to),
@@ -312,7 +310,7 @@ export default function AnalyticsDashboardPage() {
                 )}
 
                 {!data && loading && (
-                    <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-4' aria-busy='true'>
+                    <div className='grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4' aria-busy='true'>
                         {Array.from({ length: 8 }).map((_, i) => (
                             <div key={i} className='fp-surface h-36 animate-pulse rounded-xl border' />
                         ))}
@@ -322,7 +320,7 @@ export default function AnalyticsDashboardPage() {
 
                 {data && (
                     <div className={cn('space-y-4 transition-opacity', loading && 'opacity-60')}>
-                        <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-4'>
+                        <div className='grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4'>
                             <KpiCard
                                 icon={UserPlus}
                                 label={t('admin.analytics.overview.kpi.new_users')}

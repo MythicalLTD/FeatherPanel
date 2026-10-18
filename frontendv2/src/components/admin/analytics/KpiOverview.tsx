@@ -183,18 +183,18 @@ export function KpiCard({
         <>
             <div className='flex items-start justify-between gap-2'>
                 <div className='flex min-w-0 items-center gap-2'>
-                    <span className='fp-icon-tile flex h-8 w-8 shrink-0 items-center justify-center rounded-lg'>
+                    <span className='fp-icon-tile flex h-7 w-7 shrink-0 items-center justify-center rounded-lg sm:h-8 sm:w-8'>
                         <Icon className='h-4 w-4' />
                     </span>
                     <span className='text-muted-foreground truncate text-xs font-medium sm:text-sm'>{label}</span>
                 </div>
                 {module && <ModuleBadge module={module} />}
             </div>
-            <div className='mt-3 flex items-end justify-between gap-2'>
-                <span className='text-2xl font-semibold tracking-tight tabular-nums'>{value}</span>
+            <div className='mt-3 flex flex-wrap items-end justify-between gap-x-2 gap-y-1'>
+                <span className='text-xl font-semibold tracking-tight tabular-nums sm:text-2xl'>{value}</span>
                 {current !== undefined && previous !== undefined && <Delta current={current} previous={previous} />}
             </div>
-            {hint && <p className='text-muted-foreground mt-1 truncate text-xs'>{hint}</p>}
+            {hint && <p className='text-muted-foreground mt-1 line-clamp-2 text-xs'>{hint}</p>}
             {series && seriesKey && (
                 <div className='mt-2'>
                     <Sparkline data={series} dataKey={seriesKey} color={SERIES_COLORS[seriesKey]} />
@@ -202,7 +202,7 @@ export function KpiCard({
             )}
         </>
     );
-    const className = 'fp-surface flex min-w-0 flex-col rounded-xl border p-4';
+    const className = 'fp-surface flex min-w-0 flex-col rounded-xl border p-3 sm:p-4';
     if (href) {
         return (
             <Link href={href} className={cn(className, 'fp-surface-interactive')}>
