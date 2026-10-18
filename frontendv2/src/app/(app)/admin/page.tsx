@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Settings, Trash2, AlertTriangle, Download, RefreshCw, SlidersHorizontal, LayoutDashboard } from 'lucide-react';
+import { Settings, Trash2, AlertTriangle, Download, RefreshCw, SlidersHorizontal } from 'lucide-react';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
 import { useSystemHealth } from '@/hooks/useSystemHealth';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -44,7 +44,6 @@ import { SupportTicketsWidget } from '@/components/admin/SupportTicketsWidget';
 import { CloudHubWidget } from '@/components/admin/CloudHubWidget';
 import { AdminWidgetFrame } from '@/components/admin/AdminWidgetFrame';
 import { Button } from '@/components/featherui/Button';
-import { PageHeader } from '@/components/featherui/PageHeader';
 import styles from './dashboard.module.css';
 
 export default function AdminDashboardPage() {
@@ -182,61 +181,57 @@ export default function AdminDashboardPage() {
         <div className={cn(styles.dashboard, 'text-foreground space-y-6')}>
             <WidgetRenderer widgets={getWidgets('admin-home', 'top-of-page')} />
 
-            <PageHeader
-                icon={LayoutDashboard}
-                title={t('admin.dashboard.title')}
-                description={t('admin.dashboard.subtitle')}
-                actions={
-                    <div className='flex flex-wrap items-center gap-2'>
-                        <Button
-                            type='button'
-                            variant='ghost'
-                            onClick={() => {
-                                refresh();
-                                refreshHealth();
-                            }}
-                            loading={loading}
-                            className='gap-2 px-4'
-                        >
-                            {!loading && <RefreshCw className='h-4 w-4' aria-hidden />}
-                            {t('common.refresh')}
-                        </Button>
-                        <Button
-                            type='button'
-                            variant={isCustomizing ? 'warning' : 'secondary'}
-                            onClick={() => setIsCustomizing(!isCustomizing)}
-                            aria-pressed={isCustomizing}
-                            className={cn('gap-2 px-4', isCustomizing && 'text-amber-800 dark:text-amber-400')}
-                        >
-                            <SlidersHorizontal className='h-4 w-4' aria-hidden />
-                            <span className='hidden sm:inline'>
-                                {isCustomizing ? t('admin.dashboard.stop_customizing') : t('admin.dashboard.customize')}
-                            </span>
-                            <span className='sm:hidden'>
-                                {isCustomizing ? t('admin.dashboard.stop') : t('admin.dashboard.customize')}
-                            </span>
-                        </Button>
-                        <Button
-                            type='button'
-                            variant='secondary'
-                            onClick={clearCache}
-                            loading={isClearingCache}
-                            className='gap-2 px-4'
-                        >
-                            {!isClearingCache && <Trash2 className='h-4 w-4' />}
-                            <span className='hidden sm:inline'>{t('admin.dashboard.clear_cache')}</span>
-                            <span className='sm:hidden'>{t('admin.dashboard.clear')}</span>
-                        </Button>
-                        <Button asChild variant='secondary' className='gap-2 px-4'>
-                            <Link href='/admin/settings'>
-                                <Settings className='h-4 w-4' />
-                                <span className='hidden sm:inline'>{t('admin.dashboard.global_settings')}</span>
-                                <span className='sm:hidden'>{t('admin.dashboard.settings')}</span>
-                            </Link>
-                        </Button>
-                    </div>
-                }
-            />
+            {/* The hero below greets and links the main tasks; this row keeps the page tools. */}
+            <div className='flex justify-end'>
+                <div className='flex flex-wrap items-center gap-2'>
+                    <Button
+                        type='button'
+                        variant='ghost'
+                        onClick={() => {
+                            refresh();
+                            refreshHealth();
+                        }}
+                        loading={loading}
+                        className='gap-2 px-4'
+                    >
+                        {!loading && <RefreshCw className='h-4 w-4' aria-hidden />}
+                        {t('common.refresh')}
+                    </Button>
+                    <Button
+                        type='button'
+                        variant={isCustomizing ? 'warning' : 'secondary'}
+                        onClick={() => setIsCustomizing(!isCustomizing)}
+                        aria-pressed={isCustomizing}
+                        className={cn('gap-2 px-4', isCustomizing && 'text-amber-800 dark:text-amber-400')}
+                    >
+                        <SlidersHorizontal className='h-4 w-4' aria-hidden />
+                        <span className='hidden sm:inline'>
+                            {isCustomizing ? t('admin.dashboard.stop_customizing') : t('admin.dashboard.customize')}
+                        </span>
+                        <span className='sm:hidden'>
+                            {isCustomizing ? t('admin.dashboard.stop') : t('admin.dashboard.customize')}
+                        </span>
+                    </Button>
+                    <Button
+                        type='button'
+                        variant='secondary'
+                        onClick={clearCache}
+                        loading={isClearingCache}
+                        className='gap-2 px-4'
+                    >
+                        {!isClearingCache && <Trash2 className='h-4 w-4' />}
+                        <span className='hidden sm:inline'>{t('admin.dashboard.clear_cache')}</span>
+                        <span className='sm:hidden'>{t('admin.dashboard.clear')}</span>
+                    </Button>
+                    <Button asChild variant='secondary' className='gap-2 px-4'>
+                        <Link href='/admin/settings'>
+                            <Settings className='h-4 w-4' />
+                            <span className='hidden sm:inline'>{t('admin.dashboard.global_settings')}</span>
+                            <span className='sm:hidden'>{t('admin.dashboard.settings')}</span>
+                        </Link>
+                    </Button>
+                </div>
+            </div>
 
             <WidgetRenderer widgets={getWidgets('admin-home', 'after-header')} />
 

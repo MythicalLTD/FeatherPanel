@@ -19,8 +19,7 @@ import { AdminWidgetLoading } from './AdminWidgetLoading';
 
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
-import { BellRing, CheckCircle2, Clock, Database, Download, HardDrive, Server } from 'lucide-react';
-import { PageCard } from '@/components/featherui/PageCard';
+import { ArrowRight, BellRing, CheckCircle2, Clock, Database, Download, HardDrive, Server } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
 import type { GlobalStats, SelfTestResponse } from '@/hooks/useSystemHealth';
@@ -121,67 +120,92 @@ export function AttentionWidget({
     }
 
     const toneStyles = {
-        danger: 'text-red-700 dark:text-red-400',
-        warn: 'text-amber-800 dark:text-amber-400',
-        info: 'text-foreground',
+        danger: { dot: 'bg-red-500', tile: 'bg-red-500/10 text-red-600 dark:text-red-400' },
+        warn: { dot: 'bg-amber-500', tile: 'bg-amber-500/10 text-amber-700 dark:text-amber-400' },
+        info: { dot: 'bg-sky-500', tile: 'bg-sky-500/10 text-sky-700 dark:text-sky-400' },
     };
 
     return (
-        <PageCard
-            title={t('admin.attention.title')}
-            description={t('admin.attention.description')}
-            icon={BellRing}
-            className='space-y-4 p-4 sm:p-5 [&>div:first-child]:flex-wrap [&>div:first-child]:gap-3 [&>div:first-child]:pb-4'
-            variant={items.length > 0 ? 'warning' : 'default'}
-        >
-            {healthLoading && items.length === 0 ? (
-                <AdminWidgetLoading label={t('admin.attention.title')} rows={2} />
-            ) : items.length === 0 && (!stats || !selftest) ? (
-                <div className='space-y-2 py-5'>
-                    <p className='text-muted-foreground text-sm'>{t('admin.system_health.status.unavailable')}</p>
-                    <Link
-                        href='/admin/nodes/status'
-                        className='inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4'
-                    >
-                        {t('admin.system_health.view_nodes')}
-                    </Link>
+        <section className='fp-surface min-w-0 rounded-xl border p-4 sm:p-5'>
+            <header className='flex items-center gap-3'>
+                <span className='fp-icon-tile flex h-9 w-9 shrink-0 items-center justify-center rounded-xl'>
+                    <BellRing className='h-4 w-4' aria-hidden />
+                </span>
+                <div className='min-w-0 flex-1'>
+                    <h2 className='text-sm font-semibold'>{t('admin.attention.title')}</h2>
+                    <p className='text-muted-foreground truncate text-xs'>{t('admin.attention.description')}</p>
                 </div>
-            ) : items.length === 0 ? (
-                <div className='flex items-start gap-3 py-1'>
-                    <CheckCircle2
-                        className='mt-0.5 h-5 w-5 shrink-0 text-emerald-700 dark:text-emerald-400'
-                        aria-hidden
-                    />
-                    <div className='space-y-1.5'>
-                        <p className='text-sm font-medium'>{t('admin.attention.all_clear_title')}</p>
-                        <p className='text-muted-foreground text-xs leading-relaxed'>
-                            {t('admin.attention.all_clear_desc')}
-                        </p>
-                    </div>
-                </div>
-            ) : (
-                <div className='divide-border divide-y'>
-                    {items.map((item) => (
+                {items.length > 0 && (
+                    <span className='shrink-0 rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-600 dark:text-red-400'>
+                        {t('admin.attention.count_badge', { count: String(items.length) })}
+                    </span>
+                )}
+            </header>
+            <div className='mt-4'>
+                {healthLoading && items.length === 0 ? (
+                    <AdminWidgetLoading label={t('admin.attention.title')} rows={2} />
+                ) : items.length === 0 && (!stats || !selftest) ? (
+                    <div className='space-y-2 py-2'>
+                        <p className='text-muted-foreground text-sm'>{t('admin.system_health.status.unavailable')}</p>
                         <Link
-                            key={item.id}
-                            href={item.href}
-                            onClick={item.id === 'cron' ? onRevealCron : undefined}
-                            className={cn(
-                                'group hover:bg-accent flex min-h-11 items-start gap-3 rounded-md px-1 py-3 transition-colors',
-                                toneStyles[item.tone],
-                            )}
+                            href='/admin/nodes/status'
+                            className='text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline'
                         >
-                            <div className='flex h-6 w-5 shrink-0 items-center justify-center'>
-                                <item.icon className='h-4 w-4' />
-                            </div>
-                            <div className='min-w-0 flex-1 space-y-0.5'>
-                                <p className='text-sm font-medium'>{item.title}</p>
-                                <p className='text-muted-foreground text-xs leading-relaxed'>{item.detail}</p>
-                            </div>
+                            {t('admin.system_health.view_nodes')}
+                            <ArrowRight className='h-3.5 w-3.5' aria-hidden />
                         </Link>
-                    ))}
-                </div>
-            )}
-        </PageCard>
+                    </div>
+                ) : items.length === 0 ? (
+                    <div className='fp-surface-inset flex items-center gap-3 rounded-lg border p-3'>
+                        <span className='flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'>
+                            <CheckCircle2 className='h-4.5 w-4.5' aria-hidden />
+                        </span>
+                        <div className='min-w-0'>
+                            <p className='text-sm font-medium'>{t('admin.attention.all_clear_title')}</p>
+                            <p className='text-muted-foreground text-xs'>{t('admin.attention.all_clear_desc')}</p>
+                        </div>
+                    </div>
+                ) : (
+                    <ul className='space-y-2'>
+                        {items.map((item) => (
+                            <li key={item.id}>
+                                <Link
+                                    href={item.href}
+                                    onClick={item.id === 'cron' ? onRevealCron : undefined}
+                                    className='group fp-surface-inset hover:border-primary/40 flex items-center gap-3 rounded-lg border p-3 transition-colors'
+                                >
+                                    <span
+                                        className={cn(
+                                            'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+                                            toneStyles[item.tone].tile,
+                                        )}
+                                    >
+                                        <item.icon className='h-4 w-4' aria-hidden />
+                                        <span
+                                            className={cn(
+                                                'ring-card absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2',
+                                                toneStyles[item.tone].dot,
+                                            )}
+                                            aria-hidden
+                                        />
+                                    </span>
+                                    <span className='min-w-0 flex-1'>
+                                        <span className='block truncate text-sm font-medium'>{item.title}</span>
+                                        <span className='text-muted-foreground block text-xs'>{item.detail}</span>
+                                    </span>
+                                    <span className='text-primary inline-flex shrink-0 items-center gap-1 text-xs font-medium'>
+                                        {t('admin.attention.action')}
+                                        <ArrowRight
+                                            className='h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5'
+                                            aria-hidden
+                                        />
+                                    </span>
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+        </section>
     );
 }

@@ -9320,18 +9320,20 @@
 		"attention": {
 			"title": "Needs Attention",
 			"description": "Issues and recommended actions",
-			"all_clear_title": "All clear",
+			"all_clear_title": "All good",
 			"all_clear_desc": "No critical alerts right now. Infrastructure looks healthy.",
 			"unhealthy_nodes_title": "Unhealthy nodes",
-			"unhealthy_nodes_detail": "{count} node(s) need investigation",
+			"unhealthy_nodes_detail": "Nodes needing investigation: {count}",
 			"database_title": "Database issue",
 			"database_detail": "MySQL self-test reported a failure",
 			"cache_title": "Cache issue",
 			"cache_detail": "Redis self-test reported a failure",
 			"cron_title": "Cron tasks failing",
-			"cron_detail": "{count} background task(s) are late or failed",
+			"cron_detail": "Background tasks late or failing: {count}",
 			"update_title": "Update {version} available",
-			"update_detail": "Review release notes and update when ready"
+			"update_detail": "Review release notes and update when ready",
+			"action": "Fix",
+			"count_badge": "{count} open"
 		},
 		"nodes_overview": {
 			"title": "Nodes Overview",
