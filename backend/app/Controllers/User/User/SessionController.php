@@ -257,6 +257,10 @@ class SessionController
                 }
             }
         }
+        // Same charset as registration; login only accepts usernames matching it.
+        if (isset($data['username']) && $data['username'] !== $user['username'] && (!is_string($data['username']) || !preg_match('/^[a-zA-Z0-9_]+$/', $data['username']))) {
+            return ApiResponse::error('Username can only contain letters, numbers, and underscores', 'INVALID_USERNAME_FORMAT');
+        }
         // Validate email format
         if (isset($data['email'])) {
             if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
