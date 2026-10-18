@@ -110,14 +110,14 @@ export function ResourceCard({
 
             <div
                 className={cn(
-                    'relative z-10 flex flex-col gap-4 p-4 sm:p-5',
+                    'relative z-10 flex flex-col gap-3 p-3.5 sm:px-4 sm:py-3.5',
                     href && 'pointer-events-none [&_a]:pointer-events-auto [&_button]:pointer-events-auto',
                     layout === 'horizontal' ? 'md:flex-row md:items-center' : 'sm:flex-row sm:items-start',
                 )}
             >
                 <div
                     className={cn(
-                        'fp-icon-tile relative z-10 flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg',
+                        'fp-icon-tile relative z-10 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg',
                         iconWrapperClassName,
                     )}
                 >

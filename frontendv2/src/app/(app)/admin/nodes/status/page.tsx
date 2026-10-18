@@ -186,13 +186,13 @@ export default function NodeStatusPage() {
                             title={globalStats.total_nodes.toString()}
                             subtitle={t('admin.nodes.total')}
                             icon={Server}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={globalStats.healthy_nodes.toString()}
                             subtitle={t('admin.nodes.healthy')}
                             icon={Check}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                             iconClassName='text-green-500'
                             iconWrapperClassName='bg-green-500/10 border-green-500/20'
                         />
@@ -200,7 +200,7 @@ export default function NodeStatusPage() {
                             title={globalStats.unhealthy_nodes.toString()}
                             subtitle={t('admin.nodes.unhealthy')}
                             icon={AlertTriangle}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                             iconClassName='text-red-500'
                             iconWrapperClassName='bg-red-500/10 border-red-500/20'
                         />
@@ -208,7 +208,7 @@ export default function NodeStatusPage() {
                             title={`${globalStats.avg_cpu_percent.toFixed(1)}%`}
                             subtitle={t('admin.nodes.avg_cpu')}
                             icon={Cpu}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                     </div>
 
@@ -218,7 +218,7 @@ export default function NodeStatusPage() {
                         <PageCard
                             title={t('admin.nodes.memory_usage')}
                             icon={MemoryStick}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         >
                             <div className='space-y-4'>
                                 <div className='flex items-center justify-between text-sm'>
@@ -244,11 +244,7 @@ export default function NodeStatusPage() {
                                 </p>
                             </div>
                         </PageCard>
-                        <PageCard
-                            title={t('admin.nodes.disk_usage')}
-                            icon={HardDrive}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
-                        >
+                        <PageCard title={t('admin.nodes.disk_usage')} icon={HardDrive} className='fp-surface border'>
                             <div className='space-y-4'>
                                 <div className='flex items-center justify-between text-sm'>
                                     <span className='text-muted-foreground'>{t('admin.nodes.used_total')}</span>
@@ -295,7 +291,7 @@ export default function NodeStatusPage() {
                                         title={node.name}
                                         description={privacyMask.text(node.fqdn)}
                                         icon={Server}
-                                        className='bg-card/50 shadow-none! backdrop-blur-sm'
+                                        className='fp-surface border'
                                         variant={node.status === 'healthy' ? 'default' : 'danger'}
                                         action={
                                             <Badge variant={node.status === 'healthy' ? 'default' : 'destructive'}>

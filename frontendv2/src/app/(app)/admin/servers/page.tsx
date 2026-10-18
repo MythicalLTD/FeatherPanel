@@ -437,7 +437,7 @@ export default function ServersPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-servers', 'after-header')} />
 
-            <div className='bg-card/50 border-border flex flex-col items-stretch gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md'>
+            <div className='fp-surface flex flex-col items-stretch gap-4 rounded-2xl border p-4'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input

@@ -13,7 +13,10 @@ it under the terms of the GNU Affero General Public License as published
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+'use client';
+
 import React, { ComponentType } from 'react';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
 
@@ -26,8 +29,16 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ title, description, icon: Icon, actions, className }: PageHeaderProps) {
+    // Admin pages put the header on a glass card, like the Admin Home hero.
+    const carded = usePathname()?.startsWith('/admin') ?? false;
     return (
-        <div className={cn('flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pt-2', className)}>
+        <div
+            className={cn(
+                'flex flex-wrap items-center justify-between gap-x-6 gap-y-3',
+                carded ? 'fp-surface rounded-2xl border p-4 sm:p-5' : 'pt-2',
+                className,
+            )}
+        >
             <div className='flex max-w-full min-w-0 items-center gap-3 sm:gap-4'>
                 {Icon && (
                     <div className='fp-icon-tile flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-12 sm:w-12'>
