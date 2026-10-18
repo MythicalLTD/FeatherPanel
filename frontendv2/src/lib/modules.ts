@@ -60,6 +60,7 @@ const MODULE_ROUTES: { prefix: string; module: PanelModule }[] = [
     { prefix: '/admin/backup-schedules', module: 'game' },
     { prefix: '/admin/subdomains', module: 'game' },
     { prefix: '/admin/pterodactyl-importer', module: 'game' },
+    { prefix: '/admin/analytics/servers', module: 'game' },
     { prefix: '/webspace/', module: 'web' },
     { prefix: '/dashboard/webspaces', module: 'web' },
     { prefix: '/webspaces', module: 'web' },
@@ -74,6 +75,7 @@ const MODULE_ROUTES: { prefix: string; module: PanelModule }[] = [
     { prefix: '/admin/vm-instances', module: 'vds' },
     { prefix: '/admin/vds-nodes', module: 'vds' },
     { prefix: '/admin/vm-templates', module: 'vds' },
+    { prefix: '/admin/analytics/vds', module: 'vds' },
 ];
 
 export function getModuleForPath(pathname: string): PanelModule | null {

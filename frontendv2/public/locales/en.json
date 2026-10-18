@@ -9456,6 +9456,110 @@
 				"servers_desc": "Server statistics, database usage per server, allocation patterns, and resource distribution",
 				"content_desc": "Realms, eggs, nests, redirect links, mail templates, and content management insights",
 				"system_desc": "Mail queue monitoring, email delivery statistics, and queue performance metrics"
+			},
+			"overview": {
+				"range": {
+					"label": "Date range",
+					"d7": "7 days",
+					"d30": "30 days",
+					"d90": "90 days",
+					"m12": "12 months",
+					"custom": "Custom",
+					"from": "From",
+					"to": "to",
+					"comparing": "Compared with {from} to {to}"
+				},
+				"loading": "Loading KPIs...",
+				"failed": "Could not load the KPI overview.",
+				"retry": "Retry",
+				"delta_new": "new",
+				"no_previous": "No data in the previous period",
+				"kpi": {
+					"new_users": "New users",
+					"users_total": "{count} users in total",
+					"active_users": "Active users",
+					"active_hint": "{day} today, {week} in the last 7 days",
+					"returning": "Returning users",
+					"returning_hint": "{percent}% of active users signed up earlier",
+					"activity": "Activity events",
+					"activity_hint": "by {count} users",
+					"new_servers": "New servers",
+					"servers_hint": "{total} in total, {suspended} suspended",
+					"new_webspaces": "New webspaces",
+					"webspaces_hint": "{total} in total",
+					"new_vds": "New VDS instances",
+					"vds_hint": "{total} in total, {suspended} suspended",
+					"tickets": "Tickets opened",
+					"tickets_hint": "{open} open, {closed} closed in range",
+					"resolution": "Avg. resolution",
+					"resolution_hint": "for tickets closed in range",
+					"hours": "{value} h",
+					"none": "n/a"
+				},
+				"growth": {
+					"title": "Growth",
+					"description": "New users and resources per {bucket}",
+					"signups": "Signups",
+					"servers": "Servers",
+					"webspaces": "Webspaces",
+					"vds": "VDS instances",
+					"bucket_day": "day",
+					"bucket_week": "week",
+					"bucket_month": "month"
+				},
+				"mix": {
+					"title": "Resources by module",
+					"description": "Everything currently provisioned",
+					"total": "total",
+					"empty": "Nothing provisioned yet"
+				},
+				"capacity": {
+					"title": "Node capacity",
+					"description": "Allocated resources against physical capacity. Above 100% means overcommitted.",
+					"memory": "Memory",
+					"disk": "Disk",
+					"items": "{count} items",
+					"servers": "{count} servers",
+					"webspaces": "{count} webspaces",
+					"instances": "{count} instances",
+					"overcommitted": "Overcommitted",
+					"limit": "Overallocation limit {value}",
+					"unlimited": "No overallocation limit",
+					"empty": "No nodes yet",
+					"vds_nodes": "VDS nodes",
+					"vds_note": "Proxmox nodes do not report capacity to the panel, so only allocations are shown."
+				},
+				"consumers": {
+					"title": "Top consumers",
+					"description": "Owners with the most allocated memory",
+					"user": "User",
+					"resources": "Resources",
+					"memory": "Memory",
+					"disk": "Disk",
+					"empty": "No resources assigned to users yet"
+				},
+				"tickets": {
+					"title": "Tickets",
+					"description": "Opened and closed per {bucket}",
+					"opened": "Opened",
+					"closed": "Closed",
+					"empty": "No tickets in this range"
+				},
+				"activity": {
+					"title": "Activity",
+					"description": "Events logged per {bucket}",
+					"events": "Events",
+					"top": "Most frequent events",
+					"empty": "No activity in this range"
+				},
+				"reports": {
+					"title": "Detailed reports",
+					"description": "Dig into a single area"
+				},
+				"status": {
+					"title": "Server status",
+					"empty": "No servers yet"
+				}
 			}
 		},
 		"nodes": {
