@@ -21,6 +21,8 @@ namespace App\Helpers;
 
 use App\Cache\Cache;
 use App\Chat\Database;
+use App\Chat\Node;
+use App\Services\Wings\Wings;
 
 /**
  * Orchestrates game server player status queries, caching, and fallback logic.
@@ -102,7 +104,7 @@ class PlayerStatusService
         $queryResult = null;
 
         try {
-            $queryResult = GameServerQuery::query($gameType, $queryIp, $port);
+            $queryResult = $gameType === 'arksa' ? self::queryArkAscended($server) : GameServerQuery::query($gameType, $queryIp, $port);
         } catch (\Throwable) {
             // Query failed, will fall back to cached data below
         }
@@ -274,6 +276,8 @@ class PlayerStatusService
             $queries = [
                 // Full query with gamedig_type and public_ip_v4
                 'SELECT
+                    s.id AS server_id,
+                    s.node_id,
                     s.uuidShort AS uuid_short,
                     s.uuid,
                     s.name,
@@ -294,6 +298,8 @@ class PlayerStatusService
                 LIMIT 1',
                 // Without public_ip_v4
                 'SELECT
+                    s.id AS server_id,
+                    s.node_id,
                     s.uuidShort AS uuid_short,
                     s.uuid,
                     s.name,
@@ -313,6 +319,8 @@ class PlayerStatusService
                 LIMIT 1',
                 // Without gamedig_type and public_ip_v4
                 'SELECT
+                    s.id AS server_id,
+                    s.node_id,
                     s.uuidShort AS uuid_short,
                     s.uuid,
                     s.name,
@@ -347,6 +355,8 @@ class PlayerStatusService
             }
 
             return [
+                'server_id' => (int) $row['server_id'],
+                'node_id' => (int) $row['node_id'],
                 'uuid_short' => $row['uuid_short'],
                 'uuid' => $row['uuid'],
                 'name' => $row['name'],
@@ -373,6 +383,136 @@ class PlayerStatusService
 
             return null;
         }
+    }
+
+
+    /**
+     * Query an ARK: Survival Ascended server via RCON "ListPlayers" through the
+     * Wings container exec API.
+     *
+     * ASA exposes no A2S-compatible query socket (the Windows dedicated server
+     * uses Epic Online Services instead of the Steam query protocol), so GameQ
+     * can never reach it. Executing RCON inside the container is the only
+     * reliable source of player data.
+     *
+     * @param array $server Server array (requires server_id, node_id, uuid keys)
+     *
+     * @return array|null Normalized response like GameServerQuery::normalizeResponse
+     */
+    private static function queryArkAscended(array $server): ?array
+    {
+        $serverId = (int) ($server['server_id'] ?? 0);
+        $nodeId = (int) ($server['node_id'] ?? 0);
+        $serverUuid = (string) ($server['uuid'] ?? '');
+
+        if ($serverId <= 0 || $nodeId <= 0 || $serverUuid === '') {
+            return null;
+        }
+
+        $node = Node::getNodeById($nodeId);
+        if (!$node) {
+            return null;
+        }
+
+        $vars = self::getServerVariables($serverId);
+        $rconPort = (int) ($vars['RCON_PORT'] ?? 27020);
+        $rconPassword = (string) ($vars['ARK_ADMIN_PASSWORD'] ?? '');
+        $maxPlayers = (int) ($vars['MAX_PLAYERS'] ?? 0);
+        $sessionName = (string) ($vars['SESSION_NAME'] ?? '');
+
+        if ($rconPort <= 0 || $rconPassword === '') {
+            return null;
+        }
+
+        $command = sprintf('rcon -t rcon -a 127.0.0.1:%d -p "$ARK_ADMIN_PASSWORD" ListPlayers', $rconPort);
+
+        try {
+            $wings = new Wings(
+                $node['fqdn'],
+                $node['daemonListen'],
+                $node['scheme'],
+                $node['daemon_token'],
+                30,
+                WingsUrlHelper::isBehindProxy($node)
+            );
+
+            $response = $wings->getServer()->execInContainer($serverUuid, $command, 15);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        if (!$response->isSuccessful()) {
+            return null;
+        }
+
+        $data = $response->getData();
+        if (!is_array($data) || ($data['timed_out'] ?? false) === true || (int) ($data['exit_code'] ?? 1) !== 0) {
+            return null;
+        }
+
+        $stdout = (string) ($data['stdout'] ?? '');
+
+        // "No Players Connected" means a reachable but empty server
+        if (stripos($stdout, 'No Players Connected') !== false) {
+            return self::buildArksaResult(0, $maxPlayers, [], $sessionName);
+        }
+
+        // ASA prints one line per player: "0. PlayerName, <eos-id>"
+        $players = [];
+        if (preg_match_all('/^\s*\d+\.\s+(.+?)(?:,|\s*$)/m', $stdout, $matches)) {
+            foreach ($matches[1] as $name) {
+                $name = trim($name);
+                if ($name !== '') {
+                    $players[] = $name;
+                }
+            }
+        }
+
+        if (empty($players)) {
+            // RCON answered but produced no parseable player lines; do not invent data
+            return null;
+        }
+
+        return self::buildArksaResult(count($players), $maxPlayers, $players, $sessionName);
+    }
+
+    /**
+     * Fetch a server's environment variables keyed by env_variable name.
+     *
+     * @return array<string, string>
+     */
+    private static function getServerVariables(int $serverId): array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare(
+            'SELECT spv.env_variable, sv.variable_value
+            FROM featherpanel_server_variables sv
+            INNER JOIN featherpanel_spell_variables spv ON spv.id = sv.variable_id
+            WHERE sv.server_id = :server_id'
+        );
+        $stmt->execute(['server_id' => $serverId]);
+
+        $vars = [];
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $vars[$row['env_variable']] = (string) $row['variable_value'];
+        }
+
+        return $vars;
+    }
+
+    /**
+     * Normalize an ASA RCON result into the same shape GameServerQuery returns.
+     */
+    private static function buildArksaResult(int $playerCount, int $maxPlayers, array $players, string $name): array
+    {
+        return [
+            'name' => $name,
+            'map' => '',
+            'max_players' => $maxPlayers,
+            'player_count' => $playerCount,
+            'players' => $players,
+            'connect' => '',
+        ];
     }
 
     /**
