@@ -61,12 +61,20 @@ const CODE_FIELD: Record<string, Field> = {
 // Same limits as the backend (UsersController::create).
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,32}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASSWORD_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#%*-_';
+// Letters and digits without look-alikes (I, O, l, 0, 1), plus a few symbols that are safe to paste.
+const LOOKALIKES = new Set(['I', 'O', 'l', '0', '1']);
+const charRange = (from: string, to: string) =>
+    Array.from({ length: to.charCodeAt(0) - from.charCodeAt(0) + 1 }, (_, i) =>
+        String.fromCharCode(from.charCodeAt(0) + i),
+    );
+const GENERATOR_CHARS = [...charRange('A', 'Z'), ...charRange('a', 'z'), ...charRange('0', '9')]
+    .filter((c) => !LOOKALIKES.has(c))
+    .concat(['!', '@', '#', '%', '*', '-', '_']);
 
 function generatePassword(length = 16): string {
     const bytes = new Uint32Array(length);
     crypto.getRandomValues(bytes);
-    return Array.from(bytes, (b) => PASSWORD_ALPHABET[b % PASSWORD_ALPHABET.length]).join('');
+    return Array.from(bytes, (b) => GENERATOR_CHARS[b % GENERATOR_CHARS.length]).join('');
 }
 
 /** "jane.doe+test@x.io" -> "jane_doe_test", trimmed to the backend's 32 characters. */
