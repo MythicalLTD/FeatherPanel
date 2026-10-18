@@ -475,11 +475,11 @@ ENV REDIS_PASSWORD=featherpanel_redis
 ENV MARIADB_ROOT_PASSWORD=featherpanel_root
 ENV PANEL_DOCKER_DEPLOYMENT=true
 ENV TRUST_PROXY_HEADERS=true
-# FrankenPHP tuning (see backend/Caddyfile). Worker mode is opt-in.
+# FrankenPHP tuning (see backend/Caddyfile). Worker mode is the default; FRANKENPHP_WORKER=false for classic.
 ENV PHP_MEMORY_LIMIT=512M \
     FRANKENPHP_MAX_THREADS=auto \
     FRANKENPHP_MAX_WAIT_TIME=30s \
-    FEATHERPANEL_WORKER_MODE=false \
+    FRANKENPHP_WORKER=true \
     FEATHERPANEL_WORKER_MAX_REQUESTS=1000
 
 # MariaDB init
@@ -760,7 +760,7 @@ RS1
 fi
 
 if [ "${ENABLE_BACKEND:-true}" = "true" ]; then
-# PHP mode (FEATHERPANEL_WORKER_MODE) and worker pool sizes, shared with backend/init.sh
+# PHP mode (FRANKENPHP_WORKER, default true) and worker pool sizes, shared with backend/init.sh
 . /etc/caddy/caddy/frankenphp-env.sh
 mkdir -p /var/www/html/storage/caches/runtime && chmod 0777 /var/www/html/storage/caches/runtime
 cat >> "$SUPERVISOR_CONF" <<'SVCFILE'

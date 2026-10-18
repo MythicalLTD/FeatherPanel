@@ -4,6 +4,7 @@
 
 ### Added
 
+- FrankenPHP worker mode is now the default for `/api/*`: the backend boots once per worker and serves requests from memory (about 2x the throughput and half the latency of classic mode in our benchmark). Chatbot streams and downloads run in a separate small pool; phpMyAdmin, webmail and addon PHP files stay classic. Plugin installs/removals and `.env` changes restart the workers automatically. Set `FRANKENPHP_WORKER=false` to go back to classic mode. Also new: `/api/system/health` for container health checks, a bounded web `memory_limit` (`PHP_MEMORY_LIMIT`, default 512M) and FrankenPHP thread limits (`FRANKENPHP_MAX_THREADS`, `FRANKENPHP_MAX_WAIT_TIME`). by @nayskutzu
 - New `user.api_keys.create` role permission: lets a role create personal API keys (including MCP keys) when "Allow users to create API keys" is turned off panel-wide. by @nayskutzu
 - Compact server console: slim page header with address chip, server hero with status, address, uptime and node chips, a full-height console with a single-row toolbar (filters, quick rules, search, auto-scroll, clear, fullscreen) and CPU, memory, disk and network cards with sparklines. by @nayskutzu
 - ClickHouse can now be used as a remote database host, including WebSpace database provisioning, dumps and restores (#255). by @Devority
@@ -42,6 +43,15 @@
 - Size fields no longer keep the old value when you type a number and then pick the unit (typing 12 and choosing GB used to save 5 GB). by @nayskutzu
 - On phones the sidebar opens from the side you picked in Appearance; the right-hand position used to be ignored. by @nayskutzu
 - Startup, server settings, account profile, admin server edit, admin settings and Wings config show a sticky "unsaved changes" bar with Save and Discard, and ask before you leave with unsaved edits. by @nayskutzu
+
+### Notes for plugin authors (FrankenPHP worker mode)
+
+With worker mode on by default, one PHP process now serves many requests, so a plugin must not assume a fresh process per request:
+
+- Avoid static or global per-request state (caches keyed by the current user, request flags, counters). Keep it in the request, or reset it with `App\Runtime\RequestLifecycle::onReset('vendor.plugin', fn () => ...)`, which runs before every request.
+- Don't call `exit` / `die` in routes, controllers or event listeners; return a `Response` instead. `exit` ends the worker and fails the request.
+- Use `App\Runtime\RequestContext::id()` / `startTime()` instead of the `REQUEST_ID` / `APP_START` constants (now deprecated: in a worker they hold the boot values), and `App::getInstance(true)->isRedisEnabled()` instead of `REDIS_ENABLED`.
+- To opt out while a plugin is being fixed, set `FRANKENPHP_WORKER=false` on the backend container (or the all-in-one image) and restart it.
 
 ## v1.4.1 STABLE
 

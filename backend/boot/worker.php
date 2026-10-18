@@ -24,8 +24,9 @@ use App\Telemetry\SentryTelemetry;
  * FrankenPHP worker entry point.
  *
  * Boots the application once and then serves requests in a loop
- * (https://frankenphp.dev/docs/worker/). Enabled by FEATHERPANEL_WORKER_MODE=true
- * in the Docker images; public/index.php stays the classic entry point.
+ * (https://frankenphp.dev/docs/worker/). This is the default in the Docker
+ * images; FRANKENPHP_WORKER=false switches back to classic mode, which uses
+ * public/index.php.
  *
  * Between requests the loop collects garbage and exits (FrankenPHP then starts
  * a fresh copy) when:

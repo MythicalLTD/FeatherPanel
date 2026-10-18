@@ -91,12 +91,13 @@ opcache.max_accelerated_files = 20000\n\
 opcache.validate_timestamps = 1\n\
 opcache.revalidate_freq = 2' > /usr/local/etc/php/conf.d/custom.ini
 
-# Web runtime defaults (see the Caddyfile header). FEATHERPANEL_WORKER_MODE=true
-# switches /api/* to the FrankenPHP worker (boot/worker.php).
+# Web runtime defaults (see the Caddyfile header). /api/* is served by the
+# FrankenPHP worker (boot/worker.php); FRANKENPHP_WORKER=false switches back to
+# classic mode.
 ENV PHP_MEMORY_LIMIT=512M \
     FRANKENPHP_MAX_THREADS=auto \
     FRANKENPHP_MAX_WAIT_TIME=30s \
-    FEATHERPANEL_WORKER_MODE=false \
+    FRANKENPHP_WORKER=true \
     FEATHERPANEL_WORKER_MAX_REQUESTS=1000
 
 # Caddy/FrankenPHP configuration (replaces nginx.conf)

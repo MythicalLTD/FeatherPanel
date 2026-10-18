@@ -50,6 +50,8 @@ services:
       # Port exports (set to empty to not expose, or specify different port)
       - EXPORT_HTTP_PORT=${EXPORT_HTTP_PORT:-80}
       - PANEL_DOCKER_DEPLOYMENT=true
+      # FrankenPHP worker mode for /api/* (default); set to false for classic mode
+      - FRANKENPHP_WORKER=${FRANKENPHP_WORKER:-true}
       - TRUST_PROXY_HEADERS=true
       # Shown on container console login banner (optional; else parsed from app_url in .env when present)
       - FEATHERPANEL_APP_URL=${FEATHERPANEL_APP_URL:-}

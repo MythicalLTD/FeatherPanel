@@ -4,7 +4,7 @@
 # Environment (all optional, defaults in braces):
 #   SERVER_NAME                {:80}            listen address (TLS is left to the reverse proxy)
 #   FEATHERPANEL_ROOT          {/var/www/html}  backend directory
-#   FEATHERPANEL_PHP_MODE      {classic}        classic | worker, set by init.sh from FEATHERPANEL_WORKER_MODE
+#   FEATHERPANEL_PHP_MODE      {worker}         worker | classic, set by init.sh from FRANKENPHP_WORKER (false = classic)
 #   PHP_MEMORY_LIMIT           {512M}           memory_limit of web requests (CLI and cron keep their own)
 #   FRANKENPHP_MAX_THREADS     {auto}           upper bound of PHP threads, "auto" sizes it from memory_limit
 #   FRANKENPHP_MAX_WAIT_TIME   {30s}            a request waiting longer for a free thread gets an error
@@ -67,5 +67,5 @@
 
 	# PHP: classic mode (one request per PHP request) or worker mode
 	# (the app stays booted between requests), see caddy/php-*.caddyfile.
-	import caddy/php-{$FEATHERPANEL_PHP_MODE:classic}.caddyfile
+	import caddy/php-{$FEATHERPANEL_PHP_MODE:worker}.caddyfile
 }

@@ -158,7 +158,7 @@ echo ""
 echo "🚀 FeatherPanel Docker is ready to work! 🚀"
 echo ""
 
-# PHP mode (FEATHERPANEL_WORKER_MODE) and worker pool sizes for the Caddyfile.
+# PHP mode (worker by default, FRANKENPHP_WORKER=false for classic) and worker pool sizes.
 . /etc/caddy/caddy/frankenphp-env.sh
 # Worker restart stamps (plugin install/remove, .env changes) live here.
 mkdir -p /var/www/html/storage/caches/runtime

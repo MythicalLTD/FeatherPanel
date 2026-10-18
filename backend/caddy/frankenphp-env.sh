@@ -4,11 +4,12 @@
 # fit into FRANKENPHP_MAX_THREADS. Source it (". frankenphp-env.sh"); it only
 # exports variables and prints one summary line.
 
-# FEATHERPANEL_WORKER_MODE=true serves /api/* from booted FrankenPHP workers;
-# anything else keeps the classic one-request-per-boot mode.
-case "$(printf '%s' "${FEATHERPANEL_WORKER_MODE:-false}" | tr '[:upper:]' '[:lower:]')" in
-true | 1 | yes | on) FEATHERPANEL_PHP_MODE=worker ;;
-*) FEATHERPANEL_PHP_MODE=classic ;;
+# Worker mode is the default: /api/* is served by booted FrankenPHP workers.
+# FRANKENPHP_WORKER=false (or 0/no/off) switches back to classic mode, where
+# every request boots the app.
+case "$(printf '%s' "${FRANKENPHP_WORKER:-true}" | tr '[:upper:]' '[:lower:]')" in
+false | 0 | no | off) FEATHERPANEL_PHP_MODE=classic ;;
+*) FEATHERPANEL_PHP_MODE=worker ;;
 esac
 
 _fp_cpus=$(nproc 2>/dev/null || echo 2)
@@ -43,5 +44,9 @@ if [ "$FEATHERPANEL_PHP_MODE" = worker ]; then
 fi
 
 export FEATHERPANEL_PHP_MODE FEATHERPANEL_WORKERS FEATHERPANEL_SLOW_WORKERS FEATHERPANEL_SLOW_MAX_THREADS
-echo "FrankenPHP: PHP mode ${FEATHERPANEL_PHP_MODE} (FEATHERPANEL_WORKER_MODE=${FEATHERPANEL_WORKER_MODE:-false}, workers ${FEATHERPANEL_WORKERS} api + ${FEATHERPANEL_SLOW_WORKERS} slow, max_threads ${FRANKENPHP_MAX_THREADS:-auto})"
+if [ "$FEATHERPANEL_PHP_MODE" = worker ]; then
+	echo "FrankenPHP: worker mode (FRANKENPHP_WORKER=${FRANKENPHP_WORKER:-true}, workers ${FEATHERPANEL_WORKERS} api + ${FEATHERPANEL_SLOW_WORKERS} slow, max_threads ${FRANKENPHP_MAX_THREADS:-auto})"
+else
+	echo "FrankenPHP: classic mode (FRANKENPHP_WORKER=${FRANKENPHP_WORKER:-true}, max_threads ${FRANKENPHP_MAX_THREADS:-auto})"
+fi
 unset _fp_cpus _fp_max
