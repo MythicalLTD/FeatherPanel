@@ -21,6 +21,7 @@ use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\User\NotificationController;
+use App\Controllers\User\NotificationInboxController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAuthRoute(
@@ -50,5 +51,29 @@ return function (RouteCollection $routes): void {
         ['POST'],
         Rate::perMinute(30), // Default: Admin can override in ratelimit.json
         'user-notifications'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-notifications-inbox',
+        '/api/user/notifications/inbox',
+        function (Request $request) {
+            return (new NotificationInboxController())->index($request);
+        },
+        ['GET'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-notifications-inbox'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-notifications-inbox-read',
+        '/api/user/notifications/inbox/read',
+        function (Request $request) {
+            return (new NotificationInboxController())->markRead($request);
+        },
+        ['POST'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-notifications-inbox-read'
     );
 };

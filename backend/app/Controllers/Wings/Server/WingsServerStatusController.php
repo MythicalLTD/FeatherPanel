@@ -23,6 +23,7 @@ use App\Chat\Server;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Plugins\Events\Events\WingsEvent;
+use App\Services\Notifications\InboxNotifier;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Server\LifecycleHookExecutorService;
@@ -184,6 +185,7 @@ class WingsServerStatusController
         }
 
         if ($state === 'crashed' && $oldState !== 'crashed') {
+            InboxNotifier::serverCrashed($server);
             try {
                 (new LifecycleHookExecutorService())->executeForServerCrash($server, $node);
             } catch (\Throwable $e) {

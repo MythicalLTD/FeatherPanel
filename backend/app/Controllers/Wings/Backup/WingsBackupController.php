@@ -23,6 +23,7 @@ use App\Chat\Server;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Plugins\Events\Events\WingsEvent;
+use App\Services\Notifications\InboxNotifier;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -242,6 +243,11 @@ class WingsBackupController
         // Update the backup
         if (!Backup::updateBackup($backup['id'], $updateData)) {
             return ApiResponse::error('Failed to update backup', 'UPDATE_FAILED', 500);
+        }
+
+        // Only the first report notifies; Wings may retry the callback.
+        if (empty($backup['completed_at'])) {
+            InboxNotifier::backupFinished($backup, $server, (int) ($updateData['is_successful'] ?? 0) === 1);
         }
 
         // Emit event
