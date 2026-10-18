@@ -193,7 +193,10 @@ class TicketsController
         if ($isAdminViewer) {
             $responseData['is_admin_view'] = $isAdminView;
             $responseData['scope'] = $scope;
-            $responseData['open_tickets_count'] = Ticket::getGlobalOpenTicketsCount();
+            // $openOnly implies no user/status filter; without search/category the list
+            // count above is exactly the global open-ticket count.
+            $unfilteredOpen = $openOnly && $searchQuery === null && !$categoryId;
+            $responseData['open_tickets_count'] = $unfilteredOpen ? $total : Ticket::getGlobalOpenTicketsCount();
         }
 
         return ApiResponse::success($responseData, 'Tickets retrieved successfully', 200);
@@ -707,7 +710,9 @@ class TicketsController
 
         // Generate unique filename with sanitized extension
         $sanitizedBase = preg_replace('/[^a-zA-Z0-9._-]/', '_', pathinfo($originalName, PATHINFO_FILENAME));
-        $filename = uniqid() . '_ticket_' . $sanitizedBase . '.' . $originalExtension;
+        // Attachments are served from public/: the name must not be guessable
+        // (uniqid() is just the upload time in microseconds).
+        $filename = bin2hex(random_bytes(16)) . '_ticket_' . $sanitizedBase . '.' . $originalExtension;
         $filePath = $attachmentsDir . $filename;
 
         // Move uploaded file

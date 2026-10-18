@@ -386,9 +386,9 @@ class FeatherZeroTrustController
     public function getCronLogs(Request $request): Response
     {
         try {
-            $page = max(1, (int) $request->query->get('page', 1));
-            $limit = max(1, min(100, (int) $request->query->get('limit', 25)));
-            $status = $request->query->get('status');
+            $page = max(1, (int) self::scalarQuery($request, 'page', 1));
+            $limit = max(1, min(100, (int) self::scalarQuery($request, 'limit', 25)));
+            $status = self::scalarQuery($request, 'status');
             $offset = ($page - 1) * $limit;
 
             $logs = FeatherZeroTrustCronLog::getAll($limit, $offset, $status);
@@ -830,5 +830,15 @@ class FeatherZeroTrustController
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to delete hash: ' . $e->getMessage(), 'DELETE_ERROR', 500);
         }
+    }
+
+    /**
+     * Read a query value as a scalar (arrays such as ?x[]=1 count as absent).
+     */
+    private static function scalarQuery(Request $request, string $key, mixed $default = null): mixed
+    {
+        $value = $request->query->all()[$key] ?? $default;
+
+        return is_scalar($value) ? $value : $default;
     }
 }

@@ -26,7 +26,6 @@ use App\Chat\Activity;
 use App\Chat\MailList;
 use App\Chat\ApiClient;
 use App\Chat\MailQueue;
-use App\Chat\Permission;
 use App\Chat\TicketStatus;
 use App\Chat\TicketMessage;
 use App\Helpers\TimeHelper;
@@ -375,8 +374,8 @@ class SessionController
         if ($user == null) {
             return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
         }
-        $permissions = Permission::getPermissionsByRoleId($user['role_id']);
-        $permissions = array_column($permissions, 'permission');
+        // Same (request-memoised) lookup the permission checks below use.
+        $permissions = PermissionHelper::getPermissionNodesForRole((int) ($user['role_id'] ?? 0));
 
         // Load role information for the current user
         $roleId = $user['role_id'] ?? null;

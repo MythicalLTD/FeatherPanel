@@ -1541,12 +1541,12 @@ class SpellsController
     public function onlineList(Request $request): Response
     {
         try {
-            $q = trim((string) ($request->query->get('q') ?? ''));
-            $page = (int) ($request->query->get('page') ?? 1);
-            $perPage = (int) ($request->query->get('per_page') ?? 20);
-            $category = trim((string) ($request->query->get('category') ?? ''));
-            $channel = trim((string) ($request->query->get('channel') ?? ''));
-            $sort = trim((string) ($request->query->get('sort') ?? ''));
+            $q = trim((string) (self::scalarQuery($request, 'q') ?? ''));
+            $page = (int) (self::scalarQuery($request, 'page') ?? 1);
+            $perPage = (int) (self::scalarQuery($request, 'per_page') ?? 20);
+            $category = trim((string) (self::scalarQuery($request, 'category') ?? ''));
+            $channel = trim((string) (self::scalarQuery($request, 'channel') ?? ''));
+            $sort = trim((string) (self::scalarQuery($request, 'sort') ?? ''));
 
             $mythicResult = $this->tryMythicEggsList($q, $page, $perPage, $category, $channel, $sort);
             if ($mythicResult !== null) {
@@ -2356,5 +2356,15 @@ class SpellsController
         );
 
         return $spellData;
+    }
+
+    /**
+     * Read a query value as a scalar (arrays such as ?x[]=1 count as absent).
+     */
+    private static function scalarQuery(Request $request, string $key, mixed $default = null): mixed
+    {
+        $value = $request->query->all()[$key] ?? $default;
+
+        return is_scalar($value) ? $value : $default;
     }
 }

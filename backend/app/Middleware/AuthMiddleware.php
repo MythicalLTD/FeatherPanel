@@ -131,6 +131,8 @@ class AuthMiddleware implements MiddlewareInterface
         $user = $request->attributes->get('user');
         if (is_array($user) && isset($user['uuid'])) {
             \App\Telemetry\SentryTelemetry::setUser((string) $user['uuid']);
+            // The row was just loaded: permission checks in this request reuse its role.
+            \App\Helpers\PermissionHelper::rememberUser($user);
         }
 
         return $next($request);
