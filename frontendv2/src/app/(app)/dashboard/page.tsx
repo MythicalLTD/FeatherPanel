@@ -126,6 +126,14 @@ interface PlacedWidget {
     node: ReactNode;
 }
 
+/** Stat row columns per visible tile count, so the row always spans the full width. */
+const STAT_GRID: Record<number, string> = {
+    1: 'grid-cols-1',
+    2: 'grid-cols-2',
+    3: 'grid-cols-2 lg:grid-cols-3',
+    4: 'grid-cols-2 lg:grid-cols-4',
+};
+
 export default function DashboardPage() {
     const { t } = useTranslation();
     const { user, isLoading: sessionLoading, hasPermission } = useSession();
@@ -623,9 +631,18 @@ export default function DashboardPage() {
             ))}
         </div>
     ) : statTiles.length > 0 ? (
-        <div className={cn('grid grid-cols-2 lg:grid-cols-4', compact ? 'gap-2' : 'gap-3')}>
-            {statTiles.map(({ key, ...tile }) => (
-                <DashboardStatTile key={key} {...tile} />
+        <div className={cn('grid', STAT_GRID[statTiles.length] ?? STAT_GRID[4], compact ? 'gap-2' : 'gap-3')}>
+            {statTiles.map(({ key, ...tile }, index) => (
+                <div
+                    key={key}
+                    className={cn(
+                        'grid min-w-0',
+                        // An odd tile left over in the two column phone/tablet grid takes the whole row.
+                        statTiles.length % 2 === 1 && index === statTiles.length - 1 && 'col-span-2 lg:col-span-1',
+                    )}
+                >
+                    <DashboardStatTile {...tile} />
+                </div>
             ))}
         </div>
     ) : null;
