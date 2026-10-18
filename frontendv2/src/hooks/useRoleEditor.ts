@@ -24,6 +24,7 @@ import { useSession } from '@/contexts/SessionContext';
 import Permissions from '@/lib/permissions';
 import { pickDefaultRoleColor, slugifyRoleName, type Role, type RoleForm, type RolePermission } from '@/lib/role-utils';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface UseRoleEditorOptions {
     mode: 'create' | 'edit';
@@ -47,6 +48,18 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
     });
     const nameManuallyEdited = useRef(false);
 
+    // On create the color is picked automatically, so it doesn't count as an edit there.
+    const {
+        dirty: unsaved,
+        markClean,
+        restore,
+    } = useFormBaseline<Partial<RoleForm>>(mode === 'create' ? { ...form, color: undefined } : form, {
+        trackFromStart: mode === 'create',
+    });
+    const discardChanges = useCallback(() => {
+        const saved = restore();
+        if (saved) setForm((prev) => ({ ...prev, ...saved, color: saved.color ?? prev.color }));
+    }, [restore]);
     const [rolePermissions, setRolePermissions] = useState<RolePermission[]>([]);
     const [loadingPermissions, setLoadingPermissions] = useState(false);
     const [togglingPermission, setTogglingPermission] = useState<string | null>(null);
@@ -102,6 +115,7 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
                     badge_icon: role.badge_icon ?? '',
                     color: role.color,
                 });
+                markClean();
                 await fetchPermissions(roleId);
             } catch (error) {
                 console.error('Error loading role:', error);
@@ -113,7 +127,7 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
         };
 
         loadRole();
-    }, [mode, roleId, fetchPermissions, router, t]);
+    }, [mode, roleId, fetchPermissions, router, t, markClean]);
 
     const assignedPermissionMap = useMemo(() => {
         const map = new Map<string, number>();
@@ -230,8 +244,8 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
         });
     };
 
-    const handleSaveRole = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSaveRole = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         setIsSubmitting(true);
 
         const payload = {
@@ -253,6 +267,7 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
                 if (user?.role_id === editorRoleId) {
                     await refreshSession();
                 }
+                markClean();
                 toast.success(t('admin.roles.messages.updated'));
             }
         } catch (error: unknown) {
@@ -289,6 +304,8 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
         setActiveTab,
         editorRoleId,
         isSubmitting,
+        unsaved,
+        discardChanges,
         loadingPermissions,
         assignedPermissionMap,
         togglingPermission,

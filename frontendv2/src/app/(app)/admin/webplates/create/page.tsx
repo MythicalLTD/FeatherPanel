@@ -45,6 +45,8 @@ import {
 } from '../types';
 import { WebPlateDefaultSchedulesEditor } from '@/components/webspace/WebPlateDefaultSchedulesEditor';
 import type { WebSpaceScheduleDraft } from '@/lib/webspace-schedules';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export default function CreateWebPlatePage() {
     const { t } = useTranslation();
@@ -53,6 +55,7 @@ export default function CreateWebPlatePage() {
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState('general');
     const [form, setForm] = useState<WebPlateFormState>(emptyWebPlateForm);
+    const { dirty: unsaved, restore: restoreForm } = useFormBaseline(form, { trackFromStart: true });
 
     useEffect(() => {
         fetchWidgets();
@@ -282,6 +285,17 @@ export default function CreateWebPlatePage() {
             </Tabs>
 
             <WidgetRenderer widgets={getWidgets('admin-webplates-create', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleCreate()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+                saveLabel={t('common.create')}
+            />
         </div>
     );
 }

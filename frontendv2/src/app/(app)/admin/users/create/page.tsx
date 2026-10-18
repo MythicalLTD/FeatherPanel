@@ -30,6 +30,8 @@ import { Select } from '@/components/ui/select-native';
 import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface AvailableRole {
     id: string;
@@ -52,6 +54,7 @@ export default function CreateUserPage() {
         password: '',
         role_id: '',
     });
+    const { dirty: unsaved, restore: restoreForm } = useFormBaseline(createForm, { trackFromStart: true });
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-users-create');
 
@@ -91,8 +94,8 @@ export default function CreateUserPage() {
         fetchRoles();
     }, [fetchRoles]);
 
-    const handleCreateUser = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleCreateUser = async (e?: React.FormEvent) => {
+        e?.preventDefault();
 
         if (!createForm.username || !createForm.email || !createForm.password || !createForm.role_id) {
             toast.error(t('admin.users.create.validation'));
@@ -268,6 +271,17 @@ export default function CreateUserPage() {
             </div>
 
             <WidgetRenderer widgets={getWidgets('admin-users-create', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={creating}
+                onSave={() => void handleCreateUser()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setCreateForm(saved);
+                }}
+                saveLabel={t('admin.users.create.submit')}
+            />
         </div>
     );
 }

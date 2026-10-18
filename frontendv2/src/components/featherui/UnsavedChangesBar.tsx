@@ -31,6 +31,8 @@ interface UnsavedChangesBarProps {
     saveDisabled?: boolean;
     /** Optional hint shown instead of the default description (e.g. "Fix the highlighted fields"). */
     description?: string;
+    /** Label for the save button (e.g. "Create" on create pages). */
+    saveLabel?: string;
     className?: string;
 }
 
@@ -45,6 +47,7 @@ export function UnsavedChangesBar({
     saving = false,
     saveDisabled = false,
     description,
+    saveLabel,
     className,
 }: UnsavedChangesBarProps) {
     const { t } = useTranslation();
@@ -91,7 +94,7 @@ export function UnsavedChangesBar({
                         loading={saving}
                     >
                         {!saving && <Save className='mr-2 h-4 w-4' aria-hidden='true' />}
-                        {saving ? t('common.saving') : t('common.saveChanges')}
+                        {saving ? t('common.saving') : (saveLabel ?? t('common.saveChanges'))}
                     </Button>
                 </div>
             </div>

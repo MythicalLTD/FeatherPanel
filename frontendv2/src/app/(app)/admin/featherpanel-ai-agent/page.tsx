@@ -33,6 +33,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { MessageSquare, Settings as SettingsIcon, Sparkles, Zap, Save, AlertCircle, RefreshCw } from 'lucide-react';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 
 export default function FeatherAiAgentPage() {
     const { t } = useTranslation();
@@ -91,6 +92,17 @@ export default function FeatherAiAgentPage() {
         fetchChatbotSettings();
         fetchSystemPrompt();
     }, [fetchChatbotSettings, fetchSystemPrompt, fetchWidgets]);
+
+    // Same comparison as saveSettings: masked or empty passwords are not an edit.
+    const unsaved =
+        !!chatbotSettings &&
+        !!originalSettings &&
+        Object.entries(chatbotSettings).some(([key, setting]) => {
+            const originalSetting = originalSettings[key];
+            if (originalSetting && String(originalSetting.value) === String(setting.value)) return false;
+            if (setting.type === 'password' && (setting.value === '••••••••' || setting.value === '')) return false;
+            return true;
+        });
 
     const saveSettings = async () => {
         if (!chatbotSettings || !originalSettings) return;
@@ -685,6 +697,13 @@ export default function FeatherAiAgentPage() {
             </PageCard>
 
             <WidgetRenderer widgets={getWidgets('admin-ai-agent', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void saveSettings()}
+                onDiscard={() => setChatbotSettings(originalSettings)}
+            />
         </div>
     );
 }

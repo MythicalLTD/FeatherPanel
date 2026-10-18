@@ -36,6 +36,8 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { safeBack } from '@/lib/safe-back';
 import { defaultDaemonBase, supportsDaemonFeature, type DaemonType } from '@/lib/daemonCapabilities';
 import { DaemonTypeField } from '@/components/admin/DaemonTypeField';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface Location {
     id: number;
@@ -92,6 +94,7 @@ export default function CreateNodePage() {
         public_ip_v6: '',
         sftp_subdomain: '',
     });
+    const { dirty: unsaved, restore: restoreForm } = useFormBaseline(form, { trackFromStart: true });
 
     const [daemonTypeConfirmed, setDaemonTypeConfirmed] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -211,8 +214,8 @@ export default function CreateNodePage() {
         return Object.keys(newErrors).length === 0;
     }, [form, daemonTypeConfirmed, t]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         if (!validate()) return;
 
         setLoading(true);
@@ -928,6 +931,17 @@ export default function CreateNodePage() {
             </Sheet>
 
             <WidgetRenderer widgets={getWidgets('admin-nodes-create', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={loading}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+                saveLabel={t('common.create')}
+            />
         </div>
     );
 }

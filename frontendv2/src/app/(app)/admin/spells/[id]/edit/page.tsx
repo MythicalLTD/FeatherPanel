@@ -52,6 +52,8 @@ import { SpellInheritanceField } from '@/components/admin/SpellInheritanceField'
 import { SpellConfigField } from '@/components/admin/SpellConfigField';
 import { spellConfigPayload, spellConfigText } from '@/lib/spellConfig';
 import { isEnabled } from '@/lib/utils';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface Variable {
     id: number;
@@ -119,6 +121,11 @@ export default function EditSpellPage() {
     const [defaultDockerImage, setDefaultDockerImage] = useState('');
     const [features, setFeatures] = useState<string[]>([]);
     const [inheritFeatures, setInheritFeatures] = useState(false);
+    const {
+        dirty: unsaved,
+        markClean,
+        restore: restoreSaved,
+    } = useFormBaseline({ form, dockerImages, defaultDockerImage, features, inheritFeatures });
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-spells-edit');
 
@@ -181,12 +188,13 @@ export default function EditSpellPage() {
                 toast.error(getApiErrorMessage(error, t, 'admin.spells.messages.fetch_failed'));
                 router.push('/admin/spells');
             } finally {
+                markClean();
                 setLoading(false);
             }
         };
 
         fetchSpell();
-    }, [spellId, router, t]);
+    }, [spellId, router, t, markClean]);
 
     useEffect(() => {
         const fetchVariables = async () => {
@@ -1108,6 +1116,21 @@ export default function EditSpellPage() {
             </Tabs>
 
             <WidgetRenderer widgets={getWidgets('admin-spells-edit', 'bottom-of-page')} context={{ id: spellId }} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleSave()}
+                onDiscard={() => {
+                    const saved = restoreSaved();
+                    if (!saved) return;
+                    setForm(saved.form);
+                    setDockerImages(saved.dockerImages);
+                    setDefaultDockerImage(saved.defaultDockerImage);
+                    setFeatures(saved.features);
+                    setInheritFeatures(saved.inheritFeatures);
+                }}
+            />
         </div>
     );
 }

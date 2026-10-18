@@ -81,6 +81,8 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 import { RoleBadge } from '@/components/RoleBadge';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface UserRole {
     name: string;
@@ -247,6 +249,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
         password: '',
         webspace_limit: '0',
     });
+    const { dirty: unsaved, commit: commitForm, restore: restoreForm } = useFormBaseline(editForm);
 
     const fetchUser = async () => {
         setLoading(true);
@@ -277,7 +280,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 console.error('Failed to fetch roles', e);
             }
 
-            setEditForm({
+            const loadedForm: EditForm = {
                 username: apiUser.username || '',
                 first_name: apiUser.first_name || '',
                 last_name: apiUser.last_name || '',
@@ -289,7 +292,9 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         : undefined,
                 password: '',
                 webspace_limit: String(apiUser.webspace_limit ?? 0),
-            });
+            };
+            setEditForm(loadedForm);
+            commitForm(loadedForm);
 
             try {
                 const serversRes = await axios.get(`/api/admin/users/${resolvedParams.uuid}/servers`, {
@@ -362,8 +367,8 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         if (!user) return;
 
         setSubmitting(true);
@@ -1801,6 +1806,16 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             </AlertDialog>
 
             <WidgetRenderer widgets={getWidgets('admin-users-edit', 'bottom-of-page')} context={widgetContext} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={submitting}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setEditForm(saved);
+                }}
+            />
         </div>
     );
 }

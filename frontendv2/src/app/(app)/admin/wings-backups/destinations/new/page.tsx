@@ -30,15 +30,18 @@ import {
     buildDestinationPayload,
     emptyDestinationForm,
 } from '@/components/admin/wings-backups/DestinationFormFields';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export default function NewWingsBackupDestinationPage() {
     const { t } = useTranslation();
     const router = useRouter();
     const [form, setForm] = React.useState(emptyDestinationForm);
+    const { dirty: unsaved, restore: restoreForm } = useFormBaseline(form, { trackFromStart: true });
     const [saving, setSaving] = React.useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         if (!form.name.trim()) {
             toast.error(t('adminWingsBackups.nameRequired'));
             return;
@@ -79,6 +82,17 @@ export default function NewWingsBackupDestinationPage() {
                     </Button>
                 </div>
             </form>
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+                saveLabel={t('common.create')}
+            />
         </div>
     );
 }
