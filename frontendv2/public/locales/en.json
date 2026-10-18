@@ -2207,7 +2207,7 @@
 			"userPermissions": "User",
 			"serverPermissions": "Server",
 			"errorTitle": "Cannot continue",
-			"permissionsNote": "This VS Code API key is scoped to the permissions listed below.",
+			"permissionsNote": "This VS Code API key grants full access to your FeatherPanel account. The permissions below are what the extension requests, not a hard limit.",
 			"approve": "Authorize",
 			"deny": "Deny",
 			"denied": "Authorization denied",
