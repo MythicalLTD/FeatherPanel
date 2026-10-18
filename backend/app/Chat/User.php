@@ -376,6 +376,9 @@ class User
      */
     public static function updateUser(string $uuid, array $data): bool
     {
+        if (array_key_exists('role_id', $data)) {
+            \App\Helpers\PermissionHelper::forgetUser($uuid);
+        }
         try {
             if (empty($data)) {
                 App::getInstance(true)->getLogger()->error('No data to update');

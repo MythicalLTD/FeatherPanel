@@ -34,6 +34,14 @@ class PermissionHelper
      * @var array<int, list<string>> permission nodes keyed by role_id
      */
     private static array $rolePermissionCache = [];
+
+    /**
+     * role_id per user UUID for the current request (seeded with the
+     * authenticated user, so permission checks do not reload that row).
+     *
+     * @var array<string, int>
+     */
+    private static array $userRoleCache = [];
     private static int $cacheGeneration = -1;
 
     /**
@@ -43,12 +51,12 @@ class PermissionHelper
      */
     public static function hasPermission(string $userUuid, string $permission, ?array $user = null): bool
     {
-        $user = $user ?? User::getUserByUuid($userUuid);
-        if (!$user || !isset($user['role_id'])) {
+        $roleId = self::roleIdFor($userUuid, $user);
+        if ($roleId === null) {
             return false;
         }
 
-        $permissionNodes = self::getPermissionNodesForRole((int) $user['role_id']);
+        $permissionNodes = self::getPermissionNodesForRole($roleId);
 
         // Root permission always grants access
         if (in_array('admin.root', $permissionNodes, true)) {
@@ -56,6 +64,26 @@ class PermissionHelper
         }
 
         return in_array($permission, $permissionNodes, true);
+    }
+
+    /**
+     * Remember the authenticated user's role for this request (AuthMiddleware).
+     */
+    public static function rememberUser(array $user): void
+    {
+        if (!isset($user['uuid'], $user['role_id']) || !is_numeric($user['role_id'])) {
+            return;
+        }
+        self::ensureCurrentGeneration();
+        self::$userRoleCache[(string) $user['uuid']] = (int) $user['role_id'];
+    }
+
+    /**
+     * Forget a user's memoised role (call after changing role_id).
+     */
+    public static function forgetUser(string $userUuid): void
+    {
+        unset(self::$userRoleCache[$userUuid]);
     }
 
     /**
@@ -67,9 +95,7 @@ class PermissionHelper
             return [];
         }
 
-        if (self::$cacheGeneration !== RequestContext::generation()) {
-            self::resetRequestCache();
-        }
+        self::ensureCurrentGeneration();
 
         if (isset(self::$rolePermissionCache[$roleId])) {
             return self::$rolePermissionCache[$roleId];
@@ -99,6 +125,7 @@ class PermissionHelper
     public static function resetRequestCache(): void
     {
         self::$rolePermissionCache = [];
+        self::$userRoleCache = [];
         self::$cacheGeneration = RequestContext::generation();
     }
 
@@ -109,5 +136,31 @@ class PermissionHelper
     {
         unset(self::$rolePermissionCache[$roleId]);
         Cache::forget('role_permissions:' . $roleId);
+    }
+
+    private static function ensureCurrentGeneration(): void
+    {
+        if (self::$cacheGeneration !== RequestContext::generation()) {
+            self::resetRequestCache();
+        }
+    }
+
+    private static function roleIdFor(string $userUuid, ?array $user): ?int
+    {
+        if ($user !== null) {
+            return isset($user['role_id']) && is_numeric($user['role_id']) ? (int) $user['role_id'] : null;
+        }
+
+        self::ensureCurrentGeneration();
+        if (isset(self::$userRoleCache[$userUuid])) {
+            return self::$userRoleCache[$userUuid];
+        }
+
+        $user = User::getUserByUuid($userUuid);
+        if (!$user || !isset($user['role_id']) || !is_numeric($user['role_id'])) {
+            return null;
+        }
+
+        return self::$userRoleCache[$userUuid] = (int) $user['role_id'];
     }
 }

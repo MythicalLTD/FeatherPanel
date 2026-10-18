@@ -193,7 +193,10 @@ class TicketsController
         if ($isAdminViewer) {
             $responseData['is_admin_view'] = $isAdminView;
             $responseData['scope'] = $scope;
-            $responseData['open_tickets_count'] = Ticket::getGlobalOpenTicketsCount();
+            // $openOnly implies no user/status filter; without search/category the list
+            // count above is exactly the global open-ticket count.
+            $unfilteredOpen = $openOnly && $searchQuery === null && !$categoryId;
+            $responseData['open_tickets_count'] = $unfilteredOpen ? $total : Ticket::getGlobalOpenTicketsCount();
         }
 
         return ApiResponse::success($responseData, 'Tickets retrieved successfully', 200);
