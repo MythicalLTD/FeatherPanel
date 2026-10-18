@@ -19,9 +19,11 @@ namespace App\Middleware;
 
 use App\App;
 use RateLimit\Rate;
+use App\Permissions;
 use App\Helpers\ApiResponse;
 use RateLimit\RedisRateLimiter;
 use App\Helpers\FileRateLimiter;
+use App\Helpers\PermissionHelper;
 use App\CloudFlare\CloudFlareRealIP;
 use RateLimit\Exception\LimitExceeded;
 use Symfony\Component\HttpFoundation\Request;
@@ -65,6 +67,13 @@ class RateLimitMiddleware implements MiddlewareInterface
             return $next($request);
         }
 
+        // Authenticated users whose role has `admin.api.bypass_restrictions`
+        // are exempt from per-route limits (auth middleware runs first on
+        // authenticated routes). Everyone else keeps the configured limits.
+        if (self::bypassesRateLimits($request)) {
+            return $next($request);
+        }
+
         // Without a reachable Redis the counter used to be skipped entirely,
         // which left login/2FA/reset limits inactive during a Redis outage.
         // The file-backed limiter keeps those counters working instead.
@@ -97,6 +106,20 @@ class RateLimitMiddleware implements MiddlewareInterface
         }
 
         return $next($request);
+    }
+
+    private static function bypassesRateLimits(Request $request): bool
+    {
+        $user = $request->attributes->get('user');
+        if (!is_array($user) || !isset($user['uuid'])) {
+            return false;
+        }
+
+        try {
+            return PermissionHelper::hasPermission((string) $user['uuid'], Permissions::ADMIN_API_BYPASS_RESTRICTIONS, $user);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**

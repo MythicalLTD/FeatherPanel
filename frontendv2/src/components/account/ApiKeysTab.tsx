@@ -25,7 +25,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
-import { copyToClipboard } from '@/lib/utils';
+import { copyToClipboard, isEnabledUnlessExplicitlyFalse } from '@/lib/utils';
+import Permissions from '@/lib/permissions';
 import { Key, Plus, Trash2, Eye, Pencil, RefreshCw, Copy, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -68,7 +69,11 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
     const [notifyForeignIp, setNotifyForeignIp] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
-    const canCreateApiKeys = settings?.user_allow_api_keys_create || hasPermission('admin.api.bypass_restrictions');
+    // Settings arrive as 'true' / 'false' strings, so a plain truthy check never hid the button.
+    // Creation is on unless disabled panel-wide; roles with user.api_keys.create can still create keys.
+    const canCreateApiKeys =
+        isEnabledUnlessExplicitlyFalse(settings?.user_allow_api_keys_create) ||
+        hasPermission(Permissions.USER_API_KEYS_CREATE);
 
     const fetchClients = useCallback(async () => {
         setLoading(true);

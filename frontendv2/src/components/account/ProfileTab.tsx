@@ -28,7 +28,7 @@ import { Textarea } from '@/components/featherui/Textarea';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Captcha } from '@/components/Captcha';
-import { cn, isEnabled } from '@/lib/utils';
+import { cn, isEnabled, isEnabledUnlessExplicitlyFalse } from '@/lib/utils';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface FormData {
@@ -63,11 +63,11 @@ export default function ProfileTab() {
     const [turnstileToken, setTurnstileToken] = useState('');
     const [turnstileKey, setTurnstileKey] = useState(0);
 
-    const allowAvatarChange = settings?.user_allow_avatar_change ?? true;
-    const allowUsernameChange = settings?.user_allow_username_change ?? true;
-    const allowEmailChange = settings?.user_allow_email_change ?? true;
-    const allowFirstNameChange = settings?.user_allow_first_name_change ?? true;
-    const allowLastNameChange = settings?.user_allow_last_name_change ?? true;
+    const allowAvatarChange = isEnabledUnlessExplicitlyFalse(settings?.user_allow_avatar_change);
+    const allowUsernameChange = isEnabledUnlessExplicitlyFalse(settings?.user_allow_username_change);
+    const allowEmailChange = isEnabledUnlessExplicitlyFalse(settings?.user_allow_email_change);
+    const allowFirstNameChange = isEnabledUnlessExplicitlyFalse(settings?.user_allow_first_name_change);
+    const allowLastNameChange = isEnabledUnlessExplicitlyFalse(settings?.user_allow_last_name_change);
 
     useEffect(() => {
         if (user) {
