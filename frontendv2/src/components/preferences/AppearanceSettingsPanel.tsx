@@ -155,6 +155,7 @@ function SegmentButton({
     return (
         <button
             type='button'
+            aria-pressed={active}
             disabled={disabled}
             onClick={onClick}
             className={cn(

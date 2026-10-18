@@ -552,7 +552,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         if (next !== density) reportPanelInteraction('panel.preference.change', 'density');
         setDensityState(next);
         applyUiDensity(next);
-        localStorage.setItem('uiDensity', next);
+        try {
+            localStorage.setItem('uiDensity', next);
+        } catch {
+            // Storage full or blocked (private mode): keep the choice for this session only.
+        }
     };
 
     const setUiScale = (next: UiScale) => {
@@ -560,7 +564,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         if (next !== uiScale) reportPanelInteraction('panel.preference.change', 'ui-scale');
         setUiScaleState(next);
         applyUiScale(next);
-        localStorage.setItem('uiScale', next);
+        try {
+            localStorage.setItem('uiScale', next);
+        } catch {
+            // Storage full or blocked (private mode): keep the choice for this session only.
+        }
     };
 
     const setFontFamily = (font: FontFamily) => {

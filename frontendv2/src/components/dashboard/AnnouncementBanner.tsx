@@ -20,11 +20,24 @@ import { useNotifications } from '@/contexts/NotificationContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import type { Notification } from '@/types/notification';
 import { cn } from '@/lib/utils';
-import dynamic from 'next/dynamic';
+import { Suspense, lazy } from 'react';
+import { ChunkErrorBoundary } from '@/components/common/ChunkErrorBoundary';
 
 // Markdown renderer is only needed when an announcement is actually shown; keep it out of the
-// dashboard and server layout bundles.
-const ReactMarkdown = dynamic(() => import('react-markdown'));
+// dashboard and server layout bundles. Until it loads (or if the chunk fails) the raw text is
+// shown, so an announcement never appears without its message.
+const ReactMarkdown = lazy(() => import('react-markdown'));
+
+function AnnouncementMessage({ markdown }: { markdown: string }) {
+    const plain = <p className='whitespace-pre-line'>{markdown}</p>;
+    return (
+        <ChunkErrorBoundary fallback={() => plain}>
+            <Suspense fallback={plain}>
+                <ReactMarkdown>{markdown}</ReactMarkdown>
+            </Suspense>
+        </ChunkErrorBoundary>
+    );
+}
 
 export function AnnouncementBanner({ serverId }: { serverId?: number | null } = {}) {
     const { notifications, dismissNotification } = useNotifications();
@@ -88,7 +101,7 @@ export function AnnouncementBanner({ serverId }: { serverId?: number | null } = 
                                     </h3>
                                 </div>
                                 <div className='prose prose-sm dark:prose-invert prose-p:my-0 prose-headings:my-1 prose-a:text-inherit prose-a:underline max-w-none pl-7 text-sm opacity-90'>
-                                    <ReactMarkdown>{notification.message_markdown}</ReactMarkdown>
+                                    <AnnouncementMessage markdown={notification.message_markdown} />
                                 </div>
                             </div>
 

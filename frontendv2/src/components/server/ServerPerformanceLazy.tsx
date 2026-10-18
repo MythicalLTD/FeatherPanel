@@ -15,13 +15,27 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import dynamic from 'next/dynamic';
+import React, { Suspense, lazy, useCallback, useState } from 'react';
+import type ServerPerformanceComponent from '@/components/server/ServerPerformance';
+import { ChunkErrorBoundary } from '@/components/common/ChunkErrorBoundary';
+import { useTranslation } from '@/contexts/TranslationContext';
+import { cn } from '@/lib/utils';
+
+type ServerPerformanceProps = React.ComponentProps<typeof ServerPerformanceComponent>;
+
+const loadServerPerformance = () => import('@/components/server/ServerPerformance');
 
 /** Same footprint as the real chart grid so the console does not jump when recharts arrives. */
-function ServerPerformanceSkeleton() {
+function ServerPerformanceSkeleton({ count }: { count: number }) {
     return (
-        <div className='grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5' aria-hidden>
-            {Array.from({ length: 5 }).map((_, i) => (
+        <div
+            className={cn(
+                'grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3',
+                count >= 5 ? 'xl:grid-cols-5' : 'xl:grid-cols-4',
+            )}
+            aria-hidden
+        >
+            {Array.from({ length: count }).map((_, i) => (
                 <div
                     key={i}
                     className='border-border/50 bg-card/50 min-w-0 rounded-xl border p-4 backdrop-blur-xl sm:p-5'
@@ -42,11 +56,39 @@ function ServerPerformanceSkeleton() {
 
 /**
  * Lazy-loaded performance charts: recharts is only fetched when a console actually shows
- * the graphs, keeping it out of the initial server/webspace console bundle.
+ * the graphs, keeping it out of the initial server/webspace console bundle. A failed chunk
+ * request shows a retry action instead of an endless skeleton.
  */
-const ServerPerformance = dynamic(() => import('@/components/server/ServerPerformance'), {
-    ssr: false,
-    loading: () => <ServerPerformanceSkeleton />,
-});
+export default function ServerPerformance(props: ServerPerformanceProps) {
+    const { t } = useTranslation();
+    // A fresh lazy() per retry so a rejected import is attempted again.
+    const [LazyCharts, setLazyCharts] = useState(() => lazy(loadServerPerformance));
+    const chartCount = props.showDiskIo === false ? 4 : 5;
 
-export default ServerPerformance;
+    const renderFailure = useCallback(
+        (retry: () => void) => (
+            <div className='border-border/50 bg-card/50 text-muted-foreground flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 text-sm'>
+                <span>{t('common.error')}</span>
+                <button
+                    type='button'
+                    onClick={() => {
+                        setLazyCharts(() => lazy(loadServerPerformance));
+                        retry();
+                    }}
+                    className='border-border hover:bg-muted text-foreground min-h-10 rounded-lg border px-3 py-1.5 font-medium'
+                >
+                    {t('common.retry')}
+                </button>
+            </div>
+        ),
+        [t],
+    );
+
+    return (
+        <ChunkErrorBoundary fallback={renderFailure}>
+            <Suspense fallback={<ServerPerformanceSkeleton count={chartCount} />}>
+                <LazyCharts {...props} />
+            </Suspense>
+        </ChunkErrorBoundary>
+    );
+}
