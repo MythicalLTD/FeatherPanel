@@ -2989,7 +2989,22 @@
 			"none": "Off",
 			"noneHint": "Instant layout changes with no animation."
 		},
-		"quick_links": {}
+		"quick_links": {},
+		"density": {
+			"title": "Density",
+			"hint": "How much breathing room the panel uses. Compact fits more on screen, spacious is easier to tap.",
+			"compact": "Compact",
+			"comfortable": "Comfortable",
+			"spacious": "Spacious"
+		},
+		"uiScale": {
+			"title": "Text size",
+			"hint": "Scales text and controls across the whole panel, independent of your browser zoom.",
+			"sm": "Small",
+			"md": "Default",
+			"lg": "Large",
+			"xl": "Extra large"
+		}
 	},
 	"privacy": {
 		"title": "Privacy",
