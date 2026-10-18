@@ -808,7 +808,7 @@ export default function SettingsTab() {
                                 <p className='text-muted-foreground mt-1 text-sm'>
                                     {t('account.twoFactor.description')}
                                 </p>
-                                {user?.two_fa_enabled === '1' && (
+                                {user?.two_fa_enabled === 'true' && (
                                     <div className='mt-3 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-950'>
                                         <div className='flex items-center gap-2'>
                                             <Check className='h-4 w-4 text-green-600 dark:text-green-400' />
@@ -820,7 +820,7 @@ export default function SettingsTab() {
                                 )}
                             </div>
                             <div className='flex shrink-0 gap-2'>
-                                {user?.two_fa_enabled !== '1' ? (
+                                {user?.two_fa_enabled !== 'true' ? (
                                     <Button
                                         variant='default'
                                         size='sm'
