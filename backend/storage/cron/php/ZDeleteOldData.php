@@ -17,20 +17,20 @@
 
 namespace App\Cron;
 
-/**
- * DeleteOldData - Cron task for cleaning up old data.
- *
- * This cron job runs every minute and handles:
- * - Deleting old/expired/used SSO tokens
- * - Hard deleting soft-deleted mail templates
- */
-
 use App\App;
 use App\Chat\SsoToken;
 use App\Chat\MailTemplate;
 use App\Chat\UserNotification;
 use App\Cli\Utils\MinecraftColorCodeSupport;
 
+/**
+ * DeleteOldData - Cron task for cleaning up old data.
+ *
+ * This cron job runs every minute and handles:
+ * - Deleting old/expired/used SSO tokens
+ * - Hard deleting soft-deleted mail templates
+ * - Pruning old user inbox notifications
+ */
 class ZDeleteOldData implements TimeTask
 {
     /**

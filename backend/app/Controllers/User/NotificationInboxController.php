@@ -177,7 +177,9 @@ class NotificationInboxController
     {
         $text = preg_replace('/!\[[^\]]*\]\([^)]*\)/', '', $markdown) ?? $markdown;
         $text = preg_replace('/\[([^\]]*)\]\([^)]*\)/', '$1', $text) ?? $text;
-        $text = preg_replace('/[#>*_`~|-]+/', ' ', $text) ?? $text;
+        // Markdown markers only: line prefixes (headings, quotes, list bullets) and emphasis runs.
+        $text = preg_replace('/^\s*(?:#{1,6}|>|[-*+]|\d+\.)\s+/m', '', $text) ?? $text;
+        $text = preg_replace('/(\*\*|__|~~|`+|\*|\|)/', '', $text) ?? $text;
         $text = trim(preg_replace('/\s+/', ' ', $text) ?? $text);
 
         return mb_strlen($text) > 180 ? rtrim(mb_substr($text, 0, 177)) . '...' : $text;
