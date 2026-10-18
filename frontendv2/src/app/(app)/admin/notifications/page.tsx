@@ -38,7 +38,7 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -107,7 +107,7 @@ export default function NotificationsPage() {
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-notifications');
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         NOTIFICATIONS_LIST_FILTERS_KEY,
         NOTIFICATIONS_LIST_FILTERS_DEFAULTS,
     );
@@ -477,10 +477,10 @@ export default function NotificationsPage() {
             {loading ? (
                 <TableSkeleton count={3} />
             ) : notifications.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={Bell}
-                    title={t('admin.notifications.no_results')}
-                    description={t('admin.notifications.search_placeholder')}
+                    title={t('emptyStates.announcements.title')}
+                    description={t('emptyStates.announcements.description')}
                     action={
                         <Button
                             onClick={() => {
@@ -491,6 +491,8 @@ export default function NotificationsPage() {
                             {t('admin.notifications.create')}
                         </Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-4'>

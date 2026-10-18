@@ -35,7 +35,7 @@ import {
     Pencil,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -73,7 +73,7 @@ export default function RolesPage() {
     const [roles, setRoles] = useState<Role[]>([]);
     const [permissionCounts, setPermissionCounts] = useState<Record<number, number>>({});
     const [loading, setLoading] = useState(true);
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         ROLES_LIST_FILTERS_KEY,
         ROLES_LIST_FILTERS_DEFAULTS,
     );
@@ -287,13 +287,15 @@ export default function RolesPage() {
             {loading ? (
                 <TableSkeleton count={6} />
             ) : roles.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={Shield}
-                    title={t('admin.roles.no_results')}
-                    description={t('admin.roles.search_placeholder')}
+                    title={t('emptyStates.roles.title')}
+                    description={t('emptyStates.roles.description')}
                     action={
                         <Button onClick={() => router.push('/admin/roles/create')}>{t('admin.roles.create')}</Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3'>

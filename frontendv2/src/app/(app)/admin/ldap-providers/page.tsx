@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
-import { Server, User, Lock, Mail, Hash, Users, Shield, Network, Database } from 'lucide-react';
+import { Server, User, Lock, Mail, Hash, Users, Shield, Network, Database, KeyRound, Plus } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -28,6 +28,7 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 
 interface LdapProvider {
     uuid: string;
@@ -237,9 +238,18 @@ export default function LdapProvidersPage() {
                     {loading ? (
                         <div className='text-muted-foreground py-8 text-center'>{t('admin.ldapProviders.loading')}</div>
                     ) : providers.length === 0 ? (
-                        <div className='text-muted-foreground py-8 text-center'>
-                            {t('admin.ldapProviders.noProviders')}
-                        </div>
+                        <ListEmptyState
+                            icon={KeyRound}
+                            title={t('emptyStates.ldapProviders.title')}
+                            description={t('emptyStates.ldapProviders.description')}
+                            action={
+                                <Button onClick={handleCreateNew}>
+                                    <Plus className='mr-2 h-4 w-4' />
+                                    {t('admin.ldapProviders.createProvider')}
+                                </Button>
+                            }
+                            className='border-0 bg-transparent py-8'
+                        />
                     ) : (
                         <div className='space-y-3'>
                             {providers.map((provider) => {

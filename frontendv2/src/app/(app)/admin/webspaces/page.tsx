@@ -26,7 +26,7 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { PageCard } from '@/components/featherui/PageCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
@@ -130,7 +130,7 @@ export default function WebSpacesPage() {
     const { t } = useTranslation();
     const router = useRouter();
 
-    const { filters, patchFilters, resetFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, resetFilters, hydrated, isFiltered } = usePersistedListFilters(
         WEBSPACES_LIST_FILTERS_KEY,
         WEBSPACES_LIST_FILTERS_DEFAULTS,
     );
@@ -446,16 +446,18 @@ export default function WebSpacesPage() {
             {loading ? (
                 <TableSkeleton count={5} />
             ) : spaces.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={AppWindow}
-                    title={t('admin.webSpaces.no_results')}
-                    description={t('admin.webSpaces.empty_desc')}
+                    title={t('emptyStates.webspaces.title')}
+                    description={t('emptyStates.webspaces.description')}
                     action={
                         <Button size='sm' onClick={() => router.push('/admin/webspaces/create')}>
                             <Plus className='mr-2 h-4 w-4' />
                             {t('admin.webSpaces.create')}
                         </Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
                 <>

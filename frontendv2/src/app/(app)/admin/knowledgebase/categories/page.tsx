@@ -32,7 +32,6 @@ import {
     FileText,
     ChevronLeft,
     ChevronRight,
-    AlertCircle,
     Info,
     Layout,
     Shield,
@@ -41,7 +40,7 @@ import {
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -346,10 +345,10 @@ export default function KnowledgeBaseCategoriesPage() {
             {loading ? (
                 <TableSkeleton count={5} />
             ) : categories.length === 0 ? (
-                <EmptyState
-                    title={t('admin.knowledgebase.categories.no_results')}
-                    description={t('admin.knowledgebase.categories.search_placeholder')}
-                    icon={AlertCircle}
+                <ListEmptyState
+                    icon={BookOpen}
+                    title={t('emptyStates.kbCategories.title')}
+                    description={t('emptyStates.kbCategories.description')}
                     action={
                         <Button
                             variant='outline'
@@ -361,6 +360,8 @@ export default function KnowledgeBaseCategoriesPage() {
                             {t('admin.knowledgebase.categories.create')}
                         </Button>
                     }
+                    filtered={Boolean(searchQuery.trim())}
+                    onClearFilters={() => setSearchQuery('')}
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-6'>

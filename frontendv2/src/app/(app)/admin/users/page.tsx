@@ -23,21 +23,11 @@ import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-err
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import axios from 'axios';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
-import {
-    Users as UsersIcon,
-    Shield,
-    KeyRound,
-    Search,
-    Eye,
-    Trash2,
-    AlertCircle,
-    UserPlus,
-    CheckCircle2,
-} from 'lucide-react';
+import { Users as UsersIcon, Shield, KeyRound, Search, Eye, Trash2, UserPlus, CheckCircle2 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { ListPagination } from '@/components/featherui/ListPagination';
@@ -215,7 +205,7 @@ export default function UsersPage() {
 
     const [users, setUsers] = useState<ApiUser[]>([]);
     const [loading, setLoading] = useState(true);
-    const { filters, patchFilters, resetFilters, setFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, resetFilters, setFilters, hydrated, isFiltered } = usePersistedListFilters(
         USERS_LIST_FILTERS_KEY,
         USERS_LIST_FILTERS_DEFAULTS,
     );
@@ -558,20 +548,18 @@ export default function UsersPage() {
             {loading ? (
                 <TableSkeleton count={5} />
             ) : users.length === 0 ? (
-                <EmptyState
-                    title={t('admin.users.no_results')}
-                    description={t('admin.users.search_placeholder')}
-                    icon={AlertCircle}
+                <ListEmptyState
+                    icon={UsersIcon}
+                    title={t('emptyStates.users.title')}
+                    description={t('emptyStates.users.description')}
                     action={
-                        <Button
-                            variant='outline'
-                            onClick={() => {
-                                resetFilters();
-                            }}
-                        >
-                            {t('admin.users.clear_filters')}
+                        <Button onClick={() => router.push('/admin/users/create')}>
+                            <UserPlus className='mr-2 h-4 w-4' />
+                            {t('admin.users.create.title')}
                         </Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-6'>

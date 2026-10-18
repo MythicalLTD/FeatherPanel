@@ -26,7 +26,7 @@ import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
@@ -247,7 +247,7 @@ export default function LocationsPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [locations, setLocations] = useState<Location[]>([]);
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         LOCATIONS_LIST_FILTERS_KEY,
         LOCATIONS_LIST_FILTERS_DEFAULTS,
     );
@@ -516,16 +516,18 @@ export default function LocationsPage() {
             {loading ? (
                 <TableSkeleton count={5} />
             ) : locations.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={Globe}
-                    title={t('admin.locations.no_results')}
-                    description={t('admin.locations.create_description')}
+                    title={t('emptyStates.locations.title')}
+                    description={t('emptyStates.locations.description')}
                     action={
                         <Button onClick={() => setCreateOpen(true)}>
                             <Plus className='mr-2 h-4 w-4' />
                             {t('admin.locations.create')}
                         </Button>
                     }
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-4'>

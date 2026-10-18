@@ -25,7 +25,7 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { PageCard } from '@/components/featherui/PageCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
@@ -102,7 +102,7 @@ export default function NodesPage() {
     const searchParams = useSearchParams();
     const urlLocationId = searchParams.get('location_id') ?? '';
 
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         NODES_LIST_FILTERS_KEY,
         NODES_LIST_FILTERS_DEFAULTS,
     );
@@ -385,35 +385,21 @@ export default function NodesPage() {
             {loading ? (
                 <TableSkeleton count={5} />
             ) : nodes.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={Server}
-                    title={t('admin.node.no_results')}
-                    description={
-                        locationIdFilter || searchQuery
-                            ? t('admin.node.search_placeholder')
-                            : t('admin.node.description')
-                    }
+                    title={t('emptyStates.nodes.title')}
+                    description={t('emptyStates.nodes.description')}
                     action={
-                        locationIdFilter || searchQuery ? (
-                            <Button
-                                variant='outline'
-                                onClick={() => {
-                                    patchFilters({ searchQuery: '', page: 1 });
-                                    if (locationIdFilter) {
-                                        router.replace('/admin/nodes');
-                                    }
-                                }}
-                            >
-                                <X className='mr-2 h-4 w-4' />
-                                {t('admin.servers.filters.clear')}
-                            </Button>
-                        ) : (
-                            <Button onClick={() => router.push('/admin/nodes/create')}>
-                                <Plus className='mr-2 h-4 w-4' />
-                                {t('admin.node.create')}
-                            </Button>
-                        )
+                        <Button onClick={() => router.push('/admin/nodes/create')}>
+                            <Plus className='mr-2 h-4 w-4' />
+                            {t('admin.node.create')}
+                        </Button>
                     }
+                    filtered={isFiltered || Boolean(locationIdFilter)}
+                    onClearFilters={() => {
+                        resetFilters();
+                        if (locationIdFilter) router.replace('/admin/nodes');
+                    }}
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-4'>

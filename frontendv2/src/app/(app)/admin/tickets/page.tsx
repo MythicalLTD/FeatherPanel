@@ -23,7 +23,7 @@ import { formatDateInTz } from '@/lib/dateUtils';
 import { Ticket, Search, Trash2, Eye, ChevronLeft, ChevronRight, RefreshCw, Filter } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
-import { EmptyState } from '@/components/featherui/EmptyState';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -92,7 +92,7 @@ export default function TicketsPage() {
     const [categories, setCategories] = useState<Meta[]>([]);
     const [statuses, setStatuses] = useState<Meta[]>([]);
     const [loading, setLoading] = useState(true);
-    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+    const { filters, patchFilters, hydrated, resetFilters, isFiltered } = usePersistedListFilters(
         TICKETS_LIST_FILTERS_KEY,
         TICKETS_LIST_FILTERS_DEFAULTS,
     );
@@ -284,10 +284,12 @@ export default function TicketsPage() {
             {loading ? (
                 <TableSkeleton count={3} />
             ) : tickets.length === 0 ? (
-                <EmptyState
+                <ListEmptyState
                     icon={Ticket}
-                    title={t('admin.tickets.no_results')}
-                    description={t('admin.tickets.search_placeholder')}
+                    title={t('emptyStates.tickets.title')}
+                    description={t('emptyStates.tickets.description')}
+                    filtered={isFiltered}
+                    onClearFilters={resetFilters}
                 />
             ) : (
                 <div className='grid grid-cols-1 gap-4'>
