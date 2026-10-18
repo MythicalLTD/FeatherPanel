@@ -43,7 +43,9 @@ export function PageHeader({ title, description, icon: Icon, actions, className 
                     )}
                 </div>
             </div>
-            {actions && <div className='flex max-w-full flex-wrap items-center gap-2'>{actions}</div>}
+            {actions && (
+                <div className='fp-page-header-actions flex max-w-full flex-wrap items-center gap-2'>{actions}</div>
+            )}
         </div>
     );
 }

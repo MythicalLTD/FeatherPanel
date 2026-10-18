@@ -881,7 +881,7 @@ export default function DashboardPage() {
                     <div
                         key={id}
                         className={cn(
-                            'transition-all duration-500',
+                            'fp-collapse-empty-block transition-all duration-500',
                             !isVisible(id as DashboardBlockId, isCustomizing) && 'hidden',
                         )}
                     >
@@ -893,7 +893,7 @@ export default function DashboardPage() {
     );
 
     const sideColumn = (
-        <div className={cn('space-y-8', !columnsReversed ? 'lg:order-2' : 'lg:order-1')}>
+        <div className={cn('space-y-6 md:space-y-8', !columnsReversed ? 'lg:order-2' : 'lg:order-1')}>
             {rightOrder.map((id) => {
                 const node = renderRightBlock(id);
                 if (!node) return null;
@@ -901,7 +901,7 @@ export default function DashboardPage() {
                     <div
                         key={id}
                         className={cn(
-                            'transition-all duration-500',
+                            'fp-collapse-empty-block transition-all duration-500',
                             !isVisible(id as DashboardBlockId, isCustomizing) && 'hidden',
                         )}
                     >
@@ -913,7 +913,7 @@ export default function DashboardPage() {
     );
 
     return (
-        <div className='space-y-8'>
+        <div className='space-y-6 md:space-y-8'>
             <WidgetRenderer widgets={getWidgets('dashboard', 'top-of-page')} {...pluginWidgetProps} />
 
             {!heroAtBottom && (

@@ -721,3 +721,65 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/*
+ * Appearance: layout density + UI scale (set on <html> by the boot script and ThemeContext).
+ * Tailwind v4 spacing utilities are calc(var(--spacing) * n), so overriding --spacing scales
+ * padding, gaps and control heights together. UI scale changes the root font size, so rem-based
+ * text and spacing grow/shrink together without breaking layouts.
+ */
+html[data-density='compact'] {
+    --spacing: 0.21rem;
+}
+
+html[data-density='spacious'] {
+    --spacing: 0.28rem;
+}
+
+html[data-ui-scale='sm'] {
+    font-size: 93.75%;
+}
+
+html[data-ui-scale='lg'] {
+    font-size: 106.25%;
+}
+
+html[data-ui-scale='xl'] {
+    font-size: 112.5%;
+}
+
+/* Page header actions: full-width, evenly sized buttons on phones instead of a ragged wrap. */
+@media (max-width: 639.98px) {
+    .fp-page-header-actions {
+        width: 100%;
+    }
+
+    .fp-page-header-actions > div {
+        width: 100%;
+    }
+
+    .fp-page-header-actions > :is(button, a),
+    .fp-page-header-actions > div > :is(button, a) {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+}
+
+/* Horizontally scrollable strips (tabs, chips): fade the edges so it is obvious there is more. */
+.fp-scroll-fade-x {
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent 100%);
+    mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent 100%);
+}
+
+.fp-scroll-fade-x::-webkit-scrollbar {
+    display: none;
+}
+
+/*
+ * Dashboard blocks whose content rendered nothing (e.g. no announcements) should not leave a gap.
+ * Structure is block > chrome > content wrapper > content, so "no element 3 levels down" = empty.
+ */
+.fp-collapse-empty-block:not(:has(* * *)) {
+    display: none;
+}

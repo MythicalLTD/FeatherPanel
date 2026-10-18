@@ -377,18 +377,18 @@ export default function ServersPage() {
             </div>
 
             <div className='bg-card/50 border-border/50 flex flex-col gap-3 rounded-2xl border p-3 backdrop-blur-xl'>
-                <div className='flex items-center gap-2'>
+                <div className='flex flex-wrap items-center gap-2 sm:flex-nowrap'>
                     <input
                         type='text'
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder={t('servers.searchPlaceholder')}
-                        className='bg-background border-border focus:ring-primary min-w-0 flex-1 rounded-xl border px-4 py-2 text-sm transition-all focus:ring-2 focus:outline-none'
+                        className='bg-background border-border focus:ring-primary h-11 min-w-0 flex-1 basis-full rounded-xl border px-4 py-2 text-sm transition-all focus:ring-2 focus:outline-none sm:h-auto sm:basis-0'
                     />
 
                     <Listbox value={selectedSortOption} onChange={(option) => setSelectedSort(option.id)}>
                         <div className='relative shrink-0'>
-                            <ListboxButton className='bg-background border-border focus:ring-primary relative cursor-pointer rounded-xl border py-2 pr-8 pl-3 text-left text-sm whitespace-nowrap focus:ring-2 focus:outline-none'>
+                            <ListboxButton className='bg-background border-border focus:ring-primary relative min-h-10 cursor-pointer rounded-xl border py-2 pr-8 pl-3 text-left text-sm whitespace-nowrap focus:ring-2 focus:outline-none'>
                                 <span className='flex items-center gap-2'>
                                     <Filter className='text-muted-foreground h-4 w-4 shrink-0' />
                                     <span className='hidden truncate sm:block'>{selectedSortOption.name}</span>
@@ -454,7 +454,7 @@ export default function ServersPage() {
                                     value={option}
                                     className={({ checked }) =>
                                         cn(
-                                            'flex cursor-pointer items-center justify-center rounded-lg px-2.5 py-1 transition-all',
+                                            'flex min-h-8 min-w-9 cursor-pointer items-center justify-center rounded-lg px-2.5 py-1 transition-all',
                                             checked
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
@@ -475,7 +475,7 @@ export default function ServersPage() {
                     </RadioGroup>
 
                     <div
-                        className='flex shrink-0 cursor-pointer items-center gap-2'
+                        className='flex min-h-10 shrink-0 cursor-pointer items-center gap-2 px-1'
                         onClick={() => setShowOnlyRunning(!showOnlyRunning)}
                     >
                         <Switch
@@ -495,7 +495,7 @@ export default function ServersPage() {
                             serverScope === 'all' ? void fetchAllOtherServers(pagination.current_page) : fetchServers()
                         }
                         disabled={loading}
-                        className='bg-background border-border hover:bg-muted shrink-0 rounded-xl border p-2 transition-colors disabled:opacity-50'
+                        className='bg-background border-border hover:bg-muted ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-colors disabled:opacity-50 sm:ml-0 sm:h-auto sm:w-auto sm:p-2'
                         title={t('servers.refresh')}
                     >
                         <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
@@ -563,10 +563,37 @@ export default function ServersPage() {
             <WidgetRenderer widgets={getWidgets('dashboard-servers', 'bottom-of-page')} />
 
             {loading && (
-                <div className='flex items-center justify-center py-24'>
-                    <div className='flex flex-col items-center gap-4'>
-                        <RefreshCw className='text-primary h-12 w-12 animate-spin' />
-                        <p className='text-muted-foreground'>{t('servers.loading')}</p>
+                <div role='status' aria-busy='true' aria-live='polite'>
+                    <span className='sr-only'>{t('servers.loading')}</span>
+                    <div
+                        className={cn(
+                            selectedLayout === 'grid'
+                                ? 'grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3'
+                                : 'flex flex-col gap-4',
+                        )}
+                    >
+                        {Array.from({ length: selectedLayout === 'grid' ? 6 : 4 }).map((_, i) => (
+                            <div
+                                key={i}
+                                className='bg-card/40 border-border/50 overflow-hidden rounded-2xl border'
+                                style={{ opacity: 1 - i * 0.1 }}
+                            >
+                                {selectedLayout === 'grid' && (
+                                    <div className='bg-muted/30 h-28 animate-pulse sm:h-36' />
+                                )}
+                                <div className='space-y-3 p-4 sm:p-5'>
+                                    <div className='flex items-center justify-between gap-3'>
+                                        <div className='bg-muted/50 h-5 w-2/5 animate-pulse rounded-md' />
+                                        <div className='bg-muted/40 h-5 w-16 animate-pulse rounded-full' />
+                                    </div>
+                                    <div className='bg-muted/30 h-3.5 w-3/5 animate-pulse rounded-md' />
+                                    <div className='flex gap-4 pt-1'>
+                                        <div className='bg-muted/25 h-3 w-20 animate-pulse rounded-md' />
+                                        <div className='bg-muted/25 h-3 w-16 animate-pulse rounded-md' />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             )}
@@ -589,15 +616,15 @@ export default function ServersPage() {
 
             {!loading && !error && (
                 <>
-                    <div className='flex items-center justify-between gap-2'>
-                        <div className='flex flex-wrap items-center gap-2'>
+                    <div className='flex items-start justify-between gap-2 sm:items-center'>
+                        <div className='flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center'>
                             {canViewAllServers && (
-                                <div className='bg-card/50 border-border/50 flex gap-1 rounded-xl border p-1 backdrop-blur-xl'>
+                                <div className='bg-card/50 border-border/50 grid grid-cols-2 gap-1 rounded-xl border p-1 backdrop-blur-xl sm:flex'>
                                     <button
                                         type='button'
                                         onClick={() => setServerScope('mine')}
                                         className={cn(
-                                            'rounded-lg px-4 py-2 text-sm font-semibold transition-all',
+                                            'truncate rounded-lg px-3 py-2 text-sm font-semibold transition-all sm:px-4',
                                             serverScope === 'mine'
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
@@ -609,7 +636,7 @@ export default function ServersPage() {
                                         type='button'
                                         onClick={() => setServerScope('all')}
                                         className={cn(
-                                            'rounded-lg px-4 py-2 text-sm font-semibold transition-all',
+                                            'truncate rounded-lg px-3 py-2 text-sm font-semibold transition-all sm:px-4',
                                             serverScope === 'all'
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
@@ -622,12 +649,12 @@ export default function ServersPage() {
                             )}
 
                             {serverScope === 'mine' && (
-                                <div className='bg-card/50 border-border/50 flex gap-1 rounded-xl border p-1 backdrop-blur-xl'>
+                                <div className='bg-card/50 border-border/50 grid grid-cols-2 gap-1 rounded-xl border p-1 backdrop-blur-xl sm:flex'>
                                     <button
                                         type='button'
                                         onClick={() => setViewMode('all')}
                                         className={cn(
-                                            'rounded-lg px-4 py-2 text-sm font-semibold transition-all',
+                                            'truncate rounded-lg px-3 py-2 text-sm font-semibold transition-all sm:px-4',
                                             viewMode === 'all'
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
@@ -639,7 +666,7 @@ export default function ServersPage() {
                                         type='button'
                                         onClick={() => setViewMode('folders')}
                                         className={cn(
-                                            'rounded-lg px-4 py-2 text-sm font-semibold transition-all',
+                                            'truncate rounded-lg px-3 py-2 text-sm font-semibold transition-all sm:px-4',
                                             viewMode === 'folders'
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
@@ -654,7 +681,7 @@ export default function ServersPage() {
                         {serverScope === 'mine' && viewMode === 'folders' && (
                             <button
                                 onClick={openCreateFolder}
-                                className='bg-primary text-primary-foreground hover:bg-primary/90 flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors'
+                                className='bg-primary text-primary-foreground hover:bg-primary/90 flex min-h-11 shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors sm:min-h-0'
                             >
                                 <FolderPlus className='h-4 w-4' />
                                 <span className='hidden sm:inline'>{t('servers.createFolder')}</span>
@@ -697,7 +724,7 @@ export default function ServersPage() {
                                     <div
                                         className={cn(
                                             selectedLayout === 'grid'
-                                                ? 'grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'
+                                                ? 'grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3'
                                                 : 'flex flex-col gap-4',
                                         )}
                                     >
@@ -797,7 +824,7 @@ export default function ServersPage() {
                                         <div
                                             className={cn(
                                                 selectedLayout === 'grid'
-                                                    ? 'grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'
+                                                    ? 'grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3'
                                                     : 'flex flex-col gap-4',
                                             )}
                                         >
@@ -910,7 +937,7 @@ export default function ServersPage() {
                                                     <div
                                                         className={cn(
                                                             selectedLayout === 'grid'
-                                                                ? 'grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'
+                                                                ? 'grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3'
                                                                 : 'flex flex-col gap-4',
                                                         )}
                                                     >
@@ -955,7 +982,7 @@ export default function ServersPage() {
                                                 <div
                                                     className={cn(
                                                         selectedLayout === 'grid'
-                                                            ? 'grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'
+                                                            ? 'grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3'
                                                             : 'flex flex-col gap-4',
                                                     )}
                                                 >

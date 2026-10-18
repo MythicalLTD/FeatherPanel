@@ -39,7 +39,7 @@ import { FormSection } from '@/components/featherui/FormSection';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Input } from '@/components/featherui/Input';
 import { useTheme } from '@/contexts/ThemeContext';
-import type { BackgroundImageFit } from '@/contexts/ThemeContext';
+import { UI_DENSITIES, UI_SCALES, type BackgroundImageFit } from '@/contexts/ThemeContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePluginUi } from '@/contexts/PluginUiContext';
@@ -155,6 +155,7 @@ function SegmentButton({
     return (
         <button
             type='button'
+            aria-pressed={active}
             disabled={disabled}
             onClick={onClick}
             className={cn(
@@ -349,6 +350,10 @@ export default function AppearanceSettingsPanel() {
         setFontFamily,
         motionLevel,
         setMotionLevel,
+        density,
+        setDensity,
+        uiScale,
+        setUiScale,
         toggleTheme,
         mounted,
         backgroundType,
@@ -383,6 +388,7 @@ export default function AppearanceSettingsPanel() {
     const [imageUrl, setImageUrl] = useState(backgroundImage);
     const [customAccentHex, setCustomAccentHex] = useState('#7c3aed');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const navRef = useRef<HTMLElement>(null);
 
     const sectionParam = searchParams.get('section');
     const section: AppearanceSection =
@@ -399,6 +405,18 @@ export default function AppearanceSettingsPanel() {
     const setSection = (next: AppearanceSection) => {
         router.replace(`${PREFERENCES_PATH}?section=${next}`, { scroll: false });
     };
+
+    // On phones the section tabs scroll horizontally; keep the active one in view.
+    useEffect(() => {
+        const nav = navRef.current;
+        if (!nav || nav.scrollWidth <= nav.clientWidth) return;
+        const el = nav.querySelector<HTMLElement>('[aria-current="page"]');
+        if (!el) return;
+        const left = el.offsetLeft - nav.offsetLeft;
+        if (left < nav.scrollLeft || left + el.offsetWidth > nav.scrollLeft + nav.clientWidth) {
+            nav.scrollTo({ left: Math.max(0, left - 16), behavior: 'smooth' });
+        }
+    }, [section, mounted]);
 
     useEffect(() => {
         setImageUrl(backgroundImage);
@@ -452,7 +470,10 @@ export default function AppearanceSettingsPanel() {
 
     return (
         <div className='grid gap-6 lg:grid-cols-[minmax(0,220px)_1fr]'>
-            <nav className='flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible'>
+            <nav
+                ref={navRef}
+                className='fp-scroll-fade-x -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:[mask-image:none] lg:px-0 lg:pb-0 lg:[-webkit-mask-image:none]'
+            >
                 {NAV_ITEMS.map((item) => {
                     const Icon = item.icon;
                     const active = section === item.id;
@@ -460,6 +481,7 @@ export default function AppearanceSettingsPanel() {
                         <button
                             key={item.id}
                             type='button'
+                            aria-current={active ? 'page' : undefined}
                             onClick={() => setSection(item.id)}
                             className={cn(
                                 'flex shrink-0 items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-left transition-colors lg:w-full',
@@ -908,6 +930,17 @@ export default function AppearanceSettingsPanel() {
                 {/* TYPOGRAPHY */}
                 {section === 'typography' && (
                     <div className='space-y-5'>
+                        <SegmentGroup
+                            label={t('appearance.uiScale.title')}
+                            hint={t('appearance.uiScale.hint')}
+                            columns={4}
+                        >
+                            {UI_SCALES.map((scale) => (
+                                <SegmentButton key={scale} active={uiScale === scale} onClick={() => setUiScale(scale)}>
+                                    {t(`appearance.uiScale.${scale}`)}
+                                </SegmentButton>
+                            ))}
+                        </SegmentGroup>
                         <SegmentGroup label={t('appearance.fontCategoriesTitle')} columns={3}>
                             {(['sans', 'serif', 'mono'] as AppFontCategory[]).map((cat) => (
                                 <SegmentButton
@@ -965,6 +998,21 @@ export default function AppearanceSettingsPanel() {
                 {section === 'layout' && (
                     <div>
                         <FormSection className='space-y-6'>
+                            <SegmentGroup
+                                label={t('appearance.density.title')}
+                                hint={t('appearance.density.hint')}
+                                columns={3}
+                            >
+                                {UI_DENSITIES.map((value) => (
+                                    <SegmentButton
+                                        key={value}
+                                        active={density === value}
+                                        onClick={() => setDensity(value)}
+                                    >
+                                        {t(`appearance.density.${value}`)}
+                                    </SegmentButton>
+                                ))}
+                            </SegmentGroup>
                             <SegmentGroup label={t('appearance.chromeLayout.title')} columns={2}>
                                 <SegmentButton
                                     active={chromeLayout === 'modern'}

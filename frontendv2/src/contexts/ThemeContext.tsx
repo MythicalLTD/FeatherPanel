@@ -30,6 +30,34 @@ export type { BackgroundAnimatedVariant };
 export type BackgroundImageFit = 'cover' | 'contain' | 'fill';
 /** Controls animations and transitions app-wide. */
 export type MotionLevel = 'full' | 'reduced' | 'none';
+/** Layout density: scales Tailwind spacing (padding, gaps, control heights). */
+export type UiDensity = 'compact' | 'comfortable' | 'spacious';
+/** UI scale: root font size, so text and rem-based sizes scale together. */
+export type UiScale = 'sm' | 'md' | 'lg' | 'xl';
+
+export const UI_DENSITIES: readonly UiDensity[] = ['compact', 'comfortable', 'spacious'];
+export const UI_SCALES: readonly UiScale[] = ['sm', 'md', 'lg', 'xl'];
+
+function isUiDensity(value: unknown): value is UiDensity {
+    return typeof value === 'string' && (UI_DENSITIES as readonly string[]).includes(value);
+}
+
+function isUiScale(value: unknown): value is UiScale {
+    return typeof value === 'string' && (UI_SCALES as readonly string[]).includes(value);
+}
+
+/** Mirrors the boot script in app layout: default values remove the attribute. */
+function applyUiDensity(density: UiDensity) {
+    const root = document.documentElement;
+    if (density === 'comfortable') delete root.dataset.density;
+    else root.dataset.density = density;
+}
+
+function applyUiScale(scale: UiScale) {
+    const root = document.documentElement;
+    if (scale === 'md') delete root.dataset.uiScale;
+    else root.dataset.uiScale = scale;
+}
 /** UI font family preference. */
 type FontFamily = AppFontFamily;
 
@@ -126,6 +154,10 @@ interface ThemeContextType {
     backgroundImageFit: BackgroundImageFit;
     /** Animations and transitions: full, reduced, or none. */
     motionLevel: MotionLevel;
+    /** Layout density (compact, comfortable, spacious). */
+    density: UiDensity;
+    /** UI scale (root font size). */
+    uiScale: UiScale;
     /** UI font family preference (system, Inter, rounded). */
     fontFamily: FontFamily;
     /** Active plugin theme pack id (`default` or `plugin:id`). */
@@ -143,6 +175,8 @@ interface ThemeContextType {
     setBackdropDarken: (percent: number) => void;
     setBackgroundImageFit: (fit: BackgroundImageFit) => void;
     setMotionLevel: (level: MotionLevel) => void;
+    setDensity: (density: UiDensity) => void;
+    setUiScale: (scale: UiScale) => void;
     setFontFamily: (font: FontFamily) => void;
     setThemePackId: (id: string) => void;
     toggleTheme: () => void;
@@ -182,6 +216,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const [backdropDarken, setBackdropDarkenState] = useState(0);
     const [backgroundImageFit, setBackgroundImageFitState] = useState<BackgroundImageFit>('cover');
     const [motionLevel, setMotionLevelState] = useState<MotionLevel>('full');
+    const [density, setDensityState] = useState<UiDensity>('comfortable');
+    const [uiScale, setUiScaleState] = useState<UiScale>('md');
     const [fontFamily, setFontFamilyState] = useState<FontFamily>('inter');
     const [themePackId, setThemePackIdState] = useState('default');
     const { settings } = useSettings();
@@ -247,6 +283,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                   : 'full';
         setMotionLevelState(initialMotion);
         localStorage.setItem('motionLevel', initialMotion);
+
+        const savedDensity = localStorage.getItem('uiDensity');
+        const initialDensity: UiDensity = isUiDensity(savedDensity) ? savedDensity : 'comfortable';
+        setDensityState(initialDensity);
+        applyUiDensity(initialDensity);
+        const savedScale = localStorage.getItem('uiScale');
+        const initialScale: UiScale = isUiScale(savedScale) ? savedScale : 'md';
+        setUiScaleState(initialScale);
+        applyUiScale(initialScale);
 
         const initialFont: FontFamily = isAppFontFamily(savedFontFamily) ? savedFontFamily : 'inter';
         setFontFamilyState(initialFont);
@@ -502,6 +547,30 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('motionLevel', level);
     };
 
+    const setDensity = (next: UiDensity) => {
+        if (!isUiDensity(next)) return;
+        if (next !== density) reportPanelInteraction('panel.preference.change', 'density');
+        setDensityState(next);
+        applyUiDensity(next);
+        try {
+            localStorage.setItem('uiDensity', next);
+        } catch {
+            // Storage full or blocked (private mode): keep the choice for this session only.
+        }
+    };
+
+    const setUiScale = (next: UiScale) => {
+        if (!isUiScale(next)) return;
+        if (next !== uiScale) reportPanelInteraction('panel.preference.change', 'ui-scale');
+        setUiScaleState(next);
+        applyUiScale(next);
+        try {
+            localStorage.setItem('uiScale', next);
+        } catch {
+            // Storage full or blocked (private mode): keep the choice for this session only.
+        }
+    };
+
     const setFontFamily = (font: FontFamily) => {
         if (font !== fontFamily) reportPanelInteraction('panel.preference.change', 'font');
         setFontFamilyState(font);
@@ -534,6 +603,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 backdropDarken,
                 backgroundImageFit,
                 motionLevel,
+                density,
+                uiScale,
                 fontFamily,
                 themePackId,
                 themePack,
@@ -547,6 +618,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 setBackdropDarken,
                 setBackgroundImageFit,
                 setMotionLevel,
+                setDensity,
+                setUiScale,
                 setFontFamily,
                 setThemePackId,
                 toggleTheme,

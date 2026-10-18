@@ -33,7 +33,7 @@ import {
 } from '@/components/webspace/WebSpaceInfoCards';
 import { WebSpaceTerminalPanel } from '@/components/webspace/WebSpaceTerminalPanel';
 import { WebSpaceHealthBanners } from '@/components/webspace/WebSpaceSetupChecklist';
-import ServerPerformance from '@/components/server/ServerPerformance';
+import ServerPerformance from '@/components/server/ServerPerformanceLazy';
 import { Card, CardContent } from '@/components/ui/card';
 import type { QuilldStats } from '@/hooks/useQuilldWebSocket';
 import type { WebSpaceAccessUrls } from '@/lib/webspace-urls';

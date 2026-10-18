@@ -215,6 +215,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   localStorage.setItem('motionLevel', motion);
                   document.documentElement.dataset.motion = motion;
 
+                  // Initialize layout density and UI scale (see ThemeContext).
+                  var savedDensity = localStorage.getItem('uiDensity');
+                  if (savedDensity === 'compact' || savedDensity === 'spacious') {
+                    document.documentElement.dataset.density = savedDensity;
+                  }
+                  var savedScale = localStorage.getItem('uiScale');
+                  if (savedScale === 'sm' || savedScale === 'lg' || savedScale === 'xl') {
+                    document.documentElement.dataset.uiScale = savedScale;
+                  }
+
                   // Initialize font preference for UI.
                   const savedFont = localStorage.getItem('fontFamily');
                   var fontStacks = ${APP_FONT_BOOT_STACKS_JSON};

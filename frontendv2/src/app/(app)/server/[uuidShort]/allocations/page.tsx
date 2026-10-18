@@ -388,7 +388,7 @@ export default function ServerAllocationsPage() {
 
             <div className='space-y-6'>
                 <div className='flex items-center gap-4'>
-                    <div className='group relative flex-1'>
+                    <div className='group relative w-full min-w-0 flex-1'>
                         <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transition-colors' />
                         <Input
                             placeholder={t('serverAllocations.searchAllocations')}

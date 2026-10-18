@@ -282,7 +282,7 @@ export function ServerCard({
             )}
             <Link href={serverUrl} className='relative block cursor-pointer'>
                 {server.spell?.banner && (
-                    <div className='relative h-40 overflow-hidden'>
+                    <div className='relative h-28 overflow-hidden sm:h-40'>
                         <div
                             className='absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105'
                             style={{
