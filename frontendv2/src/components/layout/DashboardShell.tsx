@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useLayoutEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { ModuleRouteGuard } from '@/components/layout/ModuleRouteGuard';
 import Sidebar from '@/components/Sidebar';
@@ -44,11 +44,10 @@ import { AdminBreadcrumbs } from '@/components/admin/AdminBreadcrumbs';
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const [mobileOpen, setMobileOpen] = useState(false);
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
-        typeof window === 'undefined' ? false : readSidebarCollapsed(),
-    );
+    // Expanded on the first render (matches the server), stored choice applied before paint.
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         setSidebarCollapsed(readSidebarCollapsed());
         return subscribeSidebarCollapsed(setSidebarCollapsed);
     }, []);

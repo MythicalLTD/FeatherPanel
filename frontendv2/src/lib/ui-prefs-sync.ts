@@ -434,9 +434,10 @@ async function pullAndMerge(userUuid: string): Promise<UiPrefsSyncResult> {
 
     const previous = readState();
     const sameAccount = previous.userUuid === userUuid;
-    // A browser that never synced keeps its values and uploads them. When another account
-    // used this browser before, its values stay local and are never sent to this account.
-    const migrate = previous.userUuid === null || sameAccount;
+    // Only a browser that never synced uploads the values it already had (settings from
+    // before sync existed). Later loads send only changes the observer recorded, so values
+    // left behind by another account on this browser are never sent to this one.
+    const migrate = previous.userUuid === null;
     const pending: Record<string, Value> = sameAccount ? { ...previous.pending } : {};
     const known: Record<string, Value> = {};
     const applied: string[] = [];
