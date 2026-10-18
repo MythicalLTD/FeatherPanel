@@ -826,6 +826,9 @@ class SessionController
             return ApiResponse::error('Invalid request data', 'INVALID_REQUEST_DATA', 400, []);
         }
 
+        // Written only through /api/user/preferences/ui so its merge stays atomic.
+        unset($data[UserPreference::UI_STATE_KEY]);
+
         if (array_key_exists('favorite_server_uuids', $data)) {
             if (!is_array($data['favorite_server_uuids'])) {
                 return ApiResponse::error('favorite_server_uuids must be an array', 'INVALID_PREFERENCES', 400, []);
@@ -1268,6 +1271,7 @@ class SessionController
      */
     private function applyPreferenceDefaults(array $preferences): array
     {
+
         if (!array_key_exists('hide_server_ips', $preferences)) {
             $preferences['hide_server_ips'] =
                 App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_HIDE_IPS, 'false') === 'true';

@@ -1509,7 +1509,9 @@
 			"INVALID_USER_FILTER": "Invalid user filter.",
 			"MODULE_DISABLED": "This module is disabled by the administrator.",
 			"INVALID_DATE_RANGE": "Pick a valid date range.",
-			"DATE_RANGE_TOO_LARGE": "The date range can cover at most two years."
+			"DATE_RANGE_TOO_LARGE": "The date range can cover at most two years.",
+			"INVALID_UI_STATE": "Those interface settings could not be saved.",
+			"UI_STATE_TOO_LARGE": "Your saved interface settings are too large to sync."
 		},
 		"global": {}
 	},
