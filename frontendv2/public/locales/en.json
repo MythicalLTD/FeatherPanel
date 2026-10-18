@@ -1517,7 +1517,8 @@
 			"BULK_TOO_MANY_SERVERS": "Too many servers selected for this action.",
 			"BULK_ACTION_FAILED": "The action failed on this server.",
 			"DASHBOARD_LAYOUT_TOO_LARGE": "That dashboard layout is too large to save.",
-			"INVALID_DASHBOARD_LAYOUT": "That dashboard layout is not valid."
+			"INVALID_DASHBOARD_LAYOUT": "That dashboard layout is not valid.",
+			"INVALID_NOTIFICATION_KEYS": "Some notifications could not be found. Refresh and try again."
 		},
 		"global": {}
 	},
@@ -3923,7 +3924,35 @@
 		"localStorageDeleted": "Removed \"{key}\".",
 		"localStorageClearedCount": "Removed {count} keys.",
 		"localStorageConfirmClearTitle": "Clear all keys listed for {appName}?",
-		"localStorageConfirmClearDesc": "This deletes every key you see in this list for this site only. You stay signed in, but UI preferences may reset. This cannot be undone."
+		"localStorageConfirmClearDesc": "This deletes every key you see in this list for this site only. You stay signed in, but UI preferences may reset. This cannot be undone.",
+		"inbox": {
+			"open": "Open notifications",
+			"openUnread": "Open notifications ({count} unread)",
+			"title": "Notifications",
+			"unreadCount": "{count} unread",
+			"allRead": "You're all caught up",
+			"markAll": "Mark all read",
+			"markFailed": "Could not update your notifications.",
+			"loadFailed": "Could not load your notifications.",
+			"emptyTitle": "No notifications yet",
+			"emptyBody": "Ticket replies, backup results, server crashes and announcements show up here.",
+			"repeated": "Happened {count} times",
+			"unread": "Unread",
+			"kinds": {
+				"ticket_reply": "New ticket reply",
+				"backup_completed": "Backup completed",
+				"backup_failed": "Backup failed",
+				"server_crashed": "Server crashed",
+				"announcement": "Announcement",
+				"other": "Notification"
+			},
+			"bodies": {
+				"ticket_reply": "New reply on \"{ticket}\".",
+				"backup_completed": "{backup} on {server} finished.",
+				"backup_failed": "{backup} on {server} did not finish.",
+				"server_crashed": "{server} stopped unexpectedly."
+			}
+		}
 	},
 	"globalSearch": {
 		"open": "Open global search",

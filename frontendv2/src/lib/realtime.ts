@@ -56,6 +56,8 @@ export const realtimeTopics = {
     notifications: '/notifications',
     adminWebspaces: '/admin/webspaces',
     server: (uuidShort: string) => `/servers/${uuidShort}`,
+    /** Per user stream (inbox updates); the token grants only the signed-in user's own topic. */
+    user: (uuid: string) => `/users/${uuid}`,
 };
 
 class RealtimeClient {
