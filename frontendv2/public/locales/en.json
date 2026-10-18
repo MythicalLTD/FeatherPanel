@@ -1507,7 +1507,9 @@
 			"WEBHOSTING_ALPHA_ACCEPTANCE_REQUIRED": "Accept the WebHosting alpha notice before creating a Web Hosting location.",
 			"INVALID_DATE": "Invalid date, use the YYYY-MM-DD format.",
 			"INVALID_USER_FILTER": "Invalid user filter.",
-			"MODULE_DISABLED": "This module is disabled by the administrator."
+			"MODULE_DISABLED": "This module is disabled by the administrator.",
+			"INVALID_DATE_RANGE": "Pick a valid date range.",
+			"DATE_RANGE_TOO_LARGE": "The date range can cover at most two years."
 		},
 		"global": {}
 	},
