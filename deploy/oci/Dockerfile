@@ -139,7 +139,8 @@ opcache.memory_consumption = 256\n\
 opcache.interned_strings_buffer = 32\n\
 opcache.max_accelerated_files = 20000\n\
 opcache.validate_timestamps = 1\n\
-opcache.revalidate_freq = 2' > /usr/local/etc/php/conf.d/custom.ini
+opcache.revalidate_freq = 2\n\
+zend.assertions = -1' > /usr/local/etc/php/conf.d/custom.ini
 
 # Create backend directories
 RUN mkdir -p /var/www/html/storage/{logs,cache,uploads,temp,config,backups,addons,data} \
@@ -418,8 +419,8 @@ COPY <<'EOF' /etc/caddy/Caddyfile
 }
 
 :80 {
-    # SSE streams must not be buffered by the compressor
-    @compressible not path /api/user/chatbot/chat/stream /api/user/vds-chatbot/chat/stream
+    # SSE streams (chatbot, Mercure live updates) must not be buffered by the compressor
+    @compressible not path /api/user/chatbot/chat/stream /api/user/vds-chatbot/chat/stream /api/mercure
     encode @compressible zstd gzip
 
     request_body {

@@ -1,0 +1,36 @@
+# Mercure hub (built into FrankenPHP) - imported by the Caddyfile when
+# FEATHERPANEL_MERCURE=on (caddy/frankenphp-env.sh sets that when
+# MERCURE_SUBSCRIBER_JWT_KEY and MERCURE_PUBLISHER_JWT_KEY are present).
+#
+# The panel publishes private "something changed" events with
+# mercure_publish(); browsers subscribe through /api/mercure (so every
+# frontend proxy that already forwards /api/* works) with a short-lived,
+# topic-scoped token from POST /api/user/realtime/token, sent as an
+# Authorization header (never in the URL). There is no anonymous access:
+# an update is only delivered to a token that lists its topic. Nothing is
+# stored ("transport local"): clients refetch after a reconnect.
+#
+# The hub must be a site-level directive (not inside route/handle): that is
+# how mercure_publish() in the PHP threads finds it.
+@mercure path /api/mercure /.well-known/mercure
+# Stop proxies (nginx) from buffering the event stream.
+header @mercure X-Accel-Buffering no
+rewrite /api/mercure /.well-known/mercure
+mercure {
+	issuer https://featherpanel.internal {
+		publisher {
+			jwt {$MERCURE_PUBLISHER_JWT_KEY} HS256
+		}
+		subscriber {
+			jwt {$MERCURE_SUBSCRIBER_JWT_KEY} HS256
+		}
+	}
+	# Fixed audience: the hub is reached through several proxies
+	# (Next.js, nginx, Caddy), so a per-request one would not match.
+	# Issuer and audience are opaque identifiers that App\Realtime\Mercure
+	# puts in its tokens, nothing ever connects to them.
+	resource_identifier https://featherpanel.internal/.well-known/mercure
+	transport local
+	# Keep idle connections alive through proxies and load balancers.
+	heartbeat 25s
+}

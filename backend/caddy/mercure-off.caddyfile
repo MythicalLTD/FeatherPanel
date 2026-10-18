@@ -1,0 +1,3 @@
+# Mercure disabled (no MERCURE_JWT_SECRET or FEATHERPANEL_MERCURE=off).
+# The frontend notices that POST /api/user/realtime/token reports
+# "enabled: false" and falls back to polling.

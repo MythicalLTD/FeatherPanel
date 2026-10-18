@@ -11,8 +11,8 @@
 }
 
 :80 {
-	# Chatbot SSE streams must reach the browser unbuffered: never compress them
-	@compressible not path /api/user/chatbot/chat/stream /api/user/vds-chatbot/chat/stream
+	# SSE streams (chatbot, Mercure live updates) must reach the browser unbuffered: never compress them
+	@compressible not path /api/user/chatbot/chat/stream /api/user/vds-chatbot/chat/stream /api/mercure
 	encode @compressible zstd gzip
 
 	request_body {

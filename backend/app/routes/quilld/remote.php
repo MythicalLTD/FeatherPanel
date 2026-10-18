@@ -16,6 +16,7 @@
  */
 
 use App\App;
+use App\Realtime\Events;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\Quilld\FeatherQuilldConfigController;
@@ -98,7 +99,10 @@ return function (RouteCollection $routes): void {
                 return \App\Helpers\ApiResponse::error('Missing WebSpace UUID', 'MISSING_UUID', 400);
             }
 
-            return (new FeatherQuilldWebSpaceController())->postInstall($request, (string) $uuid);
+            return Events::onSuccess(
+                (new FeatherQuilldWebSpaceController())->postInstall($request, (string) $uuid),
+                static fn () => Events::webspaceChanged((string) $uuid)
+            );
         },
         ['POST']
     );
@@ -138,7 +142,10 @@ return function (RouteCollection $routes): void {
                 return \App\Helpers\ApiResponse::error('Missing UUID', 'MISSING_UUID', 400);
             }
 
-            return (new \App\Controllers\Quilld\FeatherQuilldTransferController())->postStatus($request, (string) $uuid);
+            return Events::onSuccess(
+                (new \App\Controllers\Quilld\FeatherQuilldTransferController())->postStatus($request, (string) $uuid),
+                static fn () => Events::webspaceChanged((string) $uuid)
+            );
         },
         ['POST']
     );
