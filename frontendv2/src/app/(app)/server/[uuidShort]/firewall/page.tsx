@@ -21,7 +21,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { Button } from '@/components/featherui/Button';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
@@ -369,7 +369,7 @@ export default function ServerFirewallPage() {
     return (
         <div key={pathname} className='space-y-8 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-firewall', 'top-of-page')} />
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverFirewall.title')}
                 description={t('serverFirewall.description')}
                 actions={

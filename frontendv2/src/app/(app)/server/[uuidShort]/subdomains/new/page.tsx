@@ -21,7 +21,7 @@ import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Globe, Lock, Settings2, Info, Plus } from 'lucide-react';
 
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { FormSection } from '@/components/featherui/FormSection';
@@ -163,7 +163,7 @@ export default function CreateSubdomainPage() {
     return (
         <div className='mx-auto max-w-6xl space-y-8 pb-16'>
             <WidgetRenderer widgets={getWidgets('server-subdomains-new', 'top-of-page')} />
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverSubdomains.createButton')}
                 description={t('serverSubdomains.newSubdomainDescription')}
                 actions={

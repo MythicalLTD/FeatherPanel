@@ -1504,7 +1504,9 @@
 			"POLICY_NOT_FOUND": "Backup policy not found.",
 			"POLICY_UPDATE_FAILED": "Failed to update the backup policy.",
 			"RUN_NOT_FOUND": "Run not found.",
-			"WEBHOSTING_ALPHA_ACCEPTANCE_REQUIRED": "Accept the WebHosting alpha notice before creating a Web Hosting location."
+			"WEBHOSTING_ALPHA_ACCEPTANCE_REQUIRED": "Accept the WebHosting alpha notice before creating a Web Hosting location.",
+			"INVALID_DATE": "Invalid date, use the YYYY-MM-DD format.",
+			"INVALID_USER_FILTER": "Invalid user filter."
 		},
 		"global": {}
 	},
@@ -3767,7 +3769,7 @@
 	},
 	"serverActivities": {
 		"title": "Server Activity",
-		"description": "View the audit logs for this server.",
+		"description": "Everything that happened on this server, searchable and filterable.",
 		"events": "Events",
 		"allEvents": "All Events",
 		"viewDetails": "View details",
@@ -3815,6 +3817,33 @@
 			"whatToShow": "What to show",
 			"apply": "Apply",
 			"showAll": "All Events"
+		},
+		"export": "Export",
+		"exported": "Exported {count} events",
+		"eventCount": "{count} events",
+		"autostartEvent": "Automatic start (node reconnect)",
+		"filters": {
+			"user": "Filter by user",
+			"allUsers": "All users",
+			"from": "From date",
+			"to": "to",
+			"until": "Until date",
+			"category": "Filter by category"
+		},
+		"categories": {
+			"console": "Console",
+			"power": "Power",
+			"files": "Files",
+			"sftp": "SFTP",
+			"backups": "Backups",
+			"databases": "Databases",
+			"schedules": "Schedules",
+			"tasks": "Tasks",
+			"users": "Users",
+			"network": "Network",
+			"startup": "Startup",
+			"settings": "Settings",
+			"reinstall": "Reinstall"
 		}
 	},
 	"serverDatabases": {

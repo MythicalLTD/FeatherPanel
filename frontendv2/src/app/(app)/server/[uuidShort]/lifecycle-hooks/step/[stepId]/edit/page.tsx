@@ -24,7 +24,7 @@ import { ArrowLeft, Lock, Loader2, Power } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -244,7 +244,7 @@ export default function EditLifecycleHookStepPage() {
     if (!Number.isFinite(stepId) || stepId <= 0 || !form) {
         return (
             <div className='space-y-8 pb-12'>
-                <PageHeader
+                <ServerPageHeader
                     title={t('lifecycleHooks.stepEdit.notFoundTitle')}
                     description={t('lifecycleHooks.stepEdit.notFoundDescription')}
                     actions={
@@ -261,7 +261,7 @@ export default function EditLifecycleHookStepPage() {
     if (!featureEnabled) {
         return (
             <div className='space-y-8 pb-12'>
-                <PageHeader
+                <ServerPageHeader
                     title={t('lifecycleHooks.stepEdit.title', { hookType: hookLabels[hookType] })}
                     description={stepDescription}
                     actions={
@@ -281,7 +281,7 @@ export default function EditLifecycleHookStepPage() {
     if (!canUpdate) {
         return (
             <div className='space-y-8 pb-12'>
-                <PageHeader
+                <ServerPageHeader
                     title={t('lifecycleHooks.stepEdit.title', { hookType: hookLabels[hookType] })}
                     description={stepDescription}
                     actions={
@@ -302,7 +302,7 @@ export default function EditLifecycleHookStepPage() {
         <>
             <WidgetRenderer widgets={getWidgets('server-lifecycle-step-edit', 'top-of-page')} />
             <div className='space-y-8 pb-12'>
-                <PageHeader
+                <ServerPageHeader
                     title={t('lifecycleHooks.stepEdit.title', { hookType: hookLabels[hookType] })}
                     description={stepDescription}
                     actions={

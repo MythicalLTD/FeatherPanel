@@ -54,7 +54,7 @@ import { cn, copyToClipboard as copyUtil } from '@/lib/utils';
 
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -470,7 +470,7 @@ export default function ServerDatabasesPage() {
         <div key={pathname} className='space-y-8 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-databases', 'top-of-page')} />
 
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverDatabases.title')}
                 description={
                     <div className='flex flex-wrap items-center gap-x-3 gap-y-2'>

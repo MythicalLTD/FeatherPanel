@@ -27,7 +27,7 @@ import { useFileEditorEngine } from '@/hooks/useFileEditorEngine';
 import { useSaveShortcut } from '@/hooks/useSaveShortcut';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/featherui/Button';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { FileTextEditor } from '@/components/server/files/FileTextEditor';
@@ -381,7 +381,7 @@ export default function FileEditorPage({
     return (
         <div className='relative flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto pb-4'>
             <WidgetRenderer widgets={getWidgets('server-file-editor', 'top-of-page')} />
-            <PageHeader
+            <ServerPageHeader
                 title={t('files.editor.title', { file: fileName })}
                 description={t('files.editor.description', { path: fullPath })}
             />

@@ -20,16 +20,16 @@ import { useParams, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import { useWingsWebSocket, type CommandSuggestResponse } from '@/hooks/useWingsWebSocket';
 import ServerHeader from '@/components/server/ServerHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import ServerConsoleStats from '@/components/server/ServerConsoleStats';
 import ServerAddressChip from '@/components/server/ServerAddressChip';
-import Link from 'next/link';
 import ServerTerminal, { ServerTerminalRef, ConsoleFilterRule } from '@/components/server/ServerTerminal';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
-import { AlertTriangle, Wifi, WifiOff, Loader2, Copy, TerminalSquare, ChevronRight } from 'lucide-react';
+import { AlertTriangle, Wifi, WifiOff, Loader2, Copy, TerminalSquare } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -773,39 +773,20 @@ export default function ServerConsolePage() {
         <div className='space-y-4 pb-6'>
             <WidgetRenderer widgets={getWidgets('server-console', 'top-of-page')} />
 
-            <div className='border-border/50 bg-card/50 flex flex-col gap-3 rounded-xl border px-4 py-3 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:px-5'>
-                <div className='flex min-w-0 items-center gap-3'>
-                    <span className='bg-muted/60 text-muted-foreground flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
-                        <TerminalSquare className='h-4 w-4' aria-hidden />
-                    </span>
-                    <div className='min-w-0'>
-                        <nav
-                            aria-label={t('ui.components.server.serverConsolePage.breadcrumb')}
-                            className='text-muted-foreground flex min-w-0 items-center gap-1 text-xs'
-                        >
-                            <Link href='/dashboard' className='hover:text-foreground shrink-0 transition-colors'>
-                                {t('navigation.items.dashboard')}
-                            </Link>
-                            <ChevronRight className='h-3 w-3 shrink-0' aria-hidden />
-                            <span className='truncate'>{server.name}</span>
-                        </nav>
-                        <h1 className='text-base leading-tight font-semibold sm:text-lg'>
-                            {t('servers.console.terminal.title')}
-                        </h1>
-                        <p className='text-muted-foreground hidden truncate text-xs sm:block'>
-                            {t('servers.console.page_description')}
-                        </p>
-                    </div>
-                </div>
-                {serverHost ? (
-                    <ServerAddressChip
-                        host={serverHost}
-                        port={server.allocation?.port || null}
-                        showVisibilityToggle
-                        className='self-start sm:self-auto'
-                    />
-                ) : null}
-            </div>
+            <ServerPageHeader
+                title={t('servers.console.terminal.title')}
+                description={t('servers.console.page_description')}
+                icon={TerminalSquare}
+                actions={
+                    serverHost ? (
+                        <ServerAddressChip
+                            host={serverHost}
+                            port={server.allocation?.port || null}
+                            showVisibilityToggle
+                        />
+                    ) : undefined
+                }
+            />
 
             <ServerHeader
                 serverName={server.name}

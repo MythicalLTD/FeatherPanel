@@ -22,7 +22,7 @@ import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Boxes, AlertTriangle, Loader2, Zap, ChevronRight, Check, Lock } from 'lucide-react';
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -364,7 +364,7 @@ export default function ServerTransferSpellPage() {
         <div key={pathname} className='mx-auto max-w-6xl space-y-8 pb-16 font-sans'>
             <WidgetRenderer widgets={getWidgets('server-startup-transfer-spell', 'top-of-page')} />
 
-            <PageHeader
+            <ServerPageHeader
                 title={t('navigation.items.transferSpell')}
                 description={t('serverStartup.spellSelectionHelp')}
                 actions={

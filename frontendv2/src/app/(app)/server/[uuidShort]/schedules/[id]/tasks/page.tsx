@@ -21,7 +21,7 @@ import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { ListCheck, Plus, Pencil, Trash2, ChevronUp, ChevronDown, Lock, AlertTriangle } from 'lucide-react';
 
-import { PageHeader } from '@/components/featherui/PageHeader';
+import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
@@ -275,7 +275,7 @@ export default function ServerTasksPage() {
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('server-tasks', 'top-of-page')} />
 
-            <PageHeader
+            <ServerPageHeader
                 title={t('serverTasks.title')}
                 description={t('serverTasks.description', { scheduleName: schedule?.name || '' })}
                 actions={
