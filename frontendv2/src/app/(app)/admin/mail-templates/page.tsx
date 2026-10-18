@@ -530,7 +530,7 @@ export default function MailTemplatesPage() {
                 <div className='flex h-full flex-col space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.mail_templates.form.edit_title')}</SheetTitle>
-                        <SheetDescription>{t('admin.mail_templates.form.edit_description')}</SheetDescription>
+                        <SheetDescription>{t('admin.mail_templates.form.edit_description', { name: selectedTemplate?.name ?? '' })}</SheetDescription>
                     </SheetHeader>
                     <form
                         onSubmit={handleUpdate}

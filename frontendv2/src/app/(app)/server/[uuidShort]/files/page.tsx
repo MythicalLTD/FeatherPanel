@@ -1517,7 +1517,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                         <div className='flex justify-between text-[10px] font-bold tracking-tighter text-white/40 uppercase'>
                                                             <span>
                                                                 {item.status === 'uploading'
-                                                                    ? t('files.messages.uploading', { file: '' })
+                                                                    ? t('files.messages.uploading', { file: item.file.name })
                                                                     : t('files.toolbar.upload')}
                                                             </span>
                                                             <span className='text-primary'>{item.progress}%</span>

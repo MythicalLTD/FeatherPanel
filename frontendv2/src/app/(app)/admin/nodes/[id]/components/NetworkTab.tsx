@@ -101,10 +101,13 @@ export function NetworkTab({ loading, data, error, onRefresh }: NetworkTabProps)
                 </div>
             </PageCard>
 
-            <PageCard title={t('admin.node.view.network.total_ips')} icon={Network}>
+            <PageCard
+                title={t('admin.node.view.network.total_ips', { count: String(ips.ip_addresses.length) })}
+                icon={Network}
+            >
                 <div className='flex items-center gap-4'>
                     <Badge variant='outline' className='bg-primary/5 text-primary border-primary/10 px-4 py-2 text-sm'>
-                        {t('admin.node.view.network.total_ips')}: {ips.ip_addresses.length}
+                        {t('admin.node.view.network.total_ips', { count: String(ips.ip_addresses.length) })}
                     </Badge>
                     <p className='text-muted-foreground text-sm leading-relaxed italic'>
                         {t('admin.node.view.network.help')}
