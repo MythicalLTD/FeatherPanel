@@ -10166,17 +10166,24 @@
 					"password": "Password",
 					"password_placeholder": "Enter password",
 					"role": "Role",
-					"select_role": "Select a role"
+					"select_role": "Select a role",
+					"description": "All fields are required. The username fills in from the email, and you can generate a password.",
+					"email_hint": "They get a welcome email with these login details if mail is set up.",
+					"username_hint": "3 to 32 letters, numbers or underscores. Suggested from the email.",
+					"password_hint": "At least 8 characters. They can change it and turn on 2FA after signing in.",
+					"generate_password": "Generate",
+					"show_password": "Show password",
+					"hide_password": "Hide password",
+					"copy_password": "Copy password",
+					"password_copied": "Password copied",
+					"role_hint": "Regular users can only see their own servers. You can change this later."
 				},
-				"help": {
-					"tips_title": "Quick Tips",
-					"tips": {
-						"username": "Choose a unique username that's easy to remember",
-						"role": "Assign the appropriate role based on user responsibilities",
-						"email": "User will receive login credentials via email"
-					},
-					"security_title": "Security",
-					"security_desc": "Ensure strong passwords and assign minimal required permissions. Users can enable 2FA after first login."
+				"errors": {
+					"required": "This field is required.",
+					"email": "Enter a valid email address.",
+					"username": "Use 3 to 32 letters, numbers or underscores.",
+					"password": "Use at least 8 characters.",
+					"role": "Choose a role."
 				}
 			},
 			"created": "Created",
