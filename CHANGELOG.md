@@ -16,6 +16,7 @@
 
 ### Fixed
 
+- Top bar no longer crowds or overlaps at tablet and laptop widths: the search box now shrinks between the page title and the actions instead of being centered on top of them, the keyboard shortcut hint only shows when there is room, and on phones the admin area, privacy mode and appearance buttons move into the user menu. by @nayskutzu
 - API key creation no longer depends on the admin `admin.api.bypass_restrictions` permission. Creation follows the "Allow users to create API keys" setting (or the new `user.api_keys.create` permission), and `admin.api.bypass_restrictions` now does what it says: authenticated users with it skip per-route rate limits, everyone else keeps them. The account page also read the `'true'`/`'false'` setting strings as truthy, so the create button and the profile field toggles ignored a disabled setting. by @nayskutzu
 - Bottom dock: the dock is now centered at every icon size and only as wide as its items; icons sit in fixed-width slots and hover magnification scales the icon in place, so neighbours no longer shift; long labels truncate cleanly with a tooltip (icons-only mode shows tooltips on hover); section pills are replaced by slim dividers and the collapse toggle is a compact icon button. by @nayskutzu
 - Translation placeholders render their values again (`{{name}}` and `{name}`, zero and empty values), e.g. the file manager upload progress showing `UPLOADING {FILE}`. A new `scan:translation-params` step fails the build when a call misses a placeholder value. by @nayskutzu

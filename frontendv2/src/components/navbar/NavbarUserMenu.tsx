@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import type { Dispatch, SetStateAction } from 'react';
 import { Fragment } from 'react';
 import { Menu, Transition } from '@headlessui/react';
-import { CircleUser, ChevronDown, Copy, Database, Eye, EyeOff, LogOut, Palette } from 'lucide-react';
+import { CircleUser, ChevronDown, Copy, Database, Eye, EyeOff, LogOut, Palette, ShieldCheck } from 'lucide-react';
 import { usePrivacyModeToggle } from '@/components/common/PrivacyModeButton';
 import { Switch } from '@/components/ui/switch';
 import { HIDDEN_IP_PLACEHOLDER } from '@/lib/ip-mask';
@@ -43,6 +43,8 @@ type NavbarUserMenuProps = {
     getUsername: () => string;
     getLegalName: () => string;
     handleLogout: () => Promise<void>;
+    /** When set, phones get an "Admin area" entry (the top bar button is hidden there). */
+    adminAreaHref?: string;
 };
 
 function UserAvatar({
@@ -143,6 +145,7 @@ export function NavbarUserMenu({
     getUsername,
     getLegalName,
     handleLogout,
+    adminAreaHref,
 }: NavbarUserMenuProps) {
     const isModern = variant === 'modern';
     const roleColor = user?.role?.color?.trim() || null;
@@ -275,6 +278,18 @@ export function NavbarUserMenu({
                     </div>
 
                     <div className='space-y-1 p-2'>
+                        {adminAreaHref ? (
+                            <Menu.Item as='div' className='sm:hidden'>
+                                {({ active }) => (
+                                    <MenuLinkRow
+                                        active={active}
+                                        onClick={() => router.push(adminAreaHref)}
+                                        icon={ShieldCheck}
+                                        label={t('navbar.adminArea')}
+                                    />
+                                )}
+                            </Menu.Item>
+                        ) : null}
                         {userNavigation.map((item) => (
                             <Menu.Item key={item.name}>
                                 {({ active }) => (
