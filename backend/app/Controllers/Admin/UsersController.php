@@ -1174,8 +1174,12 @@ class UsersController
             ownerId: (int) $user['id'],
         );
 
+        $nodes = Node::getNodesByIds(array_column($servers, 'node_id'));
+        $realms = Realm::getByIds(array_column($servers, 'realms_id'));
+        $spells = Spell::getSpellsByIds(array_column($servers, 'spell_id'));
+        $allocations = Allocation::getAllocationsByIds(array_column($servers, 'allocation_id'));
         foreach ($servers as &$server) {
-            $node = Node::getNodeById($server['node_id']);
+            $node = $nodes[(int) $server['node_id']] ?? null;
             $server['node'] = $node ? [
                 'id' => $node['id'],
                 'name' => $node['name'] ?? null,
@@ -1183,19 +1187,19 @@ class UsersController
                 'maintenance_mode' => (bool) ($node['maintenance_mode'] ?? false),
             ] : null;
 
-            $server['realm'] = Realm::getById($server['realms_id']);
+            $server['realm'] = $realms[(int) $server['realms_id']] ?? null;
             $server['realm'] = $server['realm'] ? [
                 'id' => $server['realm']['id'] ?? null,
                 'name' => $server['realm']['name'] ?? null,
             ] : null;
 
-            $server['spell'] = Spell::getSpellById($server['spell_id']);
+            $server['spell'] = $spells[(int) $server['spell_id']] ?? null;
             $server['spell'] = $server['spell'] ? [
                 'id' => $server['spell']['id'] ?? null,
                 'name' => $server['spell']['name'] ?? null,
             ] : null;
 
-            $allocation = Allocation::getAllocationById($server['allocation_id']);
+            $allocation = $allocations[(int) $server['allocation_id']] ?? null;
             $server['allocation'] = $allocation ? [
                 'id' => $allocation['id'],
                 'ip' => $allocation['ip'] ?? null,

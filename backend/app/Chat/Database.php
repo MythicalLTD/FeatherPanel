@@ -99,6 +99,13 @@ class Database
             return self::$sharedPdo;
         }
 
+        // Share the application's connection instead of opening a second one
+        // to the same database (one connect less per classic request, half the
+        // connections per worker, and settings reads join open transactions).
+        if (isset(\App\App::$instance) && isset(\App\App::$instance->db)) {
+            return self::$sharedPdo = \App\App::$instance->db->getPdo();
+        }
+
         /**
          * Load the environment variables.
          */
