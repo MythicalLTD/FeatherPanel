@@ -29,13 +29,17 @@ import { createPortal } from 'react-dom';
 import type { DockSize, SidebarGlow } from '@/hooks/useSidebarPreferences';
 import { cn } from '@/lib/utils';
 
+/**
+ * `slot` is the fixed width each item takes when labels are shown, so labels get room without
+ * pushing neighbours around. Without labels the slot is the tile itself.
+ */
 export const DOCK_SIZE_CONFIG = {
-    sm: { tile: 36, icon: 18, gap: 4, padY: 6, caption: 14 },
-    md: { tile: 42, icon: 20, gap: 5, padY: 8, caption: 14 },
-    lg: { tile: 48, icon: 22, gap: 6, padY: 9, caption: 15 },
+    sm: { tile: 34, icon: 17, gap: 4, padY: 7, caption: 14, slot: 60 },
+    md: { tile: 40, icon: 20, gap: 5, padY: 8, caption: 14, slot: 68 },
+    lg: { tile: 48, icon: 24, gap: 6, padY: 10, caption: 15, slot: 78 },
 } as const;
 
-type DockMetrics = { tile: number; icon: number; gap: number; padY: number; caption: number };
+type DockMetrics = { tile: number; icon: number; gap: number; padY: number; caption: number; slot: number };
 
 type MacDockContextValue = {
     metrics: DockMetrics;
@@ -168,26 +172,17 @@ export type MacDockCategoryProps = {
 };
 
 export function MacDockCategory({ label }: MacDockCategoryProps) {
-    const { expanded } = useMacDockContext();
-
+    // A hairline divider between groups; the group name stays available to screen readers and
+    // as a hover hint, without the pills that used to take a tile's worth of space.
     return (
         <div
-            className='fp-mac-dock-category flex shrink-0 items-center gap-1.5 px-1'
+            className='fp-mac-dock-category flex shrink-0 items-center self-stretch px-1'
             role='separator'
+            aria-orientation='vertical'
             aria-label={label}
+            title={label}
         >
-            <div className='from-primary/10 via-primary/40 h-7 w-px shrink-0 bg-gradient-to-b from-transparent to-transparent' />
-            <span
-                className={cn(
-                    'border-primary/25 rounded-md border px-1.5 py-0.5 leading-none font-semibold tracking-wide whitespace-nowrap uppercase',
-                    expanded
-                        ? 'bg-primary/10 text-primary text-[10px]'
-                        : 'bg-muted/50 text-muted-foreground text-[9px]',
-                )}
-            >
-                {label}
-            </span>
-            <div className='from-primary/10 via-primary/40 h-7 w-px shrink-0 bg-gradient-to-b from-transparent to-transparent' />
+            <div className='bg-border h-6 w-px' />
         </div>
     );
 }
@@ -262,10 +257,12 @@ export type MacDockItemProps = {
 export function MacDockItem({ label, active, className, children }: MacDockItemProps) {
     const { metrics, showItemLabels, sidebarGlow } = useMacDockContext();
     const ref = useRef<HTMLDivElement>(null);
+    const labelRef = useRef<HTMLSpanElement>(null);
     const [hovered, setHovered] = useState(false);
-    const showTooltip = hovered && !showItemLabels;
-    // Labels need more than the tile width or neighbors collide / truncate into each other.
-    const itemWidth = showItemLabels ? metrics.tile + 28 : metrics.tile;
+    const [labelTruncated, setLabelTruncated] = useState(false);
+    const showTooltip = hovered && (!showItemLabels || labelTruncated);
+    // Fixed slot width: magnification is a transform on the tile only, so siblings never reflow.
+    const slotWidth = showItemLabels ? metrics.slot : metrics.tile;
 
     const glowClass =
         sidebarGlow === 'accent' && active
@@ -274,25 +271,28 @@ export function MacDockItem({ label, active, className, children }: MacDockItemP
               ? 'fp-dock-item-glow-subtle'
               : '';
 
+    const onEnter = () => {
+        const el = labelRef.current;
+        setLabelTruncated(Boolean(el && el.scrollWidth > el.clientWidth + 1));
+        setHovered(true);
+    };
+
     return (
         <div
             ref={ref}
-            className={cn(
-                'fp-mac-dock-item relative shrink-0 overflow-visible transition-transform duration-150 ease-out',
-                hovered && 'z-20 scale-[1.18]',
-                className,
-            )}
-            style={{ width: itemWidth, transformOrigin: 'center center' }}
-            onMouseEnter={() => setHovered(true)}
+            className={cn('fp-mac-dock-item relative shrink-0 overflow-visible', hovered && 'z-20', className)}
+            style={{ width: slotWidth }}
+            onMouseEnter={onEnter}
             onMouseLeave={() => setHovered(false)}
-            onFocus={() => setHovered(true)}
+            onFocus={onEnter}
             onBlur={() => setHovered(false)}
         >
             <DockTooltip label={label} anchorRef={ref} visible={showTooltip} />
-            <div className='flex flex-col items-center justify-center gap-0.5 overflow-visible'>
+            <div className='flex flex-col items-center justify-center gap-1 overflow-visible'>
                 <div
                     className={cn(
-                        'relative flex items-center justify-center overflow-hidden rounded-xl border transition-[background-color,border-color,color,box-shadow] duration-150',
+                        'relative flex origin-bottom items-center justify-center overflow-hidden rounded-xl border transition-[transform,background-color,border-color,color] duration-150 ease-out motion-reduce:transition-none',
+                        hovered && 'scale-[1.15] motion-reduce:scale-100',
                         active
                             ? 'border-primary/40 bg-primary/12 text-primary'
                             : 'border-border/45 bg-muted/30 text-muted-foreground hover:border-primary/25 hover:bg-primary/8 hover:text-foreground',
@@ -312,11 +312,11 @@ export function MacDockItem({ label, active, className, children }: MacDockItemP
                 </div>
                 {showItemLabels && (
                     <span
+                        ref={labelRef}
                         className={cn(
-                            'w-full truncate text-center text-[10px] leading-tight font-medium',
+                            'block w-full truncate px-0.5 text-center text-[10px] leading-tight font-medium',
                             active ? 'text-primary' : 'text-muted-foreground',
                         )}
-                        title={label}
                     >
                         {label}
                     </span>
