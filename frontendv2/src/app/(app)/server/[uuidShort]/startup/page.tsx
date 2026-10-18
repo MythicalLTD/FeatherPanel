@@ -49,6 +49,7 @@ import { cn, isEnabled } from '@/lib/utils';
 import { buildSpellDockerImageOptions, resolveSpellDefaultDockerImage } from '@/lib/spellDockerImages';
 import type { Variable, Server, CustomVariable } from '@/types/server';
 import { PageLoading } from '@/components/featherui/PageLoading';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 
 interface ServerResponse {
@@ -85,6 +86,9 @@ export default function ServerStartupPage() {
     const [availableDockerImages, setAvailableDockerImages] = React.useState<{ name: string; value: string }[]>([]);
     const [spellDefaultDockerImage, setSpellDefaultDockerImage] = React.useState('');
     const [defaultStartupCommand, setDefaultStartupCommand] = React.useState('');
+    // Image the form starts from after normalising to an allowed option, so loading alone never
+    // counts as an unsaved change.
+    const [imageBaseline, setImageBaseline] = React.useState('');
 
     const [form, setForm] = React.useState({
         startup: '',
@@ -168,14 +172,18 @@ export default function ServerStartupPage() {
 
                     const allowedValues = imageOptions.map((img) => img.value);
 
+                    let initialImage = currentImage;
                     if (currentImage && allowedValues.includes(currentImage)) {
-                        setForm((prev) => ({ ...prev, image: currentImage }));
+                        initialImage = currentImage;
                     } else if (defaultImage) {
-                        setForm((prev) => ({ ...prev, image: defaultImage }));
+                        initialImage = defaultImage;
                     } else if (allowedValues.length > 0) {
-                        setForm((prev) => ({ ...prev, image: allowedValues[0] }));
+                        initialImage = allowedValues[0];
                     }
+                    setForm((prev) => ({ ...prev, image: initialImage }));
+                    setImageBaseline(initialImage);
                 } catch {
+                    setImageBaseline(s.image || s.docker_image || '');
                     setAvailableDockerImages([]);
                     setSpellDefaultDockerImage('');
                 }
@@ -346,12 +354,14 @@ export default function ServerStartupPage() {
     const hasChanges = () => {
         if (!server) return false;
         const startupChanged = form.startup !== (server.startup || '');
-        const imageChanged = canUpdateDockerImage && form.image !== (server.image || server.docker_image || '');
+        const imageChanged = canUpdateDockerImage && form.image !== imageBaseline;
         const variablesChanged = variables
             .filter((v) => isEnabled(v.user_editable))
             .some((v) => variableValues[v.variable_id] !== (v.variable_value ?? ''));
         return startupChanged || imageChanged || variablesChanged;
     };
+    const unsaved = hasChanges();
+    const hasVariableErrors = Object.keys(variableErrors).length > 0;
 
     if (permissionsLoading || settingsLoading) {
         return <PageLoading />;
@@ -419,7 +429,7 @@ export default function ServerStartupPage() {
                             variant='default'
                             size='default'
                             onClick={handleSave}
-                            disabled={saving || !hasChanges() || Object.keys(variableErrors).length > 0}
+                            disabled={saving || !unsaved || hasVariableErrors}
                             data-fp-save-shortcut
                             loading={saving}
                             className='order-1 w-full sm:order-2 sm:w-auto'
@@ -779,7 +789,10 @@ export default function ServerStartupPage() {
                             </p>
 
                             <Button
-                                onClick={() => router.push(`/server/${uuidShort}/startup/transfer/spell`)}
+                                onClick={() => {
+                                    if (unsaved && !window.confirm(t('common.unsavedChanges.leaveConfirm'))) return;
+                                    router.push(`/server/${uuidShort}/startup/transfer/spell`);
+                                }}
                                 className='bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary w-full border'
                                 size='default'
                                 variant='outline'
@@ -793,6 +806,18 @@ export default function ServerStartupPage() {
                 </div>
             </div>
             <WidgetRenderer widgets={getWidgets('server-startup', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                onSave={() => void handleSave()}
+                onDiscard={() => {
+                    setVariableErrors({});
+                    void fetchData();
+                }}
+                saving={saving}
+                saveDisabled={hasVariableErrors}
+                description={hasVariableErrors ? t('common.unsavedChanges.invalidDescription') : undefined}
+            />
         </div>
     );
 }

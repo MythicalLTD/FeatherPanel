@@ -32,6 +32,10 @@ export function getApiErrorCode(error: unknown): string | null {
     return getFeatherpanelApiErrorCode(error);
 }
 
+// Catch-all codes the backend pairs with many different, field-specific messages. A single
+// translation cannot describe them, so the API message wins and the translation is only a fallback.
+const GENERIC_ERROR_CODES = new Set(['INVALID_DATA_TYPE']);
+
 function resolveFromParts(
     code: string | null | undefined,
     rawMessage: string | null | undefined,
@@ -39,7 +43,7 @@ function resolveFromParts(
     fallbackKey: string,
     params?: Record<string, string>,
 ): string {
-    if (code) {
+    if (code && !(GENERIC_ERROR_CODES.has(code) && typeof rawMessage === 'string' && rawMessage.trim() !== '')) {
         const codeKey = `errors.codes.${code}`;
         const translated = t(codeKey, params);
         if (translated !== codeKey) {

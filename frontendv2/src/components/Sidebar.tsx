@@ -894,6 +894,9 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
 
     useEffect(() => subscribeSidebarCollapsed(setCollapsed), []);
 
+    // The mobile drawer mirrors the desktop side; "bottom" has no dock on phones, so it uses the left drawer.
+    const mobileFromRight = sidebarPosition === 'right';
+
     return (
         <>
             <Transition.Root show={mobileOpen} as={Fragment}>
@@ -910,23 +913,25 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
                         <div className='bg-background/80 fixed inset-0 backdrop-blur-sm' />
                     </Transition.Child>
 
-                    <div className='fixed inset-0 flex'>
+                    <div className={cn('fixed inset-0 flex', mobileFromRight && 'justify-end')}>
                         <Transition.Child
                             as={Fragment}
                             enter='transition ease-in-out duration-300 transform'
-                            enterFrom='-translate-x-full'
+                            enterFrom={mobileFromRight ? 'translate-x-full' : '-translate-x-full'}
                             enterTo='translate-x-0'
                             leave='transition ease-in-out duration-300 transform'
                             leaveFrom='translate-x-0'
-                            leaveTo='-translate-x-full'
+                            leaveTo={mobileFromRight ? 'translate-x-full' : '-translate-x-full'}
                         >
                             <Dialog.Panel
                                 className={cn(
-                                    'relative mr-16 flex w-full max-w-xs flex-1',
+                                    'relative flex w-full max-w-xs flex-1',
+                                    mobileFromRight ? 'ml-16' : 'mr-16',
                                     chromeLayout === 'classic'
                                         ? 'overflow-hidden'
                                         : cn(
-                                              'overflow-hidden rounded-r-2xl border border-l-0',
+                                              'overflow-hidden border',
+                                              mobileFromRight ? 'rounded-l-2xl border-r-0' : 'rounded-r-2xl border-l-0',
                                               getSidebarSurfaceClass(sidebarStyle, sidebarGlow),
                                           ),
                                 )}
@@ -940,7 +945,12 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
                                     leaveFrom='opacity-100'
                                     leaveTo='opacity-0'
                                 >
-                                    <div className='absolute top-0 left-full flex w-16 justify-center pt-5'>
+                                    <div
+                                        className={cn(
+                                            'absolute top-0 flex w-16 justify-center pt-5',
+                                            mobileFromRight ? 'right-full' : 'left-full',
+                                        )}
+                                    >
                                         <button
                                             type='button'
                                             className='border-border/50 bg-card/90 text-muted-foreground hover:bg-muted hover:text-foreground rounded-full border p-2.5 shadow-lg backdrop-blur-md transition-colors'
@@ -955,7 +965,8 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
                                 <div
                                     className={cn(
                                         'flex h-full min-h-0 grow flex-col gap-y-5 overflow-y-auto',
-                                        chromeLayout === 'classic' && 'bg-card border-border/80 border-r',
+                                        chromeLayout === 'classic' &&
+                                            cn('bg-card border-border/80', mobileFromRight ? 'border-l' : 'border-r'),
                                     )}
                                 >
                                     <SidebarContent

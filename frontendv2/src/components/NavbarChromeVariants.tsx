@@ -316,7 +316,10 @@ export function NavbarClassicChrome(props: NavbarChromeProps) {
         >
             <button
                 type='button'
-                className='text-muted-foreground hover:bg-accent/50 hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background shrink-0 touch-manipulation rounded-lg p-2.5 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-95 lg:hidden'
+                className={cn(
+                    'text-muted-foreground hover:bg-accent/50 hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background shrink-0 touch-manipulation rounded-lg p-2.5 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-95 lg:hidden',
+                    toggleOnRight && 'order-last',
+                )}
                 onClick={onMenuClick}
                 aria-label={t('navbar.openSidebar')}
             >
@@ -393,7 +396,11 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
             >
                 <button
                     type='button'
-                    className='text-muted-foreground hover:bg-muted/50 hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background flex shrink-0 touch-manipulation items-center justify-center rounded-xl border border-transparent p-2 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-95 lg:hidden'
+                    className={cn(
+                        'text-muted-foreground hover:bg-muted/50 hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background flex shrink-0 touch-manipulation items-center justify-center rounded-xl border border-transparent p-2 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-95 lg:hidden',
+                        // Mobile drawer opens from the chosen side, so the button that opens it sits there too.
+                        toggleOnRight && 'order-last',
+                    )}
                     onClick={onMenuClick}
                     aria-label={t('navbar.openSidebar')}
                 >

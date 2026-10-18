@@ -25,6 +25,11 @@
 - WebSpace listing no longer returns HTTP 500 on a legacy domain conflict, and MongoDB password resets no longer crash (#257). by @Devority
 - The account page now shows the **Disable 2FA** button again; it checked `'1'` instead of `'true'` (#260). by @MyMonsterVR
 - The 2FA setup QR code now has a white margin in dark mode so it can be scanned (#261). by @MyMonsterVR
+- Server disk limits and usage are shown correctly: the server page no longer serves a cached copy of the limits after an admin change, and stopped servers show their real disk usage instead of 0. by @nayskutzu
+- Admins can save servers that have no allocation limit set; the edit form sent it back as empty and every save was rejected. Errors of this kind now show the real reason instead of "Name must be a string". by @nayskutzu
+- Size fields no longer keep the old value when you type a number and then pick the unit (typing 12 and choosing GB used to save 5 GB). by @nayskutzu
+- On phones the sidebar opens from the side you picked in Appearance; the right-hand position used to be ignored. by @nayskutzu
+- Startup, server settings, account profile, admin server edit, admin settings and Wings config show a sticky "unsaved changes" bar with Save and Discard, and ask before you leave with unsaved edits. by @nayskutzu
 
 ## v1.4.1 STABLE
 

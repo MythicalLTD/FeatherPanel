@@ -39,7 +39,7 @@ async function getVmInstance(id: string): Promise<VmInstance | null> {
                 Cookie: cookieHeader,
                 Accept: 'application/json',
             },
-            next: { revalidate: 10 },
+            cache: 'no-store', // per-user data, never cached
         });
 
         if (!res.ok) return null;

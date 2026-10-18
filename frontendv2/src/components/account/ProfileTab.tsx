@@ -15,13 +15,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Description, Field, Fieldset, Label } from '@headlessui/react';
 import { Button } from '@/components/featherui/Button';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import axios from 'axios';
@@ -82,6 +83,18 @@ export default function ProfileTab() {
             setLoading(false);
         }
     }, [user]);
+
+    const formRef = useRef<HTMLFormElement>(null);
+    const unsaved =
+        Boolean(user) &&
+        !loading &&
+        (Boolean(avatarFile) ||
+            formData.password !== '' ||
+            formData.username !== (user?.username || '') ||
+            formData.email !== (user?.email || '') ||
+            formData.first_name !== (user?.first_name || '') ||
+            formData.last_name !== (user?.last_name || '') ||
+            formData.ticket_signature !== (user?.ticket_signature || ''));
 
     const resetForm = () => {
         if (user) {
@@ -228,7 +241,7 @@ export default function ProfileTab() {
                 <p className='text-muted-foreground mt-1 text-sm'>{t('account.editProfileDescription')}</p>
             </div>
 
-            <form onSubmit={handleSubmit} className='space-y-6' data-fp-save-shortcut>
+            <form ref={formRef} onSubmit={handleSubmit} className='space-y-6' data-fp-save-shortcut>
                 <Fieldset className='space-y-6'>
                     <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                         {allowUsernameChange && (
@@ -378,6 +391,13 @@ export default function ProfileTab() {
                     </div>
                 </div>
             </form>
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                onSave={() => formRef.current?.requestSubmit()}
+                onDiscard={resetForm}
+                saving={isSubmitting || isUploadingAvatar}
+            />
         </div>
     );
 }

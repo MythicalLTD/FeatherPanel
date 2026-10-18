@@ -47,7 +47,9 @@ async function getServer(uuidShort: string): Promise<Server | null> {
                 Cookie: cookieHeader,
                 Accept: 'application/json',
             },
-            next: { revalidate: 10 },
+            // Per-user data (limits, permissions): never serve a cached copy, or a limit changed
+            // by an admin keeps showing the old value.
+            cache: 'no-store',
         });
 
         if (!res.ok) {

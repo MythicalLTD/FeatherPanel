@@ -21,6 +21,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { adminSettingsApi, OrganizedSettings, Setting } from '@/lib/admin-settings-api';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -424,6 +425,15 @@ export default function SettingsPage() {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             [key]: { ...prev[key], value: value as any },
         }));
+    };
+
+    const unsaved = Object.entries(settings).some(([key, setting]) => {
+        const initial = initialSettings[key];
+        return Boolean(initial) && String(initial.value) !== String(setting.value);
+    });
+
+    const handleDiscard = () => {
+        setSettings(JSON.parse(JSON.stringify(initialSettings)));
     };
 
     const handleSave = async () => {
@@ -868,6 +878,13 @@ export default function SettingsPage() {
             </Dialog>
 
             <WidgetRenderer widgets={getWidgets('admin-settings', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                onSave={() => void handleSave()}
+                onDiscard={handleDiscard}
+                saving={saving}
+            />
         </div>
     );
 }

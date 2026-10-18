@@ -141,6 +141,10 @@ export default function ServerConsolePage() {
     const [currentCpu, setCurrentCpu] = useState(0);
     const [currentMemory, setCurrentMemory] = useState(0);
     const [currentDisk, setCurrentDisk] = useState(0);
+    // Disk usage is known once either live stats or the resources endpoint reported it. The
+    // daemon only streams stats while the server runs, so an offline server used to show 0.
+    const [diskKnown, setDiskKnown] = useState(false);
+    const lastLiveDiskAtRef = useRef(0);
     const [currentNetworkRx, setCurrentNetworkRx] = useState(0);
     const [currentNetworkTx, setCurrentNetworkTx] = useState(0);
     const [networkRxTotal, setNetworkRxTotal] = useState(0);
@@ -194,6 +198,37 @@ export default function ServerConsolePage() {
     const canConnect = hasPermission('websocket.connect');
     const isServerSuspended = server?.suspended === 1 || server?.status === 'suspended';
     const shouldConnectToWings = canConnect && !isServerSuspended;
+
+    // Disk usage for stopped servers (no live stats): ask the daemon directly, then every minute
+    // while live stats are not flowing.
+    useEffect(() => {
+        if (!shouldConnectToWings || !serverUuid) return;
+        let cancelled = false;
+        const load = async () => {
+            if (Date.now() - lastLiveDiskAtRef.current < 60_000) return;
+            try {
+                const { data } = await axios.get<{
+                    success: boolean;
+                    data: { disk_bytes: number | null };
+                }>(`/api/user/servers/${serverUuid}/resources`);
+                if (cancelled || !data.success || data.data.disk_bytes == null) return;
+                if (Date.now() - lastLiveDiskAtRef.current < 60_000) return;
+                const diskMiB = Number(data.data.disk_bytes) / (1024 * 1024);
+                setCurrentDisk(diskMiB);
+                setDiskKnown(true);
+                // The performance chart reads its current value from the history, so feed it too.
+                setDiskData((prev) => [...prev, { timestamp: Date.now(), value: diskMiB }].slice(-maxDataPoints));
+            } catch {
+                // Node unreachable: keep the pending state.
+            }
+        };
+        void load();
+        const timer = window.setInterval(() => void load(), 60_000);
+        return () => {
+            cancelled = true;
+            window.clearInterval(timer);
+        };
+    }, [shouldConnectToWings, serverUuid, maxDataPoints]);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('server-console');
 
@@ -331,7 +366,9 @@ export default function ServerConsolePage() {
 
             if (stats.disk_bytes !== undefined && stats.disk_bytes !== null) {
                 const diskMiB = Number(stats.disk_bytes) / (1024 * 1024);
+                lastLiveDiskAtRef.current = Date.now();
                 setCurrentDisk(diskMiB);
+                setDiskKnown(true);
                 setDiskData((prev) => {
                     const newData = [...prev, { timestamp, value: diskMiB }];
                     return newData.slice(-maxDataPoints);
@@ -859,6 +896,7 @@ export default function ServerConsolePage() {
                             wingsUptime={wingsUptime}
                             ping={ping}
                             statsReady={connectionStatus === 'connected'}
+                            diskReady={diskKnown || connectionStatus === 'connected'}
                             cpuUsage={currentCpu}
                             memoryUsage={currentMemory}
                             diskUsage={currentDisk}
@@ -897,7 +935,6 @@ export default function ServerConsolePage() {
                 />
             )}
 
-            <WidgetRenderer widgets={getWidgets('server-console', 'after-performance')} />
             <WidgetRenderer widgets={getWidgets('server-console', 'after-performance')} />
 
             <WidgetRenderer widgets={getWidgets('server-console', 'bottom-of-page')} />

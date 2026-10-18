@@ -87,6 +87,8 @@ interface ServerInfoCardsProps {
     ping: number | null;
     /** False until Wings is connected and metrics are meaningful (avoids 0% flash). */
     statsReady?: boolean;
+    /** Disk usage can be known without live stats (resources endpoint); defaults to statsReady. */
+    diskReady?: boolean;
 
     cpuUsage?: number;
     memoryUsage?: number;
@@ -111,6 +113,7 @@ export default React.memo(function ServerInfoCards({
     wingsUptime,
     ping,
     statsReady = true,
+    diskReady,
     cpuUsage = 0,
     memoryUsage = 0,
     diskUsage = 0,
@@ -147,6 +150,7 @@ export default React.memo(function ServerInfoCards({
 
     const cpuPercent = getUsagePercentage(cpuUsage, cpuLimit);
     const memoryPercent = getUsagePercentage(memoryUsage, memoryLimit);
+    const diskShown = diskReady ?? statsReady;
     const diskPercent = getUsagePercentage(diskUsage, diskLimit);
     const diskOverLimit = diskLimit > 0 && diskUsage > diskLimit;
     const memoryOverLimit = memoryLimit > 0 && memoryUsage > memoryLimit;
@@ -301,10 +305,10 @@ export default React.memo(function ServerInfoCards({
                                 {t('servers.disk')}
                             </span>
                             <span className={cn('font-medium tabular-nums', diskOverLimit && 'text-destructive')}>
-                                {statsReady ? formatMib(diskUsage) : pendingValue}
+                                {diskShown ? formatMib(diskUsage) : pendingValue}
                             </span>
                         </div>
-                        {statsReady && diskLimit > 0 && (
+                        {diskShown && diskLimit > 0 && (
                             <Progress
                                 value={diskPercent}
                                 className='h-1.5'

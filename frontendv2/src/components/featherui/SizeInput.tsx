@@ -127,6 +127,20 @@ export function SizeInput({
                             type='button'
                             aria-pressed={displayUnit === choice}
                             onClick={() => {
+                                // A bare number the user just typed means "this many of the unit I am
+                                // about to pick" (type 12, click GB = 12 GB). Converting the previous
+                                // value instead silently kept the old limit (12 typed, 5 GB saved).
+                                const typed =
+                                    touched && draft.trim() && !parsed?.hasUnit
+                                        ? parseSizeInput(draft, unit, choice)
+                                        : null;
+                                if (typed) {
+                                    setDisplayUnit(choice);
+                                    const typedValid = typed.value >= min && (max === undefined || typed.value <= max);
+                                    onValidityChange?.(typedValid);
+                                    if (typedValid) onValueChange(typed.value);
+                                    return;
+                                }
                                 const currentValue = valid && parsed ? parsed.value : value;
                                 setDisplayUnit(choice);
                                 setDraft(formatSizeInput(currentValue, unit, choice));
