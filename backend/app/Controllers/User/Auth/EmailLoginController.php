@@ -271,8 +271,12 @@ class EmailLoginController
             return ApiResponse::error('Missing required fields: ' . implode(', ', $missingFields), 'MISSING_REQUIRED_FIELDS');
         }
 
-        $email = trim($data['email']);
-        $code = trim($data['code']);
+        if (!is_scalar($data['email']) || !is_scalar($data['code'])) {
+            return ApiResponse::error('Email and code must be strings', 'INVALID_DATA_TYPE');
+        }
+
+        $email = trim((string) $data['email']);
+        $code = trim((string) $data['code']);
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return ApiResponse::error('Invalid email address format', 'INVALID_EMAIL');

@@ -1146,6 +1146,12 @@ class ServerUserController
         }
 
         // Validate and sanitize input
+        foreach (['name', 'description', 'startup', 'image'] as $field) {
+            if (isset($data[$field]) && !is_scalar($data[$field])) {
+                return ApiResponse::error("Field {$field} must be a string", 'INVALID_DATA_TYPE', 400);
+            }
+        }
+
         $updateData = [];
         $spellChanged = false;
         $oldSpellId = (int) $server['spell_id'];
@@ -1655,6 +1661,12 @@ class ServerUserController
         $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
             return ApiResponse::error('Invalid request data', 'INVALID_REQUEST', 400);
+        }
+
+        foreach (['name', 'env_variable', 'variable_value'] as $field) {
+            if (isset($data[$field]) && !is_scalar($data[$field])) {
+                return ApiResponse::error("Field {$field} must be a string", 'INVALID_DATA_TYPE', 400);
+            }
         }
 
         $name = trim((string) ($data['name'] ?? ''));

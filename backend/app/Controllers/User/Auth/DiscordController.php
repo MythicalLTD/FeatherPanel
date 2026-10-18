@@ -265,7 +265,7 @@ class DiscordController
         $usernameOrEmail = $data['username_or_email'] ?? $data['email'] ?? '';
         $password = $data['password'] ?? '';
 
-        if (empty($token) || empty($usernameOrEmail) || empty($password)) {
+        if (empty($token) || empty($usernameOrEmail) || empty($password) || !is_string($token) || !is_string($usernameOrEmail) || !is_string($password)) {
             return ApiResponse::error('Missing required fields', 'MISSING_REQUIRED_FIELDS', 400);
         }
 

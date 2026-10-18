@@ -374,6 +374,12 @@ class TicketMessagesController
             return ApiResponse::error('No data to update', 'NO_DATA', 400);
         }
 
+        foreach ($data as $field => $value) {
+            if ($value !== null && !is_scalar($value)) {
+                return ApiResponse::error('Field ' . $field . ' must be a string', 'INVALID_DATA_TYPE', 400);
+            }
+        }
+
         $updated = TicketMessage::update($id, $data);
 
         if (!$updated) {

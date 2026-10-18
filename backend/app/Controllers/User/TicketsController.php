@@ -310,7 +310,7 @@ class TicketsController
 
         $requiredFields = ['title', 'description', 'category_id', 'priority_id'];
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || (is_string($data[$field]) && trim($data[$field]) === '')) {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || (is_string($data[$field]) && trim($data[$field]) === '')) {
                 return ApiResponse::error("Missing required field: {$field}", 'MISSING_REQUIRED_FIELD', 400);
             }
         }
@@ -342,6 +342,9 @@ class TicketsController
         }
 
         // Validate server if provided
+        if (isset($data['server_id']) && $data['server_id'] !== '' && !is_numeric($data['server_id'])) {
+            return ApiResponse::error('Invalid server', 'INVALID_SERVER', 400);
+        }
         $serverId = isset($data['server_id']) && $data['server_id'] !== '' ? (int) $data['server_id'] : null;
         if ($serverId !== null) {
             $server = Server::getServerById($serverId);

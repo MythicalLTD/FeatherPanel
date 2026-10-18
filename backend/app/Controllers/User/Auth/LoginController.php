@@ -100,6 +100,9 @@ class LoginController
 
         // Handle Discord OAuth login
         $discordToken = $data['discord_token'] ?? null;
+        if ($discordToken !== null && !is_string($discordToken)) {
+            return ApiResponse::error('Invalid or expired Discord token', 'INVALID_DISCORD_TOKEN', 400);
+        }
         if ($discordToken) {
             $discordController = new DiscordController();
             $userInfo = $discordController->authenticateWithToken($discordToken);
@@ -114,6 +117,9 @@ class LoginController
 
         // Handle SSO token login
         $ssoToken = $data['sso_token'] ?? null;
+        if ($ssoToken !== null && !is_string($ssoToken)) {
+            return ApiResponse::error('Invalid or expired SSO token', 'INVALID_SSO_TOKEN', 400);
+        }
         if ($ssoToken) {
             $record = SsoToken::getValidToken($ssoToken);
             if ($record === null || !isset($record['user_uuid'])) {

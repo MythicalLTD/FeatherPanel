@@ -882,6 +882,9 @@ class UsersController
             'password' => [8, 255],
         ];
         foreach ($data as $field => $value) {
+            if ($value !== null && !is_scalar($value)) {
+                return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must not be an array or object', 'INVALID_DATA_TYPE', 400);
+            }
             if (isset($lengthRules[$field])) {
                 if (!is_string($value)) {
                     return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a string', 'INVALID_DATA_TYPE');

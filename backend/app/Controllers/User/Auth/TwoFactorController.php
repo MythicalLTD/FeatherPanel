@@ -287,7 +287,7 @@ class TwoFactorController
         $data = json_decode($request->getContent(), true);
 
         // Find user by email (from login step)
-        if (!isset($data['email']) || !isset($data['code'])) {
+        if (!isset($data['email']) || !isset($data['code']) || !is_string($data['email']) || !is_scalar($data['code'])) {
             return ApiResponse::error('Missing email or code', 'MISSING_REQUIRED_FIELDS');
         }
         $userInfo = User::getUserByEmail($data['email']);
@@ -317,7 +317,7 @@ class TwoFactorController
         }
 
         $google2fa = new Google2FA();
-        if (!$google2fa->verifyKey($userInfo['two_fa_key'], $data['code'])) {
+        if (!$google2fa->verifyKey($userInfo['two_fa_key'], (string) $data['code'])) {
             // Emit 2FA failed event
             global $eventManager;
             if (isset($eventManager) && $eventManager !== null) {

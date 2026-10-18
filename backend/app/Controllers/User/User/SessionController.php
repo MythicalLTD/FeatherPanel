@@ -183,6 +183,12 @@ class SessionController
             $data['two_fa_enabled'] = $data['two_fa_enabled'] ? 'true' : 'false';
         }
 
+        foreach (['username', 'email', 'first_name', 'last_name', 'password', 'avatar', 'ticket_signature'] as $field) {
+            if (isset($data[$field]) && !is_scalar($data[$field])) {
+                return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a string', 'INVALID_DATA_TYPE', 400);
+            }
+        }
+
         // Check if avatar change is allowed
         if (isset($data['avatar'])) {
             if ($config->getSetting(ConfigInterface::USER_ALLOW_AVATAR_CHANGE, 'true') == 'false') {
@@ -1220,7 +1226,7 @@ class SessionController
         }
 
         $data = json_decode($request->getContent(), true);
-        if ($data == null || !isset($data['api_key'])) {
+        if ($data == null || !isset($data['api_key']) || !is_string($data['api_key'])) {
             return ApiResponse::error('API key is required', 'API_KEY_REQUIRED', 400, []);
         }
 

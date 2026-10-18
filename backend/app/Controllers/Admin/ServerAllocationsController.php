@@ -155,9 +155,10 @@ class ServerAllocationsController
             $data = json_decode($request->getContent(), true);
             $allocationId = $data['allocation_id'] ?? null;
 
-            if (!$allocationId) {
+            if (!$allocationId || !is_numeric($allocationId)) {
                 return ApiResponse::error('Allocation ID is required', 'MISSING_ALLOCATION_ID', 400);
             }
+            $allocationId = (int) $allocationId;
 
             // Get server details
             $server = Server::getServerById($serverId);

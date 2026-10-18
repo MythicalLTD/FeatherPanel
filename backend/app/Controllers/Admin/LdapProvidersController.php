@@ -101,12 +101,19 @@ class LdapProvidersController
             }
         }
 
+        $optionalStringFields = ['bind_dn', 'bind_password', 'user_filter', 'username_attribute', 'email_attribute', 'first_name_attribute', 'last_name_attribute', 'group_filter', 'group_attribute', 'required_group'];
+        foreach ($optionalStringFields as $field) {
+            if (isset($data[$field]) && !is_scalar($data[$field])) {
+                return ApiResponse::error("Field $field must be a string", 'INVALID_DATA_TYPE', 400);
+            }
+        }
+
         $app = App::getInstance(true);
 
         // Encrypt bind password if provided
         $bindPasswordEncrypted = null;
         if (!empty($data['bind_password'])) {
-            $bindPasswordEncrypted = $app->encryptValue($data['bind_password']);
+            $bindPasswordEncrypted = $app->encryptValue((string) $data['bind_password']);
         }
 
         $uuid = LdapProvider::generateUuid();
@@ -186,7 +193,10 @@ class LdapProvidersController
         $stringFields = ['name', 'host', 'bind_dn', 'base_dn', 'user_filter', 'username_attribute', 'email_attribute', 'first_name_attribute', 'last_name_attribute', 'group_filter', 'group_attribute', 'required_group'];
         foreach ($stringFields as $field) {
             if (isset($data[$field])) {
-                $newValue = $data[$field] === null || trim($data[$field]) === '' ? null : trim($data[$field]);
+                if (!is_scalar($data[$field])) {
+                    return ApiResponse::error("Field $field must be a string", 'INVALID_DATA_TYPE', 400);
+                }
+                $newValue = trim((string) $data[$field]) === '' ? null : trim((string) $data[$field]);
                 if ($newValue !== ($existing[$field] ?? null)) {
                     $update[$field] = $newValue;
                     $changed[] = $field;
@@ -214,9 +224,12 @@ class LdapProvidersController
         }
 
         // Handle bind password separately
-        if (isset($data['bind_password']) && trim($data['bind_password']) !== '') {
+        if (isset($data['bind_password']) && !is_scalar($data['bind_password'])) {
+            return ApiResponse::error('Field bind_password must be a string', 'INVALID_DATA_TYPE', 400);
+        }
+        if (isset($data['bind_password']) && trim((string) $data['bind_password']) !== '') {
             $app = App::getInstance(true);
-            $update['bind_password'] = $app->encryptValue($data['bind_password']);
+            $update['bind_password'] = $app->encryptValue((string) $data['bind_password']);
             $changed[] = 'bind_password';
         }
 

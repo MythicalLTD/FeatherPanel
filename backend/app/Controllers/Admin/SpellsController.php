@@ -414,7 +414,10 @@ class SpellsController
         }
 
         // Validate realm_id exists
-        if (!Realm::getById($data['realm_id'])) {
+        if (!is_numeric($data['realm_id'])) {
+            return ApiResponse::error('realm_id must be an integer', 'INVALID_DATA_TYPE', 400);
+        }
+        if (!Realm::getById((int) $data['realm_id'])) {
             return ApiResponse::error('Realm not found', 'REALM_NOT_FOUND', 404);
         }
 
@@ -478,7 +481,7 @@ class SpellsController
             $data['uuid'] = Spell::generateUuid();
         } else {
             // Validate UUID format
-            if (!preg_match('/^[a-f0-9\-]{36}$/i', $data['uuid'])) {
+            if (!is_string($data['uuid']) || !preg_match('/^[a-f0-9\-]{36}$/i', $data['uuid'])) {
                 return ApiResponse::error('Invalid UUID format', 'INVALID_UUID');
             }
         }
@@ -590,7 +593,10 @@ class SpellsController
 
         // Validate realm_id if provided
         if (isset($data['realm_id'])) {
-            if (!Realm::getById($data['realm_id'])) {
+            if (!is_numeric($data['realm_id'])) {
+                return ApiResponse::error('realm_id must be an integer', 'INVALID_DATA_TYPE', 400);
+            }
+            if (!Realm::getById((int) $data['realm_id'])) {
                 return ApiResponse::error('Realm not found', 'REALM_NOT_FOUND', 404);
             }
         }
@@ -652,7 +658,7 @@ class SpellsController
             return ApiResponse::error($error, 'INVALID_INHERITANCE', 400);
         }
         if (isset($data['uuid'])) {
-            if (!preg_match('/^[a-f0-9\-]{36}$/i', $data['uuid'])) {
+            if (!is_string($data['uuid']) || !preg_match('/^[a-f0-9\-]{36}$/i', $data['uuid'])) {
                 return ApiResponse::error('Invalid UUID format', 'INVALID_UUID');
             }
             // Check if UUID already exists (excluding current spell)

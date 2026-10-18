@@ -236,6 +236,12 @@ class TicketPrioritiesController
             return ApiResponse::error('Invalid JSON data', 'INVALID_JSON', 400);
         }
 
+        foreach ($data as $field => $value) {
+            if ($value !== null && !is_scalar($value)) {
+                return ApiResponse::error('Field ' . $field . ' must be a string', 'INVALID_DATA_TYPE', 400);
+            }
+        }
+
         if (!isset($data['name']) || !is_scalar($data['name']) || trim((string) $data['name']) === '') {
             return ApiResponse::error('Missing required field: name', 'MISSING_REQUIRED_FIELDS', 400);
         }
@@ -318,6 +324,12 @@ class TicketPrioritiesController
         $data = json_decode($request->getContent(), true);
         if (!$data) {
             return ApiResponse::error('Invalid JSON data', 'INVALID_JSON', 400);
+        }
+
+        foreach ($data as $field => $value) {
+            if ($value !== null && !is_scalar($value)) {
+                return ApiResponse::error('Field ' . $field . ' must be a string', 'INVALID_DATA_TYPE', 400);
+            }
         }
 
         if (empty($data)) {

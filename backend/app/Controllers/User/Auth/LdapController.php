@@ -98,9 +98,13 @@ class LdapController
             return ApiResponse::error('Missing required fields: ' . implode(', ', $missingFields), 'MISSING_REQUIRED_FIELDS');
         }
 
-        $providerUuid = trim($data['provider_uuid']);
-        $username = trim($data['username']);
-        $password = $data['password']; // Don't trim password
+        if (!is_scalar($data['provider_uuid']) || !is_scalar($data['username']) || !is_scalar($data['password'])) {
+            return ApiResponse::error('Provider UUID, username, and password must be strings', 'INVALID_DATA');
+        }
+
+        $providerUuid = trim((string) $data['provider_uuid']);
+        $username = trim((string) $data['username']);
+        $password = (string) $data['password']; // Don't trim password
 
         // Validate data
         if (empty($providerUuid) || empty($username) || empty($password)) {

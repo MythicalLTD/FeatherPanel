@@ -449,6 +449,12 @@ class UserSshKeyController
             return ApiResponse::error('No valid fields to update', 'NO_VALID_FIELDS', 400);
         }
 
+        foreach ($validData as $key => $value) {
+            if (!is_string($value)) {
+                return ApiResponse::error("Field $key must be a string", 'INVALID_DATA_TYPE', 400);
+            }
+        }
+
         // Validate data length
         if (isset($validData['name']) && (strlen($validData['name']) < 1 || strlen($validData['name']) > 191)) {
             return ApiResponse::error('Name must be between 1 and 191 characters', 'INVALID_NAME_LENGTH', 400);
@@ -872,7 +878,7 @@ class UserSshKeyController
         }
 
         $data = json_decode($request->getContent(), true);
-        if ($data == null || !isset($data['public_key'])) {
+        if ($data == null || !isset($data['public_key']) || !is_string($data['public_key'])) {
             return ApiResponse::error('Public key is required', 'PUBLIC_KEY_REQUIRED', 400);
         }
 
