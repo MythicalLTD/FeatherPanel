@@ -71,9 +71,17 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "php", "cli", "help"]
-      timeout: 20s
+      # HTTP check through FrankenPHP + database; /api/system/settings is the
+      # fallback for images built before /api/system/health existed.
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS -o /dev/null http://127.0.0.1/api/system/health || curl -fsS -o /dev/null http://127.0.0.1/api/system/settings",
+        ]
+      interval: 30s
+      timeout: 10s
       retries: 10
+      start_period: 180s
     volumes:
       - featherpanel_attachments:/var/www/html/public/attachments
       - featherpanel_config:/var/www/html/storage/config

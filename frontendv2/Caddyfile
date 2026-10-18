@@ -11,7 +11,9 @@
 }
 
 :80 {
-	encode zstd gzip
+	# Chatbot SSE streams must reach the browser unbuffered: never compress them
+	@compressible not path /api/user/chatbot/chat/stream /api/user/vds-chatbot/chat/stream
+	encode @compressible zstd gzip
 
 	request_body {
 		max_size 250MB

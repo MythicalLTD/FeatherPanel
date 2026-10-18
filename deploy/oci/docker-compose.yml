@@ -61,16 +61,13 @@ services:
     healthcheck:
       test:
         [
-          "CMD",
-          "wget",
-          "--quiet",
-          "--tries=1",
-          "--spider",
-          "http://localhost:80",
+          "CMD-SHELL",
+          "curl -fsS -o /dev/null http://127.0.0.1/api/system/health || curl -fsS -o /dev/null http://127.0.0.1/api/system/settings",
         ]
-      timeout: 20s
+      interval: 30s
+      timeout: 10s
       retries: 10
-      start_period: 60s
+      start_period: 300s
     # Optional: resource limits
     # deploy:
     #   resources:
