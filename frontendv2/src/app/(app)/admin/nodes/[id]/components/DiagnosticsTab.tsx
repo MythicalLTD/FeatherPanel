@@ -356,7 +356,7 @@ export function DiagnosticsTab({ nodeId, systemLogsEnabled = false }: Diagnostic
                     title={t('admin.node.view.diagnostics.result_title')}
                     description={
                         result.format === 'url'
-                            ? t('admin.node.view.diagnostics.uploaded')
+                            ? t('admin.node.view.diagnostics.uploaded', { url: result.url ?? '' })
                             : t('admin.node.view.diagnostics.raw_output')
                     }
                     icon={CheckCircle2}

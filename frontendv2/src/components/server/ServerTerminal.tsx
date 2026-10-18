@@ -20,6 +20,7 @@ import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
+import { SearchAddon } from '@xterm/addon-search';
 import '@xterm/xterm/css/xterm.css';
 import {
     Terminal as TerminalIcon,
@@ -29,13 +30,21 @@ import {
     ChevronRight,
     History,
     Clock,
-    Settings2,
     ExternalLink,
     UploadCloud,
     Sparkles,
     Copy,
     AlertCircle,
     MoreHorizontal,
+    Filter,
+    Search,
+    ArrowDownToLine,
+    Eraser,
+    Maximize2,
+    Minimize2,
+    ChevronUp,
+    X,
+    Check,
 } from 'lucide-react';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
@@ -533,7 +542,6 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             fillContainer = false,
             showPopoutButton = true,
             onUploadLogs,
-            subtitle,
         },
         ref,
     ) => {
@@ -567,6 +575,12 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         const [showSettings, setShowSettings] = useState(false);
         const [showQuickRules, setShowQuickRules] = useState(false);
         const [showHistory, setShowHistory] = useState(false);
+        const [showSearch, setShowSearch] = useState(false);
+        const [searchQuery, setSearchQuery] = useState('');
+        const [isFullscreen, setIsFullscreen] = useState(false);
+        const rootRef = useRef<HTMLDivElement | null>(null);
+        const searchAddonRef = useRef<SearchAddon | null>(null);
+        const searchInputRef = useRef<HTMLInputElement | null>(null);
         // Sheet portals to body, so CSS sm:hidden cannot hide it - gate open state instead.
         const [isNarrowViewport, setIsNarrowViewport] = useState(false);
 
@@ -808,6 +822,9 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             terminal.loadAddon(fitAddon);
             terminal.loadAddon(webLinksAddon);
             terminal.loadAddon(clipboardAddon);
+            const searchAddon = new SearchAddon();
+            terminal.loadAddon(searchAddon);
+            searchAddonRef.current = searchAddon;
 
             terminal.open(terminalRef.current);
             terminalInstanceRef.current = terminal;
@@ -930,6 +947,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                 terminal.dispose();
                 terminalInstanceRef.current = null;
                 fitAddonRef.current = null;
+                searchAddonRef.current = null;
             };
         }, [applyTerminalTheme, fitTerminal]);
 
@@ -959,6 +977,52 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                 terminalInstanceRef.current.scrollToBottom();
             }
         };
+
+        const runSearch = (direction: 'next' | 'previous', incremental = false) => {
+            const addon = searchAddonRef.current;
+            if (!addon || !searchQuery) return;
+            if (direction === 'next') addon.findNext(searchQuery, { incremental });
+            else addon.findPrevious(searchQuery);
+        };
+
+        const closeSearch = () => {
+            setShowSearch(false);
+            setSearchQuery('');
+            searchAddonRef.current?.clearDecorations();
+            terminalInstanceRef.current?.clearSelection();
+        };
+
+        const toggleAutoScroll = () => {
+            const next = !autoScroll;
+            setAutoScroll(next);
+            if (next) {
+                followOutputRef.current = true;
+                terminalInstanceRef.current?.scrollToBottom();
+            }
+        };
+
+        const toggleFullscreen = () => {
+            const el = rootRef.current;
+            if (!el || typeof document === 'undefined') return;
+            if (document.fullscreenElement) {
+                void document.exitFullscreen().catch(() => {});
+            } else if (el.requestFullscreen) {
+                void el.requestFullscreen().catch(() => {});
+            }
+        };
+
+        useEffect(() => {
+            const onChange = () => {
+                setIsFullscreen(document.fullscreenElement === rootRef.current);
+                requestAnimationFrame(() => fitTerminal());
+            };
+            document.addEventListener('fullscreenchange', onChange);
+            return () => document.removeEventListener('fullscreenchange', onChange);
+        }, [fitTerminal]);
+
+        useEffect(() => {
+            if (showSearch) searchInputRef.current?.focus();
+        }, [showSearch]);
 
         const navigateHistory = (direction: 'up' | 'down') => {
             if (commandHistory.length === 0) return;
@@ -1132,523 +1196,680 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
 
         useEffect(() => {
             fitTerminal();
-        }, [showSettings, showQuickRules, showHistory, fitTerminal]);
+        }, [showSettings, showQuickRules, showHistory, showSearch, fitTerminal]);
 
         return (
-            <Card
+            <div
+                ref={rootRef}
                 className={cn(
-                    'border-border/50 bg-card/50 w-full min-w-0 overflow-hidden shadow-sm backdrop-blur-xl',
-                    fillContainer
-                        ? 'flex min-h-0 flex-1 flex-col'
-                        : 'flex h-full min-h-[22rem] flex-col sm:min-h-[26rem]',
+                    'flex w-full min-w-0 flex-col',
+                    fillContainer ? 'min-h-0 flex-1' : 'h-full',
+                    isFullscreen && 'bg-background h-full p-2',
                 )}
             >
-                <CardHeader className='border-border/50 shrink-0 space-y-3 border-b p-3 sm:p-4'>
-                    <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
-                        <div className='min-w-0'>
-                            <h3 className='text-muted-foreground flex items-center gap-2 text-sm font-medium'>
-                                <TerminalIcon className='h-4 w-4 shrink-0' aria-hidden />
-                                {t('servers.console.terminal.title')}
-                            </h3>
-                            <p className='text-muted-foreground mt-1 hidden max-w-2xl text-xs leading-relaxed sm:block'>
-                                {subtitle ?? t('servers.console.terminal.subtitle')}
-                            </p>
-                        </div>
-                        <div className='border-border/50 bg-muted/25 flex w-full flex-wrap items-center gap-1 rounded-lg border p-1 sm:w-auto lg:justify-end'>
-                            <label
-                                className={cn(
-                                    'border-border/50 text-muted-foreground hover:bg-muted/50 flex cursor-pointer items-center gap-1.5 rounded-md border border-transparent px-2 py-1.5 text-[11px] font-semibold transition-colors',
-                                    autoScroll && 'border-border bg-muted/60 text-foreground',
-                                )}
-                            >
-                                <input
-                                    type='checkbox'
-                                    checked={autoScroll}
-                                    onChange={(e) => setAutoScroll(e.target.checked)}
-                                    className='border-input bg-background text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer rounded border focus:ring-2 focus:ring-offset-0'
+                <Card
+                    className={cn(
+                        'border-border/50 bg-card/50 w-full min-w-0 gap-0 overflow-hidden py-0 shadow-sm backdrop-blur-xl',
+                        fillContainer || isFullscreen
+                            ? 'flex min-h-0 flex-1 flex-col'
+                            : 'flex h-full min-h-[22rem] flex-col sm:min-h-[26rem]',
+                    )}
+                >
+                    <CardHeader className='border-border/50 shrink-0 gap-0 border-b px-3 py-1.5 sm:px-4'>
+                        <div className='flex items-center justify-between gap-2'>
+                            <h3 className='flex min-w-0 items-center gap-2 text-sm font-medium'>
+                                <span
+                                    className={cn(
+                                        'h-2 w-2 shrink-0 rounded-full',
+                                        serverStatus === 'running'
+                                            ? 'bg-emerald-500'
+                                            : serverStatus === 'starting' || serverStatus === 'stopping'
+                                              ? 'animate-pulse bg-amber-500'
+                                              : 'bg-muted-foreground/50',
+                                    )}
+                                    aria-hidden
                                 />
-                                <span className='select-none'>{t('servers.console.terminal.auto_scroll')}</span>
-                            </label>
-                            <span className='bg-border/60 mx-0.5 hidden h-6 w-px sm:block' aria-hidden />
-                            <Button
-                                type='button'
-                                variant={showSettings ? 'secondary' : 'ghost'}
-                                size='icon'
-                                className='h-8 w-8 shrink-0 rounded-lg'
-                                onClick={() => setShowSettings((prev) => !prev)}
-                                aria-label={t('servers.console.terminal.customize')}
-                                aria-pressed={showSettings}
-                            >
-                                <Settings2 className='h-3.5 w-3.5' />
-                            </Button>
-                            {onFiltersChange && (
-                                <>
+                                <TerminalIcon
+                                    className='text-muted-foreground hidden h-4 w-4 shrink-0 sm:block'
+                                    aria-hidden
+                                />
+                                <span className='truncate'>{t('servers.console.terminal.title')}</span>
+                            </h3>
+                            <div className='flex shrink-0 items-center gap-0.5'>
+                                {onFiltersChange && (
                                     <Button
                                         type='button'
-                                        variant='outline'
-                                        size='sm'
-                                        className='h-8 gap-1.5 rounded-lg px-2.5 text-[11px] sm:hidden'
-                                        aria-label={t('servers.console.terminal.quick_rules')}
-                                        onClick={() => setShowQuickRules(true)}
-                                    >
-                                        <Sparkles className='text-primary h-3.5 w-3.5 shrink-0' />
-                                    </Button>
-                                    <Menu as='div' className='relative hidden sm:block'>
-                                        <Menu.Button
-                                            as={Button}
-                                            variant='outline'
-                                            size='sm'
-                                            className='h-8 gap-1.5 rounded-lg px-2.5 text-[11px]'
-                                            aria-label={t('servers.console.terminal.quick_rules')}
-                                        >
-                                            <Sparkles className='text-primary h-3.5 w-3.5 shrink-0' />
-                                            <span>{t('servers.console.terminal.quick_rules')}</span>
-                                        </Menu.Button>
-                                        <Transition
-                                            as={Fragment}
-                                            enter='transition ease-out duration-100'
-                                            enterFrom='transform opacity-0 scale-95'
-                                            enterTo='transform opacity-100 scale-100'
-                                            leave='transition ease-in duration-75'
-                                            leaveFrom='transform opacity-100 scale-100'
-                                            leaveTo='transform opacity-0 scale-95'
-                                        >
-                                            <Menu.Items className='bg-popover border-border/50 absolute right-0 z-30 mt-2 w-[min(22rem,calc(100vw-2rem))] origin-top-right overflow-hidden rounded-xl border shadow-lg focus:outline-none'>
-                                                <div className='border-border/50 bg-muted/30 border-b px-3 py-2'>
-                                                    <p className='text-foreground text-xs font-semibold'>
-                                                        {t('servers.console.terminal.quick_rules')}
-                                                    </p>
-                                                    <p className='text-muted-foreground mt-0.5 text-[11px] leading-snug'>
-                                                        {t('servers.console.terminal.quick_rules_help')}
-                                                    </p>
-                                                </div>
-                                                <QuickRulesList filters={filters} onAddPreset={handleAddPreset} />
-                                            </Menu.Items>
-                                        </Transition>
-                                    </Menu>
-                                </>
-                            )}
-                            {onSendCommand && (
-                                <>
-                                    <Button
-                                        type='button'
-                                        variant='outline'
+                                        variant={showSettings ? 'secondary' : 'ghost'}
                                         size='icon'
-                                        className='h-8 w-8 shrink-0 rounded-lg sm:hidden'
-                                        aria-label={t('servers.console.terminal.history_title')}
-                                        onClick={() => setShowHistory(true)}
+                                        className='h-8 w-8 shrink-0 rounded-lg'
+                                        onClick={() => setShowSettings((prev) => !prev)}
+                                        aria-label={t('servers.console.terminal.customize')}
+                                        title={t('servers.console.terminal.customize')}
+                                        aria-pressed={showSettings}
                                     >
-                                        <History className='h-3.5 w-3.5' />
+                                        <Filter className='h-3.5 w-3.5' />
                                     </Button>
-                                    <Menu as='div' className='relative hidden sm:block'>
-                                        <Menu.Button
-                                            as={Button}
-                                            variant='outline'
+                                )}
+                                {onFiltersChange && (
+                                    <>
+                                        <Button
+                                            type='button'
+                                            variant='ghost'
+                                            size='sm'
+                                            className='h-8 w-8 rounded-lg p-0 sm:hidden'
+                                            aria-label={t('servers.console.terminal.quick_rules')}
+                                            onClick={() => setShowQuickRules(true)}
+                                        >
+                                            <Sparkles className='h-3.5 w-3.5 shrink-0' />
+                                        </Button>
+                                        <Menu as='div' className='relative hidden sm:block'>
+                                            <Menu.Button
+                                                as={Button}
+                                                variant='ghost'
+                                                size='sm'
+                                                className='h-8 w-8 rounded-lg p-0'
+                                                aria-label={t('servers.console.terminal.quick_rules')}
+                                                title={t('servers.console.terminal.quick_rules')}
+                                            >
+                                                <Sparkles className='h-3.5 w-3.5 shrink-0' />
+                                            </Menu.Button>
+                                            <Transition
+                                                as={Fragment}
+                                                enter='transition ease-out duration-100'
+                                                enterFrom='transform opacity-0 scale-95'
+                                                enterTo='transform opacity-100 scale-100'
+                                                leave='transition ease-in duration-75'
+                                                leaveFrom='transform opacity-100 scale-100'
+                                                leaveTo='transform opacity-0 scale-95'
+                                            >
+                                                <Menu.Items className='bg-popover border-border/50 absolute right-0 z-30 mt-2 w-[min(22rem,calc(100vw-2rem))] origin-top-right overflow-hidden rounded-xl border shadow-lg focus:outline-none'>
+                                                    <div className='border-border/50 bg-muted/30 border-b px-3 py-2'>
+                                                        <p className='text-foreground text-xs font-semibold'>
+                                                            {t('servers.console.terminal.quick_rules')}
+                                                        </p>
+                                                        <p className='text-muted-foreground mt-0.5 text-[11px] leading-snug'>
+                                                            {t('servers.console.terminal.quick_rules_help')}
+                                                        </p>
+                                                    </div>
+                                                    <QuickRulesList filters={filters} onAddPreset={handleAddPreset} />
+                                                </Menu.Items>
+                                            </Transition>
+                                        </Menu>
+                                    </>
+                                )}
+                                {onSendCommand && (
+                                    <>
+                                        <Button
+                                            type='button'
+                                            variant='ghost'
                                             size='icon'
-                                            className='h-8 w-8 shrink-0 rounded-lg'
+                                            className='h-8 w-8 shrink-0 rounded-lg sm:hidden'
                                             aria-label={t('servers.console.terminal.history_title')}
+                                            onClick={() => setShowHistory(true)}
                                         >
                                             <History className='h-3.5 w-3.5' />
-                                        </Menu.Button>
-                                        <Transition
-                                            as={Fragment}
-                                            enter='transition ease-out duration-100'
-                                            enterFrom='transform opacity-0 scale-95'
-                                            enterTo='transform opacity-100 scale-100'
-                                            leave='transition ease-in duration-75'
-                                            leaveFrom='transform opacity-100 scale-100'
-                                            leaveTo='transform opacity-0 scale-95'
-                                        >
-                                            <Menu.Items className='bg-popover border-border/50 absolute right-0 z-20 mt-2 w-64 origin-top-right overflow-hidden rounded-xl border shadow-lg focus:outline-none'>
-                                                <div className='border-border/50 bg-muted/30 border-b p-2'>
-                                                    <p className='text-muted-foreground px-2 text-xs font-medium'>
-                                                        {t('servers.console.terminal.history_title')}
-                                                    </p>
-                                                </div>
-                                                <CommandHistoryList
-                                                    commandHistory={commandHistory}
-                                                    onSelect={loadHistoryCommand}
-                                                />
-                                            </Menu.Items>
-                                        </Transition>
-                                    </Menu>
-                                </>
-                            )}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger
-                                    as={Button}
-                                    variant='outline'
+                                        </Button>
+                                        <Menu as='div' className='relative hidden sm:block'>
+                                            <Menu.Button
+                                                as={Button}
+                                                variant='ghost'
+                                                size='icon'
+                                                className='h-8 w-8 shrink-0 rounded-lg'
+                                                aria-label={t('servers.console.terminal.history_title')}
+                                            >
+                                                <History className='h-3.5 w-3.5' />
+                                            </Menu.Button>
+                                            <Transition
+                                                as={Fragment}
+                                                enter='transition ease-out duration-100'
+                                                enterFrom='transform opacity-0 scale-95'
+                                                enterTo='transform opacity-100 scale-100'
+                                                leave='transition ease-in duration-75'
+                                                leaveFrom='transform opacity-100 scale-100'
+                                                leaveTo='transform opacity-0 scale-95'
+                                            >
+                                                <Menu.Items className='bg-popover border-border/50 absolute right-0 z-20 mt-2 w-64 origin-top-right overflow-hidden rounded-xl border shadow-lg focus:outline-none'>
+                                                    <div className='border-border/50 bg-muted/30 border-b p-2'>
+                                                        <p className='text-muted-foreground px-2 text-xs font-medium'>
+                                                            {t('servers.console.terminal.history_title')}
+                                                        </p>
+                                                    </div>
+                                                    <CommandHistoryList
+                                                        commandHistory={commandHistory}
+                                                        onSelect={loadHistoryCommand}
+                                                    />
+                                                </Menu.Items>
+                                            </Transition>
+                                        </Menu>
+                                    </>
+                                )}
+                                <Button
+                                    type='button'
+                                    variant={showSearch ? 'secondary' : 'ghost'}
                                     size='icon'
                                     className='h-8 w-8 shrink-0 rounded-lg'
-                                    aria-label={t('servers.console.terminal.more_menu')}
+                                    onClick={() => (showSearch ? closeSearch() : setShowSearch(true))}
+                                    aria-label={t('servers.console.terminal.search')}
+                                    title={t('servers.console.terminal.search')}
+                                    aria-pressed={showSearch}
                                 >
-                                    <MoreHorizontal className='h-3.5 w-3.5' />
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align='end' className='w-52'>
-                                    <DropdownMenuItem
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            copyTerminalSelection();
-                                        }}
+                                    <Search className='h-3.5 w-3.5' />
+                                </Button>
+                                <Button
+                                    type='button'
+                                    variant={autoScroll ? 'secondary' : 'ghost'}
+                                    size='icon'
+                                    className='h-8 w-8 shrink-0 rounded-lg'
+                                    onClick={toggleAutoScroll}
+                                    aria-label={t('servers.console.terminal.auto_scroll')}
+                                    title={t('servers.console.terminal.auto_scroll')}
+                                    aria-pressed={autoScroll}
+                                >
+                                    <ArrowDownToLine className='h-3.5 w-3.5' />
+                                </Button>
+                                <Button
+                                    type='button'
+                                    variant='ghost'
+                                    size='icon'
+                                    className='hidden h-8 w-8 shrink-0 rounded-lg sm:inline-flex'
+                                    onClick={clearTerminal}
+                                    aria-label={t('servers.console.terminal.clear')}
+                                    title={t('servers.console.terminal.clear')}
+                                >
+                                    <Eraser className='h-3.5 w-3.5' />
+                                </Button>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger
+                                        as={Button}
+                                        variant='ghost'
+                                        size='icon'
+                                        className='h-8 w-8 shrink-0 rounded-lg'
+                                        aria-label={t('servers.console.terminal.more_menu')}
                                     >
-                                        <Copy className='text-muted-foreground mr-2 h-4 w-4' />
-                                        {t('servers.console.terminal.copy_selection')}
-                                    </DropdownMenuItem>
-                                    {showPopoutButton && (
+                                        <MoreHorizontal className='h-3.5 w-3.5' />
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align='end' className='w-56'>
                                         <DropdownMenuItem
                                             onClick={(e) => {
                                                 e.preventDefault();
-                                                handlePopoutWindow();
+                                                toggleAutoScroll();
                                             }}
                                         >
-                                            <ExternalLink className='text-muted-foreground mr-2 h-4 w-4' />
-                                            {t('servers.console.terminal.popout')}
+                                            <Check
+                                                className={cn(
+                                                    'mr-2 h-4 w-4',
+                                                    autoScroll ? 'text-primary' : 'opacity-0',
+                                                )}
+                                            />
+                                            {t('servers.console.terminal.auto_scroll')}
                                         </DropdownMenuItem>
-                                    )}
-                                    {onUploadLogs && (
                                         <DropdownMenuItem
                                             onClick={(e) => {
                                                 e.preventDefault();
-                                                onUploadLogs();
+                                                copyTerminalSelection();
                                             }}
                                         >
-                                            <UploadCloud className='text-muted-foreground mr-2 h-4 w-4' />
-                                            {t('servers.console.upload_logs')}
+                                            <Copy className='text-muted-foreground mr-2 h-4 w-4' />
+                                            {t('servers.console.terminal.copy_selection')}
                                         </DropdownMenuItem>
-                                    )}
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            clearTerminal();
-                                        }}
-                                        className='text-destructive focus:text-destructive'
-                                    >
-                                        <Trash2 className='mr-2 h-4 w-4' />
-                                        {t('servers.console.terminal.clear')}
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    </div>
-                </CardHeader>
-                {showSettings && (
-                    <div className='border-border/50 bg-muted/20 hidden border-b px-4 py-4 sm:block sm:px-5 sm:py-5'>
-                        <FilterSettingsPanel
-                            filters={filters}
-                            onFiltersChange={onFiltersChange}
-                            onAddFilter={handleAddFilter}
-                            onUpdateFilter={handleUpdateFilter}
-                            onDeleteFilter={handleDeleteFilter}
-                        />
-                    </div>
-                )}
-                <CardContent className='relative z-0 flex min-h-0 flex-1 flex-col p-0'>
-                    <div className='relative isolate flex min-h-0 flex-1 flex-col'>
-                        <div
-                            ref={terminalRef}
-                            className={
-                                fullHeight
-                                    ? 'bg-secondary h-[calc(100dvh-132px)] w-full min-w-0 touch-none overflow-hidden overscroll-none'
-                                    : 'bg-secondary min-h-[16rem] w-full min-w-0 flex-1 touch-none overflow-hidden overscroll-none sm:min-h-[20rem]'
-                            }
-                        />
-                        {showScrollButton && (
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                onClick={scrollToBottom}
-                                className='absolute top-3 right-3 z-10 gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold'
-                            >
-                                <ChevronDown className='h-4 w-4' />
-                                <span className='hidden sm:inline'>{t('servers.console.terminal.scroll_bottom')}</span>
-                            </Button>
-                        )}
-                    </div>
-                </CardContent>
-                {onSendCommand && (
-                    <CardFooter className='border-border/50 bg-card flex w-full min-w-0 shrink-0 flex-col items-stretch gap-1.5 border-t px-3 py-2 sm:px-4 sm:py-2.5'>
-                        <div className='flex w-full min-w-0 items-center gap-2'>
-                            <div className='relative min-w-0 flex-1'>
-                                {suggestionMenu && suggestionMenu.suggestions.length > 0 && (
-                                    <ConsoleCompletionMenu
-                                        menu={suggestionMenu}
-                                        commandInput={commandInput}
-                                        listRef={completionListRef}
-                                        onHighlight={(index) =>
-                                            setSuggestionMenu((menu) => (menu ? { ...menu, highlight: index } : menu))
-                                        }
-                                        onSelect={(choice) =>
-                                            applyCompletionChoice(suggestionMenu.prefix, suggestionMenu.suffix, choice)
-                                        }
-                                        t={t}
-                                    />
-                                )}
-                                <div
-                                    className={cn(
-                                        'border-border/50 bg-muted/20 focus-within:border-primary/40 focus-within:ring-primary/15 flex h-9 w-full items-center gap-2 rounded-lg border px-2.5 transition-all focus-within:ring-2',
-                                        !canSend && 'opacity-60',
-                                        suggestionMenu &&
-                                            suggestionMenu.suggestions.length > 0 &&
-                                            'border-primary/30 ring-primary/10 ring-1',
-                                    )}
-                                >
-                                    <span
-                                        className='text-primary shrink-0 font-mono text-xs font-bold select-none'
-                                        aria-hidden
-                                    >
-                                        &gt;
-                                    </span>
-                                    <div className='relative min-w-0 flex-1'>
-                                        {completionGhostText && (
-                                            <div
-                                                className='pointer-events-none absolute inset-0 flex items-center overflow-hidden'
-                                                aria-hidden
+                                        {showPopoutButton && (
+                                            <DropdownMenuItem
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    handlePopoutWindow();
+                                                }}
                                             >
-                                                <span className='invisible truncate font-mono text-xs font-semibold whitespace-pre'>
-                                                    {commandInput}
-                                                </span>
-                                                <span className='text-muted-foreground/35 truncate font-mono text-xs font-semibold whitespace-pre'>
-                                                    {completionGhostText}
-                                                </span>
-                                            </div>
+                                                <ExternalLink className='text-muted-foreground mr-2 h-4 w-4' />
+                                                {t('servers.console.terminal.popout')}
+                                            </DropdownMenuItem>
                                         )}
-                                        <input
-                                            ref={commandInputRef}
-                                            value={commandInput}
-                                            onChange={(e) => {
-                                                if (!applyingCompletionRef.current) {
-                                                    pendingSuggestIdRef.current = null;
-                                                }
-                                                setCommandInput(e.target.value);
+                                        {onUploadLogs && (
+                                            <DropdownMenuItem
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    onUploadLogs();
+                                                }}
+                                            >
+                                                <UploadCloud className='text-muted-foreground mr-2 h-4 w-4' />
+                                                {t('servers.console.upload_logs')}
+                                            </DropdownMenuItem>
+                                        )}
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                clearTerminal();
                                             }}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Tab') {
-                                                    e.preventDefault();
-                                                    requestTabCompletion();
-                                                    return;
-                                                }
-                                                if (e.key === 'Escape') {
-                                                    setSuggestionMenu(null);
-                                                    pendingSuggestIdRef.current = null;
-                                                    return;
-                                                }
-                                                if (suggestionMenu && suggestionMenu.suggestions.length > 0) {
-                                                    if (e.key === 'ArrowDown') {
-                                                        e.preventDefault();
-                                                        setSuggestionMenu((menu) => {
-                                                            if (!menu) return menu;
-                                                            return {
-                                                                ...menu,
-                                                                highlight:
-                                                                    (menu.highlight + 1) % menu.suggestions.length,
-                                                            };
-                                                        });
-                                                        return;
-                                                    }
-                                                    if (e.key === 'ArrowUp') {
-                                                        e.preventDefault();
-                                                        setSuggestionMenu((menu) => {
-                                                            if (!menu) return menu;
-                                                            const next =
-                                                                (menu.highlight - 1 + menu.suggestions.length) %
-                                                                menu.suggestions.length;
-                                                            return { ...menu, highlight: next };
-                                                        });
-                                                        return;
-                                                    }
-                                                    if (e.key === 'Enter') {
-                                                        e.preventDefault();
-                                                        const choice =
-                                                            suggestionMenu.suggestions[suggestionMenu.highlight] ??
-                                                            suggestionMenu.suggestions[0];
-                                                        applyCompletionChoice(
-                                                            suggestionMenu.prefix,
-                                                            suggestionMenu.suffix,
-                                                            choice,
-                                                        );
-                                                        return;
-                                                    }
-                                                }
-                                                if (e.key === 'Enter') sendCommand();
-                                                if (e.key === 'ArrowUp') {
-                                                    e.preventDefault();
-                                                    setSuggestionMenu(null);
-                                                    navigateHistory('up');
-                                                }
-                                                if (e.key === 'ArrowDown') {
-                                                    e.preventDefault();
-                                                    setSuggestionMenu(null);
-                                                    navigateHistory('down');
-                                                }
-                                                if (e.ctrlKey && e.code === 'KeyC') {
-                                                    const termHasSelection =
-                                                        terminalInstanceRef.current?.hasSelection();
-                                                    const target = e.target as HTMLInputElement;
-                                                    const inputHasSelection =
-                                                        target.selectionStart !== target.selectionEnd;
-
-                                                    if (termHasSelection && !inputHasSelection) {
-                                                        const selection = terminalInstanceRef.current?.getSelection();
-                                                        if (selection) {
-                                                            navigator.clipboard.writeText(selection);
-                                                        }
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                    } else if (
-                                                        !termHasSelection &&
-                                                        !inputHasSelection &&
-                                                        onSendCommand
-                                                    ) {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        onSendCommand('\x03');
-                                                        setCommandInput('');
-                                                        setSuggestionMenu(null);
-                                                    }
-                                                }
-                                            }}
-                                            type='text'
-                                            className='text-foreground placeholder:text-muted-foreground/50 relative h-full w-full min-w-0 bg-transparent py-1.5 font-mono text-xs font-semibold outline-none'
-                                            placeholder={t('servers.console.terminal.placeholder')}
-                                            title={t('servers.console.terminal.input_hint')}
-                                            disabled={!canSend}
-                                            autoComplete='off'
-                                            autoCorrect='off'
-                                            spellCheck={false}
-                                        />
-                                    </div>
-                                </div>
+                                            className='text-destructive focus:text-destructive'
+                                        >
+                                            <Trash2 className='mr-2 h-4 w-4' />
+                                            {t('servers.console.terminal.clear')}
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                                <Button
+                                    type='button'
+                                    variant='ghost'
+                                    size='icon'
+                                    className='h-8 w-8 shrink-0 rounded-lg'
+                                    onClick={toggleFullscreen}
+                                    aria-label={
+                                        isFullscreen
+                                            ? t('servers.console.terminal.exit_fullscreen')
+                                            : t('servers.console.terminal.fullscreen')
+                                    }
+                                    title={
+                                        isFullscreen
+                                            ? t('servers.console.terminal.exit_fullscreen')
+                                            : t('servers.console.terminal.fullscreen')
+                                    }
+                                >
+                                    {isFullscreen ? (
+                                        <Minimize2 className='h-3.5 w-3.5' />
+                                    ) : (
+                                        <Maximize2 className='h-3.5 w-3.5' />
+                                    )}
+                                </Button>
                             </div>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='icon'
-                                className='text-primary hover:bg-primary/10 hover:text-primary border-primary/35 focus:ring-primary/15 h-9 w-9 shrink-0 rounded-lg focus:ring-2'
-                                onClick={sendCommand}
-                                disabled={!canSend || !commandInput.trim()}
-                                aria-label={t('servers.console.terminal.send')}
-                            >
-                                <Send className='h-4 w-4' />
-                            </Button>
                         </div>
-                        {!canSendCommands && (
-                            <div className='text-destructive border-destructive/20 bg-destructive/5 flex w-full min-w-0 items-start gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-medium'>
-                                <AlertCircle className='mt-0.5 h-3.5 w-3.5 shrink-0' aria-hidden />
-                                <span className='min-w-0 leading-snug'>
-                                    {t('servers.console.noConsolePermissionSend')}
-                                </span>
+                        {showSearch && (
+                            <div className='flex items-center gap-1 pt-1.5 pb-0.5'>
+                                <input
+                                    ref={searchInputRef}
+                                    value={searchQuery}
+                                    onChange={(e) => {
+                                        setSearchQuery(e.target.value);
+                                        if (e.target.value) {
+                                            searchAddonRef.current?.findNext(e.target.value, { incremental: true });
+                                        } else {
+                                            searchAddonRef.current?.clearDecorations();
+                                            terminalInstanceRef.current?.clearSelection();
+                                        }
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            runSearch(e.shiftKey ? 'previous' : 'next');
+                                        } else if (e.key === 'Escape') {
+                                            e.preventDefault();
+                                            closeSearch();
+                                        }
+                                    }}
+                                    placeholder={t('servers.console.terminal.search_placeholder')}
+                                    aria-label={t('servers.console.terminal.search')}
+                                    className='border-border/50 bg-background/60 focus-visible:ring-ring h-8 min-w-0 flex-1 rounded-lg border px-2.5 text-sm outline-none focus-visible:ring-2'
+                                />
+                                <Button
+                                    type='button'
+                                    variant='ghost'
+                                    size='icon'
+                                    className='h-8 w-8 shrink-0 rounded-lg'
+                                    onClick={() => runSearch('previous')}
+                                    aria-label={t('servers.console.terminal.search_previous')}
+                                    title={t('servers.console.terminal.search_previous')}
+                                >
+                                    <ChevronUp className='h-3.5 w-3.5' />
+                                </Button>
+                                <Button
+                                    type='button'
+                                    variant='ghost'
+                                    size='icon'
+                                    className='h-8 w-8 shrink-0 rounded-lg'
+                                    onClick={() => runSearch('next')}
+                                    aria-label={t('servers.console.terminal.search_next')}
+                                    title={t('servers.console.terminal.search_next')}
+                                >
+                                    <ChevronDown className='h-3.5 w-3.5' />
+                                </Button>
+                                <Button
+                                    type='button'
+                                    variant='ghost'
+                                    size='icon'
+                                    className='h-8 w-8 shrink-0 rounded-lg'
+                                    onClick={closeSearch}
+                                    aria-label={t('common.close')}
+                                    title={t('common.close')}
+                                >
+                                    <X className='h-3.5 w-3.5' />
+                                </Button>
                             </div>
                         )}
-                        {canSendCommands && !canSend && (
-                            <div className='flex w-full min-w-0 items-start gap-2 rounded-lg border border-orange-500/20 bg-orange-500/10 px-2.5 py-1.5 text-xs font-medium text-orange-600 dark:text-orange-400'>
-                                <AlertCircle className='mt-0.5 h-3.5 w-3.5 shrink-0' aria-hidden />
-                                <span className='min-w-0 leading-snug'>
-                                    {t('servers.console.terminal.server_running_required')}
-                                </span>
-                            </div>
-                        )}
-                    </CardFooter>
-                )}
-
-                <div className='sm:hidden'>
-                    <Sheet open={showSettings && isNarrowViewport} onOpenChange={setShowSettings} className='max-w-lg'>
-                        <SheetContent>
-                            <SheetHeader>
-                                <SheetTitle>{t('servers.console.terminal.customize')}</SheetTitle>
-                                <SheetDescription>{t('servers.console.terminal.rules_intro')}</SheetDescription>
-                            </SheetHeader>
+                    </CardHeader>
+                    {showSettings && (
+                        <div className='border-border/50 bg-muted/20 hidden border-b px-4 py-4 sm:block sm:px-5 sm:py-5'>
                             <FilterSettingsPanel
                                 filters={filters}
                                 onFiltersChange={onFiltersChange}
                                 onAddFilter={handleAddFilter}
                                 onUpdateFilter={handleUpdateFilter}
                                 onDeleteFilter={handleDeleteFilter}
-                                showIntro={false}
                             />
-                        </SheetContent>
-                    </Sheet>
+                        </div>
+                    )}
+                    <CardContent className='relative z-0 flex min-h-0 flex-1 flex-col p-0'>
+                        <div className='relative isolate flex min-h-0 flex-1 flex-col'>
+                            <div
+                                ref={terminalRef}
+                                className={
+                                    fullHeight
+                                        ? 'bg-secondary h-[calc(100dvh-132px)] w-full min-w-0 touch-none overflow-hidden overscroll-none'
+                                        : 'bg-secondary min-h-[16rem] w-full min-w-0 flex-1 touch-none overflow-hidden overscroll-none sm:min-h-[20rem]'
+                                }
+                            />
+                            {showScrollButton && (
+                                <Button
+                                    type='button'
+                                    variant='outline'
+                                    size='sm'
+                                    onClick={scrollToBottom}
+                                    className='absolute top-3 right-3 z-10 gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold'
+                                >
+                                    <ChevronDown className='h-4 w-4' />
+                                    <span className='hidden sm:inline'>
+                                        {t('servers.console.terminal.scroll_bottom')}
+                                    </span>
+                                </Button>
+                            )}
+                        </div>
+                    </CardContent>
+                    {onSendCommand && (
+                        <CardFooter className='border-border/50 bg-card flex w-full min-w-0 shrink-0 flex-col items-stretch gap-1.5 border-t px-3 py-2 sm:px-4 sm:py-2.5'>
+                            <div className='flex w-full min-w-0 items-center gap-2'>
+                                <div className='relative min-w-0 flex-1'>
+                                    {suggestionMenu && suggestionMenu.suggestions.length > 0 && (
+                                        <ConsoleCompletionMenu
+                                            menu={suggestionMenu}
+                                            commandInput={commandInput}
+                                            listRef={completionListRef}
+                                            onHighlight={(index) =>
+                                                setSuggestionMenu((menu) =>
+                                                    menu ? { ...menu, highlight: index } : menu,
+                                                )
+                                            }
+                                            onSelect={(choice) =>
+                                                applyCompletionChoice(
+                                                    suggestionMenu.prefix,
+                                                    suggestionMenu.suffix,
+                                                    choice,
+                                                )
+                                            }
+                                            t={t}
+                                        />
+                                    )}
+                                    <div
+                                        className={cn(
+                                            'border-border/50 bg-muted/20 focus-within:border-primary/40 focus-within:ring-primary/15 flex h-9 w-full items-center gap-2 rounded-lg border px-2.5 transition-all focus-within:ring-2',
+                                            !canSend && 'opacity-60',
+                                            suggestionMenu &&
+                                                suggestionMenu.suggestions.length > 0 &&
+                                                'border-primary/30 ring-primary/10 ring-1',
+                                        )}
+                                    >
+                                        <span
+                                            className='text-primary shrink-0 font-mono text-xs font-bold select-none'
+                                            aria-hidden
+                                        >
+                                            &gt;
+                                        </span>
+                                        <div className='relative min-w-0 flex-1'>
+                                            {completionGhostText && (
+                                                <div
+                                                    className='pointer-events-none absolute inset-0 flex items-center overflow-hidden'
+                                                    aria-hidden
+                                                >
+                                                    <span className='invisible truncate font-mono text-xs font-semibold whitespace-pre'>
+                                                        {commandInput}
+                                                    </span>
+                                                    <span className='text-muted-foreground/35 truncate font-mono text-xs font-semibold whitespace-pre'>
+                                                        {completionGhostText}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <input
+                                                ref={commandInputRef}
+                                                value={commandInput}
+                                                onChange={(e) => {
+                                                    if (!applyingCompletionRef.current) {
+                                                        pendingSuggestIdRef.current = null;
+                                                    }
+                                                    setCommandInput(e.target.value);
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Tab') {
+                                                        e.preventDefault();
+                                                        requestTabCompletion();
+                                                        return;
+                                                    }
+                                                    if (e.key === 'Escape') {
+                                                        setSuggestionMenu(null);
+                                                        pendingSuggestIdRef.current = null;
+                                                        return;
+                                                    }
+                                                    if (suggestionMenu && suggestionMenu.suggestions.length > 0) {
+                                                        if (e.key === 'ArrowDown') {
+                                                            e.preventDefault();
+                                                            setSuggestionMenu((menu) => {
+                                                                if (!menu) return menu;
+                                                                return {
+                                                                    ...menu,
+                                                                    highlight:
+                                                                        (menu.highlight + 1) % menu.suggestions.length,
+                                                                };
+                                                            });
+                                                            return;
+                                                        }
+                                                        if (e.key === 'ArrowUp') {
+                                                            e.preventDefault();
+                                                            setSuggestionMenu((menu) => {
+                                                                if (!menu) return menu;
+                                                                const next =
+                                                                    (menu.highlight - 1 + menu.suggestions.length) %
+                                                                    menu.suggestions.length;
+                                                                return { ...menu, highlight: next };
+                                                            });
+                                                            return;
+                                                        }
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            const choice =
+                                                                suggestionMenu.suggestions[suggestionMenu.highlight] ??
+                                                                suggestionMenu.suggestions[0];
+                                                            applyCompletionChoice(
+                                                                suggestionMenu.prefix,
+                                                                suggestionMenu.suffix,
+                                                                choice,
+                                                            );
+                                                            return;
+                                                        }
+                                                    }
+                                                    if (e.key === 'Enter') sendCommand();
+                                                    if (e.key === 'ArrowUp') {
+                                                        e.preventDefault();
+                                                        setSuggestionMenu(null);
+                                                        navigateHistory('up');
+                                                    }
+                                                    if (e.key === 'ArrowDown') {
+                                                        e.preventDefault();
+                                                        setSuggestionMenu(null);
+                                                        navigateHistory('down');
+                                                    }
+                                                    if (e.ctrlKey && e.code === 'KeyC') {
+                                                        const termHasSelection =
+                                                            terminalInstanceRef.current?.hasSelection();
+                                                        const target = e.target as HTMLInputElement;
+                                                        const inputHasSelection =
+                                                            target.selectionStart !== target.selectionEnd;
 
-                    {onFiltersChange && (
+                                                        if (termHasSelection && !inputHasSelection) {
+                                                            const selection =
+                                                                terminalInstanceRef.current?.getSelection();
+                                                            if (selection) {
+                                                                navigator.clipboard.writeText(selection);
+                                                            }
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                        } else if (
+                                                            !termHasSelection &&
+                                                            !inputHasSelection &&
+                                                            onSendCommand
+                                                        ) {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            onSendCommand('\x03');
+                                                            setCommandInput('');
+                                                            setSuggestionMenu(null);
+                                                        }
+                                                    }
+                                                }}
+                                                type='text'
+                                                className='text-foreground placeholder:text-muted-foreground/50 relative h-full w-full min-w-0 bg-transparent py-1.5 font-mono text-xs font-semibold outline-none'
+                                                placeholder={t('servers.console.terminal.placeholder')}
+                                                title={t('servers.console.terminal.input_hint')}
+                                                disabled={!canSend}
+                                                autoComplete='off'
+                                                autoCorrect='off'
+                                                spellCheck={false}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <Button
+                                    type='button'
+                                    variant='outline'
+                                    size='icon'
+                                    className='text-primary hover:bg-primary/10 hover:text-primary border-primary/35 focus:ring-primary/15 h-9 w-9 shrink-0 rounded-lg focus:ring-2'
+                                    onClick={sendCommand}
+                                    disabled={!canSend || !commandInput.trim()}
+                                    aria-label={t('servers.console.terminal.send')}
+                                >
+                                    <Send className='h-4 w-4' />
+                                </Button>
+                            </div>
+                            {!canSendCommands && (
+                                <div className='text-destructive border-destructive/20 bg-destructive/5 flex w-full min-w-0 items-start gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-medium'>
+                                    <AlertCircle className='mt-0.5 h-3.5 w-3.5 shrink-0' aria-hidden />
+                                    <span className='min-w-0 leading-snug'>
+                                        {t('servers.console.noConsolePermissionSend')}
+                                    </span>
+                                </div>
+                            )}
+                            {canSendCommands && !canSend && (
+                                <div className='flex w-full min-w-0 items-start gap-2 rounded-lg border border-orange-500/20 bg-orange-500/10 px-2.5 py-1.5 text-xs font-medium text-orange-600 dark:text-orange-400'>
+                                    <AlertCircle className='mt-0.5 h-3.5 w-3.5 shrink-0' aria-hidden />
+                                    <span className='min-w-0 leading-snug'>
+                                        {t('servers.console.terminal.server_running_required')}
+                                    </span>
+                                </div>
+                            )}
+                        </CardFooter>
+                    )}
+
+                    <div className='sm:hidden'>
                         <Sheet
-                            open={showQuickRules && isNarrowViewport}
-                            onOpenChange={setShowQuickRules}
+                            open={showSettings && isNarrowViewport}
+                            onOpenChange={setShowSettings}
                             className='max-w-lg'
                         >
                             <SheetContent>
                                 <SheetHeader>
-                                    <SheetTitle>{t('servers.console.terminal.quick_rules')}</SheetTitle>
-                                    <SheetDescription>
-                                        {t('servers.console.terminal.quick_rules_help')}
-                                    </SheetDescription>
+                                    <SheetTitle>{t('servers.console.terminal.customize')}</SheetTitle>
+                                    <SheetDescription>{t('servers.console.terminal.rules_intro')}</SheetDescription>
                                 </SheetHeader>
-                                <QuickRulesList
+                                <FilterSettingsPanel
                                     filters={filters}
-                                    onAddPreset={handleAddPreset}
-                                    onSelect={() => setShowQuickRules(false)}
+                                    onFiltersChange={onFiltersChange}
+                                    onAddFilter={handleAddFilter}
+                                    onUpdateFilter={handleUpdateFilter}
+                                    onDeleteFilter={handleDeleteFilter}
+                                    showIntro={false}
                                 />
                             </SheetContent>
                         </Sheet>
-                    )}
 
-                    <Sheet open={showHistory && isNarrowViewport} onOpenChange={setShowHistory} className='max-w-lg'>
-                        <SheetContent>
-                            <SheetHeader>
-                                <SheetTitle>{t('servers.console.terminal.history_title')}</SheetTitle>
-                            </SheetHeader>
-                            <CommandHistoryList commandHistory={commandHistory} onSelect={loadHistoryCommand} />
-                        </SheetContent>
-                    </Sheet>
-                </div>
+                        {onFiltersChange && (
+                            <Sheet
+                                open={showQuickRules && isNarrowViewport}
+                                onOpenChange={setShowQuickRules}
+                                className='max-w-lg'
+                            >
+                                <SheetContent>
+                                    <SheetHeader>
+                                        <SheetTitle>{t('servers.console.terminal.quick_rules')}</SheetTitle>
+                                        <SheetDescription>
+                                            {t('servers.console.terminal.quick_rules_help')}
+                                        </SheetDescription>
+                                    </SheetHeader>
+                                    <QuickRulesList
+                                        filters={filters}
+                                        onAddPreset={handleAddPreset}
+                                        onSelect={() => setShowQuickRules(false)}
+                                    />
+                                </SheetContent>
+                            </Sheet>
+                        )}
 
-                <style jsx global>{`
-                    .xterm {
-                        width: 100% !important;
-                        height: 100% !important;
-                        background-color: hsl(var(--secondary)) !important;
-                        touch-action: none;
-                        overscroll-behavior: none;
-                    }
-                    .xterm-scrollable-element {
-                        width: 100% !important;
-                        height: 100% !important;
-                        touch-action: none;
-                        overscroll-behavior: none;
-                    }
-                    .xterm-viewport {
-                        overflow-x: hidden !important;
-                        background-color: hsl(var(--secondary)) !important;
-                        touch-action: none;
-                        overscroll-behavior: none;
-                        scrollbar-width: thin;
-                        scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
-                    }
-                    .xterm-screen {
-                        background-color: hsl(var(--secondary)) !important;
-                    }
-                    .xterm-viewport::-webkit-scrollbar {
-                        width: 8px;
-                        height: 0;
-                    }
-                    .xterm-viewport::-webkit-scrollbar-track {
-                        background-color: transparent;
-                    }
-                    .xterm-viewport::-webkit-scrollbar-thumb {
-                        background-color: hsl(var(--muted-foreground) / 0.3);
-                        border-radius: 4px;
-                    }
-                    .xterm-viewport::-webkit-scrollbar-thumb:hover {
-                        background-color: hsl(var(--muted-foreground) / 0.5);
-                    }
-                    .xterm .xterm-scrollable-element > .scrollbar {
-                        background: transparent !important;
-                    }
-                    .xterm .xterm-scrollable-element > .scrollbar > .slider {
-                        border-radius: 4px;
-                    }
-                `}</style>
-            </Card>
+                        <Sheet
+                            open={showHistory && isNarrowViewport}
+                            onOpenChange={setShowHistory}
+                            className='max-w-lg'
+                        >
+                            <SheetContent>
+                                <SheetHeader>
+                                    <SheetTitle>{t('servers.console.terminal.history_title')}</SheetTitle>
+                                </SheetHeader>
+                                <CommandHistoryList commandHistory={commandHistory} onSelect={loadHistoryCommand} />
+                            </SheetContent>
+                        </Sheet>
+                    </div>
+
+                    <style jsx global>{`
+                        .xterm {
+                            width: 100% !important;
+                            height: 100% !important;
+                            background-color: hsl(var(--secondary)) !important;
+                            touch-action: none;
+                            overscroll-behavior: none;
+                        }
+                        .xterm-scrollable-element {
+                            width: 100% !important;
+                            height: 100% !important;
+                            touch-action: none;
+                            overscroll-behavior: none;
+                        }
+                        .xterm-viewport {
+                            overflow-x: hidden !important;
+                            background-color: hsl(var(--secondary)) !important;
+                            touch-action: none;
+                            overscroll-behavior: none;
+                            scrollbar-width: thin;
+                            scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+                        }
+                        .xterm-screen {
+                            background-color: hsl(var(--secondary)) !important;
+                        }
+                        .xterm-viewport::-webkit-scrollbar {
+                            width: 8px;
+                            height: 0;
+                        }
+                        .xterm-viewport::-webkit-scrollbar-track {
+                            background-color: transparent;
+                        }
+                        .xterm-viewport::-webkit-scrollbar-thumb {
+                            background-color: hsl(var(--muted-foreground) / 0.3);
+                            border-radius: 4px;
+                        }
+                        .xterm-viewport::-webkit-scrollbar-thumb:hover {
+                            background-color: hsl(var(--muted-foreground) / 0.5);
+                        }
+                        .xterm .xterm-scrollable-element > .scrollbar {
+                            background: transparent !important;
+                        }
+                        .xterm .xterm-scrollable-element > .scrollbar > .slider {
+                            border-radius: 4px;
+                        }
+                    `}</style>
+                </Card>
+            </div>
         );
     },
 );

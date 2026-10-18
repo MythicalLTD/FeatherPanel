@@ -345,8 +345,11 @@ export function TranslationProvider({ children, initialLocale, initialTranslatio
             }
 
             if (params) {
-                return value.replace(/\{(\w+)\}/g, (match, paramKey) => {
-                    return params[paramKey] || match;
+                // Accept both `{name}` (panel convention) and `{{name}}` placeholders. Zero and empty
+                // strings are real values, so only fall back to the placeholder when a param is missing.
+                return value.replace(/\{\{\s*(\w+)\s*\}\}|\{(\w+)\}/g, (match, doubleKey, singleKey) => {
+                    const param = (params as Record<string, unknown>)[doubleKey ?? singleKey];
+                    return param === undefined || param === null ? match : String(param);
                 });
             }
 

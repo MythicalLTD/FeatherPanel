@@ -28,7 +28,8 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { ScrollableTabsList } from '@/components/ui/scrollable-tabs-list';
 import { Select } from '@/components/ui/select-native';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -610,7 +611,27 @@ export default function SettingsPage() {
                     className='flex w-full flex-col gap-6 lg:flex-row lg:gap-8'
                 >
                     <aside className='flex min-h-0 w-full shrink-0 flex-col gap-3 lg:w-72'>
-                        <TabsList className='bg-card/30 border-border/50 flex h-auto w-full max-w-full flex-row gap-1 overflow-x-auto rounded-2xl border p-2 lg:max-h-[calc(100vh-12rem)] lg:flex-col lg:overflow-x-visible lg:overflow-y-auto'>
+                        <label className='sm:hidden'>
+                            <span className='sr-only'>{t('admin.settings.category_select')}</span>
+                            <select
+                                value={activeTab || categoryKeys[0]}
+                                onChange={(e) => handleCategoryChange(e.target.value)}
+                                className='border-border/50 bg-card/60 focus-visible:ring-ring h-11 w-full rounded-xl border px-3 text-sm outline-none focus-visible:ring-2'
+                            >
+                                {Object.entries(organizedSettings).map(([key, data]) => (
+                                    <option key={key} value={key}>
+                                        {data.category.name}
+                                        {searchTrimmed
+                                            ? ` (${categoryMatchCounts[key] ?? 0}/${Object.keys(data.settings).length})`
+                                            : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <ScrollableTabsList
+                            wrapperClassName='hidden sm:block'
+                            className='bg-card/30 border-border/50 flex h-auto w-full flex-row gap-1 rounded-2xl border p-2 lg:max-h-[calc(100vh-12rem)] lg:flex-col lg:overflow-x-visible lg:overflow-y-auto'
+                        >
                             {Object.entries(organizedSettings).map(([key, data]) => {
                                 const Icon = getIconForCategory(key);
                                 const matchCount = categoryMatchCounts[key] ?? 0;
@@ -640,7 +661,7 @@ export default function SettingsPage() {
                                     </TabsTrigger>
                                 );
                             })}
-                        </TabsList>
+                        </ScrollableTabsList>
                     </aside>
 
                     <div className='min-w-0 flex-1 space-y-6'>

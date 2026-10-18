@@ -126,7 +126,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                         <GlobalSearchDialog />
                         <PanelDebugConsole />
                         <div
-                            className='motion-content flex min-h-0 flex-1 flex-col overflow-hidden'
+                            className='motion-content flex min-h-0 flex-1 flex-col overflow-clip'
                             data-fp-dashboard-shell
                         >
                             <div

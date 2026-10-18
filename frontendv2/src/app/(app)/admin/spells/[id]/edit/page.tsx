@@ -26,7 +26,8 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Select } from '@/components/ui/select-native';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollableTabsList } from '@/components/ui/scrollable-tabs-list';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -400,14 +401,14 @@ export default function EditSpellPage() {
             <WidgetRenderer widgets={getWidgets('admin-spells-edit', 'after-header')} context={{ id: spellId }} />
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className='grid w-full grid-cols-6'>
+                <ScrollableTabsList className='flex h-auto w-full md:grid md:grid-cols-6'>
                     <TabsTrigger value='general'>{t('admin.spells.tabs.general')}</TabsTrigger>
                     <TabsTrigger value='docker'>{t('admin.spells.tabs.docker')}</TabsTrigger>
                     <TabsTrigger value='features'>{t('admin.spells.tabs.features')}</TabsTrigger>
                     <TabsTrigger value='config'>{t('admin.spells.tabs.config')}</TabsTrigger>
                     <TabsTrigger value='script'>{t('admin.spells.tabs.script')}</TabsTrigger>
                     <TabsTrigger value='variables'>{t('admin.spells.tabs.variables')}</TabsTrigger>
-                </TabsList>
+                </ScrollableTabsList>
 
                 <TabsContent value='general' className='space-y-4'>
                     <PageCard title={t('admin.spells.form.basic_information')} icon={Sparkles}>

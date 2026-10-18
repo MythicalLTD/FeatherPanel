@@ -115,7 +115,7 @@ export default function ContentAnalyticsPage() {
             const rStats = realmDetailsRes.data.data;
             setRealmDetails([
                 { name: t('admin.analytics.content.total_realms'), value: rStats.total_realms },
-                { name: t('admin.analytics.content.with_spells'), value: rStats.with_spells },
+                { name: t('admin.analytics.content.with_spells', { count: '' }).trim(), value: rStats.with_spells },
                 { name: t('admin.analytics.content.with_servers'), value: rStats.with_servers },
                 { name: t('admin.analytics.content.empty_realms'), value: rStats.empty_realms },
             ]);

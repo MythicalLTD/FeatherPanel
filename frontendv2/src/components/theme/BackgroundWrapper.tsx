@@ -171,7 +171,9 @@ export default function BackgroundWrapper({
         <div
             className={cn(
                 'relative transition-all duration-500',
-                fillViewport ? 'flex h-svh max-h-svh flex-col overflow-hidden' : 'min-h-svh',
+                // overflow-clip (not hidden): a hidden box can still be scrolled by scrollIntoView()/focus(),
+                // which pushed the top bar out of view on mobile.
+                fillViewport ? 'flex h-svh max-h-svh flex-col overflow-clip' : 'min-h-svh',
             )}
         >
             {/* Background layer: Aurora or gradient/solid/pattern/image (or spell replace on server pages).

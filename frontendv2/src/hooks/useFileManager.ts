@@ -60,7 +60,7 @@ export function useFileManager(serverUuid: string) {
         const params = new URLSearchParams(searchParams?.toString() ?? '');
         params.delete('path');
         const qs = params.toString();
-        router.replace(qs ? `?${qs}` : '?');
+        router.replace(qs ? `?${qs}` : '?', { scroll: false });
     }, [currentDirectory, router, searchParams]);
 
     // Debounce search so we filter on the server (full directory) instead of
@@ -169,7 +169,12 @@ export function useFileManager(serverUuid: string) {
         setSearchQuery('');
         setDebouncedSearch('');
         reportPanelInteraction('panel.file.browse', 'files');
-        router.push(`?${params.toString()}`);
+        // scroll: false - Next's default scroll-to-segment uses scrollIntoView(), which also scrolls the
+        // app shell and could push the mobile top bar out of view. Reset the page's own scroller instead.
+        router.push(`?${params.toString()}`, { scroll: false });
+        if (typeof document !== 'undefined') {
+            document.querySelector<HTMLElement>('.fp-shell-main')?.scrollTo({ top: 0 });
+        }
     };
 
     const toggleSelect = (name: string) => {

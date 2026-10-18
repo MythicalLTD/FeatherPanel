@@ -4,6 +4,7 @@
 
 ### Added
 
+- Compact server console: slim page header with address chip, server hero with status, address, uptime and node chips, a full-height console with a single-row toolbar (filters, quick rules, search, auto-scroll, clear, fullscreen) and CPU, memory, disk and network cards with sparklines. by @nayskutzu
 - ClickHouse can now be used as a remote database host, including WebSpace database provisioning, dumps and restores (#255). by @Devority
 - Proxmox VNC consoles can now be proxied through the panel, so the Proxmox node is never exposed to the browser (#256). by @Devority
 - ARK: Survival Ascended servers now show their player count, read over RCON (#259). by @Devority
@@ -12,6 +13,9 @@
 
 ### Fixed
 
+- Translation placeholders render their values again (`{{name}}` and `{name}`, zero and empty values), e.g. the file manager upload progress showing `UPLOADING {FILE}`. A new `scan:translation-params` step fails the build when a call misses a placeholder value. by @nayskutzu
+- Tab bars that overflow (admin settings, user, node, server, spell and webplate editors) keep every tab reachable with scroll fades, arrow buttons and the active tab kept in view; admin settings uses a dropdown on phones. by @nayskutzu
+- The mobile top bar no longer disappears when opening folders in the file manager, and the file manager toolbar fits on one row on phones. by @nayskutzu
 - Dashboard no longer fires duplicate requests on load (which hit the rate limit and logged `429` errors): the background wrapper stopped remounting the whole page after hydration, identical in-flight GETs are shared, and `429` responses are retried after the `Retry-After` delay the API now sends. by @nayskutzu
 - Aurora background handles WebGL context loss/restore, pauses in hidden tabs, respects reduced motion and frees its context on unmount. by @nayskutzu
 - Service worker ignores non-GET, cross-origin, API and non-http(s) requests instead of failing them, and is no longer registered in development. by @nayskutzu

@@ -28,7 +28,8 @@ import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Select } from '@/components/ui/select-native';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollableTabsList } from '@/components/ui/scrollable-tabs-list';
 import { Label } from '@/components/ui/label';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { toast } from 'sonner';
@@ -172,12 +173,12 @@ export default function EditWebPlatePage() {
             <WidgetRenderer widgets={getWidgets('admin-webplates-edit', 'after-header')} />
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className='grid w-full grid-cols-4'>
+                <ScrollableTabsList className='flex h-auto w-full md:grid md:grid-cols-4'>
                     <TabsTrigger value='general'>{t('admin.webPlates.form.basic')}</TabsTrigger>
                     <TabsTrigger value='runtime'>{t('admin.webPlates.form.runtime_section')}</TabsTrigger>
                     <TabsTrigger value='install'>{t('admin.webPlates.form.install_section')}</TabsTrigger>
                     <TabsTrigger value='schedules'>{t('admin.webPlates.form.schedules_section')}</TabsTrigger>
-                </TabsList>
+                </ScrollableTabsList>
 
                 <TabsContent value='general' className='space-y-4'>
                     <PageCard title={t('admin.webPlates.form.basic')} icon={LayoutTemplate}>
