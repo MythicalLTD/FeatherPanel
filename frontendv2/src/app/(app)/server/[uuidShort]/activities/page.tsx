@@ -73,6 +73,7 @@ import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 type ActivityMetadata = {
     message?: string;
@@ -525,31 +526,12 @@ export default function ServerActivityPage() {
                 </div>
 
                 {pagination.total_records > pagination.per_page && (
-                    <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                        <Button
-                            variant='glass'
-                            size='sm'
-                            disabled={!pagination.has_prev || loading}
-                            onClick={() => changePage(pagination.current_page - 1)}
-                            className='gap-1.5'
-                        >
-                            <ChevronLeft className='h-4 w-4' />
-                            {t('common.previous')}
-                        </Button>
-                        <span className='text-sm font-medium'>
-                            {pagination.current_page} / {pagination.total_pages}
-                        </span>
-                        <Button
-                            variant='glass'
-                            size='sm'
-                            disabled={!pagination.has_next || loading}
-                            onClick={() => changePage(pagination.current_page + 1)}
-                            className='gap-1.5'
-                        >
-                            {t('common.next')}
-                            <ChevronRight className='h-4 w-4' />
-                        </Button>
-                    </div>
+                    <ListPagination
+                        page={pagination.current_page}
+                        totalPages={pagination.total_pages}
+                        disabled={loading}
+                        onPageChange={(nextPage) => changePage(nextPage)}
+                    />
                 )}
 
                 {activities.length === 0 ? (

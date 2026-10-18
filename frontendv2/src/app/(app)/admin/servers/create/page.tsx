@@ -70,6 +70,7 @@ import { OwnerPickerSheet } from '@/components/admin/OwnerPickerSheet';
 import { useFormBaseline } from '@/hooks/useFormBaseline';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { Sensitive } from '@/components/common/Sensitive';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 const initialFormData: ServerFormData = {
     name: '',
@@ -1294,35 +1295,11 @@ function SelectionSheet<T extends { id: number | string }>({
                     </div>
 
                     {pagination && pagination.total_pages > 1 && (
-                        <div className='border-border bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={!pagination.has_prev}
-                                onClick={() =>
-                                    onPaginationChange({ ...pagination, current_page: pagination.current_page - 1 })
-                                }
-                                className='h-8 gap-1'
-                            >
-                                <ChevronLeft className='h-3 w-3' />
-                                {t('common.previous')}
-                            </Button>
-                            <span className='text-xs font-medium'>
-                                {pagination.current_page} / {pagination.total_pages}
-                            </span>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={!pagination.has_next}
-                                onClick={() =>
-                                    onPaginationChange({ ...pagination, current_page: pagination.current_page + 1 })
-                                }
-                                className='h-8 gap-1'
-                            >
-                                {t('common.next')}
-                                <ChevronRight className='h-3 w-3' />
-                            </Button>
-                        </div>
+                        <ListPagination
+                            page={pagination.current_page}
+                            totalPages={pagination.total_pages}
+                            onPageChange={(nextPage) => onPaginationChange({ ...pagination, current_page: nextPage })}
+                        />
                     )}
 
                     <div className='custom-scrollbar max-h-[calc(100vh-300px)] space-y-2 overflow-y-auto'>

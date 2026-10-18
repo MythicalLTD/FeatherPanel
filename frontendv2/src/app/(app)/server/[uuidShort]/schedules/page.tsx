@@ -55,6 +55,7 @@ import type { Schedule, SchedulePagination } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 export default function ServerSchedulesPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -393,31 +394,13 @@ export default function ServerSchedulesPage() {
             ) : (
                 <>
                     {pagination.total > pagination.per_page && (
-                        <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={pagination.current_page <= 1 || loading}
-                                onClick={() => fetchData(pagination.current_page - 1)}
-                                className='gap-1.5'
-                            >
-                                <ChevronLeft className='h-4 w-4' />
-                                {t('common.previous')}
-                            </Button>
-                            <span className='text-sm font-medium'>
-                                {pagination.current_page} / {pagination.last_page}
-                            </span>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={pagination.current_page >= pagination.last_page || loading}
-                                onClick={() => fetchData(pagination.current_page + 1)}
-                                className='gap-1.5'
-                            >
-                                {t('common.next')}
-                                <ChevronRight className='h-4 w-4' />
-                            </Button>
-                        </div>
+                        <ListPagination
+                            page={pagination.current_page}
+                            totalPages={pagination.last_page}
+                            disabled={loading}
+                            onPageChange={(nextPage) => fetchData(nextPage)}
+                            className='mb-4'
+                        />
                     )}
                     <div className='grid grid-cols-1 gap-4'>
                         {schedules.map((schedule) => (

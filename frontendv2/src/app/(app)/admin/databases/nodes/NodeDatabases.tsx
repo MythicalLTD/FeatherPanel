@@ -48,6 +48,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useFormBaseline } from '@/hooks/useFormBaseline';
 import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
 import { Sensitive } from '@/components/common/Sensitive';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface Database {
     id: number;
@@ -439,31 +440,11 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             </div>
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
-                        className='gap-1.5'
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
-                        className='gap-1.5'
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={pagination.page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(nextPage) => setPagination((p) => ({ ...p, page: nextPage }))}
+                />
             )}
 
             {loading ? (

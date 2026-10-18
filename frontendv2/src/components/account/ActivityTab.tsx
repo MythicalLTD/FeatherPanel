@@ -20,12 +20,13 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { Clock, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Clock, RefreshCw } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
 import { formatRelativeTime } from '@/lib/dateUtils';
 import type { Activity } from '@/types/activity';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface PaginationInfo {
     current_page: number;
@@ -154,31 +155,11 @@ export default function ActivityTab() {
             </div>
 
             {pagination && pagination.total_pages > 1 && (
-                <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.has_prev}
-                        onClick={() => fetchActivities(pagination.current_page - 1)}
-                        className='gap-1.5'
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {pagination.current_page} / {pagination.total_pages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.has_next}
-                        onClick={() => fetchActivities(pagination.current_page + 1)}
-                        className='gap-1.5'
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={pagination.current_page}
+                    totalPages={pagination.total_pages}
+                    onPageChange={(nextPage) => fetchActivities(nextPage)}
+                />
             )}
 
             {activities.length > 0 ? (

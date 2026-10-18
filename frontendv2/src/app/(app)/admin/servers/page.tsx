@@ -83,6 +83,7 @@ import { TransferServerDialog } from '@/components/admin/TransferServerDialog';
 import { ServerPowerMenu, sendServerPowerAction } from '@/components/admin/ServerPowerMenu';
 import { Sensitive } from '@/components/common/Sensitive';
 import { useIpMask } from '@/hooks/useIpMask';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 function resolveAvatarSrc(avatar?: string): string | undefined {
     if (avatar && (avatar.startsWith('http') || avatar.startsWith('/'))) {
@@ -721,31 +722,12 @@ export default function ServersPage() {
                         </div>
                     </div>
                     {pagination.totalPages > 1 && (
-                        <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={!pagination.hasPrev}
-                                onClick={() => patchFilters({ page: page - 1 })}
-                                className='gap-1.5'
-                            >
-                                <ChevronLeft className='h-4 w-4' />
-                                {t('common.previous')}
-                            </Button>
-                            <span className='text-sm font-medium'>
-                                {page} / {pagination.totalPages}
-                            </span>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={!pagination.hasNext}
-                                onClick={() => patchFilters({ page: page + 1 })}
-                                className='gap-1.5'
-                            >
-                                {t('common.next')}
-                                <ChevronRight className='h-4 w-4' />
-                            </Button>
-                        </div>
+                        <ListPagination
+                            page={page}
+                            totalPages={pagination.totalPages}
+                            onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                            className='mb-4'
+                        />
                     )}
                     <div className='grid grid-cols-1 gap-4'>
                         {servers.map((server) => {

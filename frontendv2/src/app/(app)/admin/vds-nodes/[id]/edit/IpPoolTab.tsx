@@ -30,6 +30,7 @@ import { Plus, Trash2, Search, RefreshCw, Network, Star, ChevronLeft, ChevronRig
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { TabBlankState, TabHintCard, TabTableShell, TabToolbar } from './TabPrimitives';
 import { Sensitive } from '@/components/common/Sensitive';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface VmIp {
     id: number;
@@ -324,31 +325,11 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                     </TabToolbar>
 
                     {pagination.totalPages > 1 && (
-                        <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={!pagination.hasPrev}
-                                onClick={() => setPage((p) => p - 1)}
-                                className='gap-1.5'
-                            >
-                                <ChevronLeft className='h-4 w-4' />
-                                {t('common.previous')}
-                            </Button>
-                            <span className='text-sm font-medium'>
-                                {page} / {pagination.totalPages}
-                            </span>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={!pagination.hasNext}
-                                onClick={() => setPage((p) => p + 1)}
-                                className='gap-1.5'
-                            >
-                                {t('common.next')}
-                                <ChevronRight className='h-4 w-4' />
-                            </Button>
-                        </div>
+                        <ListPagination
+                            page={page}
+                            totalPages={pagination.totalPages}
+                            onPageChange={(nextPage) => setPage(nextPage)}
+                        />
                     )}
 
                     {loading ? (

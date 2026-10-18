@@ -40,8 +40,6 @@ import {
     Zap,
     Search as SearchIcon,
     MapPin,
-    ChevronLeft,
-    ChevronRight,
     ArrowLeftRight,
 } from 'lucide-react';
 import { MassTransferServersDialog } from '@/components/admin/MassTransferServersDialog';
@@ -76,6 +74,7 @@ import {
 import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
 import { useFormBaseline } from '@/hooks/useFormBaseline';
 import { NodeSetupChecklist } from './NodeSetupChecklist';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 export interface NodeForm {
     name: string;
@@ -815,41 +814,16 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                         </div>
 
                         {locationPagination.total_pages > 1 && (
-                            <div className='border-border bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!locationPagination.has_prev}
-                                    onClick={() =>
-                                        setLocationPagination((prev) => ({
-                                            ...prev,
-                                            current_page: prev.current_page - 1,
-                                        }))
-                                    }
-                                    className='h-8 gap-1'
-                                >
-                                    <ChevronLeft className='h-3 w-3' />
-                                    {t('common.previous')}
-                                </Button>
-                                <span className='text-xs font-medium'>
-                                    {locationPagination.current_page} / {locationPagination.total_pages}
-                                </span>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!locationPagination.has_next}
-                                    onClick={() =>
-                                        setLocationPagination((prev) => ({
-                                            ...prev,
-                                            current_page: prev.current_page + 1,
-                                        }))
-                                    }
-                                    className='h-8 gap-1'
-                                >
-                                    {t('common.next')}
-                                    <ChevronRight className='h-3 w-3' />
-                                </Button>
-                            </div>
+                            <ListPagination
+                                page={locationPagination.current_page}
+                                totalPages={locationPagination.total_pages}
+                                onPageChange={(nextPage) =>
+                                    setLocationPagination((prev) => ({
+                                        ...prev,
+                                        current_page: nextPage,
+                                    }))
+                                }
+                            />
                         )}
 
                         <div className='max-h-[calc(100vh-300px)] space-y-2 overflow-y-auto'>

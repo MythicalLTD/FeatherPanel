@@ -48,6 +48,7 @@ import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface Category {
     id: number;
@@ -315,31 +316,12 @@ export default function KnowledgeBaseCategoriesPage() {
             <WidgetRenderer widgets={getWidgets('admin-knowledgebase-categories', 'before-list')} />
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
-                        className='gap-1.5'
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                        {t('common.previous')}
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
-                        className='gap-1.5'
-                    >
-                        {t('common.next')}
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={pagination.page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(nextPage) => setPagination((p) => ({ ...p, page: nextPage }))}
+                    className='mb-4'
+                />
             )}
 
             {loading ? (

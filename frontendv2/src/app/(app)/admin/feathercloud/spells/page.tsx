@@ -49,6 +49,7 @@ import {
 } from 'lucide-react';
 import { StarDisplay, StarRatingInput, mythicCloudErrorMessage } from '@/app/(app)/admin/feathercloud/products/_shared';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { ListPagination } from '@/components/featherui/ListPagination';
 
 interface OnlineSpell {
     id?: string | number | null;
@@ -812,31 +813,11 @@ export default function SpellsPage() {
                                     </div>
 
                                     {realmsPagination && realmsPagination.total_pages > 1 && (
-                                        <div className='border-border bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
-                                            <Button
-                                                variant='outline'
-                                                size='sm'
-                                                disabled={realmsPage === 1}
-                                                onClick={() => setRealmsPage((p) => p - 1)}
-                                                className='h-8 gap-1'
-                                            >
-                                                <ChevronLeft className='h-3 w-3' />
-                                                {t('common.previous')}
-                                            </Button>
-                                            <span className='text-xs font-medium'>
-                                                {realmsPage} / {realmsPagination.total_pages}
-                                            </span>
-                                            <Button
-                                                variant='outline'
-                                                size='sm'
-                                                disabled={realmsPage === realmsPagination.total_pages}
-                                                onClick={() => setRealmsPage((p) => p + 1)}
-                                                className='h-8 gap-1'
-                                            >
-                                                {t('common.next')}
-                                                <ChevronRight className='h-3 w-3' />
-                                            </Button>
-                                        </div>
+                                        <ListPagination
+                                            page={realmsPage}
+                                            totalPages={realmsPagination.total_pages}
+                                            onPageChange={(nextPage) => setRealmsPage(nextPage)}
+                                        />
                                     )}
 
                                     <div className='custom-scrollbar max-h-[300px] space-y-2 overflow-y-auto pr-2'>
