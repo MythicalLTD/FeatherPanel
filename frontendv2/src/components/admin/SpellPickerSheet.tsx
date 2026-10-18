@@ -342,7 +342,7 @@ export function SpellPickerSheet({
                                                     ) : null}
                                                     {spell.verified ? (
                                                         <span className='rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400'>
-                                                            Verified
+                                                            {t('ui.components.admin.spellPickerSheet.verified')}
                                                         </span>
                                                     ) : null}
                                                 </div>
@@ -367,7 +367,9 @@ export function SpellPickerSheet({
                                                 <span className='inline-flex items-center gap-1.5'>
                                                     <StarDisplay rating={avg} />
                                                     <span>
-                                                        {avg > 0 ? avg.toFixed(1) : 'No ratings'}
+                                                        {avg > 0
+                                                            ? avg.toFixed(1)
+                                                            : t('ui.components.admin.spellPickerSheet.noRatings')}
                                                         {reviewCount > 0 ? ` · ${reviewCount}` : ''}
                                                     </span>
                                                 </span>
@@ -394,7 +396,12 @@ export function SpellPickerSheet({
                                                 )}
                                                 {t('admin.servers.form.spell_install_to_realm')}
                                             </Button>
-                                            <Button size='sm' variant='outline' asChild title='Reviews on marketplace'>
+                                            <Button
+                                                size='sm'
+                                                variant='outline'
+                                                asChild
+                                                title={t('ui.components.admin.spellPickerSheet.reviewsOnMarketplace')}
+                                            >
                                                 <Link
                                                     href={`/admin/feathercloud/spells`}
                                                     target='_blank'

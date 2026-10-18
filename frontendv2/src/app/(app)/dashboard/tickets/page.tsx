@@ -511,7 +511,7 @@ export default function TicketsPage() {
                                 <div className='flex items-center gap-2'>
                                     {ticket.has_unread_messages_since_last_reply && (
                                         <div className='mr-2 rounded-full bg-red-500/15 px-2 py-1 text-xs font-semibold text-red-600 dark:text-red-300'>
-                                            NEW
+                                            {t('ui.dashboard.tickets.nEW')}
                                         </div>
                                     )}
                                     <Button

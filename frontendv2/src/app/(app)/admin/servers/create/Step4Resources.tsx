@@ -273,7 +273,7 @@ export function Step4Resources({ formData, setFormData, onSizeValidityChange }: 
                         <Input
                             value={formData.threads}
                             onChange={(e) => setFormData((prev) => ({ ...prev, threads: e.target.value }))}
-                            placeholder='Leave empty for all threads'
+                            placeholder={t('ui.admin.servers.create.step4Resources.leaveEmptyForAllThreads')}
                             className='bg-muted/30'
                         />
                         <p className='text-muted-foreground text-xs'>{t('admin.servers.form.threads_help')}</p>

@@ -767,7 +767,7 @@ export default function PluginManagerPage() {
                                     {selectedPlugin.target && (
                                         <div className='bg-muted/30 border-border/50 space-y-1 rounded-2xl border p-5'>
                                             <p className='text-muted-foreground text-[10px] font-bold tracking-wider uppercase'>
-                                                Target
+                                                {t('ui.admin.dev.plugins.target')}
                                             </p>
                                             <p className='font-semibold'>{selectedPlugin.target}</p>
                                         </div>

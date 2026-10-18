@@ -201,7 +201,8 @@ export default function RegisterForm() {
             if (response.success) {
                 if (response.data?.requires_email_verification) {
                     setSuccess(
-                        response.message || 'Registration successful. Please verify your email before logging in.',
+                        response.message ||
+                            t('ui.auth.register.registerForm.registrationSuccessfulPleaseVerifyYourEmail'),
                     );
                     setForm({
                         first_name: '',

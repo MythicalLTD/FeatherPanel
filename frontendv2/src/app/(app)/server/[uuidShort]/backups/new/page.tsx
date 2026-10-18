@@ -421,7 +421,7 @@ export default function CreateBackupPage() {
                                         : t('serverTasks.backupTypeFiles')}
                                 </h2>
                                 <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                    Configuration
+                                    {t('ui.server.backups.new.configuration')}
                                 </p>
                             </div>
                         </div>
@@ -518,7 +518,7 @@ export default function CreateBackupPage() {
                                         : t('serverTasks.backupTypeDatabases')}
                                 </h2>
                                 <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                    Configuration
+                                    {t('ui.server.backups.new.configuration')}
                                 </p>
                             </div>
                         </div>

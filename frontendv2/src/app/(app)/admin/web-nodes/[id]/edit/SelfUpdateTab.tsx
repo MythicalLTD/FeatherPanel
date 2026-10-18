@@ -143,7 +143,7 @@ export function SelfUpdateTab({ nodeId, currentVersion, onRefresh }: SelfUpdateT
             <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                 <PageCard
                     title={t('admin.node.view.self_update.current_version')}
-                    description='Currently installed FeatherQuilld binary'
+                    description={t('ui.admin.webNodes.edit.selfUpdateTab.currentlyInstalledFeatherQuilldBinary')}
                     icon={Terminal}
                     className='h-full'
                 >
@@ -158,7 +158,7 @@ export function SelfUpdateTab({ nodeId, currentVersion, onRefresh }: SelfUpdateT
 
                 <PageCard
                     title={t('admin.node.view.self_update.latest_version')}
-                    description='Available from upstream'
+                    description={t('ui.admin.webNodes.edit.selfUpdateTab.availableFromUpstream')}
                     icon={RefreshCw}
                     className='h-full'
                 >

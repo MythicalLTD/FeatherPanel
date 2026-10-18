@@ -134,7 +134,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
             <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                 <PageCard
                     title={t('admin.node.view.self_update.current_version')}
-                    description='Currently installed binary'
+                    description={t('ui.admin.nodes.components.selfUpdateTab.currentlyInstalledBinary')}
                     icon={Terminal}
                     className='h-full'
                 >
@@ -149,7 +149,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
 
                 <PageCard
                     title={t('admin.node.view.self_update.latest_version')}
-                    description='Available from upstream'
+                    description={t('ui.admin.nodes.components.selfUpdateTab.availableFromUpstream')}
                     icon={RefreshCw}
                     className='h-full'
                 >

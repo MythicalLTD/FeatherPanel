@@ -24,6 +24,7 @@ import { HardDrive, Cpu, MemoryStick, Globe, Server, ArrowRight } from 'lucide-r
 import { cn } from '@/lib/utils';
 import { OverflowText } from '@/components/featherui/OverflowText';
 import { Sensitive } from '@/components/common/Sensitive';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface VmCardProps {
     vm: VmInstance;
@@ -81,6 +82,7 @@ function Spec({ icon: Icon, label, value }: SpecProps) {
 }
 
 export function VmCard({ vm, layout }: VmCardProps) {
+    const { t } = useTranslation();
     // Total vCPUs = sockets × cores
     const totalCores = (vm.cpus ?? 1) * (vm.cores ?? 1);
     const memoryGb = vm.memory ? (vm.memory / 1024).toFixed(vm.memory >= 1024 ? 0 : 1) : null;
@@ -117,7 +119,13 @@ export function VmCard({ vm, layout }: VmCardProps) {
                     <div className='hidden shrink-0 flex-col gap-1 sm:flex'>
                         {totalCores > 0 && <Spec icon={Cpu} label='vCPU' value={String(totalCores)} />}
                         {memoryGb && <Spec icon={MemoryStick} label='RAM' value={`${memoryGb} GB`} />}
-                        {vm.disk_gb && <Spec icon={HardDrive} label='Disk' value={`${vm.disk_gb} GB`} />}
+                        {vm.disk_gb && (
+                            <Spec
+                                icon={HardDrive}
+                                label={t('ui.components.vms.vmCard.disk')}
+                                value={`${vm.disk_gb} GB`}
+                            />
+                        )}
                     </div>
 
                     {/* Arrow */}
@@ -163,12 +171,16 @@ export function VmCard({ vm, layout }: VmCardProps) {
                     <div className='bg-background/60 flex flex-col items-center rounded-lg px-2 py-2.5'>
                         <MemoryStick className='text-primary mb-1 h-4 w-4' />
                         <span className='text-foreground text-sm font-bold'>{memoryGb ?? '-'}</span>
-                        <span className='text-muted-foreground text-[10px] tracking-wide uppercase'>GB RAM</span>
+                        <span className='text-muted-foreground text-[10px] tracking-wide uppercase'>
+                            {t('ui.components.vms.vmCard.gBRAM')}
+                        </span>
                     </div>
                     <div className='bg-background/60 flex flex-col items-center rounded-lg px-2 py-2.5'>
                         <HardDrive className='text-primary mb-1 h-4 w-4' />
                         <span className='text-foreground text-sm font-bold'>{vm.disk_gb ?? '-'}</span>
-                        <span className='text-muted-foreground text-[10px] tracking-wide uppercase'>GB Disk</span>
+                        <span className='text-muted-foreground text-[10px] tracking-wide uppercase'>
+                            {t('ui.components.vms.vmCard.gBDisk')}
+                        </span>
                     </div>
                 </div>
 

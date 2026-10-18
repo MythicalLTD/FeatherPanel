@@ -103,11 +103,11 @@ export function DisksTab({
     }
 
     return (
-        <PageCard title={t('admin.vmInstances.edit_tabs.disks') ?? 'Disks'} icon={HardDrive}>
+        <PageCard title={t('admin.vmInstances.edit_tabs.disks')} icon={HardDrive}>
             <div className='space-y-6'>
                 {diskKeys.length > 0 && (
                     <div>
-                        <Label className='mb-2 block'>{t('admin.vmInstances.current_disks') ?? 'Current disks'}</Label>
+                        <Label className='mb-2 block'>{t('admin.vmInstances.current_disks')}</Label>
                         <ul className='space-y-2'>
                             {diskKeys.map((k) => (
                                 <li
@@ -131,7 +131,7 @@ export function DisksTab({
                                                 disabled={!!deletingDisk}
                                             >
                                                 <Trash2 className='mr-1 h-4 w-4' />
-                                                {t('common.delete') ?? 'Delete'}
+                                                {t('common.delete')}
                                             </Button>
                                         )}
                                 </li>
@@ -145,7 +145,7 @@ export function DisksTab({
                     data-fp-save-shortcut
                 >
                     <div className='min-w-[160px]'>
-                        <Label className='text-xs'>{t('admin.vmInstances.disk_storage') ?? 'Storage'}</Label>
+                        <Label className='text-xs'>{t('admin.vmInstances.disk_storage')}</Label>
                         <HeadlessSelect
                             value={newDiskStorage}
                             onChange={(v) => setNewDiskStorage(String(v))}
@@ -154,7 +154,7 @@ export function DisksTab({
                         />
                     </div>
                     <div>
-                        <Label className='text-xs'>{t('admin.vmInstances.disk_size_gb') ?? 'Size (GB)'}</Label>
+                        <Label className='text-xs'>{t('admin.vmInstances.disk_size_gb')}</Label>
                         <SizeInput
                             min={1}
                             value={newDiskSizeGb}
@@ -166,9 +166,7 @@ export function DisksTab({
                     </div>
                     {isLxc && (
                         <div>
-                            <Label className='text-xs'>
-                                {t('admin.vmInstances.disk_path') ?? 'Mount path (optional)'}
-                            </Label>
+                            <Label className='text-xs'>{t('admin.vmInstances.disk_path')}</Label>
                             <Input
                                 value={newDiskPath}
                                 onChange={(e) => setNewDiskPath(e.target.value)}
@@ -179,11 +177,11 @@ export function DisksTab({
                     )}
                     <Button type='submit' size='sm' loading={creatingDisk}>
                         <Plus className='mr-2 h-4 w-4' />
-                        {t('admin.vmInstances.add_disk') ?? 'Add disk'}
+                        {t('admin.vmInstances.add_disk')}
                     </Button>
                 </form>
                 <div>
-                    <Label className='mb-2 block'>{t('admin.vmInstances.resize_disk') ?? 'Expand disk'}</Label>
+                    <Label className='mb-2 block'>{t('admin.vmInstances.resize_disk')}</Label>
                     <form onSubmit={onResizeDisk} className='flex flex-wrap items-end gap-3' data-fp-save-shortcut>
                         <div className='min-w-[160px]'>
                             <Label className='text-xs'>{t('admin.vmInstances.resize_disk_label')}</Label>
@@ -200,17 +198,15 @@ export function DisksTab({
                             <Input
                                 value={resizeSize}
                                 onChange={(e) => setResizeSize(e.target.value)}
-                                placeholder={t('admin.vmInstances.disk_size_placeholder') ?? '+5G or 20G'}
+                                placeholder={t('admin.vmInstances.disk_size_placeholder')}
                                 className='bg-muted/30 mt-1 h-10 w-32 rounded-xl'
                             />
                         </div>
                         <Button type='submit' size='sm' loading={resizing} disabled={!resizeDisk || !resizeSize.trim()}>
-                            {t('admin.vmInstances.resize_disk') ?? 'Expand disk'}
+                            {t('admin.vmInstances.resize_disk')}
                         </Button>
                     </form>
-                    <p className='text-muted-foreground mt-2 text-xs'>
-                        {t('admin.vmInstances.disk_resize_hint') ?? 'Use +5G to add 5GB, or 20G to set total to 20GB.'}
-                    </p>
+                    <p className='text-muted-foreground mt-2 text-xs'>{t('admin.vmInstances.disk_resize_hint')}</p>
                 </div>
             </div>
         </PageCard>

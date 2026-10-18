@@ -459,7 +459,7 @@ export default function CreatePluginPage() {
                                             >
                                                 {availableFlag}
                                                 {flag !== availableFlag && form.flags.includes(availableFlag)
-                                                    ? ' (already selected)'
+                                                    ? t('ui.admin.dev.plugins.create.alreadySelected')
                                                     : ''}
                                             </option>
                                         ))}
@@ -708,7 +708,7 @@ export default function CreatePluginPage() {
                                                     };
                                                     setForm((prev) => ({ ...prev, requiredConfigs: newConfigs }));
                                                 }}
-                                                placeholder='API Key'
+                                                placeholder={t('ui.admin.dev.plugins.create.aPIKey')}
                                                 className='text-sm'
                                             />
                                         </div>

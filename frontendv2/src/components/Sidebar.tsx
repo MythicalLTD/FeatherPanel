@@ -877,7 +877,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
     const groupedItems = useMemo(() => {
         const grouped = displayItems.reduce(
             (acc, item) => {
-                const group = item.group || 'Other';
+                const group = item.group || t('ui.components.sidebar.other');
                 if (!acc[group]) acc[group] = [];
                 acc[group].push(item);
                 return acc;
@@ -890,7 +890,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
         });
 
         return grouped;
-    }, [displayItems]);
+    }, [displayItems, t]);
 
     useEffect(() => subscribeSidebarCollapsed(setCollapsed), []);
 

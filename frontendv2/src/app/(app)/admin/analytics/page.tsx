@@ -107,8 +107,8 @@ export default function AnalyticsDashboardPage() {
             borderColor: 'border-red-500/20',
         },
         {
-            title: 'VDS & Platform',
-            description: 'VDS-only analytics (instances, nodes, templates, backups, operations).',
+            title: t('ui.admin.analytics.vDSPlatform'),
+            description: t('ui.admin.analytics.vDSOnlyAnalyticsInstancesNodesTemplates'),
             icon: Boxes,
             href: '/admin/analytics/vds',
             color: 'text-cyan-500',
@@ -116,8 +116,8 @@ export default function AnalyticsDashboardPage() {
             borderColor: 'border-cyan-500/20',
         },
         {
-            title: 'Tickets',
-            description: 'Dedicated analytics for ticketing, messages, statuses, and attachments.',
+            title: t('ui.admin.analytics.tickets'),
+            description: t('ui.admin.analytics.dedicatedAnalyticsForTicketingMessagesStatuses'),
             icon: Ticket,
             href: '/admin/analytics/tickets',
             color: 'text-amber-500',
@@ -125,8 +125,8 @@ export default function AnalyticsDashboardPage() {
             borderColor: 'border-amber-500/20',
         },
         {
-            title: 'Plugins & Integrations',
-            description: 'Plugin adoption plus imports, proxies, transfers, and auth integrations.',
+            title: t('ui.admin.analytics.pluginsIntegrations'),
+            description: t('ui.admin.analytics.pluginAdoptionPlusImportsProxiesTransfers'),
             icon: Puzzle,
             href: '/admin/analytics/plugins',
             color: 'text-emerald-500',
@@ -134,8 +134,8 @@ export default function AnalyticsDashboardPage() {
             borderColor: 'border-emerald-500/20',
         },
         {
-            title: 'Knowledgebase',
-            description: 'Knowledgebase KPIs for categories, articles, tags, and attachments.',
+            title: t('ui.admin.analytics.knowledgebase'),
+            description: t('ui.admin.analytics.knowledgebaseKPIsForCategoriesArticlesTags'),
             icon: BookOpen,
             href: '/admin/analytics/knowledgebase',
             color: 'text-sky-500',

@@ -451,14 +451,18 @@ export default function ServerAllocationsPage() {
                                 description={
                                     <div className='flex flex-wrap items-center gap-x-6 gap-y-2'>
                                         <div className='text-muted-foreground flex items-center gap-2 rounded-lg border border-white/5 bg-black/40 p-1 px-2'>
-                                            <span className='text-xs font-bold uppercase opacity-60'>IP</span>
+                                            <span className='text-xs font-bold uppercase opacity-60'>
+                                                {t('ui.server.allocations.iP')}
+                                            </span>
                                             <span className='text-foreground/80 font-mono text-sm font-bold'>
                                                 <Sensitive>{allocation.ip}</Sensitive>
                                             </span>
                                             <IpVisibilityButton className='-mr-1' />
                                         </div>
                                         <div className='text-muted-foreground flex items-center gap-2 rounded-lg border border-white/5 bg-black/40 p-1 px-2'>
-                                            <span className='text-xs font-bold uppercase opacity-60'>Port</span>
+                                            <span className='text-xs font-bold uppercase opacity-60'>
+                                                {t('ui.server.allocations.port')}
+                                            </span>
                                             <span className='text-foreground/80 font-mono text-sm font-bold'>
                                                 {allocation.port}
                                             </span>
@@ -633,7 +637,7 @@ export default function ServerAllocationsPage() {
                                     </Sensitive>
                                 </span>
                                 <Badge variant='outline' className='border-primary/50 text-primary bg-primary/10'>
-                                    New Primary
+                                    {t('ui.server.allocations.newPrimary')}
                                 </Badge>
                             </div>
 
@@ -723,7 +727,9 @@ export default function ServerAllocationsPage() {
                                                         <Sensitive>{maskEndpoint(item.ip, item.port, false)}</Sensitive>
                                                     </span>
                                                     <span className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
-                                                        {item.ip_alias ? ipMask.ipLike(item.ip_alias) : 'No Alias'}
+                                                        {item.ip_alias
+                                                            ? ipMask.ipLike(item.ip_alias)
+                                                            : t('ui.server.allocations.noAlias')}
                                                     </span>
                                                 </div>
                                             </div>

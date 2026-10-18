@@ -437,7 +437,7 @@ export default function NodesPage() {
 
                         if (node.maintenance_mode) {
                             badges.push({
-                                label: 'Maintenance',
+                                label: t('ui.admin.nodes.maintenance'),
                                 className: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
                             });
                         }

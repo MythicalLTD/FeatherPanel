@@ -200,7 +200,7 @@ export default function ConsolePage() {
                 if (result.return_code !== 0 && !result.stderr) {
                     toast.warning(
                         t('admin.dev.console.messages.command_failed', {
-                            code: result.return_code.toString() || 'Unknown',
+                            code: result.return_code.toString() || t('common.unknown'),
                         }),
                     );
                 }
@@ -370,11 +370,14 @@ export default function ConsolePage() {
                                         <span className='text-muted-foreground'>OS:</span> {systemInfo.os}
                                     </div>
                                     <div>
-                                        <span className='text-muted-foreground'>Server:</span>{' '}
+                                        <span className='text-muted-foreground'>
+                                            {t('ui.admin.dev.console.server')}
+                                        </span>{' '}
                                         {systemInfo.server_software}
                                     </div>
                                     <div>
-                                        <span className='text-muted-foreground'>User:</span> {systemInfo.user}
+                                        <span className='text-muted-foreground'>{t('ui.admin.dev.console.user')}</span>{' '}
+                                        {systemInfo.user}
                                     </div>
                                 </div>
                             </div>
@@ -385,7 +388,10 @@ export default function ConsolePage() {
                                         <span className='text-muted-foreground'>PHP:</span> {systemInfo.php_version}
                                     </div>
                                     <div>
-                                        <span className='text-muted-foreground'>Uptime:</span> {systemInfo.uptime}
+                                        <span className='text-muted-foreground'>
+                                            {t('ui.admin.dev.console.uptime')}
+                                        </span>{' '}
+                                        {systemInfo.uptime}
                                     </div>
                                 </div>
                             </div>
@@ -393,15 +399,15 @@ export default function ConsolePage() {
                                 <h3 className='mb-2 font-semibold'>{t('admin.dev.console.disk_usage')}</h3>
                                 <div className='space-y-1 text-sm'>
                                     <div>
-                                        <span className='text-muted-foreground'>Used:</span>{' '}
+                                        <span className='text-muted-foreground'>{t('ui.admin.dev.console.used')}</span>{' '}
                                         {formatBytes(systemInfo.disk_usage.used)}
                                     </div>
                                     <div>
-                                        <span className='text-muted-foreground'>Free:</span>{' '}
+                                        <span className='text-muted-foreground'>{t('ui.admin.dev.console.free')}</span>{' '}
                                         {formatBytes(systemInfo.disk_usage.free)}
                                     </div>
                                     <div>
-                                        <span className='text-muted-foreground'>Usage:</span>{' '}
+                                        <span className='text-muted-foreground'>{t('ui.admin.dev.console.usage')}</span>{' '}
                                         {systemInfo.disk_usage.percentage}%
                                     </div>
                                 </div>

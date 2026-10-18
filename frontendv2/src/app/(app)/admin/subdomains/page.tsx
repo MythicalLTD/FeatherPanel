@@ -364,12 +364,7 @@ export default function AdminSubdomainsPage() {
     };
 
     const handleDelete = async (domain: SubdomainDomain) => {
-        if (
-            !confirm(
-                `Are you sure you want to delete ${domain.domain}? This will NOT delete existing DNS records on Cloudflare but will remove them from the panel.`,
-            )
-        )
-            return;
+        if (!confirm(t('ui.admin.subdomains.confirmDeleteDomain', { domain: domain.domain }))) return;
         try {
             await axios.delete(`/api/admin/subdomains/${domain.uuid}`);
             toast.success(t('admin.subdomains.messages.domain_deleted'));
@@ -1104,7 +1099,7 @@ export default function AdminSubdomainsPage() {
                                                 </span>
                                                 <span className='flex items-center gap-1'>
                                                     <Server className='h-2 w-2' />
-                                                    Port: {entry.port || 'Auto'}
+                                                    {t('ui.admin.subdomains.port')} {entry.port || 'Auto'}
                                                 </span>
                                             </div>
                                         </div>

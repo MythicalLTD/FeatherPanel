@@ -406,7 +406,8 @@ export default function NodeStatusPage() {
                                                     <div className='ml-2'>
                                                         <AlertTitle>{t('admin.nodes.offline')}</AlertTitle>
                                                         <AlertDescription>
-                                                            {node.error || 'Cannot connect to Wings daemon'}
+                                                            {node.error ||
+                                                                t('ui.admin.nodes.status.cannotConnectToWingsDaemon')}
                                                         </AlertDescription>
                                                     </div>
                                                 </Alert>

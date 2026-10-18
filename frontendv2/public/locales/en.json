@@ -3676,7 +3676,8 @@
 			"eulaAccepted": "EULA Accepted",
 			"eulaAcceptedAndServerStarted": "EULA Accepted and Server Started",
 			"failedToAccept": "Failed to accept EULA",
-			"failedToStartServer": "Failed to auto-start server. Please start it manually."
+			"failedToStartServer": "Failed to auto-start server. Please start it manually.",
+			"invalidUploadContentType": "{message} (invalid upload content type)"
 		},
 		"javaVersion": {
 			"title": "Java Version Incompatibility Detected",
@@ -10847,7 +10848,11 @@
 					}
 				}
 			},
-			"category_select": "Settings category"
+			"category_select": "Settings category",
+			"optionLabels": {
+				"hardLimit": "Hard limit (block at max)",
+				"fifoRolling": "FIFO rolling (drop oldest)"
+			}
 		},
 		"rate_limits": {
 			"title": "Rate Limits",
@@ -14792,6 +14797,628 @@
 			"tips": {
 				"title": "Tips",
 				"body": "Prefer off-peak hours for large fleets, keep concurrency low on busy nodes, and use Run now to verify a new schedule."
+			}
+		}
+	},
+	"ui": {
+		"admin": {
+			"analytics": {
+				"vDSPlatform": "VDS & Platform",
+				"vDSOnlyAnalyticsInstancesNodesTemplates": "VDS-only analytics (instances, nodes, templates, backups, operations).",
+				"tickets": "Tickets",
+				"dedicatedAnalyticsForTicketingMessagesStatuses": "Dedicated analytics for ticketing, messages, statuses, and attachments.",
+				"pluginsIntegrations": "Plugins & Integrations",
+				"pluginAdoptionPlusImportsProxiesTransfers": "Plugin adoption plus imports, proxies, transfers, and auth integrations.",
+				"knowledgebase": "Knowledgebase",
+				"knowledgebaseKPIsForCategoriesArticlesTags": "Knowledgebase KPIs for categories, articles, tags, and attachments."
+			},
+			"cloudManagement": {
+				"syncedWithMythicCloud": "Synced with Mythic Cloud",
+				"mythicIDMythicUserId": "Mythic ID {mythic_user_id}",
+				"mythicPanelCredentialsCloudApiKey": "Mythic→panel credentials (cloud_api_key/secret) were not stored. Mythic may show Pending until you re-link or complete OAuth with those params.",
+				"lastSyncLastSyncedAt": "Last sync: {last_synced_at}",
+				"syncNow": "Sync now",
+				"openMythicClouds": "Open Mythic Clouds",
+				"finish": {
+					"pendingUntilCredentials": "Linked. Mythic may stay Pending until cloud_api_key/secret are present on the OAuth redirect."
+				}
+			},
+			"databases": {
+				"nodes": {
+					"nodeDatabases": {
+						"checkHealth": "Check Health",
+						"webNodeOptional": "Web node (optional)",
+						"allWebNodesGlobal": "All web nodes (global)",
+						"scopeThisHostToAFeatherQuilld": "Scope this host to a FeatherQuilld web node, or leave global.",
+						"updated": "Updated"
+					}
+				}
+			},
+			"dev": {
+				"console": {
+					"server": "Server:",
+					"user": "User:",
+					"uptime": "Uptime:",
+					"used": "Used:",
+					"free": "Free:",
+					"usage": "Usage:"
+				},
+				"plugins": {
+					"edit": {
+						"alreadySelected": "(already selected)",
+						"aPIKey": "API Key"
+					},
+					"create": {
+						"alreadySelected": "(already selected)",
+						"aPIKey": "API Key"
+					},
+					"target": "Target"
+				}
+			},
+			"feathercloud": {
+				"marketplace": {
+					"teamMythicMarketplaceProductsReleasesFpa": "Team Mythic marketplace products releases, .fpa downloads, and reviews."
+				},
+				"products": {
+					"shared": {
+						"rating": "Rating"
+					}
+				},
+				"spells": {
+					"shown": "Shown",
+					"catalog": "Catalog",
+					"installedMatches": "Installed matches",
+					"allChannels": "All channels",
+					"downloads": "Downloads",
+					"rating": "Rating",
+					"reviews": "Reviews",
+					"newest": "Newest",
+					"name": "Name",
+					"verified": "Verified",
+					"noRatings": "No ratings",
+					"communityRatingOnMythic": "Community rating on Mythic",
+					"yourRating": "Your rating",
+					"comment": "Comment",
+					"shareYourExperience51000Characters": "Share your experience (5–1000 characters)",
+					"saveReview": "Save review",
+					"deleteMine": "Delete mine",
+					"loadingReviews": "Loading reviews…",
+					"noReviewsYetBeTheFirst": "No reviews yet. Be the first.",
+					"user": "User"
+				}
+			},
+			"featherpanelAiAgent": {
+				"youAreAHelpfulAssistantFor": "You are a helpful assistant for FeatherPanel...",
+				"userIsAnAdminWithFull": "User is an admin with full access...",
+				"reset": "Reset",
+				"tryAgain": "Try Again"
+			},
+			"featherpanelPremium": {
+				"premiumSidebarEditor": {
+					"customLink": "Custom link"
+				},
+				"premium": "Premium"
+			},
+			"featherzerotrust": {
+				"tabs": {
+					"configTab": {
+						"smallJARsAreSuspicious": "Small JARs are suspicious"
+					},
+					"logsTab": {
+						"serverScanHistory": "Server Scan History",
+						"noIndividualServerLogsFound": "No individual server logs found.",
+						"filesScanned": "Files Scanned",
+						"detections": "Detections",
+						"duration": "Duration"
+					},
+					"scannerTab": {
+						"files": "Files",
+						"detections": "Detections"
+					}
+				}
+			},
+			"mailTemplates": {
+				"template": "Template"
+			},
+			"nodes": {
+				"components": {
+					"selfUpdateTab": {
+						"currentlyInstalledBinary": "Currently installed binary",
+						"availableFromUpstream": "Available from upstream"
+					}
+				},
+				"create": {
+					"myProductionNode": "My Production Node"
+				},
+				"maintenance": "Maintenance",
+				"status": {
+					"cannotConnectToWingsDaemon": "Cannot connect to Wings daemon"
+				}
+			},
+			"plugins": {
+				"site": "Site",
+				"note": "Note"
+			},
+			"realms": {
+				"noDescription": "No description"
+			},
+			"servers": {
+				"edit": {
+					"actionsTab": {
+						"searchNodes": "Search nodes...",
+						"searchAllocations": "Search allocations...",
+						"noAlias": "No Alias"
+					}
+				},
+				"create": {
+					"step1CoreDetails": {
+						"myServer": "My Server",
+						"aBriefDescription": "A brief description"
+					},
+					"step4Resources": {
+						"leaveEmptyForAllThreads": "Leave empty for all threads"
+					}
+				},
+				"unknownNode": "Unknown Node",
+				"system": "System"
+			},
+			"settings": {
+				"troubleshooting": "Troubleshooting:"
+			},
+			"spells": {
+				"edit": {
+					"serverPort": "Server Port",
+					"thePortThatTheServerWill": "The port that the server will run on",
+					"defaultValue": "Default Value:",
+					"fieldType": "Field Type:",
+					"userViewable": "User Viewable:",
+					"userEditable": "User Editable:",
+					"validationRules": "Validation Rules:"
+				},
+				"noRealm": "No realm",
+				"noDescription": "No description"
+			},
+			"subdomains": {
+				"port": "Port:",
+				"confirmDeleteDomain": "Are you sure you want to delete {domain}? This will NOT delete existing DNS records on Cloudflare but will remove them from the panel."
+			},
+			"tickets": {
+				"categories": {
+					"monFri9AM5PM": "Mon-Fri 9AM-5PM"
+				}
+			},
+			"translations": {
+				"uploading": "Uploading...",
+				"mythicTranslateInstall": "Mythic Translate install",
+				"modified": "Modified:"
+			},
+			"updates": {
+				"checking": "Checking…",
+				"update": "Update"
+			},
+			"users": {
+				"edit": {
+					"webSpaceLimit": "WebSpace limit"
+				}
+			},
+			"vdsNodes": {
+				"edit": {
+					"infoTab": {
+						"disk": "Disk",
+						"cPUUsage": "CPU Usage",
+						"memory": "Memory",
+						"localStorage": "Local Storage",
+						"uptime": "Uptime:"
+					},
+					"storageConfigurationTab": {
+						"tipPreventQemuImgResizeTimeouts": "Tip: prevent qemu-img resize timeouts",
+						"ifVMCreatesFailWith": "If VM creates fail with"
+					},
+					"templatesTab": {
+						"qEMUKVMTutorial": "QEMU/KVM Tutorial",
+						"lXCTutorial": "LXC Tutorial",
+						"template": "Template",
+						"securityRecommendation": "Security Recommendation",
+						"lXCIsNotRecommendedForPublic": "LXC is not recommended for public hosting due to security risks and lack of KVM virtualization. Use QEMU/KVM for better isolation and stability."
+					},
+					"tutorialLXC": {
+						"lXCContainersAreNotRecommendedIf": "LXC containers are not recommended if you plan to provide public hosting services. They lack KVM virtualization, which often causes issues with Docker and advanced networking. Additionally, exploits that escape containers to reach the host are more common with LXC. We strongly advise using",
+						"qEMUKVMVirtualMachines": "QEMU/KVM Virtual Machines",
+						"inTheProxmoxWebInterfaceNavigate": "In the Proxmox web interface, navigate to your storage (e.g.,",
+						"cTTemplates": "CT Templates",
+						"templates": "Templates",
+						"download": "Download",
+						"clickCreateCTInTheTop": "Click \"Create CT\" in the top right corner and follow the wizard:",
+						"general": "General:",
+						"setAVMIDEG": "Set a VMID (e.g.,",
+						"template": "Template:",
+						"selectTheTemplateYouJustDownloaded": "Select the template you just downloaded.",
+						"disks": "Disks:",
+						"chooseYourStorageAndASuitable": "Choose your storage and a suitable disk size.",
+						"cPUMemory": "CPU / Memory:",
+						"keepDefaultsOrAdjustAsNeeded": "Keep defaults or adjust as needed.",
+						"network": "Network:",
+						"set": "Set",
+						"static": "Static",
+						"featherPanelWillOverrideTheseSettingsDuring": "(FeatherPanel will override these settings during cloning).",
+						"confirm": "Confirm:",
+						"reviewSettingsAndClick": "Review settings and click",
+						"finish": "Finish",
+						"beforeYouConvertThisCTTo": "Before you convert this CT to a template, start it once and configure SSH so deployed clients can actually connect. Open",
+						"passwordAuthenticationYes": "PasswordAuthentication yes",
+						"permitRootLoginYes": "PermitRootLogin yes",
+						"onceSSHSettingsAreCorrectEnsure": "Once SSH settings are correct, ensure the container also has the needed tools for FeatherPanel. Run:",
+						"stopTheContainerRightClickIt": "Stop the container. Right-click it in the Proxmox tree and select",
+						"convertToTemplate": "Convert to template",
+						"inTheTemplatesTabOfYour": "In the Templates tab of your VDS Node, add a new template using the VMID of the LXC template you just created. Ensure you select"
+					},
+					"tutorialVM": {
+						"inTheProxmoxUIUseThese": "In the Proxmox UI, use these settings when you click \"Create VM\":",
+						"general": "General:",
+						"oSTab": "OS tab:",
+						"doNotUseAnyMedia": "Do not use any media",
+						"systemTab": "System tab:",
+						"machineQ35": "Machine = q35",
+						"bIOSOVMFUEFI": "BIOS = OVMF (UEFI)",
+						"qemuAgent": "Qemu agent",
+						"disksTab": "Disks tab:",
+						"cPUTab": "CPU tab:",
+						"typeHost": "Type = host",
+						"memoryTab": "Memory tab:",
+						"mB": "MB).",
+						"networkTab": "Network tab:",
+						"modelVirtIOParavirtualized": "Model = VirtIO (paravirtualized)",
+						"orYourMainBridge": "(or your main bridge).",
+						"afterTheVMIsCreatedOpen": "After the VM is created, open its",
+						"hardware": "Hardware",
+						"doNotLiterallyType": "Do not literally type",
+						"forExample": "(for example",
+						"for": "For",
+						"debianAndUbuntuTemplatesGoBack": "Debian and Ubuntu templates, go back to the VM's",
+						"sSDEmulation": "SSD emulation",
+						"nextOpen": "Next, open",
+						"optionsBootOrder": "Options → Boot order",
+						"goTo": "Go to",
+						"cloudInitDrive": "CloudInit drive",
+						"doNotRemoveTheCloudInitDrive": "Do not remove the CloudInit drive",
+						"convertToTemplate": "Convert to template",
+						"importantBeforeConvertingStartTheVM": "Important before converting: start the VM once from Proxmox and verify SSH settings in",
+						"passwordAuthenticationYes": "PasswordAuthentication yes",
+						"permitRootLoginYes": "PermitRootLogin yes",
+						"inTheProxmoxUIRepeatThe": "In the Proxmox UI, repeat the same VM creation flow for Ubuntu:",
+						"vMID": "VMID",
+						"setCDDVDTo": "(set CD/DVD to",
+						"disksCPUMemoryNetwork": "Disks / CPU / Memory / Network:",
+						"thenOnTheNodeShellImport": "Then on the node shell import the Ubuntu cloud image and attach it as",
+						"importantBeforeConvertingBootTheVM": "Important before converting: boot the VM once and verify",
+						"inYourPlansProductsUseTemplate": "In your plans / products, use template ID",
+						"ifCreatesFailWith": "If creates fail with",
+						"thisIsACommonFixFor": "This is a common fix for intermittent resize timeouts under load and is safe for directory / NFS / qcow2-backed storages used by FeatherPanel provisioning.",
+						"vMsQEMUKVMProvideTheStrongest": "VMs (QEMU/KVM) provide the strongest isolation and best compatibility with modern workloads like Docker and complex networking. FeatherPanel developers and security experts recommend VMs over LXC for all commercial hosting applications to prevent container escapes and resource abuse."
+					}
+				},
+				"create": {
+					"forVDSConsoleAccessOverVNC": "For VDS console access over VNC, install the FeatherPanel VNC agent on the Proxmox node using:",
+					"thenSelectTheVNCOptionDuring": "Then select the VNC option during installation. Without this agent, VDS console connections will not work. Also make sure Proxmox is exposed on a domain (or is in the same domain/network context), otherwise VNC may also fail.",
+					"whenCreatingTheAPITokenMake": "When creating the API token, make sure to create it for the user"
+				}
+			},
+			"vmInstances": {
+				"edit": {
+					"detailsTab": {
+						"optionalNotes": "Optional notes"
+					},
+					"networkTab": {
+						"selectIP": "Select IP…"
+					},
+					"resourcesTab": {
+						"legacySeaBIOS": "Legacy (SeaBIOS)",
+						"uEFIOVMF": "UEFI (OVMF)"
+					}
+				},
+				"create": {
+					"addVPSLocation": "Add VPS location",
+					"createNode": "Create node",
+					"vMID": "VMID",
+					"noCIDR": "No CIDR",
+					"noGateway": "No gateway",
+					"createIP": "Create IP",
+					"strongPasswordForVMLogin": "Strong password for VM login"
+				}
+			},
+			"webNodes": {
+				"edit": {
+					"configurationTab": {
+						"local": "Local",
+						"leaveBlankOnUpdateToKeep": "Leave blank on update to keep the current password."
+					},
+					"selfUpdateTab": {
+						"currentlyInstalledFeatherQuilldBinary": "Currently installed FeatherQuilld binary",
+						"availableFromUpstream": "Available from upstream"
+					},
+					"statusTab": {
+						"load": "Load"
+					}
+				}
+			},
+			"webspaces": {
+				"sSL": "SSL"
+			}
+		},
+		"auth": {
+			"register": {
+				"registerForm": {
+					"registrationSuccessfulPleaseVerifyYourEmail": "Registration successful. Please verify your email before logging in."
+				}
+			}
+		},
+		"dashboard": {
+			"tickets": {
+				"nEW": "NEW"
+			}
+		},
+		"error": {
+			"update": "Update"
+		},
+		"server": {
+			"allocations": {
+				"iP": "IP",
+				"port": "Port",
+				"newPrimary": "New Primary",
+				"noAlias": "No Alias"
+			},
+			"backups": {
+				"new": {
+					"configuration": "Configuration"
+				},
+				"local": "Local"
+			},
+			"databases": {
+				"new": {
+					"configuration": "Configuration"
+				}
+			},
+			"import": {
+				"new": {
+					"sFTPSecureSSH": "SFTP (Secure / SSH)",
+					"fTPStandard": "FTP (Standard)",
+					"configuration": "Configuration"
+				}
+			},
+			"lifecycleHooks": {
+				"embeds": "Embeds:"
+			},
+			"schedules": {
+				"edit": {
+					"basicInfo": "Basic Info",
+					"scheduleTiming": "Schedule Timing",
+					"enabledScheduleWillRunAutomatically": "Enabled - Schedule will run automatically",
+					"disabledScheduleWillNotRun": "Disabled - Schedule will not run"
+				},
+				"tasks": {
+					"edit": {
+						"configuration": "Configuration",
+						"options": "Options",
+						"execution": "Execution"
+					},
+					"new": {
+						"configuration": "Configuration",
+						"options": "Options",
+						"execution": "Execution"
+					}
+				},
+				"new": {
+					"basicInfo": "Basic Info",
+					"scheduleTiming": "Schedule Timing",
+					"enabledScheduleWillRunAutomatically": "Enabled - Schedule will run automatically",
+					"disabledScheduleWillNotRun": "Disabled - Schedule will not run"
+				}
+			},
+			"settings": {
+				"step": "(Step",
+				"answer": "Answer"
+			},
+			"startup": {
+				"containerization": "Containerization"
+			},
+			"subdomains": {
+				"new": {
+					"setup": "Setup",
+					"info": "Info"
+				}
+			}
+		},
+		"vds": {
+			"vdsConsolePage": {
+				"vMIDVmid": "VMID {vmid}"
+			},
+			"activities": {
+				"vDSActivity": "VDS Activity -",
+				"metadata": "Metadata",
+				"user": "User",
+				"timestamp": "Timestamp",
+				"iPAddress": "IP Address",
+				"rawPayload": "Raw Payload"
+			},
+			"users": {
+				"loadingSubusers": "Loading subusers…",
+				"addASubuserToGrantThem": "Add a subuser to grant them access to this VDS instance.",
+				"addSubuser": "Add Subuser",
+				"permissions": "Permissions",
+				"enterTheEmailAddressOfThe": "Enter the email address of the user you want to add and select their permissions.",
+				"emailAddress": "Email Address",
+				"add": "Add"
+			}
+		},
+		"webspace": {
+			"email": {
+				"iMAP": "IMAP",
+				"sMTP": "SMTP",
+				"iMAPImapHostImapPort": "IMAP {imap_host}:{imap_port}",
+				"sMTPSmtpHostSmtpPort": "SMTP {smtp_host}:{smtp_port}"
+			}
+		},
+		"components": {
+			"captcha": {
+				"thisSiteIsProtectedByReCAPTCHA": "This site is protected by reCAPTCHA and the Google",
+				"privacyPolicy": "Privacy Policy",
+				"termsOfService": "Terms of Service"
+			},
+			"sidebar": {
+				"other": "Other"
+			},
+			"account": {
+				"mcpTab": {
+					"copied": "Copied"
+				},
+				"profileTab": {
+					"avatarPreview": "Avatar preview"
+				}
+			},
+			"admin": {
+				"roleEditor": {
+					"supportTeam": "Support Team"
+				},
+				"spellPickerSheet": {
+					"verified": "Verified",
+					"noRatings": "No ratings",
+					"reviewsOnMarketplace": "Reviews on marketplace"
+				},
+				"transferServerDialog": {
+					"noAlias": "No Alias"
+				},
+				"vmIpPickerSheet": {
+					"existing": "Existing",
+					"createNew": "Create new",
+					"noCIDR": "No CIDR",
+					"noGateway": "No gateway"
+				},
+				"vmTemplatePickerSheet": {
+					"existing": "Existing",
+					"createNew": "Create new",
+					"template": "Template",
+					"vMID": "VMID"
+				},
+				"welcomeWidget": {
+					"admin": "Admin"
+				}
+			},
+			"ai": {
+				"chatbotContainer": {
+					"user": "User",
+					"unknownServer": "Unknown Server"
+				}
+			},
+			"auth": {
+				"oAuthConsentCard": {
+					"signedInAs": "Signed in as",
+					"thisAppCan": "This app can"
+				}
+			},
+			"common": {
+				"cronEditor": {
+					"presets": "Presets",
+					"daysOfWeek": "Days of week",
+					"advancedCronFields": "Advanced (cron fields)",
+					"minute": "Minute",
+					"hour": "Hour",
+					"dayOfMonth": "Day of month",
+					"month": "Month",
+					"dayOfWeek": "Day of week",
+					"needHelp": "Need help?",
+					"runs": "Runs",
+					"presetEvery5": "Every 5 minutes",
+					"presetHourly": "Hourly",
+					"presetDaily": "Daily at midnight",
+					"presetWeekly": "Weekly (Sun 00:00)",
+					"presetMonthly": "Monthly (1st 00:00)",
+					"daySun": "Sun",
+					"dayMon": "Mon",
+					"dayTue": "Tue",
+					"dayWed": "Wed",
+					"dayThu": "Thu",
+					"dayFri": "Fri",
+					"daySat": "Sat"
+				},
+				"hackerEasterEgg": {
+					"hahahahHowFunnyYouAreYou": "Hahahah how funny you are you think you're a hacker or something?",
+					"okayThenLetSSeeHow": "Okay then, let's see how you get rid of me.",
+					"redirectingYouToYourNewHome": "(Redirecting you to your new home in 3…)"
+				}
+			},
+			"dashboard": {
+				"ticketList": {
+					"nEWREPLY": "NEW REPLY"
+				}
+			},
+			"globalSearch": {
+				"panelDebugConsole": {
+					"oK": "OK",
+					"fail": "Fail"
+				}
+			},
+			"server": {
+				"serverConsolePage": {
+					"killServer": "Kill server?",
+					"breadcrumb": "Breadcrumb"
+				},
+				"files": {
+					"editors": {
+						"bannedIpsEditor": {
+							"unknown": "(Unknown)",
+							"bannedByAnOperator": "Banned by an operator."
+						},
+						"bannedPlayersEditor": {
+							"unknown": "(Unknown)",
+							"bannedByAnOperator": "Banned by an operator."
+						},
+						"minecraftServerPropertiesEditor": {
+							"random": "Random"
+						},
+						"spigotConfigurationEditor": {
+							"enableBungeeCordSupport": "Enable BungeeCord support",
+							"saveUserCacheOnStopOnly": "Save user cache on stop only",
+							"restartOnCrash": "Restart on crash",
+							"logVillagerDeaths": "Log villager deaths",
+							"logNamedEntityDeaths": "Log named entity deaths",
+							"enableDebugLogging": "Enable debug logging",
+							"sampleCount": "Sample count",
+							"playerShuffleInterval": "Player shuffle interval",
+							"userCacheSize": "User cache size",
+							"movedWronglyThreshold": "Moved wrongly threshold",
+							"movedTooQuicklyMultiplier": "Moved too quickly multiplier",
+							"timeoutTime": "Timeout time",
+							"nettyThreads": "Netty threads",
+							"maxAbsorption": "Max absorption",
+							"maxHealth": "Max health",
+							"maxMovementSpeed": "Max movement speed",
+							"maxAttackDamage": "Max attack damage",
+							"whitelistMessage": "Whitelist message",
+							"unknownCommandMessage": "Unknown command message",
+							"serverFullMessage": "Server full message",
+							"outdatedClientMessage": "Outdated client message",
+							"outdatedServerMessage": "Outdated server message",
+							"restartMessage": "Restart message"
+						}
+					}
+				}
+			},
+			"vms": {
+				"vmCard": {
+					"disk": "Disk",
+					"gBRAM": "GB RAM",
+					"gBDisk": "GB Disk"
+				}
+			},
+			"webspace": {
+				"webSpaceDomainsCard": {
+					"sSL": "SSL"
+				}
+			}
+		},
+		"contexts": {
+			"serverContext": {
+				"suspendedServer": "Suspended Server"
 			}
 		}
 	}

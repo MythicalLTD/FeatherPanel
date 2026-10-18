@@ -97,9 +97,10 @@ export function BannedPlayersEditor({
             uuid: entry.uuid.trim(),
             name: entry.name.trim(),
             created: entry.created.trim(),
-            source: entry.source.trim() || '(Unknown)',
+            source: entry.source.trim() || t('ui.components.server.files.editors.bannedPlayersEditor.unknown'),
             expires: entry.expires.trim() || 'forever',
-            reason: entry.reason.trim() || 'Banned by an operator.',
+            reason:
+                entry.reason.trim() || t('ui.components.server.files.editors.bannedPlayersEditor.bannedByAnOperator'),
         }));
         onSave(`${JSON.stringify(sanitized, null, 4)}\n`);
     };
@@ -204,7 +205,9 @@ export function BannedPlayersEditor({
                                         value={entry.source}
                                         onChange={(e) => updateEntry(index, 'source', e.target.value)}
                                         readOnly={readonly}
-                                        placeholder='(Unknown)'
+                                        placeholder={t(
+                                            'ui.components.server.files.editors.bannedPlayersEditor.unknown',
+                                        )}
                                     />
                                 </div>
                             </div>

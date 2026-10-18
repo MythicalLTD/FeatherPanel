@@ -21,6 +21,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export const FEATHERPANEL_CATEGORY_SLUG = 'featherpanel-plugins';
 
@@ -408,11 +409,16 @@ export function StarRatingInput({
     groupLabel?: string;
     starLabel?: (count: number) => string;
 }) {
+    const { t } = useTranslation();
     const [hover, setHover] = React.useState(0);
     const shown = hover || value;
 
     return (
-        <div className='flex items-center gap-1' role='radiogroup' aria-label={groupLabel || 'Rating'}>
+        <div
+            className='flex items-center gap-1'
+            role='radiogroup'
+            aria-label={groupLabel || t('ui.admin.feathercloud.products.shared.rating')}
+        >
             {[1, 2, 3, 4, 5].map((n) => {
                 const active = n <= shown;
                 return (

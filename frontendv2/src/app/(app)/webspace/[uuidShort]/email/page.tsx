@@ -793,10 +793,10 @@ export default function WebSpaceEmailPage() {
                     <div className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'>
                         <h3 className='mb-2 text-sm font-medium'>{t('webSpaces.email.clientSettings')}</h3>
                         <p className='text-muted-foreground font-mono text-xs'>
-                            IMAP {dns.client_settings.imap_host}:{dns.client_settings.imap_port} (
-                            {dns.client_settings.imap_encryption}){' · '}
-                            SMTP {dns.client_settings.smtp_host}:{dns.client_settings.smtp_port} (
-                            {dns.client_settings.smtp_encryption})
+                            {t('ui.webspace.email.iMAP')} {dns.client_settings.imap_host}:
+                            {dns.client_settings.imap_port} ({dns.client_settings.imap_encryption}){' · '}
+                            {t('ui.webspace.email.sMTP')} {dns.client_settings.smtp_host}:
+                            {dns.client_settings.smtp_port} ({dns.client_settings.smtp_encryption})
                         </p>
                     </div>
                 )}
@@ -1123,12 +1123,18 @@ export default function WebSpaceEmailPage() {
                             )}
                             {viewingMailbox.imap_host && (
                                 <p>
-                                    IMAP {viewingMailbox.imap_host}:{viewingMailbox.imap_port}
+                                    {t('ui.webspace.email.iMAPImapHostImapPort', {
+                                        imap_host: String(viewingMailbox.imap_host),
+                                        imap_port: String(viewingMailbox.imap_port),
+                                    })}
                                 </p>
                             )}
                             {viewingMailbox.smtp_host && (
                                 <p>
-                                    SMTP {viewingMailbox.smtp_host}:{viewingMailbox.smtp_port}
+                                    {t('ui.webspace.email.sMTPSmtpHostSmtpPort', {
+                                        smtp_host: String(viewingMailbox.smtp_host),
+                                        smtp_port: String(viewingMailbox.smtp_port),
+                                    })}
                                 </p>
                             )}
                         </div>

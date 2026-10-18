@@ -326,7 +326,7 @@ const ConfigTab = () => {
                                     onChange={(e) =>
                                         setConfig({ ...config, max_jar_size: parseInt(e.target.value) || 0 })
                                     }
-                                    placeholder='Small JARs are suspicious'
+                                    placeholder={t('ui.admin.featherzerotrust.tabs.configTab.smallJARsAreSuspicious')}
                                 />
                                 <p className='text-muted-foreground pl-1 text-[10px]'>
                                     {t('admin.featherzerotrust.config.maxJarSizeDesc')}

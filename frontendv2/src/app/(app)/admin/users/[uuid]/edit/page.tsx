@@ -759,7 +759,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             </div>
 
                             <div>
-                                <Label htmlFor='edit-webspace-limit'>WebSpace limit</Label>
+                                <Label htmlFor='edit-webspace-limit'>{t('ui.admin.users.edit.webSpaceLimit')}</Label>
                                 <Input
                                     id='edit-webspace-limit'
                                     type='number'

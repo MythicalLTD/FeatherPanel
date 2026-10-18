@@ -92,9 +92,9 @@ export function BannedIpsEditor({
         const sanitized = entries.map((entry) => ({
             ip: entry.ip.trim(),
             created: entry.created.trim(),
-            source: entry.source.trim() || '(Unknown)',
+            source: entry.source.trim() || t('ui.components.server.files.editors.bannedIpsEditor.unknown'),
             expires: entry.expires.trim() || 'forever',
-            reason: entry.reason.trim() || 'Banned by an operator.',
+            reason: entry.reason.trim() || t('ui.components.server.files.editors.bannedIpsEditor.bannedByAnOperator'),
         }));
         onSave(`${JSON.stringify(sanitized, null, 4)}\n`);
     };
@@ -198,7 +198,7 @@ export function BannedIpsEditor({
                                         value={entry.source}
                                         onChange={(e) => updateEntry(index, 'source', e.target.value)}
                                         readOnly={readonly}
-                                        placeholder='(Unknown)'
+                                        placeholder={t('ui.components.server.files.editors.bannedIpsEditor.unknown')}
                                     />
                                 </div>
                             </div>

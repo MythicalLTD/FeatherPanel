@@ -415,7 +415,7 @@ export default function VmInstanceEditPage() {
                 payload.searchdomain = dnsSearchDomain.trim() || undefined;
             }
             await axios.patch(`/api/admin/vm-instances/${id}`, payload);
-            toast.success(t('admin.vmInstances.update_success') ?? 'VM instance updated');
+            toast.success(t('admin.vmInstances.update_success'));
             await fetchInstance();
             if (isLxc) await fetchConfig(instance as Record<string, unknown>);
         } catch (err) {
@@ -445,7 +445,7 @@ export default function VmInstanceEditPage() {
             } else {
                 await axios.patch(`/api/admin/vm-instances/${id}`, { vm_ip_id: vmIpId ?? null });
             }
-            toast.success(t('admin.vmInstances.update_success') ?? 'VM instance updated');
+            toast.success(t('admin.vmInstances.update_success'));
             await fetchInstance();
             await fetchConfig();
         } catch (err) {
@@ -479,7 +479,7 @@ export default function VmInstanceEditPage() {
             payload.backup_limit = vmBackupLimit;
             payload.backup_retention_mode = vmBackupRetention === 'inherit' ? null : vmBackupRetention;
             await axios.patch(`/api/admin/vm-instances/${id}`, payload);
-            toast.success(t('admin.vmInstances.update_success') ?? 'VM instance updated');
+            toast.success(t('admin.vmInstances.update_success'));
             await fetchConfig();
         } catch (err) {
             toast.error(getApiErrorMessage(err, t, 'common.error'));
@@ -500,7 +500,7 @@ export default function VmInstanceEditPage() {
                 disk: resizeDisk,
                 size: resizeSize.trim(),
             });
-            toast.success(t('admin.vmInstances.resize_success') ?? 'Disk resized successfully.');
+            toast.success(t('admin.vmInstances.resize_success'));
             setResizeSize('');
             await fetchConfig();
         } catch (err) {
@@ -517,7 +517,7 @@ export default function VmInstanceEditPage() {
             return;
         }
         if (newDiskSizeGb < 1) {
-            toast.error(t('admin.vmInstances.disk_size_min') ?? 'Size must be at least 1 GB');
+            toast.error(t('admin.vmInstances.disk_size_min'));
             return;
         }
         setCreatingDisk(true);
@@ -527,7 +527,7 @@ export default function VmInstanceEditPage() {
                 size_gb: newDiskSizeGb,
                 path: newDiskPath.trim() || undefined,
             });
-            toast.success(t('admin.vmInstances.disk_added') ?? 'Disk added successfully.');
+            toast.success(t('admin.vmInstances.disk_added'));
             setNewDiskPath('');
             await fetchConfig();
         } catch (err) {
@@ -547,7 +547,7 @@ export default function VmInstanceEditPage() {
         setDeletingDisk(key);
         try {
             await axios.delete(`/api/admin/vm-instances/${id}/disks/${key}`);
-            toast.success(t('admin.vmInstances.disk_removed') ?? 'Disk removed.');
+            toast.success(t('admin.vmInstances.disk_removed'));
             await fetchConfig();
         } catch (err) {
             toast.error(getApiErrorMessage(err, t, 'common.error'));
@@ -565,7 +565,7 @@ export default function VmInstanceEditPage() {
         setSuspending(true);
         try {
             await axios.post(`/api/admin/vm-instances/${id}/suspend`, suspendReason);
-            toast.success(t('admin.vmInstances.suspend_success') ?? 'VM instance suspended');
+            toast.success(t('admin.vmInstances.suspend_success'));
             setSuspendDialogOpen(false);
             setSuspendReason({ reason_category: '', reason_details: '' });
             await fetchInstance();
@@ -580,7 +580,7 @@ export default function VmInstanceEditPage() {
         setSuspending(true);
         try {
             await axios.post(`/api/admin/vm-instances/${id}/unsuspend`);
-            toast.success(t('admin.vmInstances.unsuspend_success') ?? 'VM instance unsuspended');
+            toast.success(t('admin.vmInstances.unsuspend_success'));
             await fetchInstance();
         } catch (err) {
             toast.error(getApiErrorMessage(err, t, 'common.error'));
@@ -596,13 +596,13 @@ export default function VmInstanceEditPage() {
         : [];
 
     const editTabs = [
-        { id: 'details', label: t('admin.vmInstances.edit_tabs.details') ?? 'Details', icon: Server },
-        { id: 'network', label: t('admin.vmInstances.edit_tabs.network') ?? 'Network', icon: Wifi },
-        { id: 'resources', label: t('admin.vmInstances.edit_tabs.resources') ?? 'Resources', icon: Cpu },
+        { id: 'details', label: t('admin.vmInstances.edit_tabs.details'), icon: Server },
+        { id: 'network', label: t('admin.vmInstances.edit_tabs.network'), icon: Wifi },
+        { id: 'resources', label: t('admin.vmInstances.edit_tabs.resources'), icon: Cpu },
         ...(isLxc || vmType === 'qemu'
-            ? [{ id: 'disks', label: t('admin.vmInstances.edit_tabs.disks') ?? 'Disks', icon: HardDrive }]
+            ? [{ id: 'disks', label: t('admin.vmInstances.edit_tabs.disks'), icon: HardDrive }]
             : []),
-        { id: 'history', label: t('admin.vmInstances.edit_tabs.history') ?? 'Task history', icon: History },
+        { id: 'history', label: t('admin.vmInstances.edit_tabs.history'), icon: History },
     ] as const;
 
     const allowedTabs = editTabs.map((tab) => tab.id);
@@ -654,10 +654,8 @@ export default function VmInstanceEditPage() {
             <WidgetRenderer widgets={getWidgets('admin-vm-instance-edit', 'top-of-page')} context={{ id }} />
 
             <PageHeader
-                title={t('admin.vmInstances.edit') ?? 'Edit VM instance'}
-                description={
-                    t('admin.vmInstances.edit_desc') ?? 'Update hostname, notes, owner, IP, resources, and disks'
-                }
+                title={t('admin.vmInstances.edit')}
+                description={t('admin.vmInstances.edit_desc')}
                 icon={Server}
                 actions={
                     <div className='flex items-center gap-2'>
@@ -674,7 +672,7 @@ export default function VmInstanceEditPage() {
                                 ) : (
                                     <ShieldCheck className='mr-2 h-4 w-4' />
                                 )}
-                                {t('admin.vmInstances.unsuspend') ?? 'Unsuspend'}
+                                {t('admin.vmInstances.unsuspend')}
                             </Button>
                         ) : (
                             <Button
@@ -692,7 +690,7 @@ export default function VmInstanceEditPage() {
                                 ) : (
                                     <Ban className='mr-2 h-4 w-4' />
                                 )}
-                                {t('admin.vmInstances.suspend') ?? 'Suspend'}
+                                {t('admin.vmInstances.suspend')}
                             </Button>
                         )}
                         <Button variant='outline' size='sm' onClick={() => router.push('/admin/vm-instances')}>
@@ -854,7 +852,7 @@ export default function VmInstanceEditPage() {
             <Sheet open={ownerModalOpen} onOpenChange={setOwnerModalOpen}>
                 <SheetContent className='sm:max-w-2xl'>
                     <SheetHeader>
-                        <SheetTitle>{t('admin.vmInstances.select_owner') ?? 'Select owner'}</SheetTitle>
+                        <SheetTitle>{t('admin.vmInstances.select_owner')}</SheetTitle>
                         <SheetDescription>
                             {ownerPagination.total_records > 0
                                 ? `Showing ${ownerPagination.total_records} users`
@@ -865,7 +863,7 @@ export default function VmInstanceEditPage() {
                         <div className='relative'>
                             <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                             <Input
-                                placeholder={t('common.search') ?? 'Search'}
+                                placeholder={t('common.search')}
                                 value={ownerSearch}
                                 onChange={(e) => {
                                     setOwnerSearch(e.target.value);

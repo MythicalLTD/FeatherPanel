@@ -371,7 +371,7 @@ export function MinecraftServerPropertiesEditor({
                             value={localForm.levelSeed}
                             onChange={(value) => updateForm('levelSeed', value)}
                             readOnly={readonly}
-                            placeholder='Random'
+                            placeholder={t('ui.components.server.files.editors.minecraftServerPropertiesEditor.random')}
                         />
                         <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
                             <label className='text-muted-foreground ml-1 text-xs font-medium'>

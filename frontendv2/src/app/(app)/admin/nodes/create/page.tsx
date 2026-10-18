@@ -326,7 +326,7 @@ export default function CreateNodePage() {
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>{t('admin.node.form.name')}</Label>
                                     <Input
-                                        placeholder='My Production Node'
+                                        placeholder={t('ui.admin.nodes.create.myProductionNode')}
                                         value={form.name}
                                         onChange={(e) => setForm({ ...form, name: e.target.value })}
                                         error={!!errors.name}

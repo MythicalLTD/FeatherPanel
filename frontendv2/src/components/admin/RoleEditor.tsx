@@ -368,7 +368,7 @@ export function RoleEditor({
                                         value={form.display_name}
                                         onChange={(e) => onDisplayNameChange(e.target.value)}
                                         required
-                                        placeholder='Support Team'
+                                        placeholder={t('ui.components.admin.roleEditor.supportTeam')}
                                         className='h-11'
                                     />
                                 </div>

@@ -230,7 +230,7 @@ export default function CreateSubdomainPage() {
                                     {t('serverSubdomains.configuration')}
                                 </h2>
                                 <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                    Setup
+                                    {t('ui.server.subdomains.new.setup')}
                                 </p>
                             </div>
                         </div>
@@ -300,7 +300,7 @@ export default function CreateSubdomainPage() {
                                     {t('serverSubdomains.guide')}
                                 </h2>
                                 <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase italic opacity-50'>
-                                    Info
+                                    {t('ui.server.subdomains.new.info')}
                                 </p>
                             </div>
                         </div>

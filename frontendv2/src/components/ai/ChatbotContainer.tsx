@@ -117,6 +117,7 @@ interface UserAvatarProps {
 }
 
 const UserAvatar = memo(function UserAvatar({ avatar, username, firstName, size = 'md' }: UserAvatarProps) {
+    const { t } = useTranslation();
     const sizeClasses = {
         sm: 'h-8 w-8 text-xs',
         md: 'h-9 w-9 text-sm',
@@ -126,7 +127,7 @@ const UserAvatar = memo(function UserAvatar({ avatar, username, firstName, size 
         return (
             <Image
                 src={avatar}
-                alt={username || 'User'}
+                alt={username || t('ui.components.ai.chatbotContainer.user')}
                 width={size === 'sm' ? 32 : 36}
                 height={size === 'sm' ? 32 : 36}
                 unoptimized
@@ -885,7 +886,7 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
 
             if (server && pathname?.startsWith('/server/')) {
                 pageContext.server = {
-                    name: server.name || 'Unknown Server',
+                    name: server.name || t('ui.components.ai.chatbotContainer.unknownServer'),
                     uuidShort: server.uuidShort || '',
                     status: server.status,
                     description: server.description,

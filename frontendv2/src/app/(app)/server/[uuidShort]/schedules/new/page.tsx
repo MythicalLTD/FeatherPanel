@@ -182,7 +182,7 @@ export default function CreateSchedulePage() {
                                 {t('serverSchedules.name')}
                             </h2>
                             <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                Basic Info
+                                {t('ui.server.schedules.new.basicInfo')}
                             </p>
                         </div>
                     </div>
@@ -217,7 +217,7 @@ export default function CreateSchedulePage() {
                                     {t('serverSchedules.cronExpression')}
                                 </h2>
                                 <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                    Schedule Timing
+                                    {t('ui.server.schedules.new.scheduleTiming')}
                                 </p>
                             </div>
                         </div>
@@ -367,8 +367,8 @@ export default function CreateSchedulePage() {
                                 value={String(formData.is_active)}
                                 onChange={(val) => setFormData({ ...formData, is_active: Number(val) })}
                                 options={[
-                                    { id: '1', name: 'Enabled - Schedule will run automatically' },
-                                    { id: '0', name: 'Disabled - Schedule will not run' },
+                                    { id: '1', name: t('ui.server.schedules.new.enabledScheduleWillRunAutomatically') },
+                                    { id: '0', name: t('ui.server.schedules.new.disabledScheduleWillNotRun') },
                                 ]}
                                 disabled={saving}
                                 buttonClassName='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all'

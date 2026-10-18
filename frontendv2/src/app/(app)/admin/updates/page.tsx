@@ -854,7 +854,7 @@ export default function AdminUpdatesPage() {
                                                 {version?.loading ? (
                                                     <span className='inline-flex items-center gap-1'>
                                                         <Loader2 className='h-3 w-3 animate-spin' />
-                                                        Checking…
+                                                        {t('ui.admin.updates.checking')}
                                                     </span>
                                                 ) : version?.error ? (
                                                     version.error
@@ -882,7 +882,7 @@ export default function AdminUpdatesPage() {
                                             </span>
                                         ) : needsUpdate ? (
                                             <span className='rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400'>
-                                                Update
+                                                {t('ui.admin.updates.update')}
                                             </span>
                                         ) : !version?.loading && !version?.error ? (
                                             <CheckCircle2 className='h-4 w-4 shrink-0 text-emerald-500' />

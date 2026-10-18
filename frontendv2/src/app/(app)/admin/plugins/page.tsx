@@ -983,7 +983,7 @@ export default function PluginsPage() {
                                                 rel='noreferrer'
                                                 className='text-primary inline-flex items-center gap-1 hover:underline'
                                             >
-                                                Site <Globe className='h-3 w-3' />
+                                                {t('ui.admin.plugins.site')} <Globe className='h-3 w-3' />
                                             </a>
                                         ) : null}
                                     </div>
@@ -1680,7 +1680,7 @@ export default function PluginsPage() {
                         <div className='rounded-2xl bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400'>
                             <div className='mb-1 flex items-center gap-2 font-medium'>
                                 <AlertCircle className='h-4 w-4' />
-                                Note
+                                {t('ui.admin.plugins.note')}
                             </div>
                             <p>{t('admin.plugins.dialogs.update.backup_warning')}</p>
                         </div>

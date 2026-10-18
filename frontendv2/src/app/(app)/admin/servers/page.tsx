@@ -749,7 +749,7 @@ export default function ServersPage() {
                         {servers.map((server) => {
                             const badges: ResourceBadge[] = [
                                 {
-                                    label: server.node?.name || 'Unknown Node',
+                                    label: server.node?.name || t('ui.admin.servers.unknownNode'),
                                     className: 'bg-primary/10 text-primary border-primary/20',
                                 },
                                 {
@@ -786,7 +786,9 @@ export default function ServersPage() {
                                                 )}
                                             </div>
                                         ) : (
-                                            <span className='text-muted-foreground font-medium'>System</span>
+                                            <span className='text-muted-foreground font-medium'>
+                                                {t('ui.admin.servers.system')}
+                                            </span>
                                         )
                                     }
                                     icon={Server}

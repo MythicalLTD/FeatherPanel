@@ -516,7 +516,7 @@ export default function MailTemplatesPage() {
                             <div className='flex flex-col space-y-2 lg:overflow-hidden'>
                                 <Label>
                                     {t('admin.mail_templates.form.preview_title', {
-                                        name: formData.name || 'Template',
+                                        name: formData.name || t('ui.admin.mailTemplates.template'),
                                     })}
                                 </Label>
                                 <div className='border-border/50 relative flex-1 overflow-hidden rounded-2xl border bg-white shadow-xl'>
@@ -587,7 +587,7 @@ export default function MailTemplatesPage() {
                             <div className='flex flex-col space-y-2 lg:overflow-hidden'>
                                 <Label>
                                     {t('admin.mail_templates.form.preview_title', {
-                                        name: formData.name || 'Template',
+                                        name: formData.name || t('ui.admin.mailTemplates.template'),
                                     })}
                                 </Label>
                                 <div className='border-border/50 relative flex-1 overflow-hidden rounded-2xl border bg-white shadow-xl'>

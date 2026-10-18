@@ -332,17 +332,19 @@ export default function TranslationsPage() {
                         <DropdownMenu>
                             <DropdownMenuTrigger className='focus-visible:ring-ring text-foreground relative inline-flex h-11 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5 px-6 text-sm font-bold whitespace-nowrap backdrop-blur-sm transition-all hover:bg-white/10 focus-visible:ring-1 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50'>
                                 <MoreHorizontal className='mr-2 h-4 w-4' />
-                                Actions
+                                {t('common.actions')}
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align='end' className='w-64'>
                                 <DropdownMenuItem onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                                     <Upload className='mr-2 h-4 w-4' />
-                                    {isUploading ? 'Uploading...' : t('admin.translations.upload')}
+                                    {isUploading
+                                        ? t('ui.admin.translations.uploading')
+                                        : t('admin.translations.upload')}
                                 </DropdownMenuItem>
                                 {!hasEnglishTranslations && (
                                     <DropdownMenuItem onClick={handleImportDefault} disabled={isImporting}>
                                         <Upload className='mr-2 h-4 w-4' />
-                                        {isImporting ? 'Importing...' : t('admin.translations.import_default')}
+                                        {isImporting ? t('common.importing') : t('admin.translations.import_default')}
                                     </DropdownMenuItem>
                                 )}
                                 <DropdownMenuItem
@@ -359,7 +361,7 @@ export default function TranslationsPage() {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => router.push('/admin/feathercloud/translations')}>
                                     <Globe className='mr-2 h-4 w-4' />
-                                    Mythic Translate install
+                                    {t('ui.admin.translations.mythicTranslateInstall')}
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -404,12 +406,12 @@ export default function TranslationsPage() {
                                         {file.enabled ? (
                                             <>
                                                 <Check className='mr-1 inline h-3 w-3' />
-                                                Enabled
+                                                {t('common.enabled')}
                                             </>
                                         ) : (
                                             <>
                                                 <X className='mr-1 inline h-3 w-3' />
-                                                Disabled
+                                                {t('common.disabled')}
                                             </>
                                         )}
                                     </span>
@@ -435,7 +437,8 @@ export default function TranslationsPage() {
                                     {file.modified && (
                                         <div className='flex items-center gap-2'>
                                             <span className='text-xs opacity-50'>
-                                                Modified: {new Date(file.modified).toLocaleString()}
+                                                {t('ui.admin.translations.modified')}{' '}
+                                                {new Date(file.modified).toLocaleString()}
                                             </span>
                                         </div>
                                     )}

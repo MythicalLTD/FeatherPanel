@@ -560,7 +560,7 @@ export default function ServerConsolePage() {
                 const confirmCtx = await pluginActionHooks.run(FP_ACTIONS.UI_CONFIRM, {
                     kind: 'server-kill',
                     uuid: serverUuid,
-                    message: 'Kill server?',
+                    message: t('ui.components.server.serverConsolePage.killServer'),
                 });
                 if (confirmCtx.cancelled) {
                     return;
@@ -780,7 +780,7 @@ export default function ServerConsolePage() {
                     </span>
                     <div className='min-w-0'>
                         <nav
-                            aria-label='Breadcrumb'
+                            aria-label={t('ui.components.server.serverConsolePage.breadcrumb')}
                             className='text-muted-foreground flex min-w-0 items-center gap-1 text-xs'
                         >
                             <Link href='/dashboard' className='hover:text-foreground shrink-0 transition-colors'>

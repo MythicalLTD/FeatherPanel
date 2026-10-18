@@ -21,6 +21,7 @@ import { Check, CircleX, LockKeyhole } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export function OAuthConsentShell({ children, className }: { children: ReactNode; className?: string }) {
     const { settings } = useSettings();
@@ -143,6 +144,7 @@ export function OAuthConsentCard({
     submitting?: boolean;
     footer?: ReactNode;
 }) {
+    const { t } = useTranslation();
     return (
         <Panel>
             <div className='flex items-start gap-4'>
@@ -168,14 +170,15 @@ export function OAuthConsentCard({
 
             {signedInAs ? (
                 <div className='border-border/60 bg-background/40 text-muted-foreground mt-5 rounded-xl border px-3.5 py-3 text-sm'>
-                    Signed in as <span className='text-foreground font-medium'>{signedInAs}</span>
+                    {t('ui.components.auth.oAuthConsentCard.signedInAs')}{' '}
+                    <span className='text-foreground font-medium'>{signedInAs}</span>
                 </div>
             ) : null}
 
             {permissions.length > 0 ? (
                 <div className='border-border/60 bg-background/35 mt-5 rounded-xl border p-4'>
                     <p className='text-muted-foreground mb-3 text-xs font-semibold tracking-wide uppercase'>
-                        This app can
+                        {t('ui.components.auth.oAuthConsentCard.thisAppCan')}
                     </p>
                     <ul className='space-y-3'>
                         {permissions.map((item) => (

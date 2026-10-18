@@ -315,6 +315,7 @@ export default function CreateVdsNodePage() {
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.name')}</Label>
                                     <Input
+                                        // i18n-ignore: example node name
                                         placeholder='Proxmox Node A'
                                         value={form.name}
                                         onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -375,14 +376,11 @@ export default function CreateVdsNodePage() {
                         <PageCard title={t('admin.vdsNodes.form.proxmox')} icon={Server}>
                             <div className='space-y-6'>
                                 <div className='rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100'>
-                                    For VDS console access over VNC, install the FeatherPanel VNC agent on the Proxmox
-                                    node using:
+                                    {t('ui.admin.vdsNodes.create.forVDSConsoleAccessOverVNC')}
                                     <div className='mt-2 rounded-md bg-black/30 px-3 py-2 font-mono text-xs break-all'>
                                         curl -sSL https://get.featherpanel.com/installer.sh | bash
                                     </div>
-                                    Then select the VNC option during installation. Without this agent, VDS console
-                                    connections will not work. Also make sure Proxmox is exposed on a domain (or is in
-                                    the same domain/network context), otherwise VNC may also fail.
+                                    {t('ui.admin.vdsNodes.create.thenSelectTheVNCOptionDuring')}
                                 </div>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.user')}</Label>
@@ -400,7 +398,7 @@ export default function CreateVdsNodePage() {
                                 </div>
                                 <div className='space-y-2'>
                                     <div className='rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-100'>
-                                        When creating the API token, make sure to create it for the user{' '}
+                                        {t('ui.admin.vdsNodes.create.whenCreatingTheAPITokenMake')}{' '}
                                         <span className='font-semibold'>root</span> with{' '}
                                         <span className='font-semibold'>no privilege separation</span>.
                                     </div>

@@ -421,7 +421,10 @@ export default function ServerLifecycleHooksPage() {
                             {content || t('lifecycleHooks.discord.contentEmpty')}
                         </p>
                         <p className='text-muted-foreground'>
-                            <span className='text-foreground/80 font-semibold'>Embeds:</span> {embeds}
+                            <span className='text-foreground/80 font-semibold'>
+                                {t('ui.server.lifecycleHooks.embeds')}
+                            </span>{' '}
+                            {embeds}
                         </p>
                     </div>
                 );

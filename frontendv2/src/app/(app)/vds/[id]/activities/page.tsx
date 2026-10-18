@@ -591,7 +591,7 @@ export default function VdsActivitiesPage() {
                                         </span>
                                     </div>
                                     <DialogDescription className='text-xl font-medium opacity-70'>
-                                        VDS Activity -{' '}
+                                        {t('ui.vds.activities.vDSActivity')}{' '}
                                         {selectedItem.timestamp
                                             ? formatDateTimeInTz(selectedItem.timestamp, dateOpts)
                                             : '-'}
@@ -605,13 +605,13 @@ export default function VdsActivitiesPage() {
                                 <div className='flex items-center justify-between border-b border-white/5 pb-4'>
                                     <h3 className='text-primary flex items-center gap-3 text-xs font-black tracking-[0.3em] uppercase'>
                                         <div className='bg-primary h-4 w-1.5 rounded-full' />
-                                        Metadata
+                                        {t('ui.vds.activities.metadata')}
                                     </h3>
                                 </div>
                                 <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                                     <div className='flex shrink-0 flex-col gap-2 rounded-3xl border border-white/5 bg-white/5 p-5'>
                                         <span className='text-primary/50 text-[10px] font-black tracking-widest uppercase'>
-                                            User
+                                            {t('ui.vds.activities.user')}
                                         </span>
                                         <span className='text-lg font-bold'>
                                             {selectedItem.user?.username || t('serverActivities.details.system')}
@@ -619,7 +619,7 @@ export default function VdsActivitiesPage() {
                                     </div>
                                     <div className='flex shrink-0 flex-col gap-2 rounded-3xl border border-white/5 bg-white/5 p-5'>
                                         <span className='text-primary/50 text-[10px] font-black tracking-widest uppercase'>
-                                            Timestamp
+                                            {t('ui.vds.activities.timestamp')}
                                         </span>
                                         <span className='text-lg font-bold'>
                                             {selectedItem.timestamp
@@ -630,7 +630,7 @@ export default function VdsActivitiesPage() {
                                     {selectedItem.ip && (
                                         <div className='col-span-2 flex flex-col gap-2 rounded-3xl border border-white/5 bg-white/5 p-5'>
                                             <span className='text-primary/50 text-[10px] font-black tracking-widest uppercase'>
-                                                IP Address
+                                                {t('ui.vds.activities.iPAddress')}
                                             </span>
                                             <span className='font-mono text-lg font-bold'>
                                                 {hideIps ? HIDDEN_IP_PLACEHOLDER : selectedItem.ip}
@@ -661,7 +661,7 @@ export default function VdsActivitiesPage() {
                                 <div className='flex items-center justify-between border-b border-white/5 pb-4'>
                                     <h3 className='text-primary flex items-center gap-3 text-xs font-black tracking-[0.3em] uppercase'>
                                         <div className='bg-primary h-4 w-1.5 rounded-full' />
-                                        Raw Payload
+                                        {t('ui.vds.activities.rawPayload')}
                                     </h3>
                                     <Button
                                         variant='glass'
@@ -673,7 +673,7 @@ export default function VdsActivitiesPage() {
                                         }}
                                     >
                                         <Copy className='mr-2 h-3.5 w-3.5' />
-                                        Copy
+                                        {t('common.copy')}
                                     </Button>
                                 </div>
                                 <pre className='custom-scrollbar max-h-[500px] overflow-x-auto rounded-4xl border border-white/5 bg-black/40 p-8 font-mono text-sm leading-relaxed text-emerald-400 backdrop-blur-3xl'>
@@ -688,7 +688,7 @@ export default function VdsActivitiesPage() {
                                 className='h-14 rounded-2xl px-12 font-black tracking-[0.2em] uppercase'
                                 onClick={() => setDetailsOpen(false)}
                             >
-                                Close
+                                {t('common.close')}
                             </Button>
                         </DialogFooter>
                     </div>

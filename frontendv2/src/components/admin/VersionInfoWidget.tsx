@@ -305,7 +305,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                                                 : isCurrentVersionUnknown
                                                   ? t('admin.version.current_version_unknown')
                                                   : t('admin.version.update_available', {
-                                                        version: latest?.version || 'Unknown',
+                                                        version: latest?.version || t('common.unknown'),
                                                     })}
                                         </p>
                                     </div>

@@ -131,15 +131,16 @@ function SectionNav({
 }
 
 function ProbeStatusBadge({ ok }: { ok: boolean }) {
+    const { t } = useTranslation();
     return ok ? (
         <span className='inline-flex items-center gap-1 text-xs font-medium text-emerald-600'>
             <CheckCircle2 className='h-3.5 w-3.5' />
-            OK
+            {t('ui.components.globalSearch.panelDebugConsole.oK')}
         </span>
     ) : (
         <span className='text-destructive inline-flex items-center gap-1 text-xs font-medium'>
             <XCircle className='h-3.5 w-3.5' />
-            Fail
+            {t('ui.components.globalSearch.panelDebugConsole.fail')}
         </span>
     );
 }

@@ -14,8 +14,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 /**
- * Flags hardcoded user-facing English in toast / confirm / PageHeader title
- * within high-churn product paths. Does not replace scan-translations.js.
+ * Flags hardcoded user-facing English across the frontend: toast / confirm /
+ * PageHeader title literals, JSX text and user-facing JSX attributes
+ * (placeholder, title, aria-label, alt, label, description).
+ * Does not replace scan-translations.js.
+ *
+ * Opt out for a line that is intentionally not translated (brand names,
+ * code samples, technical identifiers) with an `i18n-ignore` comment on that
+ * line or the line above.
  *
  * Usage: node scripts/scan-hardcoded-ui-strings.js
  * Exit 1 when offenders are found.
@@ -30,15 +36,95 @@ const __dirname = path.dirname(__filename);
 const SRC_DIR = path.join(__dirname, '../src');
 
 const SCAN_ROOTS = [
-    path.join(SRC_DIR, 'app/(app)/webspace'),
-    path.join(SRC_DIR, 'app/(app)/webspaces'),
-    path.join(SRC_DIR, 'components/webspace'),
-    path.join(SRC_DIR, 'components/admin/TransferWebSpaceDialog.tsx'),
-    path.join(SRC_DIR, 'app/(app)/admin/mail-hosts'),
-    path.join(SRC_DIR, 'app/(app)/admin/analytics/plugins'),
-    path.join(SRC_DIR, 'app/(app)/admin/webspaces'),
-    path.join(SRC_DIR, 'hooks/useWingsWebSocket.ts'),
+    path.join(SRC_DIR, 'app'),
+    path.join(SRC_DIR, 'components'),
+    path.join(SRC_DIR, 'hooks'),
+    path.join(SRC_DIR, 'contexts'),
 ];
+
+/** Files rendered outside the translation provider, or vendored UI primitives. */
+const EXEMPT_FILES = [
+    /app\/\(app\)\/global-error\.tsx$/,
+    /app\/\(app\)\/layout\.tsx$/,
+    /\/layout\.tsx$/, // route metadata
+    /components\/ui\//,
+    /components\/thirdparty\//,
+];
+
+/** Product names and technical tokens that stay in English. */
+const EXEMPT_TEXT = new Set([
+    'FeatherPanel',
+    'Nginx',
+    'PostgreSQL',
+    'MySQL',
+    'MariaDB',
+    'Redis',
+    'MongoDB',
+    'ClickHouse',
+    'Proxmox',
+    'QEMU',
+    'LXC',
+    'Docker',
+    'Wings',
+    'Cloudflare',
+    'Discord',
+    'GitHub',
+    'Google',
+    'Paper',
+    'Spigot',
+    'Velocity',
+    'Apache',
+    'Caddy',
+    'Traefik',
+    'Restic',
+    'PHP',
+    'SFTP',
+    'FTP',
+    'SSH',
+    'DNS',
+    'CIDR',
+    'VNC',
+    'OpenAI',
+    'Perplexity',
+    'OpenRouter',
+    'Grok',
+    'Gemini',
+    'Tab',
+    'Esc',
+    'Enter',
+    'Ctrl',
+    'Shift',
+    'Alt',
+    'Mythic',
+    'Pterodactyl',
+    'FeatherCloud',
+    'FeatherQuilld',
+    'FeatherWings',
+    'JSON',
+    'YAML',
+    'TOML',
+    'XML',
+    'URL',
+    'API',
+    'UUID',
+    'CPU',
+    'RAM',
+    'UTC',
+    'AbuseIPDB',
+    'MalwareBazaar',
+    'App',
+    'Web',
+    'Runner',
+    'Stable',
+    'Beta',
+    'VIP',
+    'Tor',
+    'OAuth 2.0',
+    'SQL',
+    'NULL',
+    'Proxmox Backup Server',
+    'Aa Bb Cc',
+]);
 
 const colors = {
     reset: '\x1b[0m',
@@ -50,11 +136,17 @@ const colors = {
 };
 
 /** toast.success('English') / toast.error("…") with a string literal (not t(...)) */
-const TOAST_LITERAL =
-    /\btoast\.(?:success|error|info|warning|message)\s*\(\s*(['"`])((?:(?!\1)[^\\]|\\.)+)\1/g;
+const TOAST_LITERAL = /\btoast\.(?:success|error|info|warning|message)\s*\(\s*(['"`])((?:(?!\1)[^\\]|\\.)+)\1/g;
 
 /** confirm('…') / window.confirm("…") with string literal */
 const CONFIRM_LITERAL = /\b(?:window\.)?confirm\s*\(\s*(['"`])((?:(?!\1)[^\\]|\\.)+)\1/g;
+
+/** >Some English text< on one line inside JSX */
+const JSX_TEXT = /(?<![=\w])>\s*([A-Z][a-z]+(?:[ ,'’!?:-]+[A-Za-z][A-Za-z'’]*)+[.!?:…]?)\s*<\/?[A-Za-z]/g;
+
+/** placeholder='English' / title="English" / aria-label='English' … (not ={t(...)}) */
+const JSX_ATTR =
+    /\s(?:placeholder|title|aria-label|alt|label|description|subtitle|confirmText|cancelText|emptyMessage)\s*=\s*(['"])([A-Z][^'"]*[a-z][^'"]*)\1/g;
 
 /** <PageHeader title='English' or title="English" (not title={t(...)}) */
 const PAGE_HEADER_TITLE = /<PageHeader\b[^>]*\btitle\s*=\s*(['"`])((?:(?!\1)[^\\]|\\.)+)\1/g;
@@ -82,6 +174,14 @@ function isExemptLiteral(text) {
     // Pure technical / non-copy
     if (/^[\d\s\-_/.:]+$/.test(trimmed)) return true;
     if (/^(ok|error|true|false)$/i.test(trimmed)) return true;
+    if (EXEMPT_TEXT.has(trimmed) || EXEMPT_TEXT.has(trimmed.replace(/[:.]$/, ''))) return true;
+    // camelCase / PascalCase identifiers, code, env vars
+    if (/^[A-Z][a-z]+[A-Z]\w*$/.test(trimmed)) return true;
+    if (/^[A-Z0-9_]+(=|$)/.test(trimmed)) return true;
+    if (/^(SELECT|INSERT|UPDATE|DELETE|CREATE) /.test(trimmed)) return true; // SQL samples
+    if (/^Java \d+$/.test(trimmed)) return true;
+    // Templates made only of interpolations, e.g. `${a} ${b}`
+    if (!/[A-Za-z]{2,}/.test(trimmed.replace(/\$\{[^}]*\}/g, ''))) return true;
     return false;
 }
 
@@ -89,13 +189,17 @@ function scanFile(file) {
     const content = fs.readFileSync(file, 'utf8');
     const relative = path.relative(path.join(__dirname, '..'), file);
     const hits = [];
+    if (EXEMPT_FILES.some((re) => re.test(relative.split(path.sep).join('/')))) return hits;
+    const lines = content.split('\n');
+    const ignored = (line) => /i18n-ignore/.test(lines[line - 1] || '') || /i18n-ignore/.test(lines[line - 2] || '');
 
-    const run = (regex, kind) => {
+    const run = (regex, kind, group = 2) => {
         regex.lastIndex = 0;
         let match;
         while ((match = regex.exec(content)) !== null) {
-            const text = match[2];
+            const text = match[group];
             if (isExemptLiteral(text)) continue;
+            if (ignored(lineOf(content, match.index))) continue;
             // Skip if the call already wraps t( somewhere nearby on same statement: rough
             const before = content.slice(Math.max(0, match.index - 40), match.index);
             if (/\bt\s*\(\s*$/.test(before)) continue;
@@ -106,20 +210,24 @@ function scanFile(file) {
     run(TOAST_LITERAL, 'toast');
     run(CONFIRM_LITERAL, 'confirm');
     run(PAGE_HEADER_TITLE, 'PageHeader.title');
+    run(JSX_TEXT, 'jsx-text', 1);
+    run(JSX_ATTR, 'jsx-attr');
 
     return hits;
 }
 
 function main() {
-    console.log(`${colors.blue}${colors.bold}Scanning for hardcoded UI strings (toast/confirm/PageHeader)…${colors.reset}\n`);
+    console.log(
+        `${colors.blue}${colors.bold}Scanning for hardcoded UI strings (toast/confirm/PageHeader/JSX text/attributes)…${colors.reset}\n`,
+    );
 
     const files = SCAN_ROOTS.flatMap((root) => collectFiles(root));
-    console.log(`${colors.green}✓ Scanning ${files.length} files in WebSpace paths.${colors.reset}\n`);
+    console.log(`${colors.green}✓ Scanning ${files.length} files.${colors.reset}\n`);
 
     const allHits = files.flatMap(scanFile);
 
     if (allHits.length === 0) {
-        console.log(`${colors.green}${colors.bold}Success! No hardcoded toast/confirm/PageHeader strings in scanned paths.${colors.reset}`);
+        console.log(`${colors.green}${colors.bold}Success! No hardcoded UI strings found.${colors.reset}`);
         process.exit(0);
     }
 

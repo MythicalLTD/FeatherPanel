@@ -669,7 +669,11 @@ export default function ServerStartupPage() {
                 </div>
 
                 <div className='space-y-8 lg:col-span-4'>
-                    <PageCard title={t('serverStartup.dockerImage')} description='Containerization' icon={Container}>
+                    <PageCard
+                        title={t('serverStartup.dockerImage')}
+                        description={t('ui.server.startup.containerization')}
+                        icon={Container}
+                    >
                         <div className='space-y-6'>
                             {allowCustomDockerImage ? (
                                 <div className='space-y-2.5'>
