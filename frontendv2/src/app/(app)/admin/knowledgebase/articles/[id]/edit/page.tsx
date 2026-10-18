@@ -429,7 +429,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                 <div className='space-y-6 lg:col-span-2'>
                     <WidgetRenderer widgets={getWidgets('admin-knowledgebase-article-edit', 'before-content')} />
                     <Tabs defaultValue='content' className='w-full'>
-                        <div className='bg-card/40 mb-6 flex items-center justify-between rounded-2xl p-2 shadow-sm backdrop-blur-md'>
+                        <div className='fp-surface mb-6 flex items-center justify-between rounded-2xl border p-2'>
                             <TabsList className='h-10 bg-transparent'>
                                 <TabsTrigger
                                     value='content'
@@ -477,7 +477,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                         </div>
 
                         <TabsContent value='content' className='m-0 border-none p-0 outline-none'>
-                            <div className='bg-card/40 space-y-4 rounded-2xl p-6 shadow-sm backdrop-blur-md'>
+                            <div className='fp-surface space-y-4 rounded-2xl border p-6'>
                                 <div className='space-y-2'>
                                     <Label htmlFor='title'>{t('admin.knowledgebase.articles.form.title')}</Label>
                                     <Input
@@ -594,7 +594,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                         </TabsContent>
 
                         <TabsContent value='attachments' className='m-0 border-none p-0 outline-none'>
-                            <div className='bg-card/40 space-y-6 rounded-2xl p-6 shadow-sm backdrop-blur-md'>
+                            <div className='fp-surface space-y-6 rounded-2xl border p-6'>
                                 <div className='flex items-center justify-between'>
                                     <div>
                                         <h3 className='text-lg font-bold'>
@@ -694,7 +694,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                         </TabsContent>
 
                         <TabsContent value='tags' className='m-0 border-none p-0 outline-none'>
-                            <div className='bg-card/40 space-y-6 rounded-2xl p-6 shadow-sm backdrop-blur-md'>
+                            <div className='fp-surface space-y-6 rounded-2xl border p-6'>
                                 <div className='flex items-center justify-between'>
                                     <div>
                                         <h3 className='text-lg font-bold'>
@@ -752,7 +752,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                 </div>
 
                 <div className='space-y-6'>
-                    <div className='bg-card/40 space-y-6 overflow-hidden rounded-2xl p-6 shadow-sm backdrop-blur-md'>
+                    <div className='fp-surface space-y-6 overflow-hidden rounded-2xl border p-6'>
                         <h3 className='mb-2 text-lg font-bold'>{t('common.details')}</h3>
 
                         <div className='space-y-2'>

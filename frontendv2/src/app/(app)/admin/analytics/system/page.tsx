@@ -128,28 +128,28 @@ export default function SystemAnalyticsPage() {
                                 subtitle={t('admin.analytics.system.queued')}
                                 description={t('admin.analytics.system.pending_emails')}
                                 icon={Mail}
-                                className='bg-card/50 shadow-none! backdrop-blur-sm'
+                                className='fp-surface border'
                             />
                             <ResourceCard
                                 title={stats.total_sent.toString()}
                                 subtitle={t('admin.analytics.system.sent')}
                                 description={t('admin.analytics.system.delivered')}
                                 icon={CheckCircle}
-                                className='bg-card/50 shadow-none! backdrop-blur-sm'
+                                className='fp-surface border'
                             />
                             <ResourceCard
                                 title={stats.total_failed.toString()}
                                 subtitle={t('admin.analytics.system.failed')}
                                 description={t('admin.analytics.system.errors')}
                                 icon={XCircle}
-                                className='bg-card/50 shadow-none! backdrop-blur-sm'
+                                className='fp-surface border'
                             />
                             <ResourceCard
                                 title={`${stats.success_rate}%`}
                                 subtitle={t('admin.analytics.system.success_rate')}
                                 description={t('admin.analytics.system.delivery_rate')}
                                 icon={Activity}
-                                className='bg-card/50 shadow-none! backdrop-blur-sm'
+                                className='fp-surface border'
                             />
                         </div>
 
@@ -162,7 +162,7 @@ export default function SystemAnalyticsPage() {
                                         count: featureStats.chatbot_messages.toString(),
                                     })}
                                     icon={Bot}
-                                    className='bg-card/50 shadow-none! backdrop-blur-sm'
+                                    className='fp-surface border'
                                 />
                                 <ResourceCard
                                     title={featureStats.chatbot_active_users_30d.toString()}
@@ -171,7 +171,7 @@ export default function SystemAnalyticsPage() {
                                         count: featureStats.avg_messages_per_conversation.toString(),
                                     })}
                                     icon={UserCircle}
-                                    className='bg-card/50 shadow-none! backdrop-blur-sm'
+                                    className='fp-surface border'
                                 />
                                 <ResourceCard
                                     title={featureStats.api_clients.toString()}
@@ -180,14 +180,14 @@ export default function SystemAnalyticsPage() {
                                         count: featureStats.oauth2_authorizations.toString(),
                                     })}
                                     icon={KeyRound}
-                                    className='bg-card/50 shadow-none! backdrop-blur-sm'
+                                    className='fp-surface border'
                                 />
                                 <ResourceCard
                                     title={featureStats.oidc_enabled_providers.toString()}
                                     subtitle={t('admin.analytics.system.enabled_oidc_providers')}
                                     description={t('admin.analytics.system.identity_providers_configured')}
                                     icon={ShieldCheck}
-                                    className='bg-card/50 shadow-none! backdrop-blur-sm'
+                                    className='fp-surface border'
                                 />
                             </div>
                         )}
@@ -205,7 +205,7 @@ export default function SystemAnalyticsPage() {
                                 />
                             </div>
 
-                            <Card className='border-border/50 bg-card/50 shadow-sm backdrop-blur-sm md:col-span-2'>
+                            <Card className='fp-surface border md:col-span-2'>
                                 <CardHeader>
                                     <CardTitle>{t('admin.analytics.system.recent_activity')}</CardTitle>
                                     <CardDescription>

@@ -139,42 +139,42 @@ export default function ActivityAnalyticsPage() {
                                 count: String(stats.active_users_today),
                             })}
                             icon={Activity}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={stats.this_week.toString()}
                             subtitle={t('admin.analytics.activity.this_week')}
                             description={t('admin.analytics.activity.last_7_days')}
                             icon={Calendar}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={stats.this_month.toString()}
                             subtitle={t('admin.analytics.activity.this_month')}
                             description={t('admin.analytics.activity.last_30_days')}
                             icon={Calendar}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={`${stats.peak_hour}:00`}
                             subtitle={t('admin.analytics.activity.peak_hour')}
                             description={t('admin.analytics.activity.most_active_time')}
                             icon={Clock}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={stats.total.toString()}
                             subtitle={t('admin.analytics.activity.total_activities')}
                             description={t('admin.analytics.activity.all_time_activity_events')}
                             icon={TrendingUp}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={(topActivities[0]?.count ?? 0).toString()}
                             subtitle={t('admin.analytics.activity.top_activity_type')}
                             description={topActivities[0]?.name ?? t('admin.analytics.activity.no_activity_data')}
                             icon={List}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                     </div>
                 )}

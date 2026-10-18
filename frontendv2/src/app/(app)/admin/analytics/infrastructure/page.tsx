@@ -218,7 +218,7 @@ export default function InfrastructureAnalyticsPage() {
                                 count: String(overview.locations?.with_nodes ?? 0),
                             })}
                             icon={MapPin}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={(overview.nodes?.total ?? 0).toString()}
@@ -227,7 +227,7 @@ export default function InfrastructureAnalyticsPage() {
                                 percentage: String(overview.nodes?.percentage_public ?? 0),
                             })}
                             icon={Server}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={(overview.allocations?.total ?? 0).toString()}
@@ -236,14 +236,14 @@ export default function InfrastructureAnalyticsPage() {
                                 percentage: String(overview.allocations?.percentage_in_use ?? 0),
                             })}
                             icon={Network}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={(overview.databases?.hosts ?? 0).toString()}
                             subtitle={t('admin.analytics.infrastructure.db_hosts')}
                             description={t('admin.analytics.infrastructure.across_nodes')}
                             icon={Database}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={topPort ? String(topPort.port) : '0'}
@@ -252,7 +252,7 @@ export default function InfrastructureAnalyticsPage() {
                                 count: String(topPort?.assigned ?? 0),
                             })}
                             icon={EthernetPort}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={topIp ? String(topIp.total_ports) : '0'}
@@ -266,7 +266,7 @@ export default function InfrastructureAnalyticsPage() {
                                     : t('admin.analytics.infrastructure.no_allocation_usage_data')
                             }
                             icon={Globe}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                     </div>
                 )}

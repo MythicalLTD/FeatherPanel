@@ -190,7 +190,7 @@ export default function UserAnalyticsPage() {
                             subtitle={t('admin.analytics.users.total')}
                             description={t('admin.analytics.users.active_users', { count: String(overview.active) })}
                             icon={Users}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={overview.banned.toString()}
@@ -199,7 +199,7 @@ export default function UserAnalyticsPage() {
                                 percentage: String(overview.percentage_banned),
                             })}
                             icon={UserX}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={overview.verified.toString()}
@@ -208,7 +208,7 @@ export default function UserAnalyticsPage() {
                                 percentage: String(overview.percentage_verified),
                             })}
                             icon={UserCheck}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={overview.two_fa_enabled.toString()}
@@ -217,14 +217,14 @@ export default function UserAnalyticsPage() {
                                 percentage: String(overview.percentage_two_fa),
                             })}
                             icon={ShieldCheck}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={overview.unverified.toString()}
                             subtitle={t('admin.analytics.users.unverified')}
                             description={t('admin.analytics.users.pending_email_verification')}
                             icon={UserMinus}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={(securityOverview?.not_secured ?? 0).toString()}
@@ -233,14 +233,14 @@ export default function UserAnalyticsPage() {
                                 count: String(securityOverview?.fully_secured ?? 0),
                             })}
                             icon={ShieldAlert}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                     </div>
                 )}
 
                 {growth && (
                     <div className='grid gap-4 md:grid-cols-2'>
-                        <Card className='border-border/50 bg-card/50 shadow-sm backdrop-blur-sm'>
+                        <Card className='fp-surface border'>
                             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
                                 <CardTitle className='text-sm font-medium'>
                                     {t('admin.analytics.users.growth_7d')}
@@ -262,7 +262,7 @@ export default function UserAnalyticsPage() {
                                 </p>
                             </CardContent>
                         </Card>
-                        <Card className='border-border/50 bg-card/50 shadow-sm backdrop-blur-sm'>
+                        <Card className='fp-surface border'>
                             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
                                 <CardTitle className='text-sm font-medium'>
                                     {t('admin.analytics.users.growth_30d')}
@@ -309,7 +309,7 @@ export default function UserAnalyticsPage() {
                         />
                     </div>
 
-                    <Card className='border-border/50 bg-card/50 col-span-1 shadow-sm backdrop-blur-sm lg:col-span-2'>
+                    <Card className='fp-surface col-span-1 border lg:col-span-2'>
                         <CardHeader>
                             <CardTitle>{t('admin.analytics.users.top_users')}</CardTitle>
                             <CardDescription>{t('admin.analytics.users.top_users_desc')}</CardDescription>

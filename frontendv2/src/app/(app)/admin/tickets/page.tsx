@@ -20,9 +20,10 @@ import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { formatDateInTz } from '@/lib/dateUtils';
-import { Ticket, Search, Trash2, Eye, ChevronLeft, ChevronRight, RefreshCw, Filter } from 'lucide-react';
+import { Ticket, Search, Trash2, Eye, RefreshCw, Filter } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { DataTable, ColorPill } from '@/components/featherui/DataTable';
+import { useRouter } from 'next/navigation';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Button } from '@/components/featherui/Button';
@@ -30,8 +31,6 @@ import { Input } from '@/components/featherui/Input';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { Select } from '@/components/ui/select-native';
-import { PageCard } from '@/components/featherui/PageCard';
-import { AlertCircle } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -86,6 +85,7 @@ const TICKETS_LIST_FILTERS_DEFAULTS = {
 };
 
 export default function TicketsPage() {
+    const router = useRouter();
     const { t } = useTranslation();
     const dateOpts = useDateFormatOptions();
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-tickets');
@@ -207,7 +207,7 @@ export default function TicketsPage() {
             <WidgetRenderer widgets={getWidgets('admin-tickets', 'top-of-page')} />
             <PageHeader title={t('admin.tickets.title')} description={t('admin.tickets.viewAndManage')} icon={Ticket} />
 
-            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -254,15 +254,6 @@ export default function TicketsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-tickets', 'after-header')} />
 
-            {!loading && tickets.length > 0 && pagination.totalPages > 1 && (
-                <ListPagination
-                    page={page}
-                    totalPages={pagination.totalPages}
-                    onPageChange={(nextPage) => patchFilters({ page: nextPage })}
-                    className='mb-4'
-                />
-            )}
-
             {loading ? (
                 <TableSkeleton count={3} />
             ) : tickets.length === 0 ? (
@@ -274,136 +265,124 @@ export default function TicketsPage() {
                     onClearFilters={resetFilters}
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <div className='space-y-4'>
                     <WidgetRenderer widgets={getWidgets('admin-tickets', 'before-list')} />
-                    {tickets.map((ticket) => {
-                        const badges: ResourceBadge[] = [
+                    <DataTable
+                        rows={tickets}
+                        rowKey={(ticket) => ticket.id}
+                        onRowClick={(ticket) => router.push(`/admin/tickets/${ticket.uuid}`)}
+                        columns={[
                             {
-                                label: ticket.status?.name || t('common.unknown'),
-                                style: {
-                                    backgroundColor: `${ticket.status?.color}20`,
-                                    color: ticket.status?.color,
-                                    borderColor: `${ticket.status?.color}40`,
-                                },
+                                key: 'subject',
+                                header: t('admin.tickets.table.subject'),
+                                className: 'w-[36%]',
+                                cell: (ticket) => (
+                                    <div className='min-w-0'>
+                                        <p className='truncate font-medium'>{ticket.title}</p>
+                                        <p className='text-muted-foreground font-mono text-xs'>#{ticket.id}</p>
+                                    </div>
+                                ),
                             },
                             {
-                                label: ticket.priority?.name || t('common.normal'),
-                                style: {
-                                    backgroundColor: `${ticket.priority?.color}20`,
-                                    color: ticket.priority?.color,
-                                    borderColor: `${ticket.priority?.color}40`,
-                                },
+                                key: 'user',
+                                header: t('admin.tickets.table.user'),
+                                cell: (ticket) => (
+                                    <div className='min-w-0'>
+                                        <p className='truncate'>{ticket.user?.username ?? t('common.unknown')}</p>
+                                        <p className='text-muted-foreground truncate text-xs'>
+                                            <Sensitive>{ticket.user?.email}</Sensitive>
+                                        </p>
+                                    </div>
+                                ),
                             },
-                        ];
-
-                        return (
-                            <ResourceCard
-                                key={ticket.id}
-                                icon={Ticket}
-                                title={ticket.title}
-                                subtitle={
-                                    <div className='flex items-center gap-2'>
-                                        <span className='font-mono text-xs opacity-70'>#{ticket.id}</span>
-                                        <span>•</span>
-                                        <span className='text-primary/80 font-medium'>{ticket.user?.username}</span>
-                                        <span className='opacity-50'>
-                                            (<Sensitive>{ticket.user?.email}</Sensitive>)
-                                        </span>
-                                    </div>
-                                }
-                                badges={badges}
-                                iconClassName='text-primary'
-                                description={
-                                    <div className='text-muted-foreground flex flex-wrap items-center gap-x-6 gap-y-2 text-sm'>
-                                        <div className='flex items-center gap-2'>
-                                            <span className='font-semibold'>{t('admin.tickets.table.category')}:</span>
-                                            <span>{ticket.category?.name}</span>
-                                        </div>
-                                        <div className='flex items-center gap-2'>
-                                            <span className='font-semibold'>{t('admin.tickets.table.created')}:</span>
-                                            <span>{formatDateInTz(ticket.created_at, dateOpts)}</span>
-                                        </div>
-                                        {ticket.server_id && (
-                                            <div className='flex items-center gap-2'>
-                                                <span className='font-semibold'>
-                                                    {t('admin.tickets.table.server')}:
-                                                </span>
-                                                <span className='font-mono'>#{ticket.server_id}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                }
-                                actions={
-                                    <div className='flex items-center gap-2'>
-                                        <Link href={`/admin/tickets/${ticket.uuid}`}>
-                                            <Button size='sm' variant='outline'>
-                                                <Eye className='mr-2 h-4 w-4' />
-                                                {t('common.view')}
-                                            </Button>
-                                        </Link>
-                                        <Button
-                                            size='sm'
-                                            variant='ghost'
-                                            className='text-destructive hover:text-destructive hover:bg-destructive/10'
-                                            onClick={() => handleDelete(ticket.uuid, ticket.id)}
-                                            disabled={isDeleting === ticket.id}
-                                        >
-                                            {isDeleting === ticket.id ? (
-                                                <RefreshCw className='h-4 w-4 animate-spin' />
-                                            ) : (
-                                                <Trash2 className='h-4 w-4' />
-                                            )}
-                                        </Button>
-                                    </div>
-                                }
-                            />
-                        );
-                    })}
+                            {
+                                key: 'status',
+                                header: t('admin.tickets.table.status'),
+                                cell: (ticket) => (
+                                    <ColorPill color={ticket.status?.color}>
+                                        {ticket.status?.name || t('common.unknown')}
+                                    </ColorPill>
+                                ),
+                            },
+                            {
+                                key: 'priority',
+                                header: t('admin.tickets.table.priority'),
+                                cell: (ticket) => (
+                                    <ColorPill color={ticket.priority?.color}>
+                                        {ticket.priority?.name || t('common.normal')}
+                                    </ColorPill>
+                                ),
+                            },
+                            {
+                                key: 'category',
+                                header: t('admin.tickets.table.category'),
+                                className: 'text-muted-foreground',
+                                cell: (ticket) => ticket.category?.name ?? t('common.unknown'),
+                            },
+                            {
+                                key: 'created',
+                                header: t('admin.tickets.table.created'),
+                                className: 'text-muted-foreground whitespace-nowrap',
+                                cell: (ticket) => formatDateInTz(ticket.created_at, dateOpts),
+                            },
+                        ]}
+                        mobileCard={(ticket) => (
+                            <div className='min-w-0 space-y-2'>
+                                <div className='flex items-start justify-between gap-2'>
+                                    <p className='min-w-0 font-medium'>{ticket.title}</p>
+                                    <span className='text-muted-foreground shrink-0 font-mono text-xs'>
+                                        #{ticket.id}
+                                    </span>
+                                </div>
+                                <div className='flex flex-wrap items-center gap-1.5'>
+                                    <ColorPill color={ticket.status?.color}>
+                                        {ticket.status?.name || t('common.unknown')}
+                                    </ColorPill>
+                                    <ColorPill color={ticket.priority?.color}>
+                                        {ticket.priority?.name || t('common.normal')}
+                                    </ColorPill>
+                                </div>
+                                <p className='text-muted-foreground text-xs'>
+                                    {ticket.user?.username} · {ticket.category?.name} ·{' '}
+                                    {formatDateInTz(ticket.created_at, dateOpts)}
+                                </p>
+                            </div>
+                        )}
+                        actions={(ticket) => (
+                            <>
+                                <Button asChild size='sm' variant='ghost' className='gap-1.5'>
+                                    <Link href={`/admin/tickets/${ticket.uuid}`}>
+                                        <Eye className='h-4 w-4' />
+                                        {t('common.view')}
+                                    </Link>
+                                </Button>
+                                <Button
+                                    size='sm'
+                                    variant='ghost'
+                                    className='text-destructive hover:text-destructive hover:bg-destructive/10'
+                                    onClick={() => handleDelete(ticket.uuid, ticket.id)}
+                                    disabled={isDeleting === ticket.id}
+                                    aria-label={t('common.delete')}
+                                >
+                                    {isDeleting === ticket.id ? (
+                                        <RefreshCw className='h-4 w-4 animate-spin' />
+                                    ) : (
+                                        <Trash2 className='h-4 w-4' />
+                                    )}
+                                </Button>
+                            </>
+                        )}
+                    />
                 </div>
             )}
 
-            {pagination.totalPages > 1 && (
-                <div className='mt-8 flex items-center justify-center gap-2'>
-                    <Button
-                        variant='outline'
-                        size='icon'
-                        disabled={page === 1}
-                        onClick={() => patchFilters({ page: page - 1 })}
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                    </Button>
-                    <div className='flex items-center gap-2'>
-                        <span className='text-sm font-medium'>
-                            {page} / {pagination.totalPages}
-                        </span>
-                    </div>
-                    <Button
-                        variant='outline'
-                        size='icon'
-                        disabled={page === pagination.totalPages}
-                        onClick={() => patchFilters({ page: page + 1 })}
-                    >
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+            {!loading && tickets.length > 0 && pagination.totalPages > 1 && (
+                <ListPagination
+                    page={page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                />
             )}
-            <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
-                <PageCard title={t('admin.tickets.help.managing.title')} icon={Ticket}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.tickets.help.managing.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.tickets.help.categories.title')} icon={Filter}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.tickets.help.categories.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.tickets.help.support.title')} icon={AlertCircle} variant='danger'>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.tickets.help.support.description')}
-                    </p>
-                </PageCard>
-            </div>
             <WidgetRenderer widgets={getWidgets('admin-tickets', 'bottom-of-page')} />
         </div>
     );

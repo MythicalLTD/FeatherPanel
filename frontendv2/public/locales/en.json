@@ -9018,7 +9018,9 @@
 				"status": "Status",
 				"server": "Server",
 				"created": "Created",
-				"description": "Description"
+				"description": "Description",
+				"subject": "Subject",
+				"user": "User"
 			},
 			"sidebar": {
 				"ticket_info": "Ticket Information",
