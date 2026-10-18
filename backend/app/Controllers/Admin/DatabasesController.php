@@ -176,10 +176,11 @@ class DatabasesController
      */
     public function index(Request $request): Response
     {
-        $page = $request->query->get('page', 1);
-        $limit = $request->query->get('limit', 10);
-        $search = $request->query->get('search', '');
-        $nodeId = $request->query->get('node_id');
+        $query = $request->query->all();
+        $page = max(1, (int) (is_scalar($query['page'] ?? null) ? $query['page'] : 1));
+        $limit = max(1, min(100, (int) (is_scalar($query['limit'] ?? null) ? $query['limit'] : 10)));
+        $search = is_scalar($query['search'] ?? null) ? (string) $query['search'] : '';
+        $nodeId = is_scalar($query['node_id'] ?? null) ? $query['node_id'] : null;
 
         $databases = DatabaseInstance::searchDatabases(
             (int) $page,
