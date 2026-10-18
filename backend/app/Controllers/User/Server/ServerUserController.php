@@ -1663,6 +1663,12 @@ class ServerUserController
             return ApiResponse::error('Invalid request data', 'INVALID_REQUEST', 400);
         }
 
+        foreach (['name', 'env_variable', 'variable_value'] as $field) {
+            if (isset($data[$field]) && !is_scalar($data[$field])) {
+                return ApiResponse::error("Field {$field} must be a string", 'INVALID_DATA_TYPE', 400);
+            }
+        }
+
         $name = trim((string) ($data['name'] ?? ''));
         $envVariable = strtoupper(trim((string) ($data['env_variable'] ?? '')));
         $value = (string) ($data['variable_value'] ?? '');
