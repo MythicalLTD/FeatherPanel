@@ -33,7 +33,7 @@ import { cn } from '@/lib/utils';
  */
 export function HideIpsToggle({ className, hideExample = false }: { className?: string; hideExample?: boolean }) {
     const { t } = useTranslation();
-    const { hideServerIps, setHideServerIps } = usePreferences();
+    const { hideServerIps, setHideServerIps, ready } = usePreferences();
     const [saving, setSaving] = useState(false);
 
     const handleChange = async (next: boolean) => {
@@ -71,7 +71,12 @@ export function HideIpsToggle({ className, hideExample = false }: { className?: 
             </div>
             <div className='flex shrink-0 items-center gap-2'>
                 {saving && <Loader2 className='text-muted-foreground h-4 w-4 animate-spin' />}
-                <Switch checked={hideServerIps} onCheckedChange={handleChange} disabled={saving} />
+                <Switch
+                    checked={hideServerIps}
+                    onCheckedChange={handleChange}
+                    disabled={saving || !ready}
+                    aria-label={t('privacy.hideIpsLabel')}
+                />
             </div>
         </div>
     );

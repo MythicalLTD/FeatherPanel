@@ -19,7 +19,7 @@ import { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useHideServerIps } from '@/contexts/PreferencesContext';
-import { maskEndpoint } from '@/lib/ip-mask';
+import { maskEndpoint, maskIpLike } from '@/lib/ip-mask';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
@@ -190,7 +190,8 @@ export function AllocationsTab({
                                             {maskEndpoint(allocation.ip, allocation.port, hideIps)}
                                         </div>
                                         <div className='text-muted-foreground text-xs'>
-                                            {allocation.ip_alias || t('admin.servers.edit.allocations.no_alias')}
+                                            {maskIpLike(allocation.ip_alias, hideIps) ||
+                                                t('admin.servers.edit.allocations.no_alias')}
                                         </div>
                                         {allocation.notes && (
                                             <div

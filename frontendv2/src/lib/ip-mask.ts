@@ -28,10 +28,11 @@ export const HIDDEN_IP_PLACEHOLDER = '••••••••';
 
 const IPV4_PATTERN = /^(?:\d{1,3}\.){3}\d{1,3}$/;
 const IPV6_CHARS_PATTERN = /^[0-9a-f:.]+$/i;
-// IPv4 inside text, IPv6 in brackets ([2001:db8::1]:25565) and bare IPv6 with
-// at least three colon groups — timestamps like 12:30:00 have two and stay.
+// IPv4 inside text, IPv6 in brackets ([2001:db8::1]:25565), compressed IPv6
+// containing `::` (2001:db8::1, fe80::1, ::1) and bare IPv6 with at least
+// three colon groups — timestamps like 12:30:00 have neither and stay.
 const IP_IN_TEXT_PATTERN =
-    /\b(?:\d{1,3}\.){3}\d{1,3}\b|\[(?:[0-9a-f]{0,4}:){2,}[0-9a-f:.]*\]|\b(?:[0-9a-f]{1,4}:){3,}[0-9a-f]{0,4}\b/gi;
+    /\b(?:\d{1,3}\.){3}\d{1,3}\b|\[(?:[0-9a-f]{0,4}:){2,}[0-9a-f:.]*\]|(?<![0-9a-z:])(?:[0-9a-f]{1,4}(?::[0-9a-f]{1,4})*::(?:[0-9a-f]{1,4}(?::[0-9a-f]{1,4})*)?|::[0-9a-f]{1,4}(?::[0-9a-f]{1,4})*)(?::(?:\d{1,3}\.){3}\d{1,3})?(?![0-9a-z:.])|\b(?:[0-9a-f]{1,4}:){3,}[0-9a-f]{0,4}\b/gi;
 
 /**
  * Masks IP addresses inside a free-form text (activity metadata, raw JSON
@@ -83,12 +84,14 @@ export function maskEndpointIpLike(
     port: number | string | null | undefined,
     hidden: boolean,
 ): string {
-    if (hidden && looksLikeIp(ip)) return HIDDEN_IP_PLACEHOLDER;
-    return maskEndpoint(ip, port, false);
+    return maskEndpoint(ip, port, hidden && looksLikeIp(ip));
 }
 
 /**
  * Mask an `ip:port` pair (or a bare host when no port is given).
+ *
+ * Only the host is masked: the port stays visible so allocations on the same
+ * IP remain distinguishable in lists and pickers.
  *
  * @param ip     the real host/IP value
  * @param port   optional port
@@ -99,9 +102,9 @@ export function maskEndpoint(
     port: number | string | null | undefined,
     hidden: boolean,
 ): string {
-    if (hidden) return HIDDEN_IP_PLACEHOLDER;
-    const host = ip ?? '';
     const hasPort = port !== null && port !== undefined && port !== '';
+    if (hidden) return hasPort ? `${HIDDEN_IP_PLACEHOLDER}:${port}` : HIDDEN_IP_PLACEHOLDER;
+    const host = ip ?? '';
     if (!host) return hasPort ? String(port) : '';
     return hasPort ? `${host}:${port}` : host;
 }

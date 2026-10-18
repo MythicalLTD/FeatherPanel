@@ -59,11 +59,15 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     // we are still fetching the user's stored preference from the server.
     const [browserTimezone] = useState<string>(() => detectBrowserTimezone());
     const autoPersistedForUuid = useRef<string | null>(null);
+    // Values the user changed locally while the initial GET was still in
+    // flight. A slow GET must not overwrite them with the stale server copy.
+    const localEdits = useRef<Partial<UserPreferences>>({});
 
     const reset = useCallback(() => {
         setPreferences({});
         setReady(false);
         autoPersistedForUuid.current = null;
+        localEdits.current = {};
     }, []);
 
     useEffect(() => {
@@ -84,7 +88,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
                     data?.success && data.data?.preferences && typeof data.data.preferences === 'object'
                         ? (data.data.preferences as UserPreferences)
                         : {};
-                setPreferences(fetched);
+                setPreferences({ ...fetched, ...localEdits.current });
 
                 // Auto-detect & persist the browser timezone on the very first
                 // session, so subsequent visits from other browsers still show
@@ -120,6 +124,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     }, [user?.uuid, isSessionChecked, reset]);
 
     const setTimezone = useCallback(async (tz: string | null): Promise<boolean> => {
+        localEdits.current = { ...localEdits.current, timezone: tz };
         try {
             const { data } = await axios.patch('/api/user/preferences', { timezone: tz });
             if (data?.success) {
@@ -142,6 +147,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
     const setHideServerIps = useCallback(async (hidden: boolean): Promise<boolean> => {
         // Optimistic: the UI flips immediately, the server is the source of truth.
+        localEdits.current = { ...localEdits.current, hide_server_ips: hidden };
         setPreferences((prev) => ({ ...prev, hide_server_ips: hidden }));
         try {
             const { data } = await axios.patch('/api/user/preferences', { hide_server_ips: hidden });
@@ -155,9 +161,11 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
                 }
                 return true;
             }
+            localEdits.current = { ...localEdits.current, hide_server_ips: !hidden };
             setPreferences((prev) => ({ ...prev, hide_server_ips: !hidden }));
             return false;
         } catch {
+            localEdits.current = { ...localEdits.current, hide_server_ips: !hidden };
             setPreferences((prev) => ({ ...prev, hide_server_ips: !hidden }));
             return false;
         }
@@ -173,7 +181,9 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
             timezone: explicit ?? browserTimezone,
             ready,
             setTimezone,
-            hideServerIps: preferences.hide_server_ips === true,
+            // Mask until the stored preference is known so a slow GET never
+            // flashes real addresses to a user who chose to hide them.
+            hideServerIps: !ready || preferences.hide_server_ips === true,
             setHideServerIps,
         };
     }, [preferences, browserTimezone, ready, setTimezone, setHideServerIps]);

@@ -2,6 +2,13 @@
 
 ## v1.4.2 STABLE
 
+### Added
+
+- ClickHouse can now be used as a remote database host, including WebSpace database provisioning, dumps and restores (#255). by @Devority
+- Proxmox VNC consoles can now be proxied through the panel, so the Proxmox node is never exposed to the browser (#256). by @Devority
+- ARK: Survival Ascended servers now show their player count, read over RCON (#259). by @Devority
+- Per-user switch to hide server IP addresses in the panel, handy for screen shares and streams (#258). by @redstonerthebest
+
 ### Fixed
 
 - Web node setup no longer suggests invalid `bash -s -- featherquilld`. Panel install command now uses `FP_COMPONENT=featherquilld` like Wings. Installer accepts `--quilld-install-only` and positional `featherquilld`. Args are validated before any apt work. Early unconditional `apt upgrade`/`purge`/`autoremove` was removed. Cleanup is opt-in via `--system-cleanup`. by @nayskutzu
@@ -15,6 +22,9 @@
 - `X-Forwarded-For` is scanned right-to-left. Trusted proxies and Cloudflare are skipped. by @nayskutzu
 - WebSpace share create/delete require `file.update`. Read-only subusers cannot manage shares. by @nayskutzu
 - API client validate returns only `valid`. It uses a stricter unauthenticated rate limit. OAuth2 expiry applies only to pending requests. by @nayskutzu
+- WebSpace listing no longer returns HTTP 500 on a legacy domain conflict, and MongoDB password resets no longer crash (#257). by @Devority
+- The account page now shows the **Disable 2FA** button again; it checked `'1'` instead of `'true'` (#260). by @MyMonsterVR
+- The 2FA setup QR code now has a white margin in dark mode so it can be scanned (#261). by @MyMonsterVR
 
 ## v1.4.1 STABLE
 

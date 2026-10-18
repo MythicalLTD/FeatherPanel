@@ -628,7 +628,7 @@ export default function VdsConsolePage() {
                             {t('vds.console.close_console')}
                         </Button>
                     </div>
-                    <VncConsole url={vncUrl} onDisconnect={() => {}} />
+                    <VncConsole url={vncUrl} />
                 </div>
             )}
 

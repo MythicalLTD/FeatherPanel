@@ -23,6 +23,7 @@ use App\Chat\ServerDatabase;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
+use App\Helpers\ClickHouseHttp;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\DatabasesEvent;
 use Symfony\Component\HttpFoundation\Request;
@@ -1028,33 +1029,30 @@ class DatabasesController
     }
 
     /**
-     * Verifies credentials against a ClickHouse HTTP endpoint and returns latency + server version.
+     * Verifies credentials against a ClickHouse HTTP(S) endpoint and returns latency + server version.
+     *
+     * Uses the same transport rules as provisioning (verified HTTPS for non-local
+     * hosts, no redirects) and only reports success for an HTTP 200 whose body
+     * is a ClickHouse version string.
      */
     private function testClickHouseConnection(string $host, int $port, string $username, string $password, float $startTime): array
     {
         try {
-            $ch = curl_init("http://{$host}:{$port}/");
-            curl_setopt_array($ch, [
-                CURLOPT_USERPWD => "{$username}:{$password}",
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 10,
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => 'SELECT version()',
-            ]);
-            $body = curl_exec($ch);
-            $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $err = curl_error($ch);
+            $res = ClickHouseHttp::request($host, $port, $username, $password, 'SELECT version()', 10);
             $responseTime = round((microtime(true) - $startTime) * 1000, 2);
+            $version = trim($res['body']);
 
-            if ($body === false || $code >= 400) {
+            if ($res['error'] !== '' || $res['code'] !== 200 || $res['exception'] !== null || !preg_match('/^\d+(\.\d+)+$/', $version)) {
+                $detail = $res['error'] !== '' ? $res['error'] : substr($version, 0, 200);
+
                 return [
                     'success' => false,
-                    'message' => 'Connection failed: HTTP ' . $code . ' ' . ($err !== '' ? $err : (string) $body),
+                    'message' => 'Connection failed: HTTP ' . $res['code'] . ' ' . $detail,
                     'response_time' => $responseTime,
                 ];
             }
 
-            return ['success' => true, 'message' => 'Successful (ClickHouse ' . trim((string) $body) . ')', 'response_time' => $responseTime];
+            return ['success' => true, 'message' => 'Successful (ClickHouse ' . $version . ')', 'response_time' => $responseTime];
         } catch (\Exception $e) {
             $responseTime = round((microtime(true) - $startTime) * 1000, 2);
 

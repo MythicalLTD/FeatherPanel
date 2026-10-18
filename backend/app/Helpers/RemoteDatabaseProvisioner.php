@@ -254,6 +254,59 @@ class RemoteDatabaseProvisioner
     }
 
     /**
+     * Validates a dumped `CREATE TABLE` statement and retargets it at `$target`.
+     *
+     * Accepts exactly one `CREATE TABLE <name> (<columns>) ENGINE = <local engine> ...`
+     * statement. Rejects other statements, multiple statements, `AS` / `SELECT`
+     * forms, cross-database lookups and engines that reach outside the database
+     * (URL, File, S3, MySQL, remote, Distributed, Merge, Kafka, ...).
+     *
+     * @throws \InvalidArgumentException
+     */
+    public static function chSanitizeCreateTable(string $ddl, string $target): string
+    {
+        $ddl = trim($ddl);
+        $ddl = rtrim($ddl, "; \t\r\n");
+        if ($ddl === '') {
+            throw new \InvalidArgumentException('ClickHouse dump entry has no table definition');
+        }
+
+        // Strip string literals and quoted identifiers before inspecting keywords
+        // so data in DEFAULT / COMMENT clauses or column names cannot hide (or
+        // fake) anything.
+        $stripped = preg_replace("/'(?:[^'\\\\]|\\\\.|'')*'/s", "''", $ddl);
+        $stripped = $stripped === null ? null : preg_replace('/`(?:[^`]|``)*`|"(?:[^"]|"")*"/', 'x', $stripped);
+        if ($stripped === null || str_contains($stripped, ';') || str_contains($stripped, '--') || str_contains($stripped, '/*')) {
+            throw new \InvalidArgumentException('ClickHouse dump entry must be a single CREATE TABLE statement');
+        }
+
+        $ident = '(?:`(?:[^`]|``)+`|"(?:[^"]|"")+"|[a-zA-Z_][a-zA-Z0-9_]*)';
+        $prefix = '/^CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?' . $ident . '(?:\s*\.\s*' . $ident . ')?\s*(?=\()/i';
+        if (!preg_match($prefix, $ddl, $m) || !preg_match($prefix, $stripped, $ms)) {
+            throw new \InvalidArgumentException('ClickHouse dump entry must be a plain CREATE TABLE <name> (...) statement');
+        }
+        $body = substr($stripped, strlen($ms[0]));
+
+        if (preg_match('/\b(SELECT|dictGet\w*|joinGet\w*|ATTACH|DETACH|DROP|ALTER|GRANT|REVOKE|SYSTEM|INSERT|RENAME|TRUNCATE|KILL)\b/i', $body) === 1) {
+            throw new \InvalidArgumentException('ClickHouse dump entry contains a forbidden clause');
+        }
+
+        if (!preg_match('/\bENGINE\s*=\s*([A-Za-z]+)/', $body, $engine)) {
+            throw new \InvalidArgumentException('ClickHouse dump entry has no ENGINE clause');
+        }
+        $allowedEngines = [
+            'MergeTree', 'ReplacingMergeTree', 'SummingMergeTree', 'AggregatingMergeTree',
+            'CollapsingMergeTree', 'VersionedCollapsingMergeTree', 'GraphiteMergeTree',
+            'Log', 'TinyLog', 'StripeLog', 'Memory', 'Null', 'Set', 'Join',
+        ];
+        if (!in_array($engine[1], $allowedEngines, true)) {
+            throw new \InvalidArgumentException('ClickHouse dump entry uses an unsupported table engine: ' . $engine[1]);
+        }
+
+        return 'CREATE TABLE IF NOT EXISTS ' . $target . ' ' . ltrim(substr($ddl, strlen($m[0])));
+    }
+
+    /**
      * @param array<string, mixed> $databaseHost
      */
     private static function connectToDatabase(array $databaseHost, string $databaseName): \PDO
@@ -530,35 +583,24 @@ class RemoteDatabaseProvisioner
         }
     }
 
-    // -- ClickHouse (HTTP interface on port 8123) --------------------------------
+    // -- ClickHouse (HTTP(S) interface, see ClickHouseHttp) ---------------------
 
     /**
-     * Executes a ClickHouse SQL statement over the HTTP interface and returns the raw response body.
+     * Executes a ClickHouse SQL statement over the HTTP(S) interface and returns the raw response body.
+     *
+     * Credentials only travel over verified HTTPS (plain HTTP is limited to
+     * local/private hosts) and any ClickHouse error, including
+     * one appended to an already-started 200 response, raises an exception.
      */
     private static function chQuery(array $databaseHost, string $sql, ?string $postData = null): string
     {
-        $host = (string) ($databaseHost['database_host'] ?? '');
-        $port = (int) ($databaseHost['database_port'] ?? 8123);
-        $user = (string) ($databaseHost['database_username'] ?? 'default');
-        $pass = (string) ($databaseHost['database_password'] ?? '');
-
-        $ch = curl_init("http://{$host}:{$port}/");
-        curl_setopt_array($ch, [
-            CURLOPT_USERPWD => "{$user}:{$pass}",
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => $postData !== null ? $sql . "\n" . $postData : $sql,
-        ]);
-        $body = curl_exec($ch);
-        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err = curl_error($ch);
-
-        if ($body === false || $code >= 400) {
-            throw new \RuntimeException('ClickHouse query failed (HTTP ' . $code . '): ' . ($err !== '' ? $err : (string) $body));
-        }
-
-        return (string) $body;
+        return ClickHouseHttp::query(
+            (string) ($databaseHost['database_host'] ?? ''),
+            (int) ($databaseHost['database_port'] ?? 0),
+            (string) ($databaseHost['database_username'] ?? 'default'),
+            (string) ($databaseHost['database_password'] ?? ''),
+            $postData !== null ? $sql . "\n" . $postData : $sql
+        );
     }
 
     /**
@@ -610,7 +652,7 @@ class RemoteDatabaseProvisioner
      */
     private static function chDump(array $databaseHost, string $databaseName): string
     {
-        $tables = self::chQuery($databaseHost, "SELECT name FROM system.tables WHERE database=" . var_export($databaseName, true) . ' FORMAT TSV');
+        $tables = self::chQuery($databaseHost, 'SELECT name FROM system.tables WHERE database=' . var_export($databaseName, true) . ' FORMAT TSV');
         $out = ['featherpanel_clickhouse_dump' => true, 'database' => $databaseName, 'tables' => []];
         foreach (preg_split('/\r?\n/', trim($tables)) ?: [] as $table) {
             if ($table === '') {
@@ -626,6 +668,10 @@ class RemoteDatabaseProvisioner
 
     /**
      * Imports a chDump() JSON payload back into a ClickHouse database (JSONEachRow per table).
+     *
+     * The DDL comes from the uploaded file and runs with the host credentials,
+     * so each entry must be a single plain `CREATE TABLE` with a local storage
+     * engine; anything else rejects the whole import before it is executed.
      */
     private static function chImport(array $databaseHost, string $databaseName, string $json): void
     {
@@ -633,21 +679,27 @@ class RemoteDatabaseProvisioner
         if (!is_array($data) || empty($data['featherpanel_clickhouse_dump']) || !is_array($data['tables'] ?? null)) {
             throw new \InvalidArgumentException('Invalid ClickHouse dump format (expected FeatherPanel JSON dump)');
         }
-        self::chQuery($databaseHost, 'CREATE DATABASE IF NOT EXISTS ' . self::chIdent($databaseName));
+
+        // Validate everything first so a bad entry cannot leave a half-restored database.
+        $plan = [];
         foreach ($data['tables'] as $name => $t) {
-            if (!is_array($t) || !preg_match('/^[a-zA-Z0-9_.-]+$/', (string) $name)) {
-                continue;
+            $name = (string) $name;
+            if (!is_array($t) || !preg_match('/^[a-zA-Z0-9_][a-zA-Z0-9_.-]*$/', $name)) {
+                throw new \InvalidArgumentException('Invalid table entry in ClickHouse dump: ' . substr($name, 0, 64));
             }
-            $ddl = (string) ($t['ddl'] ?? '');
-            $ddl = preg_replace('/^CREATE TABLE\s+\S+/i', 'CREATE TABLE IF NOT EXISTS ' . self::chIdent($databaseName) . '.' . self::chIdent($name), $ddl);
-            self::chQuery($databaseHost, $ddl);
-            $rows = (string) ($t['rows'] ?? '');
-            if (trim($rows) !== '') {
-                self::chQuery(
-                    $databaseHost,
-                    'INSERT INTO ' . self::chIdent($databaseName) . '.' . self::chIdent($name) . ' FORMAT JSONEachRow',
-                    $rows
-                );
+            $target = self::chIdent($databaseName) . '.' . self::chIdent($name);
+            $plan[] = [
+                'target' => $target,
+                'ddl' => self::chSanitizeCreateTable((string) ($t['ddl'] ?? ''), $target),
+                'rows' => (string) ($t['rows'] ?? ''),
+            ];
+        }
+
+        self::chQuery($databaseHost, 'CREATE DATABASE IF NOT EXISTS ' . self::chIdent($databaseName));
+        foreach ($plan as $entry) {
+            self::chQuery($databaseHost, $entry['ddl']);
+            if (trim($entry['rows']) !== '') {
+                self::chQuery($databaseHost, 'INSERT INTO ' . $entry['target'] . ' FORMAT JSONEachRow', $entry['rows']);
             }
         }
     }
