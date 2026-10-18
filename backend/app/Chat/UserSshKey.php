@@ -350,8 +350,12 @@ class UserSshKey
             }
 
             $pdo = Database::getPdoConnection();
+            $data = Database::filterColumns(self::$table, $data);
+            if ($data === []) {
+                return false;
+            }
             $fields = array_keys($data);
-            $setClause = implode(', ', array_map(fn ($f) => $f . ' = :' . $f, $fields));
+            $setClause = implode(', ', array_map(fn ($f) => '`' . $f . '` = :' . $f, $fields));
             $sql = 'UPDATE ' . self::$table . ' SET ' . $setClause . ' WHERE id = :id';
             $data['id'] = $id;
             $stmt = $pdo->prepare($sql);

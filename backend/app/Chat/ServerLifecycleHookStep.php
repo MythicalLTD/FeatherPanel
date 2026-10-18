@@ -121,8 +121,12 @@ class ServerLifecycleHookStep
         }
 
         $pdo = Database::getPdoConnection();
+        $data = Database::filterColumns(self::$table, $data);
+        if ($data === []) {
+            return false;
+        }
         $fields = array_keys($data);
-        $setClause = implode(', ', array_map(fn ($field) => $field . ' = :' . $field, $fields));
+        $setClause = implode(', ', array_map(fn ($field) => '`' . $field . '` = :' . $field, $fields));
         $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET ' . $setClause . ' WHERE id = :id');
 
         $params = $data;

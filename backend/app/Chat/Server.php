@@ -52,6 +52,14 @@ class Server
     private static string $table = 'featherpanel_servers';
 
     /**
+     * Get the name of the table.
+     */
+    public static function getTableName(): string
+    {
+        return self::$table;
+    }
+
+    /**
      * Create a new server.
      *
      * @param array $data Associative array of server fields (must include required fields)
@@ -630,7 +638,7 @@ class Server
 
                 return false;
             }
-            $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
+            $set = implode(', ', array_map(fn ($f) => "`$f` = :$f", $fields));
             $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE uuid = :uuid';
             $stmt = $pdo->prepare($sql);
             $data['uuid'] = $uuid;
@@ -676,7 +684,7 @@ class Server
 
                 return false;
             }
-            $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
+            $set = implode(', ', array_map(fn ($f) => "`$f` = :$f", $fields));
             $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE id = :id';
             $stmt = $pdo->prepare($sql);
             $data['id'] = $id;
@@ -1051,8 +1059,11 @@ class Server
      */
     public static function count(array $conditions): int
     {
+        if (Database::unknownColumns(self::$table, $conditions) !== []) {
+            return 0;
+        }
         $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . implode(' AND ', array_map(fn ($k) => "$k = :$k", array_keys($conditions))));
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . implode(' AND ', array_map(fn ($k) => "`$k` = :$k", array_keys($conditions))));
         $stmt->execute($conditions);
 
         return (int) $stmt->fetchColumn();

@@ -35,6 +35,14 @@ class Notification
     private static string $table = 'featherpanel_notifications';
 
     /**
+     * Get the name of the table.
+     */
+    public static function getTableName(): string
+    {
+        return self::$table;
+    }
+
+    /**
      * Create a new notification.
      *
      * @param array $data Associative array of notification fields
@@ -122,9 +130,13 @@ class Notification
             $data['is_sticky'] = $data['is_sticky'] ? 1 : 0;
 
             $pdo = Database::getPdoConnection();
+            $data = Database::filterColumns(self::$table, $data);
+            if ($data === []) {
+                return false;
+            }
             $fields = array_keys($data);
             $placeholders = array_map(fn ($f) => ':' . $f, $fields);
-            $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+            $sql = 'INSERT INTO ' . self::$table . ' (`' . implode('`, `', $fields) . '`) VALUES (' . implode(',', $placeholders) . ')';
             $stmt = $pdo->prepare($sql);
 
             if ($stmt->execute($data)) {
@@ -465,7 +477,7 @@ class Notification
 
             $pdo = Database::getPdoConnection();
             $fields = array_keys($data);
-            $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
+            $set = implode(', ', array_map(fn ($f) => "`$f` = :$f", $fields));
             $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE id = :id';
 
             $params = $data;

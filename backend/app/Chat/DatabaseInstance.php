@@ -567,6 +567,9 @@ class DatabaseInstance
 
     public static function count(array $conditions = []): int
     {
+        if (Database::unknownColumns(self::$table, $conditions) !== []) {
+            return 0;
+        }
         $pdo = Database::getPdoConnection();
         if ($conditions === []) {
             $stmt = $pdo->query('SELECT COUNT(*) FROM ' . self::$table);
@@ -574,7 +577,7 @@ class DatabaseInstance
             return (int) $stmt->fetchColumn();
         }
 
-        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . implode(' AND ', array_map(fn ($k) => "$k = :$k", array_keys($conditions))));
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . implode(' AND ', array_map(fn ($k) => "`$k` = :$k", array_keys($conditions))));
         $stmt->execute($conditions);
 
         return (int) $stmt->fetchColumn();

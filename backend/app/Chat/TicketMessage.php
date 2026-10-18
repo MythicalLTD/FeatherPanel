@@ -27,6 +27,14 @@ class TicketMessage
     private static string $table = 'featherpanel_ticket_messages';
 
     /**
+     * Get the name of the table.
+     */
+    public static function getTableName(): string
+    {
+        return self::$table;
+    }
+
+    /**
      * Get all messages for a ticket.
      *
      * @param int $ticketId Ticket ID

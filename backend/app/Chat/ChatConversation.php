@@ -34,9 +34,13 @@ class ChatConversation
     public static function createConversation(array $data): int | false
     {
         $pdo = Database::getPdoConnection();
+        $data = Database::filterColumns(self::$table, $data);
+        if ($data === []) {
+            return false;
+        }
         $fields = array_keys($data);
         $placeholders = array_map(fn ($f) => ':' . $f, $fields);
-        $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+        $sql = 'INSERT INTO ' . self::$table . ' (`' . implode('`, `', $fields) . '`) VALUES (' . implode(',', $placeholders) . ')';
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute($data)) {
             return (int) $pdo->lastInsertId();
@@ -100,7 +104,7 @@ class ChatConversation
             return false;
         }
         $fields = array_keys($data);
-        $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
+        $set = implode(', ', array_map(fn ($f) => "`$f` = :$f", $fields));
         $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE id = :id';
         $stmt = $pdo->prepare($sql);
         $data['id'] = $id;

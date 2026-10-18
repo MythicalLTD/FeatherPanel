@@ -160,7 +160,7 @@ class BackupPolicy
             $pdo->beginTransaction();
             $fields = array_keys($insert);
             $placeholders = array_map(fn ($f) => ':' . $f, $fields);
-            $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+            $sql = 'INSERT INTO ' . self::$table . ' (`' . implode('`, `', $fields) . '`) VALUES (' . implode(',', $placeholders) . ')';
             $stmt = $pdo->prepare($sql);
             if (!$stmt->execute($insert)) {
                 $pdo->rollBack();
@@ -389,8 +389,12 @@ class BackupPolicy
         try {
             $pdo->beginTransaction();
             if ($data !== []) {
+                $data = Database::filterColumns(self::$table, $data);
+                if ($data === []) {
+                    return false;
+                }
                 $fields = array_keys($data);
-                $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
+                $set = implode(', ', array_map(fn ($f) => "`$f` = :$f", $fields));
                 $params = $data;
                 $params['id'] = $id;
                 $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET ' . $set . ' WHERE id = :id');
