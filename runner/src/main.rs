@@ -11,6 +11,7 @@ mod proxmox;
 mod redis;
 mod settings;
 mod types;
+mod vnc_proxy;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -67,6 +68,16 @@ async fn main() -> Result<()> {
 
     // Initialize settings with encryption
     settings::init_settings(&pool, &config.encryption_key).await?;
+
+    // Spawn the Proxmox VNC websocket proxy (issue #168): serves /vnc-proxy/{token}
+    // and bridges to the node vncwebsocket endpoint using single-use tickets.
+    {
+        let proxy_pool = pool.clone();
+        tokio::spawn(async move {
+            vnc_proxy::serve(proxy_pool).await;
+        });
+        tokio::spawn(vnc_proxy::cleanup_loop(pool.clone()));
+    }
 
     // Start Redis listener with retries
     info!("📡 Starting Redis listener...");
