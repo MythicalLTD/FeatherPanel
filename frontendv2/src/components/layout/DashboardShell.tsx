@@ -38,6 +38,7 @@ import { usePluginRoutes, getPluginPaths } from '@/hooks/usePluginRoutes';
 import { readSidebarCollapsed, subscribeSidebarCollapsed } from '@/lib/sidebarChrome';
 import { useSidebarPreferences } from '@/hooks/useSidebarPreferences';
 import { getShellContentInset } from '@/lib/sidebarLayout';
+import { AdminBreadcrumbs } from '@/components/admin/AdminBreadcrumbs';
 
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -184,6 +185,9 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                                                 {!useFullBleedLayout && (
                                                     <AdminOpenTicketsBanner className='mb-5 shrink-0' />
                                                 )}
+                                                {!useFullBleedLayout && pathname?.startsWith('/admin/') ? (
+                                                    <AdminBreadcrumbs className='mb-1 shrink-0' />
+                                                ) : null}
                                             </PluginSlot>
                                             <PluginPageOverrideGate>{children}</PluginPageOverrideGate>
                                             {!useFullBleedLayout ? (

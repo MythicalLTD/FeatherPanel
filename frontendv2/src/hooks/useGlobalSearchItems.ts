@@ -67,6 +67,7 @@ import { getServerRouteId } from '@/lib/server-switch';
 import { getWebSpaceRouteId } from '@/lib/webspace-switch';
 import { vmsApi, type VmInstance } from '@/lib/vms-api';
 import type { PluginSidebarItem } from '@/types/navigation';
+import { filterNavigationByPermission } from '@/hooks/useNavigation';
 
 const APPEARANCE_SECTIONS = [
     { id: 'theme', icon: Palette, labelKey: 'appearance.sections.theme', descKey: 'appearance.sections.themeDesc' },
@@ -320,8 +321,9 @@ export function useGlobalSearchItems(open: boolean, query: string) {
     const baseItems = useMemo(() => {
         const items: GlobalSearchResult[] = [...accountItems];
 
-        const mainItems = getMainNavigationItems(t, settings, hasPermission).filter(
-            (item) => !item.permission || hasPermission(item.permission),
+        const mainItems = filterNavigationByPermission(
+            getMainNavigationItems(t, settings, hasPermission),
+            hasPermission,
         );
 
         items.push(...navigationToSearchResults(mainItems, 'pages', t('globalSearch.categories.pages')));
@@ -345,10 +347,19 @@ export function useGlobalSearchItems(open: boolean, query: string) {
         }
 
         if (canViewAdmin) {
-            const adminItems = getAdminNavigationItems(t, settings, isDeveloperModeEnabled ?? false).filter(
-                (item) => !item.permission || hasPermission(item.permission),
+            const adminItems = filterNavigationByPermission(
+                getAdminNavigationItems(t, settings, isDeveloperModeEnabled ?? false),
+                hasPermission,
             );
-            items.push(...navigationToSearchResults(adminItems, 'admin', t('globalSearch.categories.admin')));
+            const adminLabel = t('globalSearch.categories.admin');
+            items.push(
+                ...navigationToSearchResults(adminItems, 'admin', (item) => {
+                    if (!item.group) return adminLabel;
+                    const key = `navigation.groups.${item.group}`;
+                    const section = t(key);
+                    return section === key ? adminLabel : `${adminLabel} · ${section}`;
+                }),
+            );
 
             if (pluginRoutes?.admin) {
                 items.push(
