@@ -24,6 +24,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use PragmaRX\Google2FA\Google2FA;
+use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\SessionCookieHelper;
 use App\Helpers\AccountLockoutHelper;
@@ -152,7 +153,10 @@ class TwoFactorController
             }
         }
 
-        $userInfo = User::getUserByRememberToken($_COOKIE['remember_token']);
+        $userInfo = AuthMiddleware::getCurrentUser($request);
+        if ($userInfo === null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 401);
+        }
 
         // Verify code
         $google2fa = new Google2FA();
@@ -207,7 +211,10 @@ class TwoFactorController
         $app = App::getInstance(true);
         $config = $app->getConfig();
         $data = json_decode($request->getContent(), true);
-        $userInfo = User::getUserByRememberToken($_COOKIE['remember_token']);
+        $userInfo = AuthMiddleware::getCurrentUser($request);
+        if ($userInfo === null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 401);
+        }
 
         if ($userInfo['two_fa_enabled'] == 'true') {
             return ApiResponse::error('Two factor authentication is enabled', 'TWO_FACTOR_AUTH_ENABLED');
