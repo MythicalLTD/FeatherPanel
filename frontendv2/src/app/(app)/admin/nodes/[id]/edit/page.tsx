@@ -397,8 +397,8 @@ export default function EditNodePage() {
             : '';
         const yaml = `debug: false
 uuid: ${nodeData.uuid}
-token_id: ${nodeData.daemon_token_id}
-token: ${nodeData.daemon_token}
+token_id: ${nodeData.daemon_token_id ?? '<token_id>'}
+token: ${nodeData.daemon_token ?? '<token>'}
 api:
   host: 0.0.0.0
   port: ${form.daemonListen || 8443}

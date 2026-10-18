@@ -1259,6 +1259,9 @@ class NodesController
             'install_command' => $commands['install_command'],
             'setup_command' => $commands['setup_command'],
             'config_path_hint' => $commands['config_path_hint'],
+            // Full config.yml with the daemon token, for manual setup. Only
+            // exposed here (the explicit reveal endpoint), never in show().
+            'config_yaml' => $configYaml,
             'daemon_type' => $caps->getType(),
             'daemon_display_name' => $defaults['display_name'],
             'systemd_unit' => $defaults['systemd_unit'],
