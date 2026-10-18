@@ -159,28 +159,17 @@ export function useSidebarPreferences() {
     const boot = useContext(SidebarPrefsBootContext);
     const bootIconLibrary = boot.iconLibrary ?? 'lucide';
 
-    const [sidebarDensity, setSidebarDensityState] = useState<SidebarDensity>(() =>
-        typeof window === 'undefined' ? 'comfortable' : readDensity(),
-    );
-    const [sidebarStyle, setSidebarStyleState] = useState<SidebarStyle>(() =>
-        typeof window === 'undefined' ? 'glass' : readStyle(),
-    );
-    const [sidebarPosition, setSidebarPositionState] = useState<SidebarPosition>(() =>
-        typeof window === 'undefined' ? 'left' : readPosition(),
-    );
-    const [dockDisplay, setDockDisplayState] = useState<DockDisplay>(() =>
-        typeof window === 'undefined' ? 'icons' : readDockDisplay(),
-    );
-    const [dockSize, setDockSizeState] = useState<DockSize>(() =>
-        typeof window === 'undefined' ? 'md' : readDockSize(),
-    );
-    const [sidebarGlow, setSidebarGlowState] = useState<SidebarGlow>(() =>
-        typeof window === 'undefined' ? 'none' : readSidebarGlow(),
-    );
+    // Start from the server-rendered defaults and apply stored values in the layout effect below
+    // (before paint). Reading localStorage here made the first client render differ from SSR, and
+    // React keeps the server attributes on a mismatch, so e.g. a right-hand sidebar stayed on the left.
+    const [sidebarDensity, setSidebarDensityState] = useState<SidebarDensity>('comfortable');
+    const [sidebarStyle, setSidebarStyleState] = useState<SidebarStyle>('glass');
+    const [sidebarPosition, setSidebarPositionState] = useState<SidebarPosition>('left');
+    const [dockDisplay, setDockDisplayState] = useState<DockDisplay>('icons');
+    const [dockSize, setDockSizeState] = useState<DockSize>('md');
+    const [sidebarGlow, setSidebarGlowState] = useState<SidebarGlow>('none');
     const [iconLibrary, setIconLibraryState] = useState<IconLibrary>(bootIconLibrary);
-    const [sidebarTogglePlacement, setSidebarTogglePlacementState] = useState<SidebarTogglePlacement>(() =>
-        typeof window === 'undefined' ? 'sidebar' : readTogglePlacement(),
-    );
+    const [sidebarTogglePlacement, setSidebarTogglePlacementState] = useState<SidebarTogglePlacement>('sidebar');
     const iconSyncGeneration = useRef(0);
 
     useLayoutEffect(() => {
