@@ -1671,7 +1671,8 @@
 			"leaveConfirm": "You have unsaved changes. Leave this page and lose them?"
 		},
 		"scrollLeft": "Scroll left",
-		"scrollRight": "Scroll right"
+		"scrollRight": "Scroll right",
+		"goToStep": "Go back to step {step}: {title}"
 	},
 	"pwa": {
 		"installTitle": "Install {name}",
@@ -8406,6 +8407,16 @@
 						"disk_limit": "Disk must be unlimited (0) or between 128 MiB and 10 TiB",
 						"cpu_limit": "CPU must be unlimited (0) or between 1% and 1,000,000%",
 						"io_limit": "IO weight must be between 10 and 1000"
+					},
+					"skip_to_review": "Use defaults and review",
+					"skip_to_review_hint": "Keep the default resources and feature limits and go straight to the review. You can still change everything there.",
+					"autofill": {
+						"note": "Filled in for you: {items}. Change anything below if needed.",
+						"location": "the only location",
+						"node": "the only node in it",
+						"allocation": "the first free allocation",
+						"realm": "the only realm",
+						"spell": "the only spell"
 					}
 				},
 				"messages": {

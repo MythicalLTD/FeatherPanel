@@ -542,7 +542,7 @@ export default function CreateWebSpacePage() {
             )}
 
             <div className='bg-card/50 border-border/50 mt-8 mb-12 rounded-2xl border p-6 backdrop-blur-xl'>
-                <StepIndicator steps={wizardSteps} currentStep={currentStep} />
+                <StepIndicator steps={wizardSteps} currentStep={currentStep} onStepClick={setCurrentStep} />
                 {loadingOptions && (
                     <p className='text-muted-foreground mt-4 flex items-center gap-2 text-sm'>
                         <Loader2 className='h-4 w-4 animate-spin' />
