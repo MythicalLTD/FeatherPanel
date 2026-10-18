@@ -22,6 +22,7 @@ use App\Chat\Node;
 use App\Cache\Cache;
 use App\Chat\Server;
 use App\Chat\Activity;
+use App\Chat\Database;
 use App\Chat\Location;
 use GuzzleHttp\Client;
 use App\Chat\Allocation;
@@ -598,6 +599,14 @@ class NodesController
                 );
             }
             unset($data['daemon_type']);
+        }
+
+        $unknownFields = Database::unknownColumns(Node::getTableName(), $data);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
+        }
+        if ($data === []) {
+            return ApiResponse::error('No data to update', 'NO_DATA', 400);
         }
 
         $success = Node::updateNodeById($id, $data);

@@ -19,6 +19,7 @@ namespace App\Controllers\Admin;
 
 use App\App;
 use App\Chat\Activity;
+use App\Chat\Database;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
@@ -500,6 +501,11 @@ class KnowledgebaseController
             if ($existing) {
                 return ApiResponse::error('Category with this slug already exists', 'DUPLICATE_SLUG', 409);
             }
+        }
+
+        $unknownFields = Database::unknownColumns(KnowledgebaseCategory::getTableName(), $data);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
         }
 
         $success = KnowledgebaseCategory::update($id, $data);
@@ -1009,6 +1015,11 @@ class KnowledgebaseController
             if ($existing) {
                 return ApiResponse::error('Article with this slug already exists', 'DUPLICATE_SLUG', 409);
             }
+        }
+
+        $unknownFields = Database::unknownColumns(KnowledgebaseArticle::getTableName(), $data);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
         }
 
         $success = KnowledgebaseArticle::update($id, $data);

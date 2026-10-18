@@ -1660,6 +1660,11 @@ class ServersController
             unset($serverUpdateData['oom_killer']);
         }
 
+        $unknownFields = Database::unknownColumns(Server::getTableName(), $serverUpdateData);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
+        }
+
         // Normalize threads: empty string -> null (leave string if provided)
         if (array_key_exists('threads', $serverUpdateData)) {
             if ($serverUpdateData['threads'] === null) {

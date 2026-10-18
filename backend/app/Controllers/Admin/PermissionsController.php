@@ -19,6 +19,7 @@ namespace App\Controllers\Admin;
 
 use App\Permissions;
 use App\Chat\Activity;
+use App\Chat\Database;
 use App\Chat\Permission;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -267,6 +268,11 @@ class PermissionsController
         if (strlen($data['permission']) < 2 || strlen($data['permission']) > 255) {
             return ApiResponse::error('Permission must be between 2 and 255 characters', 'INVALID_DATA_LENGTH');
         }
+        $unknownFields = Database::unknownColumns(Permission::getTableName(), $data);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
+        }
+
         $id = Permission::createPermission($data);
         if (!$id) {
             return ApiResponse::error('Failed to create permission', 'PERMISSION_CREATE_FAILED', 400);
@@ -375,6 +381,14 @@ class PermissionsController
                 'CANNOT_REMOVE_OWN_ADMIN_ROOT',
                 403
             );
+        }
+
+        $unknownFields = Database::unknownColumns(Permission::getTableName(), $data);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
+        }
+        if ($data === []) {
+            return ApiResponse::error('No data to update', 'NO_DATA', 400);
         }
 
         $success = Permission::updatePermission($id, $data);

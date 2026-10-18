@@ -19,6 +19,7 @@ namespace App\Controllers\Admin;
 
 use App\App;
 use App\Chat\Activity;
+use App\Chat\Database;
 use App\Chat\TicketCategory;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -355,6 +356,11 @@ class TicketCategoriesController
 
         if (empty($data)) {
             return ApiResponse::error('No data to update', 'NO_DATA', 400);
+        }
+
+        $unknownFields = Database::unknownColumns(TicketCategory::getTableName(), $data);
+        if ($unknownFields !== []) {
+            return ApiResponse::error('Unknown field(s): ' . implode(', ', $unknownFields), 'UNKNOWN_FIELDS', 400);
         }
 
         $updated = TicketCategory::update($id, $data);
