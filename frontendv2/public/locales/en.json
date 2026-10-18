@@ -9613,6 +9613,7 @@
 					"review_delete_failed": "Failed to delete review",
 					"egg_downloaded": "Egg JSON downloaded",
 					"egg_download_failed": "Download failed",
+					"fetch_failed": "Failed to load installed spells",
 					"panel_downloads_disabled": "This product does not allow MythicalCloud panel downloads.",
 					"access_denied": "Access denied for this Mythic marketplace action.",
 					"member_uuid_required": "Your panel user is not mapped to a Mythic team member. Re-link Cloud Connections with a matching email."
