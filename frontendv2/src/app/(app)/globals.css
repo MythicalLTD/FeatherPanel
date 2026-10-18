@@ -85,16 +85,18 @@
     /* Visible but quiet: cards and inputs need an edge against --card (9%) to read as surfaces. */
     --border: 220 13% 17%;
     /* Dark glass: a near black tint so bright backgrounds read through darkened, never washed
-       out, with a faint light hairline instead of a grey border. */
+       out, with a quiet dark hairline. */
     --fp-surface-alpha: 0.74;
     --fp-surface-highlight: 0 0% 100% / 0.04;
     --fp-surface-tint: 0 0% 3%;
-    --fp-surface-border: rgb(255 255 255 / 0.07);
+    /* Solid, not translucent: a see-through edge lets bright backdrops (and the blur halo some
+       GPUs draw at the edge) shine through as a light outline. */
+    --fp-surface-border: hsl(0 0% 13%);
     --fp-surface-saturate: 1;
     --fp-chrome-alpha: 0.76;
     /* Panels nested in a card: a slightly lighter wash, not a grey slab. */
     --fp-inset-bg: rgb(255 255 255 / 0.035);
-    --fp-inset-border: rgb(255 255 255 / 0.06);
+    --fp-inset-border: hsl(0 0% 100% / 0.06);
     --input: 220 13% 19%;
     --ring: var(--primary);
 }
