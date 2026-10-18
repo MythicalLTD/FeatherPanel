@@ -18,7 +18,6 @@
 namespace App\Controllers\User\Dashboard;
 
 use App\App;
-use App\Chat\Node;
 use App\Cache\Cache;
 use App\Chat\Server;
 use App\Chat\Subuser;
@@ -26,9 +25,8 @@ use App\Chat\Database;
 use App\Helpers\ModuleGate;
 use App\SubuserPermissions;
 use App\Helpers\ApiResponse;
-use App\Services\Wings\Wings;
-use GuzzleHttp\Promise\Utils;
 use OpenApi\Attributes as OA;
+use App\Helpers\ServerUtilization;
 use App\Helpers\PlayerStatusService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -71,7 +69,7 @@ class DashboardOverviewController
             return ApiResponse::success(self::emptyOverview(), 'Overview retrieved', 200);
         }
 
-        $live = self::liveStats($servers);
+        $live = ServerUtilization::collect($servers, self::WINGS_TIMEOUT);
 
         $byStatus = [];
         $usage = [
@@ -150,6 +148,40 @@ class DashboardOverviewController
     }
 
     /**
+     * Servers the user owns or is a subuser on, with the subuser permission list per server
+     * id (null for owned servers, meaning every permission).
+     *
+     * @return array{0: array<int, array>, 1: array<int, ?array>}
+     */
+    public static function accessibleServers(int $userId): array
+    {
+        $servers = [];
+        $permissions = [];
+        foreach (Server::getServersByOwnerId($userId) as $server) {
+            $servers[] = $server;
+            $permissions[(int) $server['id']] = null;
+        }
+
+        $subuserPermissions = [];
+        foreach (Subuser::getSubusersByUserId($userId) as $row) {
+            $decoded = json_decode((string) ($row['permissions'] ?? ''), true);
+            $subuserPermissions[(int) $row['server_id']] = is_array($decoded) ? array_values(array_filter($decoded, 'is_string')) : [];
+        }
+        if ($subuserPermissions !== []) {
+            foreach (Server::getServersByIds(array_keys($subuserPermissions)) as $id => $server) {
+                $id = (int) $id;
+                if (array_key_exists($id, $permissions)) {
+                    continue; // Owned already (stale subuser row).
+                }
+                $servers[] = $server;
+                $permissions[$id] = $subuserPermissions[$id] ?? [];
+            }
+        }
+
+        return [$servers, $permissions];
+    }
+
+    /**
      * Player count from the poller's cache (never queries the game server here).
      *
      * @return array{count: int, max: int}|null
@@ -179,103 +211,6 @@ class DashboardOverviewController
             'backups' => [],
             'schedules' => [],
         ];
-    }
-
-    /**
-     * Servers the user owns or is a subuser on, with the subuser permission list per server
-     * id (null for owned servers, meaning every permission).
-     *
-     * @return array{0: array<int, array>, 1: array<int, ?array>}
-     */
-    private static function accessibleServers(int $userId): array
-    {
-        $servers = [];
-        $permissions = [];
-        foreach (Server::getServersByOwnerId($userId) as $server) {
-            $servers[] = $server;
-            $permissions[(int) $server['id']] = null;
-        }
-
-        $subuserPermissions = [];
-        foreach (Subuser::getSubusersByUserId($userId) as $row) {
-            $decoded = json_decode((string) ($row['permissions'] ?? ''), true);
-            $subuserPermissions[(int) $row['server_id']] = is_array($decoded) ? array_values(array_filter($decoded, 'is_string')) : [];
-        }
-        if ($subuserPermissions !== []) {
-            foreach (Server::getServersByIds(array_keys($subuserPermissions)) as $id => $server) {
-                $id = (int) $id;
-                if (array_key_exists($id, $permissions)) {
-                    continue; // Owned already (stale subuser row).
-                }
-                $servers[] = $server;
-                $permissions[$id] = $subuserPermissions[$id] ?? [];
-            }
-        }
-
-        return [$servers, $permissions];
-    }
-
-    /**
-     * Live utilization keyed by server uuid, from one Wings /api/servers call per node.
-     * Unreachable nodes are skipped; their servers simply have no live data.
-     *
-     * @return array<string, array{state: string, cpu: float, memory_bytes: int, disk_bytes: int, rx_bytes: int, tx_bytes: int, uptime_ms: int}>
-     */
-    private static function liveStats(array $servers): array
-    {
-        $wanted = [];
-        foreach ($servers as $server) {
-            if (!empty($server['node_id']) && !empty($server['uuid'])) {
-                $wanted[(int) $server['node_id']][(string) $server['uuid']] = true;
-            }
-        }
-        if ($wanted === []) {
-            return [];
-        }
-
-        $promises = [];
-        foreach (Node::getNodesByIds(array_keys($wanted)) as $node) {
-            $nodeId = (int) ($node['id'] ?? 0);
-            if ($nodeId <= 0 || !isset($wanted[$nodeId])) {
-                continue;
-            }
-            try {
-                $promises[$nodeId] = Wings::fromNode($node, self::WINGS_TIMEOUT)->getConnection()->getAsync('/api/servers');
-            } catch (\Throwable $e) {
-                // Node misconfigured: no live data for its servers.
-            }
-        }
-        if ($promises === []) {
-            return [];
-        }
-
-        $live = [];
-        foreach (Utils::settle($promises)->wait() as $nodeId => $outcome) {
-            if (($outcome['state'] ?? '') !== 'fulfilled' || !is_array($outcome['value'] ?? null)) {
-                continue;
-            }
-            foreach ($outcome['value'] as $entry) {
-                if (!is_array($entry)) {
-                    continue;
-                }
-                $uuid = (string) ($entry['configuration']['uuid'] ?? $entry['uuid'] ?? '');
-                if ($uuid === '' || !isset($wanted[(int) $nodeId][$uuid])) {
-                    continue; // Other users' servers on the same node are never returned.
-                }
-                $util = is_array($entry['utilization'] ?? null) ? $entry['utilization'] : [];
-                $live[$uuid] = [
-                    'state' => (string) ($entry['state'] ?? $util['state'] ?? ''),
-                    'cpu' => round((float) ($util['cpu_absolute'] ?? 0), 1),
-                    'memory_bytes' => (int) ($util['memory_bytes'] ?? 0),
-                    'disk_bytes' => (int) ($util['disk_bytes'] ?? 0),
-                    'rx_bytes' => (int) ($util['network']['rx_bytes'] ?? 0),
-                    'tx_bytes' => (int) ($util['network']['tx_bytes'] ?? 0),
-                    'uptime_ms' => (int) ($util['uptime'] ?? 0),
-                ];
-            }
-        }
-
-        return $live;
     }
 
     /** Same order of precedence as the server rows: lifecycle states first, then the live state. */
