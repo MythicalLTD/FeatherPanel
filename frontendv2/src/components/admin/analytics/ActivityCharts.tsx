@@ -44,7 +44,7 @@ export function ActivityTrendChart({ data }: ActivityTrendChartProps) {
     const { t } = useTranslation();
 
     return (
-        <Card className='border-border/50 bg-card/50 col-span-1 shadow-sm backdrop-blur-sm lg:col-span-2'>
+        <Card className='fp-surface col-span-1 border lg:col-span-2'>
             <CardHeader>
                 <CardTitle>{t('admin.analytics.activity.trend_title')}</CardTitle>
                 <CardDescription>{t('admin.analytics.activity.trend_desc')}</CardDescription>
@@ -75,7 +75,7 @@ export function ActivityBreakdownChart({ data }: ActivityBreakdownChartProps) {
     const { t } = useTranslation();
 
     return (
-        <Card className='border-border/50 bg-card/50 col-span-1 shadow-sm backdrop-blur-sm'>
+        <Card className='fp-surface col-span-1 border'>
             <CardHeader>
                 <CardTitle>{t('admin.analytics.activity.breakdown_title')}</CardTitle>
                 <CardDescription>{t('admin.analytics.activity.breakdown_desc')}</CardDescription>

@@ -182,7 +182,7 @@ export default function ContentAnalyticsPage() {
                                 count: String(overview.realms.with_spells),
                             })}
                             icon={Box}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={overview.spells.total.toString()}
@@ -191,21 +191,21 @@ export default function ContentAnalyticsPage() {
                                 percentage: String(overview.spells.percentage_in_use),
                             })}
                             icon={Layers}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={overview.images.total.toString()}
                             subtitle={t('admin.analytics.content.images')}
                             description={t('admin.analytics.content.library')}
                             icon={ImageIcon}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={overview.redirects.total.toString()}
                             subtitle={t('admin.analytics.content.redirects')}
                             description={t('admin.analytics.content.active_links')}
                             icon={ExternalLink}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={(spellOverview?.with_variables ?? 0).toString()}
@@ -214,14 +214,14 @@ export default function ContentAnalyticsPage() {
                                 count: String(spellOverview?.privileged_scripts ?? 0),
                             })}
                             icon={ShieldAlert}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                         <ResourceCard
                             title={mailTemplatesTotal.toString()}
                             subtitle={t('admin.analytics.content.mail_templates')}
                             description={t('admin.analytics.content.notification_templates')}
                             icon={Mail}
-                            className='bg-card/50 shadow-none! backdrop-blur-sm'
+                            className='fp-surface border'
                         />
                     </div>
                 )}

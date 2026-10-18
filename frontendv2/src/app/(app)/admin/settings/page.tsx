@@ -581,7 +581,7 @@ export default function SettingsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-settings', 'after-header')} />
 
-            <div className='border-border/50 bg-card/40 relative rounded-2xl border p-1.5 shadow-sm'>
+            <div className='fp-surface relative rounded-2xl border p-1.5'>
                 <Search
                     className='text-muted-foreground pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2'
                     aria-hidden
@@ -613,13 +613,13 @@ export default function SettingsPage() {
                     orientation='vertical'
                     className='flex w-full flex-col gap-6 lg:flex-row lg:gap-8'
                 >
-                    <aside className='flex min-h-0 w-full shrink-0 flex-col gap-3 lg:w-72'>
+                    <aside className='flex min-h-0 w-full shrink-0 flex-col gap-3 lg:sticky lg:top-24 lg:w-72 lg:self-start'>
                         <label className='sm:hidden'>
                             <span className='sr-only'>{t('admin.settings.category_select')}</span>
                             <select
                                 value={activeTab || categoryKeys[0]}
                                 onChange={(e) => handleCategoryChange(e.target.value)}
-                                className='border-border/50 bg-card/60 focus-visible:ring-ring h-11 w-full rounded-xl border px-3 text-sm outline-none focus-visible:ring-2'
+                                className='fp-surface focus-visible:ring-ring h-11 w-full rounded-xl border px-3 text-sm outline-none focus-visible:ring-2'
                             >
                                 {Object.entries(organizedSettings).map(([key, data]) => (
                                     <option key={key} value={key}>
@@ -633,7 +633,7 @@ export default function SettingsPage() {
                         </label>
                         <ScrollableTabsList
                             wrapperClassName='hidden sm:block'
-                            className='bg-card/30 border-border/50 flex h-auto w-full flex-row gap-1 rounded-2xl border p-2 lg:max-h-[calc(100vh-12rem)] lg:flex-col lg:overflow-x-visible lg:overflow-y-auto'
+                            className='fp-surface flex h-auto w-full flex-row gap-1 rounded-2xl border p-2 lg:max-h-[calc(100vh-12rem)] lg:flex-col lg:overflow-x-visible lg:overflow-y-auto'
                         >
                             {Object.entries(organizedSettings).map(([key, data]) => {
                                 const Icon = getIconForCategory(key);
