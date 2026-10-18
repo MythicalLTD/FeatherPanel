@@ -22,6 +22,7 @@ import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { Server, Search as SearchIcon, Save } from 'lucide-react';
 import type { OwnerUser } from './types';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface DetailsTabProps {
     hostname: string;
@@ -126,7 +127,12 @@ export function DetailsTab({
                                 {selectedOwner ? (
                                     <span>
                                         {selectedOwner.username || selectedOwner.uuid}
-                                        {selectedOwner.email ? ` (${selectedOwner.email})` : ''}
+                                        {selectedOwner.email ? (
+                                            <>
+                                                {' '}
+                                                (<Sensitive>{selectedOwner.email}</Sensitive>)
+                                            </>
+                                        ) : null}
                                     </span>
                                 ) : (
                                     <span className='text-muted-foreground'>

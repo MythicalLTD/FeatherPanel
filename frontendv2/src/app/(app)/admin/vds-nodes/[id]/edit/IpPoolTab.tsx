@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { Plus, Trash2, Search, RefreshCw, Network, Star, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { TabBlankState, TabHintCard, TabTableShell, TabToolbar } from './TabPrimitives';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface VmIp {
     id: number;
@@ -391,7 +392,9 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                             </td>
                                             <td className='px-4 py-3'>
                                                 <div className='flex items-center gap-2'>
-                                                    <span className='font-mono'>{ip.ip}</span>
+                                                    <span className='font-mono'>
+                                                        <Sensitive>{ip.ip}</Sensitive>
+                                                    </span>
                                                     {ip.is_primary === 'true' && (
                                                         <span
                                                             className='rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-600 uppercase dark:text-amber-400'
@@ -596,6 +599,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                             <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_ip')}</Label>
                             <Input
                                 placeholder='192.168.1.100'
+                                data-fp-sensitive=''
                                 value={createForm.ip}
                                 className='h-11 font-mono'
                                 onChange={(e) => setCreateForm((p) => ({ ...p, ip: e.target.value }))}
@@ -668,7 +672,12 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                 <div className='mt-8 space-y-6'>
                     <div className='space-y-2'>
                         <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_ip')}</Label>
-                        <Input value={editForm.ip} disabled className='bg-muted/30 h-11 font-mono' />
+                        <Input
+                            data-fp-sensitive=''
+                            value={editForm.ip}
+                            disabled
+                            className='bg-muted/30 h-11 font-mono'
+                        />
                         <p className='text-muted-foreground text-[10px] italic'>
                             {t('admin.vdsNodes.ips.edit.ip_immutable')}
                         </p>

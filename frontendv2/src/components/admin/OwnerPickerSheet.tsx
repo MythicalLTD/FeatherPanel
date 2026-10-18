@@ -25,6 +25,7 @@ import { UserCircle, Search as SearchIcon, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { OwnerCreateForm } from '@/components/admin/OwnerCreateForm';
 import type { User } from '@/app/(app)/admin/servers/create/types';
+import { Sensitive } from '@/components/common/Sensitive';
 
 export interface OwnerPickerPaginationState {
     current_page: number;
@@ -139,7 +140,9 @@ export function OwnerPickerSheet({
                             </div>
                             <div className='min-w-0'>
                                 <div className='truncate font-semibold'>{owner.username}</div>
-                                <div className='text-muted-foreground truncate text-xs'>{owner.email}</div>
+                                <div className='text-muted-foreground truncate text-xs'>
+                                    <Sensitive>{owner.email}</Sensitive>
+                                </div>
                             </div>
                         </div>
                     </button>

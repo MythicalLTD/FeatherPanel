@@ -39,6 +39,7 @@ export function NetworkTab({ form, setForm, errors }: NetworkTabProps) {
                         <Label className='text-sm font-semibold'>{t('admin.node.form.fqdn')}</Label>
                         <Input
                             placeholder='node.example.com'
+                            data-fp-sensitive=''
                             value={form.fqdn}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                 setForm({ ...form, fqdn: e.target.value })
@@ -51,6 +52,7 @@ export function NetworkTab({ form, setForm, errors }: NetworkTabProps) {
                         <Label className='text-sm font-semibold'>{t('admin.node.form.sftp_subdomain')}</Label>
                         <Input
                             placeholder={t('admin.node.form.sftp_subdomain_placeholder')}
+                            data-fp-sensitive=''
                             value={form.sftp_subdomain}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                 setForm({ ...form, sftp_subdomain: e.target.value })

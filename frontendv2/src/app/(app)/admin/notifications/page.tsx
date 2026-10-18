@@ -55,6 +55,8 @@ import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useFormBaseline } from '@/hooks/useFormBaseline';
 import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
+import { Sensitive } from '@/components/common/Sensitive';
+import { useIpMask } from '@/hooks/useIpMask';
 
 interface Notification {
     id: number;
@@ -101,6 +103,7 @@ const NOTIFICATIONS_LIST_FILTERS_DEFAULTS = {
 
 export default function NotificationsPage() {
     const { t } = useTranslation();
+    const privacyMask = useIpMask();
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-notifications');
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
@@ -714,11 +717,15 @@ export default function NotificationsPage() {
                                                             user_id: user.id,
                                                             server_id: null,
                                                         });
-                                                        setSelectedUserLabel(`${user.username} (${user.email})`);
+                                                        setSelectedUserLabel(
+                                                            `${user.username} (${privacyMask.text(user.email)})`,
+                                                        );
                                                     }}
                                                 >
                                                     <span className='font-medium'>{user.username}</span>
-                                                    <span className='text-muted-foreground text-xs'>{user.email}</span>
+                                                    <span className='text-muted-foreground text-xs'>
+                                                        <Sensitive>{user.email}</Sensitive>
+                                                    </span>
                                                 </button>
                                             ))
                                         )}

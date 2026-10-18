@@ -47,6 +47,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useFormBaseline } from '@/hooks/useFormBaseline';
 import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface Database {
     id: number;
@@ -531,7 +532,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                     </div>
                                     <div className='flex items-center gap-2 truncate'>
                                         <Activity className='h-3 w-3 shrink-0 opacity-50' />
-                                        {db.database_username}
+                                        <Sensitive>{db.database_username}</Sensitive>
                                     </div>
                                 </div>
                             }
@@ -664,6 +665,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                         <div className='space-y-2'>
                             <Label>{t('admin.node_databases.form.host')}</Label>
                             <Input
+                                data-fp-sensitive=''
                                 value={formData.database_host}
                                 onChange={(e) => setFormData({ ...formData, database_host: e.target.value })}
                                 placeholder={t('admin.node_databases.form.host_placeholder')}
@@ -696,6 +698,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                         <div className='space-y-2'>
                             <Label>{t('admin.node_databases.form.username')}</Label>
                             <Input
+                                data-fp-sensitive=''
                                 value={formData.database_username}
                                 onChange={(e) => setFormData({ ...formData, database_username: e.target.value })}
                                 placeholder={t('admin.node_databases.form.username_placeholder')}
@@ -706,6 +709,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                             <Label>{t('admin.node_databases.form.password')}</Label>
                             <Input
                                 type='password'
+                                data-fp-sensitive=''
                                 value={formData.database_password}
                                 onChange={(e) => setFormData({ ...formData, database_password: e.target.value })}
                                 placeholder={t('admin.node_databases.form.password_placeholder')}
@@ -814,6 +818,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                             <div className='space-y-2'>
                                 <Label>{t('admin.node_databases.form.host')}</Label>
                                 <Input
+                                    data-fp-sensitive=''
                                     value={formData.database_host}
                                     onChange={(e) => setFormData({ ...formData, database_host: e.target.value })}
                                     required
@@ -841,6 +846,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                             <div className='space-y-2'>
                                 <Label>{t('admin.node_databases.form.username')}</Label>
                                 <Input
+                                    data-fp-sensitive=''
                                     value={formData.database_username}
                                     onChange={(e) => setFormData({ ...formData, database_username: e.target.value })}
                                     required
@@ -850,6 +856,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 <Label>{t('admin.node_databases.form.password')}</Label>
                                 <Input
                                     type='password'
+                                    data-fp-sensitive=''
                                     value={formData.database_password}
                                     onChange={(e) => setFormData({ ...formData, database_password: e.target.value })}
                                     placeholder={t('admin.node_databases.form.password_placeholder')}
@@ -955,7 +962,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                     {t('admin.node_databases.form.host')}
                                 </Label>
                                 <div className='font-mono text-sm'>
-                                    {selectedDatabase.database_host}:{selectedDatabase.database_port}
+                                    <Sensitive>{`${selectedDatabase.database_host}:${selectedDatabase.database_port}`}</Sensitive>
                                 </div>
                             </div>
                             <div className='space-y-1'>
@@ -970,7 +977,9 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 <Label className='text-muted-foreground text-xs uppercase'>
                                     {t('admin.node_databases.form.username')}
                                 </Label>
-                                <div className='font-mono text-sm'>{selectedDatabase.database_username}</div>
+                                <div className='font-mono text-sm'>
+                                    <Sensitive>{selectedDatabase.database_username}</Sensitive>
+                                </div>
                             </div>
                             <div className='space-y-1'>
                                 <Label className='text-muted-foreground text-xs uppercase'>

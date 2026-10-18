@@ -402,6 +402,7 @@ export default function AdminWebSpaceEditPage() {
                             <Label>{t('admin.webSpaces.form.backend_host')}</Label>
                             <Input
                                 placeholder='127.0.0.1'
+                                data-fp-sensitive=''
                                 value={form.backend_host}
                                 onChange={(e) => setForm({ ...form, backend_host: e.target.value })}
                             />

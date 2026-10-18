@@ -17,9 +17,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { Copy, Globe } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { useIpMask } from '@/hooks/useIpMask';
 import { IpVisibilityButton } from '@/components/common/IpVisibilityButton';
 import { cn, copyToClipboard } from '@/lib/utils';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface ServerAddressChipProps {
     host: string;
@@ -29,14 +29,12 @@ interface ServerAddressChipProps {
     className?: string;
 }
 
-/** Rounded `host:port` chip with copy, honouring the user's hide-IP preference. */
+/** Rounded `host:port` chip with copy, masked in privacy mode. */
 export default function ServerAddressChip({ host, port, showVisibilityToggle, className }: ServerAddressChipProps) {
     const { t } = useTranslation();
-    const ipMask = useIpMask();
     if (!host) return null;
 
     const raw = port ? `${host}:${port}` : host;
-    const shown = port ? ipMask.endpoint(host, port) : ipMask.ip(host);
 
     return (
         <span
@@ -46,7 +44,9 @@ export default function ServerAddressChip({ host, port, showVisibilityToggle, cl
             )}
         >
             <Globe className='text-muted-foreground h-3.5 w-3.5 shrink-0' aria-hidden />
-            <span className='truncate font-mono tabular-nums'>{shown}</span>
+            <span className='truncate font-mono tabular-nums'>
+                <Sensitive>{raw}</Sensitive>
+            </span>
             {showVisibilityToggle && <IpVisibilityButton className='p-1' />}
             <button
                 type='button'

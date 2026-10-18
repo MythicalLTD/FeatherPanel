@@ -16,7 +16,6 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useTranslation } from '@/contexts/TranslationContext';
-import { useHideServerIps } from '@/contexts/PreferencesContext';
 import { maskEndpoint } from '@/lib/ip-mask';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Input } from '@/components/featherui/Input';
@@ -37,10 +36,10 @@ import {
     Terminal,
 } from 'lucide-react';
 import { StepProps } from './types';
+import { Sensitive } from '@/components/common/Sensitive';
 
 export function Step6Review({ formData, setFormData, selectedEntities }: StepProps) {
     const { t } = useTranslation();
-    const hideIps = useHideServerIps();
 
     const formatResourceValue = (value: number, unlimited: boolean) => {
         if (unlimited || value === 0) return t('admin.servers.form.wizard.review.unlimited');
@@ -90,7 +89,7 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
                                         {selectedEntities.owner?.username || noValue}
                                         {selectedEntities.owner?.email && (
                                             <span className='text-muted-foreground ml-1 text-sm'>
-                                                ({selectedEntities.owner.email})
+                                                (<Sensitive>{selectedEntities.owner.email}</Sensitive>)
                                             </span>
                                         )}
                                     </p>
@@ -133,13 +132,17 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
                                     {t('admin.servers.form.wizard.review.allocation')}
                                 </span>
                                 <p className='font-medium'>
-                                    {selectedEntities.allocation
-                                        ? maskEndpoint(
-                                              selectedEntities.allocation.ip,
-                                              selectedEntities.allocation.port,
-                                              hideIps,
-                                          )
-                                        : noValue}
+                                    {selectedEntities.allocation ? (
+                                        <Sensitive>
+                                            {maskEndpoint(
+                                                selectedEntities.allocation.ip,
+                                                selectedEntities.allocation.port,
+                                                false,
+                                            )}
+                                        </Sensitive>
+                                    ) : (
+                                        noValue
+                                    )}
                                 </p>
                             </div>
                         </div>

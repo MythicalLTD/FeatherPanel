@@ -51,6 +51,7 @@ import {
     ClipboardCheck,
     UserCircle,
 } from 'lucide-react';
+import { useIpMask } from '@/hooks/useIpMask';
 
 function BlockingChecksList({ checks, title }: { checks: InfrastructureCheck[]; title: string }) {
     if (checks.length === 0) return null;
@@ -103,6 +104,7 @@ type WebSpaceChoiceKind = 'node' | 'plate' | 'package';
 
 export default function CreateWebSpacePage() {
     const { t } = useTranslation();
+    const privacyMask = useIpMask();
     const router = useRouter();
 
     const [currentStep, setCurrentStep] = useState(1);
@@ -244,7 +246,9 @@ export default function CreateWebSpacePage() {
                     : []),
                 {
                     label: t('admin.webSpaces.form.owner_id'),
-                    value: selectedOwner ? `${selectedOwner.username} (${selectedOwner.email})` : undefined,
+                    value: selectedOwner
+                        ? `${selectedOwner.username} (${privacyMask.text(selectedOwner.email)})`
+                        : undefined,
                 },
                 { label: t('admin.webSpaces.form.ssl'), value: t(form.ssl ? 'common.yes' : 'common.no') },
                 {
@@ -563,7 +567,7 @@ export default function CreateWebSpacePage() {
                                     </Label>
                                     <PickerTrigger
                                         value={selectedNode?.name}
-                                        detail={selectedNode?.fqdn}
+                                        detail={privacyMask.text(selectedNode?.fqdn)}
                                         placeholder={t('admin.webSpaces.form.web_node_placeholder')}
                                         disabled={loadingOptions || nodes.length === 0}
                                         onClick={() => setChoicePicker('node')}
@@ -796,7 +800,7 @@ export default function CreateWebSpacePage() {
                                     <div className='flex gap-2'>
                                         <PickerTrigger
                                             value={selectedOwner?.username}
-                                            detail={selectedOwner?.email}
+                                            detail={privacyMask.text(selectedOwner?.email)}
                                             placeholder={t('admin.servers.form.select_owner')}
                                             onClick={openOwnerModal}
                                         />

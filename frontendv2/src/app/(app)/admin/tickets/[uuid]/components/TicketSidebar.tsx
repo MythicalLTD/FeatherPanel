@@ -27,6 +27,7 @@ import { formatDateInTz } from '@/lib/dateUtils';
 import { Ticket, UserData, UserMail } from '../page';
 import React from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface TicketSidebarProps {
     ticket: Ticket;
@@ -92,7 +93,7 @@ export function TicketSidebar({
                                         {userDetails.username}
                                     </h3>
                                     <p className='text-muted-foreground text-[10px] font-black tracking-widest uppercase opacity-60'>
-                                        {userDetails.email}
+                                        <Sensitive>{userDetails.email}</Sensitive>
                                     </p>
                                 </div>
                                 <div className='flex justify-center gap-2 pt-1'>

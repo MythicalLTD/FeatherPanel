@@ -135,6 +135,7 @@ export function OwnerCreateForm({ onCreated, onCancel, showFooter = true }: Owne
                     <Input
                         id='owner-create-email'
                         type='email'
+                        data-fp-sensitive=''
                         value={form.email}
                         onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
                         placeholder={t('admin.users.create.form.email_placeholder')}

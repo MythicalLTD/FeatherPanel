@@ -783,3 +783,14 @@ html[data-ui-scale='xl'] {
 .fp-collapse-empty-block:not(:has(* * *)) {
     display: none;
 }
+
+/* Privacy mode: inputs that hold sensitive values (emails, hosts, keys) are
+   masked while the field is not focused. The value stays intact for editing. */
+html.fp-privacy [data-fp-sensitive]:not(:focus) {
+    -webkit-text-security: disc;
+}
+@supports not (-webkit-text-security: disc) {
+    html.fp-privacy [data-fp-sensitive]:not(:focus) {
+        filter: blur(5px);
+    }
+}

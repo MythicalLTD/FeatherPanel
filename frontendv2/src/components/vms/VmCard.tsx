@@ -23,6 +23,7 @@ import { VmInstance } from '@/lib/vms-api';
 import { HardDrive, Cpu, MemoryStick, Globe, Server, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { OverflowText } from '@/components/featherui/OverflowText';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface VmCardProps {
     vm: VmInstance;
@@ -104,7 +105,7 @@ export function VmCard({ vm, layout }: VmCardProps) {
                             {vm.ip_address && (
                                 <span className='flex items-center gap-1'>
                                     <Globe className='h-3 w-3' />
-                                    {vm.ip_address}
+                                    <Sensitive>{vm.ip_address}</Sensitive>
                                 </span>
                             )}
                             {nodeName && <span>{nodeName}</span>}
@@ -146,7 +147,7 @@ export function VmCard({ vm, layout }: VmCardProps) {
                     {vm.ip_address && (
                         <span className='flex items-center gap-1'>
                             <Globe className='h-3 w-3 shrink-0' />
-                            {vm.ip_address}
+                            <Sensitive>{vm.ip_address}</Sensitive>
                         </span>
                     )}
                     {nodeName && <span>{nodeName}</span>}

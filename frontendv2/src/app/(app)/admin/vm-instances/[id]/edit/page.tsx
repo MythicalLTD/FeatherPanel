@@ -65,6 +65,7 @@ import { NetworkTab } from './NetworkTab';
 import { ResourcesTab } from './ResourcesTab';
 import { DisksTab } from './DisksTab';
 import type { OwnerUser, FreeIp, NetworkRow } from './types';
+import { Sensitive } from '@/components/common/Sensitive';
 
 export default function VmInstanceEditPage() {
     const { t } = useTranslation();
@@ -889,7 +890,9 @@ export default function VmInstanceEditPage() {
                                     >
                                         <div className='flex flex-col'>
                                             <span className='font-semibold'>{user.username}</span>
-                                            <span className='text-muted-foreground text-xs'>{user.email}</span>
+                                            <span className='text-muted-foreground text-xs'>
+                                                <Sensitive>{user.email}</Sensitive>
+                                            </span>
                                         </div>
                                     </button>
                                 ))

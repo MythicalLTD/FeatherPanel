@@ -63,6 +63,7 @@ import {
 import { ApiNode, ApiAllocation } from '@/types/adminServerTypes';
 import type { ServerRuntimeInfo } from '@/types/server';
 import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface ActionsTabProps {
     serverId: string;
@@ -637,9 +638,13 @@ export function ActionsTab({
                             }}
                         >
                             <span>
-                                {selectedNode
-                                    ? `${selectedNode.name} (${selectedNode.fqdn})`
-                                    : t('admin.servers.transfer.select_node')}
+                                {selectedNode ? (
+                                    <>
+                                        {selectedNode.name} (<Sensitive>{selectedNode.fqdn}</Sensitive>)
+                                    </>
+                                ) : (
+                                    t('admin.servers.transfer.select_node')
+                                )}
                             </span>
                             <ChevronRight className='h-4 w-4' />
                         </Button>
@@ -671,9 +676,13 @@ export function ActionsTab({
                                 }}
                             >
                                 <span>
-                                    {selectedAllocation
-                                        ? maskEndpoint(selectedAllocation.ip, selectedAllocation.port, hideIps)
-                                        : t('admin.servers.transfer.select_allocation')}
+                                    {selectedAllocation ? (
+                                        <Sensitive>
+                                            {maskEndpoint(selectedAllocation.ip, selectedAllocation.port, false)}
+                                        </Sensitive>
+                                    ) : (
+                                        t('admin.servers.transfer.select_allocation')
+                                    )}
                                 </span>
                                 <ChevronRight className='h-4 w-4' />
                             </Button>
@@ -752,7 +761,9 @@ export function ActionsTab({
                                     }}
                                 >
                                     <div className='font-medium'>{n.name}</div>
-                                    <div className='text-muted-foreground text-xs'>{n.fqdn}</div>
+                                    <div className='text-muted-foreground text-xs'>
+                                        <Sensitive>{n.fqdn}</Sensitive>
+                                    </div>
                                 </button>
                             ))
                         )}
@@ -800,7 +811,9 @@ export function ActionsTab({
                                         setAllocationModalOpen(false);
                                     }}
                                 >
-                                    <div className='font-medium'>{maskEndpoint(a.ip, a.port, hideIps)}</div>
+                                    <div className='font-medium'>
+                                        <Sensitive>{maskEndpoint(a.ip, a.port, false)}</Sensitive>
+                                    </div>
                                     <div className='text-muted-foreground text-xs'>
                                         {maskIpLike(a.ip_alias, hideIps) || 'No Alias'}
                                     </div>

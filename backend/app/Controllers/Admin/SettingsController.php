@@ -2559,7 +2559,7 @@ class SettingsController
                 'value' => $this->app
                     ->getConfig()
                     ->getSetting(ConfigInterface::SERVER_HIDE_IPS, 'false'),
-                'description' => 'Hide IP addresses in server activity logs and other views. When enabled, IPs will be masked with "***.***.***.***" to protect user privacy.',
+                'description' => 'Default for privacy mode. When true, IP addresses are masked in activity logs, and privacy mode (hides IPs, hosts, emails, keys and credentials in the panel) starts on for users who have not chosen a value. Each user can still switch it from the top bar.',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',

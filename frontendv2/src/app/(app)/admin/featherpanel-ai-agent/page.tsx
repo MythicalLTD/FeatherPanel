@@ -363,6 +363,7 @@ export default function FeatherAiAgentPage() {
                                                     type='password'
                                                     placeholder={t('admin.featherai_agent.config.api_key_placeholder')}
                                                     className='h-12'
+                                                    data-fp-sensitive=''
                                                     value={String(getSettingValue('chatbot_google_ai_api_key') || '')}
                                                     onChange={(e) =>
                                                         updateSettingValue('chatbot_google_ai_api_key', e.target.value)
@@ -395,6 +396,7 @@ export default function FeatherAiAgentPage() {
                                                     type='password'
                                                     placeholder={t('admin.featherai_agent.config.api_key_placeholder')}
                                                     className='h-12'
+                                                    data-fp-sensitive=''
                                                     value={String(getSettingValue('chatbot_openai_api_key') || '')}
                                                     onChange={(e) =>
                                                         updateSettingValue('chatbot_openai_api_key', e.target.value)
@@ -440,6 +442,7 @@ export default function FeatherAiAgentPage() {
                                                     type='password'
                                                     placeholder={t('admin.featherai_agent.config.api_key_placeholder')}
                                                     className='h-12'
+                                                    data-fp-sensitive=''
                                                     value={String(getSettingValue('chatbot_openrouter_api_key') || '')}
                                                     onChange={(e) =>
                                                         updateSettingValue('chatbot_openrouter_api_key', e.target.value)
@@ -502,6 +505,7 @@ export default function FeatherAiAgentPage() {
                                                 <Input
                                                     type='password'
                                                     className='h-12'
+                                                    data-fp-sensitive=''
                                                     value={String(getSettingValue('chatbot_grok_api_key') || '')}
                                                     onChange={(e) =>
                                                         updateSettingValue('chatbot_grok_api_key', e.target.value)
@@ -534,6 +538,7 @@ export default function FeatherAiAgentPage() {
                                                     type='password'
                                                     placeholder={t('admin.featherai_agent.config.api_key_placeholder')}
                                                     className='h-12'
+                                                    data-fp-sensitive=''
                                                     value={String(getSettingValue('chatbot_perplexity_api_key') || '')}
                                                     onChange={(e) =>
                                                         updateSettingValue('chatbot_perplexity_api_key', e.target.value)

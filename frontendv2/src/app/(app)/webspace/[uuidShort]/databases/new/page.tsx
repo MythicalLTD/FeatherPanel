@@ -32,6 +32,7 @@ import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { HeadlessSelect } from '@/components/ui/headless-select';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { useIpMask } from '@/hooks/useIpMask';
 
 interface DatabaseHost {
     id: number;
@@ -45,6 +46,7 @@ export default function CreateWebSpaceDatabasePage() {
     const { uuidShort } = useParams() as { uuidShort: string };
     const router = useRouter();
     const { t } = useTranslation();
+    const privacyMask = useIpMask();
     const { hasPermission, loading: permissionsLoading } = useWebSpacePermissions(uuidShort);
     const { webspace } = useWebSpace();
     const canCreate = hasPermission(WebSpaceSubuserPermissions['database.create']);
@@ -220,7 +222,9 @@ export default function CreateWebSpaceDatabasePage() {
                                 options={availableHosts.map((h) => ({
                                     id: String(h.id),
                                     name: `${h.name} (${h.database_type})${
-                                        h.database_host ? ` - ${h.database_host}:${h.database_port ?? ''}` : ''
+                                        h.database_host
+                                            ? ` - ${privacyMask.endpoint(h.database_host, h.database_port ?? '')}`
+                                            : ''
                                     }`,
                                 }))}
                                 placeholder={

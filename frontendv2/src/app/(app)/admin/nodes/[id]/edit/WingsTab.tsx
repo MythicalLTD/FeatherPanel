@@ -22,6 +22,7 @@ import { Button } from '@/components/featherui/Button';
 import { Shield, Copy, RefreshCw, Terminal } from 'lucide-react';
 import axios from 'axios';
 import { copyToClipboard } from '@/lib/utils';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface WingsTabProps {
     nodeId: string;
@@ -69,7 +70,7 @@ function CommandBlock({ command, copyLabel, onCopy, preClassName }: CommandBlock
                     preClassName ?? 'overflow-x-auto p-4 font-mono text-xs break-all whitespace-pre-wrap text-zinc-300'
                 }
             >
-                {command}
+                <Sensitive>{command}</Sensitive>
             </pre>
         </div>
     );

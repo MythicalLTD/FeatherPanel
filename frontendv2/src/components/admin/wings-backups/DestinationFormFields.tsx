@@ -237,6 +237,7 @@ export function DestinationFormFields({ form, setForm, disabled = false, editMod
                     className='animate-in fade-in-0 slide-in-from-bottom-2 duration-300'
                 >
                     <Textarea
+                        data-fp-sensitive=''
                         value={form.credentials.private_key}
                         disabled={disabled}
                         onChange={(e) => setCred({ private_key: e.target.value })}
@@ -320,6 +321,7 @@ export function DestinationFormFields({ form, setForm, disabled = false, editMod
                                 </Label>
                                 <Input
                                     type='password'
+                                    data-fp-sensitive=''
                                     value={form.credentials.secret_key}
                                     disabled={disabled}
                                     onChange={(e) => setCred({ secret_key: e.target.value })}

@@ -34,7 +34,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { useHideServerIps } from '@/contexts/PreferencesContext';
-import { maskEndpoint } from '@/lib/ip-mask';
+import { maskEndpointKeepPort } from '@/lib/ip-mask';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import type {
     FirewallRule,
@@ -300,7 +300,7 @@ export default function ServerFirewallPage() {
         () =>
             allocations.map((a) => ({
                 id: a.id.toString(),
-                name: `${maskEndpoint(a.ip, a.port, hideIps)} ${a.is_primary ? `(${t('serverAllocations.primary')})` : ''}`,
+                name: `${maskEndpointKeepPort(a.ip, a.port, hideIps)} ${a.is_primary ? `(${t('serverAllocations.primary')})` : ''}`,
             })),
         [allocations, t, hideIps],
     );

@@ -47,6 +47,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/featherui/Input';
 import { NodeServersList, type NodeStatusServer } from '@/components/admin/NodeServersList';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface NodeEntry {
     id: number;
@@ -192,7 +193,9 @@ function NodeExpandedDetail({
             <div className='mt-4 flex flex-wrap items-center justify-between gap-3'>
                 <div className='flex flex-wrap items-center gap-4'>
                     {node.fqdn && (
-                        <span className='text-muted-foreground font-mono text-xs opacity-60'>{node.fqdn}</span>
+                        <span className='text-muted-foreground font-mono text-xs opacity-60'>
+                            <Sensitive>{node.fqdn}</Sensitive>
+                        </span>
                     )}
                     {showPlayerCount && node.total_players !== undefined && (
                         <span className='text-muted-foreground flex items-center gap-1 text-xs'>

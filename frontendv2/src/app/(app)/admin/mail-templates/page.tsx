@@ -718,6 +718,7 @@ export default function MailTemplatesPage() {
                                     id='test-email'
                                     type='email'
                                     placeholder='admin@example.com'
+                                    data-fp-sensitive=''
                                     value={testEmailData.email}
                                     onChange={(e) => setTestEmailData({ ...testEmailData, email: e.target.value })}
                                     required

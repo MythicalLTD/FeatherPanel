@@ -159,6 +159,7 @@ export function BannedIpsEditor({
                                     </label>
                                     <Input
                                         type='text'
+                                        data-fp-sensitive=''
                                         value={entry.ip}
                                         onChange={(e) => updateEntry(index, 'ip', e.target.value)}
                                         readOnly={readonly}
