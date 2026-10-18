@@ -22,7 +22,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { Flag, Plus, Pencil, Trash2, Search, Zap, Palette, AlertTriangle, ChevronUp, ChevronDown } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Button } from '@/components/featherui/Button';
@@ -301,7 +301,7 @@ export default function TicketPrioritiesPage() {
                         onClearFilters={() => setSearchQuery('')}
                     />
                 ) : (
-                    <div className='grid grid-cols-1 gap-4'>
+                    <ResourceTable>
                         {filteredPriorities.map((priority, index) => (
                             <ResourceCard
                                 key={priority.id}
@@ -351,7 +351,7 @@ export default function TicketPrioritiesPage() {
                                 }
                             />
                         ))}
-                    </div>
+                    </ResourceTable>
                 )}
 
                 <Sheet open={createOpen} onOpenChange={setCreateOpen}>

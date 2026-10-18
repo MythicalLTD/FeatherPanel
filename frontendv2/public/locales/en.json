@@ -1691,7 +1691,9 @@
 		"scrollLeft": "Scroll left",
 		"scrollRight": "Scroll right",
 		"goToStep": "Go back to step {step}: {title}",
-		"done": "Done"
+		"done": "Done",
+		"name": "Name",
+		"more_actions": "More actions"
 	},
 	"pwa": {
 		"installTitle": "Install {name}",
@@ -12329,6 +12331,13 @@
 				"no_release": "No downloadable release found.",
 				"assets_resynced": "Plugin assets resynced",
 				"assets_resync_failed": "Failed to resync plugin assets"
+			},
+			"table": {
+				"plugin": "Plugin",
+				"version": "Version",
+				"author": "Author",
+				"status": "Status",
+				"active": "Active"
 			}
 		},
 		"redirect_links": {

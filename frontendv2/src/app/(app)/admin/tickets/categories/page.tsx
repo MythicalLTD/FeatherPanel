@@ -22,7 +22,7 @@ import axios from 'axios';
 import { Plus, Search, Pencil, Trash2, Ticket as TicketIcon, Tags, Info, HelpCircle } from 'lucide-react';
 import Image from 'next/image';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Button } from '@/components/featherui/Button';
@@ -262,7 +262,7 @@ export default function TicketCategoriesPage() {
                         onClearFilters={() => setSearch('')}
                     />
                 ) : (
-                    <div className='grid grid-cols-1 gap-4'>
+                    <ResourceTable>
                         {filteredCategories.map((category) => (
                             <ResourceCard
                                 key={category.id}
@@ -316,7 +316,7 @@ export default function TicketCategoriesPage() {
                                 }
                             />
                         ))}
-                    </div>
+                    </ResourceTable>
                 )}
 
                 <Sheet open={createOpen} onOpenChange={setCreateOpen}>

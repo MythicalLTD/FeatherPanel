@@ -22,7 +22,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Label } from '@/components/ui/label';
@@ -333,7 +333,7 @@ export default function MailTemplatesPage() {
                 <TableSkeleton count={5} />
             ) : templates.length > 0 ? (
                 <>
-                    <div className='grid grid-cols-1 gap-4'>
+                    <ResourceTable>
                         {templates.map((template) => (
                             <ResourceCard
                                 key={template.id}
@@ -392,7 +392,7 @@ export default function MailTemplatesPage() {
                                 }
                             />
                         ))}
-                    </div>
+                    </ResourceTable>
 
                     {pagination.total > pageSize && (
                         <div className='mt-8 flex items-center justify-center gap-2'>

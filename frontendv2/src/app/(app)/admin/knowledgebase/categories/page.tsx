@@ -38,7 +38,7 @@ import {
     Image as ImageIcon,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Button } from '@/components/featherui/Button';
@@ -346,7 +346,7 @@ export default function KnowledgeBaseCategoriesPage() {
                     onClearFilters={() => setSearchQuery('')}
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-6'>
+                <ResourceTable>
                     {categories.map((category) => {
                         const IconComponent = ({ className }: { className?: string }) => (
                             <div
@@ -439,7 +439,7 @@ export default function KnowledgeBaseCategoriesPage() {
                             />
                         );
                     })}
-                </div>
+                </ResourceTable>
             )}
 
             {pagination.totalPages > 1 && (
