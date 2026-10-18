@@ -68,6 +68,8 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { Server, AllocationItem, AllocationsResponse, AvailableAllocationsResponse } from '@/types/server';
 import { copyToClipboard, cn, isEnabled } from '@/lib/utils';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { Sensitive } from '@/components/common/Sensitive';
+import { maskEndpoint } from '@/lib/ip-mask';
 
 export default function ServerAllocationsPage() {
     const { t } = useTranslation();
@@ -451,7 +453,7 @@ export default function ServerAllocationsPage() {
                                         <div className='text-muted-foreground flex items-center gap-2 rounded-lg border border-white/5 bg-black/40 p-1 px-2'>
                                             <span className='text-xs font-bold uppercase opacity-60'>IP</span>
                                             <span className='text-foreground/80 font-mono text-sm font-bold'>
-                                                {ipMask.ip(allocation.ip)}
+                                                <Sensitive>{allocation.ip}</Sensitive>
                                             </span>
                                             <IpVisibilityButton className='-mr-1' />
                                         </div>
@@ -575,7 +577,11 @@ export default function ServerAllocationsPage() {
 
                             <div className='rounded-2xl border border-red-500/20 bg-red-500/5 p-4 backdrop-blur-sm'>
                                 <div className='flex items-center justify-between font-mono text-sm'>
-                                    <span>{ipMask.endpoint(selectedAllocation?.ip, selectedAllocation?.port)}</span>
+                                    <span>
+                                        <Sensitive>
+                                            {maskEndpoint(selectedAllocation?.ip, selectedAllocation?.port, false)}
+                                        </Sensitive>
+                                    </span>
                                 </div>
                             </div>
 
@@ -622,7 +628,9 @@ export default function ServerAllocationsPage() {
 
                             <div className='bg-primary/10 border-primary/20 flex items-center justify-between rounded-2xl border p-4'>
                                 <span className='font-mono text-sm font-bold'>
-                                    {ipMask.endpoint(selectedAllocation?.ip, selectedAllocation?.port)}
+                                    <Sensitive>
+                                        {maskEndpoint(selectedAllocation?.ip, selectedAllocation?.port, false)}
+                                    </Sensitive>
                                 </span>
                                 <Badge variant='outline' className='border-primary/50 text-primary bg-primary/10'>
                                     New Primary
@@ -712,7 +720,7 @@ export default function ServerAllocationsPage() {
                                                 </div>
                                                 <div className='flex flex-col'>
                                                     <span className='font-mono text-sm font-bold tracking-tight'>
-                                                        {ipMask.endpoint(item.ip, item.port)}
+                                                        <Sensitive>{maskEndpoint(item.ip, item.port, false)}</Sensitive>
                                                     </span>
                                                     <span className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
                                                         {item.ip_alias ? ipMask.ipLike(item.ip_alias) : 'No Alias'}

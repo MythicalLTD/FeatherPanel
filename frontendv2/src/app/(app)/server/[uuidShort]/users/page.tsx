@@ -51,6 +51,9 @@ import type { Subuser, SubuserPagination, SubusersResponse, SubuserPermissionsRe
 import { safeBack } from '@/lib/safe-back';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
+import { Sensitive } from '@/components/common/Sensitive';
 
 export default function ServerSubusersPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -91,6 +94,13 @@ export default function ServerSubusersPage() {
     const [availablePermissions, setAvailablePermissions] = React.useState<string[]>([]);
     const [groupedPermissions, setGroupedPermissions] = React.useState<Record<string, { permissions: string[] }>>({});
     const [selectedPermissions, setSelectedPermissions] = React.useState<string[]>([]);
+    const sortedPermissions = React.useMemo(() => [...selectedPermissions].sort(), [selectedPermissions]);
+    const { dirty: permissionsDirty, commit: commitPermissions } = useFormBaseline(sortedPermissions);
+    const guardPermissionsClose = useDiscardConfirm(
+        isPermissionsOpen && permissionsDirty,
+        t('common.unsavedChanges.leaveConfirm'),
+    );
+    const closePermissions = guardPermissionsClose(setIsPermissionsOpen);
     const [savingPermissions, setSavingPermissions] = React.useState(false);
 
     const fetchSubusers = React.useCallback(
@@ -181,6 +191,7 @@ export default function ServerSubusersPage() {
     const openPermissionsDialog = async (sub: Subuser) => {
         setSelectedSubuser(sub);
         setSelectedPermissions(sub.permissions || []);
+        commitPermissions([...(sub.permissions || [])].sort());
         setPermissionsLoadingData(true);
         setIsPermissionsOpen(true);
 
@@ -455,7 +466,9 @@ export default function ServerSubusersPage() {
                                     description={
                                         <div className='text-muted-foreground flex items-center gap-2 text-xs font-medium'>
                                             <Mail className='h-3 w-3' />
-                                            <span>{sub.email}</span>
+                                            <span>
+                                                <Sensitive>{sub.email}</Sensitive>
+                                            </span>
                                         </div>
                                     }
                                     actions={
@@ -627,10 +640,10 @@ export default function ServerSubusersPage() {
 
             <Dialog
                 open={isPermissionsOpen}
-                onClose={() => setIsPermissionsOpen(false)}
+                onClose={() => closePermissions(false)}
                 onOpenChange={(open) => {
                     if (!open) {
-                        setIsPermissionsOpen(false);
+                        closePermissions(false);
                     }
                 }}
                 className='max-w-3xl'
@@ -649,7 +662,9 @@ export default function ServerSubusersPage() {
                                 <span className='text-muted-foreground text-xs font-black tracking-widest uppercase opacity-50'>
                                     {t('serverSubusers.user')}
                                 </span>
-                                <span className='text-sm font-bold tracking-tight'>{selectedSubuser?.email}</span>
+                                <span className='text-sm font-bold tracking-tight'>
+                                    <Sensitive>{selectedSubuser?.email}</Sensitive>
+                                </span>
                             </div>
                         </div>
                         <Button
@@ -737,7 +752,7 @@ export default function ServerSubusersPage() {
                         <Button
                             variant='outline'
                             size='default'
-                            onClick={() => setIsPermissionsOpen(false)}
+                            onClick={() => closePermissions(false)}
                             disabled={savingPermissions}
                             className='rounded-2xl'
                         >

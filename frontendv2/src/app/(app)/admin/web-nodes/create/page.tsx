@@ -65,6 +65,8 @@ import {
     getFirstWebNodeErrorTab,
     getWebNodeTabLabelKey,
 } from '../types';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface Location {
     id: number;
@@ -103,6 +105,7 @@ export default function CreateWebNodePage() {
     });
 
     const [form, setForm] = useState<WebNodeForm>(defaultWebNodeForm());
+    const { dirty: unsaved, restore: restoreForm } = useFormBaseline(form, { trackFromStart: true });
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-web-nodes-create');
@@ -544,6 +547,17 @@ export default function CreateWebNodePage() {
             </Sheet>
 
             <WidgetRenderer widgets={getWidgets('admin-web-nodes-create', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={loading}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+                saveLabel={t('common.create')}
+            />
         </div>
     );
 }

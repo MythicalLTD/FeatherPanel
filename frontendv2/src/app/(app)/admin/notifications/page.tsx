@@ -53,6 +53,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
+import { Sensitive } from '@/components/common/Sensitive';
+import { useIpMask } from '@/hooks/useIpMask';
 
 interface Notification {
     id: number;
@@ -99,6 +103,7 @@ const NOTIFICATIONS_LIST_FILTERS_DEFAULTS = {
 
 export default function NotificationsPage() {
     const { t } = useTranslation();
+    const privacyMask = useIpMask();
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-notifications');
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
@@ -133,6 +138,12 @@ export default function NotificationsPage() {
         server_id: null as number | null,
         send_email: true,
     });
+    const { dirty: editDirty, commit: commitEdit } = useFormBaseline(editingNotification);
+    const { dirty: createDirty } = useFormBaseline(newNotification, { trackFromStart: true });
+    const guardClose = useDiscardConfirm(
+        (editOpen && editDirty) || (createOpen && createDirty),
+        t('common.unsavedChanges.leaveConfirm'),
+    );
 
     const [userSearch, setUserSearch] = useState('');
     const [userOptions, setUserOptions] = useState<AdminUserOption[]>([]);
@@ -358,6 +369,7 @@ export default function NotificationsPage() {
 
     const openEdit = (notification: Notification) => {
         setEditingNotification({ ...notification });
+        commitEdit({ ...notification });
         setEditOpen(true);
     };
 
@@ -608,7 +620,7 @@ export default function NotificationsPage() {
                 </PageCard>
             </div>
 
-            <Sheet open={createOpen} onOpenChange={setCreateOpen}>
+            <Sheet open={createOpen} onOpenChange={guardClose(setCreateOpen)}>
                 <div className='space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.notifications.form.create_title')}</SheetTitle>
@@ -705,11 +717,15 @@ export default function NotificationsPage() {
                                                             user_id: user.id,
                                                             server_id: null,
                                                         });
-                                                        setSelectedUserLabel(`${user.username} (${user.email})`);
+                                                        setSelectedUserLabel(
+                                                            `${user.username} (${privacyMask.text(user.email)})`,
+                                                        );
                                                     }}
                                                 >
                                                     <span className='font-medium'>{user.username}</span>
-                                                    <span className='text-muted-foreground text-xs'>{user.email}</span>
+                                                    <span className='text-muted-foreground text-xs'>
+                                                        <Sensitive>{user.email}</Sensitive>
+                                                    </span>
                                                 </button>
                                             ))
                                         )}
@@ -803,7 +819,7 @@ export default function NotificationsPage() {
                 </div>
             </Sheet>
 
-            <Sheet open={editOpen} onOpenChange={setEditOpen}>
+            <Sheet open={editOpen} onOpenChange={guardClose(setEditOpen)}>
                 <div className='space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.notifications.form.edit_title')}</SheetTitle>

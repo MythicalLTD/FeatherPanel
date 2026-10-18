@@ -56,6 +56,8 @@ import { StorageConfigurationTab } from './StorageConfigurationTab';
 import { DhcpAgentTab } from './DhcpAgentTab';
 import { FirewallTab } from './FirewallTab';
 import { InfoTab } from './InfoTab';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface Location {
     id: number;
@@ -108,6 +110,7 @@ export default function EditVdsNodePage() {
         storage_efi: '',
         storage_backups: '',
     });
+    const { dirty: unsaved, markClean, restore: restoreForm } = useFormBaseline(form);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [saving, setSaving] = useState(false);
     const [loadingNode, setLoadingNode] = useState(true);
@@ -192,6 +195,7 @@ export default function EditVdsNodePage() {
                     storage_efi: node.storage_efi ?? '',
                     storage_backups: node.storage_backups ?? '',
                 });
+                markClean();
 
                 if (node.addional_headers) {
                     try {
@@ -240,6 +244,7 @@ export default function EditVdsNodePage() {
 
             await axios.patch(`/api/admin/vm-nodes/${id}`, payload);
             setNodeName(form.name);
+            markClean();
             toast.success(t('admin.vdsNodes.messages.updated'));
         } catch (error) {
             if (isAxiosError(error) && error.response?.data?.errors) {
@@ -499,6 +504,16 @@ export default function EditVdsNodePage() {
                     </div>
                 </SheetContent>
             </Sheet>
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleSave()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+            />
         </div>
     );
 }

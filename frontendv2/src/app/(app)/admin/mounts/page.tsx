@@ -37,6 +37,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { HardDrive, Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { Sensitive } from '@/components/common/Sensitive';
 
 export interface AdminMount {
     id: number;
@@ -652,7 +653,7 @@ export default function AdminMountsPage() {
                                                 <span className='text-sm'>
                                                     <span className='font-medium'>{n.name}</span>
                                                     <span className='text-muted-foreground block text-xs'>
-                                                        {n.fqdn}
+                                                        <Sensitive>{n.fqdn}</Sensitive>
                                                     </span>
                                                 </span>
                                             </label>

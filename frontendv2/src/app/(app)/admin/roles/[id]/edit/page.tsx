@@ -60,6 +60,8 @@ export default function EditRolePage() {
                 isYourRole={editor.isYourRole}
                 isSubmitting={editor.isSubmitting}
                 onSave={editor.handleSaveRole}
+                unsaved={editor.unsaved}
+                onDiscard={editor.discardChanges}
                 onDelete={editor.handleDeleteRole}
                 loadingPermissions={editor.loadingPermissions}
                 assignedPermissionMap={editor.assignedPermissionMap}

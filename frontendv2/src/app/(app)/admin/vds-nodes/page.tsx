@@ -44,6 +44,7 @@ import {
     Pencil,
     HeartHandshakeIcon,
 } from 'lucide-react';
+import { useIpMask } from '@/hooks/useIpMask';
 
 interface VmNode {
     id: number;
@@ -91,6 +92,7 @@ type ConnectionStatus = 'unknown' | 'online' | 'offline';
 
 export default function VdsNodesPage() {
     const { t } = useTranslation();
+    const privacyMask = useIpMask();
     const router = useRouter();
     const searchParams = useSearchParams();
     const urlLocationId = searchParams.get('location_id') ?? '';
@@ -363,7 +365,7 @@ export default function VdsNodesPage() {
                             <ResourceCard
                                 key={node.id}
                                 title={node.name}
-                                subtitle={`${node.scheme}://${node.fqdn}:${node.port}`}
+                                subtitle={privacyMask.text(`${node.scheme}://${node.fqdn}:${node.port}`)}
                                 icon={Server}
                                 badges={badges}
                                 description={

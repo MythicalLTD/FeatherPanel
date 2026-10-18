@@ -48,6 +48,7 @@ import {
     X,
 } from 'lucide-react';
 import { MassTransferServersDialog } from '@/components/admin/MassTransferServersDialog';
+import { useIpMask } from '@/hooks/useIpMask';
 
 interface Node {
     id: number;
@@ -96,6 +97,7 @@ const NODES_LIST_FILTERS_DEFAULTS = {
 
 export default function NodesPage() {
     const { t } = useTranslation();
+    const privacyMask = useIpMask();
     const router = useRouter();
     const searchParams = useSearchParams();
     const urlLocationId = searchParams.get('location_id') ?? '';
@@ -444,7 +446,7 @@ export default function NodesPage() {
                             <ResourceCard
                                 key={node.id}
                                 title={node.name}
-                                subtitle={node.fqdn}
+                                subtitle={privacyMask.text(node.fqdn)}
                                 icon={Server}
                                 badges={badges}
                                 description={

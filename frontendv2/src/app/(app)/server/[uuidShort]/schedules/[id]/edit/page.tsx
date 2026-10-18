@@ -38,6 +38,8 @@ import type { Schedule, ScheduleUpdateRequest } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export default function EditSchedulePage() {
     const { uuidShort, id } = useParams() as { uuidShort: string; id: string };
@@ -64,6 +66,7 @@ export default function EditSchedulePage() {
         only_when_online: 0,
         is_active: 1,
     });
+    const { dirty: unsaved, markClean, restore: restoreForm } = useFormBaseline(formData);
 
     const timezoneOptions = React.useMemo(() => listSupportedTimezones().map((tz) => ({ id: tz, name: tz })), []);
 
@@ -91,6 +94,7 @@ export default function EditSchedulePage() {
                         only_when_online: scheduleData.only_when_online,
                         is_active: scheduleData.is_active,
                     });
+                    markClean();
                 }
             } catch (error) {
                 console.error('Failed to fetch schedule:', error);
@@ -106,14 +110,14 @@ export default function EditSchedulePage() {
         } else if (!permissionsLoading && !canUpdate) {
             router.push(`/server/${uuidShort}/schedules`);
         }
-    }, [uuidShort, id, canUpdate, permissionsLoading, router, settings?.server_allow_schedules, t]);
+    }, [uuidShort, id, canUpdate, permissionsLoading, router, settings?.server_allow_schedules, t, markClean]);
 
     React.useEffect(() => {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    const handleUpdate = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleUpdate = async (e?: React.FormEvent) => {
+        e?.preventDefault();
 
         if (!formData.name.trim()) {
             toast.error(t('serverSchedules.nameRequired'));
@@ -429,6 +433,16 @@ export default function EditSchedulePage() {
                     </Button>
                 </div>
             </form>
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleUpdate()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setFormData(saved);
+                }}
+            />
         </div>
     );
 }

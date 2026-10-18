@@ -71,6 +71,9 @@ import {
     getFirstWebNodeErrorTab,
     getWebNodeTabLabelKey,
 } from '../../types';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { useIpMask } from '@/hooks/useIpMask';
 
 const WEB_NODE_EDIT_TABS = new Set([
     'status',
@@ -99,6 +102,7 @@ interface Location {
 
 export default function EditWebNodePage() {
     const { t } = useTranslation();
+    const privacyMask = useIpMask();
     const router = useRouter();
     const params = useParams();
     const searchParams = useSearchParams();
@@ -125,6 +129,7 @@ export default function EditWebNodePage() {
     const [debouncedLocationSearch, setDebouncedLocationSearch] = useState('');
 
     const [form, setForm] = useState<WebNodeForm>(defaultWebNodeForm());
+    const { dirty: unsaved, markClean, restore: restoreForm } = useFormBaseline(form);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-web-node-edit');
@@ -255,6 +260,7 @@ export default function EditWebNodePage() {
                 proxyBackendHost: node.proxyBackendHost || '127.0.0.1',
                 proxyBackendBindHost: node.proxyBackendBindHost || '127.0.0.1',
             });
+            markClean();
         } catch (error) {
             console.error('Error loading web node:', error);
             toast.error(getApiErrorMessage(error, t, 'admin.webNodes.messages.fetch_failed'));
@@ -262,7 +268,7 @@ export default function EditWebNodePage() {
         } finally {
             setLoading(false);
         }
-    }, [id, router, t]);
+    }, [id, router, t, markClean]);
 
     useEffect(() => {
         if (id) void fetchInitialData();
@@ -373,7 +379,7 @@ export default function EditWebNodePage() {
                 title={form.name || t('admin.webNodes.form.edit_title')}
                 description={
                     form.fqdn
-                        ? `${t('admin.webNodes.form.edit_description')} · ${form.fqdn}`
+                        ? `${t('admin.webNodes.form.edit_description')} · ${privacyMask.text(form.fqdn)}`
                         : t('admin.webNodes.form.edit_description')
                 }
                 icon={Server}
@@ -609,6 +615,16 @@ export default function EditWebNodePage() {
             </Sheet>
 
             <WidgetRenderer widgets={getWidgets('admin-web-node-edit', 'bottom-of-page')} context={{ id }} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleSave()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+            />
         </div>
     );
 }

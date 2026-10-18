@@ -760,6 +760,7 @@ export default function AdminSubdomainsPage() {
                                     <Input
                                         id='cf-key'
                                         type='password'
+                                        data-fp-sensitive=''
                                         value={settingsForm.cloudflare_api_key}
                                         onChange={(e) =>
                                             setSettingsForm({ ...settingsForm, cloudflare_api_key: e.target.value })

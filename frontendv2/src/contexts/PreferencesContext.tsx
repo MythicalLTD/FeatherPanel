@@ -188,6 +188,11 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
         };
     }, [preferences, browserTimezone, ready, setTimezone, setHideServerIps]);
 
+    useEffect(() => {
+        if (typeof document === 'undefined') return;
+        document.documentElement.classList.toggle('fp-privacy', value.hideServerIps);
+    }, [value.hideServerIps]);
+
     return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
 }
 
@@ -220,6 +225,20 @@ export function useUserTimezone(): string {
 export function useHideServerIps(): boolean {
     const ctx = useContext(PreferencesContext);
     return ctx ? ctx.hideServerIps : false;
+}
+
+/**
+ * Privacy mode: masks IPs, ports, hosts, emails, API keys, SFTP and database
+ * credentials across the user and admin areas for this account only. It is the
+ * same stored preference as the earlier "hide server IPs" switch.
+ */
+export function usePrivacyMode(): { enabled: boolean; ready: boolean; setEnabled: (on: boolean) => Promise<boolean> } {
+    const ctx = useContext(PreferencesContext);
+    return {
+        enabled: ctx ? ctx.hideServerIps : false,
+        ready: ctx ? ctx.ready : true,
+        setEnabled: ctx ? ctx.setHideServerIps : async () => false,
+    };
 }
 
 /**

@@ -46,6 +46,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { cn } from '@/lib/utils';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface ConfigField {
     name: string;
@@ -139,6 +141,11 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
     const [config, setConfig] = useState<PluginConfig | null>(null);
     const [visibility, setVisibility] = useState<PluginVisibilityPayload | null>(null);
     const [savingSettings, setSavingSettings] = useState(false);
+    const {
+        dirty: settingsUnsaved,
+        markClean: markSettingsClean,
+        restore: restoreSettings,
+    } = useFormBaseline(config?.settings ?? null);
     const [savingVisibilityKey, setSavingVisibilityKey] = useState<string | null>(null);
     const [selectedSpellIds, setSelectedSpellIds] = useState<Set<number>>(new Set());
     const [selectedSpellsDetails, setSelectedSpellsDetails] = useState<SpellOption[]>([]);
@@ -187,6 +194,7 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                 configSchema: apiData.configSchema || [],
                 allowedOnlyOnSpells: apiData.allowedOnlyOnSpells || [],
             });
+            markSettingsClean();
             setVisibility(visibilityResponse.data.data.visibility || null);
 
             const spellIds = Array.isArray(apiData.allowedOnlyOnSpells) ? apiData.allowedOnlyOnSpells : [];
@@ -202,7 +210,7 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
         } finally {
             setLoading(false);
         }
-    }, [decodedIdentifier, loadSelectedSpellsDetails, t]);
+    }, [decodedIdentifier, loadSelectedSpellsDetails, t, markSettingsClean]);
 
     const fetchSpells = useCallback(async () => {
         setSpellsLoading(true);
@@ -813,6 +821,16 @@ export default function PluginDetailPage({ params }: { params: Promise<{ identif
                     </PageCard>
                 </TabsContent>
             </Tabs>
+
+            <UnsavedChangesBar
+                dirty={settingsUnsaved}
+                saving={savingSettings}
+                onSave={() => void saveAllSettings()}
+                onDiscard={() => {
+                    const saved = restoreSettings();
+                    if (saved) setConfig((prev) => (prev ? { ...prev, settings: saved } : prev));
+                }}
+            />
         </div>
     );
 }

@@ -47,6 +47,8 @@ import {
 } from '@/components/server/schedule/container-shell-payload';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export default function CreateTaskPage() {
     const { uuidShort, id: scheduleId } = useParams() as { uuidShort: string; id: string };
@@ -67,6 +69,10 @@ export default function CreateTaskPage() {
     });
     const [backup, setBackup] = React.useState<BackupFields>(emptyBackupFields());
     const [containerShell, setContainerShell] = React.useState<ContainerShellFields>(emptyContainerShellFields());
+    const { dirty: unsaved, restore: restoreSaved } = useFormBaseline(
+        { form, backup, containerShell },
+        { trackFromStart: true },
+    );
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-tasks-new');
 
     // Container Shell runs arbitrary commands in the container: it needs the admin switch and console access.
@@ -367,6 +373,20 @@ export default function CreateTaskPage() {
                 </FormSection>
             </form>
             <WidgetRenderer widgets={getWidgets('server-tasks-new', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleCreate()}
+                onDiscard={() => {
+                    const saved = restoreSaved();
+                    if (!saved) return;
+                    setForm(saved.form);
+                    setBackup(saved.backup);
+                    setContainerShell(saved.containerShell);
+                }}
+                saveLabel={t('common.create')}
+            />
         </div>
     );
 }

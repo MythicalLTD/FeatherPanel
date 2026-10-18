@@ -44,6 +44,8 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn } from '@/lib/utils';
 import { safeBack } from '@/lib/safe-back';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface Location {
     id: number;
@@ -92,6 +94,7 @@ export default function CreateVdsNodePage() {
         tls_no_verify: 'false' as 'true' | 'false',
         timeout: 60,
     });
+    const { dirty: unsaved, restore: restoreForm } = useFormBaseline(form, { trackFromStart: true });
 
     const [extraHeaders, setExtraHeaders] = useState<Array<{ key: string; value: string }>>([]);
     const [extraParams, setExtraParams] = useState<Array<{ key: string; value: string }>>([]);
@@ -205,8 +208,8 @@ export default function CreateVdsNodePage() {
         return Object.keys(newErrors).length === 0;
     }, [form, t]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         if (!validate()) return;
 
         setLoading(true);
@@ -406,6 +409,7 @@ export default function CreateVdsNodePage() {
                                     <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.token_id')}</Label>
                                     <Input
                                         placeholder='mytokenid'
+                                        data-fp-sensitive=''
                                         value={form.token_id}
                                         onChange={(e) => setForm({ ...form, token_id: e.target.value })}
                                         error={!!errors.token_id}
@@ -421,6 +425,7 @@ export default function CreateVdsNodePage() {
                                     <Input
                                         type='password'
                                         placeholder='********'
+                                        data-fp-sensitive=''
                                         value={form.secret}
                                         onChange={(e) => setForm({ ...form, secret: e.target.value })}
                                         error={!!errors.secret}
@@ -442,6 +447,7 @@ export default function CreateVdsNodePage() {
                                     <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.fqdn')}</Label>
                                     <Input
                                         placeholder='proxmox.example.com'
+                                        data-fp-sensitive=''
                                         value={form.fqdn}
                                         onChange={(e) => setForm({ ...form, fqdn: e.target.value })}
                                         error={!!errors.fqdn}
@@ -854,6 +860,17 @@ export default function CreateVdsNodePage() {
             </Sheet>
 
             <WidgetRenderer widgets={getWidgets('admin-vds-nodes-create', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={loading}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+                saveLabel={t('common.create')}
+            />
         </div>
     );
 }

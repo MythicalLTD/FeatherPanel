@@ -81,6 +81,9 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 import { RoleBadge } from '@/components/RoleBadge';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface UserRole {
     name: string;
@@ -247,6 +250,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
         password: '',
         webspace_limit: '0',
     });
+    const { dirty: unsaved, commit: commitForm, restore: restoreForm } = useFormBaseline(editForm);
 
     const fetchUser = async () => {
         setLoading(true);
@@ -277,7 +281,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 console.error('Failed to fetch roles', e);
             }
 
-            setEditForm({
+            const loadedForm: EditForm = {
                 username: apiUser.username || '',
                 first_name: apiUser.first_name || '',
                 last_name: apiUser.last_name || '',
@@ -289,7 +293,9 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         : undefined,
                 password: '',
                 webspace_limit: String(apiUser.webspace_limit ?? 0),
-            });
+            };
+            setEditForm(loadedForm);
+            commitForm(loadedForm);
 
             try {
                 const serversRes = await axios.get(`/api/admin/users/${resolvedParams.uuid}/servers`, {
@@ -362,8 +368,8 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         if (!user) return;
 
         setSubmitting(true);
@@ -725,6 +731,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 <Input
                                     id='edit-email'
                                     type='email'
+                                    data-fp-sensitive=''
                                     value={editForm.email}
                                     onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
                                     placeholder={t('admin.users.create.form.email_placeholder')}
@@ -825,7 +832,9 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 <AvatarImage src={user.avatar} alt={user.username} />
                             </Avatar>
                             <h2 className='text-xl font-bold'>{user.username}</h2>
-                            <p className='text-muted-foreground text-sm'>{user.email}</p>
+                            <p className='text-muted-foreground text-sm'>
+                                <Sensitive>{user.email}</Sensitive>
+                            </p>
 
                             <div className='mt-4 flex flex-wrap justify-center gap-2'>
                                 {user.role ? (
@@ -899,7 +908,9 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         {t('admin.users.edit.account_info.last_ip')}
                                     </span>
                                     <div className='flex items-center gap-2'>
-                                        <span className='font-mono'>{user.last_ip}</span>
+                                        <span className='font-mono'>
+                                            <Sensitive>{user.last_ip}</Sensitive>
+                                        </span>
                                         <Button
                                             type='button'
                                             variant='outline'
@@ -924,7 +935,9 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         {t('admin.users.edit.account_info.first_ip')}
                                     </span>
                                     <div className='flex items-center gap-2'>
-                                        <span className='font-mono'>{user.first_ip}</span>
+                                        <span className='font-mono'>
+                                            <Sensitive>{user.first_ip}</Sensitive>
+                                        </span>
                                         {user.first_ip !== user.last_ip ? (
                                             <Button
                                                 type='button'
@@ -1206,7 +1219,9 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                             >
                                                 <td className='p-4 font-medium'>{activity.name}</td>
                                                 <td className='text-muted-foreground p-4'>{activity.context}</td>
-                                                <td className='p-4 font-mono text-xs'>{activity.ip_address}</td>
+                                                <td className='p-4 font-mono text-xs'>
+                                                    <Sensitive>{activity.ip_address}</Sensitive>
+                                                </td>
                                                 <td className='text-muted-foreground p-4'>
                                                     {formatDateTimeInTz(activity.created_at, dateOpts)}
                                                 </td>
@@ -1312,7 +1327,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                         <div>
                                                             <div className='font-medium'>{alt.username}</div>
                                                             <div className='text-muted-foreground text-xs'>
-                                                                {alt.email}
+                                                                <Sensitive>{alt.email}</Sensitive>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1499,7 +1514,9 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                             : vm.status || t('vds.console.status.unknown')}
                                                     </Badge>
                                                 </td>
-                                                <td className='p-4 font-mono text-xs'>{vm.ip_address || '-'}</td>
+                                                <td className='p-4 font-mono text-xs'>
+                                                    {vm.ip_address ? <Sensitive>{vm.ip_address}</Sensitive> : '-'}
+                                                </td>
                                                 <td className='text-muted-foreground p-4'>
                                                     {vm.node_name || vm.pve_node || '-'}
                                                 </td>
@@ -1652,7 +1669,13 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             <Label htmlFor='send-email-recipient'>
                                 {t('admin.users.edit.actions.email.to', { defaultValue: 'To' })}
                             </Label>
-                            <Input id='send-email-recipient' value={user.email || ''} readOnly className='mt-2' />
+                            <Input
+                                id='send-email-recipient'
+                                data-fp-sensitive=''
+                                value={user.email || ''}
+                                readOnly
+                                className='mt-2'
+                            />
                         </div>
 
                         <div>
@@ -1801,6 +1824,16 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             </AlertDialog>
 
             <WidgetRenderer widgets={getWidgets('admin-users-edit', 'bottom-of-page')} context={widgetContext} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={submitting}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setEditForm(saved);
+                }}
+            />
         </div>
     );
 }

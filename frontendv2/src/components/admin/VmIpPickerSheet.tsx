@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import { Search as SearchIcon, Plus, Network } from 'lucide-react';
 import { toast } from 'sonner';
 import { getApiErrorMessage } from '@/lib/api-errors';
+import { Sensitive } from '@/components/common/Sensitive';
 
 export interface VmFreeIpOption {
     id: number;
@@ -295,6 +296,7 @@ export function VmIpPickerSheet({
                             <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_ip')}</Label>
                             <Input
                                 placeholder='192.168.1.100'
+                                data-fp-sensitive=''
                                 value={createForm.ip}
                                 className='h-11 font-mono'
                                 onChange={(e) => setCreateForm((p) => ({ ...p, ip: e.target.value }))}
@@ -379,7 +381,9 @@ export function VmIpPickerSheet({
                                 <Network className='text-primary h-4 w-4' />
                             </div>
                             <div>
-                                <div className='font-mono font-semibold'>{ip.ip}</div>
+                                <div className='font-mono font-semibold'>
+                                    <Sensitive>{ip.ip}</Sensitive>
+                                </div>
                                 <div className='text-muted-foreground font-mono text-xs'>
                                     {ip.cidr !== null ? `/${ip.cidr}` : 'No CIDR'} · {ip.gateway || 'No gateway'}
                                 </div>

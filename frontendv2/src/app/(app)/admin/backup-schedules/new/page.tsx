@@ -31,16 +31,19 @@ import {
     emptyBackupScheduleForm,
 } from '@/components/admin/backup-schedules/BackupScheduleFormFields';
 import { useUserTimezone } from '@/contexts/PreferencesContext';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export default function CreateBackupSchedulePage() {
     const { t } = useTranslation();
     const router = useRouter();
     const userTimezone = useUserTimezone();
     const [form, setForm] = React.useState(() => emptyBackupScheduleForm(userTimezone || 'UTC'));
+    const { dirty: unsaved, restore: restoreForm } = useFormBaseline(form, { trackFromStart: true });
     const [saving, setSaving] = React.useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         const body = buildScheduleRequestBody(form);
         if (!body) {
             toast.error(t('adminBackupSchedules.invalidPayload'));
@@ -95,6 +98,17 @@ export default function CreateBackupSchedulePage() {
                     </Button>
                 </div>
             </form>
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+                saveLabel={t('common.create')}
+            />
         </div>
     );
 }

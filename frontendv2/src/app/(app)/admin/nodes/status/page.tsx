@@ -32,6 +32,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { formatBytes } from '@/lib/format';
 import { NodeServersList, type NodeStatusServer } from '@/components/admin/NodeServersList';
+import { useIpMask } from '@/hooks/useIpMask';
 
 interface GlobalStats {
     total_nodes: number;
@@ -73,6 +74,7 @@ interface NodeStatus {
 
 export default function NodeStatusPage() {
     const { t } = useTranslation();
+    const privacyMask = useIpMask();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
@@ -281,7 +283,7 @@ export default function NodeStatusPage() {
                                     <PageCard
                                         key={node.id}
                                         title={node.name}
-                                        description={node.fqdn}
+                                        description={privacyMask.text(node.fqdn)}
                                         icon={Server}
                                         className='bg-card/50 shadow-none! backdrop-blur-sm'
                                         variant={node.status === 'healthy' ? 'default' : 'danger'}

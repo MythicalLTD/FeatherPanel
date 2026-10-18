@@ -40,6 +40,8 @@ import {
     type SchedulePresetId,
     type WebSpaceScheduleDraft,
 } from '@/lib/webspace-schedules';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export default function WebSpaceScheduleNewPage() {
     const params = useParams();
@@ -50,6 +52,7 @@ export default function WebSpaceScheduleNewPage() {
 
     const [saving, setSaving] = useState(false);
     const [form, setForm] = useState<WebSpaceScheduleDraft>(() => emptyScheduleDraft(userTimezone || 'UTC'));
+    const { dirty: unsaved, restore: restoreForm } = useFormBaseline(form, { trackFromStart: true });
 
     const timezoneOptions = useMemo(() => listSupportedTimezones().map((tz) => ({ id: tz, name: tz })), []);
     const presetOptions = useMemo(
@@ -70,8 +73,8 @@ export default function WebSpaceScheduleNewPage() {
         setForm(preset.apply(form.timezone || userTimezone || 'UTC'));
     };
 
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: FormEvent) => {
+        e?.preventDefault();
         if (!form.name.trim()) {
             toast.error(t('serverSchedules.nameRequired'));
             return;
@@ -214,6 +217,17 @@ export default function WebSpaceScheduleNewPage() {
                     </div>
                 </FormSection>
             </form>
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+                saveLabel={t('common.create')}
+            />
         </div>
     );
 }

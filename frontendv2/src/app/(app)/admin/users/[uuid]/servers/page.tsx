@@ -46,6 +46,7 @@ import {
     HardDrive,
     Network,
 } from 'lucide-react';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface UserServersPagination {
     current_page: number;
@@ -470,7 +471,13 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                                         </Badge>
                                                         <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
                                                             <Network className='h-3.5 w-3.5' />
-                                                            <span>{vm.ip_address || '-'}</span>
+                                                            <span>
+                                                                {vm.ip_address ? (
+                                                                    <Sensitive>{vm.ip_address}</Sensitive>
+                                                                ) : (
+                                                                    '-'
+                                                                )}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 }

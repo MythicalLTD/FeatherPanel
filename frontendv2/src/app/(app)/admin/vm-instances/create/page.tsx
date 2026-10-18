@@ -55,6 +55,7 @@ import {
     ClipboardCheck,
     Network,
 } from 'lucide-react';
+import { useIpMask } from '@/hooks/useIpMask';
 
 interface VmNode {
     id: number;
@@ -99,6 +100,7 @@ type VmChoiceKind = 'node' | 'pveNode' | 'storage' | 'bridge' | 'retention';
 
 export default function VmInstancesCreatePage() {
     const { t } = useTranslation();
+    const privacyMask = useIpMask();
     const router = useRouter();
 
     const [currentStep, setCurrentStep] = useState(1);
@@ -817,7 +819,7 @@ export default function VmInstancesCreatePage() {
                                     </Label>
                                     <PickerTrigger
                                         value={selectedNode?.name}
-                                        detail={selectedNode?.fqdn}
+                                        detail={privacyMask.text(selectedNode?.fqdn)}
                                         placeholder={t('admin.vmInstances.select_node')}
                                         disabled={loadingPlans || nodes.length === 0}
                                         onClick={() => setChoicePicker('node')}
@@ -1288,7 +1290,7 @@ export default function VmInstancesCreatePage() {
                                     <div className='flex gap-2'>
                                         <PickerTrigger
                                             value={selectedOwner?.username}
-                                            detail={selectedOwner?.email}
+                                            detail={privacyMask.text(selectedOwner?.email)}
                                             placeholder={t('admin.vmInstances.select_owner')}
                                             onClick={openOwnerPicker}
                                         />

@@ -68,6 +68,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Dialog, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface WebSpace {
     uuid: string;
@@ -741,7 +742,9 @@ export default function WebSpacesPage() {
                                 >
                                     <div className='flex flex-col'>
                                         <span className='font-semibold'>{user.username}</span>
-                                        <span className='text-muted-foreground text-xs'>{user.email}</span>
+                                        <span className='text-muted-foreground text-xs'>
+                                            <Sensitive>{user.email}</Sensitive>
+                                        </span>
                                     </div>
                                 </button>
                             ))
@@ -788,7 +791,9 @@ export default function WebSpacesPage() {
                                     <div className='flex flex-col'>
                                         <span className='font-semibold'>{node.name}</span>
                                         {node.fqdn && (
-                                            <span className='text-muted-foreground text-xs'>{node.fqdn}</span>
+                                            <span className='text-muted-foreground text-xs'>
+                                                <Sensitive>{node.fqdn}</Sensitive>
+                                            </span>
                                         )}
                                     </div>
                                 </button>

@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 /**
  * Warns before leaving a page that has unsaved edits: the browser prompt covers reloads and
@@ -60,4 +60,19 @@ export function useUnsavedChangesGuard(dirty: boolean, message: string) {
             document.removeEventListener('click', onClickCapture, true);
         };
     }, [dirty]);
+}
+
+/**
+ * For forms inside a sheet or dialog (which keep their own Save button): warns before leaving the
+ * page and asks before closing while there are edits. Wrap the setter: `onOpenChange={guard(setOpen)}`.
+ */
+export function useDiscardConfirm(dirty: boolean, message: string) {
+    useUnsavedChangesGuard(dirty, message);
+    return useCallback(
+        (setOpen: (open: boolean) => void) => (open: boolean) => {
+            if (!open && dirty && !window.confirm(message)) return;
+            setOpen(open);
+        },
+        [dirty, message],
+    );
 }

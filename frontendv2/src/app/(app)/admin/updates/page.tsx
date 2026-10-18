@@ -45,6 +45,7 @@ import {
     resolveInstallVersion,
     storeLatestVersion,
 } from '@/app/(app)/admin/feathercloud/products/_shared';
+import { Sensitive } from '@/components/common/Sensitive';
 
 interface NodeRow {
     id: number;
@@ -846,7 +847,9 @@ export default function AdminUpdatesPage() {
                                         />
                                         <div className='min-w-0 flex-1'>
                                             <p className='truncate text-sm font-medium'>{node.name}</p>
-                                            <p className='text-muted-foreground truncate text-xs'>{node.fqdn}</p>
+                                            <p className='text-muted-foreground truncate text-xs'>
+                                                <Sensitive>{node.fqdn}</Sensitive>
+                                            </p>
                                             <p className='text-muted-foreground mt-2 text-xs'>
                                                 {version?.loading ? (
                                                     <span className='inline-flex items-center gap-1'>
