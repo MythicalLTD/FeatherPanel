@@ -9490,9 +9490,7 @@
 					"new_vds": "New VDS instances",
 					"vds_hint": "{total} in total, {suspended} suspended",
 					"tickets": "Tickets opened",
-					"tickets_hint": "{open} open, {closed} closed in range",
-					"resolution": "Avg. resolution",
-					"resolution_hint": "for tickets closed in range",
+					"tickets_hint": "{open} open, resolved in {resolution} on average",
 					"hours": "{value} h",
 					"none": "n/a"
 				},

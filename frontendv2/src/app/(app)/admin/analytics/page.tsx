@@ -32,7 +32,6 @@ import {
     Server,
     Settings,
     Ticket,
-    Timer,
     UserPlus,
     Users,
     type LucideIcon,
@@ -424,25 +423,16 @@ export default function AnalyticsDashboardPage() {
                                     previous={data.tickets.opened_previous}
                                     hint={t('admin.analytics.overview.kpi.tickets_hint', {
                                         open: formatCompact(data.tickets.open_now),
-                                        closed: formatCompact(data.tickets.closed),
+                                        resolution:
+                                            data.tickets.avg_resolution_hours === null
+                                                ? t('admin.analytics.overview.kpi.none')
+                                                : t('admin.analytics.overview.kpi.hours', {
+                                                      value: String(data.tickets.avg_resolution_hours),
+                                                  }),
                                     })}
                                     series={data.series}
                                     seriesKey='tickets_opened'
                                     href='/admin/analytics/tickets'
-                                />
-                            )}
-                            {data.tickets && (
-                                <KpiCard
-                                    icon={Timer}
-                                    label={t('admin.analytics.overview.kpi.resolution')}
-                                    value={
-                                        data.tickets.avg_resolution_hours === null
-                                            ? t('admin.analytics.overview.kpi.none')
-                                            : t('admin.analytics.overview.kpi.hours', {
-                                                  value: String(data.tickets.avg_resolution_hours),
-                                              })
-                                    }
-                                    hint={t('admin.analytics.overview.kpi.resolution_hint')}
                                 />
                             )}
                         </div>
