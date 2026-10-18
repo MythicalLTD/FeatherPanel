@@ -20,6 +20,8 @@ import axios from 'axios';
 import { getEffectiveTimezone, type FormatDateOptions } from '@/lib/dateUtils';
 import { useSession } from '@/contexts/SessionContext';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { toast } from 'sonner';
+import { consumeUiPrefsAppliedFlag, startUiPrefsSync } from '@/lib/ui-prefs-sync';
 
 interface UserPreferences {
     timezone?: string | null;
@@ -68,6 +70,23 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
         setReady(false);
         autoPersistedForUuid.current = null;
         localEdits.current = {};
+    }, []);
+
+    const { t } = useTranslation();
+
+    // Interface settings (theme, layout, sidebar, list views...) follow the account
+    // across devices. See lib/ui-prefs-sync.ts.
+    useEffect(() => {
+        if (!isSessionChecked) return;
+        void startUiPrefsSync(user?.uuid ?? null);
+    }, [user?.uuid, isSessionChecked]);
+
+    useEffect(() => {
+        if (consumeUiPrefsAppliedFlag()) {
+            toast.success(t('uiSync.applied'));
+        }
+        // Once per load; the flag is set right before a sync reload.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {

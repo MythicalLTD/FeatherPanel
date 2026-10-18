@@ -15974,5 +15974,8 @@
 			"assigned": "Assigned {subject}",
 			"unassigned": "Unassigned {subject}"
 		}
+	},
+	"uiSync": {
+		"applied": "Your interface settings from another device were applied."
 	}
 }
