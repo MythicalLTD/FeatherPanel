@@ -2995,7 +2995,7 @@
 		"title": "Privacy",
 		"description": "Control what your panel shows on screen. Handy when you share your screen, record a video or stream.",
 		"hideIpsLabel": "Hide server IP addresses",
-		"hideIpsHint": "Shows a placeholder instead of server IPs and IP:port addresses everywhere in the panel. Only your account is affected.",
+		"hideIpsHint": "Shows a placeholder instead of server IP addresses on server, VDS and allocation pages (ports stay visible). Admin node allocation tables are not masked. Only your account is affected.",
 		"stateHidden": "IP addresses are hidden",
 		"stateVisible": "IP addresses are visible",
 		"example": "Preview",

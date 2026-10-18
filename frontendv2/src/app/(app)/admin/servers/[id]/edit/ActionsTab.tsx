@@ -20,7 +20,7 @@ import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useHideServerIps } from '@/contexts/PreferencesContext';
-import { maskEndpoint } from '@/lib/ip-mask';
+import { maskEndpoint, maskIpLike } from '@/lib/ip-mask';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -801,7 +801,9 @@ export function ActionsTab({
                                     }}
                                 >
                                     <div className='font-medium'>{maskEndpoint(a.ip, a.port, hideIps)}</div>
-                                    <div className='text-muted-foreground text-xs'>{a.ip_alias || 'No Alias'}</div>
+                                    <div className='text-muted-foreground text-xs'>
+                                        {maskIpLike(a.ip_alias, hideIps) || 'No Alias'}
+                                    </div>
                                 </button>
                             ))
                         )}

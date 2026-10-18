@@ -22,6 +22,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { PickerSheet } from '@/components/ui/picker-sheet';
 import { Plug, Search as SearchIcon, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useIpMask } from '@/hooks/useIpMask';
 import { toast } from 'sonner';
 import { AllocationCreateForm, type CreatedAllocationRow } from '@/components/admin/AllocationCreateForm';
 
@@ -82,6 +83,7 @@ export function AllocationPickerSheet({
     onSelectAllocation,
 }: AllocationPickerSheetProps) {
     const { t } = useTranslation();
+    const ipMask = useIpMask();
     const [pickerMode, setPickerMode] = useState<'browse' | 'create'>('browse');
 
     const handleCreated = (created: CreatedAllocationRow[]) => {
@@ -171,10 +173,12 @@ export function AllocationPickerSheet({
                             </div>
                             <div className='min-w-0 flex-1'>
                                 <div className='font-mono font-semibold'>
-                                    {allocation.ip}:{allocation.port}
+                                    {ipMask.endpoint(allocation.ip, allocation.port)}
                                 </div>
                                 {allocation.ip_alias && (
-                                    <div className='text-muted-foreground mt-0.5 text-xs'>{allocation.ip_alias}</div>
+                                    <div className='text-muted-foreground mt-0.5 text-xs'>
+                                        {ipMask.ipLike(allocation.ip_alias)}
+                                    </div>
                                 )}
                                 {allocation.notes && (
                                     <div

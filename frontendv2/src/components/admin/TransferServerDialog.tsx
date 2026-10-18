@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import { AlertTriangle, ArrowLeftRight, ChevronRight, Loader2, Search, ShieldCheck } from 'lucide-react';
 import { ApiAllocation, ApiNode, ApiServer } from '@/types/adminServerTypes';
 import { supportsDaemonFeature, type DaemonCapabilitiesMap, type DaemonType } from '@/lib/daemonCapabilities';
+import { useIpMask } from '@/hooks/useIpMask';
 
 interface TransferServerDialogProps {
     server: ApiServer | null;
@@ -37,6 +38,7 @@ interface TransferServerDialogProps {
 
 export function TransferServerDialog({ server, open, onOpenChange, onCompleted }: TransferServerDialogProps) {
     const { t } = useTranslation();
+    const ipMask = useIpMask();
 
     const [nodes, setNodes] = useState<ApiNode[]>([]);
     const [nodeSearch, setNodeSearch] = useState('');
@@ -573,11 +575,9 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                                 >
                                     <div className='flex items-center justify-between'>
                                         <div>
-                                            <p className='text-sm font-bold'>
-                                                {allc.ip}:{allc.port}
-                                            </p>
+                                            <p className='text-sm font-bold'>{ipMask.endpoint(allc.ip, allc.port)}</p>
                                             <p className='text-muted-foreground text-xs'>
-                                                {allc.ip_alias || 'No Alias'}
+                                                {ipMask.ipLike(allc.ip_alias) || 'No Alias'}
                                             </p>
                                         </div>
                                         {selectedAllocation?.id === allc.id && (
