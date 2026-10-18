@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { usePterodactylImporterVisible, withoutPterodactylImporter } from '@/hooks/usePterodactylImporterVisibility';
 import { getModuleStates } from '@/lib/modules';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useDeveloperMode } from '@/hooks/useDeveloperMode';
@@ -230,6 +231,7 @@ export function useGlobalSearchItems(open: boolean, query: string) {
     const pathname = usePathname();
     const { hasPermission, user } = useSession();
     const { settings } = useSettings();
+    const importerVisible = usePterodactylImporterVisible();
     const { t } = useTranslation();
     const { isDeveloperModeEnabled } = useDeveloperMode();
     const { data: pluginRoutes } = usePluginRoutes();
@@ -357,7 +359,10 @@ export function useGlobalSearchItems(open: boolean, query: string) {
 
         if (canViewAdmin) {
             const adminItems = filterNavigationByPermission(
-                getAdminNavigationItems(t, settings, isDeveloperModeEnabled ?? false),
+                withoutPterodactylImporter(
+                    getAdminNavigationItems(t, settings, isDeveloperModeEnabled ?? false),
+                    importerVisible,
+                ),
                 hasPermission,
             );
             const adminLabel = t('globalSearch.categories.admin');
@@ -385,6 +390,7 @@ export function useGlobalSearchItems(open: boolean, query: string) {
     }, [
         t,
         settings,
+        importerVisible,
         hasPermission,
         canViewAdmin,
         canViewAdminSettings,

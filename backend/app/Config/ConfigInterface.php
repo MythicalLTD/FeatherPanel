@@ -481,6 +481,12 @@ interface ConfigInterface
     public const MODULE_GAME_ENABLED = 'module_game_enabled';
     public const MODULE_WEB_ENABLED = 'module_web_enabled';
     public const MODULE_VDS_ENABLED = 'module_vds_enabled';
+
+    /**
+     * Pterodactyl importer visibility: auto (listed while the panel still meets the import
+     * requirements), always, or hidden (dismissed by an admin).
+     */
+    public const PTERODACTYL_IMPORTER_VISIBILITY = 'pterodactyl_importer_visibility';
     public const KNOWLEDGEBASE_PUBLIC_ENABLED = 'knowledgebase_public_enabled';
     public const KNOWLEDGEBASE_SHOW_CATEGORIES = 'knowledgebase_show_categories';
     public const KNOWLEDGEBASE_SHOW_ARTICLES = 'knowledgebase_show_articles';

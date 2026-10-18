@@ -10993,6 +10993,15 @@
 				"module_vds_enabled": {
 					"label": "VDS (Proxmox)",
 					"description": "Virtual servers on Proxmox nodes. When off, it is hidden everywhere and its API refuses requests."
+				},
+				"pterodactyl_importer_visibility": {
+					"label": "Pterodactyl importer",
+					"description": "Automatic lists the importer only while the panel is still fresh enough to import into.",
+					"options": {
+						"auto": "Automatic",
+						"always": "Always show",
+						"hidden": "Hidden"
+					}
 				}
 			},
 			"category_select": "Settings category",
@@ -11260,6 +11269,18 @@
 					null,
 					null
 				]
+			},
+			"visibility": {
+				"hide": "Hide importer",
+				"show_again": "Show again",
+				"always_show": "Always show",
+				"hidden_toast": "Importer hidden. You can bring it back in Settings > Modules.",
+				"shown_toast": "Importer visibility updated.",
+				"failed": "Could not update the importer visibility.",
+				"hidden_title": "The importer is hidden",
+				"hidden_description": "It no longer appears in the admin sidebar or search. You can also change this in Settings > Modules.",
+				"auto_title": "Hidden from the sidebar",
+				"auto_description": "This panel already has data, so an import can no longer start. The importer stays out of the sidebar and search unless you keep it there."
 			}
 		},
 		"database_management": {

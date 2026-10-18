@@ -17,6 +17,7 @@ import { useMemo, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { usePterodactylImporterVisible, withoutPterodactylImporter } from '@/hooks/usePterodactylImporterVisibility';
 import { useTranslation } from '@/contexts/TranslationContext';
 import type { NavigationItem, PluginSidebarItem } from '@/types/navigation';
 import {
@@ -77,6 +78,7 @@ export function useNavigation() {
     const pathname = usePathname();
     const { hasPermission, isLoading, isSessionChecked } = useSession();
     const { settings } = useSettings();
+    const importerVisible = usePterodactylImporterVisible();
     const { t } = useTranslation();
     const { isDeveloperModeEnabled } = useDeveloperMode();
 
@@ -259,7 +261,10 @@ export function useNavigation() {
         };
 
         if (isAdmin) {
-            let items = getAdminNavigationItems(t, settings, isDeveloperModeEnabled ?? false);
+            let items = withoutPterodactylImporter(
+                getAdminNavigationItems(t, settings, isDeveloperModeEnabled ?? false),
+                importerVisible,
+            );
 
             // Post-process for complex isActive states
             items = items.map((item) => {
@@ -400,6 +405,7 @@ export function useNavigation() {
         );
     }, [
         pathname,
+        importerVisible,
         hasPermission,
         pluginRoutes,
         pluginRoutesReady,

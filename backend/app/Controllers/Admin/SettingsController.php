@@ -147,6 +147,14 @@ use Symfony\Component\HttpFoundation\Response;
 ),]
 class SettingsController
 {
+    /** Settings whose value must be one of their declared options. */
+    private const STRICT_OPTION_SETTINGS = [
+        ConfigInterface::MODULE_GAME_ENABLED,
+        ConfigInterface::MODULE_WEB_ENABLED,
+        ConfigInterface::MODULE_VDS_ENABLED,
+        ConfigInterface::PTERODACTYL_IMPORTER_VISIBILITY,
+    ];
+
     private $app;
     private $settings;
     private $sensitiveSettings = [
@@ -215,6 +223,7 @@ class SettingsController
                 ConfigInterface::MODULE_GAME_ENABLED,
                 ConfigInterface::MODULE_WEB_ENABLED,
                 ConfigInterface::MODULE_VDS_ENABLED,
+                ConfigInterface::PTERODACTYL_IMPORTER_VISIBILITY,
             ],
         ],
         'links' => [
@@ -533,6 +542,22 @@ class SettingsController
                 'placeholder' => 'true',
                 'validation' => 'required|string|max:255',
                 'options' => ['true', 'false'],
+                'category' => 'modules',
+            ],
+            ConfigInterface::PTERODACTYL_IMPORTER_VISIBILITY => [
+                'name' => ConfigInterface::PTERODACTYL_IMPORTER_VISIBILITY,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::PTERODACTYL_IMPORTER_VISIBILITY,
+                        'auto',
+                    ),
+                'description' => 'When the Pterodactyl importer shows up in the admin sidebar and search',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'auto',
+                'validation' => 'required|string|in:auto,always,hidden',
+                'options' => ['auto', 'always', 'hidden'],
                 'category' => 'modules',
             ],
             ConfigInterface::APP_NAME => [
@@ -3870,6 +3895,14 @@ class SettingsController
 
             if ($setting === ConfigInterface::TELEMETRY && !in_array($stringValue, ['true', 'false'], true)) {
                 return ApiResponse::error('Telemetry must be enabled or disabled', 'INVALID_SETTING_VALUE', 400);
+            }
+
+            // Module and importer switches only accept their listed options.
+            if (
+                in_array($setting, self::STRICT_OPTION_SETTINGS, true)
+                && !in_array($stringValue, $settingConfig['options'] ?? [], true)
+            ) {
+                return ApiResponse::error("Invalid value for {$setting}", 'INVALID_SETTING_VALUE', 400);
             }
 
             // Basic validation (use normalized string so 0 / "false" are handled correctly)
