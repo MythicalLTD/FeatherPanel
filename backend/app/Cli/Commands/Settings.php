@@ -43,7 +43,7 @@ class Settings extends App implements CommandBuilder
         \App\App::getInstance(true)->loadEnv();
 
         try {
-            $db = new Database($_ENV['DATABASE_HOST'], $_ENV['DATABASE_DATABASE'], $_ENV['DATABASE_USER'], $_ENV['DATABASE_PASSWORD'], $_ENV['DATABASE_PORT']);
+            $db = new Database((string) \App\App::env('DATABASE_HOST', '127.0.0.1'), (string) \App\App::env('DATABASE_DATABASE', ''), (string) \App\App::env('DATABASE_USER', ''), (string) \App\App::env('DATABASE_PASSWORD', ''), (int) \App\App::env('DATABASE_PORT', '3306'));
             self::$config = new ConfigFactory($db->getPdo());
             self::$settings = array_values(self::$config->getConfigurableSettings());
 
