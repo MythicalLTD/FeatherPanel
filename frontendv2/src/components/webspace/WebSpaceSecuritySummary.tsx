@@ -39,8 +39,8 @@ export function WebSpaceSecuritySummary({ uuidShort }: { uuidShort: string }) {
         try {
             const [spaceRes, analyticsRes, malwareRes] = await Promise.all([
                 axios.get(`/api/user/webspaces/${uuidShort}`),
-                axios.get(`/api/user/webspaces/${uuidShort}/analytics/summary?days=7`).catch(() => null),
-                axios.get(`/api/user/webspaces/${uuidShort}/malware-scan/status`).catch(() => null),
+                axios.get(`/api/user/webspaces/${uuidShort}/analytics`, { params: { days: 7 } }).catch(() => null),
+                axios.get(`/api/user/webspaces/${uuidShort}/malware-scan`).catch(() => null),
             ]);
             const ws = spaceRes.data?.data?.webspace as { waf_enabled?: boolean };
             setWafEnabled(!!ws?.waf_enabled);
@@ -54,8 +54,8 @@ export function WebSpaceSecuritySummary({ uuidShort }: { uuidShort: string }) {
             }
             setErrors4xx(e4);
             setErrors5xx(e5);
-            const scan = malwareRes?.data?.data;
-            setMalwareDate(scan?.finished_at || scan?.started_at || null);
+            const last = malwareRes?.data?.data?.last as { scanned_at?: string } | null | undefined;
+            setMalwareDate(last?.scanned_at || null);
         } finally {
             setLoading(false);
         }
