@@ -51,6 +51,20 @@ class CloudFlareRealIP
     ];
 
     /**
+     * Parsed Cloudflare ranges: [binary network, prefix length], built once per process.
+     *
+     * @var list<array{0: string, 1: int}>|null
+     */
+    private static ?array $parsedRanges = null;
+
+    /**
+     * isFromCloudflare() results per address (bounded; depends on the address only).
+     *
+     * @var array<string, bool>
+     */
+    private static array $cloudflareMemo = [];
+
+    /**
      * Get the real client IP address, considering Cloudflare and various proxy headers.
      *
      * Order of precedence:
@@ -151,49 +165,65 @@ class CloudFlareRealIP
     }
 
     /**
-     * Check if an IP is in a given CIDR range.
+     * Compare the first $prefix bits of two packed addresses of the same family.
      */
-    private static function ipInRange($ip, $cidr)
+    private static function binaryInRange(string $ipBin, string $subnetBin, int $prefix): bool
     {
-        if (strpos($cidr, ':') !== false) {
-            // IPv6
-            return self::ipv6InRange($ip, $cidr);
+        $length = strlen($ipBin);
+        if ($length !== strlen($subnetBin) || $prefix < 0 || $prefix > $length * 8) {
+            return false;
         }
-        // IPv4
-        list($subnet, $mask) = explode('/', $cidr);
+        $bytes = intdiv($prefix, 8);
+        if ($bytes > 0 && strncmp($ipBin, $subnetBin, $bytes) !== 0) {
+            return false;
+        }
+        $bits = $prefix % 8;
+        if ($bits === 0) {
+            return true;
+        }
+        $mask = (0xFF << (8 - $bits)) & 0xFF;
 
-        return (ip2long($ip) & ~((1 << (32 - $mask)) - 1)) == ip2long($subnet);
-    }
-
-    /**
-     * Check if an IPv6 address is in a given CIDR range.
-     */
-    private static function ipv6InRange($ip, $cidr)
-    {
-        list($subnet, $mask) = explode('/', $cidr);
-        $ip_bin = inet_pton($ip);
-        $subnet_bin = inet_pton($subnet);
-        $mask = (int) $mask;
-        $ip_bits = unpack('H*', $ip_bin)[1];
-        $subnet_bits = unpack('H*', $subnet_bin)[1];
-        $ip_bits = base_convert($ip_bits, 16, 2);
-        $subnet_bits = base_convert($subnet_bits, 16, 2);
-
-        return substr($ip_bits, 0, $mask) === substr($subnet_bits, 0, $mask);
+        return (ord($ipBin[$bytes]) & $mask) === (ord($subnetBin[$bytes]) & $mask);
     }
 
     /**
      * Check if an IP is from Cloudflare.
      */
-    private static function isFromCloudflare($ip)
+    private static function isFromCloudflare($ip): bool
     {
-        foreach (self::$cloudflareRanges as $range) {
-            if (self::ipInRange($ip, $range)) {
-                return true;
+        if (!is_string($ip) || $ip === '') {
+            return false;
+        }
+        if (isset(self::$cloudflareMemo[$ip])) {
+            return self::$cloudflareMemo[$ip];
+        }
+
+        $result = false;
+        $ipBin = @inet_pton($ip);
+        if ($ipBin !== false) {
+            if (self::$parsedRanges === null) {
+                self::$parsedRanges = [];
+                foreach (self::$cloudflareRanges as $range) {
+                    [$subnet, $mask] = explode('/', $range, 2);
+                    $subnetBin = @inet_pton($subnet);
+                    if ($subnetBin !== false) {
+                        self::$parsedRanges[] = [$subnetBin, (int) $mask];
+                    }
+                }
+            }
+            foreach (self::$parsedRanges as [$subnetBin, $prefix]) {
+                if (self::binaryInRange($ipBin, $subnetBin, $prefix)) {
+                    $result = true;
+                    break;
+                }
             }
         }
 
-        return false;
+        if (count(self::$cloudflareMemo) >= 4096) {
+            self::$cloudflareMemo = [];
+        }
+
+        return self::$cloudflareMemo[$ip] = $result;
     }
 
     /**
