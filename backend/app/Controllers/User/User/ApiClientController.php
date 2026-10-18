@@ -445,6 +445,9 @@ class ApiClientController
             return ApiResponse::error('Invalid request data', 'INVALID_REQUEST_DATA', 400);
         }
 
+        if (isset($data['name']) && !is_scalar($data['name'])) {
+            return ApiResponse::error('Name must be a string', 'INVALID_DATA_TYPE', 400);
+        }
         $name = trim((string) ($data['name'] ?? 'VS Code'));
         if ($name === '' || strlen($name) > 191) {
             return ApiResponse::error('Name must be between 1 and 191 characters', 'INVALID_NAME_LENGTH', 400);
@@ -654,6 +657,10 @@ class ApiClientController
 
         if (empty($validData)) {
             return ApiResponse::error('No valid fields to update', 'NO_VALID_FIELDS', 400);
+        }
+
+        if (isset($validData['name']) && !is_string($validData['name'])) {
+            return ApiResponse::error('Name must be a string', 'INVALID_DATA_TYPE', 400);
         }
 
         if (isset($validData['name']) && (strlen($validData['name']) < 1 || strlen($validData['name']) > 191)) {
@@ -1014,7 +1021,7 @@ class ApiClientController
     public function validateApiClient(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
-        if ($data == null || !isset($data['public_key'])) {
+        if ($data == null || !isset($data['public_key']) || !is_string($data['public_key'])) {
             return ApiResponse::error('Public key is required', 'PUBLIC_KEY_REQUIRED', 400);
         }
 
@@ -1805,6 +1812,12 @@ class ApiClientController
      */
     private function normalizeOAuth2DeviceRequest(array $data): array | Response
     {
+        foreach (['name', 'allowedips', 'alertCors', 'appName', 'appLogo', 'description'] as $field) {
+            if (isset($data[$field]) && !is_scalar($data[$field])) {
+                return ApiResponse::error("Field {$field} must be a string", 'INVALID_DATA_TYPE', 400);
+            }
+        }
+
         $name = trim((string) ($data['name'] ?? ''));
         $allowedIpsInput = (string) ($data['allowedips'] ?? '');
         $alertCorsInput = (string) ($data['alertCors'] ?? 'false');
