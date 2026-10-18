@@ -456,8 +456,8 @@ export default function UsersPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-users', 'after-header')} />
 
-            <div className='bg-card/50 border-border flex flex-col items-center gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md sm:flex-row'>
-                <div className='group relative flex-1'>
+            <div className='bg-card/50 border-border flex flex-col gap-3 rounded-2xl border p-3 shadow-sm backdrop-blur-md sm:p-4'>
+                <div className='group relative w-full min-w-0 flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('admin.users.search_placeholder')}
@@ -466,10 +466,10 @@ export default function UsersPage() {
                         onChange={(e) => patchFilters({ searchQuery: e.target.value })}
                     />
                 </div>
-                <div className='flex w-full items-center gap-2 overflow-x-auto pb-2 sm:w-auto sm:pb-0'>
+                <div className='grid w-full grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5'>
                     <Input
                         placeholder={t('admin.users.filters.ip_placeholder')}
-                        className='h-11 w-[160px] rounded-xl'
+                        className='h-11 w-full rounded-xl'
                         value={ipFilter}
                         onChange={(e) => patchFilters({ ipFilter: e.target.value })}
                     />
@@ -479,7 +479,7 @@ export default function UsersPage() {
                             onChange={(e) => {
                                 patchFilters({ roleFilter: e.target.value, page: 1 });
                             }}
-                            className='h-11 w-[160px] rounded-xl'
+                            className='h-11 w-full rounded-xl'
                         >
                             <option value=''>{t('admin.users.filters.all_roles')}</option>
                             {availableRoles.map((role) => (
@@ -494,7 +494,7 @@ export default function UsersPage() {
                         onChange={(e) => {
                             patchFilters({ bannedFilter: e.target.value, page: 1 });
                         }}
-                        className='h-11 w-[160px] rounded-xl'
+                        className='h-11 w-full rounded-xl'
                     >
                         <option value=''>{t('admin.users.filters.any_status')}</option>
                         <option value='false'>{t('admin.users.filters.status_active')}</option>
@@ -508,34 +508,36 @@ export default function UsersPage() {
                                 page: 1,
                             });
                         }}
-                        className='h-11 w-[180px] rounded-xl'
+                        className='h-11 w-full rounded-xl'
                     >
                         <option value=''>{t('admin.users.filters.any_email_status')}</option>
                         <option value='true'>{t('admin.users.filters.email_verified')}</option>
                         <option value='false'>{t('admin.users.filters.email_unverified')}</option>
                     </Select>
-                    <Select
-                        value={`${sortBy}-${sortOrder}`}
-                        onChange={(e) => {
-                            const [field, order] = e.target.value.split('-') as [
-                                'id' | 'username' | 'email' | 'last_seen' | 'created_at',
-                                'ASC' | 'DESC',
-                            ];
-                            patchFilters({ sortBy: field, sortOrder: order, page: 1 });
-                        }}
-                        className='h-11 w-[200px] rounded-xl'
-                    >
-                        <option value='created_at-DESC'>{t('admin.users.sort.created_desc')}</option>
-                        <option value='created_at-ASC'>{t('admin.users.sort.created_asc')}</option>
-                        <option value='last_seen-DESC'>{t('admin.users.sort.last_active_desc')}</option>
-                        <option value='last_seen-ASC'>{t('admin.users.sort.last_active_asc')}</option>
-                        <option value='id-DESC'>{t('admin.users.sort.newest')}</option>
-                        <option value='id-ASC'>{t('admin.users.sort.oldest')}</option>
-                        <option value='username-ASC'>{t('admin.users.sort.username_asc')}</option>
-                        <option value='username-DESC'>{t('admin.users.sort.username_desc')}</option>
-                        <option value='email-ASC'>{t('admin.users.sort.email_asc')}</option>
-                        <option value='email-DESC'>{t('admin.users.sort.email_desc')}</option>
-                    </Select>
+                    <div className='col-span-2 sm:col-span-1'>
+                        <Select
+                            value={`${sortBy}-${sortOrder}`}
+                            onChange={(e) => {
+                                const [field, order] = e.target.value.split('-') as [
+                                    'id' | 'username' | 'email' | 'last_seen' | 'created_at',
+                                    'ASC' | 'DESC',
+                                ];
+                                patchFilters({ sortBy: field, sortOrder: order, page: 1 });
+                            }}
+                            className='h-11 w-full rounded-xl'
+                        >
+                            <option value='created_at-DESC'>{t('admin.users.sort.created_desc')}</option>
+                            <option value='created_at-ASC'>{t('admin.users.sort.created_asc')}</option>
+                            <option value='last_seen-DESC'>{t('admin.users.sort.last_active_desc')}</option>
+                            <option value='last_seen-ASC'>{t('admin.users.sort.last_active_asc')}</option>
+                            <option value='id-DESC'>{t('admin.users.sort.newest')}</option>
+                            <option value='id-ASC'>{t('admin.users.sort.oldest')}</option>
+                            <option value='username-ASC'>{t('admin.users.sort.username_asc')}</option>
+                            <option value='username-DESC'>{t('admin.users.sort.username_desc')}</option>
+                            <option value='email-ASC'>{t('admin.users.sort.email_asc')}</option>
+                            <option value='email-DESC'>{t('admin.users.sort.email_desc')}</option>
+                        </Select>
+                    </div>
                 </div>
             </div>
 

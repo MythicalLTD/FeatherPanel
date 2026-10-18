@@ -253,7 +253,7 @@ export function SpellPickerSheet({
             {pickerMode === 'cloud' ? (
                 <div className='space-y-4'>
                     <div className='flex flex-col gap-3 sm:flex-row'>
-                        <div className='group relative flex-1'>
+                        <div className='group relative w-full min-w-0 flex-1'>
                             <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                             <Input
                                 placeholder={t('admin.marketplace.spells.search_placeholder')}

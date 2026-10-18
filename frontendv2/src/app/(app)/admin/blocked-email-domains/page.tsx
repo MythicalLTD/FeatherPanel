@@ -588,7 +588,7 @@ export default function BlockedEmailDomainsPage() {
             </PageCard>
 
             <div className='border-border bg-card/50 flex flex-col gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md sm:flex-row sm:items-center'>
-                <div className='group relative flex-1'>
+                <div className='group relative w-full min-w-0 flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('admin.blocked_email_domains.search_placeholder')}

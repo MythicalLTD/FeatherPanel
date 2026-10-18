@@ -472,11 +472,11 @@ export default function ServersPage() {
                     />
                 </div>
                 <div className='flex flex-col items-stretch justify-between gap-2 sm:flex-row sm:items-center'>
-                    <div className='flex flex-wrap items-center gap-2'>
+                    <div className='grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center'>
                         <Button
                             variant={filterOwner ? 'default' : 'outline'}
                             size='sm'
-                            className='h-9 text-xs'
+                            className='h-10 min-w-0 justify-start overflow-hidden text-xs sm:h-9 sm:justify-center'
                             onClick={() => {
                                 setIsOwnerFilterModalOpen(true);
                                 if (!ownerFilterResults.length) {
@@ -492,7 +492,7 @@ export default function ServersPage() {
                         <Button
                             variant={filterNode ? 'default' : 'outline'}
                             size='sm'
-                            className='h-9 text-xs'
+                            className='h-10 min-w-0 justify-start overflow-hidden text-xs sm:h-9 sm:justify-center'
                             onClick={() => {
                                 fetchNodes();
                                 setIsNodeFilterModalOpen(true);
@@ -506,7 +506,7 @@ export default function ServersPage() {
                         <Button
                             variant={filterRealm ? 'default' : 'outline'}
                             size='sm'
-                            className='h-9 text-xs'
+                            className='h-10 min-w-0 justify-start overflow-hidden text-xs sm:h-9 sm:justify-center'
                             onClick={() => {
                                 setIsRealmFilterModalOpen(true);
                             }}
@@ -519,7 +519,7 @@ export default function ServersPage() {
                         <Button
                             variant={filterSpell ? 'default' : 'outline'}
                             size='sm'
-                            className='h-9 text-xs'
+                            className='h-10 min-w-0 justify-start overflow-hidden text-xs sm:h-9 sm:justify-center'
                             onClick={() => {
                                 setIsSpellFilterModalOpen(true);
                                 if (!spellsList.length) {
@@ -541,7 +541,7 @@ export default function ServersPage() {
                         <Button
                             variant={filterLocation ? 'default' : 'outline'}
                             size='sm'
-                            className='h-9 text-xs'
+                            className='h-10 min-w-0 justify-start overflow-hidden text-xs sm:h-9 sm:justify-center'
                             onClick={() => {
                                 setIsLocationFilterModalOpen(true);
                                 if (!locationsList.length) {
@@ -562,13 +562,13 @@ export default function ServersPage() {
                         <Button
                             variant='ghost'
                             size='sm'
-                            className='h-9 text-xs'
+                            className='h-10 min-w-0 justify-start overflow-hidden text-xs sm:h-9 sm:justify-center'
                             onClick={() => patchFilters({ showAdvancedFilters: !showAdvancedFilters })}
                         >
                             {t('admin.servers.filters.advanced')}
                         </Button>
                     </div>
-                    <div className='flex items-center gap-2'>
+                    <div className='grid sm:flex sm:items-center sm:gap-2'>
                         <Select
                             value={`${sortBy}-${sortOrder}`}
                             onChange={(e) => {
@@ -578,7 +578,7 @@ export default function ServersPage() {
                                 ];
                                 patchFilters({ sortBy: field, sortOrder: order, page: 1 });
                             }}
-                            className='bg-background/50 border-border/50 h-11 w-55 rounded-xl text-sm'
+                            className='bg-background/50 border-border/50 h-11 w-full rounded-xl text-sm sm:w-55'
                         >
                             <option value='id-DESC'>{t('admin.servers.sort.newest')}</option>
                             <option value='id-ASC'>{t('admin.servers.sort.oldest')}</option>
