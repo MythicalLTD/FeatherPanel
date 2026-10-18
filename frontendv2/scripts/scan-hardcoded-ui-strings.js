@@ -141,8 +141,9 @@ const TOAST_LITERAL = /\btoast\.(?:success|error|info|warning|message)\s*\(\s*([
 /** confirm('…') / window.confirm("…") with string literal */
 const CONFIRM_LITERAL = /\b(?:window\.)?confirm\s*\(\s*(['"`])((?:(?!\1)[^\\]|\\.)+)\1/g;
 
-/** >Some English text< on one line inside JSX */
-const JSX_TEXT = /(?<![=\w])>\s*([A-Z][a-z]+(?:[ ,'’!?:-]+[A-Za-z][A-Za-z'’]*)+[.!?:…]?)\s*<\/?[A-Za-z]/g;
+/** >Some English text< on one line inside JSX. Apostrophes live only inside words (never in the
+ * separator class) so the repetition stays unambiguous - CodeQL js/redos on #281. */
+const JSX_TEXT = /(?<![=\w])>\s*([A-Z][a-z]+(?:['’][a-z]+)?(?:[ ,!?:-]+[A-Za-z][A-Za-z'’]*)+[.!?:…]?)\s*<\/?[A-Za-z]/g;
 
 /** placeholder='English' / title="English" / aria-label='English' … (not ={t(...)}) */
 const JSX_ATTR =
