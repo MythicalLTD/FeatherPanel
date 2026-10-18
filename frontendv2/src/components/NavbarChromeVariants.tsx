@@ -408,7 +408,7 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
         >
             <div
                 className={cn(
-                    'border-border/30 bg-card/70 mx-auto flex h-12 max-w-450 items-center gap-x-2 rounded-2xl border px-2.5 backdrop-blur-xl sm:h-13 sm:gap-x-3 sm:px-3.5',
+                    'fp-chrome-surface mx-auto flex h-12 max-w-450 items-center gap-x-2 rounded-2xl border px-2.5 sm:h-13 sm:gap-x-3 sm:px-3.5',
                     navbarGlowClass,
                 )}
             >
