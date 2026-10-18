@@ -256,9 +256,9 @@ export default function CreateTicketPage() {
     ];
 
     return (
-        <div className='mx-auto max-w-4xl pb-12'>
+        <div className='mx-auto w-full max-w-4xl min-w-0 pb-12'>
             <WidgetRenderer widgets={getWidgets('dashboard-tickets-create', 'top-of-page')} />
-            <div className='mb-8 flex items-start gap-4'>
+            <div className='mb-6 flex items-start gap-3 sm:mb-8 sm:gap-4'>
                 <Link href='/dashboard/tickets'>
                     <Button
                         variant='ghost'
@@ -268,17 +268,17 @@ export default function CreateTicketPage() {
                         <ChevronLeft className='h-5 w-5' />
                     </Button>
                 </Link>
-                <div>
-                    <h1 className='text-foreground mb-2 text-3xl font-bold tracking-tight'>
+                <div className='min-w-0'>
+                    <h1 className='text-foreground mb-2 text-2xl font-bold tracking-tight sm:text-3xl'>
                         {t('tickets.createTicket')}
                     </h1>
-                    <p className='text-muted-foreground text-lg'>{t('tickets.createTicketDescription')}</p>
+                    <p className='text-muted-foreground text-sm sm:text-lg'>{t('tickets.createTicketDescription')}</p>
                 </div>
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-tickets-create', 'after-header')} />
 
             <div className='bg-card/50 border-border/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
-                <form onSubmit={handleSubmit} className='space-y-8 p-8' data-fp-save-shortcut>
+                <form onSubmit={handleSubmit} className='space-y-6 p-4 sm:space-y-8 sm:p-8' data-fp-save-shortcut>
                     <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                         <div className='md:col-span-2'>
                             <Input
@@ -339,7 +339,7 @@ export default function CreateTicketPage() {
                                 <Button
                                     type='button'
                                     variant='outline'
-                                    className='border-border/50 hover:bg-card hover:border-primary/50 h-auto flex-1 justify-between rounded-xl px-4 py-3 text-left font-normal'
+                                    className='border-border/50 hover:bg-card hover:border-primary/50 h-auto min-w-0 flex-1 justify-between rounded-xl px-4 py-3 text-left font-normal'
                                     onClick={() => setServerModalOpen(true)}
                                 >
                                     <div className='flex min-w-0 items-center gap-3'>
@@ -445,7 +445,7 @@ export default function CreateTicketPage() {
                         </div>
                     </div>
 
-                    <div className='flex justify-end gap-3 pt-4'>
+                    <div className='flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-end'>
                         <Link href='/dashboard/tickets'>
                             <Button type='button' variant='outline' size='lg' className='border-border/50'>
                                 {t('common.cancel')}

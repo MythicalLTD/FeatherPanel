@@ -238,9 +238,9 @@ export default function VdsSubusersPage() {
             <PageHeader
                 title={t('navigation.items.users') || t('vds.subusers.title')}
                 description={
-                    <div className='flex items-center gap-3'>
+                    <div className='flex flex-wrap items-center gap-x-3 gap-y-2'>
                         <span>{t('vds.subusers.description')}</span>
-                        <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
+                        <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest whitespace-nowrap uppercase'>
                             {subusers.length} {t('common.users')}
                         </span>
                     </div>

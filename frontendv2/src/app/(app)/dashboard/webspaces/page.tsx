@@ -194,13 +194,13 @@ export default function WebSpacesDashboardPage() {
             <WidgetRenderer widgets={getWidgets('dashboard-webspaces', 'after-header')} />
 
             <div className='bg-card/50 border-border/50 flex flex-col gap-3 rounded-2xl border p-3 backdrop-blur-xl'>
-                <div className='flex items-center gap-2'>
+                <div className='flex flex-wrap items-center gap-2'>
                     <input
                         type='text'
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder={t('webSpaces.searchPlaceholder')}
-                        className='bg-background border-border focus:ring-primary min-w-0 flex-1 rounded-xl border px-4 py-2 text-sm transition-all focus:ring-2 focus:outline-none'
+                        className='bg-background border-border focus:ring-primary min-w-0 flex-1 basis-full rounded-xl border px-4 py-2 text-sm transition-all focus:ring-2 focus:outline-none sm:basis-0'
                     />
 
                     <Listbox value={selectedSortOption} onChange={(option) => setSelectedSort(option.id)}>

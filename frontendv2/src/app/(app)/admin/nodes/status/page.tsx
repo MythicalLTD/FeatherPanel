@@ -90,7 +90,17 @@ export default function NodeStatusPage() {
                 const res = await api.get('/admin/nodes/status/global');
                 if (res.data.success) {
                     setGlobalStats(res.data.data.global);
-                    setNodes(res.data.data.nodes);
+                    // Wings can answer with system info but no live metrics; treat that as "no data"
+                    // instead of crashing on the missing numbers.
+                    setNodes(
+                        (res.data.data.nodes as NodeStatus[]).map((node) => ({
+                            ...node,
+                            utilization:
+                                node.utilization && typeof node.utilization.cpu_percent === 'number'
+                                    ? node.utilization
+                                    : null,
+                        })),
+                    );
                 } else {
                     setError(getApiErrorMessageFromPayload(res.data, t, 'admin.nodes.error'));
                 }
@@ -269,7 +279,7 @@ export default function NodeStatusPage() {
 
                     <div className='space-y-4'>
                         <h2 className='text-2xl font-bold tracking-tight'>{t('admin.nodes.individual_nodes')}</h2>
-                        <div className='grid gap-6 xl:grid-cols-2'>
+                        <div className='grid grid-cols-1 gap-6 xl:grid-cols-2'>
                             {nodes.length === 0 ? (
                                 <div className='col-span-2'>
                                     <EmptyState
@@ -403,9 +413,9 @@ export default function NodeStatusPage() {
                                             ) : (
                                                 <Alert variant='destructive'>
                                                     <AlertTriangle className='h-4 w-4' />
-                                                    <div className='ml-2'>
+                                                    <div className='ml-2 min-w-0'>
                                                         <AlertTitle>{t('admin.nodes.offline')}</AlertTitle>
-                                                        <AlertDescription>
+                                                        <AlertDescription className='[overflow-wrap:anywhere]'>
                                                             {node.error ||
                                                                 t('ui.admin.nodes.status.cannotConnectToWingsDaemon')}
                                                         </AlertDescription>
