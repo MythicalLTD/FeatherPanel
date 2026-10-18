@@ -27,17 +27,17 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, icon: Icon, actions, className }: PageHeaderProps) {
     return (
-        <div className={cn('flex flex-wrap items-end justify-between gap-x-6 gap-y-4 pt-4', className)}>
-            <div className='flex max-w-full min-w-0 items-center gap-4 sm:gap-6'>
+        <div className={cn('flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pt-2', className)}>
+            <div className='flex max-w-full min-w-0 items-center gap-3 sm:gap-4'>
                 {Icon && (
-                    <div className='bg-primary/10 text-primary border-primary/20 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border sm:h-20 sm:w-20'>
-                        <Icon className='h-7 w-7 sm:h-10 sm:w-10' />
+                    <div className='bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-lg sm:h-12 sm:w-12'>
+                        <Icon className='h-5 w-5 sm:h-6 sm:w-6' />
                     </div>
                 )}
-                <div className='min-w-0 space-y-1 sm:space-y-2'>
-                    <h1 className='text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl'>{title}</h1>
+                <div className='min-w-0 space-y-1'>
+                    <h1 className='text-xl font-semibold tracking-tight sm:text-2xl'>{title}</h1>
                     {description && (
-                        <div className='text-muted-foreground text-sm font-medium [overflow-wrap:anywhere] opacity-80 sm:text-base lg:text-lg'>
+                        <div className='text-muted-foreground max-w-3xl text-sm [overflow-wrap:anywhere]'>
                             {description}
                         </div>
                     )}

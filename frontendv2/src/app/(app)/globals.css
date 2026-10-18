@@ -18,7 +18,7 @@
     --secondary: 0 0% 96%;
     --secondary-foreground: 0 0% 9%;
     --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    --muted-foreground: 0 0% 40%; /* 5.7:1 on white, 5.2:1 on muted */
     --accent: 0 0% 96%;
     --accent-foreground: 0 0% 9%;
     --destructive: 0 84% 60%;
@@ -58,7 +58,7 @@
 }
 
 .dark {
-    --background: 220 15% 6%; /* Deep dark blue-grey/black for premium look */
+    --background: 220 15% 6%;
     --foreground: 210 20% 98%;
     --card: 220 15% 9%;
     --card-foreground: 210 20% 98%;
@@ -69,13 +69,14 @@
     --secondary: 0 0% 15%;
     --secondary-foreground: 0 0% 93%;
     --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 64%;
+    --muted-foreground: 220 10% 66%;
     --accent: 0 0% 15%;
     --accent-foreground: 0 0% 93%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 15% 8%; /* Almost background color to hide borders */
-    --input: 220 15% 10%;
+    /* Visible but quiet: cards and inputs need an edge against --card (9%) to read as surfaces. */
+    --border: 220 13% 17%;
+    --input: 220 13% 19%;
     --ring: 262 83% 58%;
 }
 
