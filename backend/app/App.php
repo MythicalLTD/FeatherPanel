@@ -24,9 +24,12 @@ use Random\RandomException;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigFactory;
 use App\Logger\LoggerFactory;
+use App\Runtime\WorkerRestart;
 use App\Config\ConfigInterface;
 use App\Plugins\ObsoleteAddons;
+use App\Runtime\RequestContext;
 use App\Helpers\RateLimitConfig;
+use App\Runtime\RequestLifecycle;
 use App\Middleware\AuthMiddleware;
 use App\Telemetry\SentryTelemetry;
 use App\Middleware\AdminMiddleware;
@@ -36,23 +39,49 @@ use Symfony\Component\Routing\Route;
 use App\Plugins\Events\Events\AppEvent;
 use App\Middleware\FeatherQuilldMiddleware;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\Matcher\UrlMatcher;
+use Symfony\Component\Routing\Matcher\CompiledUrlMatcher;
+use Symfony\Component\Routing\Matcher\UrlMatcherInterface;
+use Symfony\Component\Routing\RequestContext as RoutingContext;
 use Symfony\Component\Routing\Exception\MethodNotAllowedException;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
+use Symfony\Component\Routing\Matcher\Dumper\CompiledUrlMatcherDumper;
 
 class App
 {
+    /** Seconds a connection may sit idle between requests before it is pinged. */
+    private const CONNECTION_CHECK_IDLE_SECONDS = 2.0;
+
     public static App $instance;
     public Database $db;
     public RouteCollection $routes;
     public array $middleware = [];
     private ?\Redis $redisConnection = null;
+    private bool $redisAvailable = false;
+    private float $redisRetryAt = 0.0;
+    private float $redisRetryDelay = 5.0;
 
-    public function __construct(bool $softBoot, bool $isCron = false, bool $isCli = false)
+    /** Whether the HTTP boot (database, plugin kernels, routes) completed. */
+    private bool $httpBooted = false;
+    private ?\Throwable $bootError = null;
+    private int $handledRequests = 0;
+    private array | false | null $compiledRoutes = null;
+    private int $compiledRouteCount = 0;
+
+    /**
+     * Boot the application.
+     *
+     * @param bool $softBoot only load the environment (no database, no router)
+     * @param bool $isCron boot for cron jobs (database, no plugins, no router)
+     * @param bool $isCli boot for CLI commands and tests (database only)
+     * @param bool $dispatch handle the current request right away (classic entry
+     *                       points); the FrankenPHP worker boots once with false and
+     *                       calls handle() for every request instead
+     */
+    public function __construct(bool $softBoot, bool $isCron = false, bool $isCli = false, bool $dispatch = true)
     {
         /**
          * Load the environment variables.
@@ -83,13 +112,7 @@ class App
 
         // If running in test mode, skip Redis and plugin manager, just init DB
         if ($isCli) {
-            $this->db = new Database(
-                (string) self::env('DATABASE_HOST', '127.0.0.1'),
-                (string) self::env('DATABASE_DATABASE', ''),
-                (string) self::env('DATABASE_USER', ''),
-                (string) self::env('DATABASE_PASSWORD', ''),
-                (int) self::env('DATABASE_PORT', '3306'),
-            );
+            $this->connectDatabase();
 
             return;
         }
@@ -97,34 +120,48 @@ class App
         /**
          * Redis.
          */
-        $redis = new FastChat\Redis();
-        if (!$redis->testConnection()) {
-            if (!defined('REDIS_ENABLED')) {
-                define('REDIS_ENABLED', false);
-            }
-            $this->redisConnection = null;
-        } else {
-            if (!defined('REDIS_ENABLED')) {
-                define('REDIS_ENABLED', true);
-            }
-            // Initialize Redis connection for rate limiting
-            try {
-                $this->redisConnection = new \Redis();
-                $host = self::env('REDIS_HOST', '127.0.0.1');
-                $port = (int) self::env('REDIS_PORT', '6379');
-                $password = self::env('REDIS_PASSWORD', null);
+        $this->connectRedis();
 
-                if ($password) {
-                    $this->redisConnection->connect($host, $port);
-                    $this->redisConnection->auth($password);
-                } else {
-                    $this->redisConnection->connect($host, $port);
-                }
+        if ($isCron) {
+            try {
+                $this->connectDatabase();
             } catch (\Exception $e) {
-                self::getLogger()->error('Failed to initialize Redis connection for rate limiting: ' . $e->getMessage());
-                $this->redisConnection = null;
+                SentryTelemetry::captureException($e);
+                self::getLogger()->error('Database connection failed: ' . $e->getMessage(), false);
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => 'Database connection failed',
+                    'exception' => $e->getMessage(),
+                    'success' => false,
+                    'error_code' => 'DATABASE_CONNECTION_FAILED',
+                    'error_message' => 'Database connection failed',
+                ]);
+                exit(1);
             }
-            $redis = $this->redisConnection;
+
+            return;
+        }
+
+        $this->bootHttp();
+
+        if ($dispatch) {
+            $this->handle();
+        }
+    }
+
+    /**
+     * Connect the database, load the plugin kernels and register the routes.
+     *
+     * Idempotent: once it succeeded it returns right away. When the database was
+     * unreachable it can be called again later (a FrankenPHP worker retries on
+     * the next request instead of dying).
+     *
+     * @return bool true when the application is ready to route requests
+     */
+    public function bootHttp(): bool
+    {
+        if ($this->httpBooted) {
+            return true;
         }
 
         /**
@@ -138,44 +175,27 @@ class App
          * Database Connection.
          */
         try {
-            $this->db = new Database(
-                (string) self::env('DATABASE_HOST', '127.0.0.1'),
-                (string) self::env('DATABASE_DATABASE', ''),
-                (string) self::env('DATABASE_USER', ''),
-                (string) self::env('DATABASE_PASSWORD', ''),
-                (int) self::env('DATABASE_PORT', '3306'),
-            );
+            $this->connectDatabase();
         } catch (\Exception $e) {
+            $this->bootError = $e;
             SentryTelemetry::captureException($e);
             self::getLogger()->error('Database connection failed: ' . $e->getMessage(), false);
-            http_response_code(500);
-            header('Content-Type: application/json');
-            header('Cache-Control: no-cache, private');
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'Database connection failed',
-                'exception' => $e->getMessage(),
-                'success' => false,
-                'error_code' => 'DATABASE_CONNECTION_FAILED',
-                'error_message' => 'Database connection failed',
-            ]);
-            exit;
+
+            return false;
         }
 
         /**
          * Initialize the plugin manager.
          */
         if (!defined('CRON_MODE')) {
-            if (isset($pluginManager) && $pluginManager !== null) {
+            if (isset($pluginManager)) {
                 $pluginManager->loadKernel();
             } else {
                 self::getLogger()->warning('Plugin manager was not initialized. Skipping kernel load.');
             }
-            define('LOGGER', $this->getLogger());
-        }
-
-        if ($isCron) {
-            return;
+            if (!defined('LOGGER')) {
+                define('LOGGER', $this->getLogger());
+            }
         }
 
         // Force PHP's default timezone to UTC for the entire request.
@@ -195,13 +215,54 @@ class App
 
         $this->routes = new RouteCollection();
         $this->registerApiRoutes($this->routes);
-        $eventManager->emit(
-            AppEvent::onRouterReady(),
-            [
-                'router' => $this->routes,
-            ]
-        );
-        $this->dispatchSymfonyRouter();
+        if (isset($eventManager)) {
+            $eventManager->emit(
+                AppEvent::onRouterReady(),
+                [
+                    'router' => $this->routes,
+                ]
+            );
+        }
+
+        $this->compiledRoutes = null;
+        $this->bootError = null;
+        $this->httpBooted = true;
+
+        return true;
+    }
+
+    /**
+     * Handle one HTTP request: route it, send the response and run the
+     * per-request cleanup. Used by public/index.php (once per process) and by
+     * the FrankenPHP worker (once per request).
+     *
+     * @param Request|null $request the request, built from the superglobals when null
+     * @param float|null $startTime microtime(true) at which the request started
+     */
+    public function handle(?Request $request = null, ?float $startTime = null): Response
+    {
+        RequestContext::begin($startTime);
+        if (!defined('REQUEST_ID')) {
+            // Backwards compatibility for plugins; core code uses RequestContext::id().
+            define('REQUEST_ID', RequestContext::id());
+        }
+        RequestLifecycle::reset();
+
+        $response = $this->dispatch($request ?? Request::createFromGlobals());
+        $response->send();
+
+        RequestLifecycle::terminate($response->getStatusCode());
+
+        return $response;
+    }
+
+    /**
+     * Whether Redis is reachable right now (re-evaluated between requests,
+     * unlike the REDIS_ENABLED constant which keeps its boot-time value).
+     */
+    public function isRedisEnabled(): bool
+    {
+        return $this->redisAvailable && $this->redisConnection !== null;
     }
 
     /**
@@ -283,16 +344,33 @@ class App
 
     /**
      * Dispatch the request using Symfony Routing and handle middleware.
+     *
+     * @deprecated use handle(), which also runs the per-request lifecycle hooks
      */
     public function dispatchSymfonyRouter(): void
     {
-        $request = Request::createFromGlobals();
-        $context = new RequestContext();
+        $this->handle();
+    }
+
+    /**
+     * Route a request through the middleware stack and return the response
+     * without sending it.
+     */
+    public function dispatch(Request $request): Response
+    {
+        if (!$this->bootHttp() || !$this->ensureConnections()) {
+            $response = $this->databaseUnavailableResponse();
+            $response->headers->set('X-Request-ID', RequestContext::id());
+
+            return $response;
+        }
+
+        ++$this->handledRequests;
+        $context = new RoutingContext();
         $context->fromRequest($request);
-        $matcher = new UrlMatcher($this->routes, $context);
 
         try {
-            $parameters = $matcher->match($request->getPathInfo());
+            $parameters = $this->getUrlMatcher($context)->match($request->getPathInfo());
             SentryTelemetry::startRequest($request, $this->routes->get($parameters['_route'])->getPath());
             $controller = $parameters['_controller'];
             unset($parameters['_controller'], $parameters['_route']);
@@ -347,11 +425,6 @@ class App
                 $response = new Response($response);
             }
         } catch (ResourceNotFoundException $e) {
-            // Log all registered routes for debugging
-            $allRoutes = [];
-            foreach ($this->routes as $name => $route) {
-                $allRoutes[] = $route->getPath();
-            }
             $response = ApiResponse::error('The api route does not exist! [' . $request->getPathInfo() . ']', 'API_ROUTE_NOT_FOUND', 404, null);
         } catch (MethodNotAllowedException $e) {
             $response = ApiResponse::error('Method not allowed for this route. Allowed: ' . implode(', ', $e->getAllowedMethods()), 'METHOD_NOT_ALLOWED', 405, null);
@@ -370,15 +443,18 @@ class App
                 false
             );
             $response = ApiResponse::error('Internal server error', 'INTERNAL_SERVER_ERROR', 500, [
-                'request_id' => defined('REQUEST_ID') ? REQUEST_ID : null,
+                'request_id' => RequestContext::id(),
                 'event_id' => $eventId,
             ]);
         }
-        if (defined('REQUEST_ID')) {
-            $response->headers->set('X-Request-ID', REQUEST_ID);
-        }
+        $response->headers->set('X-Request-ID', RequestContext::id());
         SentryTelemetry::finishRequest($response->getStatusCode());
-        $response->send();
+
+        if ($response->getStatusCode() < 400) {
+            WorkerRestart::requestAfterAdminChange($request);
+        }
+
+        return $response;
     }
 
     /**
@@ -759,12 +835,10 @@ class App
                 $dotenv = \Dotenv\Dotenv::createUnsafeImmutable(__DIR__ . '/../storage/config');
                 $dotenv->safeLoad();
             } else {
-                echo 'No .env file found';
-                exit;
+                throw new \RuntimeException('No .env file found');
             }
-        } catch (\Exception $e) {
-            echo $e->getMessage();
-            exit;
+        } catch (\Dotenv\Exception\ExceptionInterface $e) {
+            throw new \RuntimeException('Failed to load the .env file: ' . $e->getMessage(), 0, $e);
         }
     }
 
@@ -868,6 +942,9 @@ class App
 
             // Clean up backup file after successful write
             unlink($backupFile);
+
+            // Workers read the .env file once at boot.
+            WorkerRestart::request('env:' . $key);
 
             return true;
         } catch (\Exception $e) {
@@ -1242,6 +1319,168 @@ class App
             [], // schemes
             $methods
         ));
+    }
+
+    /**
+     * The URL matcher for the registered routes.
+     *
+     * A process that serves more than one request (FrankenPHP worker) compiles
+     * the route collection once, which makes matching much cheaper than the
+     * linear UrlMatcher. A single-request process (classic mode) skips the
+     * compilation because it would cost more than it saves.
+     */
+    private function getUrlMatcher(RoutingContext $context): UrlMatcherInterface
+    {
+        if ($this->handledRequests > 1 && $this->compiledRoutes !== false) {
+            $routeCount = $this->routes->count();
+            if ($this->compiledRoutes === null || $this->compiledRouteCount !== $routeCount) {
+                try {
+                    $this->compiledRoutes = (new CompiledUrlMatcherDumper($this->routes))->getCompiledRoutes();
+                    $this->compiledRouteCount = $routeCount;
+                } catch (\Throwable $e) {
+                    self::getLogger()->warning('Route compilation failed, using the uncompiled matcher: ' . $e->getMessage());
+                    $this->compiledRoutes = false;
+                }
+            }
+            if (is_array($this->compiledRoutes)) {
+                return new CompiledUrlMatcher($this->compiledRoutes, $context);
+            }
+        }
+
+        return new UrlMatcher($this->routes, $context);
+    }
+
+    /**
+     * Make sure the database and Redis connections survived the idle time
+     * since the previous request (database or Redis restarts, wait_timeout).
+     * Only processes that already served a request check, so classic mode
+     * never pays for it.
+     *
+     * @return bool false when the database is unreachable
+     */
+    private function ensureConnections(): bool
+    {
+        $idle = Database::secondsSinceLastRequest();
+        if ($idle === null || ($idle < self::CONNECTION_CHECK_IDLE_SECONDS && !Database::lastRequestFailed())) {
+            return true;
+        }
+
+        Database::dropDeadSharedConnection();
+        try {
+            $this->db->ensureConnected();
+        } catch (\Exception $e) {
+            self::getLogger()->error('Database reconnect failed: ' . $e->getMessage(), false);
+            $this->bootError = $e;
+
+            return false;
+        }
+
+        $this->ensureRedis();
+
+        return true;
+    }
+
+    /**
+     * The response returned while the database is unreachable.
+     */
+    private function databaseUnavailableResponse(): Response
+    {
+        return new Response(
+            (string) json_encode([
+                'status' => 'error',
+                'message' => 'Database connection failed',
+                'exception' => $this->bootError?->getMessage() ?? 'Database connection failed',
+                'success' => false,
+                'error_code' => 'DATABASE_CONNECTION_FAILED',
+                'error_message' => 'Database connection failed',
+            ]),
+            500,
+            [
+                'Content-Type' => 'application/json',
+                'Cache-Control' => 'no-cache, private',
+            ]
+        );
+    }
+
+    /**
+     * Connect (or reconnect) the application database.
+     */
+    private function connectDatabase(): void
+    {
+        $this->db = new Database(
+            (string) self::env('DATABASE_HOST', '127.0.0.1'),
+            (string) self::env('DATABASE_DATABASE', ''),
+            (string) self::env('DATABASE_USER', ''),
+            (string) self::env('DATABASE_PASSWORD', ''),
+            (int) self::env('DATABASE_PORT', '3306'),
+        );
+    }
+
+    /**
+     * Connect Redis (used for rate limiting and, optionally, the cache).
+     */
+    private function connectRedis(): void
+    {
+        $this->redisConnection = null;
+        $this->redisAvailable = false;
+
+        $host = (string) self::env('REDIS_HOST', '127.0.0.1');
+        $port = (int) self::env('REDIS_PORT', '6379');
+        $password = self::env('REDIS_PASSWORD', null);
+
+        if (class_exists(\Redis::class)) {
+            try {
+                $connection = new \Redis();
+                if ($connection->connect($host, $port, 2.0)) {
+                    if ($password !== null && $password !== '' && $connection->auth($password) === false) {
+                        throw new \RuntimeException('Redis authentication failed');
+                    }
+                    $this->redisConnection = $connection;
+                    $this->redisAvailable = true;
+                }
+            } catch (\Throwable $e) {
+                self::getLogger()->error('Failed to connect to Redis: ' . $e->getMessage());
+                $this->redisConnection = null;
+            }
+        } else {
+            $this->redisAvailable = (new FastChat\Redis())->testConnection();
+        }
+
+        if (!defined('REDIS_ENABLED')) {
+            // Backwards compatibility: boot-time value only, see isRedisEnabled().
+            define('REDIS_ENABLED', $this->redisAvailable);
+        }
+
+        if ($this->redisAvailable) {
+            $this->redisRetryDelay = 5.0;
+        } else {
+            $this->redisRetryAt = microtime(true) + $this->redisRetryDelay;
+            $this->redisRetryDelay = min(60.0, $this->redisRetryDelay * 2);
+        }
+    }
+
+    /**
+     * Ping Redis and reconnect after a Redis restart, retrying an unreachable
+     * Redis with a growing back-off so requests do not wait on connect timeouts.
+     */
+    private function ensureRedis(): void
+    {
+        if ($this->redisConnection !== null) {
+            try {
+                $this->redisConnection->ping();
+
+                return;
+            } catch (\Throwable) {
+                $this->redisConnection = null;
+                $this->redisAvailable = false;
+                $this->redisRetryAt = 0.0;
+                $this->redisRetryDelay = 5.0;
+            }
+        }
+
+        if (class_exists(\Redis::class) && microtime(true) >= $this->redisRetryAt) {
+            $this->connectRedis();
+        }
     }
 
     /**
