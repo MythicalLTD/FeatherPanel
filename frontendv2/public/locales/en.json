@@ -1945,7 +1945,15 @@
 				"tickets": "Support",
 				"knowledgebase": "Knowledge base",
 				"recent_mails": "Recent emails",
-				"profile": "Profile card"
+				"profile": "Profile card",
+				"greeting": "Greeting and what's new",
+				"pinned": "Pinned servers",
+				"recent": "Recently opened",
+				"notes": "Notes",
+				"quick_links": "Quick links",
+				"clock": "Clock",
+				"players": "Players online",
+				"heatmap": "Resource heatmap"
 			},
 			"descriptions": {
 				"stats": "Counts of your servers, VDS, web spaces and tickets.",
@@ -1965,7 +1973,15 @@
 				"tickets": "Your latest support tickets.",
 				"knowledgebase": "Guides and answers.",
 				"recent_mails": "The newest messages in your mailboxes.",
-				"profile": "Your name, avatar and role."
+				"profile": "Your name, avatar and role.",
+				"greeting": "A hello, the time and the latest news from your host.",
+				"pinned": "The servers you starred, one click away.",
+				"recent": "Servers you opened lately.",
+				"notes": "A private note in Markdown, saved to your account.",
+				"quick_links": "Your own links to sites and panel pages.",
+				"clock": "The time and date in your time zone.",
+				"players": "Who is playing on your running game servers.",
+				"heatmap": "Every server as a tile coloured by how busy it is."
 			},
 			"usage": {
 				"title": "Resource usage",

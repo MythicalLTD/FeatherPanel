@@ -14,6 +14,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import axios from 'axios';
 
 /**
  * Per-user dashboard configuration: which widgets show, in what order and size, and how the
@@ -23,10 +24,14 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
  */
 export const DASHBOARD_LAYOUT_STORAGE_KEY = 'featherpanel_dashboard_layout_v1';
 
-/** 7: widget list with sizes replaces the fixed two columns of version 6. */
-const LAYOUT_VERSION = 7;
+/**
+ * 7: widget list with sizes replaces the fixed two columns of version 6.
+ * 8: greeting hero (with what's new) on top, personal notes and quick links.
+ */
+const LAYOUT_VERSION = 8;
 
 export type DashboardWidgetId =
+    | 'greeting'
     | 'stats'
     | 'attention'
     | 'servers'
@@ -44,7 +49,14 @@ export type DashboardWidgetId =
     | 'tickets'
     | 'knowledgebase'
     | 'recent_mails'
-    | 'profile';
+    | 'profile'
+    | 'pinned'
+    | 'recent'
+    | 'notes'
+    | 'quick_links'
+    | 'clock'
+    | 'players'
+    | 'heatmap';
 
 export type DashboardWidgetSize = 'small' | 'medium' | 'full';
 
@@ -71,6 +83,12 @@ export interface DashboardServerOptions {
     limit: number;
 }
 
+export interface DashboardQuickLink {
+    id: string;
+    label: string;
+    url: string;
+}
+
 export interface DashboardConfig {
     layoutVersion: number;
     widgets: DashboardWidgetPlacement[];
@@ -80,7 +98,13 @@ export interface DashboardConfig {
     statTiles: DashboardStatTileId[];
     servers: DashboardServerOptions;
     hiddenPluginWidgets: string[];
+    /** Personal markdown note shown by the notes card. */
+    notes: string;
+    quickLinks: DashboardQuickLink[];
 }
+
+export const NOTES_MAX_LENGTH = 4000;
+export const QUICK_LINKS_MAX = 12;
 
 export const SERVER_LIMIT_OPTIONS = [3, 6, 10, 20] as const;
 export const STAT_TILE_IDS: DashboardStatTileId[] = ['game', 'vds', 'web', 'support'];
@@ -88,6 +112,7 @@ export const METER_IDS: DashboardMeter[] = ['cpu', 'ram', 'disk'];
 
 /** Sizes each widget supports; the first is its default. */
 export const WIDGET_SIZES: Record<DashboardWidgetId, DashboardWidgetSize[]> = {
+    greeting: ['full'],
     stats: ['full'],
     attention: ['full'],
     servers: ['medium', 'full'],
@@ -106,7 +131,27 @@ export const WIDGET_SIZES: Record<DashboardWidgetId, DashboardWidgetSize[]> = {
     knowledgebase: ['small', 'medium', 'full'],
     recent_mails: ['medium', 'full', 'small'],
     profile: ['small', 'medium'],
+    pinned: ['small', 'medium', 'full'],
+    recent: ['small', 'medium', 'full'],
+    notes: ['small', 'medium', 'full'],
+    quick_links: ['small', 'medium', 'full'],
+    clock: ['small', 'medium'],
+    players: ['small', 'medium', 'full'],
+    heatmap: ['medium', 'full', 'small'],
 };
+
+export const SIZE_ORDER: DashboardWidgetSize[] = ['small', 'medium', 'full'];
+
+/** Next allowed size one step smaller (-1) or larger (+1), or null at the end. */
+export function stepWidgetSize(
+    id: DashboardWidgetId,
+    size: DashboardWidgetSize,
+    direction: -1 | 1,
+): DashboardWidgetSize | null {
+    const allowed = SIZE_ORDER.filter((s) => WIDGET_SIZES[id].includes(s));
+    const next = allowed[allowed.indexOf(size) + direction];
+    return next ?? null;
+}
 
 export const ALL_WIDGET_IDS = Object.keys(WIDGET_SIZES) as DashboardWidgetId[];
 
@@ -117,10 +162,10 @@ const place = (id: DashboardWidgetId, size?: DashboardWidgetSize): DashboardWidg
 
 /** Calm default: what you own on the left, a few helpful cards on the right. */
 export const DEFAULT_WIDGETS: DashboardWidgetPlacement[] = [
+    place('greeting'),
     place('stats'),
     place('attention'),
-    place('servers'),
-    place('announcements'),
+    place('servers', 'full'),
     place('usage'),
     place('vds'),
     place('webspaces'),
@@ -151,6 +196,8 @@ export function defaultDashboardConfig(): DashboardConfig {
         statTiles: [...STAT_TILE_IDS],
         servers: { ...DEFAULT_SERVER_OPTIONS, meters: [...DEFAULT_SERVER_OPTIONS.meters] },
         hiddenPluginWidgets: [],
+        notes: '',
+        quickLinks: [],
     };
 }
 
@@ -177,6 +224,41 @@ function parseWidgets(raw: unknown): DashboardWidgetPlacement[] | null {
         out.push({ id, size: pick(size, WIDGET_SIZES[id], WIDGET_SIZES[id][0]) });
     }
     return out;
+}
+
+function parseQuickLinks(raw: unknown): DashboardQuickLink[] {
+    if (!Array.isArray(raw)) return [];
+    const out: DashboardQuickLink[] = [];
+    for (const entry of raw) {
+        const e = entry as Partial<DashboardQuickLink> | null;
+        if (!e || typeof e.label !== 'string' || typeof e.url !== 'string') continue;
+        if (!isSafeLinkUrl(e.url)) continue;
+        out.push({
+            id: typeof e.id === 'string' && e.id ? e.id : `l${out.length}`,
+            label: e.label.slice(0, 60),
+            url: e.url.slice(0, 500),
+        });
+        if (out.length >= QUICK_LINKS_MAX) break;
+    }
+    return out;
+}
+
+/** http(s) links and panel paths only, so a stored link can never run script. */
+export function isSafeLinkUrl(url: string): boolean {
+    const value = url.trim();
+    if (value.startsWith('/') && !value.startsWith('//')) return true;
+    try {
+        const parsed = new URL(value);
+        return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+    } catch {
+        return false;
+    }
+}
+
+/** Version 7 had no greeting card; what's new now lives in it, so the separate card goes. */
+function migrateV7(config: DashboardConfig): DashboardConfig {
+    const widgets = config.widgets.filter((w) => w.id !== 'announcements' && w.id !== 'greeting');
+    return { ...config, widgets: [place('greeting'), ...widgets] };
 }
 
 /** Version 6 had a main column, a side column and a hidden list; carry the user's choices over. */
@@ -214,7 +296,7 @@ export function parseDashboardConfig(raw: string | null): DashboardConfig {
     try {
         const parsed = JSON.parse(raw) as Record<string, unknown>;
         const version = typeof parsed.layoutVersion === 'number' ? parsed.layoutVersion : 1;
-        if (version < LAYOUT_VERSION) return migrateV6(parsed);
+        if (version < 7) return migrateV7(migrateV6(parsed));
 
         const base = defaultDashboardConfig();
         const s = (parsed.servers ?? {}) as Record<string, unknown>;
@@ -224,7 +306,7 @@ export function parseDashboardConfig(raw: string | null): DashboardConfig {
         const limit = SERVER_LIMIT_OPTIONS.includes(s.limit as (typeof SERVER_LIMIT_OPTIONS)[number])
             ? (s.limit as number)
             : base.servers.limit;
-        return {
+        const config: DashboardConfig = {
             layoutVersion: LAYOUT_VERSION,
             widgets: parseWidgets(parsed.widgets) ?? base.widgets,
             sideFirst: Boolean(parsed.sideFirst),
@@ -244,27 +326,68 @@ export function parseDashboardConfig(raw: string | null): DashboardConfig {
                 limit,
             },
             hiddenPluginWidgets: uniqueStrings(parsed.hiddenPluginWidgets),
+            notes: typeof parsed.notes === 'string' ? parsed.notes.slice(0, NOTES_MAX_LENGTH) : '',
+            quickLinks: parseQuickLinks(parsed.quickLinks),
         };
+        return version < LAYOUT_VERSION ? migrateV7(config) : config;
     } catch {
         return defaultDashboardConfig();
     }
 }
 
+/** Panel default layout saved by an admin; personal fields are never part of it. */
+function withPersonal(base: DashboardConfig, personal: DashboardConfig): DashboardConfig {
+    return {
+        ...base,
+        notes: personal.notes,
+        quickLinks: personal.quickLinks,
+        hiddenPluginWidgets: personal.hiddenPluginWidgets,
+    };
+}
+
 export function useDashboardConfig() {
     const [config, setConfig] = useState<DashboardConfig>(defaultDashboardConfig);
     const [loaded, setLoaded] = useState(false);
+    const [panelDefault, setPanelDefault] = useState<DashboardConfig | null>(null);
     const skipSave = useRef(true);
+    const hasOwnLayout = useRef(false);
 
     // Read after hydration so the server render and the first client render match.
     useLayoutEffect(() => {
-        setConfig(parseDashboardConfig(localStorage.getItem(DASHBOARD_LAYOUT_STORAGE_KEY)));
+        const stored = localStorage.getItem(DASHBOARD_LAYOUT_STORAGE_KEY);
+        hasOwnLayout.current = stored !== null;
+        setConfig(parseDashboardConfig(stored));
         setLoaded(true);
+    }, []);
+
+    // Users who never arranged their dashboard start from the panel default, if an admin set one.
+    useEffect(() => {
+        let cancelled = false;
+        axios
+            .get('/api/user/dashboard/default-layout')
+            .then(({ data }) => {
+                const layout = data?.data?.layout;
+                if (cancelled || !layout || typeof layout !== 'object') return;
+                const parsed = parseDashboardConfig(JSON.stringify(layout));
+                setPanelDefault(parsed);
+                if (!hasOwnLayout.current) {
+                    skipSave.current = true;
+                    setConfig((current) => withPersonal(parsed, current));
+                }
+            })
+            .catch(() => {
+                // No default: the built-in layout stays.
+            });
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     useEffect(() => {
         const onStorage = (event: StorageEvent) => {
             if (event.key !== DASHBOARD_LAYOUT_STORAGE_KEY) return;
             skipSave.current = true;
+            hasOwnLayout.current = event.newValue !== null;
             setConfig(parseDashboardConfig(event.newValue));
         };
         window.addEventListener('storage', onStorage);
@@ -279,10 +402,14 @@ export function useDashboardConfig() {
         }
         try {
             localStorage.setItem(DASHBOARD_LAYOUT_STORAGE_KEY, JSON.stringify(config));
+            hasOwnLayout.current = true;
         } catch {
             // Storage full or blocked: the layout still works for this visit.
         }
     }, [config, loaded]);
+
+    /** Swap in a whole configuration (used to cancel arrange mode). */
+    const replace = useCallback((next: DashboardConfig) => setConfig(next), []);
 
     const update = useCallback((patch: Partial<DashboardConfig>) => setConfig((c) => ({ ...c, ...patch })), []);
 
@@ -347,7 +474,32 @@ export function useDashboardConfig() {
         [],
     );
 
-    const reset = useCallback(() => setConfig(defaultDashboardConfig()), []);
+    /** Back to the panel default (or the built-in one), keeping notes and links. */
+    const reset = useCallback(
+        () => setConfig((current) => withPersonal(panelDefault ?? defaultDashboardConfig(), current)),
+        [panelDefault],
+    );
+
+    /** Make the widget one size smaller or larger, if it has that size. */
+    const stepSize = useCallback(
+        (id: DashboardWidgetId, direction: -1 | 1) =>
+            setConfig((c) => ({
+                ...c,
+                widgets: c.widgets.map((w) => {
+                    if (w.id !== id) return w;
+                    const next = stepWidgetSize(id, w.size, direction);
+                    return next ? { ...w, size: next } : w;
+                }),
+            })),
+        [],
+    );
+
+    /** Admin only: save the current arrangement as the panel default. */
+    const saveAsPanelDefault = useCallback(async (current: DashboardConfig) => {
+        const { data } = await axios.put('/api/admin/dashboard/default-layout', { layout: current });
+        const layout = data?.data?.layout;
+        if (layout) setPanelDefault(parseDashboardConfig(JSON.stringify(layout)));
+    }, []);
 
     return {
         config,
@@ -361,6 +513,10 @@ export function useDashboardConfig() {
         toggleStatTile,
         toggleHiddenPluginWidget,
         reset,
+        replace,
+        stepSize,
+        saveAsPanelDefault,
+        hasPanelDefault: panelDefault !== null,
     };
 }
 

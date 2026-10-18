@@ -19,6 +19,7 @@ use App\App;
 use App\Permissions;
 use Symfony\Component\HttpFoundation\Request;
 use App\Controllers\Admin\DashboardController;
+use App\Controllers\User\Dashboard\DashboardDefaultLayoutController;
 use Symfony\Component\Routing\RouteCollection;
 
 return function (RouteCollection $routes): void {
@@ -30,5 +31,27 @@ return function (RouteCollection $routes): void {
             return (new DashboardController())->index($request);
         },
         Permissions::ADMIN_DASHBOARD_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-dashboard-default-layout-update',
+        '/api/admin/dashboard/default-layout',
+        function (Request $request) {
+            return (new DashboardDefaultLayoutController())->update($request);
+        },
+        Permissions::ADMIN_SETTINGS_EDIT,
+        ['PUT'],
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-dashboard-default-layout-clear',
+        '/api/admin/dashboard/default-layout',
+        function (Request $request) {
+            return (new DashboardDefaultLayoutController())->clear($request);
+        },
+        Permissions::ADMIN_SETTINGS_EDIT,
+        ['DELETE'],
     );
 };

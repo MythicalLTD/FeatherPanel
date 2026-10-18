@@ -19,10 +19,12 @@ namespace App\Controllers\User\Dashboard;
 
 use App\App;
 use App\Chat\Node;
+use App\Cache\Cache;
 use App\Chat\Server;
 use App\Chat\Subuser;
 use App\Chat\Database;
 use App\Helpers\ModuleGate;
+use App\Helpers\PlayerStatusService;
 use App\SubuserPermissions;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
@@ -117,6 +119,10 @@ class DashboardOverviewController
                 'uptime_ms' => $stats['uptime_ms'] ?? null,
                 'rx_bytes' => $stats['rx_bytes'] ?? null,
                 'tx_bytes' => $stats['tx_bytes'] ?? null,
+                'cpu_limit' => $cpuLimit,
+                'memory_limit_bytes' => $memoryLimit,
+                'disk_limit_bytes' => $diskLimit,
+                'players' => self::cachedPlayers((string) $server['uuidShort'], $status),
             ];
         }
         $usage['cpu_percent'] = round($usage['cpu_percent'], 1);
@@ -141,6 +147,28 @@ class DashboardOverviewController
             'backups' => self::recentBackups($backupIds, $byId),
             'schedules' => self::upcomingSchedules($scheduleIds, $byId),
         ], 'Overview retrieved', 200);
+    }
+
+    /**
+     * Player count from the poller's cache (never queries the game server here).
+     *
+     * @return array{count: int, max: int}|null
+     */
+    private static function cachedPlayers(string $uuidShort, string $status): ?array
+    {
+        if ($status !== 'running') {
+            return null;
+        }
+        try {
+            $cached = Cache::get(PlayerStatusService::buildCacheKey($uuidShort));
+        } catch (\Throwable) {
+            return null;
+        }
+        if (!is_array($cached) || !isset($cached['player_count'])) {
+            return null;
+        }
+
+        return ['count' => (int) $cached['player_count'], 'max' => (int) ($cached['max_players'] ?? 0)];
     }
 
     private static function emptyOverview(): array
