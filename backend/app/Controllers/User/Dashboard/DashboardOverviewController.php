@@ -135,6 +135,9 @@ class DashboardOverviewController
                 'usage' => $usage,
                 'items' => $serverRows,
             ],
+            // Whether the user may see backups / schedules on any server, so the widgets can
+            // hide instead of claiming there are none.
+            'can_view' => ['backups' => $backupIds !== [], 'schedules' => $scheduleIds !== []],
             'backups' => self::recentBackups($backupIds, $byId),
             'schedules' => self::upcomingSchedules($scheduleIds, $byId),
         ], 'Overview retrieved', 200);
@@ -144,6 +147,7 @@ class DashboardOverviewController
     {
         return [
             'servers' => ['total' => 0, 'by_status' => (object) [], 'usage' => null, 'items' => []],
+            'can_view' => ['backups' => false, 'schedules' => false],
             'backups' => [],
             'schedules' => [],
         ];
