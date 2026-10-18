@@ -1470,6 +1470,9 @@ class ServerFilesController
             // Get optional name and extension (default to generated name and tar.gz)
             $name = $data['name'] ?? '';
             $extension = $data['extension'] ?? 'tar.gz';
+            if (!is_string($name) || !is_string($extension)) {
+                return ApiResponse::error('Fields name and extension must be strings', 'INVALID_DATA_TYPE', 400);
+            }
 
             // For large archives, process asynchronously to avoid Cloudflare timeout (100s limit)
             // Return immediately to client, then process in background
@@ -1925,6 +1928,9 @@ class ServerFilesController
             $fileName = $data['fileName'] ?? null;
             $foreground = $data['foreground'] ?? false;
             $useHeader = $data['useHeader'] ?? true;
+            if (($fileName !== null && !is_string($fileName)) || !is_scalar($foreground) || !is_scalar($useHeader)) {
+                return ApiResponse::error('Invalid fileName, foreground or useHeader value', 'INVALID_DATA_TYPE', 400);
+            }
 
             $wings = $this->createWingsConnection($node);
             $response = $wings->getServer()->pullFile(
@@ -2989,6 +2995,12 @@ class ServerFilesController
         foreach ($requiredFields as $field) {
             if (!isset($data[$field])) {
                 throw new \Exception("Missing required field: {$field}", 400);
+            }
+
+            // List fields carry arrays; every other required field is a path/name string.
+            $expectsArray = in_array($field, ['files', 'ids', 'entries'], true);
+            if ($expectsArray ? !is_array($data[$field]) : !is_string($data[$field])) {
+                throw new \Exception("Invalid type for field: {$field}", 400);
             }
         }
 
