@@ -4,6 +4,7 @@
 
 ### Added
 
+- Unsaved changes bar (Discard / Save with a leave-page warning) on every full-page form with a save button: admin users, nodes, spells, roles, webplates, VDS and web nodes, knowledgebase articles, plugin settings and plugin editor, backup schedules and Wings backup policies/destinations, rate limits, AI agent settings, and their create pages; server and webspace schedules and tasks, server database creation, webspace settings and VDS hardware settings. Forms in side panels and dialogs (locations, realms, mail templates, notifications, translations, database hosts, subuser permissions) keep their own Save button and now ask before closing with edits. The server creation wizard warns before leaving. by @nayskutzu
 - New `user.api_keys.create` role permission: lets a role create personal API keys (including MCP keys) when "Allow users to create API keys" is turned off panel-wide. by @nayskutzu
 - Compact server console: slim page header with address chip, server hero with status, address, uptime and node chips, a full-height console with a single-row toolbar (filters, quick rules, search, auto-scroll, clear, fullscreen) and CPU, memory, disk and network cards with sparklines. by @nayskutzu
 - ClickHouse can now be used as a remote database host, including WebSpace database provisioning, dumps and restores (#255). by @Devority

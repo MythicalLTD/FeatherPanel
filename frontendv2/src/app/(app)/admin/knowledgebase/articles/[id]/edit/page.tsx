@@ -64,6 +64,8 @@ import remarkGfm from 'remark-gfm';
 import { copyToClipboard, formatFileSize } from '@/lib/utils';
 import { safeBack } from '@/lib/safe-back';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface Category {
     id: number;
@@ -116,6 +118,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
         status: 'draft',
         pinned: 'false',
     });
+    const { dirty: unsaved, markClean, restore: restoreForm } = useFormBaseline(form);
 
     const [iconFile, setIconFile] = useState<File | null>(null);
     const [iconPreview, setIconPreview] = useState<string | null>(null);
@@ -148,6 +151,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                 const art = artRes.data.data.article;
                 setArticle(art);
                 setForm(art);
+                markClean();
                 setIconPreview(art.icon);
             }
             if (catRes.data?.success) setCategories(catRes.data.data.categories);
@@ -156,7 +160,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
         } catch (error) {
             toast.error(getApiErrorMessage(error, t, 'admin.knowledgebase.articles.messages.fetch_failed'));
         }
-    }, [id, t]);
+    }, [id, t, markClean]);
 
     // Fetch articles in the same category for reordering
     const fetchCategoryArticles = useCallback(async (categoryId: number) => {
@@ -264,8 +268,8 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
         }
     };
 
-    const handleSave = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSave = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         setSaveLoading(true);
 
         let iconUrl = form.icon || '';
@@ -962,6 +966,16 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
             </Dialog>
 
             <WidgetRenderer widgets={getWidgets('admin-knowledgebase-article-edit', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saveLoading}
+                onSave={() => void handleSave()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+            />
         </div>
     );
 }

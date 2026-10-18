@@ -31,6 +31,8 @@ import { cn } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 interface ReinstallTemplate {
     id: number;
@@ -74,6 +76,11 @@ export default function VdsSettingsPage() {
     const [efiEnabled, setEfiEnabled] = React.useState(false);
     const [tpmEnabled, setTpmEnabled] = React.useState(false);
     const [serial0Enabled, setSerial0Enabled] = React.useState(true);
+    const {
+        dirty: hardwareUnsaved,
+        markClean: markHardwareClean,
+        restore: restoreHardware,
+    } = useFormBaseline({ biosMode, efiEnabled, tpmEnabled, serial0Enabled });
 
     // ISO mount/unmount (QEMU only, mounted as ide2 cdrom)
     const [isoStoragesLoading, setIsoStoragesLoading] = React.useState(false);
@@ -100,13 +107,14 @@ export default function VdsSettingsPage() {
                 setTpmEnabled(!!hw?.tpm_enabled);
                 // serial0_enabled=true means serial console socket is configured.
                 setSerial0Enabled(!!hw?.serial0_enabled);
+                markHardwareClean();
             }
         } catch {
             // Ignore: the UI is permission-gated; backend will 403 if not allowed.
         } finally {
             setQemuHardwareLoading(false);
         }
-    }, [id, isQemu]);
+    }, [id, isQemu, markHardwareClean]);
 
     React.useEffect(() => {
         if (!instanceLoading && instance && isQemu) {
@@ -875,6 +883,22 @@ export default function VdsSettingsPage() {
             </Dialog>
 
             <WidgetRenderer widgets={getWidgets('vds-settings', 'bottom-of-page')} />
+
+            {isQemu && (
+                <UnsavedChangesBar
+                    dirty={hardwareUnsaved}
+                    saving={qemuHardwareSaving}
+                    onSave={() => void handleApplyQemuHardware()}
+                    onDiscard={() => {
+                        const saved = restoreHardware();
+                        if (!saved) return;
+                        setBiosMode(saved.biosMode);
+                        setEfiEnabled(saved.efiEnabled);
+                        setTpmEnabled(saved.tpmEnabled);
+                        setSerial0Enabled(saved.serial0Enabled);
+                    }}
+                />
+            )}
         </div>
     );
 }

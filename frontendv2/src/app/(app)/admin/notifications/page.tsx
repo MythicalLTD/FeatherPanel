@@ -53,6 +53,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
 
 interface Notification {
     id: number;
@@ -133,6 +135,12 @@ export default function NotificationsPage() {
         server_id: null as number | null,
         send_email: true,
     });
+    const { dirty: editDirty, commit: commitEdit } = useFormBaseline(editingNotification);
+    const { dirty: createDirty } = useFormBaseline(newNotification, { trackFromStart: true });
+    const guardClose = useDiscardConfirm(
+        (editOpen && editDirty) || (createOpen && createDirty),
+        t('common.unsavedChanges.leaveConfirm'),
+    );
 
     const [userSearch, setUserSearch] = useState('');
     const [userOptions, setUserOptions] = useState<AdminUserOption[]>([]);
@@ -358,6 +366,7 @@ export default function NotificationsPage() {
 
     const openEdit = (notification: Notification) => {
         setEditingNotification({ ...notification });
+        commitEdit({ ...notification });
         setEditOpen(true);
     };
 
@@ -608,7 +617,7 @@ export default function NotificationsPage() {
                 </PageCard>
             </div>
 
-            <Sheet open={createOpen} onOpenChange={setCreateOpen}>
+            <Sheet open={createOpen} onOpenChange={guardClose(setCreateOpen)}>
                 <div className='space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.notifications.form.create_title')}</SheetTitle>
@@ -803,7 +812,7 @@ export default function NotificationsPage() {
                 </div>
             </Sheet>
 
-            <Sheet open={editOpen} onOpenChange={setEditOpen}>
+            <Sheet open={editOpen} onOpenChange={guardClose(setEditOpen)}>
                 <div className='space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.notifications.form.edit_title')}</SheetTitle>

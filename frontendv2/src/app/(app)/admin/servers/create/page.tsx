@@ -65,6 +65,8 @@ import { AllocationPickerSheet } from '@/components/admin/AllocationPickerSheet'
 import { RealmPickerSheet } from '@/components/admin/RealmPickerSheet';
 import { SpellPickerSheet } from '@/components/admin/SpellPickerSheet';
 import { OwnerPickerSheet } from '@/components/admin/OwnerPickerSheet';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 
 const initialFormData: ServerFormData = {
     name: '',
@@ -199,6 +201,10 @@ export default function CreateServerPage() {
     });
 
     const [submitting, setSubmitting] = useState(false);
+    // Multi-step wizard: no save bar (creating needs the last step), only the leave-page warning.
+    // showOnStatus is ignored because it is filled from the panel settings on load.
+    const { dirty: unsaved } = useFormBaseline({ ...formData, showOnStatus: undefined }, { trackFromStart: true });
+    useUnsavedChangesGuard(unsaved && !submitting, t('common.unsavedChanges.leaveConfirm'));
 
     type InfraGate =
         | { status: 'loading' }

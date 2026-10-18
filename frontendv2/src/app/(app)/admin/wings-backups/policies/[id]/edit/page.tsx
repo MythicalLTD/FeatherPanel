@@ -32,6 +32,8 @@ import {
     formFromPolicy,
     type PolicyFormState,
 } from '@/components/admin/wings-backups/PolicyFormFields';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export default function EditWingsBackupPolicyPage() {
     const { t } = useTranslation();
@@ -39,6 +41,7 @@ export default function EditWingsBackupPolicyPage() {
     const params = useParams();
     const id = Number(params?.id);
     const [form, setForm] = React.useState<PolicyFormState>(emptyPolicyForm);
+    const { dirty: unsaved, markClean, restore: restoreForm } = useFormBaseline(form);
     const [loading, setLoading] = React.useState(true);
     const [saving, setSaving] = React.useState(false);
 
@@ -49,6 +52,7 @@ export default function EditWingsBackupPolicyPage() {
                 const p = data?.data?.policy;
                 if (!p) throw new Error('not found');
                 setForm(formFromPolicy(p));
+                markClean();
             } catch (error) {
                 toast.error(getApiErrorMessage(error, t, 'adminWingsBackups.policyLoadFailed'));
                 router.push('/admin/wings-backups');
@@ -56,10 +60,10 @@ export default function EditWingsBackupPolicyPage() {
                 setLoading(false);
             }
         })();
-    }, [id, router, t]);
+    }, [id, router, t, markClean]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         if (!form.name.trim()) {
             toast.error(t('adminWingsBackups.nameRequired'));
             return;
@@ -107,6 +111,16 @@ export default function EditWingsBackupPolicyPage() {
                     </Button>
                 </div>
             </form>
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleSubmit()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+            />
         </div>
     );
 }

@@ -35,6 +35,8 @@ import { Sparkles, Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, Fold
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
 
 interface Realm {
     id: number;
@@ -87,6 +89,13 @@ export default function RealmsPage() {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [newRealm, setNewRealm] = useState({ name: '', description: '' });
+    const editedFields = editingRealm ? { name: editingRealm.name, description: editingRealm.description || '' } : null;
+    const { dirty: editDirty, commit: commitEdit } = useFormBaseline(editedFields);
+    const { dirty: createDirty } = useFormBaseline(newRealm, { trackFromStart: true });
+    const guardClose = useDiscardConfirm(
+        (editOpen && editDirty) || (createOpen && createDirty),
+        t('common.unsavedChanges.leaveConfirm'),
+    );
     const [refreshKey, setRefreshKey] = useState(0);
 
     useEffect(() => {
@@ -276,6 +285,7 @@ export default function RealmsPage() {
                                         variant='ghost'
                                         onClick={() => {
                                             setEditingRealm({ ...realm });
+                                            commitEdit({ name: realm.name, description: realm.description || '' });
                                             setEditOpen(true);
                                         }}
                                     >
@@ -336,7 +346,7 @@ export default function RealmsPage() {
                 </PageCard>
             </div>
 
-            <Sheet open={createOpen} onOpenChange={setCreateOpen}>
+            <Sheet open={createOpen} onOpenChange={guardClose(setCreateOpen)}>
                 <div className='space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.realms.form.create_title')}</SheetTitle>
@@ -368,7 +378,7 @@ export default function RealmsPage() {
                 </div>
             </Sheet>
 
-            <Sheet open={editOpen} onOpenChange={setEditOpen}>
+            <Sheet open={editOpen} onOpenChange={guardClose(setEditOpen)}>
                 <div className='space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.realms.form.edit_title')}</SheetTitle>

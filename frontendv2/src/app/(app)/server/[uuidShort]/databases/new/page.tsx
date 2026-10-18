@@ -34,6 +34,8 @@ import { HeadlessSelect } from '@/components/ui/headless-select';
 import type { DatabaseHost, Server } from '@/types/server';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
 
 export default function CreateDatabasePage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -53,6 +55,7 @@ export default function CreateDatabasePage() {
         remote: '%',
         max_connections: 0,
     });
+    const { dirty: unsaved, markClean, restore: restoreForm } = useFormBaseline(form, { trackFromStart: true });
 
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-databases-new');
 
@@ -82,6 +85,8 @@ export default function CreateDatabasePage() {
                     setAvailableHosts(hosts);
                     if (hosts.length === 1) {
                         setForm((prev) => ({ ...prev, database_host_id: String(hosts[0].id) }));
+                        // The only host is picked for the user; that alone is not an edit.
+                        markClean();
                     }
                 }
                 const total = databasesRes.data?.data?.pagination?.total;
@@ -96,7 +101,7 @@ export default function CreateDatabasePage() {
             }
         };
         load();
-    }, [uuidShort, t]);
+    }, [uuidShort, t, markClean]);
 
     const limitReached = !!server && server.database_limit > 0 && databaseCount >= server.database_limit;
     const databasesDisabled = !!server && server.database_limit === 0;
@@ -323,6 +328,17 @@ export default function CreateDatabasePage() {
                 </div>
             </form>
             <WidgetRenderer widgets={getWidgets('server-databases-new', 'bottom-of-page')} />
+
+            <UnsavedChangesBar
+                dirty={unsaved}
+                saving={saving}
+                onSave={() => void handleCreate()}
+                onDiscard={() => {
+                    const saved = restoreForm();
+                    if (saved) setForm(saved);
+                }}
+                saveLabel={t('common.create')}
+            />
         </div>
     );
 }

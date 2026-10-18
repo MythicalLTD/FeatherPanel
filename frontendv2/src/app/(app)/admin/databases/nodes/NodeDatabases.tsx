@@ -45,6 +45,8 @@ import {
 } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
 
 interface Database {
     id: number;
@@ -130,6 +132,14 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
     const [adminNodes, setAdminNodes] = useState<Node[]>([]);
     const [webNodes, setWebNodes] = useState<WebNodeOption[]>([]);
     const [webNodeId, setWebNodeId] = useState('');
+    const { dirty: hostFormDirty, markClean: markHostFormClean } = useFormBaseline(
+        { formData, hostScope, scopeNodeId, webNodeId },
+        { trackFromStart: true },
+    );
+    const guardClose = useDiscardConfirm(
+        (createOpen || editOpen) && hostFormDirty,
+        t('common.unsavedChanges.leaveConfirm'),
+    );
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -296,6 +306,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                 database_username: '',
                 database_password: '',
             });
+            markHostFormClean();
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error creating database:', error);
@@ -561,6 +572,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                                 database_username: db.database_username,
                                                 database_password: '',
                                             });
+                                            markHostFormClean();
                                             setEditOpen(true);
                                         }}
                                     >
@@ -615,7 +627,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
 
             <WidgetRenderer widgets={getWidgets(slug, 'bottom-of-page')} context={widgetContext} />
 
-            <Sheet open={createOpen} onOpenChange={setCreateOpen}>
+            <Sheet open={createOpen} onOpenChange={guardClose(setCreateOpen)}>
                 <div className='space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.node_databases.form.create_title')}</SheetTitle>
@@ -769,7 +781,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                 </div>
             </Sheet>
 
-            <Sheet open={editOpen} onOpenChange={setEditOpen}>
+            <Sheet open={editOpen} onOpenChange={guardClose(setEditOpen)}>
                 <div className='space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.node_databases.form.edit_title')}</SheetTitle>

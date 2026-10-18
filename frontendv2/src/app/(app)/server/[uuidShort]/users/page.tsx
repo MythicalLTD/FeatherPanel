@@ -51,6 +51,8 @@ import type { Subuser, SubuserPagination, SubusersResponse, SubuserPermissionsRe
 import { safeBack } from '@/lib/safe-back';
 import { PageLoading } from '@/components/featherui/PageLoading';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
+import { useFormBaseline } from '@/hooks/useFormBaseline';
+import { useDiscardConfirm } from '@/hooks/useUnsavedChangesGuard';
 
 export default function ServerSubusersPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -91,6 +93,13 @@ export default function ServerSubusersPage() {
     const [availablePermissions, setAvailablePermissions] = React.useState<string[]>([]);
     const [groupedPermissions, setGroupedPermissions] = React.useState<Record<string, { permissions: string[] }>>({});
     const [selectedPermissions, setSelectedPermissions] = React.useState<string[]>([]);
+    const sortedPermissions = React.useMemo(() => [...selectedPermissions].sort(), [selectedPermissions]);
+    const { dirty: permissionsDirty, commit: commitPermissions } = useFormBaseline(sortedPermissions);
+    const guardPermissionsClose = useDiscardConfirm(
+        isPermissionsOpen && permissionsDirty,
+        t('common.unsavedChanges.leaveConfirm'),
+    );
+    const closePermissions = guardPermissionsClose(setIsPermissionsOpen);
     const [savingPermissions, setSavingPermissions] = React.useState(false);
 
     const fetchSubusers = React.useCallback(
@@ -181,6 +190,7 @@ export default function ServerSubusersPage() {
     const openPermissionsDialog = async (sub: Subuser) => {
         setSelectedSubuser(sub);
         setSelectedPermissions(sub.permissions || []);
+        commitPermissions([...(sub.permissions || [])].sort());
         setPermissionsLoadingData(true);
         setIsPermissionsOpen(true);
 
@@ -627,10 +637,10 @@ export default function ServerSubusersPage() {
 
             <Dialog
                 open={isPermissionsOpen}
-                onClose={() => setIsPermissionsOpen(false)}
+                onClose={() => closePermissions(false)}
                 onOpenChange={(open) => {
                     if (!open) {
-                        setIsPermissionsOpen(false);
+                        closePermissions(false);
                     }
                 }}
                 className='max-w-3xl'
@@ -737,7 +747,7 @@ export default function ServerSubusersPage() {
                         <Button
                             variant='outline'
                             size='default'
-                            onClick={() => setIsPermissionsOpen(false)}
+                            onClick={() => closePermissions(false)}
                             disabled={savingPermissions}
                             className='rounded-2xl'
                         >
