@@ -80,7 +80,8 @@ import { Dialog, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { TransferServerDialog } from '@/components/admin/TransferServerDialog';
-import { ServerPowerMenu, sendServerPowerAction } from '@/components/admin/ServerPowerMenu';
+import { ServerPowerMenu } from '@/components/admin/ServerPowerMenu';
+import { BulkSelectionRow, BulkServerActions } from '@/components/servers/BulkServerActions';
 import { Sensitive } from '@/components/common/Sensitive';
 import { useIpMask } from '@/hooks/useIpMask';
 import { ListPagination } from '@/components/featherui/ListPagination';
@@ -190,8 +191,6 @@ export default function ServersPage() {
     const [spellsList, setSpellsList] = useState<{ id: number; name: string; description?: string }[]>([]);
     const [locationsList, setLocationsList] = useState<{ id: number; name: string; description?: string }[]>([]);
     const [selectedServerIds, setSelectedServerIds] = useState<number[]>([]);
-    const [bulkPowerLoading, setBulkPowerLoading] = useState(false);
-    const [confirmBulkKill, setConfirmBulkKill] = useState(false);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -284,38 +283,11 @@ export default function ServersPage() {
 
     const selectedServers = servers.filter((server) => selectedServerIds.includes(server.id));
 
-    const handleBulkPowerAction = async (action: 'start' | 'stop' | 'restart' | 'kill') => {
-        if (selectedServers.length === 0) {
-            return;
-        }
-
-        setBulkPowerLoading(true);
-        try {
-            const results = await Promise.all(
-                selectedServers.map((server) =>
-                    sendServerPowerAction(server.uuidShort, action)
-                        .then(() => true)
-                        .catch(() => false),
-                ),
-            );
-
-            const successCount = results.filter(Boolean).length;
-
-            if (successCount === 0) {
-                toast.error(t('servers.bulk.error'));
-            } else if (successCount < selectedServers.length) {
-                toast.warning(t('servers.bulk.partialSuccess'));
-            } else {
-                toast.success(
-                    t('servers.bulk.success', {
-                        count: String(successCount),
-                    }),
-                );
-                clearSelection();
-            }
-        } finally {
-            setBulkPowerLoading(false);
-        }
+    const handleBulkFinished = (failedUuidShorts: string[]) => {
+        // Failed servers stay selected so they can be retried.
+        setSelectedServerIds(
+            servers.filter((server) => failedUuidShorts.includes(server.uuidShort)).map((server) => server.id),
+        );
     };
 
     const handleDelete = (server: ApiServer, hard: boolean = false) => {
@@ -655,72 +627,13 @@ export default function ServersPage() {
                 />
             ) : (
                 <>
-                    <div className='border-border bg-card/60 mb-4 flex flex-col items-start justify-between gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center'>
-                        <div className='flex items-center gap-2 text-sm'>
-                            <button
-                                type='button'
-                                onClick={selectAllVisible}
-                                className='text-primary text-xs font-medium hover:underline sm:text-sm'
-                            >
-                                {t('servers.bulk.selectAllPage')}
-                            </button>
-                            <span className='text-muted-foreground text-xs sm:text-sm'>
-                                {selectedServers.length > 0
-                                    ? t('servers.bulk.selectedCount', {
-                                          count: String(selectedServers.length),
-                                      })
-                                    : t('servers.bulk.noSelection')}
-                            </span>
-                            {selectedServers.length > 0 && (
-                                <button
-                                    type='button'
-                                    onClick={clearSelection}
-                                    className='text-muted-foreground hover:text-foreground text-xs hover:underline sm:text-sm'
-                                >
-                                    {t('servers.bulk.clearSelection')}
-                                </button>
-                            )}
-                        </div>
-                        <div className='flex items-center gap-2'>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                onClick={() => handleBulkPowerAction('start')}
-                                disabled={selectedServers.length === 0 || bulkPowerLoading}
-                            >
-                                {t('servers.start')}
-                            </Button>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                onClick={() => handleBulkPowerAction('stop')}
-                                disabled={selectedServers.length === 0 || bulkPowerLoading}
-                            >
-                                {t('servers.stop')}
-                            </Button>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                onClick={() => handleBulkPowerAction('restart')}
-                                disabled={selectedServers.length === 0 || bulkPowerLoading}
-                            >
-                                {t('servers.restart')}
-                            </Button>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                className='text-destructive hover:text-destructive'
-                                onClick={() => setConfirmBulkKill(true)}
-                                disabled={selectedServers.length === 0 || bulkPowerLoading}
-                            >
-                                {t('servers.console.kill')}
-                            </Button>
-                        </div>
-                    </div>
+                    <BulkSelectionRow
+                        className='mb-4'
+                        selectedCount={selectedServers.length}
+                        visibleCount={servers.length}
+                        onSelectAll={selectAllVisible}
+                        onClear={clearSelection}
+                    />
                     {pagination.totalPages > 1 && (
                         <ListPagination
                             page={page}
@@ -1197,32 +1110,11 @@ export default function ServersPage() {
                 </SheetContent>
             </Sheet>
 
-            <AlertDialog open={confirmBulkKill} onOpenChange={setConfirmBulkKill}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>{t('servers.console.kill_confirm_title')}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {t('servers.bulk.kill_confirm_description', {
-                                count: String(selectedServers.length),
-                            })}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel disabled={bulkPowerLoading}>{t('common.cancel')}</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={(e) => {
-                                e.preventDefault();
-                                setConfirmBulkKill(false);
-                                void handleBulkPowerAction('kill');
-                            }}
-                            disabled={bulkPowerLoading}
-                            className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                        >
-                            {t('servers.console.kill_confirm')}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <BulkServerActions
+                selected={selectedServers.map((server) => ({ uuidShort: server.uuidShort, name: server.name }))}
+                onClear={clearSelection}
+                onFinished={handleBulkFinished}
+            />
 
             <AlertDialog
                 open={confirmDeleteId !== null}

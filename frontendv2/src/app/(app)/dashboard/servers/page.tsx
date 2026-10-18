@@ -55,7 +55,6 @@ import {
     LayoutGrid,
     List,
 } from 'lucide-react';
-import axios from 'axios';
 import { useSession } from '@/contexts/SessionContext';
 import Permissions from '@/lib/permissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -63,6 +62,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { ServerCard } from '@/components/servers/ServerCard';
 import { EmptyState } from '@/components/servers/EmptyState';
 import { FolderDialog } from '@/components/servers/FolderDialog';
+import { BulkSelectionRow, BulkServerActions } from '@/components/servers/BulkServerActions';
 
 export default function ServersPage() {
     const { t } = useTranslation();
@@ -130,7 +130,6 @@ export default function ServersPage() {
     const { getWidgets, fetchWidgets } = usePluginWidgets('dashboard-servers');
 
     const [selectedServerIds, setSelectedServerIds] = useState<number[]>([]);
-    const [bulkActionLoading, setBulkActionLoading] = useState(false);
     const fetchGenerationRef = useRef(0);
 
     useEffect(() => {
@@ -272,37 +271,11 @@ export default function ServersPage() {
 
     const selectedServers = filteredServers.filter((server) => selectedServerIds.includes(server.id));
 
-    const handleBulkPowerAction = async (action: 'start' | 'stop' | 'restart') => {
-        if (selectedServers.length === 0) {
-            // Reuse generic servers bulk translation
-
-            return;
-        }
-
-        setBulkActionLoading(true);
-        try {
-            const results = await Promise.all(
-                selectedServers.map((server) =>
-                    axios
-                        .post(`/api/user/servers/${server.uuidShort}/power/${action}`)
-                        .then(() => true)
-                        .catch(() => false),
-                ),
-            );
-
-            const successCount = results.filter(Boolean).length;
-
-            if (successCount === 0) {
-                console.error('Bulk power action failed for all servers');
-            } else if (successCount < selectedServers.length) {
-                // Partial success; keep selection so the user can retry failed ones
-            } else {
-                // All succeeded; clear selection
-                clearSelection();
-            }
-        } finally {
-            setBulkActionLoading(false);
-        }
+    const handleBulkFinished = (failedUuidShorts: string[]) => {
+        // Failed servers stay selected so the user can retry them.
+        setSelectedServerIds(
+            filteredServers.filter((server) => failedUuidShorts.includes(server.uuidShort)).map((server) => server.id),
+        );
     };
 
     const openCreateFolder = () => {
@@ -504,59 +477,13 @@ export default function ServersPage() {
 
                 <WidgetRenderer widgets={getWidgets('dashboard-servers', 'before-server-list')} />
                 {servers.length > 0 && (
-                    <div className='border-border bg-card/60 mt-1 flex flex-col items-start justify-between gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center'>
-                        <div className='flex items-center gap-2 text-sm'>
-                            <button
-                                type='button'
-                                onClick={selectAllVisible}
-                                className='text-primary text-xs font-medium hover:underline sm:text-sm'
-                            >
-                                {t('servers.bulk.selectAllPage')}
-                            </button>
-                            <span className='text-muted-foreground text-xs sm:text-sm'>
-                                {selectedServers.length > 0
-                                    ? t('servers.bulk.selectedCount', {
-                                          count: String(selectedServers.length),
-                                      })
-                                    : t('servers.bulk.noSelection')}
-                            </span>
-                            {selectedServers.length > 0 && (
-                                <button
-                                    type='button'
-                                    onClick={clearSelection}
-                                    className='text-muted-foreground hover:text-foreground text-xs hover:underline sm:text-sm'
-                                >
-                                    {t('servers.bulk.clearSelection')}
-                                </button>
-                            )}
-                        </div>
-                        <div className='flex items-center gap-2'>
-                            <button
-                                type='button'
-                                onClick={() => handleBulkPowerAction('start')}
-                                disabled={selectedServers.length === 0 || bulkActionLoading}
-                                className='border-border bg-background hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm'
-                            >
-                                {t('servers.start')}
-                            </button>
-                            <button
-                                type='button'
-                                onClick={() => handleBulkPowerAction('stop')}
-                                disabled={selectedServers.length === 0 || bulkActionLoading}
-                                className='border-border bg-background hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm'
-                            >
-                                {t('servers.stop')}
-                            </button>
-                            <button
-                                type='button'
-                                onClick={() => handleBulkPowerAction('restart')}
-                                disabled={selectedServers.length === 0 || bulkActionLoading}
-                                className='border-border bg-background hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm'
-                            >
-                                {t('servers.restart')}
-                            </button>
-                        </div>
-                    </div>
+                    <BulkSelectionRow
+                        className='mt-1'
+                        selectedCount={selectedServers.length}
+                        visibleCount={filteredServers.length}
+                        onSelectAll={selectAllVisible}
+                        onClear={clearSelection}
+                    />
                 )}
                 <WidgetRenderer widgets={getWidgets('dashboard-servers', 'after-server-list')} />
             </div>
@@ -1027,6 +954,12 @@ export default function ServersPage() {
                 formData={folderFormData}
                 setFormData={setFolderFormData}
                 t={t}
+            />
+
+            <BulkServerActions
+                selected={selectedServers.map((server) => ({ uuidShort: server.uuidShort, name: server.name }))}
+                onClear={clearSelection}
+                onFinished={handleBulkFinished}
             />
         </div>
     );

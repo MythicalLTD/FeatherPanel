@@ -1511,7 +1511,11 @@
 			"INVALID_DATE_RANGE": "Pick a valid date range.",
 			"DATE_RANGE_TOO_LARGE": "The date range can cover at most two years.",
 			"INVALID_UI_STATE": "Those interface settings could not be saved.",
-			"UI_STATE_TOO_LARGE": "Your saved interface settings are too large to sync."
+			"UI_STATE_TOO_LARGE": "Your saved interface settings are too large to sync.",
+			"INVALID_BULK_ACTION": "That action cannot be run on several servers.",
+			"BULK_NO_SERVERS": "Select at least one server.",
+			"BULK_TOO_MANY_SERVERS": "Too many servers selected for this action.",
+			"BULK_ACTION_FAILED": "The action failed on this server."
 		},
 		"global": {}
 	},
@@ -2620,18 +2624,30 @@
 		},
 		"bulk": {
 			"title": "Bulk power actions",
-			"selectedCount": "{count} servers selected",
-			"noSelection": "No servers selected",
+			"selectedCount": "Selected: {count}",
 			"selectAllPage": "Select all on this page",
 			"clearSelection": "Clear selection",
-			"start": "Start selected",
-			"stop": "Stop selected",
-			"restart": "Restart selected",
-			"kill": "Kill selected",
+			"kill": "Kill servers",
 			"kill_confirm_description": "This will forcefully terminate {count} selected server(s). This may cause data corruption. Use Stop for a graceful shutdown instead.",
-			"success": "Power action sent to {count} servers.",
-			"partialSuccess": "Power action sent, but some servers failed.",
-			"error": "Failed to send power actions. Please try again."
+			"error": "Failed to send power actions. Please try again.",
+			"hint": "Select servers to start, stop, restart or reinstall them together.",
+			"more": "More actions",
+			"kill_title": "Kill the selected servers?",
+			"reinstall": "Reinstall servers",
+			"reinstall_title": "Reinstall the selected servers?",
+			"reinstall_description": "Each server stops and runs its install script again. Files are kept. Servers you do not have reinstall permission for are skipped.",
+			"and_more": "and {count} more",
+			"limit": "Select at most {count} servers for this action.",
+			"done": {
+				"start": "Start sent to the selected servers.",
+				"stop": "Stop sent to the selected servers.",
+				"restart": "Restart sent to the selected servers.",
+				"kill": "Kill sent to the selected servers.",
+				"reinstall": "Reinstall started on the selected servers."
+			},
+			"partial": "Done on {succeeded} of {total}. The others are still selected.",
+			"all_failed": "The action failed on every selected server.",
+			"more_failed": "More failed: {count}"
 		},
 		"console": {
 			"loading": "Loading server...",
