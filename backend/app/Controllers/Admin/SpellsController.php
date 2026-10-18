@@ -398,7 +398,7 @@ class SpellsController
     public function create(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
@@ -576,7 +576,7 @@ class SpellsController
         }
 
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
@@ -910,7 +910,7 @@ class SpellsController
     public function reorder(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
@@ -1326,7 +1326,7 @@ class SpellsController
             return ApiResponse::error('Spell not found', 'SPELL_NOT_FOUND', 404);
         }
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
         $data['spell_id'] = $spellId;
@@ -1408,7 +1408,7 @@ class SpellsController
             return ApiResponse::error('Variable not found', 'VARIABLE_NOT_FOUND', 404);
         }
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
         unset($data['id']);
