@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import axios from 'axios';
@@ -77,7 +77,7 @@ import {
     type WebSpaceUsageFields,
 } from '@/components/dashboard/DashboardWidgets';
 import { DashboardCustomizeSheet, WIDGET_LABEL_KEYS } from '@/components/dashboard/DashboardCustomizeSheet';
-import { DashboardRun } from '@/components/dashboard/DashboardRun';
+import { DashboardPackedGrid } from '@/components/dashboard/DashboardPackedGrid';
 import { RoleBadge } from '@/components/RoleBadge';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -123,25 +123,7 @@ function daysUntil(value?: string | null): number | null {
 interface PlacedWidget {
     id: DashboardWidgetId;
     size: DashboardWidgetSize;
-    order: number;
     node: ReactNode;
-}
-
-type Run = { kind: 'full'; widget: PlacedWidget } | { kind: 'run'; widgets: PlacedWidget[] };
-
-/** Full-width widgets stand alone; the widgets between them share a main (medium) and a side (small) column. */
-function toRuns(widgets: PlacedWidget[]): Run[] {
-    const runs: Run[] = [];
-    for (const w of widgets) {
-        if (w.size === 'full') {
-            runs.push({ kind: 'full', widget: w });
-            continue;
-        }
-        const last = runs[runs.length - 1];
-        if (last?.kind === 'run') last.widgets.push(w);
-        else runs.push({ kind: 'run', widgets: [w] });
-    }
-    return runs;
 }
 
 export default function DashboardPage() {
@@ -979,14 +961,13 @@ export default function DashboardPage() {
 
     const placed: PlacedWidget[] = config.widgets
         .filter((w) => availableWidgets.includes(w.id))
-        .map((w, order) => {
+        .map((w) => {
             const node = renderWidget(w.id);
             const empty = node === null || node === undefined || node === false;
-            if (!arranging) return { ...w, order, node: empty ? null : node };
+            if (!arranging) return { ...w, node: empty ? null : node };
             const index = visibleIds.indexOf(w.id);
             return {
                 ...w,
-                order,
                 node: (
                     <ArrangeFrame
                         id={w.id}
@@ -1012,20 +993,6 @@ export default function DashboardPage() {
         .filter((id) => !config.widgets.some((w) => w.id === id))
         .map((id) => ({ id, label: t(WIDGET_LABEL_KEYS[id]) }));
 
-    const gap = compact ? 'gap-3' : 'gap-4 lg:gap-5';
-    // Inside a run the order style keeps list order on mobile, where both columns flow as one.
-    const wrap = (w: PlacedWidget, inRun = true) => (
-        <div
-            key={w.id}
-            style={inRun ? ({ order: w.order } as CSSProperties) : undefined}
-            className='fp-collapse-empty-block min-w-0'
-        >
-            {w.node}
-        </div>
-    );
-
-    const runs = toRuns(placed);
-
     return (
         <div className={cn(compact ? 'space-y-3' : 'space-y-5')}>
             <WidgetRenderer widgets={getWidgets('dashboard', 'top-of-page')} {...pluginWidgetProps} />
@@ -1043,39 +1010,12 @@ export default function DashboardPage() {
 
             <WidgetRenderer widgets={getWidgets('dashboard', 'before-server-list')} {...pluginWidgetProps} />
 
-            <div className={cn('flex flex-col', dashboard.loaded ? null : 'opacity-0', gap)}>
-                {runs.map((run, i) => {
-                    if (run.kind === 'full') return wrap(run.widget, false);
-                    const main = run.widgets.filter((w) => w.size === 'medium');
-                    const side = run.widgets.filter((w) => w.size === 'small');
-                    if (main.length === 0) {
-                        return (
-                            <div
-                                key={`run-${i}`}
-                                className={cn('grid grid-cols-1 items-start sm:grid-cols-2 lg:grid-cols-3', gap)}
-                            >
-                                {side.map((w) => wrap(w))}
-                            </div>
-                        );
-                    }
-                    if (side.length === 0) {
-                        return (
-                            <div key={`run-${i}`} className={cn('flex flex-col', gap)}>
-                                {main.map((w) => wrap(w))}
-                            </div>
-                        );
-                    }
-                    return (
-                        <DashboardRun
-                            key={`run-${i}`}
-                            main={main}
-                            side={side}
-                            sideFirst={config.sideFirst}
-                            compact={compact}
-                        />
-                    );
-                })}
-            </div>
+            <DashboardPackedGrid
+                items={placed}
+                compact={compact}
+                mirrored={config.sideFirst}
+                className={dashboard.loaded ? undefined : 'opacity-0'}
+            />
 
             {arranging ? (
                 <HiddenTray items={hiddenItems} onAdd={(id) => dashboard.addWidget(id as DashboardWidgetId)} />
