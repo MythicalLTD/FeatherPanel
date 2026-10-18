@@ -13,6 +13,7 @@
 
 ### Fixed
 
+- Bottom dock: the dock is now centered at every icon size and only as wide as its items; icons sit in fixed-width slots and hover magnification scales the icon in place, so neighbours no longer shift; long labels truncate cleanly with a tooltip (icons-only mode shows tooltips on hover); section pills are replaced by slim dividers and the collapse toggle is a compact icon button. by @nayskutzu
 - Translation placeholders render their values again (`{{name}}` and `{name}`, zero and empty values), e.g. the file manager upload progress showing `UPLOADING {FILE}`. A new `scan:translation-params` step fails the build when a call misses a placeholder value. by @nayskutzu
 - Tab bars that overflow (admin settings, user, node, server, spell and webplate editors) keep every tab reachable with scroll fades, arrow buttons and the active tab kept in view; admin settings uses a dropdown on phones. by @nayskutzu
 - The mobile top bar no longer disappears when opening folders in the file manager, and the file manager toolbar fits on one row on phones. by @nayskutzu
