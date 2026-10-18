@@ -5028,7 +5028,8 @@
 			"upload_folders": "Upload folder(s)",
 			"ignored_content": "Ignored Content",
 			"wipe_all": "Wipe All",
-			"trash": "Trash"
+			"trash": "Trash",
+			"more_actions": "More actions"
 		},
 		"list": {
 			"header_name": "Name",

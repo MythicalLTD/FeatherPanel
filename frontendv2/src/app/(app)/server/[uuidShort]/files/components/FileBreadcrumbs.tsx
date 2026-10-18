@@ -17,7 +17,7 @@ import { Button } from '@/components/featherui/Button';
 import { ChevronRight, Home, Search, Settings2, X } from 'lucide-react';
 import { Input } from '@/components/featherui/Input';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { ARCHIVE_EXTRACT_DRAG_MIME } from '@/lib/files-api';
 
@@ -112,23 +112,36 @@ export function FileBreadcrumbs({
     const { t } = useTranslation();
     const segments = (currentDirectory || '').split('/').filter(Boolean);
     const normalizedCurrent = (currentDirectory || '/').replace(/\/+$/, '') || '/';
+    const crumbsRef = useRef<HTMLDivElement | null>(null);
 
     const getPath = (index: number) => {
         return '/' + segments.slice(0, index + 1).join('/');
     };
 
+    // Keep the deepest folder visible when the path is longer than the screen.
+    useEffect(() => {
+        const el = crumbsRef.current;
+        if (el) el.scrollLeft = el.scrollWidth;
+    }, [normalizedCurrent]);
+
     return (
-        <div className='flex flex-col gap-3 p-1 md:flex-row md:items-center md:gap-2'>
-            <div className='no-scrollbar flex min-w-0 flex-1 items-center gap-1 overflow-x-auto'>
+        <div className='flex flex-col gap-2 p-1 md:flex-row md:items-center'>
+            <div ref={crumbsRef} className='no-scrollbar flex min-w-0 flex-1 items-center gap-1 overflow-x-auto'>
                 <CrumbButton
                     path='/'
                     isCurrent={normalizedCurrent === '/'}
                     onDropFilesToPath={onDropFilesToPath}
-                    className='text-muted-foreground hover:text-foreground h-8 w-8 shrink-0 p-0 transition-colors'
+                    className={cn(
+                        'h-8 shrink-0 gap-1.5 px-2 transition-colors',
+                        normalizedCurrent === '/'
+                            ? 'text-foreground bg-white/5 font-semibold'
+                            : 'text-muted-foreground hover:text-foreground',
+                    )}
                     onClick={() => onNavigate('/')}
                     title={t('files.breadcrumbs.home')}
                 >
-                    <Home className='h-4 w-4' />
+                    <Home className='h-4 w-4 shrink-0' />
+                    {normalizedCurrent === '/' ? <span>{t('files.breadcrumbs.home')}</span> : null}
                 </CrumbButton>
 
                 {segments.map((segment, index) => {

@@ -252,8 +252,18 @@ export function FileRow({
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
     useEffect(() => {
-        if (isAnchor && rowRef.current) {
-            rowRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        const row = rowRef.current;
+        if (!isAnchor || !row) return;
+        // Scroll only the page's own scroll container. Element.scrollIntoView() also scrolls
+        // overflow-hidden ancestors, which could shift the whole shell and hide the top bar.
+        const container = row.closest<HTMLElement>('.fp-shell-main');
+        if (!container) return;
+        const rowRect = row.getBoundingClientRect();
+        const boxRect = container.getBoundingClientRect();
+        if (rowRect.top < boxRect.top) {
+            container.scrollBy({ top: rowRect.top - boxRect.top - 8, behavior: 'smooth' });
+        } else if (rowRect.bottom > boxRect.bottom) {
+            container.scrollBy({ top: rowRect.bottom - boxRect.bottom + 8, behavior: 'smooth' });
         }
     }, [isAnchor]);
 
