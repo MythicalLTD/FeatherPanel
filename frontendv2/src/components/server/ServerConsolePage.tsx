@@ -20,15 +20,16 @@ import { useParams, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import { useWingsWebSocket, type CommandSuggestResponse } from '@/hooks/useWingsWebSocket';
 import ServerHeader from '@/components/server/ServerHeader';
-import ServerInfoCards from '@/components/server/ServerInfoCards';
+import ServerConsoleStats from '@/components/server/ServerConsoleStats';
+import ServerAddressChip from '@/components/server/ServerAddressChip';
+import Link from 'next/link';
 import ServerTerminal, { ServerTerminalRef, ConsoleFilterRule } from '@/components/server/ServerTerminal';
-import ServerPerformance from '@/components/server/ServerPerformanceLazy';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
-import { AlertTriangle, Wifi, WifiOff, Loader2, Copy } from 'lucide-react';
+import { AlertTriangle, Wifi, WifiOff, Loader2, Copy, TerminalSquare, ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -135,7 +136,7 @@ export default function ServerConsolePage() {
     const [memoryData, setMemoryData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const [diskData, setDiskData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const [networkData, setNetworkData] = useState<Array<{ timestamp: number; value: number }>>([]);
-    const [diskIoData, setDiskIoData] = useState<Array<{ timestamp: number; value: number }>>([]);
+    const [, setDiskIoData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const maxDataPoints = 60;
 
     const [currentCpu, setCurrentCpu] = useState(0);
@@ -149,10 +150,10 @@ export default function ServerConsolePage() {
     const [currentNetworkTx, setCurrentNetworkTx] = useState(0);
     const [networkRxTotal, setNetworkRxTotal] = useState(0);
     const [networkTxTotal, setNetworkTxTotal] = useState(0);
-    const [currentDiskIoRead, setCurrentDiskIoRead] = useState(0);
-    const [currentDiskIoWrite, setCurrentDiskIoWrite] = useState(0);
-    const [diskIoReadTotal, setDiskIoReadTotal] = useState(0);
-    const [diskIoWriteTotal, setDiskIoWriteTotal] = useState(0);
+    const [, setCurrentDiskIoRead] = useState(0);
+    const [, setCurrentDiskIoWrite] = useState(0);
+    const [, setDiskIoReadTotal] = useState(0);
+    const [, setDiskIoWriteTotal] = useState(0);
 
     const [consoleFilters, setConsoleFilters] = useState<ConsoleFilterRule[]>([]);
     const hasLoadedFilters = useRef(false);
@@ -476,7 +477,7 @@ export default function ServerConsolePage() {
         terminalRef.current?.applyCommandSuggestions(response);
     }, []);
 
-    const { connectionStatus, ping, sendCommand, suggestCommand, sendPowerAction, requestStats, requestLogs } =
+    const { connectionStatus, sendCommand, suggestCommand, sendPowerAction, requestStats, requestLogs } =
         useWingsWebSocket({
             serverUuid,
             connect: shouldConnectToWings,
@@ -725,6 +726,10 @@ export default function ServerConsolePage() {
     }
 
     const connectionInfo = getConnectionStatusInfo();
+    const serverHost =
+        server.subdomain && server.subdomain.domain && server.subdomain.subdomain
+            ? `${server.subdomain.subdomain}.${server.subdomain.domain}`
+            : server.allocation?.ip_alias || server.allocation?.ip || '';
 
     if (isPopout) {
         return (
@@ -765,15 +770,51 @@ export default function ServerConsolePage() {
     }
 
     return (
-        <div className='space-y-4 pb-8'>
+        <div className='space-y-4 pb-6'>
             <WidgetRenderer widgets={getWidgets('server-console', 'top-of-page')} />
+
+            <div className='border-border/50 bg-card/50 flex flex-col gap-3 rounded-xl border px-4 py-3 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:px-5'>
+                <div className='flex min-w-0 items-center gap-3'>
+                    <span className='bg-muted/60 text-muted-foreground flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
+                        <TerminalSquare className='h-4 w-4' aria-hidden />
+                    </span>
+                    <div className='min-w-0'>
+                        <nav
+                            aria-label='Breadcrumb'
+                            className='text-muted-foreground flex min-w-0 items-center gap-1 text-xs'
+                        >
+                            <Link href='/dashboard' className='hover:text-foreground shrink-0 transition-colors'>
+                                {t('navigation.items.dashboard')}
+                            </Link>
+                            <ChevronRight className='h-3 w-3 shrink-0' aria-hidden />
+                            <span className='truncate'>{server.name}</span>
+                        </nav>
+                        <h1 className='text-base leading-tight font-semibold sm:text-lg'>
+                            {t('servers.console.terminal.title')}
+                        </h1>
+                        <p className='text-muted-foreground hidden truncate text-xs sm:block'>
+                            {t('servers.console.page_description')}
+                        </p>
+                    </div>
+                </div>
+                {serverHost ? (
+                    <ServerAddressChip
+                        host={serverHost}
+                        port={server.allocation?.port || null}
+                        showVisibilityToggle
+                        className='self-start sm:self-auto'
+                    />
+                ) : null}
+            </div>
 
             <ServerHeader
                 serverName={server.name}
+                description={server.description}
                 serverStatus={serverStatus}
-                serverUuid={server.uuid}
-                serverUuidShort={server.uuidShort}
-                nodeLocation={server.location?.name || server.node?.name}
+                address={serverHost}
+                port={server.allocation?.port || null}
+                uptime={connectionStatus === 'connected' && serverStatus === 'running' ? wingsUptime : undefined}
+                nodeLocation={server.location?.name}
                 nodeLocationFlag={server.location?.flag_code}
                 nodeName={server.node?.name}
                 bannerUrl={server.spell?.banner}
@@ -795,8 +836,8 @@ export default function ServerConsolePage() {
 
             <WidgetRenderer widgets={getWidgets('server-console', 'after-header')} />
 
-            <div className='grid grid-cols-1 items-stretch gap-4 xl:grid-cols-12 xl:gap-5 2xl:gap-6'>
-                <div className='flex h-full min-h-0 min-w-0 flex-col gap-4 xl:col-span-9'>
+            <div className='grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_18rem] 2xl:grid-cols-[minmax(0,1fr)_20rem]'>
+                <div className='flex min-w-0 flex-col gap-4'>
                     {/* Disconnected/error cable message lives in ServerNodeConnectionBanner (layout). */}
                     {shouldConnectToWings && connectionStatus === 'connecting' && (
                         <Card className={`border-2 ${connectionInfo.bgColor}`}>
@@ -860,7 +901,7 @@ export default function ServerConsolePage() {
                     )}
 
                     {shouldConnectToWings && (
-                        <div className='flex min-h-0 flex-1 flex-col'>
+                        <div className='flex h-[min(70dvh,40rem)] min-h-[22rem] flex-col xl:h-[max(32rem,calc(100dvh-22rem))]'>
                             <ServerTerminal
                                 ref={terminalRef}
                                 onSendCommand={sendCommand}
@@ -869,6 +910,7 @@ export default function ServerConsolePage() {
                                 serverStatus={serverStatus}
                                 filters={consoleFilters}
                                 onFiltersChange={setConsoleFilters}
+                                fillContainer
                                 onUploadLogs={
                                     canConnect && hasPermission('activity.read') ? handleUploadLogs : undefined
                                 }
@@ -879,62 +921,35 @@ export default function ServerConsolePage() {
                     <WidgetRenderer widgets={getWidgets('server-console', 'after-terminal')} />
                 </div>
 
-                <div className='min-w-0 space-y-4 xl:col-span-3'>
-                    <PlayerStatusWidget uuidShort={serverUuid} />
-
+                <div className='min-w-0 space-y-4'>
                     {shouldConnectToWings && (
-                        <ServerInfoCards
-                            serverIp={
-                                server.subdomain && server.subdomain.domain && server.subdomain.subdomain
-                                    ? `${server.subdomain.subdomain}.${server.subdomain.domain}`
-                                    : server.allocation?.ip_alias || server.allocation?.ip || ''
-                            }
-                            serverPort={server.allocation?.port || 0}
-                            cpuLimit={server.cpu || 0}
-                            memoryLimit={server.memory || 0}
-                            diskLimit={server.disk || 0}
-                            wingsUptime={wingsUptime}
-                            ping={ping}
+                        <ServerConsoleStats
                             statsReady={connectionStatus === 'connected'}
                             diskReady={diskKnown || connectionStatus === 'connected'}
                             cpuUsage={currentCpu}
                             memoryUsage={currentMemory}
                             diskUsage={currentDisk}
+                            cpuLimit={server.cpu || 0}
+                            memoryLimit={server.memory || 0}
+                            diskLimit={server.disk || 0}
                             networkRx={currentNetworkRx}
                             networkTx={currentNetworkTx}
                             networkRxTotal={networkRxTotal}
                             networkTxTotal={networkTxTotal}
-                            diskIoRead={currentDiskIoRead}
-                            diskIoWrite={currentDiskIoWrite}
-                            diskIoReadTotal={diskIoReadTotal}
-                            diskIoWriteTotal={diskIoWriteTotal}
-                            className='xl:grid-cols-1'
+                            cpuData={cpuData}
+                            memoryData={memoryData}
+                            diskData={diskData}
+                            networkData={networkData}
                         />
                     )}
+
+                    <PlayerStatusWidget uuidShort={serverUuid} />
 
                     <WidgetRenderer widgets={getWidgets('server-console', 'under-server-info-cards')} />
                 </div>
             </div>
 
             <WidgetRenderer widgets={getWidgets('server-console', 'before-performance')} />
-
-            {server && shouldConnectToWings && (
-                <ServerPerformance
-                    cpuData={cpuData}
-                    memoryData={memoryData}
-                    diskData={diskData}
-                    networkData={networkData}
-                    diskIoData={diskIoData}
-                    networkRxTotal={networkRxTotal}
-                    networkTxTotal={networkTxTotal}
-                    diskIoReadTotal={diskIoReadTotal}
-                    diskIoWriteTotal={diskIoWriteTotal}
-                    cpuLimit={server.cpu || 0}
-                    memoryLimit={server.memory || 0}
-                    diskLimit={server.disk || 0}
-                />
-            )}
-
             <WidgetRenderer widgets={getWidgets('server-console', 'after-performance')} />
 
             <WidgetRenderer widgets={getWidgets('server-console', 'bottom-of-page')} />

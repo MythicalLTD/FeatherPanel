@@ -104,7 +104,7 @@
 			"email_placeholder": "john@example.com",
 			"username_placeholder": "johndoe",
 			"password_placeholder": "Create a strong password",
-			"device_limit": "Too many accounts on this device. Please use your main account: {{username}}, or contact support.",
+			"device_limit": "Too many accounts on this device. Please use your main account: {username}, or contact support.",
 			"device_limit_generic": "Too many accounts on this device. Please use your main account or contact support."
 		},
 		"forgot_password": {
@@ -2456,8 +2456,8 @@
 				"scroll_bottom": "Scroll to bottom",
 				"placeholder": "Enter command...",
 				"completions": "Command completions",
-				"completions_count": "{{count}} matches",
-				"completions_more": "+{{count}} more. Keep typing to narrow",
+				"completions_count": "{count} matches",
+				"completions_more": "+{count} more. Keep typing to narrow",
 				"completions_hint_cycle": "cycle",
 				"completions_hint_navigate": "navigate",
 				"completions_hint_accept": "accept",
@@ -2531,7 +2531,13 @@
 						"title": "Dim DEBUG lines",
 						"desc": "Colors DEBUG / TRACE keywords in gray for quieter reading."
 					}
-				}
+				},
+				"search": "Search console",
+				"search_placeholder": "Search output…",
+				"search_next": "Next match",
+				"search_previous": "Previous match",
+				"fullscreen": "Fullscreen",
+				"exit_fullscreen": "Exit fullscreen"
 			},
 			"players": {
 				"title": "Players",
@@ -2545,6 +2551,11 @@
 			"not_found": {
 				"title": "Server not found",
 				"message": "The requested server could not be loaded."
+			},
+			"page_description": "Live output, power controls and resource usage for this server.",
+			"stats": {
+				"of_limit": "of {limit}",
+				"total_traffic": "Total {down} in · {up} out"
 			}
 		}
 	},
@@ -10235,7 +10246,7 @@
 						"device_profile": "Browser profile"
 					},
 					"clear_user": "Clear device fingerprints",
-					"clear_user_confirm": "Clear all browser/device fingerprint records for {{username}}? They can register again from the same device after this.",
+					"clear_user_confirm": "Clear all browser/device fingerprint records for {username}? They can register again from the same device after this.",
 					"clear_user_success": "Device fingerprints cleared for this user",
 					"clear_failed": "Failed to clear device fingerprints"
 				},
@@ -10254,7 +10265,7 @@
 			},
 			"servers": {
 				"title": "User Servers",
-				"description": "Servers owned by {{username}}",
+				"description": "Servers owned by {username}",
 				"descriptionGeneric": "Servers owned by this user",
 				"backToUser": "Back to user",
 				"noServers": "No servers",
