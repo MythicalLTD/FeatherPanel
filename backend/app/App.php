@@ -42,6 +42,7 @@ use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\Exception\MethodNotAllowedException;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class App
 {
@@ -354,6 +355,9 @@ class App
             $response = ApiResponse::error('The api route does not exist! [' . $request->getPathInfo() . ']', 'API_ROUTE_NOT_FOUND', 404, null);
         } catch (MethodNotAllowedException $e) {
             $response = ApiResponse::error('Method not allowed for this route. Allowed: ' . implode(', ', $e->getAllowedMethods()), 'METHOD_NOT_ALLOWED', 405, null);
+        } catch (BadRequestException $e) {
+            // Malformed client input (e.g. ?search[]=x where a scalar is expected) is a 400, not a server error.
+            $response = ApiResponse::error('Invalid request: ' . $e->getMessage(), 'INVALID_REQUEST', 400, null);
         } catch (\Throwable $e) {
             $eventId = SentryTelemetry::captureException($e);
             self::getLogger()->error(
