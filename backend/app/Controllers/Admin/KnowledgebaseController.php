@@ -337,14 +337,14 @@ class KnowledgebaseController
     public function categoriesCreate(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
         $requiredFields = ['name', 'icon'];
         $missingFields = [];
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 $missingFields[] = $field;
             }
         }
@@ -353,7 +353,7 @@ class KnowledgebaseController
         }
 
         // Auto-generate slug from name if not provided
-        if (!isset($data['slug']) || trim($data['slug']) === '') {
+        if (!isset($data['slug']) || !is_scalar($data['slug']) || trim((string) $data['slug']) === '') {
             $data['slug'] = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $data['name']));
             $data['slug'] = trim($data['slug'], '-');
         }
@@ -465,7 +465,7 @@ class KnowledgebaseController
         }
 
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
@@ -808,7 +808,7 @@ class KnowledgebaseController
     public function articlesCreate(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
@@ -824,7 +824,7 @@ class KnowledgebaseController
         }
 
         // Auto-generate slug from title if not provided
-        if (!isset($data['slug']) || trim($data['slug']) === '') {
+        if (!isset($data['slug']) || !is_scalar($data['slug']) || trim((string) $data['slug']) === '') {
             $data['slug'] = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $data['title']));
             $data['slug'] = trim($data['slug'], '-');
         }
@@ -948,7 +948,7 @@ class KnowledgebaseController
         }
 
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
@@ -998,7 +998,7 @@ class KnowledgebaseController
         }
 
         // Auto-generate slug from title if title changed and slug not provided
-        if (isset($data['title']) && (!isset($data['slug']) || trim($data['slug']) === '')) {
+        if (isset($data['title']) && (!isset($data['slug']) || !is_scalar($data['slug']) || trim((string) $data['slug']) === '')) {
             $data['slug'] = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $data['title']));
             $data['slug'] = trim($data['slug'], '-');
         }
@@ -1808,11 +1808,11 @@ class KnowledgebaseController
         }
 
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
-        if (empty($data) || !isset($data['tag_name']) || trim($data['tag_name']) === '') {
+        if (empty($data) || !isset($data['tag_name']) || !is_scalar($data['tag_name']) || trim((string) $data['tag_name']) === '') {
             return ApiResponse::error('Tag name is required', 'TAG_NAME_REQUIRED', 400);
         }
 

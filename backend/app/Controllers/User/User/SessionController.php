@@ -140,7 +140,7 @@ class SessionController
         $data = json_decode($request->getContent(), true);
 
         if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
-            if (!isset($data['turnstile_token']) || trim($data['turnstile_token']) === '') {
+            if (!isset($data['turnstile_token']) || !is_scalar($data['turnstile_token']) || trim((string) $data['turnstile_token']) === '') {
                 return ApiResponse::error('Captcha token is required', 'CAPTCHA_TOKEN_REQUIRED');
             }
             if (!CaptchaHelper::validate($data['turnstile_token'], CloudFlareRealIP::getRealIP())) {
@@ -174,6 +174,11 @@ class SessionController
         if (isset($data['two_fa_enabled'])) {
             if (!is_bool($data['two_fa_enabled'])) {
                 return ApiResponse::error('two_fa_enabled must be a boolean value', 'INVALID_2FA_VALUE');
+            }
+            // Enabling must go through PUT /api/user/auth/two-factor, which stores the secret after
+            // verifying a code. Turning the flag on here without a secret locks the account out.
+            if ($data['two_fa_enabled'] && ($user['two_fa_enabled'] ?? 'false') !== 'true') {
+                return ApiResponse::error('Use the two-factor setup to enable 2FA', 'INVALID_2FA_VALUE', 400);
             }
             $data['two_fa_enabled'] = $data['two_fa_enabled'] ? 'true' : 'false';
         }
@@ -252,6 +257,10 @@ class SessionController
                 }
             }
         }
+        // Same charset as registration; login only accepts usernames matching it.
+        if (isset($data['username']) && $data['username'] !== $user['username'] && (!is_string($data['username']) || !preg_match('/^[a-zA-Z0-9_]+$/', $data['username']))) {
+            return ApiResponse::error('Username can only contain letters, numbers, and underscores', 'INVALID_USERNAME_FORMAT');
+        }
         // Validate email format
         if (isset($data['email'])) {
             if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
@@ -264,7 +273,8 @@ class SessionController
                     return ApiResponse::error($domainRejection['message'], $domainRejection['code'], 400);
                 }
                 $existingUser = User::getUserByEmail($data['email']);
-                if ($existingUser) {
+                // Lookups are case-insensitive, so a case-only change finds the current user itself.
+                if ($existingUser && ($existingUser['uuid'] ?? null) !== $user['uuid']) {
                     return ApiResponse::error('Email already exists', 'EMAIL_ALREADY_EXISTS', 409);
                 }
             }
@@ -274,7 +284,7 @@ class SessionController
             // Only check for duplicate username if it's different from the current user's username
             if ($data['username'] !== $user['username']) {
                 $existingUser = User::getUserByUsername($data['username']);
-                if ($existingUser) {
+                if ($existingUser && ($existingUser['uuid'] ?? null) !== $user['uuid']) {
                     return ApiResponse::error('Username already exists', 'USERNAME_ALREADY_EXISTS', 409);
                 }
             }
@@ -743,27 +753,6 @@ class SessionController
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to save avatar', 'SAVE_FAILED', 500);
         }
-    }
-
-    /**
-     * Adds effective defaults for preferences that hold no stored value yet.
-     *
-     * `hide_server_ips` follows the administrator-wide setting until the user
-     * flips the switch themselves, so a global opt-in stays respected and GET
-     * and PATCH responses always agree.
-     *
-     * @param array $preferences the stored preferences
-     *
-     * @return array the preferences with defaults applied
-     */
-    private function applyPreferenceDefaults(array $preferences): array
-    {
-        if (!array_key_exists('hide_server_ips', $preferences)) {
-            $preferences['hide_server_ips'] =
-                App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_HIDE_IPS, 'false') === 'true';
-        }
-
-        return $preferences;
     }
 
     #[OA\Get(
@@ -1259,5 +1248,26 @@ class SessionController
             'signature' => $signature,
             'api_key' => $apiKey,
         ], 'API key signed successfully', 200);
+    }
+
+    /**
+     * Adds effective defaults for preferences that hold no stored value yet.
+     *
+     * `hide_server_ips` follows the administrator-wide setting until the user
+     * flips the switch themselves, so a global opt-in stays respected and GET
+     * and PATCH responses always agree.
+     *
+     * @param array $preferences the stored preferences
+     *
+     * @return array the preferences with defaults applied
+     */
+    private function applyPreferenceDefaults(array $preferences): array
+    {
+        if (!array_key_exists('hide_server_ips', $preferences)) {
+            $preferences['hide_server_ips'] =
+                App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_HIDE_IPS, 'false') === 'true';
+        }
+
+        return $preferences;
     }
 }

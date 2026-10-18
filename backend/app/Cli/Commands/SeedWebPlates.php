@@ -42,11 +42,11 @@ class SeedWebPlates extends App implements CommandBuilder
         try {
             MainApp::getInstance(true)->loadEnv();
             new Database(
-                $_ENV['DATABASE_HOST'],
-                $_ENV['DATABASE_DATABASE'],
-                $_ENV['DATABASE_USER'],
-                $_ENV['DATABASE_PASSWORD'],
-                $_ENV['DATABASE_PORT'],
+                (string) MainApp::env('DATABASE_HOST', '127.0.0.1'),
+                (string) MainApp::env('DATABASE_DATABASE', ''),
+                (string) MainApp::env('DATABASE_USER', ''),
+                (string) MainApp::env('DATABASE_PASSWORD', ''),
+                (int) MainApp::env('DATABASE_PORT', '3306'),
             );
 
             $result = WebPlate::seedSystemDefaults();

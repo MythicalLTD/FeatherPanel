@@ -48,7 +48,7 @@ class Rebuild extends App implements CommandBuilder
 
         try {
             \App\App::getInstance(true)->loadEnv();
-            $db = new Database($_ENV['DATABASE_HOST'], $_ENV['DATABASE_DATABASE'], $_ENV['DATABASE_USER'], $_ENV['DATABASE_PASSWORD'], $_ENV['DATABASE_PORT']);
+            $db = new Database((string) \App\App::env('DATABASE_HOST', '127.0.0.1'), (string) \App\App::env('DATABASE_DATABASE', ''), (string) \App\App::env('DATABASE_USER', ''), (string) \App\App::env('DATABASE_PASSWORD', ''), (int) \App\App::env('DATABASE_PORT', '3306'));
             $db = $db->getPdo();
         } catch (\Exception $e) {
             $app->send('&cFailed to connect to the database: &r' . $e->getMessage());

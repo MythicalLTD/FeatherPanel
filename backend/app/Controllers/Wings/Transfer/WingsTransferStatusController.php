@@ -57,7 +57,7 @@ class WingsTransferStatusController
     public function setTransferStatus(Request $request, string $uuid): Response
     {
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 

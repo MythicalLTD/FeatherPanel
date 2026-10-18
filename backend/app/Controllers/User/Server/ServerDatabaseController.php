@@ -404,7 +404,7 @@ class ServerDatabaseController
         // Validate required fields
         $required = ['database_host_id', 'database_name'];
         foreach ($required as $field) {
-            if (!isset($body[$field]) || trim($body[$field]) === '') {
+            if (!isset($body[$field]) || !is_scalar($body[$field]) || trim((string) $body[$field]) === '') {
                 return ApiResponse::error("Missing required field: {$field}", 'MISSING_REQUIRED_FIELD', 400);
             }
         }

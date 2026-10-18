@@ -561,6 +561,16 @@ class ServerSchedule
     {
         $expression = self::formatCronExpression($dayOfWeek, $month, $dayOfMonth, $hour, $minute);
 
+        // A fixed day that never exists in the chosen month (e.g. 30 2 or 31 4) never fires;
+        // next-run calculation would then fall back to an unrelated date.
+        if (ctype_digit(trim($dayOfMonth)) && ctype_digit(trim($month)) && trim($dayOfWeek) === '*') {
+            $maxDays = [1 => 31, 2 => 29, 3 => 31, 4 => 30, 5 => 31, 6 => 30, 7 => 31, 8 => 31, 9 => 30, 10 => 31, 11 => 30, 12 => 31];
+            $monthNumber = (int) $month;
+            if (isset($maxDays[$monthNumber]) && (int) $dayOfMonth > $maxDays[$monthNumber]) {
+                return false;
+            }
+        }
+
         if (class_exists(CrontabSchedule::class)) {
             try {
                 new CrontabSchedule($expression);

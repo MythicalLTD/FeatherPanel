@@ -203,6 +203,9 @@ class ApiClientController
         if ($page < 1) {
             $page = 1;
         }
+        if ($limit < 1) {
+            $limit = 150;
+        }
 
         // Get user's API clients with pagination and search
         $apiClients = ApiClient::searchApiClients(
@@ -341,7 +344,7 @@ class ApiClientController
         // Validate required fields
         $required = ['name'];
         foreach ($required as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 return ApiResponse::error("Missing required field: $field", 'MISSING_REQUIRED_FIELD', 400);
             }
         }

@@ -236,7 +236,7 @@ class TicketPrioritiesController
             return ApiResponse::error('Invalid JSON data', 'INVALID_JSON', 400);
         }
 
-        if (!isset($data['name']) || trim($data['name']) === '') {
+        if (!isset($data['name']) || !is_scalar($data['name']) || trim((string) $data['name']) === '') {
             return ApiResponse::error('Missing required field: name', 'MISSING_REQUIRED_FIELDS', 400);
         }
 

@@ -347,7 +347,9 @@ class ServerUserController
                 $serversById = Server::getServersByIds($subuserServerIds);
                 foreach ($subuserServerIds as $serverId) {
                     $server = $serversById[$serverId] ?? null;
-                    if ($server) {
+                    // A stale subuser row on a server the user now owns (e.g. after an ownership
+                    // transfer) must not list the server twice.
+                    if ($server && (int) ($server['owner_id'] ?? 0) !== (int) $user['id']) {
                         if (
                             empty($search)
                             || stripos($server['name'], $search) !== false

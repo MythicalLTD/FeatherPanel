@@ -123,13 +123,13 @@ class FileManagerController
         try {
             $config = App::getInstance(true)->getConfig();
             if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to browse files in non-developer mode', 403);
+                return ApiResponse::error('You are not allowed to browse files in non-developer mode', 'FORBIDDEN', 403);
             }
             $path = $request->query->get('path', '');
             $fullPath = $this->resolvePath($path);
 
             if (!is_dir($fullPath)) {
-                return ApiResponse::error('Directory not found', 404);
+                return ApiResponse::error('Directory not found', 'NOT_FOUND', 404);
             }
 
             $items = [];
@@ -168,7 +168,7 @@ class FileManagerController
                 'parent' => $path ? dirname($path) : null,
             ], 'Directory contents fetched successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to browse directory: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to browse directory: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -205,23 +205,23 @@ class FileManagerController
         try {
             $config = App::getInstance(true)->getConfig();
             if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to read files in non-developer mode', 403);
+                return ApiResponse::error('You are not allowed to read files in non-developer mode', 'FORBIDDEN', 403);
             }
             $path = $request->query->get('path', '');
             $fullPath = $this->resolvePath($path);
 
             if (!file_exists($fullPath)) {
-                return ApiResponse::error('File not found', 404);
+                return ApiResponse::error('File not found', 'NOT_FOUND', 404);
             }
 
             if (!is_file($fullPath)) {
-                return ApiResponse::error('Path is not a file', 400);
+                return ApiResponse::error('Path is not a file', 'BAD_REQUEST', 400);
             }
 
             // Check file size (limit to 5MB for safety)
             $fileSize = filesize($fullPath);
             if ($fileSize > 5 * 1024 * 1024) {
-                return ApiResponse::error('File too large (max 5MB)', 413);
+                return ApiResponse::error('File too large (max 5MB)', 'PAYLOAD_TOO_LARGE', 413);
             }
 
             $content = file_get_contents($fullPath);
@@ -241,7 +241,7 @@ class FileManagerController
                 'modified' => filemtime($fullPath),
             ], 'File content fetched successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to read file: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to read file: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -276,7 +276,7 @@ class FileManagerController
         try {
             $config = App::getInstance(true)->getConfig();
             if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to save files in non-developer mode', 403);
+                return ApiResponse::error('You are not allowed to save files in non-developer mode', 'FORBIDDEN', 403);
             }
             $path = $request->request->get('path', '');
             $content = $request->request->get('content', '');
@@ -284,7 +284,7 @@ class FileManagerController
 
             // Validate path is within project bounds
             if (!$this->isPathAllowed($fullPath)) {
-                return ApiResponse::error('Access denied to this path', 403);
+                return ApiResponse::error('Access denied to this path', 'FORBIDDEN', 403);
             }
 
             // Create directory if it doesn't exist
@@ -303,7 +303,7 @@ class FileManagerController
             $result = file_put_contents($fullPath, $content);
 
             if ($result === false) {
-                return ApiResponse::error('Failed to save file', 500);
+                return ApiResponse::error('Failed to save file', 'INTERNAL_SERVER_ERROR', 500);
             }
 
             // Emit event
@@ -325,7 +325,7 @@ class FileManagerController
                 'modified' => filemtime($fullPath),
             ], 'File saved successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to save file: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to save file: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -361,7 +361,7 @@ class FileManagerController
         try {
             $config = App::getInstance(true)->getConfig();
             if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to create files in non-developer mode', 403);
+                return ApiResponse::error('You are not allowed to create files in non-developer mode', 'FORBIDDEN', 403);
             }
             $path = $request->request->get('path', '');
             $isDirectory = $request->request->getBoolean('isDirectory', false);
@@ -369,11 +369,11 @@ class FileManagerController
 
             // Validate path is within project bounds
             if (!$this->isPathAllowed($fullPath)) {
-                return ApiResponse::error('Access denied to this path', 403);
+                return ApiResponse::error('Access denied to this path', 'FORBIDDEN', 403);
             }
 
             if (file_exists($fullPath)) {
-                return ApiResponse::error('File or directory already exists', 409);
+                return ApiResponse::error('File or directory already exists', 'CONFLICT', 409);
             }
 
             // Create directory if it doesn't exist
@@ -407,7 +407,7 @@ class FileManagerController
                 'created' => filemtime($fullPath),
             ], ($isDirectory ? 'Directory' : 'File') . ' created successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to create ' . ($isDirectory ? 'directory' : 'file') . ': ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to create ' . ($isDirectory ? 'directory' : 'file') . ': ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -441,18 +441,18 @@ class FileManagerController
         try {
             $config = App::getInstance(true)->getConfig();
             if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to delete files in non-developer mode', 403);
+                return ApiResponse::error('You are not allowed to delete files in non-developer mode', 'FORBIDDEN', 403);
             }
             $path = $request->request->get('path', '');
             $fullPath = $this->resolvePath($path);
 
             // Validate path is within project bounds
             if (!$this->isPathAllowed($fullPath)) {
-                return ApiResponse::error('Access denied to this path', 403);
+                return ApiResponse::error('Access denied to this path', 'FORBIDDEN', 403);
             }
 
             if (!file_exists($fullPath)) {
-                return ApiResponse::error('File or directory not found', 404);
+                return ApiResponse::error('File or directory not found', 'NOT_FOUND', 404);
             }
 
             // Prevent deletion of critical directories
@@ -465,7 +465,7 @@ class FileManagerController
 
             foreach ($criticalPaths as $criticalPath) {
                 if (strpos($fullPath, $this->rootPath . DIRECTORY_SEPARATOR . $criticalPath) === 0) {
-                    return ApiResponse::error('Cannot delete critical system directory', 403);
+                    return ApiResponse::error('Cannot delete critical system directory', 'FORBIDDEN', 403);
                 }
             }
 
@@ -492,7 +492,7 @@ class FileManagerController
 
             return ApiResponse::success([], 'File or directory deleted successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to delete file or directory: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to delete file or directory: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 

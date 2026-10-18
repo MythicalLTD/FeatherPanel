@@ -17,6 +17,7 @@
 
 namespace App\Controllers\Admin;
 
+use App\App;
 use App\Chat\Database;
 use App\Helpers\PhpMyAdmin;
 use App\Helpers\ApiResponse;
@@ -74,11 +75,11 @@ class DatabaseManagmentController
         try {
             // Connect using env configuration already loaded by the app kernel
             $db = new Database(
-                $_ENV['DATABASE_HOST'] ?? '127.0.0.1',
-                $_ENV['DATABASE_DATABASE'] ?? '',
-                $_ENV['DATABASE_USER'] ?? '',
-                $_ENV['DATABASE_PASSWORD'] ?? '',
-                (int) ($_ENV['DATABASE_PORT'] ?? 3306)
+                App::env('DATABASE_HOST', '127.0.0.1'),
+                App::env('DATABASE_DATABASE', ''),
+                App::env('DATABASE_USER', ''),
+                App::env('DATABASE_PASSWORD', ''),
+                (int) App::env('DATABASE_PORT', '3306')
             );
 
             $pdo = $db->getPdo();
@@ -109,7 +110,7 @@ class DatabaseManagmentController
                 'bytes_sent' => (int) ($vars['Bytes_sent'] ?? 0),
             ], 'Database status fetched', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch database status: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch database status: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -142,15 +143,15 @@ class DatabaseManagmentController
             $startTime = microtime(true);
 
             // Load env
-            \App\App::getInstance(true)->loadEnv();
-            $lines[] = '⏳ Connecting to database... ' . ($_ENV['DATABASE_HOST'] ?? 'localhost') . ':' . (string) ($_ENV['DATABASE_PORT'] ?? '3306');
+            App::getInstance(true)->loadEnv();
+            $lines[] = '⏳ Connecting to database... ' . App::env('DATABASE_HOST', 'localhost') . ':' . (string) App::env('DATABASE_PORT', '3306');
 
             $db = new Database(
-                $_ENV['DATABASE_HOST'] ?? '127.0.0.1',
-                $_ENV['DATABASE_DATABASE'] ?? '',
-                $_ENV['DATABASE_USER'] ?? '',
-                $_ENV['DATABASE_PASSWORD'] ?? '',
-                (int) ($_ENV['DATABASE_PORT'] ?? 3306)
+                App::env('DATABASE_HOST', '127.0.0.1'),
+                App::env('DATABASE_DATABASE', ''),
+                App::env('DATABASE_USER', ''),
+                App::env('DATABASE_PASSWORD', ''),
+                (int) App::env('DATABASE_PORT', '3306')
             );
 
             $pdo = $db->getPdo();
@@ -253,7 +254,7 @@ class DatabaseManagmentController
                 'output' => implode("\n", $lines),
             ], $failed > 0 ? 'Migrations finished with errors' : 'Migrations executed', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to run migrations: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to run migrations: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -299,7 +300,7 @@ class DatabaseManagmentController
                 'already_installed' => false,
             ], 'phpMyAdmin installed successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to install phpMyAdmin: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to install phpMyAdmin: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -333,7 +334,7 @@ class DatabaseManagmentController
                 'installed' => $isInstalled,
             ], 'phpMyAdmin status retrieved', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to check phpMyAdmin status: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to check phpMyAdmin status: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -373,7 +374,7 @@ class DatabaseManagmentController
                 'message' => 'phpMyAdmin deleted successfully',
             ], 'phpMyAdmin deleted successfully', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to delete phpMyAdmin: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to delete phpMyAdmin: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 

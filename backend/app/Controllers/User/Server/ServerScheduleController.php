@@ -357,7 +357,7 @@ class ServerScheduleController
         // Validate required fields
         $required = ['name', 'cron_day_of_week', 'cron_month', 'cron_day_of_month', 'cron_hour', 'cron_minute'];
         foreach ($required as $field) {
-            if (!isset($body[$field]) || trim($body[$field]) === '') {
+            if (!isset($body[$field]) || !is_scalar($body[$field]) || trim((string) $body[$field]) === '') {
                 return ApiResponse::error("Missing required field: {$field}", 'MISSING_REQUIRED_FIELD', 400);
             }
         }

@@ -89,7 +89,7 @@ class WingsImportStatusController
     public function setImportStatus(Request $request, string $uuid): Response
     {
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
@@ -104,7 +104,7 @@ class WingsImportStatusController
         }
 
         $successful = (bool) $data['successful'];
-        $error = isset($data['error']) && is_string($data['error']) ? trim($data['error']) : null;
+        $error = isset($data['error']) ? trim($data['error']) : null;
 
         // Limit error message length (sanitization)
         if ($error && strlen($error) > 1000) {

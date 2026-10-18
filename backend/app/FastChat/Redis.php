@@ -28,9 +28,9 @@ class Redis
     {
         $app = App::getInstance(true);
         $app->loadEnv();
-        $host = $_ENV['REDIS_HOST'];
-        $port = $_ENV['REDIS_PORT'] ?? 6379;
-        $pwd = $_ENV['REDIS_PASSWORD'] ?? '';
+        $host = App::env('REDIS_HOST', '127.0.0.1');
+        $port = App::env('REDIS_PORT', '6379');
+        $pwd = App::env('REDIS_PASSWORD', '');
         $options = [
             'scheme' => 'tcp',
             'host' => $host,

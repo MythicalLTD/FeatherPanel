@@ -42,6 +42,7 @@ use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\Exception\MethodNotAllowedException;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class App
 {
@@ -109,9 +110,9 @@ class App
             // Initialize Redis connection for rate limiting
             try {
                 $this->redisConnection = new \Redis();
-                $host = $_ENV['REDIS_HOST'] ?? '127.0.0.1';
-                $port = (int) ($_ENV['REDIS_PORT'] ?? 6379);
-                $password = $_ENV['REDIS_PASSWORD'] ?? null;
+                $host = self::env('REDIS_HOST', '127.0.0.1');
+                $port = (int) self::env('REDIS_PORT', '6379');
+                $password = self::env('REDIS_PASSWORD', null);
 
                 if ($password) {
                     $this->redisConnection->connect($host, $port);
@@ -354,6 +355,9 @@ class App
             $response = ApiResponse::error('The api route does not exist! [' . $request->getPathInfo() . ']', 'API_ROUTE_NOT_FOUND', 404, null);
         } catch (MethodNotAllowedException $e) {
             $response = ApiResponse::error('Method not allowed for this route. Allowed: ' . implode(', ', $e->getAllowedMethods()), 'METHOD_NOT_ALLOWED', 405, null);
+        } catch (BadRequestException $e) {
+            // Malformed client input (e.g. ?search[]=x where a scalar is expected) is a 400, not a server error.
+            $response = ApiResponse::error('Invalid request: ' . $e->getMessage(), 'INVALID_REQUEST', 400, null);
         } catch (\Throwable $e) {
             $eventId = SentryTelemetry::captureException($e);
             self::getLogger()->error(
@@ -974,7 +978,7 @@ class App
 
     public function getEnvValue(string $key): string
     {
-        return $_ENV[$key];
+        return (string) self::env($key, '');
     }
 
     public function encryptValue(string $value): string

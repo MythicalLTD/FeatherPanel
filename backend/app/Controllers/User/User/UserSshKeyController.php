@@ -322,7 +322,7 @@ class UserSshKeyController
         // Validate required fields
         $required = ['name', 'public_key'];
         foreach ($required as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 return ApiResponse::error("Missing required field: $field", 'MISSING_REQUIRED_FIELD', 400);
             }
         }

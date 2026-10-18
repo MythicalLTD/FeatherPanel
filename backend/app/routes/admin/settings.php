@@ -56,8 +56,8 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-settings-category',
         '/api/admin/settings/category/{category}',
-        function (Request $request, string $category) {
-            return (new SettingsController())->getSettingsByCategory($category);
+        function (Request $request, array $args) {
+            return (new SettingsController())->getSettingsByCategory((string) ($args['category'] ?? ''));
         },
         Permissions::ADMIN_SETTINGS_VIEW,
         ['GET']
@@ -66,8 +66,8 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-settings-show',
         '/api/admin/settings/{setting}',
-        function (Request $request, string $setting) {
-            return (new SettingsController())->show($request, $setting);
+        function (Request $request, array $args) {
+            return (new SettingsController())->show($request, (string) ($args['setting'] ?? ''));
         },
         Permissions::ADMIN_SETTINGS_VIEW,
         ['GET']

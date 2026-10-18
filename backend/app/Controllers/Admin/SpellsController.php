@@ -398,14 +398,14 @@ class SpellsController
     public function create(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
         $requiredFields = ['realm_id', 'author', 'name'];
         $missingFields = [];
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
+            if (!isset($data[$field]) || !is_scalar($data[$field]) || trim((string) $data[$field]) === '') {
                 $missingFields[] = $field;
             }
         }
@@ -576,7 +576,7 @@ class SpellsController
         }
 
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
@@ -910,7 +910,7 @@ class SpellsController
     public function reorder(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
@@ -1326,7 +1326,7 @@ class SpellsController
             return ApiResponse::error('Spell not found', 'SPELL_NOT_FOUND', 404);
         }
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
         $data['spell_id'] = $spellId;
@@ -1408,7 +1408,7 @@ class SpellsController
             return ApiResponse::error('Variable not found', 'VARIABLE_NOT_FOUND', 404);
         }
         $data = json_decode($request->getContent(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
         unset($data['id']);
@@ -1643,7 +1643,7 @@ class SpellsController
                 'source' => 'pterodactyl',
             ], 'Online spells fetched', 200);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch online spells: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch online spells: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 
@@ -1865,7 +1865,7 @@ class SpellsController
 
             return ApiResponse::success(['spell' => $spell], 'Spell installed successfully from online repository', 201);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to install spell from online repository: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to install spell from online repository: ' . $e->getMessage(), 'INTERNAL_SERVER_ERROR', 500);
         }
     }
 

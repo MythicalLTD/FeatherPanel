@@ -3621,7 +3621,7 @@ class SettingsController
     public function getSettingsByCategory(string $category): Response
     {
         if (!isset($this->settingsCategories[$category])) {
-            return ApiResponse::error('Category not found', 404);
+            return ApiResponse::error('Category not found', 'NOT_FOUND', 404);
         }
 
         $categorySettings = [];
@@ -3697,7 +3697,7 @@ class SettingsController
     public function show(Request $request, string $setting): Response
     {
         if (!isset($this->settings[$setting])) {
-            return ApiResponse::error('Setting not found', 404);
+            return ApiResponse::error('Setting not found', 'NOT_FOUND', 404);
         }
 
         // Emit event
@@ -3818,6 +3818,7 @@ class SettingsController
             if ($settingConfig['required'] && $stringValue === '') {
                 return ApiResponse::error(
                     "Setting {$setting} is required",
+                    'BAD_REQUEST',
                     400,
                 );
             }
@@ -3830,6 +3831,7 @@ class SettingsController
             ) {
                 return ApiResponse::error(
                     "Setting {$setting} value is too long (max {$maxLength} characters)",
+                    'BAD_REQUEST',
                     400,
                 );
             }
@@ -3847,6 +3849,7 @@ class SettingsController
             } else {
                 return ApiResponse::error(
                     "Failed to update setting: {$setting}",
+                    'INTERNAL_SERVER_ERROR',
                     500,
                 );
             }
@@ -4296,8 +4299,8 @@ class SettingsController
             );
         }
 
-        $updaterUrl = trim((string) ($_ENV['DOCKER_UPDATER_URL'] ?? ''));
-        $updaterToken = trim((string) ($_ENV['DOCKER_UPDATER_TOKEN'] ?? ''));
+        $updaterUrl = trim((string) App::env('DOCKER_UPDATER_URL', ''));
+        $updaterToken = trim((string) App::env('DOCKER_UPDATER_TOKEN', ''));
 
         if ($updaterUrl === '' || $updaterToken === '') {
             return ApiResponse::error(
@@ -4444,7 +4447,7 @@ class SettingsController
 
     private function isDockerDeployment(): bool
     {
-        $flag = strtolower(trim((string) ($_ENV['PANEL_DOCKER_DEPLOYMENT'] ?? 'false')));
+        $flag = strtolower(trim((string) App::env('PANEL_DOCKER_DEPLOYMENT', 'false')));
 
         return in_array($flag, ['1', 'true', 'yes', 'on'], true);
     }

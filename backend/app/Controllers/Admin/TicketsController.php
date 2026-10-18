@@ -1018,7 +1018,7 @@ class TicketsController
             return ApiResponse::error('Invalid JSON data', 'INVALID_JSON', 400);
         }
 
-        if (!isset($data['message']) || trim($data['message']) === '') {
+        if (!isset($data['message']) || !is_scalar($data['message']) || trim((string) $data['message']) === '') {
             return ApiResponse::error('Message is required', 'MISSING_MESSAGE', 400);
         }
 
