@@ -42,7 +42,8 @@ import {
     ChevronRight,
     HardDrive,
 } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollableTabsList } from '@/components/ui/scrollable-tabs-list';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from '@/components/ui/sheet';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
@@ -1103,8 +1104,8 @@ export default function EditServerPage() {
                 orientation='vertical'
                 className='flex w-full flex-col gap-6 md:flex-row'
             >
-                <aside className='w-full shrink-0 overflow-x-auto pb-2 md:w-64 md:overflow-visible md:pb-0'>
-                    <TabsList className='bg-card/30 border-border/50 flex h-auto w-max flex-row gap-2 rounded-2xl border p-2 md:w-full md:flex-col md:gap-1'>
+                <aside className='w-full shrink-0 md:w-64'>
+                    <ScrollableTabsList className='bg-card/30 border-border/50 flex h-auto w-full flex-row gap-2 rounded-2xl border p-2 md:flex-col md:gap-1 md:overflow-visible'>
                         {tabs.map((tab) => {
                             const Icon = tab.icon;
                             return (
@@ -1118,7 +1119,7 @@ export default function EditServerPage() {
                                 </TabsTrigger>
                             );
                         })}
-                    </TabsList>
+                    </ScrollableTabsList>
                 </aside>
 
                 <div className='min-w-0 flex-1 space-y-6'>

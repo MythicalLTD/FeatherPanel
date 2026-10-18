@@ -50,7 +50,8 @@ import { Select } from '@/components/ui/select-native';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollableTabsList } from '@/components/ui/scrollable-tabs-list';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
     AlertDialog,
@@ -1048,8 +1049,8 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             </div>
 
             <Tabs defaultValue='servers' className='w-full'>
-                <div className='mb-4 flex items-center justify-between'>
-                    <TabsList>
+                <div className='mb-4 flex min-w-0'>
+                    <ScrollableTabsList wrapperClassName='max-w-full'>
                         <TabsTrigger value='servers' className='gap-2'>
                             <ServerIcon className='h-4 w-4' />
                             {t('admin.users.edit.tabs.servers')}
@@ -1075,7 +1076,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             <Mail className='h-4 w-4' />
                             {t('admin.users.edit.tabs.mails')}
                         </TabsTrigger>
-                    </TabsList>
+                    </ScrollableTabsList>
                 </div>
 
                 <TabsContent value='servers'>

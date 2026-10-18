@@ -1632,7 +1632,9 @@
 			"invalidDescription": "Fix the highlighted fields before saving.",
 			"discard": "Discard",
 			"leaveConfirm": "You have unsaved changes. Leave this page and lose them?"
-		}
+		},
+		"scrollLeft": "Scroll left",
+		"scrollRight": "Scroll right"
 	},
 	"pwa": {
 		"installTitle": "Install {name}",
@@ -10835,7 +10837,8 @@
 						"none": "None (no encryption)"
 					}
 				}
-			}
+			},
+			"category_select": "Settings category"
 		},
 		"rate_limits": {
 			"title": "Rate Limits",
