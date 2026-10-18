@@ -40,6 +40,7 @@ interface SetupCommandData {
     daemon_display_name?: string;
     systemd_unit?: string;
     join_data?: string;
+    config_yaml?: string;
 }
 
 interface CommandBlockProps {
@@ -79,6 +80,11 @@ export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }:
     const { t } = useTranslation();
     const [setupData, setSetupData] = useState<SetupCommandData | null>(null);
     const [setupLoading, setSetupLoading] = useState(false);
+
+    // The node detail response no longer includes the daemon token, so the
+    // locally built YAML would show token_id/token as undefined. Prefer the
+    // server-generated config from the setup-command endpoint.
+    const configYaml = setupData?.config_yaml || wingsConfigYaml;
 
     const fetchSetupCommand = useCallback(async () => {
         if (!nodeId) return;
@@ -170,9 +176,9 @@ export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }:
                 <div className='space-y-6'>
                     <p className='text-muted-foreground text-sm'>{t('admin.node.wings.config_help')}</p>
                     <CommandBlock
-                        command={wingsConfigYaml}
+                        command={configYaml}
                         copyLabel={t('admin.node.wings.copy_config')}
-                        onCopy={() => copyToClipboard(wingsConfigYaml, t)}
+                        onCopy={() => copyToClipboard(configYaml, t)}
                         preClassName='scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent overflow-x-auto p-6 font-mono text-xs whitespace-pre text-zinc-300'
                     />
 
