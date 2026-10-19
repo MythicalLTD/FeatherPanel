@@ -75,16 +75,7 @@ export function OAuthConsentShell({ children, className }: { children: ReactNode
 }
 
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
-    return (
-        <section
-            className={cn(
-                'border-border/60 bg-card/90 rounded-2xl border p-5 shadow-2xl shadow-black/10 backdrop-blur-xl sm:p-7',
-                className,
-            )}
-        >
-            {children}
-        </section>
-    );
+    return <section className={cn('fp-surface rounded-2xl border p-5 sm:p-7', className)}>{children}</section>;
 }
 
 export function OAuthConsentButton({
@@ -177,7 +168,7 @@ export function OAuthConsentCard({
 
             {permissions.length > 0 ? (
                 <div className='border-border/60 bg-background/35 mt-5 rounded-xl border p-4'>
-                    <p className='text-muted-foreground mb-3 text-xs font-semibold tracking-wide uppercase'>
+                    <p className='text-muted-foreground mb-3 text-xs font-medium'>
                         {t('ui.components.auth.oAuthConsentCard.thisAppCan')}
                     </p>
                     <ul className='space-y-3'>

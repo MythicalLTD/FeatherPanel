@@ -349,9 +349,7 @@ export default function LoginQrPanel({ className, compact = false }: { className
 
                         {challenge?.userCode ? (
                             <div className='mt-3 space-y-1'>
-                                <p className='text-muted-foreground text-[10px] font-semibold tracking-[0.14em] uppercase'>
-                                    {t('auth.qr.userCode')}
-                                </p>
+                                <p className='text-muted-foreground text-xs font-medium'>{t('auth.qr.userCode')}</p>
                                 <p className='text-foreground font-mono text-lg tracking-[0.22em]'>
                                     {challenge.userCode}
                                 </p>

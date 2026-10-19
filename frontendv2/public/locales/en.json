@@ -186,12 +186,16 @@
 			"cancel": "No, Cancel"
 		},
 		"shell": {
-			"tagline": "Manage your game servers from anywhere.",
+			"tagline": "Manage your game servers, websites and virtual machines from one place.",
 			"asideTitle": "Your servers. One control plane.",
 			"controlPlane": "Game server control plane",
 			"featureControl": "Full console, files, and power controls",
 			"featureSecure": "Secure sign-in with optional 2FA and SSO",
-			"featureFast": "Fast installs and live resource metrics"
+			"featureFast": "Fast installs and live resource metrics",
+			"aside_title": "Welcome to {app}",
+			"feature_fast": "Start, stop and manage servers in seconds",
+			"feature_secure": "Two factor, passkeys and session control",
+			"feature_modern": "A clean panel that works on any device"
 		},
 		"sso": {
 			"headline": "Continue with SSO",
