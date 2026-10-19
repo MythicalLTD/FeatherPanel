@@ -381,7 +381,7 @@ const ScannerTab = () => {
                                 style={{ width: `${Math.min((scanProgress.filesScanned / 1500) * 100, 98)}%` }}
                             />
                         </div>
-                        <div className='rounded-lg border border-[var(--fp-surface-border)] bg-black/50 p-3 font-mono text-[10px] text-green-500/80'>
+                        <div className='fp-surface-inset rounded-lg border p-3 font-mono text-[10px] text-green-500/80'>
                             <div className='flex items-center gap-2'>
                                 <span className='opacity-50'>CUR_DIR:</span>
                                 <span className='truncate'>{scanProgress.currentDirectory}</span>

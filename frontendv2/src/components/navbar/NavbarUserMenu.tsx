@@ -217,7 +217,7 @@ export function NavbarUserMenu({
                 leaveTo='transform opacity-0 scale-[0.97] translate-y-1'
             >
                 <Menu.Items className='border-border/40 bg-card/95 ring-border/20 absolute right-0 z-50 mt-2 w-[min(20rem,calc(100vw-1rem))] origin-top-right overflow-hidden rounded-2xl border shadow-xl ring-1 backdrop-blur-xl focus:outline-none sm:w-80'>
-                    <div className='from-primary/10 via-primary/5 relative border-b border-white/5 bg-linear-to-br to-transparent px-4 py-4'>
+                    <div className='from-primary/10 via-primary/5 relative border-b border-[var(--fp-surface-border)] bg-linear-to-br to-transparent px-4 py-4'>
                         <div className='flex items-start gap-3'>
                             <UserAvatar
                                 user={user}
