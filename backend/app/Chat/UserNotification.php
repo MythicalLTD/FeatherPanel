@@ -31,12 +31,16 @@ class UserNotification
     public const KIND_BACKUP_COMPLETED = 'backup_completed';
     public const KIND_BACKUP_FAILED = 'backup_failed';
     public const KIND_SERVER_CRASHED = 'server_crashed';
+    public const KIND_FILE_TRANSFER_COMPLETED = 'file_transfer_completed';
+    public const KIND_FILE_TRANSFER_FAILED = 'file_transfer_failed';
 
     public const KINDS = [
         self::KIND_TICKET_REPLY,
         self::KIND_BACKUP_COMPLETED,
         self::KIND_BACKUP_FAILED,
         self::KIND_SERVER_CRASHED,
+        self::KIND_FILE_TRANSFER_COMPLETED,
+        self::KIND_FILE_TRANSFER_FAILED,
     ];
 
     /** Read items are kept this long, unread ones three times as long. */

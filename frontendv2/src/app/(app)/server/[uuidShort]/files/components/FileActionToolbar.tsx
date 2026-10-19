@@ -32,6 +32,7 @@ import {
     Boxes,
     ChevronDown,
     Code2,
+    Send,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -63,6 +64,8 @@ interface FileActionToolbarProps {
     onPermissionsSelected: () => void;
     /** Download every selected entry (files directly, folders when the daemon supports it). */
     onDownloadSelected?: () => void;
+    /** Copy or move the selection to another server. */
+    onTransferSelected?: () => void;
     onOpenInIDE?: () => void;
     onOpenInCalagopus?: () => void;
     canCreate: boolean;
@@ -89,6 +92,7 @@ export function FileActionToolbar({
     onMoveSelected,
     onPermissionsSelected,
     onDownloadSelected,
+    onTransferSelected,
     onOpenInIDE,
     onOpenInCalagopus,
     canCreate,
@@ -125,6 +129,19 @@ export function FileActionToolbar({
                                 <Archive className='mr-2 h-4 w-4' />
                                 <span className='hidden sm:inline'>{t('files.toolbar.compress')}</span>
                             </Button>
+                            {onTransferSelected && (
+                                <Button
+                                    variant='secondary'
+                                    size='sm'
+                                    onClick={onTransferSelected}
+                                    className='h-9 px-3'
+                                    title={t('files.transfer.title')}
+                                    aria-label={t('files.transfer.title')}
+                                >
+                                    <Send className='h-4 w-4 sm:mr-2' />
+                                    <span className='hidden sm:inline'>{t('files.transfer.button')}</span>
+                                </Button>
+                            )}
                             {onDownloadSelected && (
                                 <Button
                                     variant='secondary'
