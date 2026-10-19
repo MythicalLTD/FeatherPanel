@@ -15,6 +15,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { DataTable, RowActionsMenu } from '@/components/featherui/DataTable';
+
 import * as React from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
@@ -36,8 +38,6 @@ import {
     Loader2,
     CheckCircle2,
 } from 'lucide-react';
-
-import { ResourceCard } from '@/components/featherui/ResourceCard';
 
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -437,52 +437,64 @@ export default function ServerSubusersPage() {
                             </Button>
                         </div>
                     ) : (
-                        <div className='grid grid-cols-1 gap-4'>
-                            {subusers.map((sub) => (
-                                <ResourceCard
-                                    key={sub.id}
-                                    icon={Users}
-                                    iconWrapperClassName='bg-primary/10 border-primary/20 text-primary'
-                                    title={sub.username || sub.email}
-                                    description={
-                                        <div className='text-muted-foreground flex items-center gap-2 text-xs font-medium'>
-                                            <Mail className='h-3 w-3' />
-                                            <span>
-                                                <Sensitive>{sub.email}</Sensitive>
+                        <DataTable
+                            rows={subusers}
+                            rowKey={(sub) => sub.id}
+                            columns={[
+                                {
+                                    key: 'user',
+                                    header: t('serverSubusers.username'),
+                                    cell: (sub) => (
+                                        <div className='flex min-w-0 items-center gap-3'>
+                                            <span className='fp-icon-tile text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-xl'>
+                                                <Users className='h-4 w-4' />
                                             </span>
+                                            <p className='truncate font-medium'>{sub.username || sub.email}</p>
                                         </div>
-                                    }
-                                    actions={
-                                        <div className='flex items-center gap-3'>
-                                            {canUpdate && (
-                                                <Button
-                                                    variant='ghost'
-                                                    size='sm'
-                                                    onClick={() => openPermissionsDialog(sub)}
-                                                    className='hover:bg-muted/70 h-8 rounded-lg px-3 text-xs'
-                                                >
-                                                    <Shield className='mr-1.5 h-3.5 w-3.5' />
-                                                    {t('serverSubusers.permissions')}
-                                                </Button>
-                                            )}
-                                            {canDelete && (
-                                                <Button
-                                                    variant='destructive'
-                                                    size='sm'
-                                                    onClick={() => {
-                                                        setSelectedSubuser(sub);
-                                                        setIsDeleteOpen(true);
-                                                    }}
-                                                    className='h-8 w-8 p-0'
-                                                >
-                                                    <Trash2 className='h-3.5 w-3.5' />
-                                                </Button>
-                                            )}
-                                        </div>
-                                    }
-                                />
-                            ))}
-                        </div>
+                                    ),
+                                },
+                                {
+                                    key: 'email',
+                                    header: t('serverSubusers.email'),
+                                    className: 'text-muted-foreground',
+                                    cell: (sub) => <Sensitive>{sub.email}</Sensitive>,
+                                },
+                            ]}
+                            mobileCard={(sub) => (
+                                <div className='min-w-0 space-y-1'>
+                                    <p className='truncate font-medium'>{sub.username || sub.email}</p>
+                                    <p className='text-muted-foreground flex items-center gap-1.5 truncate text-xs'>
+                                        <Mail className='h-3 w-3' />
+                                        <Sensitive>{sub.email}</Sensitive>
+                                    </p>
+                                </div>
+                            )}
+                            actions={(sub) =>
+                                (canUpdate || canDelete) && (
+                                    <RowActionsMenu
+                                        items={[
+                                            {
+                                                label: t('serverSubusers.permissions'),
+                                                icon: Shield,
+                                                onClick: () => openPermissionsDialog(sub),
+                                                hidden: !canUpdate,
+                                            },
+                                            {
+                                                label: t('common.delete'),
+                                                icon: Trash2,
+                                                destructive: true,
+                                                separated: canUpdate,
+                                                hidden: !canDelete,
+                                                onClick: () => {
+                                                    setSelectedSubuser(sub);
+                                                    setIsDeleteOpen(true);
+                                                },
+                                            },
+                                        ]}
+                                    />
+                                )
+                            }
+                        />
                     )}
 
                     {pagination.total > pagination.per_page && (

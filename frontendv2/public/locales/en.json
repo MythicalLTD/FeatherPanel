@@ -4401,7 +4401,8 @@
 		"rowsReturned": "{count} row(s) returned",
 		"rowsAffected": "{count} row(s) affected",
 		"truncatedTo": "(truncated to {limit})",
-		"queryExecuted": "Query executed {count} row(s) affected"
+		"queryExecuted": "Query executed {count} row(s) affected",
+		"remote": "Remote access"
 	},
 	"serverBackups": {
 		"title": "Backups",
@@ -4525,7 +4526,10 @@
 		"recoverFailed": "Failed to recover backup status. Refresh the list and try again.",
 		"recheckAction": "Recheck backup status",
 		"recheckSuccess": "Backup status rechecked",
-		"recheckFailed": "Could not recheck backup status"
+		"recheckFailed": "Could not recheck backup status",
+		"size": "Size",
+		"storage": "Storage",
+		"created": "Created"
 	},
 	"serverImport": {
 		"title": "Server Import",
@@ -4810,7 +4814,9 @@
 		"options": "Options",
 		"configuration": "Configuration",
 		"runRegardless": "No, run regardless of server status",
-		"runOnlyOnline": "Yes, only run when server is online"
+		"runOnlyOnline": "Yes, only run when server is online",
+		"cron": "Schedule",
+		"nextRunHeader": "Next run"
 	},
 	"serverTasks": {
 		"title": "Schedule Tasks",
@@ -5241,7 +5247,9 @@
 					}
 				}
 			}
-		}
+		},
+		"username": "User",
+		"email": "Email"
 	},
 	"serverStartup": {
 		"softwareEnvironment": "Transfer to another software",
