@@ -1525,7 +1525,10 @@
 			"INVALID_NOTIFICATION_KEYS": "Some notifications could not be found. Refresh and try again.",
 			"CURRENT_SESSION": "Use sign out to end the current session",
 			"SESSION_NOT_FOUND": "Session not found",
-			"SESSION_REQUIRED": "Sessions are only available for browser sign-ins"
+			"SESSION_REQUIRED": "Sessions are only available for browser sign-ins",
+			"INVALID_TRANSFER": "Pick at least one file and valid folders",
+			"TARGET_NOT_FOUND": "Target server not found",
+			"TRANSFER_CREATE_FAILED": "Failed to queue the transfer"
 		},
 		"global": {}
 	},
@@ -4018,13 +4021,17 @@
 				"backup_failed": "Backup failed",
 				"server_crashed": "Server crashed",
 				"announcement": "Announcement",
-				"other": "Notification"
+				"other": "Notification",
+				"file_transfer_completed": "File transfer finished",
+				"file_transfer_failed": "File transfer failed"
 			},
 			"bodies": {
 				"ticket_reply": "New reply on \"{ticket}\".",
 				"backup_completed": "{backup} on {server} finished.",
 				"backup_failed": "{backup} on {server} did not finish.",
-				"server_crashed": "{server} stopped unexpectedly."
+				"server_crashed": "{server} stopped unexpectedly.",
+				"file_transfer_completed": "{files} item(s) from {server} arrived on {target}.",
+				"file_transfer_failed": "Sending {files} item(s) from {server} to {target} failed."
 			}
 		}
 	},
@@ -6772,6 +6779,37 @@
 			"summary": "{folders} folders, {files} files, {size}",
 			"selected": "{count} selected",
 			"select_all": "Select all"
+		},
+		"transfer": {
+			"title": "Copy or move to another server",
+			"button": "To server",
+			"description": "{count} selected item(s) will be packed, sent and unpacked on the server you pick.",
+			"no_targets": "You have no other server where you can create files.",
+			"target": "Target server",
+			"mode": "Action",
+			"mode_copy": "Copy",
+			"mode_move": "Move",
+			"destination": "Destination folder",
+			"no_folders": "No subfolders here.",
+			"submit_copy": "Copy here",
+			"submit_move": "Move here",
+			"started": "Transfer started",
+			"failed": "Could not start the transfer",
+			"panel_title": "Server transfers",
+			"job_copy": "Copy {count} item(s) from {source} to {target}",
+			"job_move": "Move {count} item(s) from {source} to {target}",
+			"stages": {
+				"queued": "Queued",
+				"preparing": "Preparing",
+				"compressing": "Compressing",
+				"pulling": "Sending",
+				"streaming": "Streaming",
+				"extracting": "Extracting",
+				"copying": "Copying",
+				"removing_originals": "Removing originals",
+				"done": "Done",
+				"failed": "Failed"
+			}
 		}
 	},
 	"admin": {

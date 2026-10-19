@@ -26,6 +26,8 @@ import { FileActionToolbar } from './components/FileActionToolbar';
 import { FileBreadcrumbs } from './components/FileBreadcrumbs';
 import { FileList } from './components/FileList';
 import { FileListControls } from './components/FileListControls';
+import { FileTransferDialog } from './components/FileTransferDialog';
+import { FileTransfersPanel } from './components/FileTransfersPanel';
 import { FileQuickAccess, FileQuickAccessPanel } from './components/FileQuickAccess';
 import { PanelRightOpen } from 'lucide-react';
 import { useFilesViewPrefs, useFilesQuickAccess, sortAndFilterFiles } from '@/lib/files-view-prefs';
@@ -241,6 +243,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const [moveCopyOpen, setMoveCopyOpen] = useState(false);
     const [permissionsOpen, setPermissionsOpen] = useState(false);
     const [compressOpen, setCompressOpen] = useState(false);
+    const [transferOpen, setTransferOpen] = useState(false);
+    const [transferKey, setTransferKey] = useState(0);
     const [fileHashOpen, setFileHashOpen] = useState(false);
     const [archiveBrowseOpen, setArchiveBrowseOpen] = useState(false);
     const [calagopusOpen, setCalagopusOpen] = useState(false);
@@ -1354,6 +1358,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             }}
                             onArchiveSelected={() => handleCompress(selectedFiles)}
                             onDownloadSelected={canRead ? handleDownloadSelected : undefined}
+                            onTransferSelected={canRead && canArchive ? () => setTransferOpen(true) : undefined}
                             onClearSelection={() => setSelectedFiles([])}
                             onPullFile={() => setPullFileOpen(true)}
                             onWipeAll={() => setWipeAllOpen(true)}
@@ -1693,6 +1698,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             </div>
                         </div>
 
+                        <FileTransfersPanel serverUuid={uuidShort} refreshKey={transferKey} onCompleted={refresh} />
+
                         <div className='flex items-start gap-4'>
                             <div className='min-w-0 flex-1'>
                                 <FileList
@@ -1867,6 +1874,18 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 files={actionFile ? [actionFile.name] : selectedFiles}
                 onSuccess={() => {
                     refresh();
+                    setSelectedFiles([]);
+                }}
+            />
+            <FileTransferDialog
+                open={transferOpen}
+                onOpenChange={setTransferOpen}
+                serverUuid={uuidShort}
+                directory={currentDirectory || '/'}
+                files={selectedFiles}
+                canMove={canDelete}
+                onStarted={() => {
+                    setTransferKey((k) => k + 1);
                     setSelectedFiles([]);
                 }}
             />

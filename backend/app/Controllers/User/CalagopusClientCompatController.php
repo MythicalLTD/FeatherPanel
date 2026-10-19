@@ -1633,7 +1633,7 @@ class CalagopusClientCompatController
      * @param array<string, mixed> $destinationServer
      * @param array<int, array{from:string,to:string}> $files
      */
-    private function copyRemoteThroughPanel(
+    public function copyRemoteThroughPanel(
         array $sourceNode,
         array $sourceServer,
         array $destinationNode,

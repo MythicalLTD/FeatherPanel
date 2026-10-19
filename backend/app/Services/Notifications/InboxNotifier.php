@@ -83,6 +83,26 @@ class InboxNotifier
         });
     }
 
+    /** A cross server file copy or move finished: notify the user who started it. */
+    public static function fileTransferFinished(array $user, array $source, array $target, array $job, bool $successful): void
+    {
+        self::guard(static function () use ($user, $source, $target, $job, $successful): void {
+            $files = json_decode((string) ($job['files'] ?? '[]'), true) ?: [];
+            self::send(
+                [$user],
+                $successful ? UserNotification::KIND_FILE_TRANSFER_COMPLETED : UserNotification::KIND_FILE_TRANSFER_FAILED,
+                [
+                    'server_name' => mb_substr((string) ($source['name'] ?? ''), 0, 120),
+                    'target_name' => mb_substr((string) ($target['name'] ?? ''), 0, 120),
+                    'server' => (string) ($source['uuidShort'] ?? ''),
+                    'count' => (string) count($files),
+                ],
+                '/server/' . rawurlencode((string) ($target['uuidShort'] ?? '')) . '/files',
+                'transfer:' . (string) ($job['uuid'] ?? '')
+            );
+        });
+    }
+
     /** Wings reported a crash: owner and subusers with console access. Repeats fold into one unread item. */
     public static function serverCrashed(array $server): void
     {
