@@ -1,9 +1,23 @@
 # Changelog
 
-## v1.4.2 STABLE
+## v1.5.0 STABLE
 
 ### Added
 
+- Added a redesigned user dashboard with a greeting hero, server overview, customizable widgets, arrange mode, saved layout preferences, 24-hour resource history, sparklines, trends, and an improved responsive layout. by @nayskutzu
+- Added admin KPI analytics with date ranges, growth, capacity, top consumers, and infrastructure/server/user views. by @nayskutzu
+- Added an admin audit log with searchable activity history and detailed records for administrative actions. by @nayskutzu
+- Added a first-install setup wizard and a setup checklist for new nodes. by @nayskutzu
+- Added a notifications centre in the top bar with an in-panel notification inbox and unread state. by @nayskutzu
+- Added per-device account sessions, including the ability to sign out one device or all other devices. by @nayskutzu
+- Added a guided onboarding tour for new users. by @nayskutzu
+- Added configurable Game, Web Hosting, and VDS modules with module badges and admin controls. by @nayskutzu
+- Added bulk server actions for start, stop, restart, kill, and reinstall. by @nayskutzu
+- Added a shared server-list data table with sorting, filtering, pagination, and consistent layouts across server lists.
+- Added a new file manager with redesigned browsing, breadcrumbs, thumbnails, file information, quick access, bulk actions, trash improvements, file templates, and transfer progress. by @nayskutzu
+- Added cross-server file copy and move with transfer tracking and notifications. by @nayskutzu
+- Added shared admin table layouts and redesigns across users, servers, nodes, roles, API keys, tickets, plugins, mail, knowledgebase, databases, updates, and remaining admin pages. by @nayskutzu
+- Added admin breadcrumbs, section-aware command palette entries, helpful empty states, node setup checklists, and improved server creation defaults and review flow.  by @nayskutzu
 - FrankenPHP worker mode is now the default for `/api/*`: the backend boots once per worker and serves requests from memory (about 2x the throughput and half the latency of classic mode in our benchmark). Chatbot streams and downloads run in a separate small pool; phpMyAdmin, webmail and addon PHP files stay classic. Plugin installs/removals and `.env` changes restart the workers automatically. Set `FRANKENPHP_WORKER=false` to go back to classic mode. Also new: `/api/system/health` for container health checks, a bounded web `memory_limit` (`PHP_MEMORY_LIMIT`, default 512M) and FrankenPHP thread limits (`FRANKENPHP_MAX_THREADS`, `FRANKENPHP_MAX_WAIT_TIME`). by @nayskutzu
 - Live updates: FrankenPHP's built-in Mercure hub pushes server, backup, notification and WebSpace changes to the browser over one event stream per tab (`/api/mercure`), so these pages refresh right away instead of polling every 5-10 seconds. Subscribers get a short-lived token from `POST /api/user/realtime/token` that only covers topics they can access. Keys are generated on first start; set `FEATHERPANEL_MERCURE=off` to turn it off. Without a hub (php-fpm, `php -S`) the pages keep polling as before. by @nayskutzu
 - Faster API: the compiled route table is cached on disk and the routes are only built when it is stale (about 3.2 ms to 0.6 ms per boot), the admin user and server lists no longer run a query per row (211 to 6 and 410 to 10 queries for 50 rows, about 4x and 5x the throughput), new indexes for the activity, server activity and backup lists, one shared database connection per request, `zend.assertions` off and faster response compression (zstd, brotli level 4). by @nayskutzu
@@ -51,15 +65,21 @@
 - Size fields no longer keep the old value when you type a number and then pick the unit (typing 12 and choosing GB used to save 5 GB). by @nayskutzu
 - On phones the sidebar opens from the side you picked in Appearance; the right-hand position used to be ignored. by @nayskutzu
 - Startup, server settings, account profile, admin server edit, admin settings and Wings config show a sticky "unsaved changes" bar with Save and Discard, and ask before you leave with unsaved edits. by @nayskutzu
+- Fixed runtime and console errors across the panel, including invalid list query strings, wrong permission checks, email-login code abuse, Cloudflare IP range matching, ticket attachment names, and WebSpace read-only access. by @nayskutzu
+- Fixed admin and server page layout issues where cards, headers, toasts, borders, or controls could overlap, leave gaps, or render inconsistently. by @nayskutzu
+- Fixed dashboard card packing so widgets fill available space regardless of their order. by @nayskutzu
+- Fixed account, appearance, and server pages to use the shared card and page-header surfaces consistently. by @nayskutzu
+- Bumped the PWA service-worker cache version so updated frontend assets are picked up after the UI redesign. by @nayskutzu
 
-### Notes for plugin authors (FrankenPHP worker mode)
+### Improved 
 
-With worker mode on by default, one PHP process now serves many requests, so a plugin must not assume a fresh process per request:
-
-- Avoid static or global per-request state (caches keyed by the current user, request flags, counters). Keep it in the request, or reset it with `App\Runtime\RequestLifecycle::onReset('vendor.plugin', fn () => ...)`, which runs before every request.
-- Don't call `exit` / `die` in routes, controllers or event listeners; return a `Response` instead. `exit` ends the worker and fails the request.
-- Use `App\Runtime\RequestContext::id()` / `startTime()` instead of the `REQUEST_ID` / `APP_START` constants (now deprecated: in a worker they hold the boot values), and `App::getInstance(true)->isRedisEnabled()` instead of `REDIS_ENABLED`.
-- To opt out while a plugin is being fixed, set `FRANKENPHP_WORKER=false` on the backend container (or the all-in-one image) and restart it.
+- Refreshed the dashboard, server pages, authentication pages, account pages, admin pages, marketplace, plugin store, database management, and settings with consistent glass surfaces, borders, spacing, page headers, cards, and dark/light mode treatment. by @nayskutzu
+- Added shared server headers, compact activity lists, server-side activity filters, full-width stat rows, and equal-height console stat cards. by @nayskutzu
+- Improved mobile layouts, responsive tables, navigation, notifications, toasts, focus rings, tab handling, and light-mode contrast across the panel. by @nayskutzu
+- Server announcements are rendered on the server to avoid post-hydration layout shifts. by @nayskutzu
+- Session, settings, notification, and preference contexts now avoid unnecessary rerenders; date-fns locales are loaded on demand to reduce route bundles. by @nayskutzu
+- Error-code messages and active-session errors are translated, and the frontend translation scanners now cover additional user-facing strings. by @nayskutzu
+- The installer prompt handling was improved, and the Pterodactyl importer can be hidden when dismissed or no longer usable. by @nayskutzu
 
 ## v1.4.1 STABLE
 
