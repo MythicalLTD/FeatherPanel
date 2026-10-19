@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { PageHeader } from '@/components/featherui/PageHeader';
 import { useState, useEffect, Fragment, useCallback, useRef } from 'react';
 
 import { Server, ServerFolder } from '@/types/server';
@@ -338,18 +339,17 @@ export default function ServersPage() {
     const selectedLayoutOption = layoutOptions.find((o) => o.id === selectedLayout) || layoutOptions[0];
 
     return (
-        <div className='space-y-10 pb-12'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('dashboard-servers', 'top-of-page')} />
 
-            <div className='flex items-start justify-between'>
-                <div>
-                    <h1 className='text-2xl font-bold tracking-tight sm:text-4xl'>{t('servers.title')}</h1>
-                    <p className='text-muted-foreground mt-2 text-sm sm:text-lg'>{t('servers.description')}</p>
-                </div>
-                <WidgetRenderer widgets={getWidgets('dashboard-servers', 'after-header')} />
-            </div>
+            <PageHeader
+                title={t('servers.title')}
+                description={t('servers.description')}
+                icon={ServerIcon}
+                actions={<WidgetRenderer widgets={getWidgets('dashboard-servers', 'after-header')} />}
+            />
 
-            <div className='bg-card/50 border-border/50 flex flex-col gap-3 rounded-2xl border p-3 backdrop-blur-xl'>
+            <div className='fp-surface flex flex-col gap-3 rounded-xl border p-3'>
                 <div className='flex flex-wrap items-center gap-2 sm:flex-nowrap'>
                     <input
                         type='text'
@@ -546,7 +546,7 @@ export default function ServersPage() {
                     <div className='flex items-start justify-between gap-2 sm:items-center'>
                         <div className='flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center'>
                             {canViewAllServers && (
-                                <div className='bg-card/50 border-border/50 grid grid-cols-2 gap-1 rounded-xl border p-1 backdrop-blur-xl sm:flex'>
+                                <div className='fp-surface grid grid-cols-2 gap-1 rounded-xl border p-1 sm:flex'>
                                     <button
                                         type='button'
                                         onClick={() => setServerScope('mine')}
@@ -576,7 +576,7 @@ export default function ServersPage() {
                             )}
 
                             {serverScope === 'mine' && (
-                                <div className='bg-card/50 border-border/50 grid grid-cols-2 gap-1 rounded-xl border p-1 backdrop-blur-xl sm:flex'>
+                                <div className='fp-surface grid grid-cols-2 gap-1 rounded-xl border p-1 sm:flex'>
                                     <button
                                         type='button'
                                         onClick={() => setViewMode('all')}

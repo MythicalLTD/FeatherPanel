@@ -15,8 +15,18 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { PageHeader } from '@/components/featherui/PageHeader';
 import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, LayoutGrid, List, TriangleAlert, Server, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+    RefreshCw,
+    LayoutGrid,
+    List,
+    TriangleAlert,
+    Server,
+    ChevronLeft,
+    ChevronRight,
+    MonitorCog,
+} from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useVmsState } from '@/hooks/useVmsState';
 import { vmsApi, VmInstance, VmPagination } from '@/lib/vms-api';
@@ -107,14 +117,10 @@ export default function VmsPage() {
 
     return (
         <div className='space-y-6 pb-12'>
-            {/* Page header */}
-            <div>
-                <h1 className='text-2xl font-bold tracking-tight sm:text-3xl'>{t('vms.title')}</h1>
-                <p className='text-muted-foreground mt-1 text-sm'>{t('vms.description')}</p>
-            </div>
+            <PageHeader title={t('vms.title')} description={t('vms.description')} icon={MonitorCog} />
 
             {/* Controls two rows on mobile, one row on desktop */}
-            <div className='border-border/50 bg-card/50 space-y-2 rounded-2xl border p-3 backdrop-blur-xl'>
+            <div className='fp-surface space-y-2 rounded-xl border p-3'>
                 {/* Row 1: search */}
                 <input
                     type='text'

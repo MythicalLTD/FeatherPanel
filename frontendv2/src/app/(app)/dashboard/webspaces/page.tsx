@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { PageHeader } from '@/components/featherui/PageHeader';
 import { useCallback, useEffect, useMemo, useState, Fragment } from 'react';
 import axios from 'axios';
 import {
@@ -27,6 +28,7 @@ import {
     ChevronsUpDown,
     ChevronLeft,
     ChevronRight,
+    Globe,
 } from 'lucide-react';
 import {
     Listbox,
@@ -181,19 +183,14 @@ export default function WebSpacesDashboardPage() {
     };
 
     return (
-        <div className='space-y-10 pb-12'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('dashboard-webspaces', 'top-of-page')} />
 
-            <div className='flex flex-wrap items-start justify-between gap-3'>
-                <div>
-                    <h1 className='text-2xl font-bold tracking-tight sm:text-4xl'>{t('webSpaces.title')}</h1>
-                    <p className='text-muted-foreground mt-2 text-sm sm:text-lg'>{t('webSpaces.description')}</p>
-                </div>
-            </div>
+            <PageHeader title={t('webSpaces.title')} description={t('webSpaces.description')} icon={Globe} />
 
             <WidgetRenderer widgets={getWidgets('dashboard-webspaces', 'after-header')} />
 
-            <div className='bg-card/50 border-border/50 flex flex-col gap-3 rounded-2xl border p-3 backdrop-blur-xl'>
+            <div className='fp-surface flex flex-col gap-3 rounded-xl border p-3'>
                 <div className='flex flex-wrap items-center gap-2'>
                     <input
                         type='text'
@@ -397,7 +394,7 @@ export default function WebSpacesDashboardPage() {
 
             {!loading && !error && (
                 <>
-                    <div className='bg-card/50 border-border/50 inline-flex gap-1 rounded-xl border p-1 backdrop-blur-xl'>
+                    <div className='fp-surface inline-flex gap-1 rounded-xl border p-1'>
                         <span className='bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-semibold'>
                             {t('webSpaces.allWebSpaces')} ({filteredSpaces.length})
                         </span>
