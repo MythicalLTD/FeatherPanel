@@ -144,7 +144,7 @@ export function CalagopusAuthorizeView({
 
     return (
         <div className='flex min-h-[70vh] items-center justify-center p-6'>
-            <div className='border-border/60 bg-card/70 w-full max-w-2xl space-y-6 rounded-2xl border p-6 shadow-sm backdrop-blur-xl md:p-8'>
+            <div className='fp-surface w-full max-w-2xl space-y-6 rounded-xl border p-6 md:p-8'>
                 <div className='flex min-w-0 items-center gap-4'>
                     <div className='bg-muted flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border'>
                         <Code2 className='text-muted-foreground h-6 w-6' />

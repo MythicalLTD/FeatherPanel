@@ -282,7 +282,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                                                     <SystemHealthCheck />
                                                     <PwaInstaller />
                                                     <AppContent>{children}</AppContent>
-                                                    <Toaster richColors position='top-right' />
+                                                    {/* Below the floating top bar, not on top of its buttons. */}
+                                                    <Toaster
+                                                        richColors
+                                                        position='top-right'
+                                                        offset={{ top: '4.75rem', right: '1.5rem' }}
+                                                        mobileOffset={{ top: '4.25rem' }}
+                                                    />
                                                 </FeatherPanelHost>
                                             </NotificationProvider>
                                         </SidebarPrefsBootstrap>

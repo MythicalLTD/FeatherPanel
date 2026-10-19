@@ -309,7 +309,7 @@ export default function ServerAllocationsPage() {
     const showHeaderCreateActions = canCreate && allocations.length > 0;
 
     return (
-        <div key={pathname} className='space-y-8 pb-12'>
+        <div key={pathname} className='space-y-6 pb-12'>
             <ServerPageHeader
                 title={t('serverAllocations.title')}
                 description={

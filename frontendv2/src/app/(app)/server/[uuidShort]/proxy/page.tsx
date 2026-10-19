@@ -158,7 +158,7 @@ export default function ServerProxyPage() {
     }
 
     return (
-        <div key={pathname} className='space-y-8 pb-12'>
+        <div key={pathname} className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-proxy', 'top-of-page')} />
 
             <ServerPageHeader

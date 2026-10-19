@@ -87,7 +87,7 @@ export default function AccountPage() {
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('dashboard-account', 'top-of-page')} />
 
-            <div className='border-border/60 bg-card/70 rounded-2xl border p-5 backdrop-blur-xl sm:p-8'>
+            <div className='fp-surface rounded-xl border p-5 sm:p-8'>
                 {showProfileSkeleton ? (
                     <div className='flex flex-col items-center gap-4 sm:flex-row sm:gap-6'>
                         <div className='bg-muted/50 border-border/60 mx-auto h-20 w-20 animate-pulse rounded-full border-2 sm:mx-0 sm:h-24 sm:w-24' />
@@ -134,7 +134,7 @@ export default function AccountPage() {
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-account', 'after-profile-card')} />
 
-            <div className='border-border/60 bg-card/60 overflow-hidden rounded-2xl border backdrop-blur-xl'>
+            <div className='fp-surface overflow-hidden rounded-xl border'>
                 <Tab.Group selectedIndex={selectedIndex} onChange={handleTabChange}>
                     <div className='border-border block border-b p-3 sm:hidden'>
                         <select

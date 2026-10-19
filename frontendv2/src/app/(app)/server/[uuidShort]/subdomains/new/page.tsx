@@ -162,7 +162,7 @@ export default function CreateSubdomainPage() {
 
     if (availableDomains.length === 0 && !loading) {
         return (
-            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-3xl border py-24 text-center backdrop-blur-3xl'>
+            <div className='fp-surface flex flex-col items-center justify-center space-y-8 rounded-xl border py-24 text-center'>
                 <div className='relative'>
                     <div className='bg-primary/20 absolute inset-0 scale-150 rounded-full blur-3xl' />
                     <div className='bg-primary/10 border-primary/20 relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2'>
@@ -187,7 +187,7 @@ export default function CreateSubdomainPage() {
     }
 
     return (
-        <div className='mx-auto max-w-6xl space-y-8 pb-16'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-subdomains-new', 'top-of-page')} />
             <ServerPageHeader
                 title={t('serverSubdomains.createButton')}

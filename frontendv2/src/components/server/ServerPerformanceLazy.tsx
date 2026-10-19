@@ -36,10 +36,7 @@ function ServerPerformanceSkeleton({ count }: { count: number }) {
             aria-hidden
         >
             {Array.from({ length: count }).map((_, i) => (
-                <div
-                    key={i}
-                    className='border-border/50 bg-card/50 min-w-0 rounded-xl border p-4 backdrop-blur-xl sm:p-5'
-                >
+                <div key={i} className='fp-surface min-w-0 rounded-xl border p-4 backdrop-blur-xl sm:p-5'>
                     <div className='mb-3 flex items-center justify-between gap-2'>
                         <div className='bg-muted/50 h-4 w-20 animate-pulse rounded-md' />
                         <div className='bg-muted/40 h-4 w-8 animate-pulse rounded-md' />
@@ -67,7 +64,7 @@ export default function ServerPerformance(props: ServerPerformanceProps) {
 
     const renderFailure = useCallback(
         (retry: () => void) => (
-            <div className='border-border/50 bg-card/50 text-muted-foreground flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 text-sm'>
+            <div className='fp-surface text-muted-foreground flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 text-sm'>
                 <span>{t('common.error')}</span>
                 <button
                     type='button'

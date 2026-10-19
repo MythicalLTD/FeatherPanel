@@ -243,7 +243,7 @@ export default function EditLifecycleHookStepPage() {
 
     if (!Number.isFinite(stepId) || stepId <= 0 || !form) {
         return (
-            <div className='space-y-8 pb-12'>
+            <div className='space-y-6 pb-12'>
                 <ServerPageHeader
                     title={t('lifecycleHooks.stepEdit.notFoundTitle')}
                     description={t('lifecycleHooks.stepEdit.notFoundDescription')}

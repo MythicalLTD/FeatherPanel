@@ -367,7 +367,7 @@ export default function ServerFirewallPage() {
     const showHeaderCreateAction = canManage && firewallEnabled && rules.length > 0;
 
     return (
-        <div key={pathname} className='space-y-8 pb-12'>
+        <div key={pathname} className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-firewall', 'top-of-page')} />
             <ServerPageHeader
                 title={t('serverFirewall.title')}

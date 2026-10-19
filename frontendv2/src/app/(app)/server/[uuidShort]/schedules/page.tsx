@@ -269,7 +269,7 @@ export default function ServerSchedulesPage() {
 
     if (!isEnabledUnlessExplicitlyFalse(settings?.server_allow_schedules)) {
         return (
-            <div className='bg-card/40 border-border/50 flex flex-col items-center justify-center space-y-8 rounded-3xl border py-24 text-center backdrop-blur-xl'>
+            <div className='fp-surface flex flex-col items-center justify-center space-y-8 rounded-xl border py-24 text-center'>
                 <div className='relative'>
                     <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
                     <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
@@ -321,7 +321,7 @@ export default function ServerSchedulesPage() {
     }
 
     return (
-        <div key={pathname} className='space-y-8 pb-12'>
+        <div key={pathname} className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-schedules', 'top-of-page')} />
 
             <ServerPageHeader

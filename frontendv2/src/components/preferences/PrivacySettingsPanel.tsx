@@ -35,7 +35,7 @@ export default function PrivacySettingsPanel() {
             <div className='space-y-4'>
                 <HideIpsToggle />
 
-                <div className='border-border/40 bg-card/40 rounded-xl border p-4'>
+                <div className='fp-surface-inset rounded-xl border p-4'>
                     <p className='text-muted-foreground mb-2 text-[10px] font-black tracking-widest uppercase'>
                         {t('privacy.example')}
                     </p>

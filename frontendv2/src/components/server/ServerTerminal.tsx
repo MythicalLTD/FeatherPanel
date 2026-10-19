@@ -1209,7 +1209,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             >
                 <Card
                     className={cn(
-                        'border-border/50 bg-card/50 w-full min-w-0 gap-0 overflow-hidden py-0 shadow-sm backdrop-blur-xl',
+                        'w-full min-w-0 gap-0 overflow-hidden py-0',
                         fillContainer || isFullscreen
                             ? 'flex min-h-0 flex-1 flex-col'
                             : 'flex h-full min-h-[22rem] flex-col sm:min-h-[26rem]',

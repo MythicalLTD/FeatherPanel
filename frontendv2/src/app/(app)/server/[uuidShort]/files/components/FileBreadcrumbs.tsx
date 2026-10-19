@@ -134,7 +134,7 @@ export function FileBreadcrumbs({
                     className={cn(
                         'h-8 shrink-0 gap-1.5 px-2 transition-colors',
                         normalizedCurrent === '/'
-                            ? 'text-foreground bg-white/5 font-semibold'
+                            ? 'text-foreground bg-muted/60 font-semibold'
                             : 'text-muted-foreground hover:text-foreground',
                     )}
                     onClick={() => onNavigate('/')}
@@ -157,8 +157,8 @@ export function FileBreadcrumbs({
                                 className={cn(
                                     'h-8 px-2 whitespace-nowrap transition-colors',
                                     isCurrent
-                                        ? 'text-foreground cursor-default bg-white/5 font-bold'
-                                        : 'text-muted-foreground hover:text-foreground hover:bg-white/5',
+                                        ? 'text-foreground bg-muted/60 cursor-default font-bold'
+                                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
                                 )}
                                 onClick={() => onNavigate(path)}
                             >
@@ -179,7 +179,7 @@ export function FileBreadcrumbs({
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
                         placeholder={t('files.breadcrumbs.search_placeholder')}
-                        className='focus:border-primary/50 focus:ring-primary/10 h-10 rounded-2xl border-black/10 bg-black/5 pr-10 pl-10 text-sm font-medium transition-all focus:ring-4 dark:border-white/5 dark:bg-black/20'
+                        className='focus:border-primary/50 focus:ring-primary/10 border-border/60 bg-background/60 h-10 rounded-2xl pr-10 pl-10 text-sm font-medium transition-all focus:ring-4'
                     />
                     {searchQuery && (
                         <button

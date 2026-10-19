@@ -773,7 +773,7 @@ export default function ServerConsolePage() {
     }
 
     return (
-        <div className='space-y-4 pb-6'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-console', 'top-of-page')} />
 
             <ServerPageHeader
@@ -896,7 +896,9 @@ export default function ServerConsolePage() {
                     )}
 
                     {shouldConnectToWings && (
-                        <div className='flex h-[min(70dvh,40rem)] min-h-[22rem] flex-col xl:h-[max(32rem,calc(100dvh-22rem))]'>
+                        // Desktop: the console grows to the bottom of the stats column next to it (at least
+                        // the viewport); phones and tablets keep a fixed, scrollable height.
+                        <div className='flex h-[min(70dvh,40rem)] min-h-[22rem] flex-col xl:h-auto xl:min-h-[max(32rem,calc(100dvh-22rem))] xl:flex-1'>
                             <ServerTerminal
                                 ref={terminalRef}
                                 onSendCommand={sendCommand}
@@ -916,9 +918,11 @@ export default function ServerConsolePage() {
                     <WidgetRenderer widgets={getWidgets('server-console', 'after-terminal')} />
                 </div>
 
-                <div className='min-w-0 space-y-4'>
+                {/* Desktop: the stat cards share out the column height, so they end level with the console. */}
+                <div className='flex min-w-0 flex-col gap-4'>
                     {shouldConnectToWings && (
                         <ServerConsoleStats
+                            className='xl:flex-1 xl:auto-rows-fr'
                             statsReady={connectionStatus === 'connected'}
                             diskReady={diskKnown || connectionStatus === 'connected'}
                             cpuUsage={currentCpu}

@@ -156,7 +156,7 @@ export default function McpTab({}: McpTabProps) {
                 </Button>
             </div>
 
-            <div className='border-border/60 bg-card/40 space-y-3 rounded-2xl border p-5'>
+            <div className='fp-surface-inset space-y-3 rounded-xl border p-5'>
                 <p className='text-muted-foreground text-xs font-medium tracking-wide uppercase'>
                     {t('account.mcp.endpointLabel')}
                 </p>
@@ -188,7 +188,7 @@ export default function McpTab({}: McpTabProps) {
                 </ul>
             </div>
 
-            <div className='border-border/60 bg-card/40 space-y-3 rounded-2xl border p-5'>
+            <div className='fp-surface-inset space-y-3 rounded-xl border p-5'>
                 <h4 className='text-foreground text-sm font-semibold'>{t('account.mcp.claudeConnectorTitle')}</h4>
                 <p className='text-muted-foreground text-sm'>{t('account.mcp.claudeConnectorHelp')}</p>
                 <ol className='text-muted-foreground list-decimal space-y-2 pl-5 text-sm'>

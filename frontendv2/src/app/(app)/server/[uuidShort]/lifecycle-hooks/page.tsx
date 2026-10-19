@@ -534,7 +534,7 @@ export default function ServerLifecycleHooksPage() {
     return (
         <>
             <WidgetRenderer widgets={getWidgets('server-lifecycle-hooks', 'top-of-page')} />
-            <div className='space-y-8 pb-12'>
+            <div className='space-y-6 pb-12'>
                 <ServerPageHeader
                     title={t('lifecycleHooks.title')}
                     description={t('lifecycleHooks.description')}
@@ -610,7 +610,7 @@ export default function ServerLifecycleHooksPage() {
                     ))}
                 </div>
 
-                <div className='border-border/30 bg-card/40 rounded-2xl border p-4 sm:p-5'>
+                <div className='fp-surface rounded-xl border p-4 sm:p-5'>
                     <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                         <div className='min-w-0 space-y-1'>
                             <p className='text-muted-foreground text-xs font-semibold tracking-wide uppercase'>

@@ -155,7 +155,7 @@ export default function OAuth2DeviceAuthorizePage() {
     if (denied) {
         return (
             <div className='flex min-h-[70vh] items-center justify-center p-6'>
-                <div className='bg-card/80 w-full max-w-xl space-y-4 rounded-2xl border p-6 backdrop-blur-xl'>
+                <div className='fp-surface w-full max-w-xl space-y-4 rounded-xl border p-6'>
                     <h1 className='text-foreground text-xl font-semibold'>
                         {t('account.apiKeys.oauth2.deviceDeniedTitle')}
                     </h1>
@@ -168,7 +168,7 @@ export default function OAuth2DeviceAuthorizePage() {
     if (claiming) {
         return (
             <div className='flex min-h-[50vh] items-center justify-center'>
-                <div className='border-border/60 bg-card/60 text-muted-foreground flex items-center gap-3 rounded-2xl border px-6 py-5 backdrop-blur-xl'>
+                <div className='fp-surface text-muted-foreground flex items-center gap-3 rounded-xl border px-6 py-5'>
                     <Loader2 className='text-primary h-5 w-5 animate-spin' />
                     <span>{t('account.apiKeys.oauth2.deviceClaimLoading')}</span>
                 </div>
@@ -179,7 +179,7 @@ export default function OAuth2DeviceAuthorizePage() {
     if (!payload) {
         return (
             <div className='mx-auto w-full max-w-2xl space-y-5'>
-                <div className='border-border/60 bg-card/70 rounded-2xl border p-6 backdrop-blur-xl sm:p-8'>
+                <div className='fp-surface rounded-xl border p-6 sm:p-8'>
                     <div className='flex items-start gap-4'>
                         <div className='bg-primary/10 text-primary border-primary/20 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border'>
                             <KeyRound className='h-6 w-6' />
@@ -195,7 +195,7 @@ export default function OAuth2DeviceAuthorizePage() {
                     </div>
                 </div>
 
-                <div className='border-border/60 bg-card/60 overflow-hidden rounded-2xl border p-5 backdrop-blur-xl sm:p-6'>
+                <div className='fp-surface overflow-hidden rounded-xl border p-5 sm:p-6'>
                     <form
                         data-fp-save-shortcut
                         className='space-y-5'

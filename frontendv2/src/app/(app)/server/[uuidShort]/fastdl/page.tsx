@@ -251,7 +251,7 @@ export default function ServerFastDlPage() {
     }
 
     return (
-        <div className='space-y-8 pb-12'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-fastdl', 'top-of-page')} />
             <ServerPageHeader title={t('serverFastDl.title')} description={t('serverFastDl.description')} />
             <WidgetRenderer widgets={getWidgets('server-fastdl', 'after-header')} />

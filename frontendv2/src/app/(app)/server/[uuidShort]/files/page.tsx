@@ -1272,7 +1272,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     }, [currentDirectory, addToUploadQueueFromDrop]);
 
     return (
-        <div className='relative flex min-h-screen flex-col gap-6 pb-20'>
+        <div className='relative flex flex-col gap-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-files', 'top-of-page')} />
             <ServerPageHeader
                 title={t('files.title')}
@@ -1281,7 +1281,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             <WidgetRenderer widgets={getWidgets('server-files', 'after-header')} />
 
             <div className='flex flex-col gap-4'>
-                <div className='flex flex-col gap-4 rounded-xl border border-black/5 bg-white/80 p-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/5'>
+                <div className='fp-surface flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between'>
                     <FileBreadcrumbs
                         currentDirectory={currentDirectory || '/'}
                         onNavigate={navigate}

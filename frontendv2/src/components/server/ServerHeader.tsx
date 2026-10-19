@@ -293,7 +293,7 @@ export default function ServerHeader({
     // Banner styles (strip / cover / hero) all render the spell art behind the hero, faded towards the
     // text so it stays readable; "off" keeps a plain card.
     return (
-        <div className='border-border/50 bg-card/50 relative overflow-hidden rounded-xl border backdrop-blur-xl'>
+        <div className='fp-surface relative overflow-hidden rounded-xl border'>
             {resolvedBanner ? (
                 <div className='pointer-events-none absolute inset-0' aria-hidden>
                     {/* eslint-disable-next-line @next/next/no-img-element */}

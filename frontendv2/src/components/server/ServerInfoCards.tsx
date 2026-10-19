@@ -186,7 +186,7 @@ export default React.memo(function ServerInfoCards({
 
     return (
         <div className={cn('grid gap-4', className)}>
-            <div className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'>
+            <div className='fp-surface rounded-xl border p-4'>
                 <h3 className='text-muted-foreground mb-3 flex items-center gap-2 text-sm font-medium'>
                     <Wifi className='h-4 w-4' />
                     {t('servers.console.info_cards.network_title')}
@@ -246,7 +246,7 @@ export default React.memo(function ServerInfoCards({
                 </div>
             </div>
 
-            <div className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'>
+            <div className='fp-surface rounded-xl border p-4'>
                 <h3 className='text-muted-foreground mb-3 flex items-center gap-2 text-sm font-medium'>
                     <Activity className='h-4 w-4' />
                     {t('servers.console.info_cards.resources_title')}
@@ -321,7 +321,7 @@ export default React.memo(function ServerInfoCards({
                 </div>
             </div>
 
-            <div className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'>
+            <div className='fp-surface rounded-xl border p-4'>
                 <h3 className='text-muted-foreground mb-3 flex items-center gap-2 text-sm font-medium'>
                     <Activity className='h-4 w-4' />
                     {t('servers.console.info_cards.network_title')}
@@ -348,7 +348,7 @@ export default React.memo(function ServerInfoCards({
                 </div>
             </div>
 
-            <div className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'>
+            <div className='fp-surface rounded-xl border p-4'>
                 <h3 className='text-muted-foreground mb-3 flex items-center gap-2 text-sm font-medium'>
                     <HardDrive className='h-4 w-4' />
                     {t('servers.console.info_cards.disk_io_title')}

@@ -140,7 +140,7 @@ export default function ServerTrashPage({ params }: { params: Promise<{ uuidShor
 
     if (!trashEnabled) {
         return (
-            <div className='relative flex min-h-screen flex-col gap-6 pb-20'>
+            <div className='relative flex flex-col gap-6 pb-12'>
                 <ServerPageHeader title={t('files.trash.title')} description={t('files.trash.disabled')} />
                 <Button asChild variant='outline'>
                     <Link href={`/server/${uuidShort}/files`}>
@@ -153,7 +153,7 @@ export default function ServerTrashPage({ params }: { params: Promise<{ uuidShor
     }
 
     return (
-        <div className='relative flex min-h-screen flex-col gap-6 pb-20'>
+        <div className='relative flex flex-col gap-6 pb-12'>
             <ServerPageHeader title={t('files.trash.title')} description={headerDescription} />
 
             <TrashActionToolbar

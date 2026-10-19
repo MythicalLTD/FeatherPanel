@@ -206,7 +206,7 @@ export default function CreateProxyPage() {
     }
 
     return (
-        <div className='mx-auto max-w-6xl space-y-8 pb-16'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-proxy-new', 'top-of-page')} />
 
             <ServerPageHeader

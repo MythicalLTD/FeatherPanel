@@ -138,7 +138,7 @@ export default function ServerImportPage() {
     }
 
     return (
-        <div className='space-y-8'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-import', 'top-of-page')} />
             <ServerPageHeader
                 title={t('serverImport.title')}

@@ -139,7 +139,7 @@ export default function CreateSchedulePage() {
     }
 
     return (
-        <div className='mx-auto max-w-4xl space-y-8 pb-16'>
+        <div className='space-y-6 pb-12'>
             <ServerPageHeader
                 title={t('serverSchedules.createSchedule')}
                 description={t('serverSchedules.createScheduleDescription')}
