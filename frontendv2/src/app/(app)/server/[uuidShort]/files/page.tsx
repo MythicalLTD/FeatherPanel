@@ -25,6 +25,9 @@ import { ServerPageTips } from '@/components/server/ServerPageTips';
 import { FileActionToolbar } from './components/FileActionToolbar';
 import { FileBreadcrumbs } from './components/FileBreadcrumbs';
 import { FileList } from './components/FileList';
+import { FileListControls } from './components/FileListControls';
+import { FileQuickAccess } from './components/FileQuickAccess';
+import { useFilesViewPrefs, useFilesQuickAccess, sortAndFilterFiles } from '@/lib/files-view-prefs';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import {
     CreateFolderDialog,
@@ -305,7 +308,12 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         void refreshTrashStats();
     }, [refreshTrashStats]);
 
-    const baseFiles = searchResults ?? files;
+    const { prefs: viewPrefs, update: updateViewPrefs } = useFilesViewPrefs();
+    const quickAccess = useFilesQuickAccess(uuidShort);
+    const baseFiles = useMemo(
+        () => sortAndFilterFiles(searchResults ?? files, viewPrefs),
+        [searchResults, files, viewPrefs],
+    );
     const visibleFiles = useMemo(() => {
         if (!trashEnabled || searchResults !== null) return baseFiles;
         return [createTrashFolderEntry(trashStats ?? undefined), ...baseFiles];
@@ -1640,7 +1648,20 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             }}
                         />
 
+                        <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
+                            <FileQuickAccess
+                                currentDirectory={currentDirectory || '/'}
+                                pins={quickAccess.pins}
+                                recent={quickAccess.recent}
+                                onTogglePin={quickAccess.togglePin}
+                                onClearRecent={quickAccess.clearRecent}
+                                onNavigate={(path) => navigateAndCloseArchive(path)}
+                            />
+                            <FileListControls prefs={viewPrefs} onChange={updateViewPrefs} />
+                        </div>
+
                         <FileList
+                            view={viewPrefs.view}
                             files={visibleFiles}
                             loading={loading || searchLoading}
                             selectedFiles={selectedFiles}
@@ -1656,7 +1677,12 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                 }
                                 navigateAndCloseArchive(resolveDirectoryTarget(currentDirectory || '/', name));
                             }}
-                            onAction={handleAction}
+                            onAction={(action, file) => {
+                                if (file.isFile && (action === 'edit' || action === 'preview')) {
+                                    quickAccess.addRecent(joinPath(currentDirectory || '/', file.name));
+                                }
+                                handleAction(action, file);
+                            }}
                             onRowDragStart={canUpdate ? handleRowDragStart : undefined}
                             onRowDragEnd={canUpdate ? handleRowDragEnd : undefined}
                             onDropFiles={canUpdate || canArchive ? handleDropOnFolder : undefined}

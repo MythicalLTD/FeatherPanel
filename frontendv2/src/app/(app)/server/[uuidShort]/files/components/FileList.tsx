@@ -19,6 +19,7 @@ import { FileRow } from './FileRow';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, FolderOpen } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { formatBytes } from '@/lib/format';
 
 interface FileListProps {
     files: FileObject[];
@@ -46,6 +47,7 @@ interface FileListProps {
     currentDirectory: string;
     anchorName?: string | null;
     isSearching?: boolean;
+    view?: 'list' | 'grid';
 }
 
 export function FileList({
@@ -73,6 +75,7 @@ export function FileList({
     currentDirectory,
     anchorName = null,
     isSearching = false,
+    view = 'list',
 }: FileListProps) {
     const { t } = useTranslation();
 
@@ -121,30 +124,64 @@ export function FileList({
     const selectableNames = selectableFiles.map((f) => f.name);
     const allSelected = selectableNames.length > 0 && selectableNames.every((n) => selectedFiles.includes(n));
 
+    const fileCount = files.filter((f) => f.isFile).length;
+    const folderCount = files.filter((f) => !f.isFile && !f.isTrashShortcut).length;
+    const totalBytes = files.reduce((sum, f) => sum + (f.isFile ? f.size : 0), 0);
+    const footer = (
+        <div className='text-muted-foreground flex flex-wrap items-center justify-between gap-2 border-t border-[var(--fp-surface-border)] px-4 py-2.5 text-xs'>
+            <span>
+                {t('files.footer.summary', {
+                    folders: String(folderCount),
+                    files: String(fileCount),
+                    size: formatBytes(totalBytes),
+                })}
+            </span>
+            {selectedFiles.length > 0 && (
+                <span className='text-primary'>
+                    {t('files.footer.selected', { count: String(selectedFiles.length) })}
+                </span>
+            )}
+        </div>
+    );
+
     return (
         <div className='fp-surface overflow-hidden rounded-xl border'>
-            <div className='text-muted-foreground border-border/60 flex items-center gap-3 border-b px-4 py-4 text-[10px] font-bold tracking-[0.2em] uppercase'>
+            <div className='text-muted-foreground flex items-center gap-3 border-b border-[var(--fp-surface-border)] px-4 py-3 text-xs font-medium'>
                 <div className='flex shrink-0 items-center'>
                     <Checkbox
                         checked={allSelected}
                         onCheckedChange={onSelectAll}
+                        aria-label={t('files.shortcuts.select_all')}
                         className='border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary transition-colors'
                     />
                 </div>
-                <div className='w-9 shrink-0' aria-hidden />
-                <div className='min-w-0 flex-1 truncate'>{t('files.list.header_name')}</div>
-                <div className='hidden w-[5.5rem] shrink-0 text-right sm:block'>{t('files.list.header_size')}</div>
-                <div className='hidden w-[9rem] shrink-0 truncate text-right sm:block'>
-                    {t('files.list.header_modified')}
-                </div>
-                <div className='w-9 shrink-0 text-center'>
-                    <span className='hidden sm:block'>{t('files.list.header_actions')}</span>
-                </div>
+                {view === 'grid' ? (
+                    <div className='min-w-0 flex-1 truncate'>{t('files.footer.select_all')}</div>
+                ) : (
+                    <>
+                        <div className='w-9 shrink-0' aria-hidden />
+                        <div className='min-w-0 flex-1 truncate'>{t('files.list.header_name')}</div>
+                        <div className='hidden w-[5.5rem] shrink-0 text-right sm:block'>
+                            {t('files.list.header_size')}
+                        </div>
+                        <div className='hidden w-[9rem] shrink-0 truncate text-right sm:block'>
+                            {t('files.list.header_modified')}
+                        </div>
+                        <div className='w-9 shrink-0' aria-hidden />
+                    </>
+                )}
             </div>
 
-            <div className='divide-y divide-gray-200 dark:divide-white/5'>
+            <div
+                className={
+                    view === 'grid'
+                        ? 'grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6'
+                        : 'divide-y divide-[var(--fp-surface-border)]'
+                }
+            >
                 {files.map((file) => (
                     <FileRow
+                        grid={view === 'grid'}
                         key={file.name}
                         file={file}
                         selected={selectedFiles.includes(file.name)}
@@ -170,6 +207,7 @@ export function FileList({
                     />
                 ))}
             </div>
+            {footer}
         </div>
     );
 }

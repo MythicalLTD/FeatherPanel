@@ -14,7 +14,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import { Button } from '@/components/featherui/Button';
-import { ChevronRight, Home, Search, Settings2, X } from 'lucide-react';
+import { Check, ChevronRight, Copy, Home, Search, Settings2, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { Input } from '@/components/featherui/Input';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useEffect, useRef, useState } from 'react';
@@ -124,6 +125,8 @@ export function FileBreadcrumbs({
         if (el) el.scrollLeft = el.scrollWidth;
     }, [normalizedCurrent]);
 
+    const [copied, setCopied] = useState(false);
+
     return (
         <div className='flex flex-col gap-2 p-1 md:flex-row md:items-center'>
             <div ref={crumbsRef} className='no-scrollbar flex min-w-0 flex-1 items-center gap-1 overflow-x-auto'>
@@ -169,6 +172,23 @@ export function FileBreadcrumbs({
                 })}
             </div>
 
+            <Button
+                variant='ghost'
+                size='sm'
+                className='hidden h-8 shrink-0 rounded-lg px-2 md:inline-flex'
+                title={t('files.breadcrumbs.copy_path')}
+                aria-label={t('files.breadcrumbs.copy_path')}
+                onClick={() => {
+                    void navigator.clipboard?.writeText(normalizedCurrent).then(() => {
+                        setCopied(true);
+                        toast.success(t('files.breadcrumbs.path_copied'));
+                        setTimeout(() => setCopied(false), 1500);
+                    });
+                }}
+            >
+                {copied ? <Check className='h-4 w-4 text-emerald-500' /> : <Copy className='h-4 w-4' />}
+            </Button>
+
             <div className='flex w-full shrink-0 items-center gap-2 md:w-auto'>
                 <div className='group relative min-w-0 flex-1 md:w-64 md:flex-none'>
                     <div className='pointer-events-none absolute inset-y-0 left-3 flex items-center'>
@@ -184,7 +204,7 @@ export function FileBreadcrumbs({
                     {searchQuery && (
                         <button
                             onClick={() => onSearchChange('')}
-                            className='text-muted-foreground absolute inset-y-0 right-3 flex items-center transition-colors hover:text-white'
+                            className='text-muted-foreground hover:text-foreground absolute inset-y-0 right-3 flex items-center transition-colors'
                         >
                             <X className='h-3.5 w-3.5' />
                         </button>
