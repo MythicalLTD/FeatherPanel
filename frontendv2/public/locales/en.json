@@ -5563,7 +5563,9 @@
 		"manage_description": "Manage files in {directory}",
 		"breadcrumbs": {
 			"home": "Home",
-			"search_placeholder": "Search files..."
+			"search_placeholder": "Search files...",
+			"copy_path": "Copy path",
+			"path_copied": "Path copied"
 		},
 		"toolbar": {
 			"selected": "Selected",
@@ -6727,6 +6729,39 @@
 				"close": "Close",
 				"download": "Download"
 			}
+		},
+		"view": {
+			"sort_name": "Name",
+			"sort_size": "Size",
+			"sort_modified": "Modified",
+			"hidden_toggle": "Show or hide dotfiles",
+			"hidden_shown": "Hidden shown",
+			"hidden_hidden": "Hidden off",
+			"list": "List view",
+			"grid": "Grid view"
+		},
+		"shortcuts": {
+			"title": "Keyboard shortcuts",
+			"search": "Search",
+			"select_all": "Select all",
+			"open": "Open",
+			"up": "Go up a folder",
+			"rename": "Rename",
+			"delete": "Delete",
+			"refresh": "Refresh",
+			"toggle": "Toggle selection",
+			"clear": "Clear selection"
+		},
+		"quick": {
+			"pin": "Pin folder",
+			"unpin": "Unpin folder",
+			"recent": "Recent files",
+			"clear_recent": "Clear recent files"
+		},
+		"footer": {
+			"summary": "{folders} folders, {files} files, {size}",
+			"selected": "{count} selected",
+			"select_all": "Select all"
 		}
 	},
 	"admin": {

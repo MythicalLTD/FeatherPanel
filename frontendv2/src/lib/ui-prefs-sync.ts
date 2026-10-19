@@ -99,6 +99,8 @@ const SYNCED_KEYS = new Set<string>([
     'featherpanel_skip_kill_confirm',
     'featherpanel_dismissed_notifications',
     'featherpanel_onboarding_tour',
+    'featherpanel_files_view_prefs',
+    'featherpanel_files_quick_access',
     'featherpanel-file-editor-engine',
     'featherpanel.calagopus.uriScheme',
 ]);
