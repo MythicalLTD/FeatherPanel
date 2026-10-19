@@ -56,7 +56,9 @@ import {
     Lock,
     Smartphone,
     Boxes,
+    Rocket,
 } from 'lucide-react';
+import { reopenSetup } from '@/lib/setup-wizard';
 import { copyToClipboard, cn } from '@/lib/utils';
 import { ImageAttachmentField } from '@/components/featherui/ImageAttachmentField';
 
@@ -564,6 +566,22 @@ export default function SettingsPage() {
                 icon={Settings}
                 actions={
                     <div className='flex flex-wrap items-center justify-end gap-2'>
+                        <Button
+                            variant='outline'
+                            className='shrink-0'
+                            disabled={isDemo}
+                            onClick={async () => {
+                                try {
+                                    await reopenSetup();
+                                    router.push('/setup');
+                                } catch (error) {
+                                    toast.error(getApiErrorMessage(error, t, 'setup_wizard.errors.save'));
+                                }
+                            }}
+                        >
+                            <Rocket className='mr-2 h-4 w-4' />
+                            {t('setup_wizard.rerun')}
+                        </Button>
                         <Button variant='outline' onClick={handleUploadLogs} className='shrink-0' disabled={isDemo}>
                             <UploadCloud className='mr-2 h-4 w-4' />
                             {t('admin.settings.actions.upload_logs')}

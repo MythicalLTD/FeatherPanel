@@ -16,10 +16,12 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import DashboardShell from '@/components/layout/DashboardShell';
 import PermissionGuard from '@/components/auth/PermissionGuard';
 import Permissions from '@/lib/permissions';
+import { SetupGate } from '@/components/setup/SetupGate';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     return (
         <PermissionGuard permission={Permissions.ADMIN_DASHBOARD_VIEW}>
+            <SetupGate />
             <DashboardShell>{children}</DashboardShell>
         </PermissionGuard>
     );

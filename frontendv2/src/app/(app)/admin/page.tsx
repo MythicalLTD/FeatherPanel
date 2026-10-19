@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { SetupBanner } from '@/components/setup/SetupBanner';
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Settings, Trash2, AlertTriangle, Download, RefreshCw, SlidersHorizontal } from 'lucide-react';
@@ -180,6 +181,8 @@ export default function AdminDashboardPage() {
     return (
         <div className={cn(styles.dashboard, 'text-foreground space-y-6')}>
             <WidgetRenderer widgets={getWidgets('admin-home', 'top-of-page')} />
+
+            <SetupBanner />
 
             {/* The hero below greets and links the main tasks; this row keeps the page tools. */}
             <div className='flex justify-end'>
