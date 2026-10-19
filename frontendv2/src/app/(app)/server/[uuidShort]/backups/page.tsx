@@ -55,6 +55,7 @@ import { formatBackupLimitLabel, isBackupLimitDisabled } from '@/lib/server-util
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { ServerPageHeader } from '@/components/server/ServerPageHeader';
+import { ServerPageTips } from '@/components/server/ServerPageTips';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
@@ -423,7 +424,7 @@ export default function ServerBackupsPage() {
                     <div className='flex flex-wrap items-center gap-x-3 gap-y-2'>
                         <span>{t('serverBackups.description')}</span>
                         {server && activeTab === 'files' && (
-                            <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest whitespace-nowrap uppercase'>
+                            <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-semibold whitespace-nowrap'>
                                 {backupCountTotal} / {formatBackupLimitLabel(server.backup_limit, t('common.disabled'))}
                                 {fifoRolling ? ' · FIFO' : ''}
                             </span>
@@ -668,7 +669,7 @@ export default function ServerBackupsPage() {
                                             <>
                                                 <span
                                                     className={cn(
-                                                        'rounded-full px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase',
+                                                        'rounded-full px-3 py-1 text-[10px] leading-none font-semibold',
                                                         !backup.completed_at && !backup.is_successful
                                                             ? backup.is_stale
                                                                 ? 'bg-amber-500 text-white'
@@ -689,7 +690,7 @@ export default function ServerBackupsPage() {
                                                           : t('serverBackups.statusFailed')}
                                                 </span>
                                                 {backup.is_locked === 1 && (
-                                                    <span className='flex items-center gap-1.5 rounded-full border border-yellow-500/20 bg-yellow-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-yellow-500 uppercase'>
+                                                    <span className='flex items-center gap-1.5 rounded-full border border-yellow-500/20 bg-yellow-500/10 px-3 py-1 text-[10px] leading-none font-semibold text-yellow-500'>
                                                         <Lock className='h-3 w-3' />
                                                         {t('serverBackups.statusLocked')}
                                                     </span>
@@ -706,7 +707,7 @@ export default function ServerBackupsPage() {
                                                 </div>
                                                 <div className='text-muted-foreground flex items-center gap-2'>
                                                     <Database className='h-4 w-4 opacity-50' />
-                                                    <span className='text-sm font-semibold tracking-tight uppercase'>
+                                                    <span className='text-sm font-semibold tracking-tight'>
                                                         {backup.disk === 'pbs'
                                                             ? 'PBS'
                                                             : backup.disk === 'wings'
@@ -730,7 +731,7 @@ export default function ServerBackupsPage() {
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent
                                                         align='end'
-                                                        className='bg-card/90 border-border/40 w-56 rounded-2xl p-2 backdrop-blur-xl'
+                                                        className='fp-menu-surface w-56 rounded-2xl p-2'
                                                     >
                                                         {canRestore && backup.is_successful === 1 && (
                                                             <DropdownMenuItem
@@ -818,7 +819,7 @@ export default function ServerBackupsPage() {
 
                     {pagination.total > pagination.per_page && (
                         <div className='border-border/40 flex items-center justify-between border-t px-6 py-8'>
-                            <p className='text-sm font-bold tracking-widest uppercase opacity-40'>
+                            <p className='text-sm font-bold opacity-40'>
                                 {t('serverActivities.pagination.showing', {
                                     from: String((pagination.current_page - 1) * pagination.per_page + 1),
                                     to: String(
@@ -840,7 +841,7 @@ export default function ServerBackupsPage() {
                                 >
                                     <ChevronLeft className='h-5 w-5' />
                                 </Button>
-                                <span className='bg-primary/5 text-primary border-primary/20 flex h-10 min-w-12 items-center justify-center rounded-xl border px-4 text-sm font-black'>
+                                <span className='bg-primary/5 text-primary border-primary/20 flex h-10 min-w-12 items-center justify-center rounded-xl border px-4 text-sm font-semibold'>
                                     {pagination.current_page} / {pagination.last_page}
                                 </span>
                                 <Button
@@ -892,9 +893,7 @@ export default function ServerBackupsPage() {
                     <div className='mx-1 space-y-3 rounded-2xl border border-orange-500/20 bg-orange-500/5 p-5 backdrop-blur-sm'>
                         <div className='flex items-center gap-3 text-orange-500'>
                             <AlertTriangle className='h-5 w-5' />
-                            <h4 className='text-[10px] leading-none font-black tracking-widest uppercase'>
-                                {t('serverBackups.caution')}
-                            </h4>
+                            <h4 className='text-[10px] leading-none font-semibold'>{t('serverBackups.caution')}</h4>
                         </div>
                         <p className='text-sm leading-relaxed font-medium text-orange-700/80 dark:text-orange-500/80'>
                             {t('serverBackups.truncateDirectoryHelp')}
@@ -919,7 +918,7 @@ export default function ServerBackupsPage() {
                                 >
                                     {t('serverBackups.truncateDirectory')}
                                 </label>
-                                <p className='text-[10px] font-bold tracking-tighter uppercase opacity-40'>
+                                <p className='text-[10px] font-bold opacity-40'>
                                     {t('serverBackups.truncateDirectoryDescription')}
                                 </p>
                             </div>
@@ -988,6 +987,7 @@ export default function ServerBackupsPage() {
                     }
                 }}
             />
+            <ServerPageTips page='backups' />
         </div>
     );
 }

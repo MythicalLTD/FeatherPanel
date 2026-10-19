@@ -21,6 +21,7 @@ import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { formatBackupLimitLabel } from '@/lib/server-utils';
 import { ServerPageHeader } from '@/components/server/ServerPageHeader';
+import { ServerPageTips } from '@/components/server/ServerPageTips';
 import { PageCard } from '@/components/featherui/PageCard';
 import { HideIpsToggle } from '@/components/preferences/HideIpsToggle';
 import { Switch } from '@/components/ui/switch';
@@ -375,7 +376,7 @@ export default function ServerSettingsPage() {
                     </div>
                 </div>
                 <div className='max-w-md space-y-3 px-4'>
-                    <h2 className='text-3xl font-black tracking-tight uppercase'>{t('serverSettings.accessDenied')}</h2>
+                    <h2 className='text-3xl font-semibold tracking-tight'>{t('serverSettings.accessDenied')}</h2>
                 </div>
                 <Button
                     variant='outline'
@@ -404,7 +405,7 @@ export default function ServerSettingsPage() {
                     >
                         <div className='space-y-4'>
                             <div className='space-y-2'>
-                                <Label className='text-muted-foreground ml-1 text-xs font-bold tracking-wider uppercase'>
+                                <Label className='text-muted-foreground ml-1 text-xs font-bold'>
                                     {t('serverSettings.serverName')}
                                 </Label>
                                 <Input
@@ -415,7 +416,7 @@ export default function ServerSettingsPage() {
                                 />
                             </div>
                             <div className='space-y-2'>
-                                <Label className='text-muted-foreground ml-1 text-xs font-bold tracking-wider uppercase'>
+                                <Label className='text-muted-foreground ml-1 text-xs font-bold'>
                                     {t('serverSettings.serverDescription')}
                                 </Label>
                                 <Input
@@ -467,7 +468,7 @@ export default function ServerSettingsPage() {
                         >
                             <div className='grid min-w-0 grid-cols-1 gap-6 md:grid-cols-2'>
                                 <div className='min-w-0 space-y-2'>
-                                    <Label className='text-muted-foreground ml-1 text-xs font-bold tracking-wider uppercase'>
+                                    <Label className='text-muted-foreground ml-1 text-xs font-bold'>
                                         {t('serverSettings.backupLimitReadOnlyLabel')}
                                     </Label>
                                     <div className='border-border/10 bg-muted/40 flex h-12 items-center rounded-xl border px-4 text-sm font-medium'>
@@ -480,7 +481,7 @@ export default function ServerSettingsPage() {
                                     </p>
                                 </div>
                                 <div className='min-w-0 space-y-2'>
-                                    <Label className='text-muted-foreground ml-1 text-xs font-bold tracking-wider uppercase'>
+                                    <Label className='text-muted-foreground ml-1 text-xs font-bold'>
                                         {t('admin.servers.form.backup_retention_mode')}
                                     </Label>
                                     <select
@@ -554,7 +555,7 @@ export default function ServerSettingsPage() {
                                     />
                                 </div>
                                 <div className='space-y-2'>
-                                    <Label className='text-muted-foreground ml-1 text-xs font-bold tracking-wider uppercase'>
+                                    <Label className='text-muted-foreground ml-1 text-xs font-bold'>
                                         {t('serverSettings.autoStartDelayLabel')}
                                     </Label>
                                     <Input
@@ -610,7 +611,7 @@ export default function ServerSettingsPage() {
                     >
                         <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                             <div className='space-y-2'>
-                                <Label className='text-muted-foreground ml-1 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase'>
+                                <Label className='text-muted-foreground ml-1 flex items-center gap-2 text-[10px] font-semibold'>
                                     <ServerIcon className='h-3 w-3' />
                                     {t('serverSettings.sftpHost')}
                                 </Label>
@@ -636,7 +637,7 @@ export default function ServerSettingsPage() {
                             </div>
 
                             <div className='space-y-2'>
-                                <Label className='text-muted-foreground ml-1 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase'>
+                                <Label className='text-muted-foreground ml-1 flex items-center gap-2 text-[10px] font-semibold'>
                                     <Hash className='h-3 w-3' />
                                     {t('serverSettings.sftpPort')}
                                 </Label>
@@ -660,7 +661,7 @@ export default function ServerSettingsPage() {
                             </div>
 
                             <div className='space-y-2'>
-                                <Label className='text-muted-foreground ml-1 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase'>
+                                <Label className='text-muted-foreground ml-1 flex items-center gap-2 text-[10px] font-semibold'>
                                     <User className='h-3 w-3' />
                                     {t('serverSettings.sftpUsername')}
                                 </Label>
@@ -684,7 +685,7 @@ export default function ServerSettingsPage() {
                             </div>
 
                             <div className='space-y-2'>
-                                <Label className='text-muted-foreground ml-1 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase'>
+                                <Label className='text-muted-foreground ml-1 flex items-center gap-2 text-[10px] font-semibold'>
                                     <KeyRound className='h-3 w-3' />
                                     {t('serverSettings.sftpPassword')}
                                 </Label>
@@ -697,7 +698,7 @@ export default function ServerSettingsPage() {
                         </div>
 
                         <div className='space-y-2 pt-6'>
-                            <Label className='text-muted-foreground ml-1 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase'>
+                            <Label className='text-muted-foreground ml-1 flex items-center gap-2 text-[10px] font-semibold'>
                                 <LinkIcon className='h-3 w-3' />
                                 {t('serverSettings.sftpUrl')}
                             </Label>
@@ -732,7 +733,7 @@ export default function ServerSettingsPage() {
                             <div className='flex items-start gap-3'>
                                 <Info className='mt-0.5 h-5 w-5 shrink-0 text-blue-500' />
                                 <div className='space-y-2'>
-                                    <h4 className='text-sm font-bold tracking-wide text-blue-500 uppercase'>
+                                    <h4 className='text-sm font-bold text-blue-500'>
                                         {t('serverSettings.sftpInfoTitle')}
                                     </h4>
                                     <p className='text-muted-foreground text-xs leading-relaxed'>
@@ -753,7 +754,7 @@ export default function ServerSettingsPage() {
                             </p>
                             <Button
                                 variant='destructive'
-                                className='mt-4 h-12 w-full rounded-xl border border-orange-500/20 bg-orange-500/10 text-xs font-black tracking-widest text-orange-500 uppercase hover:border-orange-500/50 hover:bg-orange-500/20'
+                                className='mt-4 h-12 w-full rounded-xl border border-orange-500/20 bg-orange-500/10 text-xs font-semibold text-orange-500 hover:border-orange-500/50 hover:bg-orange-500/20'
                                 loading={abortingInstall}
                                 onClick={handleAbortInstall}
                             >
@@ -772,7 +773,7 @@ export default function ServerSettingsPage() {
 
                                 <Button
                                     variant='destructive'
-                                    className='mt-4 h-12 w-full rounded-xl border border-orange-500/20 bg-orange-500/10 text-xs font-black tracking-widest text-orange-500 uppercase hover:border-orange-500/50 hover:bg-orange-500/20'
+                                    className='mt-4 h-12 w-full rounded-xl border border-orange-500/20 bg-orange-500/10 text-xs font-semibold text-orange-500 hover:border-orange-500/50 hover:bg-orange-500/20'
                                     onClick={() => setShowReinstallDialog(true)}
                                 >
                                     {t('serverSettings.reinstallServer')}
@@ -790,7 +791,7 @@ export default function ServerSettingsPage() {
 
                             <Button
                                 variant='destructive'
-                                className='mt-4 h-12 w-full rounded-xl border border-red-500/20 bg-red-500/10 text-xs font-black tracking-widest text-red-500 uppercase hover:border-red-500/50 hover:bg-red-500/20'
+                                className='mt-4 h-12 w-full rounded-xl border border-red-500/20 bg-red-500/10 text-xs font-semibold text-red-500 hover:border-red-500/50 hover:bg-red-500/20'
                                 onClick={() => {
                                     setShowDeleteDialog(true);
                                     setDeleteStep(1);
@@ -972,6 +973,7 @@ export default function ServerSettingsPage() {
                 onDiscard={handleDiscardAll}
                 saving={savingAny}
             />
+            <ServerPageTips page='settings' />
         </div>
     );
 }

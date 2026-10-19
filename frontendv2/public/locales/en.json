@@ -16820,5 +16820,33 @@
 			"account_title": "Account and help",
 			"account_body": "Your profile, security, API keys and appearance live in this menu. You can restart this tour from here too."
 		}
+	},
+	"server": {
+		"tips": {
+			"files_t1_title": "Drag and drop uploads",
+			"files_t1_body": "Drop files anywhere on this page to upload them into the current folder.",
+			"files_t2_title": "Bulk actions",
+			"files_t2_body": "Select several files to move, archive or delete them in one go.",
+			"databases_t1_title": "One database per need",
+			"databases_t1_body": "Create a separate database for each plugin or app so data stays isolated.",
+			"databases_t2_title": "Keep credentials safe",
+			"databases_t2_body": "Rotate the password if it was shared, and only connect from trusted hosts.",
+			"schedules_t1_title": "Automate routine work",
+			"schedules_t1_body": "Use schedules for restarts, backups and commands that should run on a timer.",
+			"schedules_t2_title": "Chain tasks",
+			"schedules_t2_body": "Add several tasks with offsets to run steps in order, such as a warning before a restart.",
+			"users_t1_title": "Share access",
+			"users_t1_body": "Invite people by email and give them only the permissions they need.",
+			"users_t2_title": "Least privilege",
+			"users_t2_body": "Avoid granting file or startup permissions unless the person really needs them.",
+			"backups_t1_title": "Back up before changes",
+			"backups_t1_body": "Create a backup before updates, mod changes or a reinstall.",
+			"backups_t2_title": "Lock important backups",
+			"backups_t2_body": "Locked backups are not removed when the backup limit rotates old ones.",
+			"settings_t1_title": "Server details",
+			"settings_t1_body": "Rename the server and update its description so it is easy to find.",
+			"settings_t2_title": "Reinstall carefully",
+			"settings_t2_body": "A reinstall runs the install script again and can overwrite files. Take a backup first."
+		}
 	}
 }

@@ -21,6 +21,7 @@ import { useFileManager } from '@/hooks/useFileManager';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { ServerPageHeader } from '@/components/server/ServerPageHeader';
+import { ServerPageTips } from '@/components/server/ServerPageTips';
 import { FileActionToolbar } from './components/FileActionToolbar';
 import { FileBreadcrumbs } from './components/FileBreadcrumbs';
 import { FileList } from './components/FileList';
@@ -1360,7 +1361,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                         {uploadQueue.length > 0 && (
                             <div className='animate-in slide-in-from-top-4 mb-6 grid grid-cols-1 gap-4 duration-500 md:grid-cols-2 lg:grid-cols-3'>
                                 <div className='flex items-center justify-between md:col-span-2 lg:col-span-3'>
-                                    <span className='text-primary/80 text-xs font-bold tracking-widest uppercase'>
+                                    <span className='text-primary/80 text-xs font-bold'>
                                         {uploadQueue.length === 1
                                             ? t('files.toolbar.upload')
                                             : t('files.messages.uploading_files_progress', {
@@ -1438,7 +1439,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                     </div>
                                                     {!allDone && !hasError && (
                                                         <div className='space-y-1.5'>
-                                                            <div className='text-muted-foreground flex justify-between text-[10px] font-bold tracking-tighter uppercase'>
+                                                            <div className='text-muted-foreground flex justify-between text-[10px] font-bold'>
                                                                 <span>
                                                                     {t('files.messages.uploading_folder_progress', {
                                                                         current: String(currentLabel),
@@ -1514,7 +1515,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                 </div>
                                                 {(item.status === 'uploading' || item.status === 'pending') && (
                                                     <div className='space-y-1.5'>
-                                                        <div className='text-muted-foreground flex justify-between text-[10px] font-bold tracking-tighter uppercase'>
+                                                        <div className='text-muted-foreground flex justify-between text-[10px] font-bold'>
                                                             <span>
                                                                 {item.status === 'uploading'
                                                                     ? t('files.messages.uploading', {
@@ -1563,7 +1564,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                     <div className='bg-primary/20 text-primary flex h-8 w-8 items-center justify-center rounded-lg'>
                                                         <Download className='h-4 w-4 animate-bounce' />
                                                     </div>
-                                                    <span className='text-primary/80 text-xs font-bold tracking-widest uppercase'>
+                                                    <span className='text-primary/80 text-xs font-bold'>
                                                         {t('files.messages.active_pull')}
                                                     </span>
                                                 </div>
@@ -1580,7 +1581,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                 </Button>
                                             </div>
                                             <div className='space-y-1.5'>
-                                                <div className='text-muted-foreground flex justify-between text-[10px] font-bold tracking-tighter uppercase'>
+                                                <div className='text-muted-foreground flex justify-between text-[10px] font-bold'>
                                                     <span>
                                                         {t('files.messages.task_id', {
                                                             id: pull.Identifier.slice(0, 8),
@@ -1822,7 +1823,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                         <div className='space-y-1'>
                             <label className='text-sm font-semibold'>{t('files.search.advanced.include_label')}</label>
                             <input
-                                className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                className='bg-background/50 w-full rounded-md border border-[var(--fp-surface-border)] px-3 py-2 text-sm'
                                 placeholder={t('files.search.advanced.include_placeholder')}
                                 value={includePattern}
                                 onChange={(e) => setIncludePattern(e.target.value)}
@@ -1832,7 +1833,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                         <div className='space-y-1'>
                             <label className='text-sm font-semibold'>{t('files.search.advanced.exclude_label')}</label>
                             <input
-                                className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                className='bg-background/50 w-full rounded-md border border-[var(--fp-surface-border)] px-3 py-2 text-sm'
                                 placeholder={t('files.search.advanced.exclude_placeholder')}
                                 value={excludePattern}
                                 onChange={(e) => setExcludePattern(e.target.value)}
@@ -1844,7 +1845,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                 {t('files.search.advanced.search_text_label')}
                             </label>
                             <input
-                                className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                className='bg-background/50 w-full rounded-md border border-[var(--fp-surface-border)] px-3 py-2 text-sm'
                                 placeholder={t('files.search.advanced.search_text_placeholder')}
                                 value={contentQuery}
                                 onChange={(e) => setContentQuery(e.target.value)}
@@ -1858,7 +1859,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                 {t('files.search.advanced.max_file_size_label')}
                             </label>
                             <input
-                                className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                className='bg-background/50 w-full rounded-md border border-[var(--fp-surface-border)] px-3 py-2 text-sm'
                                 type='number'
                                 min={0}
                                 placeholder={t('files.search.advanced.max_file_size')}
@@ -1875,7 +1876,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             </label>
                             <div className='grid grid-cols-2 gap-2'>
                                 <input
-                                    className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                    className='bg-background/50 w-full rounded-md border border-[var(--fp-surface-border)] px-3 py-2 text-sm'
                                     type='number'
                                     min={0}
                                     placeholder={t('files.search.advanced.minimum_placeholder')}
@@ -1883,7 +1884,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                     onChange={(e) => setMinSizeBytes(Number(e.target.value || 0))}
                                 />
                                 <input
-                                    className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                    className='bg-background/50 w-full rounded-md border border-[var(--fp-surface-border)] px-3 py-2 text-sm'
                                     type='number'
                                     min={0}
                                     placeholder={t('files.search.advanced.maximum_placeholder')}
@@ -1935,6 +1936,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 </DialogContent>
             </Dialog>
             <WidgetRenderer widgets={getWidgets('server-files', 'bottom-of-page')} />
+            <ServerPageTips page='files' />
         </div>
     );
 }

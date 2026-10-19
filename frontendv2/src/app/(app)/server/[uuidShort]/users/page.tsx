@@ -20,6 +20,7 @@ import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { ServerPageHeader } from '@/components/server/ServerPageHeader';
+import { ServerPageTips } from '@/components/server/ServerPageTips';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import {
     Users,
@@ -292,9 +293,7 @@ export default function ServerSubusersPage() {
                     </div>
                 </div>
                 <div className='max-w-md space-y-3 px-4'>
-                    <h2 className='text-3xl font-black tracking-tight uppercase'>
-                        {t('serverSubusers.featureDisabled')}
-                    </h2>
+                    <h2 className='text-3xl font-semibold tracking-tight'>{t('serverSubusers.featureDisabled')}</h2>
                     <p className='text-muted-foreground text-lg leading-relaxed font-medium'>
                         {t('serverSubusers.featureDisabledDescription')}
                     </p>
@@ -326,7 +325,7 @@ export default function ServerSubusersPage() {
                 <div className='mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-red-500/10'>
                     <Lock className='h-10 w-10 text-red-500' />
                 </div>
-                <h1 className='text-2xl font-black tracking-tight uppercase'>{t('common.accessDenied')}</h1>
+                <h1 className='text-2xl font-semibold tracking-tight'>{t('common.accessDenied')}</h1>
                 <p className='text-muted-foreground mt-2'>{t('common.noPermission')}</p>
                 <Button variant='outline' className='mt-8' onClick={() => safeBack(router)}>
                     {t('common.goBack')}
@@ -423,7 +422,7 @@ export default function ServerSubusersPage() {
                     )}
 
                     {subusers.length === 0 ? (
-                        <div className='bg-card/10 border-border/60 rounded-4xl border border-dashed py-12 text-center'>
+                        <div className='fp-surface border-border/60 rounded-4xl border border-dashed py-12 text-center'>
                             <h3 className='text-xl font-bold'>{t('serverSubusers.noResults')}</h3>
                             <p className='text-muted-foreground mt-1'>{t('serverSubusers.noResultsDescription')}</p>
                             <Button
@@ -502,7 +501,7 @@ export default function ServerSubusersPage() {
                                 >
                                     <ChevronLeft className='h-5 w-5' />
                                 </Button>
-                                <div className='bg-secondary/50 border-border/5 flex h-10 items-center rounded-xl border px-4 text-sm font-black'>
+                                <div className='bg-secondary/50 border-border/5 flex h-10 items-center rounded-xl border px-4 text-sm font-semibold'>
                                     {pagination.current_page} / {pagination.last_page}
                                 </div>
                                 <Button
@@ -536,7 +535,7 @@ export default function ServerSubusersPage() {
                 </DialogHeader>
                 <div className='space-y-4 py-4'>
                     <div className='space-y-2'>
-                        <label className='text-muted-foreground text-sm font-bold tracking-wider uppercase'>
+                        <label className='text-muted-foreground text-sm font-bold'>
                             {t('serverSubusers.emailLabel')}
                         </label>
                         <div className='relative'>
@@ -641,7 +640,7 @@ export default function ServerSubusersPage() {
                                 <Mail className='text-primary h-5 w-5' />
                             </div>
                             <div className='flex flex-col'>
-                                <span className='text-muted-foreground text-xs font-black tracking-widest uppercase opacity-50'>
+                                <span className='text-muted-foreground text-xs font-semibold opacity-50'>
                                     {t('serverSubusers.user')}
                                 </span>
                                 <span className='text-sm font-bold tracking-tight'>
@@ -653,7 +652,7 @@ export default function ServerSubusersPage() {
                             variant='outline'
                             size='sm'
                             onClick={selectAllPermissions}
-                            className='border-border/10 hover:bg-secondary/20 h-10 rounded-xl px-4 text-xs font-bold tracking-wider uppercase'
+                            className='border-border/10 hover:bg-secondary/20 h-10 rounded-xl px-4 text-xs font-bold'
                         >
                             {availablePermissions.every((p) => selectedPermissions.includes(p))
                                 ? t('serverSubusers.deselectAll')
@@ -670,8 +669,8 @@ export default function ServerSubusersPage() {
                         <div className='scrollbar-thin scrollbar-thumb-muted-foreground/10 max-h-[50vh] space-y-6 overflow-y-auto pr-2'>
                             {Object.entries(groupedPermissions).map(([category, data]) => (
                                 <div key={category} className='space-y-4'>
-                                    <div className='bg-card/70 border-border/5 sticky top-0 z-10 -mx-2 border-b px-2 py-3 backdrop-blur-xl'>
-                                        <h4 className='text-primary text-lg font-black tracking-tight uppercase'>
+                                    <div className='fp-chrome-surface border-border/5 sticky top-0 z-10 -mx-2 border-b px-2 py-3 backdrop-blur-xl'>
+                                        <h4 className='text-primary text-lg font-semibold tracking-tight'>
                                             {t(`serverSubusers.permissionCategories.${category}.name`)}
                                         </h4>
                                         <p className='text-muted-foreground text-[10px] leading-relaxed font-medium opacity-70'>
@@ -686,7 +685,7 @@ export default function ServerSubusersPage() {
                                                     'group flex cursor-pointer items-start gap-4 rounded-2xl border p-4 transition-all',
                                                     selectedPermissions.includes(perm)
                                                         ? 'bg-primary/5 border-primary/20'
-                                                        : 'bg-card/30 border-border/5 hover:border-border/20',
+                                                        : 'fp-surface border-border/5 hover:border-border/20',
                                                 )}
                                             >
                                                 <div className='relative mt-1 shrink-0'>
@@ -725,7 +724,7 @@ export default function ServerSubusersPage() {
                         </div>
                     )}
 
-                    <div className='text-primary/80 bg-primary/5 border-primary/10 flex items-center gap-3 rounded-2xl border px-5 py-4 text-xs font-black tracking-widest uppercase'>
+                    <div className='text-primary/80 bg-primary/5 border-primary/10 flex items-center gap-3 rounded-2xl border px-5 py-4 text-xs font-semibold'>
                         <Shield className='h-4 w-4' />
                         {selectedPermissions.length} {t('serverSubusers.permissionsSelected')}
                     </div>
@@ -758,6 +757,7 @@ export default function ServerSubusersPage() {
                 </div>
             </Dialog>
             <WidgetRenderer widgets={getWidgets('server-users', 'bottom-of-page')} />
+            <ServerPageTips page='users' />
         </div>
     );
 }

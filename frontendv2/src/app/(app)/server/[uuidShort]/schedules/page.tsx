@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 
 import { ServerPageHeader } from '@/components/server/ServerPageHeader';
+import { ServerPageTips } from '@/components/server/ServerPageTips';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
@@ -277,9 +278,7 @@ export default function ServerSchedulesPage() {
                     </div>
                 </div>
                 <div className='max-w-md space-y-3 px-4'>
-                    <h2 className='text-3xl font-black tracking-tight uppercase'>
-                        {t('serverSchedules.featureDisabled')}
-                    </h2>
+                    <h2 className='text-3xl font-semibold tracking-tight'>{t('serverSchedules.featureDisabled')}</h2>
                     <p className='text-muted-foreground text-lg leading-relaxed font-medium'>
                         {t('serverSchedules.featureDisabledDescription')}
                     </p>
@@ -311,7 +310,7 @@ export default function ServerSchedulesPage() {
                 <div className='mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-red-500/10'>
                     <Lock className='h-10 w-10 text-red-500' />
                 </div>
-                <h1 className='text-2xl font-black tracking-tight uppercase'>{t('common.accessDenied')}</h1>
+                <h1 className='text-2xl font-semibold tracking-tight'>{t('common.accessDenied')}</h1>
                 <p className='text-muted-foreground mt-2'>{t('common.noPermission')}</p>
                 <Button variant='outline' className='mt-8' onClick={() => safeBack(router)}>
                     {t('common.goBack')}
@@ -669,6 +668,7 @@ export default function ServerSchedulesPage() {
                     </div>
                 </div>
             </Dialog>
+            <ServerPageTips page='schedules' />
         </div>
     );
 }
