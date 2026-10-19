@@ -15,6 +15,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { DataTable, RowActionsMenu } from '@/components/featherui/DataTable';
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios from 'axios';
@@ -28,12 +30,9 @@ import {
     ChevronLeft,
     ChevronRight,
     ShieldAlert,
-    MoreVertical,
     ExternalLink,
     Eye,
     Copy,
-    User,
-    Server as ServerIcon,
     Globe,
     AlertTriangle,
     Download,
@@ -57,17 +56,9 @@ import { Input } from '@/components/featherui/Input';
 import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { ServerPageTips } from '@/components/server/ServerPageTips';
 import { EmptyState } from '@/components/featherui/EmptyState';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from '@/components/ui/dialog';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 import { Database, DatabasesResponse, Server } from '@/types/server';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
@@ -621,148 +612,141 @@ export default function ServerDatabasesPage() {
                         }
                     />
                 ) : (
-                    <div className='grid grid-cols-1 gap-4'>
-                        {databases.map((db) => (
-                            <div key={db.id} className='flex items-stretch gap-3'>
-                                {canDelete && (
-                                    <div className='flex shrink-0 items-center pl-1'>
-                                        <Checkbox
-                                            checked={selectedIds.includes(db.id)}
-                                            onCheckedChange={() => toggleDatabaseSelection(db.id)}
-                                            aria-label={db.database}
-                                        />
+                    <DataTable
+                        rows={databases}
+                        rowKey={(db) => db.id}
+                        columns={[
+                            ...(canDelete
+                                ? [
+                                      {
+                                          key: 'select',
+                                          header: '',
+                                          className: 'w-10',
+                                          cell: (db: (typeof databases)[number]) => (
+                                              <Checkbox
+                                                  checked={selectedIds.includes(db.id)}
+                                                  onCheckedChange={() => toggleDatabaseSelection(db.id)}
+                                                  aria-label={db.database}
+                                              />
+                                          ),
+                                      },
+                                  ]
+                                : []),
+                            {
+                                key: 'name',
+                                header: t('serverDatabases.databaseName'),
+                                cell: (db) => (
+                                    <div className='flex min-w-0 items-center gap-3'>
+                                        <span className='fp-icon-tile text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-xl'>
+                                            <DatabaseIcon className='h-4 w-4' />
+                                        </span>
+                                        <div className='min-w-0'>
+                                            <p className='truncate font-medium'>{db.database}</p>
+                                            <p className='text-muted-foreground text-xs'>{db.database_type}</p>
+                                        </div>
                                     </div>
+                                ),
+                            },
+                            {
+                                key: 'user',
+                                header: t('serverDatabases.username'),
+                                cell: (db) => <Sensitive>{db.username}</Sensitive>,
+                            },
+                            {
+                                key: 'host',
+                                header: t('serverDatabases.host'),
+                                className: 'font-mono text-xs',
+                                cell: (db) => (
+                                    <Sensitive>{`${getDatabaseDisplayHost(db)}:${db.database_port}`}</Sensitive>
+                                ),
+                            },
+                            {
+                                key: 'remote',
+                                header: t('serverDatabases.remote'),
+                                cell: (db) =>
+                                    db.remote === '%' ? (
+                                        <span className='inline-flex items-center gap-1.5 text-xs text-emerald-500'>
+                                            <Globe className='h-3 w-3' />
+                                            {t('serverDatabases.allHosts')}
+                                        </span>
+                                    ) : (
+                                        <span className='text-muted-foreground font-mono text-xs'>{db.remote}</span>
+                                    ),
+                            },
+                        ]}
+                        mobileCard={(db) => (
+                            <div className='flex min-w-0 items-start gap-3'>
+                                {canDelete && (
+                                    <Checkbox
+                                        checked={selectedIds.includes(db.id)}
+                                        onCheckedChange={() => toggleDatabaseSelection(db.id)}
+                                        aria-label={db.database}
+                                        className='mt-1'
+                                    />
                                 )}
-                                <ResourceCard
-                                    className={cn(
-                                        'min-w-0 flex-1 transition-all duration-300',
-                                        selectedIds.includes(db.id) && 'border-primary/40 bg-primary/5',
-                                    )}
-                                    icon={DatabaseIcon}
-                                    title={db.database}
-                                    badges={
-                                        <>
-                                            <span className='bg-primary/10 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] leading-none font-semibold'>
-                                                {db.database_type}
-                                            </span>
-                                            {db.remote === '%' ? (
-                                                <span className='flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] leading-none font-semibold text-emerald-500'>
-                                                    <Globe className='h-3 w-3' />
-                                                    {t('serverDatabases.allHosts')}
-                                                </span>
-                                            ) : (
-                                                <span className='bg-muted border-border/50 text-muted-foreground rounded-full border px-3 py-1 font-mono text-[10px] leading-none font-semibold'>
-                                                    {db.remote}
-                                                </span>
-                                            )}
-                                        </>
-                                    }
-                                    description={
-                                        <>
-                                            <div className='text-muted-foreground flex items-center gap-2'>
-                                                <User className='h-4 w-4 opacity-50' />
-                                                <span className='text-sm font-semibold'>
-                                                    <Sensitive>{db.username}</Sensitive>
-                                                </span>
-                                            </div>
-                                            <div className='text-muted-foreground flex items-center gap-2'>
-                                                <ServerIcon className='h-4 w-4 opacity-50' />
-                                                <span className='font-mono text-sm font-semibold'>
-                                                    <Sensitive>{`${getDatabaseDisplayHost(db)}:${db.database_port}`}</Sensitive>
-                                                </span>
-                                            </div>
-                                        </>
-                                    }
-                                    actions={
-                                        (canViewPassword || canDelete) && (
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger className='group-hover:bg-primary/10 flex h-12 w-12 items-center justify-center rounded-xl transition-colors outline-none'>
-                                                    <MoreVertical className='text-muted-foreground group-hover:text-primary h-6 w-6 transition-colors' />
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent
-                                                    align='end'
-                                                    className='fp-menu-surface w-56 rounded-2xl p-2'
-                                                >
-                                                    {canViewPassword && (
-                                                        <>
-                                                            <DropdownMenuItem
-                                                                onClick={() => openViewDatabase(db)}
-                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                            >
-                                                                <Eye className='text-primary h-4 w-4' />
-                                                                <span className='font-bold'>
-                                                                    {t('serverDatabases.view')}
-                                                                </span>
-                                                            </DropdownMenuItem>
-                                                            {phpMyAdminInstalled && (
-                                                                <DropdownMenuItem
-                                                                    onClick={() => handlePhpMyAdmin(db)}
-                                                                    className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                                >
-                                                                    <ExternalLink className='h-4 w-4 text-blue-500' />
-                                                                    <span className='font-bold'>phpMyAdmin</span>
-                                                                </DropdownMenuItem>
-                                                            )}
-                                                            <DropdownMenuSeparator className='bg-border/40 my-1' />
-                                                            <DropdownMenuItem
-                                                                onClick={() => handleExportDatabase(db)}
-                                                                disabled={exportingId === db.id}
-                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                            >
-                                                                {exportingId === db.id ? (
-                                                                    <Loader2 className='h-4 w-4 animate-spin text-emerald-500' />
-                                                                ) : (
-                                                                    <Download className='h-4 w-4 text-emerald-500' />
-                                                                )}
-                                                                <span className='font-bold'>
-                                                                    {t('serverDatabases.exportSql')}
-                                                                </span>
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem
-                                                                onClick={() => openImportDialog(db)}
-                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                            >
-                                                                <Upload className='h-4 w-4 text-amber-500' />
-                                                                <span className='font-bold'>
-                                                                    {t('serverDatabases.importSql')}
-                                                                </span>
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem
-                                                                onClick={() => openQueryDialog(db)}
-                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                            >
-                                                                <Terminal className='text-primary h-4 w-4' />
-                                                                <span className='font-bold'>
-                                                                    {t('serverDatabases.runQuery')}
-                                                                </span>
-                                                            </DropdownMenuItem>
-                                                        </>
-                                                    )}
-                                                    {canDelete && (
-                                                        <>
-                                                            <DropdownMenuSeparator className='bg-border/40 my-1' />
-                                                            <DropdownMenuItem
-                                                                onClick={() => {
-                                                                    setDatabaseToDelete(db);
-                                                                    setConfirmDeleteDialogOpen(true);
-                                                                }}
-                                                                className='text-destructive focus:text-destructive focus:bg-destructive/10 flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                            >
-                                                                <Trash2 className='h-4 w-4' />
-                                                                <span className='font-bold'>
-                                                                    {t('serverDatabases.confirmDelete')}
-                                                                </span>
-                                                            </DropdownMenuItem>
-                                                        </>
-                                                    )}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        )
-                                    }
-                                />
+                                <div className='min-w-0 space-y-1'>
+                                    <p className='truncate font-medium'>{db.database}</p>
+                                    <p className='text-muted-foreground text-xs'>
+                                        {db.database_type} · <Sensitive>{db.username}</Sensitive>
+                                    </p>
+                                    <p className='text-muted-foreground font-mono text-xs'>
+                                        <Sensitive>{`${getDatabaseDisplayHost(db)}:${db.database_port}`}</Sensitive>
+                                    </p>
+                                </div>
                             </div>
-                        ))}
-                    </div>
+                        )}
+                        actions={(db) =>
+                            (canViewPassword || canDelete) && (
+                                <RowActionsMenu
+                                    items={[
+                                        {
+                                            label: t('serverDatabases.view'),
+                                            icon: Eye,
+                                            onClick: () => openViewDatabase(db),
+                                            hidden: !canViewPassword,
+                                        },
+                                        {
+                                            label: 'phpMyAdmin',
+                                            icon: ExternalLink,
+                                            onClick: () => handlePhpMyAdmin(db),
+                                            hidden: !canViewPassword || !phpMyAdminInstalled,
+                                        },
+                                        {
+                                            label: t('serverDatabases.exportSql'),
+                                            icon: exportingId === db.id ? Loader2 : Download,
+                                            onClick: () => handleExportDatabase(db),
+                                            disabled: exportingId === db.id,
+                                            hidden: !canViewPassword,
+                                            separated: true,
+                                        },
+                                        {
+                                            label: t('serverDatabases.importSql'),
+                                            icon: Upload,
+                                            onClick: () => openImportDialog(db),
+                                            hidden: !canViewPassword,
+                                        },
+                                        {
+                                            label: t('serverDatabases.runQuery'),
+                                            icon: Terminal,
+                                            onClick: () => openQueryDialog(db),
+                                            hidden: !canViewPassword,
+                                        },
+                                        {
+                                            label: t('serverDatabases.confirmDelete'),
+                                            icon: Trash2,
+                                            destructive: true,
+                                            separated: true,
+                                            hidden: !canDelete,
+                                            onClick: () => {
+                                                setDatabaseToDelete(db);
+                                                setConfirmDeleteDialogOpen(true);
+                                            },
+                                        },
+                                    ]}
+                                />
+                            )
+                        }
+                    />
                 )}
 
                 <WidgetRenderer widgets={getWidgets('server-databases', 'after-databases-list')} />
