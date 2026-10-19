@@ -55,7 +55,7 @@ export function TrashActionToolbar({
 
     return (
         <div className='sticky top-0 z-20 pb-4'>
-            <div className='flex flex-col gap-4 rounded-xl border border-black/5 bg-white/80 p-2 backdrop-blur-xl transition-all duration-300 sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/5'>
+            <div className='fp-surface flex flex-col gap-4 rounded-xl border p-2 sm:flex-row sm:items-center sm:justify-between'>
                 {hasSelection ? (
                     <>
                         <div className='flex items-center gap-3 px-2'>

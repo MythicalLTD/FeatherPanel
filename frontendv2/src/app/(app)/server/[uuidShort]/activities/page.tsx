@@ -491,7 +491,7 @@ export default function ServerActivityPage() {
     }
 
     return (
-        <div className='space-y-4 pb-12'>
+        <div className='space-y-6 pb-12'>
             <ServerPageHeader
                 title={t('serverActivities.title')}
                 description={t('serverActivities.description')}

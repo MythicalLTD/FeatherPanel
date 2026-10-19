@@ -333,7 +333,7 @@ export default function ServerTransferSpellPage() {
 
     if (!canChangeSpell) {
         return (
-            <div className='bg-card/40 border-border/50 flex flex-col items-center justify-center space-y-8 rounded-3xl border py-24 text-center backdrop-blur-xl'>
+            <div className='fp-surface flex flex-col items-center justify-center space-y-8 rounded-xl border py-24 text-center'>
                 <div className='relative'>
                     <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
                     <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
@@ -361,7 +361,7 @@ export default function ServerTransferSpellPage() {
     }
 
     return (
-        <div key={pathname} className='mx-auto max-w-6xl space-y-8 pb-16 font-sans'>
+        <div key={pathname} className='space-y-6 pb-12 font-sans'>
             <WidgetRenderer widgets={getWidgets('server-startup-transfer-spell', 'top-of-page')} />
 
             <ServerPageHeader
@@ -470,8 +470,8 @@ export default function ServerTransferSpellPage() {
                                     key={realm.id}
                                     onClick={() => handleRealmSelect(String(realm.id))}
                                     className={cn(
-                                        'group bg-card/10 hover:border-primary/40 hover:bg-card/30 relative cursor-pointer overflow-hidden rounded-3xl border border-white/5 p-8 transition-all duration-500',
-                                        selectedRealmId === String(realm.id) && 'border-primary/50 bg-primary/5',
+                                        'group fp-surface fp-surface-interactive relative cursor-pointer overflow-hidden rounded-xl border p-6 transition-all duration-500',
+                                        selectedRealmId === String(realm.id) && 'ring-primary/60 ring-2',
                                     )}
                                 >
                                     <div className='bg-primary/5 group-hover:bg-primary/10 absolute top-0 right-0 h-32 w-32 translate-x-1/2 -translate-y-1/2 blur-3xl transition-colors' />
@@ -510,8 +510,8 @@ export default function ServerTransferSpellPage() {
                                         key={spell.id}
                                         onClick={() => handleSpellSelect(String(spell.id))}
                                         className={cn(
-                                            'group bg-card/20 hover:border-primary/30 hover:bg-card/40 flex cursor-pointer items-center gap-6 rounded-3xl border border-white/5 p-6 transition-all duration-300',
-                                            selectedSpellId === String(spell.id) && 'border-primary/40 bg-primary/5',
+                                            'group fp-surface fp-surface-interactive flex cursor-pointer items-center gap-6 rounded-xl border p-5 transition-all duration-300',
+                                            selectedSpellId === String(spell.id) && 'ring-primary/60 ring-2',
                                         )}
                                     >
                                         <div className='group-hover:border-primary/20 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/5 transition-all'>
@@ -604,7 +604,7 @@ export default function ServerTransferSpellPage() {
                         </div>
 
                         {targetVariables.length === 0 ? (
-                            <div className='bg-card/10 border-border/40 text-muted-foreground flex flex-col items-center justify-center space-y-4 rounded-3xl border border-dashed py-16 text-center'>
+                            <div className='fp-surface text-muted-foreground flex flex-col items-center justify-center space-y-4 rounded-xl border border-dashed py-16 text-center'>
                                 <Zap className='h-16 w-16 opacity-10' />
                                 <p className='text-xs font-black tracking-widest uppercase opacity-50'>
                                     {t('serverStartup.unconfiguredVariables')}

@@ -71,7 +71,7 @@ function TrashRow({
                 }
             }}
             className={cn(
-                'group flex cursor-pointer items-center gap-3 border-b border-gray-200 bg-transparent px-4 py-3 transition-all select-none hover:bg-gray-50 active:scale-[0.995] dark:border-white/5 dark:hover:bg-white/5',
+                'group border-border/40 hover:bg-muted/40 flex cursor-pointer items-center gap-3 border-b bg-transparent px-4 py-3 transition-all select-none active:scale-[0.995]',
                 selected && 'bg-primary/5 dark:bg-primary/10',
             )}
         >
@@ -85,7 +85,7 @@ function TrashRow({
 
             <div
                 className={cn(
-                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/5 transition-all group-hover:scale-110',
+                    'border-border/40 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-all group-hover:scale-110',
                     entry.is_directory
                         ? 'bg-amber-500/10 text-amber-500'
                         : 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400',
@@ -130,7 +130,7 @@ export function TrashList({ entries, loading, selectedIds, onToggle, onToggleAll
 
     if (loading && entries.length === 0) {
         return (
-            <div className='flex h-64 items-center justify-center rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm'>
+            <div className='fp-surface flex h-64 items-center justify-center rounded-xl border'>
                 <Loader2 className='text-primary h-8 w-8 animate-spin' />
             </div>
         );
@@ -138,14 +138,14 @@ export function TrashList({ entries, loading, selectedIds, onToggle, onToggleAll
 
     if (entries.length === 0) {
         return (
-            <div className='text-muted-foreground flex h-[400px] flex-col items-center justify-center gap-6 rounded-2xl border border-dashed border-white/10 bg-white/2'>
-                <div className='flex h-24 w-24 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/20'>
+            <div className='fp-surface text-muted-foreground flex h-[400px] flex-col items-center justify-center gap-6 rounded-xl border border-dashed'>
+                <div className='fp-icon-tile flex h-24 w-24 items-center justify-center rounded-2xl'>
                     <Trash2 className='h-10 w-10 opacity-40' />
                 </div>
 
                 <div className='space-y-2 text-center'>
-                    <h3 className='text-xl font-bold text-white/80'>{t('files.trash.empty_title')}</h3>
-                    <p className='mx-auto max-w-[280px] text-sm leading-relaxed text-white/40'>
+                    <h3 className='text-foreground text-xl font-bold'>{t('files.trash.empty_title')}</h3>
+                    <p className='text-muted-foreground mx-auto max-w-[280px] text-sm leading-relaxed'>
                         {t('files.trash.empty')}
                     </p>
                 </div>
@@ -156,9 +156,9 @@ export function TrashList({ entries, loading, selectedIds, onToggle, onToggleAll
     const allSelected = entries.length > 0 && selectedIds.length === entries.length;
 
     return (
-        <div className='overflow-hidden rounded-3xl border border-gray-200 bg-white backdrop-blur-xl dark:border-white/10 dark:bg-white/5'>
+        <div className='fp-surface overflow-hidden rounded-xl border'>
             <div
-                className='text-foreground/60 flex items-center gap-3 border-b border-gray-200 bg-gray-50/50 px-4 py-4 text-[10px] font-bold tracking-[0.2em] uppercase dark:border-white/10 dark:bg-white/5 dark:text-white/40'
+                className='text-muted-foreground border-border/60 flex items-center gap-3 border-b px-4 py-4 text-[10px] font-bold tracking-[0.2em] uppercase'
                 style={{ color: 'hsl(var(--foreground))', opacity: 0.6 }}
             >
                 <div className='flex shrink-0 items-center'>

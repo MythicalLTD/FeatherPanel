@@ -104,7 +104,7 @@ export default function PlayerStatusWidget({ uuidShort, pollingInterval = 30000 
     };
 
     return (
-        <div className='border-border/50 bg-card/50 rounded-xl border p-6 backdrop-blur-xl'>
+        <div className='fp-surface rounded-xl border p-6'>
             {/* Header */}
             <div className='mb-4 flex items-center justify-between'>
                 <h3 className='text-muted-foreground flex items-center gap-2 text-sm font-medium'>

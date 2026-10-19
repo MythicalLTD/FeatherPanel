@@ -284,7 +284,7 @@ export default function ServerSubusersPage() {
 
     if (!isEnabled(settings?.server_allow_subusers)) {
         return (
-            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-3xl border py-24 text-center backdrop-blur-3xl'>
+            <div className='fp-surface flex flex-col items-center justify-center space-y-8 rounded-xl border py-24 text-center'>
                 <div className='relative'>
                     <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
                     <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
@@ -336,7 +336,7 @@ export default function ServerSubusersPage() {
     }
 
     return (
-        <div key={pathname} className='space-y-8 pb-12'>
+        <div key={pathname} className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-users', 'top-of-page')} />
 
             <ServerPageHeader
@@ -635,7 +635,7 @@ export default function ServerSubusersPage() {
                     <DialogDescription>{t('serverSubusers.managePermissionsDescription')}</DialogDescription>
                 </DialogHeader>
                 <div className='space-y-6 pt-4'>
-                    <div className='bg-card/50 border-border/5 flex items-center justify-between rounded-3xl border p-5 backdrop-blur-md'>
+                    <div className='fp-surface flex items-center justify-between rounded-xl border p-5'>
                         <div className='flex items-center gap-4'>
                             <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
                                 <Mail className='text-primary h-5 w-5' />

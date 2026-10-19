@@ -773,7 +773,7 @@ export default function ServerConsolePage() {
     }
 
     return (
-        <div className='space-y-4 pb-6'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-console', 'top-of-page')} />
 
             <ServerPageHeader
@@ -896,7 +896,9 @@ export default function ServerConsolePage() {
                     )}
 
                     {shouldConnectToWings && (
-                        <div className='flex h-[min(70dvh,40rem)] min-h-[22rem] flex-col xl:h-[max(32rem,calc(100dvh-22rem))]'>
+                        // Desktop: the console grows to the bottom of the stats column next to it (at least
+                        // the viewport); phones and tablets keep a fixed, scrollable height.
+                        <div className='flex h-[min(70dvh,40rem)] min-h-[22rem] flex-col xl:h-auto xl:min-h-[max(32rem,calc(100dvh-22rem))] xl:flex-1'>
                             <ServerTerminal
                                 ref={terminalRef}
                                 onSendCommand={sendCommand}

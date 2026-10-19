@@ -144,7 +144,7 @@ const PerformanceChartCard = React.memo(function PerformanceChartCard({
     }, [formatTooltip]);
 
     return (
-        <div className='border-border/50 bg-card/50 min-w-0 rounded-xl border p-4 backdrop-blur-xl sm:p-5'>
+        <div className='fp-surface min-w-0 rounded-xl border p-4 backdrop-blur-xl sm:p-5'>
             <div className='mb-3 flex items-center justify-between gap-2'>
                 <h3 className='text-foreground truncate text-sm font-medium'>{title}</h3>
                 <div className='flex items-center gap-2'>

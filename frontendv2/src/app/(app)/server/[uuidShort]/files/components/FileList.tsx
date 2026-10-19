@@ -92,7 +92,7 @@ export function FileList({
 
     if (loading && files.length === 0) {
         return (
-            <div className='flex h-64 items-center justify-center rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm'>
+            <div className='fp-surface flex h-64 items-center justify-center rounded-xl border'>
                 <Loader2 className='text-primary h-8 w-8 animate-spin' />
             </div>
         );
@@ -100,16 +100,16 @@ export function FileList({
 
     if (files.length === 0) {
         return (
-            <div className='text-muted-foreground flex h-[400px] flex-col items-center justify-center gap-6 rounded-2xl border border-dashed border-white/10 bg-white/2'>
-                <div className='flex h-24 w-24 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/20'>
+            <div className='fp-surface text-muted-foreground flex h-[400px] flex-col items-center justify-center gap-6 rounded-xl border border-dashed'>
+                <div className='fp-icon-tile flex h-24 w-24 items-center justify-center rounded-2xl'>
                     <FolderOpen className='h-10 w-10 opacity-40' />
                 </div>
 
                 <div className='space-y-2 text-center'>
-                    <h3 className='text-xl font-bold text-white/80'>
+                    <h3 className='text-foreground text-xl font-bold'>
                         {isSearching ? t('files.list.empty_search_title') : t('files.list.empty_title')}
                     </h3>
-                    <p className='mx-auto max-w-[280px] text-sm leading-relaxed text-white/40'>
+                    <p className='text-muted-foreground mx-auto max-w-[280px] text-sm leading-relaxed'>
                         {isSearching ? t('files.list.empty_search_description') : t('files.list.empty_description')}
                     </p>
                 </div>
@@ -122,8 +122,8 @@ export function FileList({
     const allSelected = selectableNames.length > 0 && selectableNames.every((n) => selectedFiles.includes(n));
 
     return (
-        <div className='overflow-hidden rounded-xl border border-black/5 bg-white/80 backdrop-blur-xl dark:border-white/10 dark:bg-white/5'>
-            <div className='text-muted-foreground flex items-center gap-3 border-b border-gray-200 px-4 py-4 text-[10px] font-bold tracking-[0.2em] uppercase dark:border-white/10'>
+        <div className='fp-surface overflow-hidden rounded-xl border'>
+            <div className='text-muted-foreground border-border/60 flex items-center gap-3 border-b px-4 py-4 text-[10px] font-bold tracking-[0.2em] uppercase'>
                 <div className='flex shrink-0 items-center'>
                     <Checkbox
                         checked={allSelected}

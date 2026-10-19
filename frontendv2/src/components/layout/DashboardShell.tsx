@@ -95,9 +95,10 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     const useFullBleedLayout = isFullWidthMode || isImmersiveRoute;
 
     const pathSegments = (pathname || '').split('/').filter(Boolean);
-    const isServerConsoleHome = pathSegments.length === 2 && pathSegments[0] === 'server' && Boolean(pathSegments[1]);
-    const isWebSpaceConsoleHome =
-        pathSegments.length === 2 && pathSegments[0] === 'webspace' && Boolean(pathSegments[1]);
+    // Every page of one server (or WebSpace) uses the console's width, so switching tabs never
+    // changes the page width.
+    const isServerOrWebSpacePage =
+        pathSegments.length >= 2 && (pathSegments[0] === 'server' || pathSegments[0] === 'webspace');
     const isTicketDetailPage =
         pathSegments.length === 3 &&
         (pathSegments[0] === 'admin' || pathSegments[0] === 'dashboard') &&
@@ -174,7 +175,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                                                 'flex w-full flex-col',
                                                 useFullBleedLayout ? 'h-full min-h-0 flex-1' : 'min-h-full flex-1',
                                                 !useFullBleedLayout &&
-                                                    (isServerConsoleHome || isWebSpaceConsoleHome
+                                                    (isServerOrWebSpacePage
                                                         ? 'mx-auto max-w-[min(100rem,calc(100vw-1.5rem))] sm:max-w-[min(100rem,calc(100vw-2rem))]'
                                                         : isTicketDetailPage
                                                           ? 'mx-auto max-w-[min(112rem,calc(100vw-1.5rem))] sm:max-w-[min(112rem,calc(100vw-2rem))]'

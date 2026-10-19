@@ -416,7 +416,7 @@ export default function ServerBackupsPage() {
     }
 
     return (
-        <div className='space-y-8 pb-12'>
+        <div className='space-y-6 pb-12'>
             <ServerPageHeader
                 title={t('serverBackups.title')}
                 description={
@@ -465,7 +465,7 @@ export default function ServerBackupsPage() {
                 onValueChange={(value) => setActiveTab(value === 'databases' ? 'databases' : 'files')}
                 className='space-y-6'
             >
-                <TabsList className='bg-card/50 border-border/50 grid h-auto w-full grid-cols-2 gap-1 rounded-2xl border p-1.5'>
+                <TabsList className='fp-surface grid h-auto w-full grid-cols-2 gap-1 rounded-xl border p-1.5'>
                     <TabsTrigger
                         value='files'
                         className='data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold'
@@ -566,7 +566,7 @@ export default function ServerBackupsPage() {
                     </div>
 
                     {canDelete && backups.length > 0 && (
-                        <div className='border-border bg-card/50 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3'>
+                        <div className='fp-surface flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3'>
                             <div className='flex items-center gap-3'>
                                 <Checkbox
                                     checked={allDeletableSelected}
@@ -903,7 +903,7 @@ export default function ServerBackupsPage() {
 
                     <form onSubmit={handleRestoreBackup} className='space-y-6' data-fp-save-shortcut>
                         <div
-                            className='group mx-1 flex cursor-pointer items-center gap-4 rounded-3xl border border-white/5 bg-black/20 p-5 transition-all hover:bg-black/30'
+                            className='fp-surface fp-surface-interactive group mx-1 flex cursor-pointer items-center gap-4 rounded-xl border p-5'
                             onClick={() => setTruncateDirectory(!truncateDirectory)}
                         >
                             <Checkbox

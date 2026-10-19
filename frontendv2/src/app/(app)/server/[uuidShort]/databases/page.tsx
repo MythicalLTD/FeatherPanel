@@ -467,7 +467,7 @@ export default function ServerDatabasesPage() {
     const showHeaderCreateAction = canCreate && databases.length > 0;
 
     return (
-        <div key={pathname} className='space-y-8 pb-12'>
+        <div key={pathname} className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-databases', 'top-of-page')} />
 
             <ServerPageHeader
@@ -558,7 +558,7 @@ export default function ServerDatabasesPage() {
                 </div>
 
                 {canDelete && databases.length > 0 && (
-                    <div className='border-border bg-card/50 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3'>
+                    <div className='fp-surface flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3'>
                         <div className='flex items-center gap-3'>
                             <Checkbox
                                 checked={allSelected}
@@ -872,7 +872,7 @@ export default function ServerDatabasesPage() {
                     </DialogHeader>
 
                     <div
-                        className='bg-card/50 border-border/50 group hover:bg-accent/50 mx-1 flex cursor-pointer items-center gap-4 rounded-3xl border p-5 backdrop-blur-xl transition-all'
+                        className='fp-surface fp-surface-interactive group mx-1 flex cursor-pointer items-center gap-4 rounded-xl border p-5'
                         onClick={() => setRememberSensitiveChoice(!rememberSensitiveChoice)}
                     >
                         <Checkbox

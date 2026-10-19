@@ -222,7 +222,7 @@ export default function NewLifecycleHookStepPage() {
 
     if (!featureEnabled) {
         return (
-            <div className='space-y-8 pb-12'>
+            <div className='space-y-6 pb-12'>
                 <ServerPageHeader
                     title={t('lifecycleHooks.stepNew.title', { hookType: hookLabels[hookType] })}
                     description={stepDescription}

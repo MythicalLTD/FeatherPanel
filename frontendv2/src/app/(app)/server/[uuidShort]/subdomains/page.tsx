@@ -156,7 +156,7 @@ export default function ServerSubdomainsPage() {
     const showHeaderCreateAction = !limitReached && subdomains.length > 0;
 
     return (
-        <div key={pathname} className='space-y-8 pb-12'>
+        <div key={pathname} className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-subdomains', 'top-of-page')} />
 
             <ServerPageHeader

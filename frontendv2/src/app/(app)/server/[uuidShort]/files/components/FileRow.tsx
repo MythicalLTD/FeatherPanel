@@ -437,7 +437,7 @@ export function FileRow({
             onDrop={handleDrop}
             onContextMenu={handleContextMenu}
             className={cn(
-                'group flex cursor-pointer items-center gap-3 border-b border-gray-200 bg-transparent px-4 py-3 transition-all select-none hover:bg-gray-50 active:scale-[0.995] dark:border-white/5 dark:hover:bg-white/5',
+                'group border-border/40 hover:bg-muted/40 flex cursor-pointer items-center gap-3 border-b bg-transparent px-4 py-3 transition-all select-none active:scale-[0.995]',
                 selected && 'bg-primary/5 dark:bg-primary/10',
                 isAnchor && 'ring-primary/40 ring-1 ring-inset',
                 isDragging && 'opacity-40',
@@ -456,7 +456,7 @@ export function FileRow({
 
             <div
                 className={cn(
-                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/5 transition-all group-hover:scale-110',
+                    'border-border/40 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-all group-hover:scale-110',
                     virtualTrash
                         ? 'border-primary/20 bg-primary/10 text-primary'
                         : file.isFile

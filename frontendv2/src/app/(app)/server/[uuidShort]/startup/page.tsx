@@ -369,7 +369,7 @@ export default function ServerStartupPage() {
 
     if (!canRead) {
         return (
-            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-3xl border py-24 text-center backdrop-blur-3xl'>
+            <div className='fp-surface flex flex-col items-center justify-center space-y-8 rounded-xl border py-24 text-center'>
                 <div className='relative'>
                     <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
                     <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
@@ -406,7 +406,7 @@ export default function ServerStartupPage() {
     }
 
     return (
-        <div key={pathname} className='mx-auto max-w-6xl space-y-8 pb-16 font-sans'>
+        <div key={pathname} className='space-y-6 pb-12 font-sans'>
             <WidgetRenderer widgets={getWidgets('server-startup', 'top-of-page')} />
 
             <ServerPageHeader

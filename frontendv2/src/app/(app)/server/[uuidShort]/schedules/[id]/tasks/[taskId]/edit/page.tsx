@@ -234,7 +234,7 @@ export default function EditTaskPage() {
     }
 
     return (
-        <div className='mx-auto max-w-4xl space-y-8 pb-16'>
+        <div className='space-y-6 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-tasks-edit', 'top-of-page')} />
             <ServerPageHeader
                 title={t('serverTasks.editTask')}
