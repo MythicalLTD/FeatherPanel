@@ -139,7 +139,7 @@ export function BackupTaskFields({ fields, setFields, databases, disabled = fals
                                         return (
                                             <label
                                                 key={db.id}
-                                                className='flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2 hover:bg-white/5'
+                                                className='hover:bg-muted/60 flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2'
                                             >
                                                 <Checkbox
                                                     checked={checked}

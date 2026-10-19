@@ -17,13 +17,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { AnnouncementBanner } from '@/components/dashboard/AnnouncementBanner';
 import { useServer } from '@/contexts/ServerContext';
+import type { Notification } from '@/types/notification';
 
-export function ServerAnnouncementBanner() {
+export function ServerAnnouncementBanner({ initialNotifications }: { initialNotifications?: Notification[] | null }) {
     const { server } = useServer();
 
     if (!server?.id) {
         return null;
     }
 
-    return <AnnouncementBanner serverId={server.id} />;
+    return <AnnouncementBanner serverId={server.id} initialNotifications={initialNotifications} />;
 }

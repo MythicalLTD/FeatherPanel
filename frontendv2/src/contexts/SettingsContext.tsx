@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from 'react';
 import type { AppSettings, CoreInfo } from '@/types/settings';
 import { settingsApi } from '@/lib/settings-api';
 import { getFeatherpanelApiErrorMessage } from '@/lib/api';
@@ -98,19 +98,12 @@ export function SettingsProvider({ children, initialSettings = null, initialCore
         await fetchSettings();
     }, [fetchSettings]);
 
-    return (
-        <SettingsContext.Provider
-            value={{
-                settings,
-                core,
-                loading,
-                error,
-                refetch,
-            }}
-        >
-            {children}
-        </SettingsContext.Provider>
+    const contextValue = useMemo(
+        () => ({ settings, core, loading, error, refetch }),
+        [settings, core, loading, error, refetch],
     );
+
+    return <SettingsContext.Provider value={contextValue}>{children}</SettingsContext.Provider>;
 }
 
 export function useSettings() {

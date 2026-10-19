@@ -666,7 +666,7 @@ export default function ServerLifecycleHooksPage() {
                                 badges={[
                                     {
                                         label: `#${step.sequence_id}`,
-                                        className: 'bg-white/5 border-white/10 text-muted-foreground',
+                                        className: 'bg-muted/40 border-border/60 text-muted-foreground',
                                     },
                                     ...(step.continue_on_failure === 1
                                         ? [

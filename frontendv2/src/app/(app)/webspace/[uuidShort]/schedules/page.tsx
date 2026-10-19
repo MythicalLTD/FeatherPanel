@@ -205,7 +205,7 @@ export default function WebSpaceSchedulesPage() {
                                     title={schedule.name}
                                     description={
                                         <div className='text-muted-foreground flex flex-wrap items-center gap-3 text-xs'>
-                                            <span className='flex items-center gap-1.5 rounded-lg bg-white/5 px-2 py-1 font-mono'>
+                                            <span className='bg-muted/40 flex items-center gap-1.5 rounded-lg px-2 py-1 font-mono'>
                                                 <Clock className='h-3 w-3' />
                                                 {formatCron(schedule)}
                                             </span>
@@ -237,7 +237,7 @@ export default function WebSpaceSchedulesPage() {
                                                 return (
                                                     <span
                                                         key={`${schedule.id}-task-${task.id ?? taskIndex}`}
-                                                        className='rounded-lg bg-white/5 px-2 py-1 font-mono'
+                                                        className='bg-muted/40 rounded-lg px-2 py-1 font-mono'
                                                     >
                                                         {label}
                                                     </span>

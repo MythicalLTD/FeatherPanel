@@ -16,7 +16,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { reportPanelInteraction } from '@/lib/panel-analytics';
-import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback, useMemo } from 'react';
+import { isDateFnsLocaleReady, preloadDateFnsLocale } from '@/lib/dateUtils';
 import { isCloudflareChallengeText } from '@/lib/cloudflare-challenge';
 import { useSettings } from '@/contexts/SettingsContext';
 import { writeLocaleCookie } from '@/lib/locale-cookie';
@@ -133,6 +134,19 @@ export function TranslationProvider({ children, initialLocale, initialTranslatio
     ]);
     const [loading, setLoading] = useState(false);
     const [ready, setReady] = useState(() => Boolean(ssrTranslations));
+    // Bumped when a lazily loaded date-fns locale arrives, so date labels re-render in it.
+    const [dateLocaleRevision, setDateLocaleRevision] = useState(0);
+
+    useEffect(() => {
+        if (isDateFnsLocaleReady(locale)) return;
+        let alive = true;
+        void preloadDateFnsLocale(locale).then(() => {
+            if (alive) setDateLocaleRevision((r) => r + 1);
+        });
+        return () => {
+            alive = false;
+        };
+    }, [locale]);
 
     const fetchJsonObject = useCallback(async (url: string): Promise<Record<string, unknown> | null> => {
         const response = await fetch(url, { credentials: 'same-origin' });
@@ -313,19 +327,22 @@ export function TranslationProvider({ children, initialLocale, initialTranslatio
         writeLocaleCookie(adminLocaleDefault);
     }, [settings, isLocaleLocked, adminLocaleDefault, locale]);
 
-    const setLocale = async (newLocale: string) => {
-        if (isLocaleLocked) return;
+    const setLocale = useCallback(
+        async (newLocale: string) => {
+            if (isLocaleLocked) return;
 
-        const normalized = normalizeLocaleCode(newLocale) || DEFAULT_LOCALE;
-        if (normalized !== locale) reportPanelInteraction('panel.preference.change', 'language');
-        setLoading(true);
-        setLocaleState(normalized);
-        localStorage.setItem('locale', normalized);
-        localStorage.setItem(LOCALE_USER_OVERRIDE_KEY, 'true');
-        writeLocaleCookie(normalized);
-        await loadFullTranslations(normalized);
-        setLoading(false);
-    };
+            const normalized = normalizeLocaleCode(newLocale) || DEFAULT_LOCALE;
+            if (normalized !== locale) reportPanelInteraction('panel.preference.change', 'language');
+            setLoading(true);
+            setLocaleState(normalized);
+            localStorage.setItem('locale', normalized);
+            localStorage.setItem(LOCALE_USER_OVERRIDE_KEY, 'true');
+            writeLocaleCookie(normalized);
+            await loadFullTranslations(normalized);
+            setLoading(false);
+        },
+        [isLocaleLocked, locale, loadFullTranslations],
+    );
 
     const t = useCallback(
         (key: string, params?: Record<string, string>): string => {
@@ -358,22 +375,14 @@ export function TranslationProvider({ children, initialLocale, initialTranslatio
         [translations],
     );
 
-    return (
-        <TranslationContext.Provider
-            value={{
-                locale,
-                translations,
-                availableLanguages,
-                setLocale,
-                t,
-                loading,
-                ready,
-                isLocaleLocked,
-            }}
-        >
-            {children}
-        </TranslationContext.Provider>
+    const contextValue = useMemo(
+        () => ({ locale, translations, availableLanguages, setLocale, t, loading, ready, isLocaleLocked }),
+        // dateLocaleRevision: re-render consumers once a lazy date-fns locale has loaded.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [locale, translations, availableLanguages, setLocale, t, loading, ready, isLocaleLocked, dateLocaleRevision],
     );
+
+    return <TranslationContext.Provider value={contextValue}>{children}</TranslationContext.Provider>;
 }
 
 export function useTranslation() {

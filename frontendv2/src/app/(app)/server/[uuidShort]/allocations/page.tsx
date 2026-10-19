@@ -509,7 +509,7 @@ export default function ServerAllocationsPage() {
 
                                         {!allocation.is_primary && (canUpdate || canDelete) && (
                                             <DropdownMenu>
-                                                <DropdownMenuTrigger className='bg-card/40 group-hover:bg-card/60 flex h-12 w-12 items-center justify-center rounded-xl border border-white/5 transition-all outline-none hover:bg-white/10'>
+                                                <DropdownMenuTrigger className='bg-card/40 group-hover:bg-card/60 border-border/50 hover:bg-muted/70 flex h-12 w-12 items-center justify-center rounded-xl border transition-all outline-none'>
                                                     <MoreVertical className='text-muted-foreground group-hover:text-primary h-6 w-6 transition-colors' />
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent
@@ -561,7 +561,7 @@ export default function ServerAllocationsPage() {
                 <WidgetRenderer widgets={getWidgets('server-allocations', 'allocation-bottom')} />
 
                 <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                    <DialogContent className='bg-card/90 max-w-md overflow-hidden border-white/10 p-0 backdrop-blur-2xl sm:rounded-3xl'>
+                    <DialogContent className='max-w-md overflow-hidden p-0'>
                         <div className='space-y-6 p-6'>
                             <DialogHeader>
                                 <div className='flex items-center gap-4'>
@@ -612,7 +612,7 @@ export default function ServerAllocationsPage() {
                 </Dialog>
 
                 <Dialog open={primaryDialogOpen} onOpenChange={setPrimaryDialogOpen}>
-                    <DialogContent className='bg-card/90 max-w-md overflow-hidden border-white/10 p-0 backdrop-blur-2xl sm:rounded-3xl'>
+                    <DialogContent className='max-w-md overflow-hidden p-0'>
                         <div className='space-y-6 p-6'>
                             <DialogHeader>
                                 <div className='flex items-center gap-4'>
@@ -663,7 +663,7 @@ export default function ServerAllocationsPage() {
                 </Dialog>
 
                 <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
-                    <DialogContent className='bg-card/90 max-w-lg overflow-hidden border-white/10 p-0 backdrop-blur-2xl sm:rounded-3xl'>
+                    <DialogContent className='max-w-lg overflow-hidden p-0'>
                         <div className='space-y-6 p-6'>
                             <DialogHeader>
                                 <div className='flex items-center gap-4'>
@@ -687,7 +687,7 @@ export default function ServerAllocationsPage() {
                                         <Loader2 className='text-primary h-8 w-8 animate-spin opacity-50' />
                                     </div>
                                 ) : availableAllocations.length === 0 ? (
-                                    <div className='flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-white/10 py-12 text-center'>
+                                    <div className='border-border/60 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed py-12 text-center'>
                                         <p className='text-muted-foreground font-medium'>
                                             {t('serverAllocations.noAvailableAllocations')}
                                         </p>
@@ -710,7 +710,7 @@ export default function ServerAllocationsPage() {
                                                         'flex h-10 w-10 items-center justify-center rounded-xl border transition-colors',
                                                         selectedAssignId === item.id
                                                             ? 'bg-primary/20 border-primary/30'
-                                                            : 'border-white/5 bg-white/5',
+                                                            : 'border-border/50 bg-muted/40',
                                                     )}
                                                 >
                                                     <Network

@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { PageHeader } from '@/components/featherui/PageHeader';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -275,33 +276,36 @@ export default function TicketsPage() {
     return (
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('dashboard-tickets', 'top-of-page')} />
-            <div className='flex flex-col justify-between gap-4 sm:flex-row sm:items-center'>
-                <div>
-                    <h1 className='text-3xl font-bold tracking-tight'>{t('tickets.title')}</h1>
-                    <p className='text-muted-foreground'>
-                        {isAdminView ? t('tickets.adminViewAndManage') : t('tickets.viewAndManage')}
-                    </p>
-                    {isAdminView && openTicketsCount > 0 && (
-                        <div className='mt-2 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-300'>
-                            <span className='h-2 w-2 animate-pulse rounded-full bg-amber-500' />
-                            {t('tickets.adminOpenTicketsInline').replace('{count}', String(openTicketsCount))}
-                        </div>
-                    )}
-                    {unreadTicketsCount > 0 && (
-                        <div className='mt-2 inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-600 dark:text-red-300'>
-                            <span className='h-2 w-2 animate-pulse rounded-full bg-red-500' />
-                            {unreadTicketsCount} ticket{unreadTicketsCount > 1 ? 's' : ''} with new replies (
-                            {unreadMessagesCount})
-                        </div>
-                    )}
-                </div>
-                <Link href='/dashboard/tickets/create'>
-                    <Button>
-                        <Plus className='mr-2 h-4 w-4' />
-                        {t('tickets.createTicket')}
-                    </Button>
-                </Link>
-            </div>
+            <PageHeader
+                title={t('tickets.title')}
+                icon={TicketIcon}
+                description={
+                    <>
+                        <p>{isAdminView ? t('tickets.adminViewAndManage') : t('tickets.viewAndManage')}</p>
+                        {isAdminView && openTicketsCount > 0 && (
+                            <div className='mt-2 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-300'>
+                                <span className='h-2 w-2 animate-pulse rounded-full bg-amber-500' />
+                                {t('tickets.adminOpenTicketsInline').replace('{count}', String(openTicketsCount))}
+                            </div>
+                        )}
+                        {unreadTicketsCount > 0 && (
+                            <div className='mt-2 inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-600 dark:text-red-300'>
+                                <span className='h-2 w-2 animate-pulse rounded-full bg-red-500' />
+                                {unreadTicketsCount} ticket{unreadTicketsCount > 1 ? 's' : ''} with new replies (
+                                {unreadMessagesCount})
+                            </div>
+                        )}
+                    </>
+                }
+                actions={
+                    <Link href='/dashboard/tickets/create'>
+                        <Button>
+                            <Plus className='mr-2 h-4 w-4' />
+                            {t('tickets.createTicket')}
+                        </Button>
+                    </Link>
+                }
+            />
             <WidgetRenderer widgets={getWidgets('dashboard-tickets', 'after-header')} />
 
             {canViewAllTickets && (
@@ -329,7 +333,7 @@ export default function TicketsPage() {
                 </div>
             )}
 
-            <div className='bg-card/50 border-border/50 rounded-xl border p-1 backdrop-blur-xl'>
+            <div className='fp-surface rounded-xl border p-1'>
                 <div className='flex flex-col gap-4 p-4 md:flex-row'>
                     <div className='flex w-full flex-1 flex-col gap-4 md:flex-row'>
                         <div className='z-20 w-full md:w-56'>
@@ -376,7 +380,7 @@ export default function TicketsPage() {
             {loading ? (
                 <div className='space-y-4'>
                     {[1, 2, 3].map((i) => (
-                        <div key={i} className='bg-card/20 h-24 animate-pulse rounded-xl border border-white/5' />
+                        <div key={i} className='bg-card/20 border-border/50 h-24 animate-pulse rounded-xl border' />
                     ))}
                 </div>
             ) : tickets.length === 0 ? (
@@ -397,7 +401,7 @@ export default function TicketsPage() {
                     </Link>
                 </div>
             ) : (
-                <div className='bg-card/50 border-border/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
+                <div className='fp-surface overflow-hidden rounded-xl border'>
                     <div className='divide-border/50 divide-y'>
                         {tickets.map((ticket) => (
                             <div

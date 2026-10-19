@@ -890,6 +890,14 @@ html.fp-privacy [data-fp-sensitive]:not(:focus) {
     color: hsl(var(--primary));
 }
 
+/* A surface inside another surface already sits on blurred glass: a second backdrop blur costs a
+   full compositing pass per card and is invisible, so only the outermost layer blurs. */
+.fp-surface :is(.fp-surface, .fp-chrome-surface),
+.fp-chrome-surface .fp-surface {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
 @media (prefers-reduced-transparency: reduce) {
     :root {
         --fp-surface-alpha: 0.97;

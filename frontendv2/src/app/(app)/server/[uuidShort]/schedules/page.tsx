@@ -418,7 +418,7 @@ export default function ServerSchedulesPage() {
                                 description={
                                     <div className='flex flex-col gap-1'>
                                         <div className='text-muted-foreground flex flex-wrap items-center gap-3 text-xs font-medium'>
-                                            <span className='flex items-center gap-1.5 rounded-lg bg-white/5 px-2 py-1 font-mono'>
+                                            <span className='bg-muted/40 flex items-center gap-1.5 rounded-lg px-2 py-1 font-mono'>
                                                 <Clock className='h-3 w-3' />
                                                 {formatCronExpression(schedule)}
                                             </span>
@@ -530,7 +530,7 @@ export default function ServerSchedulesPage() {
                         ))}
                     </div>
                     {pagination.total > pagination.per_page && (
-                        <div className='flex items-center justify-between gap-3 border-t border-white/5 pt-4'>
+                        <div className='border-border/50 flex items-center justify-between gap-3 border-t pt-4'>
                             <div className='text-muted-foreground text-xs'>
                                 {t('serverSchedules.showing', {
                                     from: String(pagination.from),
@@ -622,7 +622,7 @@ export default function ServerSchedulesPage() {
                 </DialogHeader>
                 <div className='flex flex-col gap-4 pt-2'>
                     <div
-                        className='flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/10 bg-white/5 p-6 transition-colors hover:border-white/20'
+                        className='border-border/60 bg-muted/40 hover:border-border flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-6 transition-colors'
                         onClick={() => importFileRef.current?.click()}
                     >
                         <Upload className='text-muted-foreground h-8 w-8' />
@@ -636,12 +636,12 @@ export default function ServerSchedulesPage() {
                         />
                     </div>
                     <div className='text-muted-foreground flex items-center gap-3 text-xs'>
-                        <div className='h-px flex-1 bg-white/10' />
+                        <div className='bg-border h-px flex-1' />
                         <span>{t('serverSchedules.orPasteJson')}</span>
-                        <div className='h-px flex-1 bg-white/10' />
+                        <div className='bg-border h-px flex-1' />
                     </div>
                     <textarea
-                        className='text-foreground placeholder:text-muted-foreground focus:ring-primary min-h-40 w-full resize-none rounded-xl border border-white/10 bg-white/5 p-3 font-mono text-xs focus:ring-1 focus:outline-none'
+                        className='text-foreground placeholder:text-muted-foreground focus:ring-primary border-border/60 bg-muted/40 min-h-40 w-full resize-none rounded-xl border p-3 font-mono text-xs focus:ring-1 focus:outline-none'
                         placeholder='{"name": "My Schedule", "cron_minute": "0", ...}'
                         value={importJson}
                         onChange={(e) => setImportJson(e.target.value)}

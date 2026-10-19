@@ -143,7 +143,7 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
 
             <div
                 className={cn(
-                    'border-border/50 bg-card/60 flex flex-wrap items-center gap-3 rounded-2xl border p-3 shadow-[0_10px_30px_-24px_rgba(0,0,0,0.7)] backdrop-blur-xl sm:gap-4 sm:p-4',
+                    'fp-surface flex flex-wrap items-center gap-3 rounded-xl border p-3 sm:gap-4 sm:p-4',
                     isPublicKnowledgebasePage &&
                         'border-border/60 from-card via-card/90 to-primary/5 bg-linear-to-b shadow-[0_20px_60px_-30px_rgba(0,0,0,0.65)]',
                 )}
@@ -169,7 +169,7 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'after-header')} />
 
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'before-article-content')} />
-            <div className='bg-card/50 text-card-foreground border-border/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
+            <div className='fp-surface text-card-foreground overflow-hidden rounded-xl border'>
                 <div className='p-6 sm:p-8'>
                     {/* Use semantic colors only prose-blue + dark:prose-invert can yield light headings on light cards */}
                     <div
@@ -335,7 +335,7 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                                 <a
                                     key={attachment.id}
                                     href={attachment.url}
-                                    className='border-border/50 bg-card/50 hover:border-primary/30 group flex items-center justify-between rounded-xl border p-4 backdrop-blur-xl transition-all hover:bg-white/2'
+                                    className='fp-surface fp-surface-interactive group flex items-center justify-between rounded-xl border p-4 transition-all'
                                 >
                                     <div className='flex min-w-0 items-center gap-4'>
                                         <div className='bg-primary/5 text-primary rounded-lg p-3 transition-transform group-hover:scale-110'>

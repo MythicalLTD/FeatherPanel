@@ -543,7 +543,7 @@ export default function WebSpaceDatabasesPage() {
                             </DialogDescription>
                         </DialogHeader>
                         <div
-                            className='bg-card/50 border-border/50 group hover:bg-accent/50 mx-1 flex cursor-pointer items-center gap-4 rounded-3xl border p-5 backdrop-blur-xl transition-all'
+                            className='fp-surface group hover:bg-accent/50 mx-1 flex cursor-pointer items-center gap-4 rounded-xl border p-5 transition-all'
                             onClick={() => setRememberSensitiveChoice(!rememberSensitiveChoice)}
                         >
                             <Checkbox
@@ -631,7 +631,7 @@ export default function WebSpaceDatabasesPage() {
                                                     <Button
                                                         variant='glass'
                                                         size='sm'
-                                                        className='absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 bg-white/10 p-0 opacity-0 transition-opacity group-hover:opacity-100'
+                                                        className='bg-muted/60 absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 p-0 opacity-0 transition-opacity group-hover:opacity-100'
                                                         onClick={() => copyToClipboard(item.value || '')}
                                                     >
                                                         <Copy className='h-3.5 w-3.5' />
@@ -660,7 +660,7 @@ export default function WebSpaceDatabasesPage() {
                                                 <Button
                                                     variant='glass'
                                                     size='sm'
-                                                    className='absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 bg-white/10 p-0 opacity-0 transition-opacity group-hover:opacity-100'
+                                                    className='bg-muted/60 absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 p-0 opacity-0 transition-opacity group-hover:opacity-100'
                                                     onClick={() => copyToClipboard(viewingDatabase.username)}
                                                 >
                                                     <Copy className='h-3.5 w-3.5' />
@@ -696,7 +696,7 @@ export default function WebSpaceDatabasesPage() {
                                                         <Button
                                                             variant='glass'
                                                             size='sm'
-                                                            className='absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 bg-white/10 p-0 opacity-0 transition-opacity group-hover:opacity-100'
+                                                            className='bg-muted/60 absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 p-0 opacity-0 transition-opacity group-hover:opacity-100'
                                                             onClick={() =>
                                                                 copyToClipboard(viewingDatabase.password || '')
                                                             }

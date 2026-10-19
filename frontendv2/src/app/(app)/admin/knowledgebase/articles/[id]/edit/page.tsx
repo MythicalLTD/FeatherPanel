@@ -937,7 +937,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
             </div>
 
             <Dialog open={tagsDialogOpen} onOpenChange={setTagsDialogOpen}>
-                <DialogContent className='rounded-3xl sm:max-w-[425px]'>
+                <DialogContent className='sm:max-w-[425px]'>
                     <DialogHeader>
                         <DialogTitle>{t('admin.knowledgebase.edit.tags.add_dialog_title')}</DialogTitle>
                         <DialogDescription>

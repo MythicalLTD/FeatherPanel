@@ -310,7 +310,7 @@ export default function VdsSubusersPage() {
                                         variant='ghost'
                                         size='sm'
                                         onClick={() => openPermissions(sub)}
-                                        className='h-8 rounded-lg px-3 text-xs hover:bg-white/10'
+                                        className='hover:bg-muted/70 h-8 rounded-lg px-3 text-xs'
                                     >
                                         <Shield className='mr-1.5 h-3.5 w-3.5' />
                                         {t('ui.vds.users.permissions')}

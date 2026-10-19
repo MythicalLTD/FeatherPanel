@@ -109,7 +109,7 @@ export function WebSpaceHeader({
     const isRunningStatus = (value: string) => value === 'running' || value === 'starting';
 
     return (
-        <div className='border-border/50 bg-card/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
+        <div className='fp-surface overflow-hidden rounded-xl border'>
             <div className='flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5'>
                 <div className='min-w-0 space-y-2'>
                     <h1 className='truncate text-xl font-bold tracking-tight sm:text-2xl md:text-3xl'>{name}</h1>

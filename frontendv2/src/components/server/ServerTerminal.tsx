@@ -349,10 +349,7 @@ function FilterSettingsPanel({
             ) : (
                 <div className='custom-scrollbar max-h-[min(24rem,55dvh)] space-y-3 overflow-y-auto pr-1 sm:max-h-72'>
                     {filters.map((rule) => (
-                        <div
-                            key={rule.id}
-                            className='border-border/50 bg-card/50 space-y-2.5 rounded-xl border p-4 backdrop-blur-sm'
-                        >
+                        <div key={rule.id} className='fp-surface space-y-2.5 rounded-xl border p-4'>
                             {rule.presetId && (
                                 <div className='flex flex-wrap items-center gap-2'>
                                     <span className='bg-primary/12 text-primary inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase'>

@@ -569,7 +569,7 @@ export default function VdsActivitiesPage() {
                                         <DialogTitle className='text-4xl leading-none font-black tracking-tighter uppercase'>
                                             {formatEvent(selectedItem.event)}
                                         </DialogTitle>
-                                        <span className='rounded-full border border-white/5 bg-white/10 px-4 py-1.5 text-xs font-black tracking-[0.2em] uppercase opacity-40'>
+                                        <span className='border-border/50 bg-muted/60 rounded-full border px-4 py-1.5 text-xs font-black tracking-[0.2em] uppercase opacity-40'>
                                             #{selectedItem.id}
                                         </span>
                                     </div>
@@ -585,14 +585,14 @@ export default function VdsActivitiesPage() {
 
                         <div className='grid grid-cols-1 gap-8 xl:grid-cols-2'>
                             <div className='space-y-6'>
-                                <div className='flex items-center justify-between border-b border-white/5 pb-4'>
+                                <div className='border-border/50 flex items-center justify-between border-b pb-4'>
                                     <h3 className='text-primary flex items-center gap-3 text-xs font-black tracking-[0.3em] uppercase'>
                                         <div className='bg-primary h-4 w-1.5 rounded-full' />
                                         {t('ui.vds.activities.metadata')}
                                     </h3>
                                 </div>
                                 <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
-                                    <div className='flex shrink-0 flex-col gap-2 rounded-3xl border border-white/5 bg-white/5 p-5'>
+                                    <div className='border-border/50 bg-muted/40 flex shrink-0 flex-col gap-2 rounded-3xl border p-5'>
                                         <span className='text-primary/50 text-[10px] font-black tracking-widest uppercase'>
                                             {t('ui.vds.activities.user')}
                                         </span>
@@ -600,7 +600,7 @@ export default function VdsActivitiesPage() {
                                             {selectedItem.user?.username || t('serverActivities.details.system')}
                                         </span>
                                     </div>
-                                    <div className='flex shrink-0 flex-col gap-2 rounded-3xl border border-white/5 bg-white/5 p-5'>
+                                    <div className='border-border/50 bg-muted/40 flex shrink-0 flex-col gap-2 rounded-3xl border p-5'>
                                         <span className='text-primary/50 text-[10px] font-black tracking-widest uppercase'>
                                             {t('ui.vds.activities.timestamp')}
                                         </span>
@@ -611,7 +611,7 @@ export default function VdsActivitiesPage() {
                                         </span>
                                     </div>
                                     {selectedItem.ip && (
-                                        <div className='col-span-2 flex flex-col gap-2 rounded-3xl border border-white/5 bg-white/5 p-5'>
+                                        <div className='border-border/50 bg-muted/40 col-span-2 flex flex-col gap-2 rounded-3xl border p-5'>
                                             <span className='text-primary/50 text-[10px] font-black tracking-widest uppercase'>
                                                 {t('ui.vds.activities.iPAddress')}
                                             </span>
@@ -624,7 +624,7 @@ export default function VdsActivitiesPage() {
                                         Object.entries(selectedItem.metadata).map(([k, v]) => (
                                             <div
                                                 key={k}
-                                                className='group flex flex-col gap-2 rounded-3xl border border-white/5 bg-white/5 p-5 transition-all hover:bg-white/10'
+                                                className='group border-border/50 bg-muted/40 hover:bg-muted/70 flex flex-col gap-2 rounded-3xl border p-5 transition-all'
                                             >
                                                 <span className='text-primary/50 decoration-primary/20 text-[10px] font-black tracking-widest uppercase underline decoration-2 underline-offset-4'>
                                                     {k}
@@ -641,7 +641,7 @@ export default function VdsActivitiesPage() {
                             </div>
 
                             <div className='space-y-6'>
-                                <div className='flex items-center justify-between border-b border-white/5 pb-4'>
+                                <div className='border-border/50 flex items-center justify-between border-b pb-4'>
                                     <h3 className='text-primary flex items-center gap-3 text-xs font-black tracking-[0.3em] uppercase'>
                                         <div className='bg-primary h-4 w-1.5 rounded-full' />
                                         {t('ui.vds.activities.rawPayload')}
@@ -649,7 +649,7 @@ export default function VdsActivitiesPage() {
                                     <Button
                                         variant='glass'
                                         size='sm'
-                                        className='h-8 border-white/5 px-4 font-black tracking-wider uppercase opacity-40 hover:opacity-100'
+                                        className='border-border/50 h-8 px-4 font-black tracking-wider uppercase opacity-40 hover:opacity-100'
                                         onClick={() => {
                                             navigator.clipboard.writeText(rawJson);
                                             toast.success(t('vds.activities.payload_copied'));
@@ -665,7 +665,7 @@ export default function VdsActivitiesPage() {
                             </div>
                         </div>
 
-                        <DialogFooter className='mt-4 flex items-center justify-end border-t border-white/5 pt-8'>
+                        <DialogFooter className='border-border/50 mt-4 flex items-center justify-end border-t pt-8'>
                             <Button
                                 size='default'
                                 className='h-14 rounded-2xl px-12 font-black tracking-[0.2em] uppercase'

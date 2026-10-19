@@ -966,7 +966,7 @@ export default function ServerDatabasesPage() {
                                                 <Button
                                                     variant='glass'
                                                     size='sm'
-                                                    className='absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 bg-white/10 p-0 opacity-0 transition-opacity group-hover:opacity-100'
+                                                    className='bg-muted/60 absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 p-0 opacity-0 transition-opacity group-hover:opacity-100'
                                                     onClick={() => copyToClipboard(item.copyValue || '')}
                                                 >
                                                     <Copy className='h-3.5 w-3.5' />
@@ -997,7 +997,7 @@ export default function ServerDatabasesPage() {
                                             <Button
                                                 variant='glass'
                                                 size='sm'
-                                                className='absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 bg-white/10 p-0 opacity-0 transition-opacity group-hover:opacity-100'
+                                                className='bg-muted/60 absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 p-0 opacity-0 transition-opacity group-hover:opacity-100'
                                                 onClick={() => copyToClipboard(viewingDatabase.username)}
                                             >
                                                 <Copy className='h-3.5 w-3.5' />
@@ -1027,7 +1027,7 @@ export default function ServerDatabasesPage() {
                                             <Button
                                                 variant='glass'
                                                 size='sm'
-                                                className='absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 bg-white/10 p-0 opacity-0 transition-opacity group-hover:opacity-100'
+                                                className='bg-muted/60 absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 p-0 opacity-0 transition-opacity group-hover:opacity-100'
                                                 onClick={() => copyToClipboard(viewingDatabase.password || '')}
                                             >
                                                 <Copy className='h-3.5 w-3.5' />
@@ -1195,7 +1195,7 @@ export default function ServerDatabasesPage() {
                     ) : (
                         <>
                             <div
-                                className='flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/10 bg-white/5 p-5 transition-colors hover:border-white/20'
+                                className='border-border/60 bg-muted/40 hover:border-border flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-5 transition-colors'
                                 onClick={() => importFileRef.current?.click()}
                             >
                                 <Upload className='text-muted-foreground h-7 w-7' />
@@ -1209,12 +1209,12 @@ export default function ServerDatabasesPage() {
                                 />
                             </div>
                             <div className='text-muted-foreground flex items-center gap-3 text-xs'>
-                                <div className='h-px flex-1 bg-white/10' />
+                                <div className='bg-border h-px flex-1' />
                                 <span>{t('serverDatabases.orPasteSql')}</span>
-                                <div className='h-px flex-1 bg-white/10' />
+                                <div className='bg-border h-px flex-1' />
                             </div>
                             <textarea
-                                className='text-foreground placeholder:text-muted-foreground focus:ring-primary min-h-[160px] w-full resize-none rounded-xl border border-white/10 bg-white/5 p-3 font-mono text-xs focus:ring-1 focus:outline-none'
+                                className='text-foreground placeholder:text-muted-foreground focus:ring-primary border-border/60 bg-muted/40 min-h-[160px] w-full resize-none rounded-xl border p-3 font-mono text-xs focus:ring-1 focus:outline-none'
                                 placeholder='-- Paste your SQL here...'
                                 value={importSql}
                                 onChange={(e) => setImportSql(e.target.value)}
@@ -1372,7 +1372,7 @@ export default function ServerDatabasesPage() {
                                             {queryResult.rows.map((row, ri) => (
                                                 <tr
                                                     key={ri}
-                                                    className='border-border/20 border-b transition-colors hover:bg-white/5'
+                                                    className='border-border/20 hover:bg-muted/60 border-b transition-colors'
                                                 >
                                                     {(row as unknown[]).map((cell, ci) => (
                                                         <td
