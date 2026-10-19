@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { useState } from 'react';
 import { Listbox, Field, Label, Description } from '@headlessui/react';
 import { Check, ChevronDown } from 'lucide-react';
 import clsx from 'clsx';
@@ -37,6 +38,8 @@ interface HeadlessSelectProps {
     buttonClassName?: string;
     disabled?: boolean;
     error?: string;
+    searchable?: boolean;
+    searchPlaceholder?: string;
     /** When 'top', dropdown opens upward to avoid overlapping content below (e.g. activity list). Default 'bottom'. */
     anchorPosition?: 'top' | 'bottom';
 }
@@ -52,21 +55,46 @@ export function HeadlessSelect({
     description,
     disabled,
     error,
+    searchable = false,
+    searchPlaceholder = 'Search options…',
     anchorPosition = 'bottom',
 }: HeadlessSelectProps) {
+    const [query, setQuery] = useState('');
     const selectedOption = options.find((o) => o.id === value) || null;
     const selectedImage = selectedOption?.image ? resolveAttachmentUrl(selectedOption.image) : null;
     const anchor = anchorPosition === 'top' ? 'top start' : 'bottom start';
+    const visibleOptions = searchable
+        ? options.filter((option) => option.name.toLowerCase().includes(query.trim().toLowerCase()))
+        : options;
 
     return (
-        <Listbox value={value} onChange={onChange} disabled={disabled}>
+        <Listbox
+            value={value}
+            onChange={(nextValue) => {
+                setQuery('');
+                onChange(nextValue);
+            }}
+            disabled={disabled}
+        >
             <Field className={clsx('relative', className)}>
                 {label && <Label className='text-foreground mb-2 block text-sm font-semibold'>{label}</Label>}
                 {description && <Description className='text-muted-foreground mb-2 text-sm'>{description}</Description>}
+                {searchable && (
+                    <div className='relative mb-2'>
+                        <input
+                            type='search'
+                            value={query}
+                            onChange={(event) => setQuery(event.target.value)}
+                            placeholder={searchPlaceholder}
+                            aria-label={searchPlaceholder}
+                            className='bg-muted/20 border-border/70 placeholder:text-muted-foreground/70 focus-visible:border-primary focus-visible:outline-primary h-10 w-full rounded-lg border px-3 text-sm transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-1'
+                        />
+                    </div>
+                )}
 
                 <Listbox.Button
                     className={clsx(
-                        'bg-muted/30 relative h-12 w-full cursor-pointer rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-all duration-200 focus:ring-4 focus:outline-none',
+                        'bg-muted/30 focus-visible:outline-primary relative h-12 w-full cursor-pointer rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2',
                         error
                             ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
                             : 'border-border/50 focus:border-primary focus:ring-primary/20 hover:border-border',
@@ -103,13 +131,14 @@ export function HeadlessSelect({
                 <Listbox.Options
                     anchor={anchor}
                     transition
+                    style={{ maxHeight: 'min(12rem, calc(100vh - 14rem))' }}
                     className={clsx(
-                        'fp-menu-surface custom-scrollbar z-50 max-h-60 w-[var(--button-width)] overflow-auto rounded-xl border p-1 text-base focus:outline-none sm:text-sm',
+                        'fp-menu-surface custom-scrollbar z-50 w-[var(--button-width)] overflow-auto overscroll-contain rounded-xl border p-1 text-base focus:outline-none sm:text-sm',
                         'transition duration-200 ease-out data-closed:scale-95 data-closed:opacity-0',
                         anchorPosition === 'top' ? 'origin-bottom' : 'origin-top',
                     )}
                 >
-                    {options.map((option) => {
+                    {visibleOptions.map((option) => {
                         const optionImage = option.image ? resolveAttachmentUrl(option.image) : null;
 
                         return (
@@ -117,7 +146,7 @@ export function HeadlessSelect({
                                 key={option.id}
                                 className={({ active, selected }) =>
                                     clsx(
-                                        'group relative mx-0.5 my-0.5 cursor-pointer rounded-xl py-3 pr-10 pl-4 transition-all duration-200 select-none',
+                                        'group relative mx-0.5 my-0.5 cursor-pointer rounded-lg py-1.5 pr-10 pl-3 transition-colors duration-200 select-none',
                                         active
                                             ? 'bg-primary scale-[1.02] text-white'
                                             : selected

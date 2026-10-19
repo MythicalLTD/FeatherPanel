@@ -36,13 +36,13 @@ import {
     Server,
     Settings,
     ShieldCheck,
-    Sparkles,
     Store,
     Users,
 } from 'lucide-react';
 import BackgroundWrapper from '@/components/theme/BackgroundWrapper';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
+import { ImageAttachmentField } from '@/components/featherui/ImageAttachmentField';
 import { HeadlessSelect } from '@/components/ui/headless-select';
 import { Switch } from '@/components/ui/switch';
 import { TipCard } from '@/components/featherui/TipCard';
@@ -130,7 +130,7 @@ function urlIssues(value: string): { error?: string; warnings: string[] } {
 export function SetupWizard() {
     const { t } = useTranslation();
     const router = useRouter();
-    const { refetch: refetchSettings } = useSettings();
+    const { refetch: refetchSettings, settings } = useSettings();
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -258,9 +258,18 @@ export function SetupWizard() {
         if (ok) goTo(stepIndex + 1);
     };
 
-    const skipMail = () => goTo(stepIndex + 1);
+    const skipCurrentStep = async () => {
+        setSaving(true);
+        const ok = await saveKeys(STEP_KEYS[step.id] ?? []);
+        setSaving(false);
+        if (ok) goTo(stepIndex + 1);
+    };
 
-    const finishLater = () => {
+    const finishLater = async () => {
+        setSaving(true);
+        const ok = await saveKeys(STEP_KEYS[step.id] ?? []);
+        setSaving(false);
+        if (!ok) return;
         setSetupDeferred(true);
         router.push('/admin');
     };
@@ -311,14 +320,20 @@ export function SetupWizard() {
 
     const isLast = step.id === 'done';
     const progress = Math.round((stepIndex / (STEPS.length - 1)) * 100);
+    const logoUrl = settings?.app_logo_dark?.trim() || settings?.app_logo_white?.trim() || '/logo.png';
 
     return (
         <BackgroundWrapper>
-            <div className='mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:items-start lg:py-12'>
-                <aside className='fp-surface shrink-0 rounded-2xl border p-5 lg:sticky lg:top-12 lg:w-72'>
+            <div className='mx-auto flex min-h-svh w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:flex-row lg:items-start lg:gap-8 lg:py-10'>
+                <aside className='fp-surface shrink-0 rounded-2xl border p-4 shadow-sm sm:p-5 lg:sticky lg:top-8 lg:w-64'>
                     <div className='mb-5 flex items-center gap-3'>
-                        <div className='fp-icon-tile flex h-10 w-10 items-center justify-center rounded-xl'>
-                            <Sparkles className='h-5 w-5' />
+                        <div className='fp-icon-tile flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl p-1.5'>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={logoUrl}
+                                alt={settings?.app_name || 'FeatherPanel'}
+                                className='h-full w-full object-contain'
+                            />
                         </div>
                         <div className='min-w-0'>
                             <p className='text-sm font-semibold'>{t('setup_wizard.title')}</p>
@@ -330,8 +345,12 @@ export function SetupWizard() {
                             </p>
                         </div>
                     </div>
-                    <div className='bg-muted/40 mb-4 h-1 overflow-hidden rounded-full lg:hidden'>
+                    <div className='bg-muted/40 mb-3 h-1.5 overflow-hidden rounded-full lg:hidden'>
                         <div className='bg-primary h-full transition-all' style={{ width: `${progress}%` }} />
+                    </div>
+                    <div className='mb-4 flex items-center justify-between gap-3 lg:hidden'>
+                        <span className='text-muted-foreground text-xs font-medium'>{t(STEP_TITLES[step.id])}</span>
+                        <span className='text-muted-foreground text-xs tabular-nums'>{progress}%</span>
                     </div>
                     <ol className='hidden space-y-1 lg:block'>
                         {STEPS.map((s, i) => {
@@ -368,18 +387,26 @@ export function SetupWizard() {
                     </ol>
                 </aside>
 
-                <main className='fp-surface min-w-0 flex-1 rounded-2xl border'>
-                    <header className='flex items-start gap-4 border-b p-5 sm:p-6'>
-                        <div className='fp-icon-tile flex h-11 w-11 shrink-0 items-center justify-center rounded-xl'>
+                <main className='fp-surface min-w-0 flex-1 rounded-2xl border shadow-sm'>
+                    <header className='flex items-start gap-4 border-b p-5 sm:p-7'>
+                        <div className='bg-primary/10 text-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-xl'>
                             <step.icon className='h-5 w-5' />
                         </div>
                         <div className='min-w-0'>
-                            <h1 className='text-xl font-semibold tracking-tight'>{t(STEP_TITLES[step.id])}</h1>
+                            <p className='text-primary mb-1 text-[11px] font-semibold tracking-[0.16em] uppercase'>
+                                {t('setup_wizard.progress', {
+                                    current: String(stepIndex + 1),
+                                    total: String(STEPS.length),
+                                })}
+                            </p>
+                            <h1 className='text-xl font-semibold tracking-tight sm:text-2xl'>
+                                {t(STEP_TITLES[step.id])}
+                            </h1>
                             <p className='text-muted-foreground mt-0.5 text-sm'>{t(STEP_DESCRIPTIONS[step.id])}</p>
                         </div>
                     </header>
 
-                    <div className='space-y-5 p-5 sm:p-6'>
+                    <div className='space-y-6 p-5 sm:p-7'>
                         {loading ? (
                             <div className='text-muted-foreground flex items-center gap-2 py-16 text-sm'>
                                 <Loader2 className='h-4 w-4 animate-spin' />
@@ -387,15 +414,23 @@ export function SetupWizard() {
                             </div>
                         ) : step.id === 'welcome' ? (
                             <>
-                                <Input
-                                    label={t('setup_wizard.welcome.url_label')}
-                                    description={t('setup_wizard.welcome.url_help')}
-                                    value={values.app_url || ''}
-                                    onChange={(e) => set('app_url', e.target.value.trim())}
-                                    error={url.error ? t(url.error) : undefined}
-                                    icon={<Globe className='h-4 w-4' />}
-                                    inputMode='url'
-                                />
+                                <div className='grid gap-5 sm:grid-cols-2'>
+                                    <Input
+                                        label={t('setup_wizard.welcome.name_label')}
+                                        value={values.app_name || ''}
+                                        onChange={(e) => set('app_name', e.target.value)}
+                                        maxLength={64}
+                                    />
+                                    <Input
+                                        label={t('setup_wizard.welcome.url_label')}
+                                        value={values.app_url || ''}
+                                        onChange={(e) => set('app_url', e.target.value.trim())}
+                                        error={url.error ? t(url.error) : undefined}
+                                        icon={<Globe className='h-4 w-4' />}
+                                        inputMode='url'
+                                        description={t('setup_wizard.welcome.url_help')}
+                                    />
+                                </div>
                                 {!url.error && url.warnings.length > 0 ? (
                                     <div className='space-y-2'>
                                         {url.warnings.map((w) => (
@@ -421,35 +456,19 @@ export function SetupWizard() {
                                         ) : null}
                                     </div>
                                 ) : null}
-                                <Input
-                                    label={t('setup_wizard.welcome.name_label')}
-                                    value={values.app_name || ''}
-                                    onChange={(e) => set('app_name', e.target.value)}
-                                    maxLength={64}
-                                />
-                                <div className='grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end'>
-                                    <Input
+                                <div className='border-border/70 bg-muted/15 rounded-2xl border p-4 sm:p-5'>
+                                    <ImageAttachmentField
+                                        id='setup-panel-logo'
                                         label={t('setup_wizard.welcome.logo_label')}
                                         description={t('setup_wizard.welcome.logo_help')}
                                         value={values.app_logo_dark || ''}
-                                        onChange={(e) => {
-                                            set('app_logo_dark', e.target.value.trim());
-                                            set('app_logo_white', e.target.value.trim());
+                                        onChange={(value) => {
+                                            set('app_logo_dark', value.trim());
+                                            set('app_logo_white', value.trim());
                                         }}
-                                        placeholder='https://'
+                                        allowManualUrl
+                                        placeholder='https://… or /attachments/…'
                                     />
-                                    <div className='fp-surface-inset flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border'>
-                                        {values.app_logo_dark ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img
-                                                src={values.app_logo_dark}
-                                                alt=''
-                                                className='h-12 w-12 object-contain'
-                                            />
-                                        ) : (
-                                            <Sparkles className='text-muted-foreground h-5 w-5' />
-                                        )}
-                                    </div>
                                 </div>
                             </>
                         ) : step.id === 'locale' ? (
@@ -459,6 +478,9 @@ export function SetupWizard() {
                                     description={t('setup_wizard.locale.timezone_help')}
                                     value={values.app_timezone || 'UTC'}
                                     onChange={(v) => set('app_timezone', String(v))}
+                                    searchable
+                                    searchPlaceholder={t('setup_wizard.locale.search_timezone')}
+                                    buttonClassName='h-11 rounded-lg'
                                     options={(options.app_timezone ?? ['UTC']).map((tz) => ({ id: tz, name: tz }))}
                                 />
                                 <HeadlessSelect
@@ -721,14 +743,14 @@ export function SetupWizard() {
                                         {t('setup_wizard.actions.back')}
                                     </Button>
                                 ) : null}
-                                <Button variant='ghost' onClick={finishLater} disabled={saving}>
+                                <Button variant='ghost' onClick={() => void finishLater()} disabled={saving}>
                                     {t('setup_wizard.actions.finish_later')}
                                 </Button>
                             </div>
                         )}
                         <div className='flex gap-2 sm:justify-end'>
                             {step.id === 'mail' || step.id === 'infrastructure' ? (
-                                <Button variant='outline' onClick={skipMail} disabled={saving}>
+                                <Button variant='outline' onClick={() => void skipCurrentStep()} disabled={saving}>
                                     {t('setup_wizard.actions.skip')}
                                 </Button>
                             ) : null}

@@ -14,7 +14,7 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-const CACHE = 'fp-pwa-v2';
+const CACHE = 'fp-pwa-v3';
 const PRECACHE = ['/offline.html'];
 
 self.addEventListener('install', (event) => {

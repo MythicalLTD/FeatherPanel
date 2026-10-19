@@ -33,7 +33,6 @@ export function PageHeader({ title, description, icon: Icon, actions, className 
     // Every page header sits on the same glass card (admin, account, server, WebSpace...), so the
     // top of a page looks the same wherever you are.
     const pathname = usePathname() ?? '';
-    // On admin sub-pages the breadcrumb trail sits inside the header card (the shell hides its own copy).
     const withCrumbs = pathname.startsWith('/admin/');
     const row = (
         <div className='flex flex-wrap items-center justify-between gap-x-6 gap-y-3'>

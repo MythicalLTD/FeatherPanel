@@ -49,61 +49,61 @@ export function FileListControls({
     const { t } = useTranslation();
     const sortKeys: FilesSortKey[] = ['name', 'size', 'modified'];
     return (
-        <div className='flex flex-wrap items-center gap-2'>
-            <div className='fp-surface-inset flex items-center gap-0.5 rounded-xl border p-0.5'>
-                {sortKeys.map((key) => (
+        <Popover className='relative w-full'>
+            <div className='flex flex-wrap items-center gap-2'>
+                <div className='fp-surface-inset flex items-center gap-0.5 rounded-xl border p-0.5'>
+                    {sortKeys.map((key) => (
+                        <button
+                            key={key}
+                            type='button'
+                            className={segBtn(prefs.sortKey === key)}
+                            onClick={() =>
+                                prefs.sortKey === key
+                                    ? onChange({ sortDir: prefs.sortDir === 'asc' ? 'desc' : 'asc' })
+                                    : onChange({ sortKey: key, sortDir: 'asc' })
+                            }
+                        >
+                            {t(`files.view.sort_${key}`)}
+                            {prefs.sortKey === key &&
+                                (prefs.sortDir === 'asc' ? (
+                                    <ArrowDownAZ className='h-3.5 w-3.5' />
+                                ) : (
+                                    <ArrowUpAZ className='h-3.5 w-3.5' />
+                                ))}
+                        </button>
+                    ))}
+                </div>
+                <button
+                    type='button'
+                    className={cn(segBtn(!prefs.showHidden), 'fp-surface-inset border')}
+                    onClick={() => onChange({ showHidden: !prefs.showHidden })}
+                    title={t('files.view.hidden_toggle')}
+                >
+                    {prefs.showHidden ? <Eye className='h-3.5 w-3.5' /> : <EyeOff className='h-3.5 w-3.5' />}
+                    <span className='hidden sm:inline'>
+                        {prefs.showHidden ? t('files.view.hidden_shown') : t('files.view.hidden_hidden')}
+                    </span>
+                </button>
+                <div className='fp-surface-inset flex items-center gap-0.5 rounded-xl border p-0.5'>
                     <button
-                        key={key}
                         type='button'
-                        className={segBtn(prefs.sortKey === key)}
-                        onClick={() =>
-                            prefs.sortKey === key
-                                ? onChange({ sortDir: prefs.sortDir === 'asc' ? 'desc' : 'asc' })
-                                : onChange({ sortKey: key, sortDir: 'asc' })
-                        }
+                        className={segBtn(prefs.view === 'list')}
+                        onClick={() => onChange({ view: 'list' })}
+                        aria-label={t('files.view.list')}
+                        title={t('files.view.list')}
                     >
-                        {t(`files.view.sort_${key}`)}
-                        {prefs.sortKey === key &&
-                            (prefs.sortDir === 'asc' ? (
-                                <ArrowDownAZ className='h-3.5 w-3.5' />
-                            ) : (
-                                <ArrowUpAZ className='h-3.5 w-3.5' />
-                            ))}
+                        <List className='h-3.5 w-3.5' />
                     </button>
-                ))}
-            </div>
-            <button
-                type='button'
-                className={cn(segBtn(!prefs.showHidden), 'fp-surface-inset border')}
-                onClick={() => onChange({ showHidden: !prefs.showHidden })}
-                title={t('files.view.hidden_toggle')}
-            >
-                {prefs.showHidden ? <Eye className='h-3.5 w-3.5' /> : <EyeOff className='h-3.5 w-3.5' />}
-                <span className='hidden sm:inline'>
-                    {prefs.showHidden ? t('files.view.hidden_shown') : t('files.view.hidden_hidden')}
-                </span>
-            </button>
-            <div className='fp-surface-inset flex items-center gap-0.5 rounded-xl border p-0.5'>
-                <button
-                    type='button'
-                    className={segBtn(prefs.view === 'list')}
-                    onClick={() => onChange({ view: 'list' })}
-                    aria-label={t('files.view.list')}
-                    title={t('files.view.list')}
-                >
-                    <List className='h-3.5 w-3.5' />
-                </button>
-                <button
-                    type='button'
-                    className={segBtn(prefs.view === 'grid')}
-                    onClick={() => onChange({ view: 'grid' })}
-                    aria-label={t('files.view.grid')}
-                    title={t('files.view.grid')}
-                >
-                    <LayoutGrid className='h-3.5 w-3.5' />
-                </button>
-            </div>
-            <Popover className='relative'>
+                    <button
+                        type='button'
+                        className={segBtn(prefs.view === 'grid')}
+                        onClick={() => onChange({ view: 'grid' })}
+                        aria-label={t('files.view.grid')}
+                        title={t('files.view.grid')}
+                    >
+                        <LayoutGrid className='h-3.5 w-3.5' />
+                    </button>
+                </div>
                 <PopoverButton
                     className={cn(segBtn(false), 'fp-surface-inset border')}
                     title={t('files.shortcuts.title')}
@@ -111,23 +111,20 @@ export function FileListControls({
                 >
                     <Keyboard className='h-3.5 w-3.5' />
                 </PopoverButton>
-                <PopoverPanel
-                    anchor='bottom end'
-                    className='fp-menu-surface z-50 mt-2 w-64 rounded-xl border p-3 text-sm shadow-xl'
-                >
-                    <p className='mb-2 font-semibold'>{t('files.shortcuts.title')}</p>
-                    <ul className='space-y-1.5'>
-                        {SHORTCUTS.map((s) => (
-                            <li key={s.keys} className='flex items-center justify-between gap-3'>
-                                <span className='text-muted-foreground'>{t(s.label)}</span>
-                                <kbd className='bg-muted rounded-md border px-1.5 py-0.5 font-mono text-[11px]'>
-                                    {s.keys}
-                                </kbd>
-                            </li>
-                        ))}
-                    </ul>
-                </PopoverPanel>
-            </Popover>
-        </div>
+            </div>
+            <PopoverPanel className='fp-menu-surface mt-2 ml-auto w-full max-w-64 rounded-xl border p-3 text-sm shadow-xl'>
+                <p className='mb-2 font-semibold'>{t('files.shortcuts.title')}</p>
+                <ul className='space-y-1.5'>
+                    {SHORTCUTS.map((s) => (
+                        <li key={s.keys} className='flex items-center justify-between gap-3'>
+                            <span className='text-muted-foreground'>{t(s.label)}</span>
+                            <kbd className='bg-muted rounded-md border px-1.5 py-0.5 font-mono text-[11px]'>
+                                {s.keys}
+                            </kbd>
+                        </li>
+                    ))}
+                </ul>
+            </PopoverPanel>
+        </Popover>
     );
 }

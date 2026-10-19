@@ -16843,12 +16843,13 @@
 			"use_current": "Use {origin}",
 			"name_label": "Panel name",
 			"name_required": "Enter a panel name",
-			"logo_label": "Logo URL",
-			"logo_help": "Optional. A square image works best. You can upload one later in Settings."
+			"logo_label": "Panel logo",
+			"logo_help": "Optional. Upload a square JPG, PNG, GIF or WebP, or paste an image URL."
 		},
 		"locale": {
 			"timezone_label": "Timezone",
 			"timezone_help": "Used for schedules, logs and dates.",
+			"search_timezone": "Search timezones",
 			"language_label": "Default language",
 			"language_help": "Users can still pick their own language.",
 			"use_browser": "Use my timezone ({zone})"
@@ -16942,6 +16943,9 @@
 	},
 	"server": {
 		"tips": {
+			"title": "Helpful tips",
+			"hide": "Hide tips",
+			"show": "Show tips",
 			"files_t1_title": "Drag and drop uploads",
 			"files_t1_body": "Drop files anywhere on this page to upload them into the current folder.",
 			"files_t2_title": "Bulk actions",

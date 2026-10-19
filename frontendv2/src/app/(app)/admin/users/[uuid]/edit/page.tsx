@@ -848,8 +848,8 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             <Avatar className='ring-background mb-4 h-24 w-24 shadow-lg ring-4'>
                                 <AvatarImage src={user.avatar} alt={user.username} />
                             </Avatar>
-                            <h2 className='text-xl font-bold'>{user.username}</h2>
-                            <p className='text-muted-foreground text-sm'>
+                            <h2 className='max-w-full text-center text-xl font-bold break-words'>{user.username}</h2>
+                            <p className='text-muted-foreground max-w-full text-center text-sm break-words'>
                                 <Sensitive>{user.email}</Sensitive>
                             </p>
 
@@ -891,41 +891,47 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         </div>
 
                         <div className='border-border/50 space-y-3 border-t pt-4 text-sm'>
-                            <div className='flex justify-between'>
+                            <div className='flex min-w-0 items-start justify-between gap-4'>
                                 <span className='text-muted-foreground'>
                                     {t('admin.users.edit.account_info.user_id')}
                                 </span>
-                                <span className='font-mono'>{user.id}</span>
+                                <span className='min-w-0 text-right font-mono'>{user.id}</span>
                             </div>
-                            <div className='flex justify-between'>
+                            <div className='flex min-w-0 items-start justify-between gap-4'>
                                 <span className='text-muted-foreground'>{t('admin.users.edit.account_info.uuid')}</span>
-                                <span className='font-mono text-xs' title={user.uuid}>
+                                <span className='min-w-0 text-right font-mono text-xs break-all' title={user.uuid}>
                                     {user.uuid.substring(0, 8)}...
                                 </span>
                             </div>
-                            <div className='flex justify-between'>
+                            <div className='flex min-w-0 items-start justify-between gap-4'>
                                 <span className='text-muted-foreground'>
                                     {t('admin.users.edit.account_info.created')}
                                 </span>
-                                <span title={formatDateTimeInTz(user.created_at || user.first_seen, dateOpts)}>
+                                <span
+                                    className='min-w-0 text-right'
+                                    title={formatDateTimeInTz(user.created_at || user.first_seen, dateOpts)}
+                                >
                                     {formatDateTimeInTz(user.created_at || user.first_seen, dateOpts)}
                                 </span>
                             </div>
-                            <div className='flex justify-between'>
+                            <div className='flex min-w-0 items-start justify-between gap-4'>
                                 <span className='text-muted-foreground'>
                                     {t('admin.users.edit.account_info.last_seen')}
                                 </span>
-                                <span title={user.last_seen ? formatDateTimeInTz(user.last_seen, dateOpts) : undefined}>
+                                <span
+                                    className='min-w-0 text-right'
+                                    title={user.last_seen ? formatDateTimeInTz(user.last_seen, dateOpts) : undefined}
+                                >
                                     {user.last_seen ? formatRelativeTime(user.last_seen, dateOpts) : '-'}
                                 </span>
                             </div>
                             {user.last_ip && (
-                                <div className='flex items-center justify-between gap-2'>
+                                <div className='flex min-w-0 flex-wrap items-start justify-between gap-2'>
                                     <span className='text-muted-foreground'>
                                         {t('admin.users.edit.account_info.last_ip')}
                                     </span>
-                                    <div className='flex items-center gap-2'>
-                                        <span className='font-mono'>
+                                    <div className='flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2'>
+                                        <span className='min-w-0 text-right font-mono break-all'>
                                             <Sensitive>{user.last_ip}</Sensitive>
                                         </span>
                                         <Button
@@ -947,12 +953,12 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 </div>
                             )}
                             {user.first_ip && (
-                                <div className='flex items-center justify-between gap-2'>
+                                <div className='flex min-w-0 flex-wrap items-start justify-between gap-2'>
                                     <span className='text-muted-foreground'>
                                         {t('admin.users.edit.account_info.first_ip')}
                                     </span>
-                                    <div className='flex items-center gap-2'>
-                                        <span className='font-mono'>
+                                    <div className='flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2'>
+                                        <span className='min-w-0 text-right font-mono break-all'>
                                             <Sensitive>{user.first_ip}</Sensitive>
                                         </span>
                                         {user.first_ip !== user.last_ip ? (
@@ -976,19 +982,23 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 </div>
                             )}
                             {user.discord_oauth2_username && (
-                                <div className='border-border/50 mt-4 flex justify-between border-t pt-4'>
+                                <div className='border-border/50 mt-4 flex min-w-0 flex-wrap items-start justify-between gap-4 border-t pt-4'>
                                     <span className='text-muted-foreground'>
                                         {t('admin.users.edit.account_info.discord_user')}
                                     </span>
-                                    <span className='font-medium'>{user.discord_oauth2_username}</span>
+                                    <span className='min-w-0 text-right font-medium break-words'>
+                                        {user.discord_oauth2_username}
+                                    </span>
                                 </div>
                             )}
                             {user.discord_oauth2_id && (
-                                <div className='flex justify-between'>
+                                <div className='flex min-w-0 items-start justify-between gap-4'>
                                     <span className='text-muted-foreground'>
                                         {t('admin.users.edit.account_info.discord_id')}
                                     </span>
-                                    <span className='font-mono text-xs'>{user.discord_oauth2_id}</span>
+                                    <span className='min-w-0 text-right font-mono text-xs break-all'>
+                                        {user.discord_oauth2_id}
+                                    </span>
                                 </div>
                             )}
                         </div>

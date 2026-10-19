@@ -39,7 +39,7 @@ import { usePluginRoutes, getPluginPaths } from '@/hooks/usePluginRoutes';
 import { readSidebarCollapsed, subscribeSidebarCollapsed } from '@/lib/sidebarChrome';
 import { useSidebarPreferences } from '@/hooks/useSidebarPreferences';
 import { getShellContentInset } from '@/lib/sidebarLayout';
-import { AdminBreadcrumbs } from '@/components/admin/AdminBreadcrumbs';
+import { useNavbarSticky } from '@/hooks/useNavbarSticky';
 
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -108,6 +108,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     const { navbarHoverReveal } = useNavbarHoverReveal();
     const { chromeLayout } = useChromeLayout();
     const { sidebarPosition, dockDisplay, dockSize } = useSidebarPreferences();
+    const { navbarSticky } = useNavbarSticky();
     const navbarHoverDockActive = navbarHoverReveal && chromeLayout === 'modern';
 
     return (
@@ -128,7 +129,12 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                         <GlobalSearchDialog />
                         <PanelDebugConsole />
                         <div
-                            className='motion-content flex min-h-0 flex-1 flex-col overflow-clip'
+                            className={cn(
+                                'motion-content flex min-h-0 flex-1 flex-col',
+                                navbarSticky
+                                    ? 'overflow-clip'
+                                    : 'custom-scrollbar overflow-x-hidden overflow-y-auto overscroll-y-contain',
+                            )}
                             data-fp-dashboard-shell
                         >
                             <div
@@ -167,7 +173,12 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                                             'fp-shell-main flex min-h-0 flex-1 flex-col',
                                             useFullBleedLayout
                                                 ? 'overflow-hidden p-0'
-                                                : 'custom-scrollbar overflow-x-hidden overflow-y-auto overscroll-y-contain px-3 py-5 sm:px-6 sm:py-6 lg:px-8',
+                                                : cn(
+                                                      'px-3 py-5 sm:px-6 sm:py-6 lg:px-8',
+                                                      navbarSticky
+                                                          ? 'custom-scrollbar overflow-x-hidden overflow-y-auto overscroll-y-contain'
+                                                          : 'overflow-visible',
+                                                  ),
                                         )}
                                     >
                                         <div
@@ -186,9 +197,6 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                                                 {!useFullBleedLayout && (
                                                     <AdminOpenTicketsBanner className='mb-5 shrink-0' />
                                                 )}
-                                                {!useFullBleedLayout && pathname?.startsWith('/admin/') ? (
-                                                    <AdminBreadcrumbs className='fp-shell-crumbs mb-2 shrink-0 px-1' />
-                                                ) : null}
                                             </PluginSlot>
                                             <ModuleRouteGuard>
                                                 <PluginPageOverrideGate>{children}</PluginPageOverrideGate>

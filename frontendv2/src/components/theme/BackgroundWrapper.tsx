@@ -57,12 +57,14 @@ export default function BackgroundWrapper({
     }, []);
 
     const isServerRoute = Boolean(pathname?.startsWith('/server/'));
-    const spellBgMode = resolveServerSpellBannerBackground(settings);
+    const isLight = theme === 'light';
+    // Server artwork is dark-first and reduces contrast across the light theme. Keep it disabled
+    // there even when the server-level banner preference is enabled.
+    const spellBgMode = isLight ? 'off' : resolveServerSpellBannerBackground(settings);
     const spellBannerUrl =
         isServerRoute && spellBgMode !== 'off' ? resolveSpellBannerUrl(serverCtx?.server?.spell?.banner) : null;
     const useSpellReplace = Boolean(spellBannerUrl && spellBgMode === 'replace');
     const useSpellBlend = Boolean(spellBannerUrl && spellBgMode === 'blend');
-    const isLight = theme === 'light';
     // Light mode only paints pattern/solid; never aurora/image/gradient canvases.
     const effectiveBackgroundType =
         isLight && backgroundType !== 'pattern' && backgroundType !== 'solid' ? 'pattern' : backgroundType;

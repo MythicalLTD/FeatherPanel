@@ -24,6 +24,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/contexts/ThemeContext';
 import { resolveSpellBannerUrl, type ServerSpellBannerStyle } from '@/lib/server-spell-banner';
 
 interface ServerHeaderProps {
@@ -81,12 +82,13 @@ export default function ServerHeader({
     trend,
 }: ServerHeaderProps) {
     const { t } = useTranslation();
+    const { theme } = useTheme();
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [showKillConfirm, setShowKillConfirm] = useState(false);
     const [dontAskAgain, setDontAskAgain] = useState(false);
     const [skipKillConfirm, setSkipKillConfirm] = useState(false);
 
-    const style = bannerStyle === 'off' ? 'off' : bannerStyle;
+    const style = theme === 'light' || bannerStyle === 'off' ? 'off' : bannerStyle;
     const resolvedBanner = style !== 'off' ? resolveSpellBannerUrl(bannerUrl) : null;
 
     useEffect(() => {

@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import type { ComponentType } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Archive,
     CalendarClock,
@@ -28,6 +29,7 @@ import {
     ShieldCheck,
     Upload,
     Users,
+    X,
 } from 'lucide-react';
 import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -36,42 +38,87 @@ type Tip = { icon: ComponentType<{ className?: string }>; key: string };
 
 const PAGE_TIPS: Record<string, Tip[]> = {
     files: [
-        { icon: Upload, key: 'files.t1' },
-        { icon: FolderOpen, key: 'files.t2' },
+        { icon: Upload, key: 'files_t1' },
+        { icon: FolderOpen, key: 'files_t2' },
     ],
     databases: [
-        { icon: Database, key: 'databases.t1' },
-        { icon: KeyRound, key: 'databases.t2' },
+        { icon: Database, key: 'databases_t1' },
+        { icon: KeyRound, key: 'databases_t2' },
     ],
     schedules: [
-        { icon: CalendarClock, key: 'schedules.t1' },
-        { icon: RotateCcw, key: 'schedules.t2' },
+        { icon: CalendarClock, key: 'schedules_t1' },
+        { icon: RotateCcw, key: 'schedules_t2' },
     ],
     users: [
-        { icon: Users, key: 'users.t1' },
-        { icon: ShieldCheck, key: 'users.t2' },
+        { icon: Users, key: 'users_t1' },
+        { icon: ShieldCheck, key: 'users_t2' },
     ],
     backups: [
-        { icon: Archive, key: 'backups.t1' },
-        { icon: Lock, key: 'backups.t2' },
+        { icon: Archive, key: 'backups_t1' },
+        { icon: Lock, key: 'backups_t2' },
     ],
     settings: [
-        { icon: Settings, key: 'settings.t1' },
-        { icon: RotateCcw, key: 'settings.t2' },
+        { icon: Settings, key: 'settings_t1' },
+        { icon: RotateCcw, key: 'settings_t2' },
     ],
 };
 
 export function ServerPageTips({ page, className }: { page: keyof typeof PAGE_TIPS; className?: string }) {
     const { t } = useTranslation();
     const tips = PAGE_TIPS[page];
+    const storageKey = `featherpanel.server-page-tips.${page}`;
+    const [hidden, setHidden] = useState(false);
+
+    useEffect(() => {
+        setHidden(window.localStorage.getItem(storageKey) === 'hidden');
+    }, [storageKey]);
+
     if (!tips?.length) return null;
+
+    if (hidden) {
+        return (
+            <div className='flex justify-end'>
+                <button
+                    type='button'
+                    className='text-muted-foreground hover:text-foreground text-xs transition-colors'
+                    onClick={() => {
+                        window.localStorage.removeItem(storageKey);
+                        setHidden(false);
+                    }}
+                >
+                    {t('server.tips.show')}
+                </button>
+            </div>
+        );
+    }
+
     return (
-        <TipGrid className={className}>
-            {tips.map((tip) => (
-                <TipCard key={tip.key} icon={tip.icon} title={t(`server.tips.${tip.key}_title`)}>
-                    <p>{t(`server.tips.${tip.key}_body`)}</p>
-                </TipCard>
-            ))}
-        </TipGrid>
+        <div className='clear-both space-y-3'>
+            <div className='flex items-center justify-between gap-3'>
+                <p className='text-muted-foreground text-xs font-semibold tracking-wide uppercase'>
+                    {t('server.tips.title')}
+                </p>
+                <button
+                    type='button'
+                    className='text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-xs transition-colors'
+                    onClick={() => {
+                        window.localStorage.setItem(storageKey, 'hidden');
+                        setHidden(true);
+                    }}
+                >
+                    <X className='h-3.5 w-3.5' />
+                    {t('server.tips.hide')}
+                </button>
+            </div>
+            <TipGrid className={className}>
+                {tips.map((tip) => {
+                    return (
+                        <TipCard key={tip.key} icon={tip.icon} title={t(`server.tips.${tip.key}_title`)}>
+                            <p>{t(`server.tips.${tip.key}_body`)}</p>
+                        </TipCard>
+                    );
+                })}
+            </TipGrid>
+        </div>
     );
 }
