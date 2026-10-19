@@ -2673,6 +2673,23 @@
 			"description": "Add an extra layer of security to your account",
 			"disabledSuccessfully": "2FA disabled successfully",
 			"disableFailed": "Failed to disable 2FA"
+		},
+		"sessions": {
+			"title": "Active sessions",
+			"description": "Devices that are signed in to your account. Sign out any you do not recognise.",
+			"revoke": "Sign out",
+			"revoke_others": "Sign out all other sessions",
+			"revoked": "Session signed out",
+			"revoked_others": "All other sessions were signed out",
+			"revoke_failed": "Could not sign out the session",
+			"load_failed": "Could not load sessions",
+			"loading": "Loading sessions...",
+			"this_device": "This device",
+			"active_now": "active now",
+			"meta": "{ip} · {seen}",
+			"unknown_device": "Unknown device",
+			"only_this": "No other devices are signed in.",
+			"legacy": "This browser signed in before session tracking was added. Sign out all other sessions to start tracking it."
 		}
 	},
 	"servers": {

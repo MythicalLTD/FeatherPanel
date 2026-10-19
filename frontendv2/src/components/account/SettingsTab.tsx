@@ -31,6 +31,7 @@ import { isEnabled } from '@/lib/utils';
 import { isCaptchaConfigured, obtainCaptchaResponseToken } from '@/lib/captchaGate';
 import { startRegistration } from '@simplewebauthn/browser';
 import { passkeysApi } from '@/lib/api/passkeys';
+import { ActiveSessionsCard } from '@/components/account/ActiveSessionsCard';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { format } from 'date-fns';
 import {
@@ -793,6 +794,8 @@ export default function SettingsTab() {
                     <p className='text-muted-foreground mt-1 text-sm'>{t('account.loginDevice.subtitle')}</p>
                 </div>
             </Link>
+
+            <ActiveSessionsCard />
 
             <div className='fp-surface-inset rounded-xl border p-6'>
                 <div className='flex items-start gap-4'>
