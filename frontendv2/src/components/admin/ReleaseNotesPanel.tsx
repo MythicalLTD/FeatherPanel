@@ -187,7 +187,7 @@ export function ReleaseNotesPanel({
                                         setActiveTab(tab.id);
                                     }}
                                     className={cn(
-                                        'rounded-lg px-3 py-1.5 text-[10px] font-black tracking-wide uppercase transition-colors',
+                                        'rounded-lg px-3 py-1.5 text-[10px] font-semibold transition-colors',
                                         active.id === tab.id
                                             ? 'bg-background text-foreground shadow-sm'
                                             : 'text-muted-foreground hover:text-foreground',

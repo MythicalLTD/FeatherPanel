@@ -374,7 +374,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                         </p>
                     </div>
                 </div>
-                <div className='flex items-start gap-4 rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4'>
+                <div className='fp-surface flex items-start gap-4 rounded-2xl border p-4'>
                     <div className='h-fit rounded-xl bg-blue-500/20 p-2'>
                         <Info className='h-5 w-5 text-blue-500' />
                     </div>

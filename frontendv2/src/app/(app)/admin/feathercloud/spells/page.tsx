@@ -429,15 +429,15 @@ export default function SpellsPage() {
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-spells', 'before-content')} />
 
             <div className='grid gap-3 sm:grid-cols-3'>
-                <div className='bg-card/60 rounded-2xl px-4 py-3'>
+                <div className='fp-surface rounded-xl border px-4 py-3'>
                     <p className='text-muted-foreground text-xs'>{t('ui.admin.feathercloud.spells.shown')}</p>
                     <p className='mt-1 text-sm font-medium'>{onlineSpells.length}</p>
                 </div>
-                <div className='bg-card/60 rounded-2xl px-4 py-3'>
+                <div className='fp-surface rounded-xl border px-4 py-3'>
                     <p className='text-muted-foreground text-xs'>{t('ui.admin.feathercloud.spells.catalog')}</p>
                     <p className='mt-1 text-sm font-medium'>{onlinePagination?.total_records ?? '-'}</p>
                 </div>
-                <div className='bg-card/60 rounded-2xl px-4 py-3'>
+                <div className='fp-surface rounded-xl border px-4 py-3'>
                     <p className='text-muted-foreground text-xs'>
                         {t('ui.admin.feathercloud.spells.installedMatches')}
                     </p>
@@ -541,7 +541,7 @@ export default function SpellsPage() {
                                 <article
                                     key={spell.identifier}
                                     className={cn(
-                                        'bg-card/80 ring-border/40 flex flex-col overflow-hidden rounded-2xl shadow-sm ring-1 transition',
+                                        'fp-surface ring-border/40 flex flex-col overflow-hidden rounded-2xl border ring-1 transition',
                                         'hover:bg-card hover:shadow-md',
                                     )}
                                 >
@@ -704,7 +704,7 @@ export default function SpellsPage() {
 
                     <div className='-mr-2 flex-1 space-y-6 overflow-y-auto pr-2'>
                         {selectedSpell && !selectedSpell.verified && (
-                            <div className='flex items-start gap-4 rounded-2xl border border-blue-500/30 bg-blue-500/5 p-5'>
+                            <div className='fp-surface flex items-start gap-4 rounded-2xl border p-5'>
                                 <Info className='mt-0.5 h-5 w-5 shrink-0 text-blue-600' />
                                 <div className='space-y-1'>
                                     <p className='text-sm font-bold text-blue-700'>
@@ -718,7 +718,7 @@ export default function SpellsPage() {
                         )}
 
                         {installedSpellIds.includes(selectedSpell?.name || '') && (
-                            <div className='flex items-start gap-4 rounded-2xl border border-blue-500/30 bg-blue-500/5 p-5'>
+                            <div className='fp-surface flex items-start gap-4 rounded-2xl border p-5'>
                                 <Info className='mt-0.5 h-5 w-5 shrink-0 text-blue-600' />
                                 <div className='space-y-1'>
                                     <p className='text-sm font-bold text-blue-700'>
@@ -917,7 +917,7 @@ export default function SpellsPage() {
                         >
                             {installingId ? (
                                 <>
-                                    <RefreshCw className='mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white' />
+                                    <RefreshCw className='mr-2 h-4 w-4 animate-spin rounded-full border-2 border-[var(--fp-surface-border)] border-t-white' />
                                     {t('admin.marketplace.spells.dialog.installing')}
                                 </>
                             ) : (

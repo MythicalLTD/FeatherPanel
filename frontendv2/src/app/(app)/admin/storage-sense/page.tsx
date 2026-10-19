@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
@@ -330,7 +331,6 @@ export default function StorageSensePage() {
                         </p>
                     </div>
                 </div>
-                <div className='bg-primary/5 pointer-events-none absolute -right-8 -bottom-8 h-32 w-32 rounded-full blur-2xl' />
             </div>
 
             {totals && !loading ? (
@@ -710,6 +710,8 @@ export default function StorageSensePage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <AdminPageTips page='storage-sense' />
 
             <WidgetRenderer widgets={getWidgets('admin-storage-sense', 'bottom-of-page')} />
         </div>

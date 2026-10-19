@@ -221,7 +221,7 @@ export function TerminalTab({ node }: TerminalTabProps) {
                 </div>
             </PageCard>
 
-            <div className='animate-in fade-in slide-in-from-bottom-2 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-4'>
+            <div className='animate-in fade-in slide-in-from-bottom-2 rounded-2xl border border-yellow-500/25 bg-yellow-500/[0.06] p-4'>
                 <div className='flex items-start gap-4'>
                     <div className='rounded-xl bg-yellow-500/10 p-2'>
                         <AlertTriangle className='h-5 w-5 text-yellow-500' />

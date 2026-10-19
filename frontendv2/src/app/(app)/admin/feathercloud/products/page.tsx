@@ -443,7 +443,7 @@ export default function MythicProductsPage() {
                                     <article
                                         key={slug}
                                         className={cn(
-                                            'bg-card/80 group overflow-hidden rounded-2xl shadow-sm ring-1 ring-transparent transition',
+                                            'fp-surface group overflow-hidden rounded-2xl border ring-1 ring-transparent transition',
                                             'hover:bg-card hover:shadow-md',
                                             checked ? 'ring-primary/50' : 'ring-border/40',
                                         )}

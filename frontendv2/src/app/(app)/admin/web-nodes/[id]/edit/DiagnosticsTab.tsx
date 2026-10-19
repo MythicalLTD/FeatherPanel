@@ -379,7 +379,7 @@ export function DiagnosticsTab({ nodeId, onOpenQuilldTab }: DiagnosticsTabProps)
 
                     {logsError && <p className='text-destructive text-sm'>{logsError}</p>}
 
-                    <div className='overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950'>
+                    <div className='overflow-hidden rounded-xl border border-[var(--fp-surface-border)] bg-zinc-950'>
                         <pre className='max-h-[28rem] overflow-auto p-4 font-mono text-xs leading-relaxed text-zinc-300'>
                             {logsLoading
                                 ? t('admin.webNodes.diagnostics.logs_loading')

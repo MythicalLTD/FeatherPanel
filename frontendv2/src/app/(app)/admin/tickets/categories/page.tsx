@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -30,7 +31,6 @@ import { Input } from '@/components/featherui/Input';
 import { Sheet, SheetDescription, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { PageCard } from '@/components/featherui/PageCard';
 import { cn, resolveAttachmentUrl } from '@/lib/utils';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
@@ -469,27 +469,23 @@ export default function TicketCategoriesPage() {
                     </div>
                 </Sheet>
 
-                <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-3'>
-                    <PageCard title={t('admin.tickets.categories.help.managing.title')} icon={Tags}>
+                <TipGrid>
+                    <TipCard title={t('admin.tickets.categories.help.managing.title')} icon={Tags}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.categories.help.managing.description')}
                         </p>
-                    </PageCard>
-                    <PageCard title={t('admin.tickets.categories.help.emails.title')} icon={Info}>
+                    </TipCard>
+                    <TipCard title={t('admin.tickets.categories.help.emails.title')} icon={Info}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.categories.help.emails.description')}
                         </p>
-                    </PageCard>
-                    <PageCard
-                        title={t('admin.tickets.categories.help.icons.title')}
-                        icon={HelpCircle}
-                        variant='warning'
-                    >
+                    </TipCard>
+                    <TipCard title={t('admin.tickets.categories.help.icons.title')} icon={HelpCircle} variant='warning'>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.categories.help.icons.description')}
                         </p>
-                    </PageCard>
-                </div>
+                    </TipCard>
+                </TipGrid>
             </div>
             <WidgetRenderer widgets={getWidgets('admin-tickets-categories', 'bottom-of-page')} />
         </>

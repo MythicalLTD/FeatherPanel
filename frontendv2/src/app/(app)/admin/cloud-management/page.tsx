@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -262,7 +263,7 @@ export default function CloudManagementPage() {
 
             {cloudDisabled ? (
                 <PageCard title={t('demo.cloud.title')} icon={AlertTriangle}>
-                    <div className='flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-amber-950 dark:text-amber-50'>
+                    <div className='flex items-start gap-3 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] p-4 text-amber-950 dark:text-amber-50'>
                         <AlertTriangle className='mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-300' />
                         <p className='text-sm leading-relaxed'>{t('demo.cloud.description')}</p>
                     </div>
@@ -541,6 +542,7 @@ export default function CloudManagementPage() {
                     </AlertDialog>
                 </>
             ) : null}
+            <AdminPageTips page='cloud-management' />
         </div>
     );
 }

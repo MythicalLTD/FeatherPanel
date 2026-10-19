@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
@@ -26,7 +27,6 @@ import { Input } from '@/components/featherui/Input';
 import { DataTable, RowActionsMenu, StatusDot, TableIdentity } from '@/components/featherui/DataTable';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
-import { PageCard } from '@/components/featherui/PageCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -525,12 +525,12 @@ export default function NodesPage() {
                 />
             )}
 
-            <PageCard title={t('admin.node.help.wings.title')} icon={Shield} className='mt-6'>
+            <TipCard title={t('admin.node.help.wings.title')} icon={Shield} className='mt-6'>
                 <div className='text-muted-foreground space-y-4 text-sm'>
                     <p>{t('admin.node.help.wings.p1')}</p>
                     <p>{t('admin.node.help.wings.p2')}</p>
                 </div>
-            </PageCard>
+            </TipCard>
 
             <WidgetRenderer widgets={getWidgets('admin-nodes', 'bottom-of-page')} />
 

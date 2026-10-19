@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -31,7 +32,6 @@ import {
     ChevronUp,
     ChevronDown,
 } from 'lucide-react';
-import { PageCard } from '@/components/featherui/PageCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
@@ -432,23 +432,23 @@ export default function TicketStatusesPage() {
                     </div>
                 </Sheet>
 
-                <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
-                    <PageCard title={t('admin.tickets.statuses.help.workflow.title')} icon={GitBranch}>
+                <TipGrid>
+                    <TipCard title={t('admin.tickets.statuses.help.workflow.title')} icon={GitBranch}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.statuses.help.workflow.description')}
                         </p>
-                    </PageCard>
-                    <PageCard title={t('admin.tickets.statuses.help.tracking.title')} icon={Eye}>
+                    </TipCard>
+                    <TipCard title={t('admin.tickets.statuses.help.tracking.title')} icon={Eye}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.statuses.help.tracking.description')}
                         </p>
-                    </PageCard>
-                    <PageCard title={t('admin.tickets.statuses.help.states.title')} icon={Settings2} variant='danger'>
+                    </TipCard>
+                    <TipCard title={t('admin.tickets.statuses.help.states.title')} icon={Settings2} variant='danger'>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.statuses.help.states.description')}
                         </p>
-                    </PageCard>
-                </div>
+                    </TipCard>
+                </TipGrid>
             </div>
             <WidgetRenderer widgets={getWidgets('admin-tickets-statuses', 'bottom-of-page')} />
         </>

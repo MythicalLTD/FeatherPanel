@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -390,6 +391,8 @@ export default function RolesPage() {
                     className='mt-4'
                 />
             )}
+
+            <AdminPageTips page='roles' />
 
             <WidgetRenderer widgets={getWidgets('admin-roles', 'bottom-of-page')} />
         </div>

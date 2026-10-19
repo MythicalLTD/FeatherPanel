@@ -293,7 +293,7 @@ export function MassTransferServersDialog({
                             </div>
 
                             {!hasEnoughAllocations && selectedCount > 0 && (
-                                <p className='rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-600'>
+                                <p className='rounded-xl border border-red-500/25 bg-red-500/[0.06] p-3 text-sm text-red-600'>
                                     {t('admin.node.mass_transfer.insufficient_allocations')}
                                 </p>
                             )}

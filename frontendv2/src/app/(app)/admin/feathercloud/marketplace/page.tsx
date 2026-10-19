@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard } from '@/components/featherui/TipCard';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -22,7 +23,6 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
-import { PageCard } from '@/components/featherui/PageCard';
 import { Puzzle, Sparkles, Languages, Info, Store } from 'lucide-react';
 
 export default function MarketplacePage() {
@@ -103,11 +103,11 @@ export default function MarketplacePage() {
             </div>
 
             <div className='pt-4'>
-                <PageCard title={t('admin.marketplace.index.about.title')} icon={Info}>
+                <TipCard title={t('admin.marketplace.index.about.title')} icon={Info}>
                     <p className='text-muted-foreground text-base leading-relaxed'>
                         {t('admin.marketplace.index.about.description')}
                     </p>
-                </PageCard>
+                </TipCard>
             </div>
 
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-marketplace', 'bottom-of-page')} />

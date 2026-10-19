@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -737,18 +738,18 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                         </TabsContent>
                     </Tabs>
 
-                    <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-                        <PageCard title={t('admin.knowledgebase.help.managing.title')} icon={Layout}>
+                    <TipGrid>
+                        <TipCard title={t('admin.knowledgebase.help.managing.title')} icon={Layout}>
                             <p className='text-muted-foreground text-sm leading-relaxed'>
                                 {t('admin.knowledgebase.help.managing.description')}
                             </p>
-                        </PageCard>
-                        <PageCard title={t('admin.knowledgebase.help.content.title')} icon={Info}>
+                        </TipCard>
+                        <TipCard title={t('admin.knowledgebase.help.content.title')} icon={Info}>
                             <p className='text-muted-foreground text-sm leading-relaxed'>
                                 {t('admin.knowledgebase.help.content.description')}
                             </p>
-                        </PageCard>
-                    </div>
+                        </TipCard>
+                    </TipGrid>
                 </div>
 
                 <div className='space-y-6'>
@@ -836,11 +837,11 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                         </div>
                     </div>
 
-                    <PageCard title={t('admin.knowledgebase.help.attachments.title')} icon={Shield} variant='danger'>
+                    <TipCard title={t('admin.knowledgebase.help.attachments.title')} icon={Shield} variant='danger'>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.knowledgebase.help.attachments.description')}
                         </p>
-                    </PageCard>
+                    </TipCard>
 
                     {/* Article Reordering Section */}
                     {categoryArticles.length > 1 && (

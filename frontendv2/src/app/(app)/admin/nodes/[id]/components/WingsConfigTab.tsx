@@ -196,7 +196,7 @@ export function WingsConfigTab({ node }: WingsConfigTabProps) {
                 </div>
             </PageCard>
 
-            <div className='rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4'>
+            <div className='fp-surface rounded-2xl border p-4'>
                 <div className='flex items-start gap-4'>
                     <div className='rounded-xl bg-blue-500/10 p-2'>
                         <Settings2 className='h-5 w-5 text-blue-500' />

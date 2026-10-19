@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
@@ -25,7 +26,6 @@ import { Input } from '@/components/featherui/Input';
 import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
-import { PageCard } from '@/components/featherui/PageCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -443,32 +443,32 @@ export default function VdsNodesPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
-                <PageCard title={t('admin.vdsNodes.help.what.title')} icon={Server}>
+            <TipGrid>
+                <TipCard title={t('admin.vdsNodes.help.what.title')} icon={Server}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.vdsNodes.help.what.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.vdsNodes.help.utility.title')} icon={Network}>
+                </TipCard>
+                <TipCard title={t('admin.vdsNodes.help.utility.title')} icon={Network}>
                     <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm leading-relaxed'>
                         <li>{t('admin.vdsNodes.help.utility.connect')}</li>
                         <li>{t('admin.vdsNodes.help.utility.monitor')}</li>
                         <li>{t('admin.vdsNodes.help.utility.mapLocations')}</li>
                     </ul>
-                </PageCard>
-                <PageCard title={t('admin.vdsNodes.help.locations.title')} icon={MapPin}>
+                </TipCard>
+                <TipCard title={t('admin.vdsNodes.help.locations.title')} icon={MapPin}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.vdsNodes.help.locations.description')}
                     </p>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
 
-            <PageCard title={t('admin.vdsNodes.help.proxmox.title')} icon={Shield} className='mt-6'>
+            <TipCard title={t('admin.vdsNodes.help.proxmox.title')} icon={Shield} className='mt-6'>
                 <div className='text-muted-foreground space-y-4 text-sm'>
                     <p>{t('admin.vdsNodes.help.proxmox.p1')}</p>
                     <p>{t('admin.vdsNodes.help.proxmox.p2')}</p>
                 </div>
-            </PageCard>
+            </TipCard>
 
             <WidgetRenderer widgets={getWidgets('admin-vm-nodes', 'bottom-of-page')} />
         </div>

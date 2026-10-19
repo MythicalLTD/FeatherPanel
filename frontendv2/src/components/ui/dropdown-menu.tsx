@@ -44,7 +44,7 @@ export function DropdownMenuContent({
             <MenuItems
                 anchor={align === 'end' ? 'bottom end' : 'bottom start'}
                 className={cn(
-                    'border-border/40 bg-card/90 z-50 min-w-32 overflow-hidden rounded-xl border p-1 shadow-2xl backdrop-blur-xl focus:outline-none',
+                    'fp-menu-surface z-50 min-w-32 overflow-hidden rounded-xl border p-1 focus:outline-none',
                     className,
                 )}
             >
@@ -86,7 +86,7 @@ export function DropdownMenuItem({
 }
 
 export function DropdownMenuSeparator({ className }: { className?: string }) {
-    return <div className={cn('bg-border/40 -mx-1 my-1 h-px', className)} />;
+    return <div className={cn('-mx-1 my-1 h-px bg-[var(--fp-surface-border)]', className)} />;
 }
 
 export function DropdownMenuLabel({ children, className }: { children: React.ReactNode; className?: string }) {

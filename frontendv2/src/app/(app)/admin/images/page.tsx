@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
@@ -39,7 +40,6 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Input } from '@/components/featherui/Input';
 import { Button } from '@/components/featherui/Button';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
-import { PageCard } from '@/components/featherui/PageCard';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Sheet, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
@@ -406,18 +406,18 @@ export default function ImagesPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-                <PageCard icon={Upload} title={t('admin.images.help.upload.title')}>
+            <TipGrid>
+                <TipCard icon={Upload} title={t('admin.images.help.upload.title')}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.images.help.upload.description')}
                     </p>
-                </PageCard>
-                <PageCard icon={ImageIcon} title={t('admin.images.help.audit.title')}>
+                </TipCard>
+                <TipCard icon={ImageIcon} title={t('admin.images.help.audit.title')}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.images.help.audit.description')}
                     </p>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
 
             <Sheet open={createOpen} onOpenChange={setCreateOpen}>
                 <div className='space-y-6'>
@@ -535,7 +535,7 @@ export default function ImagesPage() {
                                     {t('admin.images.form.url')}
                                 </Label>
                                 <div className='flex items-center gap-2'>
-                                    <div className='fp-surface flex-1 truncate rounded-xl border border-white/5 p-3 font-mono text-sm'>
+                                    <div className='fp-surface flex-1 truncate rounded-xl border border-[var(--fp-surface-border)] p-3 font-mono text-sm'>
                                         {selectedImage?.url}
                                     </div>
                                     <Button

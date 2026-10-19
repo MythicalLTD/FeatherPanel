@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -24,7 +25,6 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
-import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
@@ -317,18 +317,18 @@ export default function RealmsPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 gap-6 pt-6 md:grid-cols-2'>
-                <PageCard title={t('admin.realms.help.what_are_realms.title')} icon={Sparkles}>
+            <TipGrid>
+                <TipCard title={t('admin.realms.help.what_are_realms.title')} icon={Sparkles}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.realms.help.what_are_realms.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.realms.help.organize_spells.title')} icon={FolderTree}>
+                </TipCard>
+                <TipCard title={t('admin.realms.help.organize_spells.title')} icon={FolderTree}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.realms.help.organize_spells.description')}
                     </p>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
 
             <Sheet open={createOpen} onOpenChange={guardClose(setCreateOpen)}>
                 <div className='space-y-6'>

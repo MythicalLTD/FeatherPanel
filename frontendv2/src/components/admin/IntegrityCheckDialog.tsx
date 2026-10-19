@@ -197,7 +197,7 @@ export function IntegrityCheckDialog({ open, onOpenChange }: IntegrityCheckDialo
                             <p className='text-muted-foreground text-xs'>{t('admin.version.integrity_scope')}</p>
 
                             {data.baseline_present ? (
-                                <div className='border-border/40 bg-card/50 rounded-lg border px-3 py-2 text-xs'>
+                                <div className='fp-surface rounded-lg border px-3 py-2 text-xs'>
                                     <p className='text-foreground font-semibold'>
                                         {t('admin.version.integrity_baseline_title')}
                                     </p>

@@ -23,7 +23,8 @@ import { Slot } from '@radix-ui/react-slot';
 const variants = {
     default: 'bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98]',
     destructive: 'bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 active:scale-[0.98]',
-    outline: 'border border-white/10 bg-white/5 hover:bg-white/10 text-foreground backdrop-blur-sm',
+    outline:
+        'border border-[var(--fp-surface-border)] bg-[hsl(var(--fp-surface-tint)/0.55)] hover:bg-primary/10 hover:border-primary/30 text-foreground',
     secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
     ghost: 'hover:bg-accent hover:text-accent-foreground',
     link: 'text-primary underline-offset-4 hover:underline',
@@ -34,8 +35,8 @@ const variants = {
 
 const sizes = {
     default: 'h-11 px-6',
-    sm: 'h-9 rounded-xl px-4 text-xs tracking-wide uppercase',
-    lg: 'h-14 rounded-2xl px-10 text-base uppercase tracking-widest',
+    sm: 'h-9 rounded-xl px-3.5 text-sm font-medium',
+    lg: 'h-12 rounded-xl px-8 text-base',
     icon: 'h-11 w-11',
 };
 
@@ -53,7 +54,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ) => {
         const Comp = asChild ? Slot : 'button';
         const baseStyles =
-            'inline-flex items-center justify-center whitespace-nowrap rounded-2xl text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 relative';
+            'inline-flex items-center justify-center whitespace-nowrap rounded-2xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 relative';
 
         return (
             <Comp

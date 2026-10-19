@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
@@ -438,6 +439,8 @@ export default function NodeStatusPage() {
                     <WidgetRenderer widgets={getWidgets('admin-nodes-status', 'after-individual-nodes')} />
                 </>
             )}
+
+            <AdminPageTips page='nodes-status' />
 
             <WidgetRenderer widgets={getWidgets('admin-nodes-status', 'bottom-of-page')} />
         </div>

@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -482,7 +483,7 @@ export default function PterodactylImporterPage() {
                                     ].map((item) => (
                                         <div
                                             key={item.key}
-                                            className='bg-card/50 hover:bg-card/80 flex items-center justify-between rounded-lg border border-white/5 box-decoration-clone p-3 transition-all'
+                                            className='bg-card/50 hover:bg-card/80 flex items-center justify-between rounded-lg border border-[var(--fp-surface-border)] box-decoration-clone p-3 transition-all'
                                         >
                                             <span className='text-sm font-medium'>
                                                 {t(`admin.pterodactyl_importer.prerequisites.items.${item.key}`)}
@@ -500,7 +501,7 @@ export default function PterodactylImporterPage() {
                                         </div>
                                     ))}
 
-                                    <div className='bg-card/50 hover:bg-card/80 flex items-center justify-between rounded-lg border border-white/5 box-decoration-clone p-3 transition-all sm:col-span-2'>
+                                    <div className='bg-card/50 hover:bg-card/80 flex items-center justify-between rounded-lg border border-[var(--fp-surface-border)] box-decoration-clone p-3 transition-all sm:col-span-2'>
                                         <span className='text-sm font-medium'>
                                             {t('admin.pterodactyl_importer.prerequisites.items.panel_status')}
                                         </span>
@@ -598,20 +599,20 @@ export default function PterodactylImporterPage() {
                                         className='border-primary/20'
                                     >
                                         <div className='space-y-6'>
-                                            <div className='rounded-xl border border-white/10 bg-black/50 p-4'>
+                                            <div className='rounded-xl border border-[var(--fp-surface-border)] bg-black/50 p-4'>
                                                 <code className='font-mono text-sm text-green-400'>
                                                     feathercli config setup
                                                 </code>
                                             </div>
 
                                             <div className='grid gap-4 sm:grid-cols-2'>
-                                                <div className='space-y-1 rounded-lg border border-white/5 bg-white/5 p-3'>
+                                                <div className='space-y-1 rounded-lg border border-[var(--fp-surface-border)] bg-white/5 p-3'>
                                                     <span className='text-muted-foreground text-xs font-medium uppercase'>
                                                         {t('admin.pterodactyl_importer.cli.step2.panel_url')}
                                                     </span>
                                                     <div className='font-mono text-sm break-all'>{panelUrl}</div>
                                                 </div>
-                                                <div className='space-y-1 rounded-lg border border-white/5 bg-white/5 p-3'>
+                                                <div className='space-y-1 rounded-lg border border-[var(--fp-surface-border)] bg-white/5 p-3'>
                                                     <span className='text-muted-foreground text-xs font-medium uppercase'>
                                                         {t('admin.pterodactyl_importer.cli.step2.api_key')}
                                                     </span>
@@ -628,7 +629,7 @@ export default function PterodactylImporterPage() {
                                                 <p className='text-muted-foreground text-sm'>
                                                     {t('admin.pterodactyl_importer.cli.step4.description')}
                                                 </p>
-                                                <div className='rounded-xl border border-white/10 bg-black/50 p-4'>
+                                                <div className='rounded-xl border border-[var(--fp-surface-border)] bg-black/50 p-4'>
                                                     <code className='font-mono text-sm text-green-400'>
                                                         feathercli migrate
                                                     </code>
@@ -653,7 +654,7 @@ export default function PterodactylImporterPage() {
                                 href='https://docs.mythical.systems/docs/featherpanel/migration'
                                 target='_blank'
                                 rel='noopener noreferrer'
-                                className='flex items-center gap-3 rounded-lg border border-transparent p-3 transition-colors hover:border-white/10 hover:bg-white/5'
+                                className='flex items-center gap-3 rounded-lg border border-transparent p-3 transition-colors hover:border-[var(--fp-surface-border)] hover:bg-white/5'
                             >
                                 <div className='bg-primary/10 text-primary rounded-lg p-2'>
                                     <BookOpen className='h-5 w-5' />
@@ -672,7 +673,7 @@ export default function PterodactylImporterPage() {
                                 href='https://discord.mythical.systems'
                                 target='_blank'
                                 rel='noopener noreferrer'
-                                className='flex items-center gap-3 rounded-lg border border-transparent p-3 transition-colors hover:border-white/10 hover:bg-white/5'
+                                className='flex items-center gap-3 rounded-lg border border-transparent p-3 transition-colors hover:border-[var(--fp-surface-border)] hover:bg-white/5'
                             >
                                 <div className='rounded-lg bg-[#5865F2]/10 p-2 text-[#5865F2]'>
                                     <MessageCircle className='h-5 w-5' />
@@ -704,7 +705,7 @@ export default function PterodactylImporterPage() {
                                 ),
                             )}
                         </ul>
-                        <div className='mt-4 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-500/90'>
+                        <div className='mt-4 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] p-3 text-xs text-amber-500/90'>
                             {t('admin.pterodactyl_importer.info.footer')}
                         </div>
                     </PageCard>
@@ -736,7 +737,7 @@ export default function PterodactylImporterPage() {
                                 {t('admin.pterodactyl_importer.create_key.help_text')}
                             </p>
                         </div>
-                        <div className='rounded-lg border border-amber-500/30 bg-amber-500/10 p-3'>
+                        <div className='rounded-lg border border-amber-500/25 bg-amber-500/[0.06] p-3'>
                             <div className='flex items-start gap-2'>
                                 <AlertTriangle className='mt-0.5 h-4 w-4 shrink-0 text-amber-500' />
                                 <div className='text-xs text-amber-500/90'>
@@ -769,6 +770,8 @@ export default function PterodactylImporterPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <AdminPageTips page='pterodactyl-importer' />
 
             <WidgetRenderer widgets={getWidgets('admin-pterodactyl-importer', 'bottom-of-page')} />
         </div>

@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import React, { useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -81,6 +82,8 @@ const FeatherZeroTrustPage = () => {
                     </TabsContent>
                 </Tabs>
             </div>
+            <AdminPageTips page='featherzerotrust' />
+
             <WidgetRenderer widgets={getWidgets('admin-featherzerotrust', 'bottom-of-page')} />
         </>
     );

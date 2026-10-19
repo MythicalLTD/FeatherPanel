@@ -104,7 +104,7 @@ export function HeadlessSelect({
                     anchor={anchor}
                     transition
                     className={clsx(
-                        'bg-popover/80 custom-scrollbar z-50 max-h-60 w-[var(--button-width)] overflow-auto rounded-2xl border border-white/10 p-1.5 py-1 text-base shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-3xl focus:outline-none sm:text-sm dark:border-white/5',
+                        'fp-menu-surface custom-scrollbar z-50 max-h-60 w-[var(--button-width)] overflow-auto rounded-xl border p-1 text-base focus:outline-none sm:text-sm',
                         'transition duration-200 ease-out data-closed:scale-95 data-closed:opacity-0',
                         anchorPosition === 'top' ? 'origin-bottom' : 'origin-top',
                     )}

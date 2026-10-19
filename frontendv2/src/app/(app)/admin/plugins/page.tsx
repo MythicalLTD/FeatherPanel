@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -860,11 +861,11 @@ export default function PluginsPage() {
             <WidgetRenderer widgets={getWidgets('admin-plugins', 'after-header')} />
 
             <div className='grid gap-3 sm:grid-cols-3'>
-                <div className='bg-card/60 rounded-2xl px-4 py-3'>
+                <div className='fp-surface rounded-xl border px-4 py-3'>
                     <p className='text-muted-foreground text-xs'>{t('admin.plugins.stats.installed')}</p>
                     <p className='mt-1 text-sm font-medium'>{plugins.length}</p>
                 </div>
-                <div className='bg-card/60 rounded-2xl px-4 py-3'>
+                <div className='fp-surface rounded-xl border px-4 py-3'>
                     <p className='text-muted-foreground text-xs'>{t('admin.plugins.stats.updates')}</p>
                     <p className='mt-1 text-sm font-medium'>
                         {storeError
@@ -876,7 +877,7 @@ export default function PluginsPage() {
                               : t('admin.plugins.stats.up_to_date')}
                     </p>
                 </div>
-                <div className='bg-card/60 rounded-2xl px-4 py-3'>
+                <div className='fp-surface rounded-xl border px-4 py-3'>
                     <p className='text-muted-foreground text-xs'>{t('admin.plugins.stats.issues')}</p>
                     <p className='mt-1 text-sm font-medium'>
                         {issueCount > 0
@@ -1712,6 +1713,8 @@ export default function PluginsPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <AdminPageTips page='plugins' />
 
             <WidgetRenderer widgets={getWidgets('admin-plugins', 'bottom-of-page')} />
         </div>

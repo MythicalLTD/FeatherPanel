@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -383,6 +384,8 @@ export default function TicketsPage() {
                     onPageChange={(nextPage) => patchFilters({ page: nextPage })}
                 />
             )}
+            <AdminPageTips page='tickets' />
+
             <WidgetRenderer widgets={getWidgets('admin-tickets', 'bottom-of-page')} />
         </div>
     );

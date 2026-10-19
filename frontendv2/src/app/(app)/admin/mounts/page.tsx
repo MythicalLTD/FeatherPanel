@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -479,7 +480,7 @@ export default function AdminMountsPage() {
                         if (!m.user_mountable) {
                             badges.push({
                                 label: t('admin.mounts.admin_only'),
-                                className: 'bg-zinc-500/10 text-zinc-600 border-zinc-500/20',
+                                className: 'bg-zinc-500/10 text-zinc-600 border-[var(--fp-surface-border)]',
                             });
                         }
                         return (
@@ -690,6 +691,7 @@ export default function AdminMountsPage() {
                     </SheetFooter>
                 </SheetContent>
             </Sheet>
+            <AdminPageTips page='mounts' />
         </div>
     );
 }
