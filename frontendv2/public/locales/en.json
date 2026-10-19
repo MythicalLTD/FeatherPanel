@@ -3603,7 +3603,8 @@
 			"backupSchedules": "Backup Schedules",
 			"wingsBackups": "Wings Backups",
 			"mailHosts": "Mail",
-			"dnsHosts": "DNS hosts"
+			"dnsHosts": "DNS hosts",
+			"auditLog": "Audit log"
 		}
 	},
 	"adminWingsBackups": {
@@ -14232,6 +14233,50 @@
 				"t1_body": "Set your own logo and decide whether the FeatherPanel credit and version appear in the sidebar.",
 				"t2_title": "Custom sidebar",
 				"t2_body": "Reorder or hide items per area and add your own links. Use reset to go back to the defaults."
+			}
+		},
+		"audit_log": {
+			"title": "Audit log",
+			"description": "Every recorded action across the panel. Filter, inspect and export.",
+			"fetch_failed": "Failed to load the audit log",
+			"export_failed": "Failed to export the audit log",
+			"export": "Export CSV",
+			"search_placeholder": "Search actions, details, IPs or users",
+			"user_placeholder": "User (username, email or UUID)",
+			"action": "Action",
+			"all_actions": "All actions",
+			"target": "Target",
+			"all_targets": "All targets",
+			"from": "From date",
+			"to": "To date",
+			"total": "{count} events",
+			"clear": "Clear filters",
+			"empty_title": "No events found",
+			"empty_description": "Recorded actions will appear here.",
+			"when": "When",
+			"user": "User",
+			"email": "Email",
+			"user_uuid": "User UUID",
+			"context": "Details",
+			"ip": "IP address",
+			"event_id": "Event ID",
+			"deleted_user": "Deleted user",
+			"filter_user": "Show only this user",
+			"targets": {
+				"auth": "Authentication",
+				"vm": "Virtual servers",
+				"allocation": "Allocations",
+				"server": "Servers",
+				"node": "Nodes",
+				"user": "Users",
+				"database": "Databases",
+				"spell": "Spells and realms",
+				"ticket": "Tickets",
+				"knowledgebase": "Knowledge base",
+				"plugin": "Plugins",
+				"security": "Security",
+				"settings": "Settings",
+				"other": "Other"
 			}
 		}
 	},
