@@ -55,6 +55,7 @@ import { cn, copyToClipboard as copyUtil } from '@/lib/utils';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { ServerPageHeader } from '@/components/server/ServerPageHeader';
+import { ServerPageTips } from '@/components/server/ServerPageTips';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -476,7 +477,7 @@ export default function ServerDatabasesPage() {
                     <div className='flex flex-wrap items-center gap-x-3 gap-y-2'>
                         <span>{t('serverDatabases.description')}</span>
                         {server && (
-                            <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest whitespace-nowrap uppercase'>
+                            <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-semibold whitespace-nowrap'>
                                 {pagination.total} / {server.database_limit}
                             </span>
                         )}
@@ -641,16 +642,16 @@ export default function ServerDatabasesPage() {
                                     title={db.database}
                                     badges={
                                         <>
-                                            <span className='bg-primary/10 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase'>
+                                            <span className='bg-primary/10 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] leading-none font-semibold'>
                                                 {db.database_type}
                                             </span>
                                             {db.remote === '%' ? (
-                                                <span className='flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-emerald-500 uppercase'>
+                                                <span className='flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] leading-none font-semibold text-emerald-500'>
                                                     <Globe className='h-3 w-3' />
                                                     {t('serverDatabases.allHosts')}
                                                 </span>
                                             ) : (
-                                                <span className='bg-muted border-border/50 text-muted-foreground rounded-full border px-3 py-1 font-mono text-[10px] leading-none font-black tracking-widest uppercase'>
+                                                <span className='bg-muted border-border/50 text-muted-foreground rounded-full border px-3 py-1 font-mono text-[10px] leading-none font-semibold'>
                                                     {db.remote}
                                                 </span>
                                             )}
@@ -680,7 +681,7 @@ export default function ServerDatabasesPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent
                                                     align='end'
-                                                    className='bg-card/90 border-border/40 w-56 rounded-2xl p-2 backdrop-blur-xl'
+                                                    className='fp-menu-surface w-56 rounded-2xl p-2'
                                                 >
                                                     {canViewPassword && (
                                                         <>
@@ -768,7 +769,7 @@ export default function ServerDatabasesPage() {
 
                 {pagination.total > pagination.per_page && (
                     <div className='border-border/40 flex items-center justify-between border-t px-6 py-8'>
-                        <p className='text-sm font-bold tracking-widest uppercase opacity-40'>
+                        <p className='text-sm font-bold opacity-40'>
                             {t('serverActivities.pagination.showing', {
                                 from: String((pagination.current_page - 1) * pagination.per_page + 1),
                                 to: String(Math.min(pagination.current_page * pagination.per_page, pagination.total)),
@@ -788,7 +789,7 @@ export default function ServerDatabasesPage() {
                             >
                                 <ChevronLeft className='h-5 w-5' />
                             </Button>
-                            <span className='bg-primary/5 text-primary border-primary/20 flex h-10 min-w-12 items-center justify-center rounded-xl border px-4 text-sm font-black'>
+                            <span className='bg-primary/5 text-primary border-primary/20 flex h-10 min-w-12 items-center justify-center rounded-xl border px-4 text-sm font-semibold'>
                                 {pagination.current_page} / {pagination.last_page}
                             </span>
                             <Button
@@ -863,7 +864,7 @@ export default function ServerDatabasesPage() {
                         <div className='mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl border border-yellow-500/20 bg-yellow-500/10 shadow-inner'>
                             <ShieldAlert className='h-8 w-8 text-yellow-500' />
                         </div>
-                        <DialogTitle className='text-2xl leading-tight font-black text-yellow-500'>
+                        <DialogTitle className='text-2xl leading-tight font-semibold text-yellow-500'>
                             {t('serverDatabases.sensitiveInfoWarning')}
                         </DialogTitle>
                         <DialogDescription className='px-4 text-sm leading-relaxed opacity-70'>
@@ -888,7 +889,7 @@ export default function ServerDatabasesPage() {
                             >
                                 {t('serverDatabases.rememberChoice')}
                             </label>
-                            <p className='text-[10px] font-bold tracking-tighter uppercase opacity-40'>
+                            <p className='text-[10px] font-bold opacity-40'>
                                 {t('serverDatabases.skipWarningInFuture')}
                             </p>
                         </div>
@@ -930,7 +931,7 @@ export default function ServerDatabasesPage() {
 
                         <div className='space-y-6 px-1'>
                             <div className='border-primary/20 bg-primary/5 space-y-5 rounded-3xl border p-6 backdrop-blur-sm'>
-                                <h3 className='text-primary/60 flex items-center gap-2 text-[10px] font-black tracking-[0.2em] uppercase'>
+                                <h3 className='text-primary/60 flex items-center gap-2 text-[10px] font-semibold'>
                                     <div className='bg-primary/30 h-4 w-1.5 rounded-full' />
                                     {t('serverDatabases.connectionDetails')}
                                 </h3>
@@ -953,9 +954,7 @@ export default function ServerDatabasesPage() {
                                         },
                                     ].map((item, i) => (
                                         <div key={i} className='space-y-2'>
-                                            <label className='text-[10px] font-bold tracking-widest uppercase opacity-40'>
-                                                {item.label}
-                                            </label>
+                                            <label className='text-[10px] font-bold opacity-40'>{item.label}</label>
                                             <div className='group relative'>
                                                 <Input
                                                     readOnly
@@ -978,13 +977,13 @@ export default function ServerDatabasesPage() {
                             </div>
 
                             <div className='border-primary/20 bg-primary/5 space-y-5 rounded-3xl border p-6 backdrop-blur-sm'>
-                                <h3 className='text-primary/60 flex items-center gap-2 text-[10px] font-black tracking-[0.2em] uppercase'>
+                                <h3 className='text-primary/60 flex items-center gap-2 text-[10px] font-semibold'>
                                     <div className='bg-primary/30 h-4 w-1.5 rounded-full' />
                                     {t('serverDatabases.loginCredentials')}
                                 </h3>
                                 <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                                     <div className='space-y-2'>
-                                        <label className='text-[10px] font-bold tracking-widest uppercase opacity-40'>
+                                        <label className='text-[10px] font-bold opacity-40'>
                                             {t('serverDatabases.username')}
                                         </label>
                                         <div className='group relative'>
@@ -1006,11 +1005,11 @@ export default function ServerDatabasesPage() {
                                     </div>
                                     <div className='space-y-2'>
                                         <div className='flex items-center justify-between'>
-                                            <label className='text-[10px] font-bold tracking-widest uppercase opacity-40'>
+                                            <label className='text-[10px] font-bold opacity-40'>
                                                 {t('serverDatabases.password')}
                                             </label>
                                             <button
-                                                className='text-primary text-[10px] font-black uppercase hover:underline'
+                                                className='text-primary text-[10px] font-semibold hover:underline'
                                                 onClick={() => setShowPassword(!showPassword)}
                                             >
                                                 {showPassword ? t('common.hide') : t('common.show')}
@@ -1045,7 +1044,7 @@ export default function ServerDatabasesPage() {
                                     localStorage.removeItem('featherpanel-remember-sensitive-info');
                                     toast.success(t('serverDatabases.rememberedChoiceCleared'));
                                 }}
-                                className='text-[10px] font-black tracking-widest uppercase opacity-40 transition-opacity hover:opacity-100 sm:mr-auto'
+                                className='text-[10px] font-semibold opacity-40 transition-opacity hover:opacity-100 sm:mr-auto'
                             >
                                 {t('serverDatabases.resetWarning')}
                             </Button>
@@ -1071,7 +1070,7 @@ export default function ServerDatabasesPage() {
                         <div className='mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl border border-red-500/20 bg-red-500/10 shadow-inner'>
                             <Trash2 className='h-8 w-8 text-red-500' />
                         </div>
-                        <DialogTitle className='text-2xl leading-tight font-black text-red-500'>
+                        <DialogTitle className='text-2xl leading-tight font-semibold text-red-500'>
                             {t('serverDatabases.confirmDeleteTitle')}
                         </DialogTitle>
                         <DialogDescription className='px-4 text-sm leading-relaxed opacity-70'>
@@ -1082,7 +1081,7 @@ export default function ServerDatabasesPage() {
                     </DialogHeader>
 
                     <div className='py-2 text-center'>
-                        <p className='text-[10px] font-black tracking-[0.2em] text-red-500 uppercase opacity-80'>
+                        <p className='text-[10px] font-semibold text-red-500 opacity-80'>
                             {t('common.actionsCannotBeUndone')}
                         </p>
                     </div>
@@ -1163,7 +1162,7 @@ export default function ServerDatabasesPage() {
                             </div>
                             {importResult.errors.length > 0 && (
                                 <div className='border-destructive/20 bg-destructive/5 max-h-48 space-y-2 overflow-y-auto rounded-xl border p-4'>
-                                    <p className='text-destructive/70 text-xs font-black tracking-wider uppercase'>
+                                    <p className='text-destructive/70 text-xs font-semibold'>
                                         {t('serverDatabases.errorsHeader')}
                                     </p>
                                     {importResult.errors.map((err, i) => (
@@ -1222,7 +1221,7 @@ export default function ServerDatabasesPage() {
                             />
                             <button
                                 type='button'
-                                className='border-border/40 bg-card/50 hover:bg-accent/30 flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-colors'
+                                className='border-border/40 fp-surface hover:bg-accent/30 flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-colors'
                                 onClick={() => setImportIgnoreErrors(!importIgnoreErrors)}
                             >
                                 <Checkbox
@@ -1361,7 +1360,7 @@ export default function ServerDatabasesPage() {
                                                 {queryResult.columns.map((col, i) => (
                                                     <th
                                                         key={i}
-                                                        className='text-muted-foreground border-border/40 border-b px-3 py-2 text-left font-black tracking-wider whitespace-nowrap uppercase'
+                                                        className='text-muted-foreground border-border/40 border-b px-3 py-2 text-left font-semibold whitespace-nowrap'
                                                     >
                                                         {col}
                                                     </th>
@@ -1422,6 +1421,7 @@ export default function ServerDatabasesPage() {
             </Dialog>
 
             <WidgetRenderer widgets={getWidgets('server-databases', 'bottom-of-page')} />
+            <ServerPageTips page='databases' />
         </div>
     );
 }
