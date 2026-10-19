@@ -1297,7 +1297,7 @@ manage_configuration() {
 		1)
 			show_config
 			echo ""
-			read -r -p "Press Enter to continue..."
+			prompt "Press Enter to continue..." __continue
 			;;
 		2)
 			configure_auto_update
@@ -1826,7 +1826,7 @@ show_panel_info() {
 			echo -e "${YELLOW}FeatherPanel compose file not found at ${compose_file}.${NC}"
 			echo ""
 			draw_hr
-			read -r -p "Press Enter to continue..."
+			prompt "Press Enter to continue..." __continue
 			return 0
 		fi
 
@@ -2035,7 +2035,7 @@ show_panel_info() {
 
 	echo ""
 	draw_hr
-	read -r -p "Press Enter to continue..."
+	prompt "Press Enter to continue..." __continue
 }
 
 manage_panel_firewall() {
@@ -2153,7 +2153,7 @@ manage_panel_firewall() {
 
 	echo ""
 	draw_hr
-	read -r -p "Press Enter to continue..."
+	prompt "Press Enter to continue..." __continue
 }
 
 show_backup_menu() {
@@ -2817,10 +2817,10 @@ prompt() {
 	local __varname="$2"
 	local __input=""
 	if [ -t 0 ]; then
-		read -r -p "$message" __input
-	else
+		read -r -p "$message" __input || true
+	elif [ -r /dev/tty ]; then
 		# Read from the real terminal
-		read -r -p "$message" __input </dev/tty
+		read -r -p "$message" __input </dev/tty || true
 	fi
 	printf -v "$__varname" '%s' "$__input"
 }
@@ -2830,11 +2830,11 @@ prompt_secret() {
 	local __varname="$2"
 	local __input=""
 	if [ -t 0 ]; then
-		read -r -s -p "$message" __input
+		read -r -s -p "$message" __input || true
 		echo
-	else
+	elif [ -r /dev/tty ]; then
 		# Read from the real terminal
-		read -r -s -p "$message" __input </dev/tty
+		read -r -s -p "$message" __input </dev/tty || true
 		echo
 	fi
 	printf -v "$__varname" '%s' "$__input"
