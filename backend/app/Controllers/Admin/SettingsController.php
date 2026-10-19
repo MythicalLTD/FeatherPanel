@@ -260,6 +260,8 @@ class SettingsController
                 ConfigInterface::AUTH_SSO_SUBHEADLINE,
                 ConfigInterface::AUTH_SHOW_MARKETING_PANEL,
                 ConfigInterface::AUTH_ASIDE_IMAGE_URL,
+                ConfigInterface::AUTH_TEMPLATE,
+                ConfigInterface::AUTH_VISUAL_PRESET,
                 ConfigInterface::AUTH_SHOW_QR_LOGIN,
                 ConfigInterface::AUTH_FORM_DENSITY,
                 ConfigInterface::AUTH_SECONDARY_LAYOUT,
@@ -1736,6 +1738,32 @@ class SettingsController
                 'placeholder' => 'https://example.com/auth-hero.jpg',
                 'validation' => 'nullable|string|max:2048',
                 'options' => [],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_TEMPLATE => [
+                'name' => ConfigInterface::AUTH_TEMPLATE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_TEMPLATE, 'split'),
+                'description' => 'Choose the login page template: split (form plus marketing panel), centered (focused form), or spotlight (form with a compact brand panel).',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'split',
+                'validation' => 'required|string|max:32',
+                'options' => ['split', 'centered', 'spotlight'],
+                'category' => 'auth_page',
+            ],
+            ConfigInterface::AUTH_VISUAL_PRESET => [
+                'name' => ConfigInterface::AUTH_VISUAL_PRESET,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AUTH_VISUAL_PRESET, 'aurora'),
+                'description' => 'Choose the visual treatment for auth backgrounds and surfaces: aurora, glass, minimal, or contrast.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'aurora',
+                'validation' => 'required|string|max:32',
+                'options' => ['aurora', 'glass', 'minimal', 'contrast'],
                 'category' => 'auth_page',
             ],
             ConfigInterface::AUTH_SHOW_QR_LOGIN => [

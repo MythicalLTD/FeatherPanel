@@ -223,6 +223,10 @@ export interface AppSettings {
     auth_show_marketing_panel?: string;
     /** Optional hero image for the auth marketing panel */
     auth_aside_image_url?: string;
+    /** split | centered | spotlight */
+    auth_template?: string;
+    /** aurora | glass | minimal | contrast */
+    auth_visual_preset?: string;
     /** comfortable | compact | dense */
     auth_form_density?: string;
     /** chips | stack | collapsed */

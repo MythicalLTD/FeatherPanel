@@ -22,6 +22,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
+import { clearDevelopmentCaches } from '@/lib/development-cache';
 
 interface BeforeInstallPromptEvent extends Event {
     prompt: () => Promise<void>;
@@ -85,6 +86,10 @@ export function PwaInstaller() {
 
     useEffect(() => {
         if (typeof window === 'undefined' || typeof navigator === 'undefined') return;
+        if (process.env.NODE_ENV === 'development') {
+            void clearDevelopmentCaches();
+            return;
+        }
 
         const unregisterPanelWorker = () => {
             if (!('serviceWorker' in navigator)) return;

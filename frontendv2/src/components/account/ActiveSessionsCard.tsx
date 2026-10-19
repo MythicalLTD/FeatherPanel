@@ -68,18 +68,21 @@ export function ActiveSessionsCard() {
     const { t } = useTranslation();
     const [sessions, setSessions] = useState<SessionRow[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const [busyId, setBusyId] = useState<number | 'others' | null>(null);
 
     const load = useCallback(async () => {
+        setLoadError(false);
         try {
             const { data } = await axios.get('/api/user/sessions');
             setSessions(Array.isArray(data?.data?.sessions) ? data.data.sessions : []);
-        } catch (error) {
-            toast.error(getApiErrorMessage(error, t, 'account.sessions.load_failed'));
+        } catch {
+            setSessions([]);
+            setLoadError(true);
         } finally {
             setLoading(false);
         }
-    }, [t]);
+    }, []);
 
     useEffect(() => {
         void load();
@@ -146,6 +149,13 @@ export function ActiveSessionsCard() {
                             <Loader2 className='h-4 w-4 animate-spin' />
                             {t('account.sessions.loading')}
                         </p>
+                    ) : loadError ? (
+                        <div className='border-destructive/25 bg-destructive/[0.04] flex flex-col gap-3 rounded-xl border px-4 py-4 sm:flex-row sm:items-center sm:justify-between'>
+                            <p className='text-muted-foreground text-sm'>{t('account.sessions.load_failed')}</p>
+                            <Button type='button' variant='outline' size='sm' onClick={() => void load()}>
+                                {t('account.sessions.retry')}
+                            </Button>
+                        </div>
                     ) : (
                         <ul className='space-y-2'>
                             {sessions.map((s) => {

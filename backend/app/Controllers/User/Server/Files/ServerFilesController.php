@@ -203,14 +203,15 @@ class ServerFilesController
             $path = $this->getPathFromQuery();
             $search = trim((string) ($_GET['search'] ?? ''));
 
-            $wings = $this->createWingsConnection($node);
+            // Short timeout: offline nodes should fail fast (not burn FPM workers for 30s+).
+            $wings = $this->createWingsConnection($node, 8);
             $response = $wings->getServer()->listDirectory($server['uuid'], $path, true);
 
             if (!$response->isSuccessful()) {
                 $error = $response->getError();
                 if ($this->isWingsConnectionUnavailableError($error)) {
                     return ApiResponse::error(
-                        'Wings Connection Unavailable. Please contact the support team. Technical details: ' . $error,
+                        'Could not reach the node. It may be offline or Wings may be down.',
                         'WINGS_CONNECTION_UNAVAILABLE',
                         503
                     );
@@ -270,7 +271,7 @@ class ServerFilesController
                 'limit' => self::MAX_LIST_ITEMS,
                 'total' => $total,
             ], 'Files fetched successfully');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return $this->handleWingsError($e, 'fetch files');
         }
     }
@@ -322,7 +323,7 @@ class ServerFilesController
                 $error = $response->getError();
                 if ($this->isWingsConnectionUnavailableError($error)) {
                     return ApiResponse::error(
-                        'Wings Connection Unavailable. Please contact the support team. Technical details: ' . $error,
+                        'Could not reach the node. It may be offline or Wings may be down.',
                         'WINGS_CONNECTION_UNAVAILABLE',
                         503
                     );
@@ -2905,18 +2906,25 @@ class ServerFilesController
     /**
      * Helper method to handle Wings API errors.
      */
-    private function handleWingsError(\Exception $e, string $operation): Response
+    private function handleWingsError(\Throwable $e, string $operation): Response
     {
         $error = $e->getMessage();
-        $statusCode = $e->getCode() ?: 500;
+        $statusCode = is_int($e->getCode()) && $e->getCode() >= 400 && $e->getCode() < 600
+            ? $e->getCode()
+            : 500;
 
-        // Surface a clear, user-friendly message when Wings cannot be reached.
-        if ($e instanceof \App\Services\Wings\Exceptions\WingsConnectionException) {
-            $message = 'Wings Connection Unavailable. Please contact the support team. Technical details: ' . $error;
-
+        // Offline / unreachable node — stable code, no raw stack or curl dump for the client.
+        if (
+            $e instanceof \App\Services\Wings\Exceptions\WingsConnectionException
+            || $this->isWingsConnectionUnavailableError($error)
+        ) {
             App::getInstance(true)->getLogger()->error("Wings connection unavailable during {$operation}: {$error}");
 
-            return ApiResponse::error($message, 'WINGS_CONNECTION_UNAVAILABLE', 503);
+            return ApiResponse::error(
+                'Could not reach the node. It may be offline or Wings may be down.',
+                'WINGS_CONNECTION_UNAVAILABLE',
+                503
+            );
         }
 
         // Map Wings error codes to user-friendly messages
@@ -2935,7 +2943,7 @@ class ServerFilesController
 
         App::getInstance(true)->getLogger()->error("Failed to {$operation}: {$error}");
 
-        return ApiResponse::error($message, strtoupper($operation) . '_FAILED', $statusCode);
+        return ApiResponse::error($message, strtoupper(str_replace(' ', '_', $operation)) . '_FAILED', $statusCode);
     }
 
     /**
@@ -2946,10 +2954,20 @@ class ServerFilesController
         $needle = strtolower($error);
 
         return str_contains($needle, 'connection failed')
-            || str_contains($needle, 'could not connect to server')
+            || str_contains($needle, 'could not connect')
+            || str_contains($needle, 'failed to connect')
+            || str_contains($needle, 'connection refused')
+            || str_contains($needle, 'network is unreachable')
+            || str_contains($needle, 'name or service not known')
+            || str_contains($needle, 'nodename nor servname')
             || str_contains($needle, 'curl error 7')
+            || str_contains($needle, 'curl error 28')
+            || str_contains($needle, 'curl error 35')
             || str_contains($needle, 'timed out')
-            || str_contains($needle, 'curl error 28');
+            || str_contains($needle, 'timeout')
+            || str_contains($needle, 'all retry attempts failed')
+            || str_contains($needle, 'wings connection unavailable')
+            || str_contains($needle, 'failed to reach the node');
     }
 
     /**

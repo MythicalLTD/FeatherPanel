@@ -87,6 +87,8 @@ const ADMIN_SETTING_DISPLAY_NAMES: Record<string, string> = {
     auth_show_qr_login: 'QR code login',
     auth_show_marketing_panel: 'Marketing panel (desktop)',
     auth_aside_image_url: 'Marketing panel image',
+    auth_template: 'Login page template',
+    auth_visual_preset: 'Login visual preset',
     auth_form_density: 'Form density',
     auth_secondary_layout: 'Alternate methods layout',
     auth_show_theme_customizer: 'Theme customizer on auth',

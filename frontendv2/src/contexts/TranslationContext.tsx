@@ -58,6 +58,7 @@ function translationCacheKey(lang: string): string {
 }
 
 function readCachedTranslations(lang: string): Record<string, unknown> | null {
+    if (process.env.NODE_ENV === 'development') return null;
     if (typeof window === 'undefined') return null;
     try {
         const cached = localStorage.getItem(translationCacheKey(lang));
@@ -100,6 +101,7 @@ function deepMerge(target: Record<string, unknown>, source: Record<string, unkno
 }
 
 function seedClientTranslationCache(lang: string, translations: Record<string, unknown>) {
+    if (process.env.NODE_ENV === 'development') return;
     if (typeof window === 'undefined') return;
     if (Object.keys(translations).length === 0) return;
     try {
@@ -149,7 +151,10 @@ export function TranslationProvider({ children, initialLocale, initialTranslatio
     }, [locale]);
 
     const fetchJsonObject = useCallback(async (url: string): Promise<Record<string, unknown> | null> => {
-        const response = await fetch(url, { credentials: 'same-origin' });
+        const response = await fetch(url, {
+            credentials: 'same-origin',
+            ...(process.env.NODE_ENV === 'development' ? { cache: 'no-store' as const } : {}),
+        });
         if (!response.ok) return null;
 
         const contentType = String(response.headers.get('content-type') || '').toLowerCase();
@@ -236,7 +241,8 @@ export function TranslationProvider({ children, initialLocale, initialTranslatio
 
             if (Object.keys(mergedTranslations).length > 0) {
                 setTranslations(mergedTranslations);
-                localStorage.setItem(cacheKey, JSON.stringify(mergedTranslations));
+                if (process.env.NODE_ENV !== 'development')
+                    localStorage.setItem(cacheKey, JSON.stringify(mergedTranslations));
                 setReady(true);
             } else if (cached) {
                 setTranslations(cached);
@@ -250,7 +256,10 @@ export function TranslationProvider({ children, initialLocale, initialTranslatio
 
     const loadAvailableLanguages = useCallback(async () => {
         try {
-            const response = await fetch('/api/system/translations/languages');
+            const response = await fetch(
+                '/api/system/translations/languages',
+                process.env.NODE_ENV === 'development' ? { cache: 'no-store' } : undefined,
+            );
             if (response.ok) {
                 const data = await response.json();
 

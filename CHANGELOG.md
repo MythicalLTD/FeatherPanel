@@ -4,6 +4,7 @@
 
 ### Added
 
+- Added FeatherOS, a browser desktop workspace for managing servers, files, notes, transfers, backups, databases, logs, schedules, terminals, settings, and other panel tools from one place. by @nayskutzu
 - Added a redesigned user dashboard with a greeting hero, server overview, customizable widgets, arrange mode, saved layout preferences, 24-hour resource history, sparklines, trends, and an improved responsive layout. by @nayskutzu
 - Added admin KPI analytics with date ranges, growth, capacity, top consumers, and infrastructure/server/user views. by @nayskutzu
 - Added an admin audit log with searchable activity history and detailed records for administrative actions. by @nayskutzu
@@ -34,6 +35,7 @@
 
 ### Fixed
 
+- Active sessions no longer surface a generic internal-server-error toast when an older installation has not applied the user-session migration yet; the account page keeps working and provides an inline retry state. by @nayskutzu
 - Re-running the source installer no longer replaces `DATABASE_ENCRYPTION_KEY` (which made encrypted data unreadable) or the database password, the default `change-me` database password is replaced by a random one, and the no-SSL nginx config no longer points at a backend that was never set up. by @nayskutzu
 - Hardcoded English in the frontend moved into translations: about 400 strings (page text, placeholders, titles, labels, select options, empty states, the VDS node setup tutorials, the cron editor) are now translatable keys, and 157 dead English fallbacks after existing translation keys were removed. `scan:hardcoded-ui` now covers the whole frontend (JSX text and user-facing attributes as well as toasts, confirms and page titles) and runs in CI; use an `i18n-ignore` comment for intentional English such as code samples. by @nayskutzu
 - Top bar no longer crowds or overlaps at tablet and laptop widths: the search box now shrinks between the page title and the actions instead of being centered on top of them, the keyboard shortcut hint only shows when there is room, and on phones the admin area, privacy mode and appearance buttons move into the user menu. by @nayskutzu
@@ -73,6 +75,16 @@
 
 ### Improved 
 
+- FeatherOS Terminal now fits saved windows inside the available viewport, starts at a more useful compact size, and uses a single flat macOS-style surface instead of a card nested inside another bordered window. by @nayskutzu
+- The Code Editor can now open a persisted workspace folder from the taskbar welcome screen: choose a server and directory, browse its files in Explorer, and open them into tabs without starting from “No file open.” by @nayskutzu
+- Dock magnification was toned down to a more natural 1.32× maximum. The Code Editor now opens with a VS Code-inspired welcome workspace, activity bar, Explorer panel, file-opening flow, and multi-file workspace guidance. by @nayskutzu
+- Dock magnification now scales only an icon overlay inside a fixed hit slot, so the navbar footprint stays unchanged. FeatherOS app icons were simplified from glossy gradients to a consistent flat color-and-glyph system. by @nayskutzu
+- Refined dock magnification so the dock keeps its normal footprint while the hovered icon scales above the bar and stays in front of neighboring icons. by @nayskutzu
+- FeatherOS Code Editor now includes a workspace explorer, multi-file tabs, dirty-file indicators, Save All, refreshable folder contents, and a fuller Monaco workspace experience. FeatherOS Terminal now uses a macOS-style chrome with traffic-light controls and a darker terminal surface. by @nayskutzu
+- FeatherOS dock magnification now scales icons inside fixed slots so hovering no longer resizes or shifts the whole dock. Finder now has visible multi-selection with Ctrl/Cmd-click, Shift-range selection, Select All/None, and bulk copy, cut, and delete actions. by @nayskutzu
+- Expanded auth customization with four visual presets (Aurora, Glass, Minimal, Contrast) that can be combined with the selectable login templates. by @nayskutzu
+- Added admin-selectable login templates: split, centered, and spotlight layouts, with safe fallback to the split template for existing installations. Removed generic server start/stop copy from the login marketing panel. by @nayskutzu
+- Security Settings now use a clearer status overview for 2FA, active devices, and passkeys, with better grouping and responsive card hierarchy. Login copy was also rewritten to be concise and product-specific instead of generic marketing text. by @nayskutzu
 - Refreshed the dashboard, server pages, authentication pages, account pages, admin pages, marketplace, plugin store, database management, and settings with consistent glass surfaces, borders, spacing, page headers, cards, and dark/light mode treatment. by @nayskutzu
 - Added shared server headers, compact activity lists, server-side activity filters, full-width stat rows, and equal-height console stat cards. by @nayskutzu
 - Improved mobile layouts, responsive tables, navigation, notifications, toasts, focus rings, tab handling, and light-mode contrast across the panel. by @nayskutzu

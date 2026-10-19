@@ -19,6 +19,9 @@ import type { FileObject } from '@/types/server';
 /** Internal trash folder on the server (hidden from file manager listings). */
 export const FEATHER_TRASH_DIR = '.featherpanel-trash';
 
+/** FeatherOS staging trash (DB-tracked restore when Wings trash is disabled). */
+export const FEATHEROS_TRASH_DIR = '.featheros-trash';
+
 /** Database dump folder managed via Backups → Database dumps (hidden from file manager). */
 export const DATABASE_BACKUPS_DIR = '.featherpanel-database-backups';
 
@@ -81,7 +84,12 @@ function normalizeEntryPath(name: string): string {
 
 export function isFeatherTrashEntry(name: string): boolean {
     const n = normalizeEntryPath(name);
-    return n === FEATHER_TRASH_DIR || n.startsWith(`${FEATHER_TRASH_DIR}/`);
+    return (
+        n === FEATHER_TRASH_DIR ||
+        n.startsWith(`${FEATHER_TRASH_DIR}/`) ||
+        n === FEATHEROS_TRASH_DIR ||
+        n.startsWith(`${FEATHEROS_TRASH_DIR}/`)
+    );
 }
 
 export function isDatabaseBackupsEntry(name: string): boolean {

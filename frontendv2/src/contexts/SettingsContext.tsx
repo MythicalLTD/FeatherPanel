@@ -47,7 +47,7 @@ export function SettingsProvider({ children, initialSettings = null, initialCore
 
     const fetchSettings = useCallback(async () => {
         try {
-            if (!initialSettings) {
+            if (!initialSettings && process.env.NODE_ENV !== 'development') {
                 const cached = localStorage.getItem(CACHE_KEY);
                 if (cached) {
                     const { data, version } = JSON.parse(cached);
@@ -66,14 +66,15 @@ export function SettingsProvider({ children, initialSettings = null, initialCore
                 setCore(data.core);
                 setError(null);
 
-                localStorage.setItem(
-                    CACHE_KEY,
-                    JSON.stringify({
-                        data,
-                        version: CACHE_VERSION,
-                        timestamp: Date.now(),
-                    }),
-                );
+                if (process.env.NODE_ENV !== 'development')
+                    localStorage.setItem(
+                        CACHE_KEY,
+                        JSON.stringify({
+                            data,
+                            version: CACHE_VERSION,
+                            timestamp: Date.now(),
+                        }),
+                    );
             } else if (!initialSettings) {
                 throw new Error('Failed to load settings');
             }

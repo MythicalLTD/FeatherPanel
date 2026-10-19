@@ -27,7 +27,10 @@ const nextConfig: NextConfig = {
     experimental: {
         // Prefer webpack for next/dev + next/build (see package.json --webpack flags).
         // Turbopack in Next 16.3 fails next/font/google when many families load at once.
-        turbopackFileSystemCacheForDev: true,
+        turbopackFileSystemCacheForDev: false,
+        ...(process.env.NODE_ENV === 'development'
+            ? { serverComponentsHmrCache: false, staleTimes: { dynamic: 0, static: 0 } }
+            : {}),
         // TypeScript 7 has no programmatic compiler API; Next must shell out to `tsc`.
         useTypeScriptCli: true,
     },
@@ -47,9 +50,7 @@ const nextConfig: NextConfig = {
         if (dev) {
             // Keep dev compilation single-threaded to avoid spawning many hungry workers.
             config.parallelism = 1;
-            if (config.cache && typeof config.cache === 'object') {
-                config.cache = { ...config.cache, maxMemoryGenerations: 1 };
-            }
+            config.cache = false;
         }
         return config;
     },
@@ -61,6 +62,14 @@ const nextConfig: NextConfig = {
 
     // Prevent caching of HTML so users always get fresh chunk references after deploys
     async headers() {
+        if (process.env.NODE_ENV === 'development') {
+            return [
+                {
+                    source: '/:path*',
+                    headers: [{ key: 'Cache-Control', value: 'no-store, no-cache, max-age=0, must-revalidate' }],
+                },
+            ];
+        }
         return [
             {
                 // Skip API/MCP/static assets

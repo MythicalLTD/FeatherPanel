@@ -267,6 +267,8 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::AUTH_SHOW_QR_LOGIN => 'true',
             ConfigInterface::AUTH_SHOW_MARKETING_PANEL => 'true',
             ConfigInterface::AUTH_ASIDE_IMAGE_URL => '',
+            ConfigInterface::AUTH_TEMPLATE => 'split',
+            ConfigInterface::AUTH_VISUAL_PRESET => 'aurora',
             ConfigInterface::AUTH_FORM_DENSITY => 'compact',
             ConfigInterface::AUTH_SECONDARY_LAYOUT => 'chips',
             ConfigInterface::AUTH_SHOW_THEME_CUSTOMIZER => 'true',

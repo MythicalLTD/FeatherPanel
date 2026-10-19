@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { Suspense, useEffect } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import TopLoadingBar from '@/components/common/TopLoadingBar';
@@ -24,6 +25,9 @@ import { DemoModeBanner } from '@/components/common/DemoModeBanner';
 
 export default function AppContent({ children }: { children: React.ReactNode }) {
     const { ready } = useTranslation();
+    const pathname = usePathname();
+    // FeatherOS owns the full viewport; skip panel chrome (loading bar, page transitions).
+    const isOs = pathname === '/os' || pathname?.startsWith('/os/');
 
     useEffect(() => {
         document.documentElement.dataset.fpHydrated = '1';
@@ -36,6 +40,10 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
                 <div className='border-muted-foreground/30 border-t-primary h-8 w-8 animate-spin rounded-full border-2' />
             </div>
         );
+    }
+
+    if (isOs) {
+        return <>{children}</>;
     }
 
     return (

@@ -512,6 +512,7 @@ export interface ConsoleFilterRule {
 }
 
 interface ServerTerminalProps {
+    className?: string;
     onSendCommand?: (command: string) => void;
     /** Request Wings console Tab completions for the current input line. */
     onSuggestCommand?: (request: CommandSuggestRequest) => void;
@@ -529,6 +530,7 @@ interface ServerTerminalProps {
 const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
     (
         {
+            className,
             onSendCommand,
             onSuggestCommand,
             canSendCommands = false,
@@ -1200,6 +1202,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                 ref={rootRef}
                 className={cn(
                     'flex w-full min-w-0 flex-col',
+                    className,
                     fillContainer ? 'min-h-0 flex-1' : 'h-full',
                     isFullscreen && 'bg-background h-full p-2',
                 )}

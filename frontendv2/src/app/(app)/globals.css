@@ -599,6 +599,23 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
     box-shadow: 0 0 0 1px hsl(var(--border) / 0.55);
 }
 
+.auth-shell[data-auth-preset='glass'] .fp-surface {
+    background-color: hsl(var(--card) / 0.62);
+    backdrop-filter: blur(22px);
+}
+
+.auth-shell[data-auth-preset='minimal'] .fp-surface {
+    background-color: transparent;
+    border-color: hsl(var(--border) / 0.72);
+    box-shadow: none;
+}
+
+.auth-shell[data-auth-preset='contrast'] .fp-surface {
+    background-color: hsl(var(--card) / 0.94);
+    border-color: hsl(var(--foreground) / 0.16);
+    box-shadow: 0 18px 50px -28px hsl(var(--foreground) / 0.55);
+}
+
 /* Custom scrollbar utilities */
 .hide-scrollbar::-webkit-scrollbar {
     display: none;

@@ -508,20 +508,29 @@ class App
                 'request_id' => RequestContext::id(),
             ]);
         } catch (\Throwable $e) {
-            $eventId = SentryTelemetry::captureException($e);
-            self::getLogger()->error(
-                'Exception in router: [' . get_class($e) . '] ' .
-                'Message: ' . $e->getMessage() .
-                ' Code: ' . $e->getCode() .
-                ' File: ' . $e->getFile() .
-                ' Line: ' . $e->getLine() .
-                ' Trace: ' . $e->getTraceAsString(),
-                false
-            );
-            $response = ApiResponse::error('Internal server error', 'INTERNAL_SERVER_ERROR', 500, [
-                'request_id' => RequestContext::id(),
-                'event_id' => $eventId,
-            ]);
+            // Controllers sometimes wrap Guzzle/cURL failures in plain Exception/Error. Treat those
+            // as node-down instead of a panel 500 so the UI can show a clear message.
+            if (self::isLikelyNodeUnreachableError($e)) {
+                self::getLogger()->warning('Node unreachable on ' . $request->getPathInfo() . ': ' . $e->getMessage());
+                $response = ApiResponse::error('Failed to reach the node', 'DAEMON_UNREACHABLE', 502, [
+                    'request_id' => RequestContext::id(),
+                ]);
+            } else {
+                $eventId = SentryTelemetry::captureException($e);
+                self::getLogger()->error(
+                    'Exception in router: [' . get_class($e) . '] ' .
+                    'Message: ' . $e->getMessage() .
+                    ' Code: ' . $e->getCode() .
+                    ' File: ' . $e->getFile() .
+                    ' Line: ' . $e->getLine() .
+                    ' Trace: ' . $e->getTraceAsString(),
+                    false
+                );
+                $response = ApiResponse::error('Internal server error', 'INTERNAL_SERVER_ERROR', 500, [
+                    'request_id' => RequestContext::id(),
+                    'event_id' => $eventId,
+                ]);
+            }
         }
         $response->headers->set('X-Request-ID', RequestContext::id());
         SentryTelemetry::finishRequest($response->getStatusCode());
@@ -1628,6 +1637,41 @@ class App
     /**
      * The response returned while the database is unreachable.
      */
+    /**
+     * True when a thrown error is almost certainly "node / Wings unreachable"
+     * rather than an application bug (avoids a misleading Internal server error).
+     */
+    private static function isLikelyNodeUnreachableError(\Throwable $e): bool
+    {
+        if ($e instanceof WingsConnectionException) {
+            return true;
+        }
+
+        if ($e instanceof \GuzzleHttp\Exception\ConnectException) {
+            return true;
+        }
+
+        $needle = strtolower($e->getMessage());
+        if ($needle === '') {
+            return false;
+        }
+
+        return str_contains($needle, 'connection failed')
+            || str_contains($needle, 'could not connect')
+            || str_contains($needle, 'failed to connect')
+            || str_contains($needle, 'connection refused')
+            || str_contains($needle, 'network is unreachable')
+            || str_contains($needle, 'name or service not known')
+            || str_contains($needle, 'nodename nor servname')
+            || str_contains($needle, 'curl error 7')
+            || str_contains($needle, 'curl error 28')
+            || str_contains($needle, 'curl error 35')
+            || str_contains($needle, 'operation timed out')
+            || str_contains($needle, 'all retry attempts failed')
+            || str_contains($needle, 'wings connection unavailable')
+            || str_contains($needle, 'failed to reach the node');
+    }
+
     private function databaseUnavailableResponse(): Response
     {
         return new Response(

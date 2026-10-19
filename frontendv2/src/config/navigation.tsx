@@ -69,6 +69,7 @@ import {
     Mail,
     Palette,
     LifeBuoy,
+    Monitor,
 } from 'lucide-react';
 import { isEnabled, isEnabledUnlessExplicitlyFalse } from '@/lib/utils';
 import { supportsDaemonFeature, type DaemonFeature } from '@/lib/daemonCapabilities';
@@ -1055,6 +1056,20 @@ const buildMainNavigationItems = (
             isActive: false,
             category: 'main',
             group: 'overview',
+        },
+        {
+            // Desktop UI for game servers: always opens in its own tab.
+            id: 'featheros',
+            module: 'game',
+            name: t('featheros.nav_open').replace('{name}', `${settings?.app_name || 'FeatherPanel'} OS`),
+            title: t('featheros.nav_open').replace('{name}', `${settings?.app_name || 'FeatherPanel'} OS`),
+            description: t('featheros.nav_open_hint'),
+            url: '/os',
+            icon: Monitor,
+            isActive: false,
+            category: 'main',
+            group: 'overview',
+            openInNewTab: true,
         },
         {
             id: 'vms',

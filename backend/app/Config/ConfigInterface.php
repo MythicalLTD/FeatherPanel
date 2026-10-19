@@ -199,6 +199,8 @@ interface ConfigInterface
     public const AUTH_SHOW_QR_LOGIN = 'auth_show_qr_login';
     public const AUTH_SHOW_MARKETING_PANEL = 'auth_show_marketing_panel';
     public const AUTH_ASIDE_IMAGE_URL = 'auth_aside_image_url';
+    public const AUTH_TEMPLATE = 'auth_template';
+    public const AUTH_VISUAL_PRESET = 'auth_visual_preset';
     public const AUTH_FORM_DENSITY = 'auth_form_density';
     public const AUTH_SECONDARY_LAYOUT = 'auth_secondary_layout';
     public const AUTH_SHOW_THEME_CUSTOMIZER = 'auth_show_theme_customizer';

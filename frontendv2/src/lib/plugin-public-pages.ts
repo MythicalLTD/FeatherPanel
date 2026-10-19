@@ -21,7 +21,9 @@ async function fetchPluginPublicPages(): Promise<PluginPublicPage[]> {
     try {
         const baseUrl = getBaseUrl();
         const res = await fetch(`${baseUrl}/api/system/plugin-public-pages`, {
-            next: { revalidate: 30, tags: ['plugin-public-pages'] },
+            ...(process.env.NODE_ENV === 'development'
+                ? { cache: 'no-store' as const }
+                : { next: { revalidate: 30, tags: ['plugin-public-pages'] } }),
             headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',

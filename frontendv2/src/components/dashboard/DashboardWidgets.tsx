@@ -19,6 +19,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import {
     Activity as ActivityIcon,
+    Monitor as MonitorIcon,
     ArchiveRestore,
     ArrowDown,
     ArrowUp,
@@ -571,6 +572,8 @@ export interface QuickAction {
     label: string;
     href: string;
     icon: typeof ServerIcon;
+    /** Opens in a new browser tab (used for full screen apps such as the OS desktop). */
+    external?: boolean;
 }
 
 export function QuickActionsWidget({ actions }: { actions: QuickAction[] }) {
@@ -579,16 +582,25 @@ export function QuickActionsWidget({ actions }: { actions: QuickAction[] }) {
     return (
         <DashboardPanel title={t('dashboard.widgets.quick_actions.title')} icon={Zap}>
             <div className='grid grid-cols-2 gap-2'>
-                {actions.map(({ key, label, href, icon: Icon }) => (
-                    <Link
-                        key={key}
-                        href={href}
-                        className='fp-surface-inset hover:border-primary/40 hover:text-primary flex min-w-0 items-center gap-2 rounded-lg border border-transparent px-2.5 py-2 text-xs font-medium transition-colors'
-                    >
-                        <Icon className='h-4 w-4 shrink-0' aria-hidden />
-                        <span className='truncate'>{label}</span>
-                    </Link>
-                ))}
+                {actions.map(({ key, label, href, icon: Icon, external }) => {
+                    const className =
+                        'fp-surface-inset hover:border-primary/40 hover:text-primary flex min-w-0 items-center gap-2 rounded-lg border border-transparent px-2.5 py-2 text-xs font-medium transition-colors';
+                    const content = (
+                        <>
+                            <Icon className='h-4 w-4 shrink-0' aria-hidden />
+                            <span className='truncate'>{label}</span>
+                        </>
+                    );
+                    return external ? (
+                        <a key={key} href={href} target='_blank' rel='noopener' className={className}>
+                            {content}
+                        </a>
+                    ) : (
+                        <Link key={key} href={href} className={className}>
+                            {content}
+                        </Link>
+                    );
+                })}
             </div>
         </DashboardPanel>
     );
@@ -602,4 +614,5 @@ export const QUICK_ACTION_ICONS = {
     account: UserRound,
     ssh: KeyRound,
     activity: ActivityIcon,
+    os: MonitorIcon,
 };

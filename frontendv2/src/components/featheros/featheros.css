@@ -1,0 +1,3552 @@
+/*
+ * FeatherOS: desktop shell animations. Plain CSS so the shell does not depend on a
+ * Tailwind animation plugin. Respects the OS "reduce motion" setting via [data-fos-motion].
+ */
+
+.fos-root {
+    --fos-ease: cubic-bezier(0.2, 0.9, 0.25, 1);
+    --fos-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-font-smoothing: antialiased;
+}
+
+@keyframes fos-window-in {
+    from {
+        opacity: 0;
+        transform: scale(0.94) translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes fos-pop-in {
+    from {
+        opacity: 0;
+        transform: scale(0.96) translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes fos-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fos-dock-bounce {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    30% {
+        transform: translateY(-14px);
+    }
+    55% {
+        transform: translateY(0);
+    }
+    75% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes fos-boot-progress {
+    from {
+        transform: scaleX(0.05);
+    }
+    to {
+        transform: scaleX(1);
+    }
+}
+
+@keyframes fos-shimmer {
+    from {
+        background-position: -200% 0;
+    }
+    to {
+        background-position: 200% 0;
+    }
+}
+
+.fos-window {
+    animation: fos-window-in 220ms var(--fos-ease) both;
+    transition:
+        transform 260ms var(--fos-ease),
+        opacity 220ms var(--fos-ease),
+        box-shadow 200ms ease;
+}
+
+.fos-window[data-anim='geometry'] {
+    transition:
+        left 260ms var(--fos-ease),
+        top 260ms var(--fos-ease),
+        width 260ms var(--fos-ease),
+        height 260ms var(--fos-ease),
+        transform 260ms var(--fos-ease),
+        opacity 220ms var(--fos-ease);
+}
+
+.fos-window[data-minimized='true'] {
+    /* Genie animation (genie.ts) runs before this state; keep minimized windows out of layout. */
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.fos-pop {
+    animation: fos-pop-in 140ms var(--fos-ease) both;
+}
+
+.fos-fade {
+    animation: fos-fade-in 200ms ease both;
+}
+
+.fos-dock-item {
+    position: relative;
+    flex: 0 0 auto;
+    z-index: 1;
+    overflow: visible;
+    transition: filter 140ms ease;
+}
+
+.fos-dock-scale {
+    transition: transform 140ms var(--fos-ease);
+}
+
+.fos-dock-item:hover {
+    z-index: 20;
+    filter: brightness(1.05);
+}
+
+.fos-dock-item:focus-visible {
+    outline: 2px solid var(--fos-accent-color);
+    outline-offset: 3px;
+}
+
+.fos-dock-indicator {
+    background: var(--fos-ink);
+    box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.2);
+}
+
+.fos-dock-launcher-button {
+    background: color-mix(in oklab, var(--fos-accent-color) 14%, transparent);
+    border-radius: 22%;
+}
+
+.fos-dock-launcher-icon {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid color-mix(in oklab, var(--fos-accent-color) 40%, white);
+    border-radius: 22%;
+    background: linear-gradient(
+        160deg,
+        color-mix(in oklab, var(--fos-accent-color) 70%, white),
+        var(--fos-accent-color) 55%,
+        color-mix(in oklab, var(--fos-accent-color) 75%, black)
+    );
+    color: white;
+    box-shadow:
+        inset 0 1px 1px rgb(255 255 255 / 0.5),
+        0 8px 18px -10px color-mix(in oklab, var(--fos-accent-color) 70%, transparent);
+}
+
+.fos-dock-launcher-icon::after {
+    position: absolute;
+    inset: 1px;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.38), transparent 46%);
+    content: '';
+    pointer-events: none;
+}
+
+.fos-dock-shell {
+    padding-bottom: max(4px, env(safe-area-inset-bottom));
+    scrollbar-width: none;
+}
+
+.fos-dock-shell::-webkit-scrollbar {
+    display: none;
+}
+
+.fos-dock-bounce {
+    animation: fos-dock-bounce 700ms var(--fos-ease) 1;
+}
+
+.fos-mac-terminal [data-slot='card'] {
+    border: 0;
+    border-radius: 0;
+    background: #101012;
+    box-shadow: none;
+}
+
+.fos-mac-terminal [data-slot='card-header'] {
+    border-color: rgb(255 255 255 / 0.08);
+    background: #17171a;
+}
+
+.fos-mac-terminal [data-slot='card-footer'] {
+    border-color: rgb(255 255 255 / 0.08);
+    background: #17171a;
+}
+
+.fos-mac-terminal .xterm,
+.fos-mac-terminal .xterm-viewport {
+    border-radius: 10px;
+}
+
+.fos-mac-terminal .xterm-viewport {
+    background: #101012 !important;
+}
+
+.fos-boot-bar {
+    transform-origin: left center;
+    animation: fos-boot-progress 1.1s var(--fos-ease) both;
+}
+
+.fos-boot-bar-fill {
+    transform-origin: left center;
+    transition: width 320ms var(--fos-ease);
+}
+
+.fos-app-loading {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    background: var(--fos-content-soft, transparent);
+}
+
+.fos-app-loading-bar {
+    height: 2px;
+    width: 100%;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--fos-hairline, rgb(127 127 127 / 0.25)) 80%, transparent);
+}
+
+.fos-app-loading-bar > span {
+    display: block;
+    height: 100%;
+    width: 40%;
+    border-radius: 999px;
+    background: color-mix(in srgb, #0a84ff 70%, white);
+}
+
+.fos-app-loading-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+    padding: 18px 20px;
+}
+
+.fos-app-loading-line {
+    height: 10px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--fos-hover, rgb(127 127 127 / 0.12)) 100%, transparent);
+}
+
+.fos-app-loading-line.is-short {
+    width: 42%;
+}
+
+.fos-app-loading-line.is-mid {
+    width: 68%;
+}
+
+.fos-select {
+    position: relative;
+    display: inline-flex;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.fos-select-trigger {
+    display: inline-flex;
+    max-width: 100%;
+    min-height: 28px;
+    align-items: center;
+    gap: 6px;
+    border-radius: 7px;
+    background: var(--fos-hover);
+    padding: 3px 8px 3px 10px;
+    font-size: 12px;
+    color: var(--fos-window-ink);
+    outline: none;
+}
+
+.fos-select-trigger:hover {
+    background: var(--fos-active-fill);
+}
+
+.fos-select-trigger:focus-visible {
+    box-shadow: 0 0 0 3px rgb(10 132 255 / 0.22);
+}
+
+.fos-select-trigger.is-open {
+    background: var(--fos-active-fill);
+}
+
+.fos-select-trigger.is-toolbar {
+    min-height: 24px;
+    border-radius: 6px;
+    padding: 2px 6px 2px 8px;
+    font-size: 12px;
+}
+
+.fos-select-label {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+}
+
+.fos-select-chevron {
+    flex-shrink: 0;
+    opacity: 0.45;
+}
+
+.fos-select-menu {
+    position: absolute;
+    z-index: 80;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 100%;
+    max-height: 14rem;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.fos-select-menu.is-up {
+    top: auto;
+    bottom: calc(100% + 4px);
+}
+
+.fos-select-option {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 8px;
+    border-radius: 6px;
+    padding: 5px 8px;
+    text-align: left;
+    font-size: 12px;
+    color: var(--fos-window-ink);
+    outline: none;
+}
+
+.fos-select-option:hover,
+.fos-select-option.is-active {
+    background: #0a84ff;
+    color: #fff;
+}
+
+.fos-select-option.is-selected:not(:hover):not(.is-active) {
+    background: color-mix(in srgb, #0a84ff 16%, transparent);
+}
+
+.fos-select-check {
+    width: 14px;
+    flex-shrink: 0;
+}
+
+.fos-hotcorners-map {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: 112px;
+    margin: 4px 12px 10px auto;
+}
+
+.fos-hotcorners-cell {
+    display: flex;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 0.5px solid var(--fos-hairline);
+    background: color-mix(in srgb, var(--fos-hover) 70%, transparent);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--fos-secondary);
+    text-transform: uppercase;
+}
+
+.fos-hotcorners-cell.is-hover,
+.fos-hotcorners-cell:hover {
+    border-color: #0a84ff;
+    background: color-mix(in srgb, #0a84ff 18%, transparent);
+    color: var(--fos-window-ink);
+}
+
+.fos-shimmer {
+    background: linear-gradient(90deg, transparent 0%, rgb(255 255 255 / 0.25) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: fos-shimmer 1.4s linear infinite;
+}
+
+.fos-root[data-fos-motion='reduced'] *,
+.fos-root[data-fos-motion='reduced'] *::before,
+.fos-root[data-fos-motion='reduced'] *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+}
+
+.fos-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(127 127 127 / 0.35) transparent;
+}
+
+.fos-scroll::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.fos-scroll::-webkit-scrollbar-thumb {
+    background: rgb(127 127 127 / 0.35);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+}
+
+.fos-root {
+    --fos-speed: 1;
+}
+
+.fos-window {
+    animation-duration: calc(220ms / var(--fos-speed, 1));
+}
+
+.fos-window[data-minimizing='1'] {
+    animation: fos-genie-out calc(320ms / var(--fos-speed, 1)) var(--fos-ease) both;
+    pointer-events: none;
+}
+
+@keyframes fos-genie-out {
+    to {
+        opacity: 0;
+        transform: scale(0.2) translateY(40vh);
+        filter: blur(2px);
+    }
+}
+
+.fos-marquee {
+    border-radius: 2px;
+}
+
+.fos-mission {
+    animation: fos-fade-in calc(180ms / var(--fos-speed, 1)) var(--fos-ease) both;
+}
+
+.fos-mission-card {
+    animation: fos-pop-in calc(220ms / var(--fos-speed, 1)) var(--fos-spring) both;
+}
+
+.fos-notif {
+    animation: fos-slide-in-right calc(220ms / var(--fos-speed, 1)) var(--fos-ease) both;
+}
+
+@keyframes fos-slide-in-right {
+    from {
+        transform: translateX(100%);
+        opacity: 0.5;
+    }
+    to {
+        transform: none;
+        opacity: 1;
+    }
+}
+
+.fos-desktop-icon {
+    touch-action: none;
+    cursor: default;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: transform calc(120ms / var(--fos-speed, 1)) var(--fos-ease);
+}
+.fos-desktop-icon:active:not(.is-dragging) {
+    transform: scale(0.96);
+}
+.fos-desktop-icon.is-dragging {
+    z-index: 40;
+    cursor: grabbing;
+    opacity: 0.96;
+    transition: none !important;
+    transform: none !important;
+    filter: drop-shadow(0 10px 18px rgb(0 0 0 / 0.35));
+}
+
+[data-fos-motion='reduced'] .fos-window,
+[data-fos-motion='reduced'] .fos-mission,
+[data-fos-motion='reduced'] .fos-notif,
+[data-fos-motion='reduced'] .fos-mission-card,
+[data-fos-motion='reduced'] .fos-desktop-icon {
+    animation: none !important;
+    transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fos-root:not([data-fos-motion='full']) .fos-window,
+    .fos-root:not([data-fos-motion='full']) .fos-mission,
+    .fos-root:not([data-fos-motion='full']) .fos-notif {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* Accent (set via panel --primary when OS settings.accent syncs; also --fos-accent hex fallback). */
+.fos-root {
+    --fos-accent-color: hsl(var(--primary));
+}
+.fos-marquee {
+    border-color: color-mix(in oklab, var(--fos-accent-color) 80%, white);
+    background: color-mix(in oklab, var(--fos-accent-color) 25%, transparent);
+}
+.fos-desktop-icon.ring-white\/40,
+.fos-window:focus-within {
+    outline-color: var(--fos-accent-color);
+}
+.fos-dock-item:focus-visible {
+    box-shadow: 0 0 0 2px var(--fos-accent-color);
+}
+
+/*
+ * macOS-style vibrancy materials.
+ * Reason: FeatherOS is intentionally a macOS glass shell; surfaces borrow Sequoia-like
+ * translucent layers so chrome reads as glass, while app canvases stay opaque for readability.
+ */
+.fos-root {
+    /* Shell chrome */
+    --fos-glass: rgb(246 248 252 / 0.62);
+    --fos-glass-thick: rgb(250 251 253 / 0.82);
+    --fos-glass-edge: rgb(255 255 255 / 0.55);
+    --fos-glass-edge-soft: rgb(0 0 0 / 0.08);
+    --fos-surface: rgb(255 255 255 / 0.78);
+    --fos-ink: #1d1d1f;
+    --fos-secondary: #6e6e73;
+    /* Windows / apps */
+    --fos-window-fill: rgb(246 246 248 / 0.82);
+    --fos-window-ink: #1d1d1f;
+    --fos-window-muted: #6e6e73;
+    --fos-sidebar: #e8e8ed;
+    --fos-sidebar-soft: rgb(246 246 248 / 0.55);
+    --fos-content: #f5f5f7;
+    --fos-content-soft: rgb(255 255 255 / 0.78);
+    --fos-card: #ffffff;
+    --fos-widget-bg: rgb(255 255 255 / 0.88);
+    --fos-hover: rgb(0 0 0 / 0.05);
+    --fos-active-fill: rgb(0 0 0 / 0.08);
+    --fos-hairline: rgb(0 0 0 / 0.1);
+    --fos-input-bg: rgb(255 255 255 / 0.92);
+    --fos-shadow: 0 28px 90px -18px rgb(0 0 0 / 0.5);
+    --fos-accent-color: var(--fos-accent, hsl(var(--primary)));
+    --fos-blur: blur(40px) saturate(180%);
+    --fos-blur-heavy: blur(48px) saturate(190%);
+    color: var(--fos-ink);
+    color-scheme: light;
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        'SF Pro Text',
+        'SF Pro Display',
+        'Helvetica Neue',
+        'Segoe UI',
+        sans-serif;
+}
+
+/*
+ * OS shell theme is owned by FeatherOS (data-fos-theme), not the panel's .dark class.
+ */
+.fos-root[data-fos-theme='dark'] {
+    --fos-glass: rgb(40 40 44 / 0.55);
+    --fos-glass-thick: rgb(48 48 52 / 0.72);
+    --fos-glass-edge: rgb(255 255 255 / 0.16);
+    --fos-glass-edge-soft: rgb(255 255 255 / 0.08);
+    --fos-surface: rgb(50 50 54 / 0.55);
+    --fos-ink: #f5f5f7;
+    --fos-secondary: #a1a1a6;
+    --fos-window-fill: rgb(42 42 46 / 0.78);
+    --fos-window-ink: #f5f5f7;
+    --fos-window-muted: #a1a1a6;
+    --fos-sidebar: rgb(44 44 48 / 0.94);
+    --fos-sidebar-soft: rgb(50 50 54 / 0.55);
+    --fos-content: #1c1c1e;
+    --fos-content-soft: rgb(36 36 40 / 0.82);
+    --fos-card: rgb(44 44 46 / 0.95);
+    --fos-widget-bg: rgb(44 44 46 / 0.78);
+    --fos-hover: rgb(255 255 255 / 0.08);
+    --fos-active-fill: rgb(255 255 255 / 0.12);
+    --fos-hairline: rgb(255 255 255 / 0.12);
+    --fos-input-bg: rgb(58 58 60 / 0.9);
+    --fos-shadow: 0 28px 90px -18px rgb(0 0 0 / 0.7);
+    color-scheme: dark;
+}
+
+/* Panel .dark must not recolor a light OS shell */
+.dark .fos-root:not([data-fos-theme='dark']) {
+    color-scheme: light;
+}
+
+.fos-menubar {
+    background: var(--fos-glass);
+    color: var(--fos-ink);
+    border-bottom: 1px solid var(--fos-glass-edge-soft);
+    box-shadow: inset 0 -0.5px 0 rgb(255 255 255 / 0.35);
+    backdrop-filter: var(--fos-blur);
+    -webkit-backdrop-filter: var(--fos-blur);
+}
+
+.fos-menubar-search {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 1;
+    display: flex;
+    width: min(320px, 36vw);
+    min-width: 160px;
+    height: 26px;
+    align-items: center;
+    gap: 8px;
+    border: 0.5px solid var(--fos-hairline);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--fos-ink) 6%, transparent);
+    padding: 0 10px;
+    color: var(--fos-secondary);
+    font-size: 12px;
+    transform: translate(-50%, -50%);
+    transition:
+        background 140ms ease,
+        color 140ms ease,
+        border-color 140ms ease;
+}
+
+.fos-menubar-search:hover {
+    background: color-mix(in srgb, var(--fos-ink) 9%, transparent);
+    color: var(--fos-ink);
+    border-color: color-mix(in srgb, var(--fos-ink) 18%, transparent);
+}
+
+.fos-menubar-search kbd {
+    margin-left: auto;
+    border: 0.5px solid var(--fos-hairline);
+    border-radius: 4px;
+    padding: 0 5px;
+    font-size: 10px;
+    font-family: inherit;
+    opacity: 0.7;
+}
+
+@media (max-width: 900px) {
+    .fos-menubar-search {
+        display: none;
+    }
+}
+
+.fos-disk-meter {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    margin-top: 2px;
+}
+
+.fos-disk-meter-bar {
+    height: 3px;
+    width: 78%;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.28);
+    box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.2);
+}
+
+.fos-disk-meter-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #34c759, #30d158);
+}
+
+.fos-disk-meter-fill.is-warn {
+    background: linear-gradient(90deg, #ff9f0a, #ffb340);
+}
+
+.fos-disk-meter-fill.is-crit {
+    background: linear-gradient(90deg, #ff453a, #ff6961);
+}
+
+.fos-disk-meter-label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: rgb(255 255 255 / 0.88);
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.75);
+    font-variant-numeric: tabular-nums;
+}
+
+.fos-widget-disk-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 8px;
+    margin-top: 8px;
+    font-size: 11px;
+}
+
+.fos-widget-disk-row + .fos-widget-disk-row {
+    margin-top: 6px;
+}
+
+.fos-widget-disk-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 550;
+}
+
+.fos-widget-disk-val {
+    color: var(--fos-secondary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.fos-widget-disk-track {
+    grid-column: 1 / -1;
+    height: 4px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--fos-hover);
+}
+
+.fos-widget-disk-track > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: #0a84ff;
+}
+
+.fos-widget-disk-track > span.is-warn {
+    background: #ff9f0a;
+}
+
+.fos-widget-disk-track > span.is-crit {
+    background: #ff3b30;
+}
+
+.fos-menubar-item:hover {
+    background: var(--fos-hover);
+}
+
+.fos-menubar-item.is-open {
+    background: var(--fos-active-fill);
+}
+
+.fos-menu-sep {
+    background: var(--fos-hairline);
+}
+
+.fos-root[data-fos-theme='dark'] .fos-menubar {
+    box-shadow: inset 0 -0.5px 0 rgb(255 255 255 / 0.06);
+}
+
+.fos-menubar[data-opaque='true'] {
+    background: var(--fos-glass-thick);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.fos-glass-menu,
+.fos-dock-shell,
+.fos-sheet,
+.fos-control-center {
+    border: 1px solid var(--fos-glass-edge);
+    background: var(--fos-glass-thick);
+    color: var(--fos-ink);
+    backdrop-filter: var(--fos-blur-heavy);
+    -webkit-backdrop-filter: var(--fos-blur-heavy);
+    box-shadow:
+        inset 0 0.5px 0 rgb(255 255 255 / 0.45),
+        inset 0 -0.5px 0 rgb(255 255 255 / 0.08),
+        0 18px 50px -16px rgb(0 0 0 / 0.42),
+        0 2px 8px rgb(0 0 0 / 0.08);
+}
+
+.fos-root[data-fos-theme='dark'] .fos-glass-menu,
+.fos-root[data-fos-theme='dark'] .fos-dock-shell,
+.fos-root[data-fos-theme='dark'] .fos-sheet,
+.fos-root[data-fos-theme='dark'] .fos-control-center {
+    box-shadow:
+        inset 0 0.5px 0 rgb(255 255 255 / 0.12),
+        0 22px 56px -14px rgb(0 0 0 / 0.65),
+        0 2px 10px rgb(0 0 0 / 0.35);
+}
+
+/* Spotlight: thinner glass so wallpaper shows through (macOS Spotlight). */
+.fos-spotlight-scrim {
+    background: rgb(0 0 0 / 0.18);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+.fos-spotlight {
+    border: 1px solid rgb(255 255 255 / 0.22);
+    border-radius: 16px;
+    background: rgb(246 248 252 / 0.52);
+    color: var(--fos-ink);
+    backdrop-filter: blur(48px) saturate(190%);
+    -webkit-backdrop-filter: blur(48px) saturate(190%);
+    box-shadow:
+        inset 0 0.5px 0 rgb(255 255 255 / 0.55),
+        0 28px 80px -18px rgb(0 0 0 / 0.55),
+        0 8px 24px rgb(0 0 0 / 0.18);
+}
+
+.fos-root[data-fos-theme='dark'] .fos-spotlight {
+    border-color: rgb(255 255 255 / 0.16);
+    background: rgb(38 38 42 / 0.48);
+    box-shadow:
+        inset 0 0.5px 0 rgb(255 255 255 / 0.14),
+        0 32px 90px -16px rgb(0 0 0 / 0.7),
+        0 8px 28px rgb(0 0 0 / 0.4);
+}
+
+.fos-spotlight-search {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px 14px;
+}
+
+.fos-spotlight-search-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    opacity: 0.45;
+}
+
+.fos-spotlight-input {
+    flex: 1;
+    min-width: 0;
+    border: 0 !important;
+    background: transparent !important;
+    color: inherit;
+    font-size: 24px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    outline: none !important;
+    box-shadow: none !important;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.fos-spotlight-input:focus,
+.fos-spotlight-input:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border: 0 !important;
+}
+
+.fos-spotlight-input::placeholder {
+    color: var(--fos-secondary);
+    opacity: 0.85;
+}
+
+.fos-spotlight-input::-webkit-search-decoration,
+.fos-spotlight-input::-webkit-search-cancel-button,
+.fos-spotlight-input::-webkit-search-results-button,
+.fos-spotlight-input::-webkit-search-results-decoration {
+    display: none;
+}
+
+.fos-spotlight-input:-webkit-autofill,
+.fos-spotlight-input:-webkit-autofill:hover,
+.fos-spotlight-input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--fos-ink);
+    transition: background-color 99999s ease-in-out 0s;
+    box-shadow: 0 0 0 1000px transparent inset;
+    caret-color: var(--fos-ink);
+}
+
+.fos-spotlight-results {
+    overflow-y: auto;
+    border-top: 1px solid color-mix(in oklab, var(--fos-ink) 10%, transparent);
+    padding: 8px;
+}
+
+.fos-spotlight-group {
+    padding: 10px 10px 6px;
+    color: var(--fos-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.fos-spotlight-row {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 12px;
+    min-height: 40px;
+    padding: 7px 10px;
+    border-radius: 10px;
+    text-align: left;
+    color: inherit;
+}
+
+.fos-spotlight-row.is-active {
+    background: #0a84ff;
+    color: white;
+}
+
+.fos-spotlight-row.is-active .fos-spotlight-meta,
+.fos-spotlight-row.is-active .fos-spotlight-glyph {
+    color: rgb(255 255 255 / 0.85);
+    opacity: 1;
+}
+
+.fos-spotlight-glyph {
+    display: flex;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: color-mix(in oklab, var(--fos-ink) 8%, transparent);
+    color: var(--fos-secondary);
+}
+
+.fos-spotlight-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.fos-spotlight-meta {
+    flex-shrink: 0;
+    max-width: 36%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--fos-secondary);
+    font-size: 12px;
+}
+
+.fos-spotlight-empty {
+    border-top: 1px solid color-mix(in oklab, var(--fos-ink) 10%, transparent);
+    padding: 28px 20px;
+    color: var(--fos-secondary);
+    font-size: 13px;
+    text-align: center;
+}
+
+.fos-dock-shell {
+    border-radius: 28px;
+    gap: 4px;
+    padding-inline: 10px;
+    border: 0.5px solid var(--fos-glass-edge);
+    background: color-mix(in oklab, var(--fos-glass-thick) 78%, rgb(20 20 24) 22%);
+    box-shadow:
+        inset 0 0.5px 0 rgb(255 255 255 / 0.35),
+        inset 0 -1px 0 rgb(0 0 0 / 0.12),
+        0 22px 60px -18px rgb(0 0 0 / 0.55),
+        0 4px 14px rgb(0 0 0 / 0.18);
+}
+
+.fos-root:not([data-fos-theme='dark']) .fos-dock-shell {
+    background: color-mix(in oklab, var(--fos-glass-thick) 86%, white 14%);
+    box-shadow:
+        inset 0 0.5px 0 rgb(255 255 255 / 0.7),
+        inset 0 -1px 0 rgb(0 0 0 / 0.06),
+        0 22px 60px -18px rgb(0 0 0 / 0.38),
+        0 4px 14px rgb(0 0 0 / 0.1);
+}
+
+.fos-root[data-fos-theme='dark'] .fos-dock-shell {
+    background: color-mix(in oklab, rgb(36 36 40 / 0.72) 70%, var(--fos-glass) 30%);
+}
+
+.fos-dock-divider {
+    width: 1px;
+    align-self: stretch;
+    margin: 0 6px 10px;
+    background: color-mix(in oklab, var(--fos-ink) 22%, transparent);
+    opacity: 0.55;
+}
+
+.fos-dock-shell[data-vertical='true'] .fos-dock-divider {
+    width: auto;
+    height: 1px;
+    margin: 8px 10px;
+    align-self: stretch;
+}
+
+.fos-app-icon {
+    background-image: linear-gradient(165deg, rgb(255 255 255 / 0.38), transparent 48%, rgb(0 0 0 / 0.22));
+    box-shadow:
+        inset 0 1px 1px rgb(255 255 255 / 0.7),
+        inset 0 -2px 4px rgb(0 0 0 / 0.16),
+        0 6px 12px -4px rgb(0 0 0 / 0.4);
+    border: 1px solid rgb(255 255 255 / 0.28);
+}
+
+.fos-app-icon svg {
+    filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.22));
+}
+
+.fos-window-surface {
+    position: relative;
+    background: var(--fos-window-fill);
+    color: var(--fos-window-ink);
+    border-color: var(--fos-glass-edge);
+    border-radius: 12px;
+    backdrop-filter: blur(50px) saturate(190%);
+    -webkit-backdrop-filter: blur(50px) saturate(190%);
+    box-shadow:
+        inset 0 0.5px 0 rgb(255 255 255 / 0.45),
+        var(--fos-shadow),
+        0 0 0 0.5px var(--fos-hairline);
+}
+
+.fos-window-body {
+    background: transparent;
+    color: var(--fos-window-ink, #1d1d1f);
+}
+
+.fos-window-body .text-muted-foreground,
+.fos-window-body .text-foreground {
+    color: inherit;
+}
+
+.fos-window-body .text-muted-foreground {
+    color: var(--fos-window-muted, #6e6e73) !important;
+}
+
+/* ── Finder 1:1 macOS chrome ── */
+.fos-window-surface--finder {
+    --fos-window-fill: transparent;
+    background: transparent;
+    border-color: var(--fos-hairline);
+    box-shadow: var(--fos-shadow), 0 0 0 0.5px var(--fos-hairline);
+}
+
+.fos-window-surface--finder .fos-window-body {
+    background: transparent;
+}
+
+.fos-finder-traffic {
+    /* drag region over sidebar; buttons stay clickable */
+}
+
+.fos-finder {
+    display: flex;
+    height: 100%;
+    color: var(--fos-window-ink);
+    background: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        'SF Pro Text',
+        'Helvetica Neue',
+        sans-serif;
+}
+
+.fos-finder input,
+.fos-finder textarea {
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.fos-finder-sidebar {
+    width: 13rem;
+    flex-shrink: 0;
+    padding: 52px 10px 14px;
+    border-right: 0.5px solid var(--fos-hairline);
+    background: var(--fos-sidebar-soft);
+    backdrop-filter: blur(50px) saturate(200%);
+    -webkit-backdrop-filter: blur(50px) saturate(200%);
+}
+
+.fos-finder-sidebar-label {
+    padding: 10px 10px 5px;
+    color: var(--fos-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.fos-finder-location {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 8px;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 13px;
+    line-height: 1.25;
+    text-align: left;
+    color: var(--fos-window-ink);
+}
+
+.fos-finder-location:hover {
+    background: var(--fos-hover);
+}
+
+/* Reference Finder uses gray sidebar selection, not system blue */
+.fos-finder-location.is-active {
+    background: var(--fos-active-fill);
+    font-weight: 500;
+}
+
+.fos-finder-location.is-active svg {
+    color: inherit !important;
+}
+
+.fos-finder-main {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    background: var(--fos-content-soft);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+}
+
+.fos-finder-toolbar {
+    display: flex;
+    height: 52px;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 0.5px solid var(--fos-hairline);
+    background: color-mix(in srgb, var(--fos-content-soft) 70%, transparent);
+    padding-inline: 12px 14px;
+}
+
+.fos-finder-toolbar-nav {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.fos-finder-toolbar-title {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--fos-window-ink);
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: grab;
+}
+
+.fos-finder-toolbar-title:active {
+    cursor: grabbing;
+}
+
+.fos-finder-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.fos-finder-pathbar {
+    display: flex;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+    border-bottom: 0.5px solid var(--fos-hairline);
+    background: color-mix(in srgb, var(--fos-content-soft) 55%, transparent);
+    padding: 4px 12px 6px;
+    font-size: 11px;
+    color: var(--fos-secondary);
+}
+
+.fos-finder-pathbar-seg {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.fos-finder-pathbar-sep {
+    margin-inline: 2px 4px;
+    opacity: 0.45;
+}
+
+.fos-finder-pathbar-btn {
+    max-width: 10rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-radius: 4px;
+    padding: 1px 5px;
+    color: var(--fos-secondary);
+}
+
+.fos-finder-pathbar-btn:hover {
+    background: var(--fos-hover);
+    color: var(--fos-window-ink);
+}
+
+.fos-finder-pathbar-btn.is-current {
+    font-weight: 600;
+    color: var(--fos-window-ink);
+}
+
+.fos-finder-canvas-columns {
+    overflow: hidden;
+}
+
+.fos-finder-columns {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    align-items: stretch;
+}
+
+.fos-finder-column {
+    display: flex;
+    width: 11.5rem;
+    min-width: 11.5rem;
+    flex-direction: column;
+    overflow-y: auto;
+    border-right: 0.5px solid var(--fos-hairline);
+    padding: 4px 0;
+}
+
+.fos-finder-column-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    text-align: left;
+    font-size: 12px;
+    color: var(--fos-window-ink);
+}
+
+.fos-finder-column-item:hover {
+    background: var(--fos-hover);
+}
+
+.fos-finder-column-item.is-selected {
+    background: color-mix(in srgb, #0a84ff 22%, transparent);
+}
+
+.fos-finder-column-item.is-drop {
+    background: color-mix(in srgb, #0a84ff 32%, transparent);
+    outline: 1px solid #0a84ff;
+}
+
+.fos-finder-column-empty {
+    padding: 12px 10px;
+    font-size: 11px;
+    color: var(--fos-secondary);
+}
+
+.fos-finder-toolbtn {
+    display: flex;
+    height: 28px;
+    width: 28px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    color: var(--fos-secondary);
+}
+
+.fos-finder-toolbtn:hover:not(:disabled) {
+    background: var(--fos-hover);
+    color: var(--fos-window-ink);
+}
+
+.fos-finder-toolbtn:disabled {
+    opacity: 0.28;
+}
+
+.fos-finder-toolbtn.is-on {
+    background: var(--fos-active-fill);
+    color: var(--fos-window-ink);
+}
+
+.fos-finder-filter-wrap {
+    position: relative;
+    margin-left: 4px;
+}
+
+.fos-finder-filter {
+    height: 28px;
+    width: 10rem;
+    border: none;
+    border-radius: 6px;
+    background: var(--fos-hover);
+    padding-left: 1.75rem;
+    padding-right: 0.5rem;
+    font-size: 13px;
+    color: var(--fos-window-ink);
+    outline: none;
+}
+
+.fos-finder-filter::placeholder {
+    color: var(--fos-secondary);
+}
+
+.fos-finder-filter:focus {
+    background: var(--fos-active-fill);
+    box-shadow: 0 0 0 3px rgb(10 132 255 / 0.22);
+}
+
+.fos-finder-canvas {
+    position: relative;
+    min-height: 0;
+    flex: 1;
+    background: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: default;
+}
+
+.fos-finder-canvas.is-drop-target {
+    background: rgb(10 132 255 / 0.06);
+    box-shadow: inset 0 0 0 2px rgb(10 132 255 / 0.35);
+}
+
+.fos-finder-grid {
+    display: grid;
+    /* Fixed column width — icons stay centered in their hit box (no 1fr stretch). */
+    grid-template-columns: repeat(auto-fill, 104px);
+    justify-content: start;
+    align-content: start;
+    gap: 10px 12px;
+    padding: 16px 14px 28px;
+    min-height: 100%;
+}
+
+.fos-finder-icon {
+    box-sizing: border-box;
+    display: flex;
+    width: 104px;
+    height: 122px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    padding: 8px 4px 6px;
+    text-align: center;
+    outline: none;
+    cursor: default;
+    transition: background 100ms ease;
+}
+
+.fos-finder-icon:hover {
+    background: var(--fos-hover);
+}
+
+.fos-finder-icon.is-selected {
+    background: rgb(10 132 255 / 0.16);
+    border-color: rgb(10 132 255 / 0.22);
+}
+
+.fos-finder-icon.is-drop {
+    background: rgb(10 132 255 / 0.22);
+    border-color: #0a84ff;
+}
+
+.fos-finder-icon-glyph {
+    display: flex;
+    height: 64px;
+    width: 64px;
+    flex: 0 0 64px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.14));
+}
+
+.fos-finder-icon-glyph svg {
+    width: 52px !important;
+    height: 52px !important;
+}
+
+.fos-finder-icon-name {
+    box-sizing: border-box;
+    width: 96px;
+    min-height: 2.6em;
+    max-height: 2.6em;
+    border-radius: 5px;
+    padding: 2px 4px;
+    font-size: 12px;
+    line-height: 1.3;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.fos-finder-icon.is-selected .fos-finder-icon-name {
+    background: #0a84ff;
+    color: #fff;
+}
+
+.fos-finder-marquee {
+    position: absolute;
+    z-index: 5;
+    pointer-events: none;
+    border: 1px solid rgb(10 132 255 / 0.9);
+    background: rgb(10 132 255 / 0.18);
+    border-radius: 2px;
+}
+
+.fos-finder-empty {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--fos-secondary);
+    font-size: 13px;
+}
+
+.fos-finder-list {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    color: var(--fos-window-ink);
+}
+
+.fos-finder-list thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: color-mix(in srgb, var(--fos-content-soft) 92%, transparent);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+}
+
+.fos-finder-list th {
+    padding: 6px 10px;
+    border-bottom: 0.5px solid var(--fos-hairline);
+    color: var(--fos-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    text-align: left;
+}
+
+.fos-finder-list td {
+    padding: 3px 10px;
+    vertical-align: middle;
+}
+
+.fos-finder-list-name {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+}
+
+.fos-finder-list-name > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fos-finder-list-name svg {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+}
+
+.fos-finder-list-size,
+.fos-finder-list-modified {
+    width: 6.5rem;
+    color: var(--fos-secondary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.fos-finder-list-modified {
+    width: 11rem;
+}
+
+.fos-finder-list tbody tr {
+    cursor: default;
+    transition: background 80ms ease;
+}
+
+.fos-finder-list tbody tr:hover:not(.is-selected) {
+    background: var(--fos-hover);
+}
+
+.fos-finder-list tbody tr.is-alt:not(.is-selected) {
+    background: color-mix(in srgb, var(--fos-hover) 55%, transparent);
+}
+
+.fos-finder-list tbody tr.is-selected {
+    background: color-mix(in srgb, #0a84ff 16%, transparent);
+}
+
+.fos-finder-list tbody tr.is-selected.is-focused {
+    background: #0a84ff;
+    color: #fff;
+}
+
+.fos-finder-list tbody tr.is-selected.is-focused .fos-finder-list-size,
+.fos-finder-list tbody tr.is-selected.is-focused .fos-finder-list-modified,
+.fos-finder-list tbody tr.is-selected.is-focused svg {
+    color: rgb(255 255 255 / 0.9);
+}
+
+.fos-finder-list tbody tr.is-drop {
+    outline: 2px solid #0a84ff;
+    outline-offset: -2px;
+}
+
+.fos-finder-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    border-top: 0.5px solid var(--fos-hairline);
+    background: color-mix(in srgb, var(--fos-content-soft) 55%, transparent);
+    padding: 5px 12px;
+    color: var(--fos-secondary);
+    font-size: 11px;
+}
+
+.fos-finder-footer > span:first-child {
+    text-align: center;
+}
+
+@media (max-width: 767px) {
+    .fos-finder-sidebar {
+        width: 9.5rem;
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .fos-finder-traffic {
+        width: 9.5rem;
+    }
+
+    .fos-finder-toolbar-title {
+        display: none;
+    }
+
+    .fos-finder-filter {
+        width: 7rem;
+    }
+}
+
+.fos-window[data-fos-app='finder'] .fos-window-body,
+.fos-window[data-fos-app='settings'] .fos-window-body,
+.fos-window[data-fos-app='terminal'] .fos-window-body,
+.fos-window[data-fos-app='editor'] .fos-window-body {
+    background: transparent;
+}
+
+/* ── System Settings (macOS) ── */
+.fos-window-surface--settings {
+    --fos-window-fill: transparent;
+    background: transparent;
+    border-color: var(--fos-hairline);
+    box-shadow: var(--fos-shadow), 0 0 0 0.5px var(--fos-hairline);
+}
+
+.fos-settings {
+    display: flex;
+    height: 100%;
+    color: var(--fos-window-ink);
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        'SF Pro Text',
+        'Helvetica Neue',
+        sans-serif;
+}
+
+.fos-window .fos-settings-sidebar {
+    width: 13.5rem;
+    flex-shrink: 0;
+    padding: 52px 10px 14px;
+    border-right: 0.5px solid var(--fos-hairline);
+    background: var(--fos-sidebar);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    color: var(--fos-window-ink);
+}
+
+.fos-settings-nav {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 8px;
+    border-radius: 7px;
+    padding: 5px 8px;
+    font-size: 13px;
+    text-align: left;
+    color: var(--fos-window-ink);
+}
+
+.fos-settings-nav:hover {
+    background: var(--fos-hover);
+}
+
+.fos-settings-nav.is-active {
+    background: #0a84ff;
+    color: #fff;
+    font-weight: 550;
+}
+
+.fos-settings-nav-icon {
+    display: flex;
+    height: 22px;
+    width: 22px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: #8e8e93;
+    color: #fff;
+}
+
+.fos-settings-nav.is-active .fos-settings-nav-icon {
+    background: rgb(255 255 255 / 0.22);
+}
+
+.fos-settings-nav-icon.is-appearance {
+    background: #bf5af2;
+}
+.fos-settings-nav-icon.is-dock {
+    background: #0a84ff;
+}
+.fos-settings-nav-icon.is-desktop {
+    background: #30d158;
+}
+.fos-settings-nav-icon.is-about {
+    background: #64d2ff;
+}
+
+.fos-settings-main {
+    min-width: 0;
+    flex: 1;
+    overflow: auto;
+    padding: 28px 28px 36px;
+    background: var(--fos-content);
+    color: var(--fos-window-ink);
+}
+
+.fos-settings-heading {
+    margin: 0 0 18px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.fos-settings-group {
+    margin-bottom: 22px;
+}
+
+.fos-settings-group-title {
+    margin: 0 0 6px 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--fos-secondary);
+}
+
+.fos-settings-card {
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--fos-card);
+    border: 0.5px solid var(--fos-hairline);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.03);
+}
+
+.fos-settings-card > * + * {
+    border-top: 0.5px solid var(--fos-hairline);
+}
+
+.fos-settings-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+}
+
+.fos-settings-row-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.fos-settings-row-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.fos-settings-row-hint {
+    display: block;
+    margin-top: 2px;
+    font-size: 11px;
+    color: var(--fos-secondary);
+}
+
+.fos-settings-toggle {
+    position: relative;
+    width: 38px;
+    height: 22px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: #787880;
+    transition: background 160ms ease;
+}
+
+.fos-settings-toggle.is-on {
+    background: #34c759;
+}
+
+.fos-settings-toggle > span {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.28);
+    transition: transform 160ms ease;
+}
+
+.fos-settings-toggle.is-on > span {
+    transform: translateX(16px);
+}
+
+.fos-settings-themes {
+    display: flex;
+    gap: 16px;
+    padding: 16px 14px;
+}
+
+.fos-settings-theme {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--fos-secondary);
+}
+
+.fos-settings-theme-preview {
+    width: 84px;
+    height: 56px;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+}
+
+.fos-settings-theme.is-active .fos-settings-theme-preview {
+    border-color: #0a84ff;
+}
+
+.fos-settings-theme-preview.is-light {
+    background: #f5f5f7;
+}
+.fos-settings-theme-preview.is-dark {
+    background: #1c1c1e;
+}
+.fos-settings-theme-preview.is-auto {
+    background: linear-gradient(90deg, #f5f5f7 50%, #1c1c1e 50%);
+}
+
+.fos-settings-accents {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 16px 14px;
+}
+
+.fos-settings-swatch {
+    display: flex;
+    height: 28px;
+    width: 28px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 2px solid transparent;
+    box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.15);
+}
+
+.fos-settings-swatch.is-active {
+    border-color: var(--fos-window-ink);
+    box-shadow:
+        0 0 0 2px var(--fos-card),
+        0 0 0 4px #0a84ff;
+}
+
+.fos-settings-swatch-custom {
+    position: relative;
+    overflow: hidden;
+    background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
+}
+
+.fos-settings-swatch-custom input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.fos-settings-wallpapers {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+    gap: 12px;
+    padding: 14px;
+}
+
+.fos-settings-wallpaper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--fos-secondary);
+}
+
+.fos-settings-wallpaper-thumb {
+    position: relative;
+    display: flex;
+    height: 64px;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+}
+
+.fos-settings-wallpaper.is-active .fos-settings-wallpaper-thumb {
+    border-color: #0a84ff;
+}
+
+.fos-settings-wallpaper-custom {
+    display: flex;
+    gap: 8px;
+    padding: 0 14px 12px;
+}
+
+.fos-settings-wallpaper-upload {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px 14px;
+    font-size: 11px;
+    color: var(--fos-secondary);
+}
+
+.fos-settings-wallpaper-preview {
+    margin: 0 14px 14px;
+    height: 88px;
+    border-radius: 10px;
+    background-size: cover;
+    background-position: center;
+}
+
+.fos-settings-input {
+    flex: 1;
+    height: 32px;
+    border: 0.5px solid var(--fos-hairline);
+    border-radius: 8px;
+    background: var(--fos-input-bg);
+    color: var(--fos-window-ink);
+    padding: 0 10px;
+    font-size: 12px;
+    outline: none;
+}
+
+.fos-settings-input:focus {
+    border-color: #0a84ff;
+    box-shadow: 0 0 0 3px rgb(10 132 255 / 0.2);
+}
+
+.fos-settings-btn {
+    height: 32px;
+    border-radius: 8px;
+    background: #0a84ff;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.fos-settings-btn:disabled {
+    opacity: 0.45;
+}
+
+.fos-settings-btn-danger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    border-radius: 8px;
+    border: 0.5px solid rgb(255 59 48 / 0.35);
+    background: rgb(255 59 48 / 0.08);
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ff3b30;
+}
+
+.fos-settings-select {
+    height: 28px;
+    border: 0.5px solid var(--fos-hairline);
+    border-radius: 7px;
+    background: var(--fos-input-bg);
+    color: var(--fos-window-ink);
+    padding: 0 8px;
+    font-size: 12px;
+}
+
+.fos-settings-range {
+    width: 140px;
+}
+
+.fos-settings-range-val {
+    width: 40px;
+    text-align: right;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--fos-secondary);
+}
+
+.fos-settings-dock-apps {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 12px;
+    padding: 10px 14px;
+}
+
+.fos-settings-dock-app {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    font-size: 12px;
+}
+
+.fos-settings-about {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding-top: 40px;
+    text-align: center;
+}
+
+.fos-settings-about img {
+    height: 88px;
+    width: 88px;
+    border-radius: 20px;
+    object-fit: contain;
+    box-shadow: 0 8px 24px -10px rgb(0 0 0 / 0.35);
+}
+
+.fos-settings-about h2 {
+    margin: 8px 0 0;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.fos-settings-about p {
+    margin: 0;
+    max-width: 28rem;
+    font-size: 12px;
+    color: var(--fos-secondary);
+}
+
+.fos-picker {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+    padding: 28px 24px 20px;
+    color: var(--fos-window-ink);
+    background: transparent;
+}
+
+.fos-picker-title {
+    font-size: 17px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+}
+
+.fos-picker-subtitle {
+    margin-top: 4px;
+    color: var(--fos-secondary);
+    font-size: 12px;
+}
+
+.fos-picker-search {
+    position: relative;
+    margin-top: 18px;
+    width: 100%;
+    max-width: 26rem;
+}
+
+.fos-picker-search-icon {
+    position: absolute;
+    top: 50%;
+    left: 11px;
+    width: 14px;
+    height: 14px;
+    transform: translateY(-50%);
+    color: var(--fos-secondary);
+    pointer-events: none;
+}
+
+.fos-picker-search-input {
+    width: 100%;
+    height: 34px;
+    border: 1px solid var(--fos-hairline);
+    border-radius: 8px;
+    background: var(--fos-input-bg);
+    padding: 0 12px 0 34px;
+    font-size: 13px;
+    color: var(--fos-window-ink);
+    outline: none;
+}
+
+.fos-picker-search-input::placeholder {
+    color: var(--fos-secondary);
+}
+
+.fos-picker-search-input:focus {
+    border-color: #0a84ff;
+    box-shadow: 0 0 0 3px rgb(10 132 255 / 0.22);
+}
+
+.fos-picker-list {
+    margin-top: 12px;
+    width: 100%;
+    max-width: 26rem;
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.fos-picker-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 40px 12px;
+    color: var(--fos-secondary);
+    font-size: 13px;
+}
+
+.fos-picker-row {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 12px;
+    border-radius: 10px;
+    padding: 9px 12px;
+    text-align: left;
+    transition: background 120ms ease;
+}
+
+.fos-picker-row:hover {
+    background: var(--fos-hover);
+}
+
+.fos-picker-row:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgb(10 132 255 / 0.35);
+}
+
+.fos-picker-dot {
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 0.5);
+}
+
+.fos-picker-meta {
+    min-width: 0;
+    flex: 1;
+}
+
+.fos-picker-name {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 550;
+}
+
+.fos-picker-detail {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--fos-secondary);
+    font-size: 11px;
+}
+
+.fos-picker-state {
+    flex-shrink: 0;
+    color: var(--fos-secondary);
+    font-size: 11px;
+}
+
+.fos-finder-error {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 28px;
+    text-align: center;
+    color: var(--fos-secondary);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.fos-finder-error-title {
+    max-width: 22rem;
+    color: var(--fos-window-ink);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.fos-finder-error-action {
+    margin-top: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--fos-hairline);
+    border-radius: 8px;
+    background: var(--fos-card);
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 550;
+    color: var(--fos-window-ink);
+}
+
+.fos-finder-error-action:hover {
+    background: var(--fos-hover);
+}
+
+.fos-window[data-focused='true'] .fos-window-surface {
+    box-shadow:
+        inset 0 0.5px 0 rgb(255 255 255 / 0.5),
+        0 34px 90px -22px rgb(0 0 0 / 0.58),
+        0 0 0 0.5px rgb(0 0 0 / 0.18);
+}
+
+.fos-window[data-focused='false'] .fos-window-surface {
+    opacity: 0.96;
+    filter: saturate(0.92);
+}
+
+.fos-window-surface.rounded-none {
+    border-radius: 0;
+}
+
+.fos-titlebar {
+    height: 40px;
+    background: color-mix(in srgb, var(--fos-content-soft) 88%, transparent);
+    border-bottom: 0.5px solid var(--fos-hairline);
+    color: var(--fos-window-ink);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+.fos-window[data-focused='false'] .fos-titlebar {
+    color: var(--fos-secondary);
+    background: color-mix(in srgb, var(--fos-sidebar) 75%, transparent);
+}
+
+/* Generic app asides only — Finder/Settings own their sidebar materials. */
+.fos-window aside:not(.fos-finder-sidebar):not(.fos-settings-sidebar) {
+    background: color-mix(in oklab, var(--fos-glass) 85%, transparent);
+    border-color: color-mix(in oklab, var(--fos-ink) 10%, transparent);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+}
+
+.fos-control-section,
+.fos-control-tile {
+    border: 1px solid color-mix(in oklab, var(--fos-ink) 10%, transparent);
+    border-radius: 14px;
+    background: rgb(255 255 255 / 0.42);
+    padding: 14px;
+    box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.5);
+}
+
+.fos-root[data-fos-theme='dark'] .fos-control-section,
+.fos-root[data-fos-theme='dark'] .fos-control-tile {
+    background: rgb(255 255 255 / 0.07);
+    box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.08);
+}
+
+.fos-control-tile {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.fos-control-tile small {
+    display: block;
+    margin-top: 3px;
+    color: var(--fos-secondary);
+    font-size: 11px;
+    font-weight: 400;
+}
+
+.fos-control-symbol,
+.fos-control-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgb(128 128 128 / 0.16);
+}
+
+.fos-control-tile[aria-pressed='true'] .fos-control-symbol {
+    background: #0a84ff;
+    color: white;
+}
+
+.fos-switch {
+    appearance: none;
+    width: 36px;
+    height: 22px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: #787880;
+    cursor: pointer;
+    padding: 2px;
+}
+
+.fos-switch::after {
+    content: '';
+    display: block;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 160ms var(--fos-ease);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.28);
+}
+
+.fos-switch:checked {
+    background: #34c759;
+}
+.fos-switch:checked::after {
+    transform: translateX(14px);
+}
+
+.fos-root :is(button, input, select, a):focus-visible {
+    outline: 2px solid var(--fos-accent-color);
+    outline-offset: 3px;
+}
+
+.fos-glass-menu button {
+    min-height: 28px;
+}
+.fos-glass-menu button:hover {
+    filter: none;
+}
+.fos-mission button:focus-visible {
+    outline-color: white;
+}
+
+.fos-widgets {
+    max-height: calc(100vh - 96px);
+    overflow: visible;
+}
+
+.fos-widget {
+    border: 0.5px solid var(--fos-glass-edge);
+    border-radius: 22px;
+    background: var(--fos-widget-bg);
+    color: var(--fos-ink);
+    padding: 18px 20px;
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    box-shadow:
+        inset 0 0.5px 0 rgb(255 255 255 / 0.35),
+        0 16px 40px -16px rgb(0 0 0 / 0.4);
+    cursor: default;
+    transition:
+        background 140ms ease,
+        transform 140ms ease,
+        box-shadow 140ms ease;
+}
+
+.fos-widget[role='button'] {
+    cursor: pointer;
+}
+
+.fos-widget:hover {
+    filter: brightness(1.04);
+}
+
+.fos-widget--edit {
+    cursor: grab;
+}
+
+.fos-widget--edit:active {
+    cursor: grabbing;
+}
+
+.fos-widget-grip {
+    position: absolute;
+    top: 10px;
+    left: 8px;
+    color: var(--fos-secondary);
+    opacity: 0.65;
+}
+
+.fos-dialog-input {
+    border: 1px solid var(--fos-hairline);
+    background: var(--fos-input-bg);
+    color: var(--fos-ink);
+}
+
+.fos-dialog-cancel {
+    background: var(--fos-hover);
+    color: var(--fos-ink);
+}
+
+.fos-dialog-cancel:hover {
+    background: var(--fos-active-fill);
+}
+
+.fos-notif-header {
+    border-bottom: 1px solid var(--fos-hairline);
+    color: var(--fos-ink);
+}
+
+.fos-notif-card {
+    border: 1px solid var(--fos-hairline);
+    background: var(--fos-surface);
+    color: var(--fos-ink);
+}
+
+.fos-notif-dismiss:hover {
+    background: var(--fos-hover);
+}
+
+.fos-widget-remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    height: 20px;
+    width: 20px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: rgb(0 0 0 / 0.55);
+    color: #fff;
+}
+
+.fos-widget-remove:hover {
+    background: #ff3b30;
+}
+
+.fos-widget--edit {
+    padding-left: 28px;
+    padding-right: 28px;
+}
+
+.fos-widget-time {
+    font-size: 44px;
+    font-weight: 300;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--fos-ink);
+}
+
+.fos-widget-date {
+    margin-top: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--fos-secondary);
+}
+
+.fos-widget-kicker {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--fos-secondary);
+}
+
+.fos-widget-stat {
+    margin-top: 4px;
+    font-size: 28px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--fos-ink);
+}
+
+.fos-widget-stat-muted {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--fos-secondary);
+}
+
+.fos-widget-sub {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--fos-secondary);
+}
+
+.fos-widget-dots {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.fos-widget-dot {
+    height: 8px;
+    width: 8px;
+    border-radius: 999px;
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 0.5);
+}
+
+.fos-widget-metrics {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.fos-widget-metric-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--fos-secondary);
+}
+
+.fos-widget-metric-value {
+    margin-top: 2px;
+    font-size: 20px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--fos-ink);
+}
+
+.fos-widget-cal {
+    text-align: center;
+    padding: 4px 0 2px;
+}
+
+.fos-widget-cal-month {
+    font-size: 13px;
+    font-weight: 700;
+    color: #ff3b30;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.fos-widget-cal-day {
+    margin-top: 2px;
+    font-size: 52px;
+    font-weight: 300;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: var(--fos-ink);
+}
+
+.fos-widget-cal-weekday {
+    margin-top: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--fos-secondary);
+}
+
+.fos-widget-shortcuts {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.fos-widget-shortcuts button {
+    display: flex;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: var(--fos-hover);
+    color: var(--fos-ink);
+}
+
+.fos-widget-shortcuts button:hover {
+    background: var(--fos-active-fill);
+}
+
+.fos-widget-edit-btn,
+.fos-widget-add-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    align-self: center;
+    border-radius: 999px;
+    padding: 7px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--fos-ink);
+    background: var(--fos-widget-bg);
+    border: 0.5px solid var(--fos-glass-edge);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    box-shadow:
+        inset 0 0.5px 0 rgb(255 255 255 / 0.35),
+        0 6px 18px -10px rgb(0 0 0 / 0.4);
+}
+
+.fos-widget-edit-btn:hover,
+.fos-widget-add-btn:hover {
+    filter: brightness(1.05);
+}
+
+.fos-widget-edit-hint {
+    color: var(--fos-secondary);
+}
+
+.fos-widget-gallery {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    border-radius: 16px;
+    padding: 8px;
+    background: var(--fos-widget-bg);
+    border: 0.5px solid var(--fos-glass-edge);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    box-shadow: 0 12px 32px -14px rgb(0 0 0 / 0.35);
+}
+
+.fos-widget-gallery-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-weight: 550;
+    color: var(--fos-ink);
+    text-align: left;
+}
+
+.fos-widget-gallery-item:hover {
+    background: var(--fos-hover);
+}
+
+.fos-widget-gallery-icon {
+    display: flex;
+    height: 28px;
+    width: 28px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgb(10 132 255 / 0.12);
+    color: #0a84ff;
+}
+
+.fos-app-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 12px;
+    border-bottom: 1px solid color-mix(in oklab, var(--fos-ink) 10%, transparent);
+    background: color-mix(in oklab, var(--fos-glass) 70%, transparent);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+}
+
+.fos-app-toolbar select,
+.fos-app-toolbar .fos-app-btn {
+    height: 28px;
+    border: 1px solid color-mix(in oklab, var(--fos-ink) 12%, transparent);
+    border-radius: 8px;
+    background: color-mix(in oklab, var(--fos-ink) 6%, transparent);
+    color: var(--fos-ink);
+    font-size: 12px;
+    padding-inline: 10px;
+}
+
+.fos-app-toolbar .fos-app-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.fos-app-toolbar .fos-app-btn:disabled {
+    opacity: 0.4;
+}
+
+.fos-app-toolbar .fos-app-btn:not(:disabled):hover {
+    background: color-mix(in oklab, var(--fos-ink) 10%, transparent);
+}
+
+.fos-app-toolbar .fos-app-btn-danger {
+    color: #ff453a;
+}
+
+.fos-app-toolbar .fos-app-btn-primary {
+    border-color: transparent;
+    background: #0a84ff;
+    color: white;
+}
+
+.fos-app-toolbar .fos-app-btn-primary:not(:disabled):hover {
+    background: #409cff;
+}
+
+.fos-empty-state {
+    display: flex;
+    flex: 1;
+    min-height: 220px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 40px 24px;
+    color: var(--fos-secondary);
+    text-align: center;
+}
+
+.fos-empty-state strong {
+    color: var(--fos-ink);
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.fos-empty-state p {
+    max-width: 280px;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.fos-empty-state button {
+    margin-top: 6px;
+    color: #0a84ff;
+    font-size: 13px;
+}
+
+.fos-traffic-lights {
+    gap: 8px;
+    padding-left: 0;
+}
+
+.fos-traffic-light {
+    width: 14px;
+    height: 14px;
+    padding: 0;
+}
+
+.fos-traffic-light > span {
+    width: 12px;
+    height: 12px;
+    box-shadow: inset 0 -0.5px 0.5px rgb(0 0 0 / 0.28);
+}
+
+.fos-traffic-idle {
+    background: #c9c9cc;
+}
+
+.fos-root[data-fos-theme='dark'] .fos-traffic-idle {
+    background: #5a5a5e;
+}
+
+.fos-window-caption {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.fos-window-caption small {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--fos-secondary);
+}
+
+@media (max-width: 1200px) {
+    .fos-menubar {
+        font-size: 11px;
+    }
+    .fos-menubar > div > div > button {
+        padding-inline: 7px;
+    }
+    .fos-dock-shell {
+        gap: 5px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fos-root *,
+    .fos-root *::before,
+    .fos-root *::after {
+        animation-duration: 1ms !important;
+        transition-duration: 1ms !important;
+    }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+    .fos-glass-menu,
+    .fos-dock-shell,
+    .fos-menubar,
+    .fos-sheet,
+    .fos-spotlight,
+    .fos-control-center,
+    .fos-widget,
+    .fos-window-surface,
+    .fos-titlebar {
+        background: var(--fos-glass-thick);
+        backdrop-filter: none;
+    }
+
+    .fos-spotlight {
+        background: rgb(36 36 40 / 0.94);
+    }
+}
+
+.fos-editor {
+    --editor-canvas: #fff;
+    --editor-chrome: #f6f7fa;
+    --editor-line: rgb(100 116 139 / 0.16);
+    --editor-selected: color-mix(in srgb, var(--fos-accent-color) 10%, transparent);
+    display: flex;
+    height: 100%;
+    min-width: 0;
+    flex-direction: column;
+    color: var(--fos-ink);
+    container-type: inline-size;
+}
+
+.dark .fos-editor {
+    --editor-canvas: #1e1e1e;
+    --editor-chrome: #24262c;
+    --editor-line: rgb(180 190 210 / 0.12);
+    --editor-selected: color-mix(in srgb, var(--fos-accent-color) 20%, transparent);
+}
+
+.fos-editor button {
+    cursor: pointer;
+    transition: background-color 120ms ease;
+}
+
+.fos-editor button:disabled {
+    cursor: default;
+    opacity: 0.45;
+}
+.fos-editor button:not(:disabled):hover {
+    background-color: var(--editor-selected);
+}
+
+.fos-editor-toolbar {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 4px;
+    min-height: 46px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--editor-line);
+    background: var(--fos-glass);
+}
+
+.fos-editor-toolbar button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 30px;
+    min-width: 30px;
+    padding: 5px 8px;
+    border-radius: 7px;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.fos-editor-toolbar button[aria-pressed='true'] {
+    background: var(--editor-selected);
+}
+.fos-editor-toolbar-divider {
+    width: 1px;
+    height: 17px;
+    background: var(--editor-line);
+    margin: 0 5px;
+}
+.fos-editor-toolbar .fos-editor-save:not(:disabled) {
+    background: var(--fos-accent-color);
+    color: white;
+}
+.fos-editor-toolbar .fos-editor-save:not(:disabled):hover {
+    filter: brightness(1.1);
+}
+
+.fos-editor-workspace {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+}
+.fos-editor .fos-editor-sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 218px;
+    flex-shrink: 0;
+    padding: 12px 9px;
+    border-right: 1px solid var(--editor-line);
+    background: var(--fos-glass);
+}
+
+.fos-editor-sidebar-heading,
+.fos-editor-folder-heading,
+.fos-editor-location {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    padding: 0 7px;
+    font-size: 11px;
+}
+
+.fos-editor-sidebar-heading {
+    margin-bottom: 14px;
+    font-weight: 600;
+    font-size: 12px;
+}
+.fos-editor-sidebar-heading > span,
+.fos-editor-folder-heading > span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.fos-editor-sidebar-heading button,
+.fos-editor-folder-heading button {
+    display: grid;
+    place-items: center;
+    padding: 5px;
+    border-radius: 5px;
+}
+.fos-editor-location {
+    color: var(--fos-secondary);
+    margin-bottom: 8px;
+}
+.fos-editor-location span {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.fos-editor-location svg,
+.fos-editor-folder-heading svg {
+    flex-shrink: 0;
+}
+.fos-editor-folder-heading {
+    font-weight: 500;
+    min-height: 28px;
+}
+.fos-editor-filter {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 10px 3px;
+    padding: 6px 8px;
+    background: var(--editor-canvas);
+    border: 1px solid var(--editor-line);
+    border-radius: 7px;
+    color: var(--fos-secondary);
+}
+.fos-editor-filter input {
+    min-width: 0;
+    width: 100%;
+    background: transparent;
+    font-size: 11px;
+    color: var(--fos-ink);
+}
+.fos-editor-filter input::placeholder {
+    color: var(--fos-secondary);
+}
+.fos-editor-file {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    min-height: 28px;
+    max-height: 28px;
+    padding: 4px 9px;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.2;
+    font-weight: 400;
+    text-align: left;
+    color: var(--fos-ink);
+}
+.fos-editor-file .fos-tree-file-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.fos-editor-file svg {
+    flex: 0 0 auto;
+    width: 14px;
+    height: 14px;
+    color: var(--fos-secondary);
+}
+.fos-editor-file .fos-tree-chevron {
+    transition: transform 120ms ease;
+}
+.fos-editor-file .fos-tree-chevron.is-open {
+    transform: rotate(90deg);
+}
+.fos-editor-file .fos-editor-folder-icon {
+    color: #1683ba;
+    fill: rgb(22 131 186 / 0.12);
+}
+.fos-editor-file.is-active {
+    background: var(--editor-selected);
+    font-weight: 500;
+}
+.fos-editor-file.is-active svg {
+    color: var(--fos-ink);
+}
+.fos-editor-sidebar-message {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 8px;
+    font-size: 11px;
+    line-height: 1.7;
+    color: var(--fos-secondary);
+    overflow-wrap: anywhere;
+}
+.fos-editor-sidebar-message button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border: 1px solid var(--editor-line);
+    border-radius: 6px;
+    color: var(--fos-ink);
+}
+
+.fos-editor-main {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    flex-direction: column;
+    background: var(--editor-canvas);
+}
+.fos-editor-tabs {
+    display: flex;
+    flex-shrink: 0;
+    min-height: 39px;
+    overflow-x: auto;
+    background: var(--editor-chrome);
+    border-bottom: 1px solid var(--editor-line);
+    padding: 4px 5px 0;
+    gap: 3px;
+}
+.fos-editor-tab {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    max-width: 230px;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    padding-right: 5px;
+    color: var(--fos-secondary);
+}
+.fos-editor-tab.is-active {
+    background: var(--editor-canvas);
+    color: var(--fos-ink);
+    border-color: var(--editor-line);
+}
+.fos-editor-tab-select {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 9px;
+    font-size: 12px;
+    border-radius: 7px;
+}
+.fos-editor-tab-select > span:not(.fos-editor-dirty) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.fos-editor-tab-select svg {
+    flex-shrink: 0;
+    color: var(--fos-secondary);
+}
+.fos-editor-tab-close {
+    display: grid;
+    place-items: center;
+    width: 23px;
+    height: 23px;
+    flex-shrink: 0;
+    border-radius: 5px;
+}
+.fos-editor-dirty {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: currentColor;
+}
+.fos-editor-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    height: 32px;
+    padding: 0 17px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--editor-line);
+    color: var(--fos-secondary);
+    font-size: 11px;
+}
+.fos-editor-breadcrumb span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.fos-editor-breadcrumb strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+    color: var(--fos-ink);
+}
+.fos-editor-breadcrumb svg {
+    flex-shrink: 0;
+}
+.fos-editor-code {
+    position: relative;
+    min-height: 0;
+    flex: 1;
+}
+.fos-editor-message {
+    display: flex;
+    height: 100%;
+    padding: 24px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--fos-secondary);
+    font-size: 12px;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+.fos-editor-message button {
+    border: 1px solid var(--editor-line);
+    border-radius: 7px;
+    padding: 7px 12px;
+    color: var(--fos-ink);
+}
+.fos-editor-status {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    min-height: 28px;
+    flex-shrink: 0;
+    padding: 4px 12px;
+    border-top: 1px solid var(--editor-line);
+    background: var(--editor-chrome);
+    color: var(--fos-secondary);
+    font-size: 10px;
+}
+.fos-editor-save-state {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.fos-editor-language {
+    padding-left: 14px;
+    border-left: 1px solid var(--editor-line);
+}
+
+.fos-editor-welcome {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: safe center;
+    padding: clamp(24px, 5cqi, 56px);
+    overflow-y: auto;
+}
+.fos-editor-welcome-icon {
+    margin-bottom: 22px;
+    color: var(--fos-secondary);
+}
+.fos-editor-welcome h1 {
+    font-size: clamp(20px, 2.6cqi, 28px);
+    line-height: 1.25;
+    letter-spacing: -0.035em;
+    font-weight: 600;
+}
+.fos-editor-welcome > p {
+    max-width: 380px;
+    margin-top: 10px;
+    color: var(--fos-secondary);
+    font-size: 12px;
+    line-height: 1.8;
+}
+.fos-editor-welcome-actions {
+    display: flex;
+    flex-direction: column;
+    width: min(100%, 360px);
+    gap: 8px;
+    margin-top: 26px;
+}
+.fos-editor-welcome-actions button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 45px;
+    border: 1px solid var(--editor-line);
+    border-radius: 9px;
+    padding: 10px 13px;
+    text-align: left;
+    font-size: 12px;
+}
+.fos-editor-welcome-actions span {
+    flex: 1;
+}
+.fos-editor-shortcuts {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 25px;
+    color: var(--fos-secondary);
+    font-size: 10px;
+}
+
+@container (max-width: 720px) {
+    .fos-editor .fos-editor-sidebar {
+        width: 172px;
+        padding: 10px 5px;
+    }
+    .fos-editor-toolbar > button > span {
+        display: none;
+    }
+    .fos-editor-toolbar {
+        gap: 2px;
+        padding-inline: 6px;
+    }
+    .fos-editor-toolbar-divider {
+        margin-inline: 2px;
+    }
+    .fos-editor-welcome {
+        padding: 24px;
+    }
+}
+
+/* Editor keeps opaque chrome so code stays readable over glass windows. */
+.fos-window[data-fos-app='editor'] .fos-titlebar {
+    border-bottom-color: transparent;
+}
+.fos-editor-toolbar {
+    background: rgb(244 246 250 / 0.92);
+    padding-top: 0;
+    min-height: 38px;
+}
+.dark .fos-editor-toolbar {
+    background: rgb(38 41 48 / 0.94);
+}
+.fos-editor-document {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+}
+.fos-editor-document[data-hidden='true'] {
+    display: none;
+}
+.fos-editor-tree,
+.fos-editor-tree-children {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.fos-tree-chevron-spacer {
+    flex: 0 0 12px;
+    width: 12px;
+    height: 12px;
+}
+.fos-editor-tree-entry {
+    min-width: 0;
+}
+.fos-editor-tree-entry > .fos-editor-file {
+    gap: 5px;
+}
+.fos-editor-console {
+    position: relative;
+    display: flex;
+    min-height: 110px;
+    flex-shrink: 0;
+    flex-direction: column;
+    border-top: 1px solid var(--editor-line);
+    background: #101012;
+}
+.fos-editor-console[hidden] {
+    display: none;
+}
+.fos-editor-console-heading {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 8px;
+    min-height: 34px;
+    padding: 0 10px;
+    background: var(--editor-chrome);
+    color: var(--fos-ink);
+    font-size: 11px;
+}
+.fos-editor-console-heading strong {
+    font-weight: 500;
+    white-space: nowrap;
+}
+.fos-editor-console-heading button {
+    display: grid;
+    place-items: center;
+    width: 25px;
+    height: 25px;
+    flex-shrink: 0;
+    border-radius: 5px;
+}
+.fos-console-target {
+    margin-left: auto;
+    color: var(--fos-secondary);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+.fos-editor-console-body {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+}
+.fos-editor-console-resize {
+    position: absolute;
+    top: -3px;
+    right: 0;
+    left: 0;
+    height: 6px;
+    cursor: row-resize;
+    z-index: 4;
+    touch-action: none;
+}
+.fos-editor-console-resize:hover,
+.fos-editor-console-resize:focus-visible {
+    background: var(--fos-accent-color);
+    outline: none;
+}
+.fos-console-session-embedded {
+    height: 26px;
+    font-size: 10px;
+}
+.fos-editor-console .fos-mac-terminal [data-slot='card-header'] {
+    display: none;
+}
+.fos-editor-console .fos-mac-terminal [data-slot='card-footer'] {
+    padding: 5px 8px;
+}
+@container (max-width: 620px) {
+    .fos-editor-toolbar button {
+        padding-inline: 5px;
+        min-width: 27px;
+    }
+    .fos-editor-toolbar-divider {
+        margin-inline: 1px;
+    }
+    .fos-console-target {
+        max-width: 100px;
+    }
+}
+
+/* ── Launchpad ── */
+.fos-launchpad {
+    position: fixed;
+    inset: 0;
+    z-index: 8600;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    background: rgb(20 20 24 / 0.42);
+    backdrop-filter: blur(36px) saturate(160%);
+    -webkit-backdrop-filter: blur(36px) saturate(160%);
+    padding: 72px 28px 96px;
+}
+
+.fos-launchpad-inner {
+    display: flex;
+    width: min(960px, 100%);
+    flex-direction: column;
+    gap: 28px;
+    margin: 0 auto;
+}
+
+.fos-launchpad-search {
+    display: flex;
+    width: min(320px, 100%);
+    align-items: center;
+    gap: 10px;
+    align-self: center;
+    border: 0.5px solid rgb(255 255 255 / 0.28);
+    border-radius: 12px;
+    background: rgb(255 255 255 / 0.16);
+    padding: 9px 14px;
+    color: #fff;
+    box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.25);
+}
+
+.fos-launchpad-input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+}
+
+.fos-launchpad-input::placeholder {
+    color: rgb(255 255 255 / 0.55);
+}
+
+.fos-launchpad-input::-webkit-search-decoration,
+.fos-launchpad-input::-webkit-search-cancel-button {
+    display: none;
+}
+
+.fos-launchpad-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    gap: 18px 10px;
+    justify-items: center;
+    overflow: auto;
+    padding: 4px 8px 24px;
+}
+
+.fos-launchpad-app {
+    position: relative;
+    display: flex;
+    width: 112px;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    border-radius: 16px;
+    padding: 10px 6px 8px;
+    color: #fff;
+    transition:
+        background 120ms ease,
+        transform 120ms ease;
+}
+
+.fos-launchpad-app:hover {
+    background: rgb(255 255 255 / 0.12);
+    transform: scale(1.04);
+}
+
+.fos-launchpad-app-name {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.55);
+}
+
+.fos-launchpad-dot {
+    position: absolute;
+    bottom: 2px;
+    width: 4px;
+    height: 4px;
+    border-radius: 999px;
+    background: #fff;
+    opacity: 0.85;
+}
+
+.fos-launchpad-empty {
+    margin-top: 48px;
+    text-align: center;
+    color: rgb(255 255 255 / 0.7);
+    font-size: 14px;
+}
+
+/* ── Mission Control space strip / window cards ── */
+.fos-mission-spaces {
+    display: flex;
+    flex-shrink: 0;
+    align-items: stretch;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 20px 8px;
+    overflow-x: auto;
+}
+
+.fos-mission-space {
+    display: flex;
+    width: 148px;
+    flex-direction: column;
+    gap: 6px;
+    border: 1px solid rgb(255 255 255 / 0.14);
+    border-radius: 14px;
+    background: rgb(255 255 255 / 0.08);
+    padding: 8px;
+    color: #fff;
+    text-align: left;
+    transition:
+        background 120ms ease,
+        border-color 120ms ease,
+        transform 120ms ease;
+}
+
+.fos-mission-space:hover {
+    background: rgb(255 255 255 / 0.14);
+}
+
+.fos-mission-space.is-active {
+    border-color: rgb(255 255 255 / 0.55);
+    background: rgb(255 255 255 / 0.22);
+    box-shadow: 0 10px 28px -14px rgb(0 0 0 / 0.55);
+}
+
+.fos-mission-space.is-drop {
+    border-color: #0a84ff;
+    background: rgb(10 132 255 / 0.28);
+}
+
+.fos-mission-space-label {
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.fos-mission-space-preview {
+    position: relative;
+    height: 84px;
+    overflow: hidden;
+    border-radius: 8px;
+    background: linear-gradient(160deg, rgb(40 44 56 / 0.9), rgb(18 20 28 / 0.95));
+}
+
+.fos-mission-mini-win {
+    position: absolute;
+    overflow: hidden;
+    border: 0.5px solid rgb(255 255 255 / 0.25);
+    border-radius: 4px;
+    background: rgb(255 255 255 / 0.16);
+    box-shadow: 0 4px 10px -4px rgb(0 0 0 / 0.5);
+}
+
+.fos-mission-mini-win-bar {
+    height: 6px;
+    background: rgb(255 255 255 / 0.2);
+}
+
+.fos-mission-card-preview {
+    position: relative;
+    display: flex;
+    min-height: 140px;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: linear-gradient(165deg, rgb(255 255 255 / 0.1), rgb(0 0 0 / 0.15));
+}
+
+.fos-mission-card-moves {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 0 10px 10px;
+}
+
+.fos-mission-move-btn {
+    border: 0.5px solid rgb(255 255 255 / 0.18);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.1);
+    padding: 2px 8px;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 550;
+}
+
+.fos-mission-move-btn:hover {
+    background: rgb(255 255 255 / 0.22);
+}
+
+.fos-mission-move-btn.is-current {
+    opacity: 0.45;
+}

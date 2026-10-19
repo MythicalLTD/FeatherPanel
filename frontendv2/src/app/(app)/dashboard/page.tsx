@@ -825,6 +825,13 @@ export default function DashboardPage() {
             href: '/dashboard/servers',
             icon: QUICK_ACTION_ICONS.servers,
         },
+        serverTotal > 0 && {
+            key: 'featheros',
+            label: t('featheros.nav_open', { name: `${settings?.app_name || 'FeatherPanel'} OS` }),
+            href: '/os',
+            icon: QUICK_ACTION_ICONS.os,
+            external: true,
+        },
         ticketsEnabled && {
             key: 'ticket',
             label: t('dashboard.widgets.quick_actions.new_ticket'),

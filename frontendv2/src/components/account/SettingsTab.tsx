@@ -23,11 +23,22 @@ import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePreferences, useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { Button } from '@/components/featherui/Button';
-import { ShieldCheck, Check, Fingerprint, Pencil, FileText, Clock, Network, Trash2, Smartphone } from 'lucide-react';
+import {
+    ArrowUpRight,
+    ShieldCheck,
+    Check,
+    Fingerprint,
+    Pencil,
+    FileText,
+    Clock,
+    Network,
+    Trash2,
+    Smartphone,
+} from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Captcha } from '@/components/Captcha';
-import { isEnabled } from '@/lib/utils';
+import { cn, isEnabled } from '@/lib/utils';
 import { isCaptchaConfigured, obtainCaptchaResponseToken } from '@/lib/captchaGate';
 import { startRegistration } from '@simplewebauthn/browser';
 import { passkeysApi } from '@/lib/api/passkeys';
@@ -777,25 +788,93 @@ export default function SettingsTab() {
                 </div>
             </div>
 
-            <div className='border-border/50 bg-muted/20 rounded-xl border p-4'>
-                <h3 className='text-foreground text-lg font-semibold'>{t('account.securitySettings')}</h3>
-                <p className='text-muted-foreground mt-1 text-sm'>{t('account.securitySettingsDescription')}</p>
+            <div className='border-primary/20 from-primary/12 via-background to-muted/20 relative overflow-hidden rounded-2xl border bg-linear-to-br p-5 sm:p-6'>
+                <div className='relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between'>
+                    <div className='flex min-w-0 items-start gap-3'>
+                        <span className='bg-primary/12 text-primary ring-primary/20 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1'>
+                            <ShieldCheck className='h-5 w-5' />
+                        </span>
+                        <div className='min-w-0'>
+                            <div className='flex flex-wrap items-center gap-2'>
+                                <h3 className='text-foreground text-lg font-semibold'>
+                                    {t('account.securitySettings')}
+                                </h3>
+                                <span
+                                    className={cn(
+                                        'rounded-full px-2 py-0.5 text-[11px] font-semibold',
+                                        user?.two_fa_enabled === 'true'
+                                            ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300'
+                                            : 'bg-amber-500/12 text-amber-700 dark:text-amber-300',
+                                    )}
+                                >
+                                    {user?.two_fa_enabled === 'true'
+                                        ? t('account.securityOverview.protected')
+                                        : t('account.securityOverview.recommended')}
+                                </span>
+                            </div>
+                            <p className='text-muted-foreground mt-1 max-w-2xl text-sm'>
+                                {t('account.securitySettingsDescription')}
+                            </p>
+                        </div>
+                    </div>
+                    <div className='grid shrink-0 grid-cols-3 gap-2 sm:min-w-64'>
+                        <div className='border-border/60 bg-background/45 rounded-xl border px-3 py-2'>
+                            <p className='text-muted-foreground text-[10px] font-medium tracking-wider uppercase'>
+                                2FA
+                            </p>
+                            <p className='text-foreground mt-1 text-xs font-semibold'>
+                                {user?.two_fa_enabled === 'true'
+                                    ? t('account.securityOverview.enabled')
+                                    : t('account.securityOverview.notEnabled')}
+                            </p>
+                        </div>
+                        <div className='border-border/60 bg-background/45 rounded-xl border px-3 py-2'>
+                            <p className='text-muted-foreground text-[10px] font-medium tracking-wider uppercase'>
+                                {t('account.securityOverview.devices')}
+                            </p>
+                            <p className='text-foreground mt-1 text-xs font-semibold'>
+                                {t('account.securityOverview.managed')}
+                            </p>
+                        </div>
+                        <div className='border-border/60 bg-background/45 rounded-xl border px-3 py-2'>
+                            <p className='text-muted-foreground text-[10px] font-medium tracking-wider uppercase'>
+                                {t('auth.passkey.title')}
+                            </p>
+                            <p className='text-foreground mt-1 text-xs font-semibold'>
+                                {passkeys.length
+                                    ? t('account.securityOverview.available')
+                                    : t('account.securityOverview.addOne')}
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <Link
                 href='/dashboard/account/login-device'
-                className='fp-surface-inset hover:border-primary/30 flex items-start gap-4 rounded-xl border p-5 transition-colors'
+                aria-label={t('account.loginDevice.menuLabel')}
+                className='fp-surface-inset hover:border-primary/45 focus-visible:ring-primary/60 group flex items-center gap-4 rounded-2xl border p-4 transition-[border-color,background-color,box-shadow] hover:bg-white/[0.025] hover:shadow-[0_12px_30px_-20px_hsl(var(--primary)/0.7)] focus-visible:ring-2 focus-visible:outline-none sm:p-5'
             >
-                <div className='bg-primary/10 flex h-12 w-12 shrink-0 items-center justify-center rounded-lg'>
-                    <Smartphone className='text-primary h-6 w-6' />
+                <div className='bg-primary/10 text-primary group-hover:bg-primary/15 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors'>
+                    <Smartphone className='h-5 w-5' />
                 </div>
                 <div className='min-w-0 flex-1'>
                     <h4 className='text-foreground text-sm font-medium'>{t('account.loginDevice.title')}</h4>
                     <p className='text-muted-foreground mt-1 text-sm'>{t('account.loginDevice.subtitle')}</p>
                 </div>
+                <span className='border-primary/25 bg-primary/10 text-primary group-hover:bg-primary/15 hidden shrink-0 items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold sm:inline-flex'>
+                    {t('account.loginDevice.open')}
+                    <ArrowUpRight className='h-3.5 w-3.5' />
+                </span>
+                <ArrowUpRight className='text-muted-foreground group-hover:text-primary h-4 w-4 shrink-0 sm:hidden' />
             </Link>
 
-            <ActiveSessionsCard />
+            <div className='space-y-2'>
+                <p className='text-muted-foreground px-1 text-[11px] font-semibold tracking-[0.16em] uppercase'>
+                    {t('account.securityOverview.devices')}
+                </p>
+                <ActiveSessionsCard />
+            </div>
 
             <div className='fp-surface-inset rounded-xl border p-6'>
                 <div className='flex items-start gap-4'>

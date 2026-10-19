@@ -16,6 +16,24 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 export type AuthFormDensity = 'comfortable' | 'compact' | 'dense';
 export type AuthSecondaryLayout = 'chips' | 'stack' | 'collapsed';
 export type AuthFooterStyle = 'full' | 'minimal' | 'hidden';
+export type AuthTemplate = 'split' | 'centered' | 'spotlight';
+export type AuthVisualPreset = 'aurora' | 'glass' | 'minimal' | 'contrast';
+
+export function parseAuthTemplate(raw: string | undefined): AuthTemplate {
+    const v = (raw ?? 'split').trim().toLowerCase();
+    if (v === 'centered' || v === 'spotlight' || v === 'split') {
+        return v;
+    }
+    return 'split';
+}
+
+export function parseAuthVisualPreset(raw: string | undefined): AuthVisualPreset {
+    const v = (raw ?? 'aurora').trim().toLowerCase();
+    if (v === 'glass' || v === 'minimal' || v === 'contrast' || v === 'aurora') {
+        return v;
+    }
+    return 'aurora';
+}
 
 export function parseAuthFormDensity(raw: string | undefined): AuthFormDensity {
     const v = (raw ?? 'compact').trim().toLowerCase();

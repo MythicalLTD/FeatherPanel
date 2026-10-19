@@ -127,12 +127,17 @@ class UserSession
      */
     public static function listActive(int $userId, string $accountToken): array
     {
-        $stmt = Database::getPdoConnection()->prepare(
-            'SELECT id, ip_address, user_agent, created_at, last_seen_at FROM ' . self::$table . ' WHERE user_id = :user_id AND account_token_hash = :account AND revoked_at IS NULL AND created_at > (NOW() - INTERVAL ' . self::LIFETIME_SECONDS . ' SECOND) ORDER BY last_seen_at DESC LIMIT 100'
-        );
-        $stmt->execute(['user_id' => $userId, 'account' => self::hash($accountToken)]);
+        try {
+            $stmt = Database::getPdoConnection()->prepare(
+                'SELECT id, ip_address, user_agent, created_at, last_seen_at FROM ' . self::$table . ' WHERE user_id = :user_id AND account_token_hash = :account AND revoked_at IS NULL AND created_at > (NOW() - INTERVAL ' . self::LIFETIME_SECONDS . ' SECOND) ORDER BY last_seen_at DESC LIMIT 100'
+            );
+            $stmt->execute(['user_id' => $userId, 'account' => self::hash($accountToken)]);
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable) {
+            // Keep account settings usable while an older installation is applying migrations.
+            return [];
+        }
     }
 
     public static function revoke(int $id, int $userId): bool
