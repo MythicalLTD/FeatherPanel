@@ -258,9 +258,11 @@ export function TableIdentity({
 export function StatusDot({
     tone,
     children,
+    className,
 }: {
     tone: 'success' | 'warning' | 'danger' | 'muted';
     children: ReactNode;
+    className?: string;
 }) {
     const dot = {
         success: 'bg-emerald-500',
@@ -269,7 +271,7 @@ export function StatusDot({
         muted: 'bg-muted-foreground/50',
     }[tone];
     return (
-        <span className='inline-flex items-center gap-2 text-xs font-medium whitespace-nowrap'>
+        <span className={cn('inline-flex items-center gap-2 text-xs font-medium whitespace-nowrap', className)}>
             <span className={cn('h-2 w-2 rounded-full', dot)} aria-hidden />
             {children}
         </span>

@@ -53,9 +53,7 @@ export function ChangelogSection({ title, items, color, icon }: ChangelogSection
                 >
                     {icon}
                 </div>
-                <h4 className='text-muted-foreground truncate text-xs font-bold tracking-wider uppercase md:text-sm'>
-                    {title}
-                </h4>
+                <h4 className='text-foreground truncate text-sm font-semibold'>{title}</h4>
             </div>
             <ul className='space-y-2'>
                 {items.map((item, index) => (
