@@ -23,7 +23,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Label } from '@/components/ui/label';
@@ -579,7 +579,7 @@ export default function AdminSubdomainsPage() {
                 </Alert>
             )}
 
-            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -605,7 +605,7 @@ export default function AdminSubdomainsPage() {
                             className='mb-4'
                         />
                     )}
-                    <div className='grid grid-cols-1 gap-4'>
+                    <ResourceTable>
                         <WidgetRenderer widgets={getWidgets('admin-subdomains', 'before-list')} />
                         {domains.map((domain) => (
                             <ResourceCard
@@ -672,7 +672,7 @@ export default function AdminSubdomainsPage() {
                                 }
                             />
                         ))}
-                    </div>
+                    </ResourceTable>
 
                     {pagination.totalPages > 1 && (
                         <div className='mt-8 flex items-center justify-center gap-2'>
@@ -897,7 +897,7 @@ export default function AdminSubdomainsPage() {
 
                             <div className='bg-border/50 h-px' />
 
-                            <div className='bg-card/20 space-y-4 rounded-3xl border border-white/5 p-6 backdrop-blur-md'>
+                            <div className='fp-surface space-y-4 rounded-3xl border border-white/5 p-6'>
                                 <div className='flex items-center justify-between'>
                                     <Label className='text-foreground/80 flex items-center gap-2 font-semibold'>
                                         <Cloud className='text-primary h-4 w-4' />

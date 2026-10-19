@@ -200,7 +200,7 @@ const ScannerTab = () => {
     return (
         <div className='space-y-6'>
             <div className='grid grid-cols-1 gap-6 lg:grid-cols-3'>
-                <Card className='border-border/50 bg-card/30 backdrop-blur-sm lg:col-span-2'>
+                <Card className='fp-surface border lg:col-span-2'>
                     <CardHeader>
                         <CardTitle className='flex items-center gap-2 text-lg'>
                             <Activity className='text-primary h-5 w-5' />
@@ -290,7 +290,7 @@ const ScannerTab = () => {
                     </CardContent>
                 </Card>
 
-                <Card className='border-border/50 bg-card/30 backdrop-blur-sm'>
+                <Card className='fp-surface border'>
                     <CardHeader>
                         <CardTitle className='text-muted-foreground flex items-center justify-between text-sm font-medium tracking-wider uppercase'>
                             {t('admin.featherzerotrust.scanner.targets')}

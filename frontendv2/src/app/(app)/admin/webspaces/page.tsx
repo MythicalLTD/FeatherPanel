@@ -24,7 +24,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -383,7 +383,7 @@ export default function WebSpacesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-webspaces', 'after-header')} />
 
-            <div className='bg-card/50 border-border flex flex-col items-stretch gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md'>
+            <div className='fp-surface flex flex-col items-stretch gap-4 rounded-2xl border p-4'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -472,7 +472,7 @@ export default function WebSpacesPage() {
                             className='mb-4'
                         />
                     )}
-                    <div className='grid grid-cols-1 gap-4'>
+                    <ResourceTable>
                         {spaces.map((space) => {
                             const state = space.state || 'stopped';
                             const busy = powering?.startsWith(space.uuid);
@@ -607,7 +607,7 @@ export default function WebSpacesPage() {
                                 />
                             );
                         })}
-                    </div>
+                    </ResourceTable>
 
                     {pagination.totalPages > 1 && (
                         <div className='mt-8 flex items-center justify-center gap-2'>

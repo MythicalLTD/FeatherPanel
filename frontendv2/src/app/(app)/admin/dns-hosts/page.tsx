@@ -24,7 +24,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Select } from '@/components/ui/select-native';
@@ -239,7 +239,7 @@ export default function AdminDnsHostsPage() {
                     description={t('admin.dnsHosts.emptyHint')}
                 />
             ) : (
-                <div className='space-y-3'>
+                <ResourceTable>
                     <p className='text-muted-foreground text-sm'>
                         {t('admin.dnsHosts.listSummary', { total: String(rows.length) })}
                     </p>
@@ -334,7 +334,7 @@ export default function AdminDnsHostsPage() {
                             />
                         );
                     })}
-                </div>
+                </ResourceTable>
             )}
         </div>
     );

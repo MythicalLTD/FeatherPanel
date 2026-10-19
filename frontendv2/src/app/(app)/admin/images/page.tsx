@@ -280,7 +280,7 @@ export default function ImagesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-images', 'after-header')} />
 
-            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -443,7 +443,7 @@ export default function ImagesPage() {
                             {filePreview && (
                                 <div className='space-y-2'>
                                     <Label>{t('admin.images.form.preview')}</Label>
-                                    <div className='bg-card/50 h-48 w-full overflow-hidden rounded-xl border'>
+                                    <div className='fp-surface h-48 w-full overflow-hidden rounded-xl border'>
                                         <img
                                             src={filePreview}
                                             alt={t('common.preview')}
@@ -535,7 +535,7 @@ export default function ImagesPage() {
                                     {t('admin.images.form.url')}
                                 </Label>
                                 <div className='flex items-center gap-2'>
-                                    <div className='bg-card/40 flex-1 truncate rounded-xl border border-white/5 p-3 font-mono text-sm'>
+                                    <div className='fp-surface flex-1 truncate rounded-xl border border-white/5 p-3 font-mono text-sm'>
                                         {selectedImage?.url}
                                     </div>
                                     <Button

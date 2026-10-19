@@ -35,7 +35,7 @@ import {
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -194,7 +194,7 @@ export default function AdminWingsBackupsPage() {
                             }
                         />
                     ) : (
-                        <div className='grid grid-cols-1 gap-4'>
+                        <ResourceTable>
                             {policies.map((policy) => {
                                 const badges: ResourceBadge[] = [
                                     {
@@ -277,7 +277,7 @@ export default function AdminWingsBackupsPage() {
                                     />
                                 );
                             })}
-                        </div>
+                        </ResourceTable>
                     )}
                 </TabsContent>
 
@@ -297,7 +297,7 @@ export default function AdminWingsBackupsPage() {
                             }
                         />
                     ) : (
-                        <div className='grid grid-cols-1 gap-4'>
+                        <ResourceTable>
                             {destinations.map((dest) => {
                                 const testLabel =
                                     dest.last_test_ok === null || dest.last_test_ok === undefined
@@ -357,7 +357,7 @@ export default function AdminWingsBackupsPage() {
                                     />
                                 );
                             })}
-                        </div>
+                        </ResourceTable>
                     )}
                 </TabsContent>
             </Tabs>

@@ -740,7 +740,7 @@ export default function AdminLogsPage() {
                 />
 
                 {/* Mode switcher tabs */}
-                <div className='bg-card/50 border-border/40 flex w-fit items-center gap-1 rounded-2xl border p-1 backdrop-blur-xl'>
+                <div className='fp-surface flex w-fit items-center gap-1 rounded-2xl border p-1'>
                     <button
                         onClick={() => setViewMode('panel')}
                         className={cn(
@@ -769,7 +769,7 @@ export default function AdminLogsPage() {
 
                 {/* Panel logs view */}
                 {viewMode === 'panel' && (
-                    <div className='border-border/50 bg-card/50 overflow-hidden rounded-3xl border backdrop-blur-xl'>
+                    <div className='fp-surface overflow-hidden rounded-3xl border'>
                         {/* Panel toolbar */}
                         <div className='border-border/40 bg-muted/20 flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center'>
                             {/* Log type pills */}
@@ -911,7 +911,7 @@ export default function AdminLogsPage() {
 
                 {/* Panel log file inventory */}
                 {viewMode === 'panel' && logFiles.length > 0 && (
-                    <div className='border-border/40 bg-card/30 overflow-hidden rounded-2xl border backdrop-blur-xl'>
+                    <div className='fp-surface overflow-hidden rounded-2xl border'>
                         <div className='border-border/30 flex items-center gap-2 border-b px-4 py-2.5'>
                             <HardDrive className='text-muted-foreground h-3.5 w-3.5' />
                             <span className='text-muted-foreground text-xs font-semibold tracking-wide uppercase'>
@@ -966,7 +966,7 @@ export default function AdminLogsPage() {
 
                 {/* Wings node logs view */}
                 {viewMode === 'wings' && (
-                    <div className='border-border/50 bg-card/50 overflow-hidden rounded-3xl border backdrop-blur-xl'>
+                    <div className='fp-surface overflow-hidden rounded-3xl border'>
                         {/* Wings toolbar */}
                         <div className='border-border/40 bg-muted/20 flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center'>
                             {/* Node picker */}
@@ -1178,7 +1178,7 @@ export default function AdminLogsPage() {
 
                 {/* Wings node switcher grid */}
                 {viewMode === 'wings' && nodes.length > 0 && (
-                    <div className='border-border/40 bg-card/30 overflow-hidden rounded-2xl border backdrop-blur-xl'>
+                    <div className='fp-surface overflow-hidden rounded-2xl border'>
                         <div className='border-border/30 flex items-center gap-2 border-b px-4 py-2.5'>
                             <Server className='text-muted-foreground h-3.5 w-3.5' />
                             <span className='text-muted-foreground text-xs font-semibold tracking-wide uppercase'>

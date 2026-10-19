@@ -24,7 +24,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Label } from '@/components/ui/label';
@@ -419,7 +419,7 @@ export default function AdminMountsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-mounts', 'after-header')} />
 
-            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                     <Input
@@ -456,7 +456,7 @@ export default function AdminMountsPage() {
                     onClearFilters={resetFilters}
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <ResourceTable>
                     {mounts.map((m) => {
                         const nodeTag =
                             m.node_ids.length === 0
@@ -541,7 +541,7 @@ export default function AdminMountsPage() {
                             />
                         );
                     })}
-                </div>
+                </ResourceTable>
             )}
 
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>

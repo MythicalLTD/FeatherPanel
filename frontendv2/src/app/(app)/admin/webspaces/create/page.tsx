@@ -541,7 +541,7 @@ export default function CreateWebSpacePage() {
                 </div>
             )}
 
-            <div className='bg-card/50 border-border/50 mt-8 mb-12 rounded-2xl border p-6 backdrop-blur-xl'>
+            <div className='fp-surface mt-8 mb-12 rounded-2xl border p-6'>
                 <StepIndicator steps={wizardSteps} currentStep={currentStep} onStepClick={setCurrentStep} />
                 {loadingOptions && (
                     <p className='text-muted-foreground mt-4 flex items-center gap-2 text-sm'>
@@ -904,7 +904,7 @@ export default function CreateWebSpacePage() {
                 )}
             </div>
 
-            <div className='bg-card/50 border-border/50 mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 backdrop-blur-xl sm:p-6'>
+            <div className='fp-surface mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 sm:p-6'>
                 <Button
                     type='button'
                     variant='outline'

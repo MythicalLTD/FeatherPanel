@@ -23,7 +23,7 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { ListPagination } from '@/components/featherui/ListPagination';
@@ -269,7 +269,7 @@ export default function BlockedIpsPage() {
 
             {beforeListWidgets.length > 0 ? <WidgetRenderer widgets={beforeListWidgets} /> : null}
 
-            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center gap-4 rounded-2xl border p-4 sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -300,11 +300,11 @@ export default function BlockedIpsPage() {
                     description={t('admin.blocked_ips.empty_search_hint')}
                 />
             ) : (
-                <div className='space-y-4'>
+                <ResourceTable>
                     <p className='text-muted-foreground text-sm'>
                         {t('admin.blocked_ips.list_summary', { total: String(total) })}
                     </p>
-                    <div className='space-y-3'>
+                    <ResourceTable>
                         {rows.map((row) => {
                             const badges: ResourceBadge[] = [
                                 {
@@ -351,9 +351,9 @@ export default function BlockedIpsPage() {
                                 />
                             );
                         })}
-                    </div>
+                    </ResourceTable>
                     <ListPagination page={page} totalPages={totalPages} disabled={loading} onPageChange={setPage} />
-                </div>
+                </ResourceTable>
             )}
 
             {bottomWidgets.length > 0 ? <WidgetRenderer widgets={bottomWidgets} /> : null}
