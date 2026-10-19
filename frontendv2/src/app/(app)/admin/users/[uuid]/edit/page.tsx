@@ -1272,7 +1272,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             {t('admin.users.edit.potential_alts.description')}
                         </p>
                         {altSourceIps.length > 0 && (
-                            <div className='mb-6 rounded-lg border border-[var(--fp-surface-border)] bg-white/5 p-4'>
+                            <div className='fp-surface-inset mb-6 rounded-lg border p-4'>
                                 <p className='text-muted-foreground mb-2 text-xs font-bold tracking-wider uppercase'>
                                     {t('admin.users.edit.potential_alts.source_ips')}
                                 </p>
@@ -1286,7 +1286,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             </div>
                         )}
                         {altSourceDevices.length > 0 && (
-                            <div className='mb-6 rounded-lg border border-[var(--fp-surface-border)] bg-white/5 p-4'>
+                            <div className='fp-surface-inset mb-6 rounded-lg border p-4'>
                                 <p className='text-muted-foreground mb-2 text-xs font-bold tracking-wider uppercase'>
                                     {t('admin.users.edit.potential_alts.source_devices')}
                                 </p>

@@ -489,7 +489,7 @@ export default function PterodactylImporterPage() {
                                                 {t(`admin.pterodactyl_importer.prerequisites.items.${item.key}`)}
                                             </span>
                                             <div className='flex items-center gap-3'>
-                                                <span className='text-muted-foreground rounded bg-white/5 px-2 py-0.5 font-mono text-xs'>
+                                                <span className='text-muted-foreground bg-muted rounded px-2 py-0.5 font-mono text-xs'>
                                                     {item.count}
                                                 </span>
                                                 {item.passed ? (
@@ -599,20 +599,20 @@ export default function PterodactylImporterPage() {
                                         className='border-primary/20'
                                     >
                                         <div className='space-y-6'>
-                                            <div className='rounded-xl border border-[var(--fp-surface-border)] bg-black/50 p-4'>
+                                            <div className='fp-surface-inset rounded-xl border p-4'>
                                                 <code className='font-mono text-sm text-green-400'>
                                                     feathercli config setup
                                                 </code>
                                             </div>
 
                                             <div className='grid gap-4 sm:grid-cols-2'>
-                                                <div className='space-y-1 rounded-lg border border-[var(--fp-surface-border)] bg-white/5 p-3'>
+                                                <div className='fp-surface-inset space-y-1 rounded-lg border p-3'>
                                                     <span className='text-muted-foreground text-xs font-medium uppercase'>
                                                         {t('admin.pterodactyl_importer.cli.step2.panel_url')}
                                                     </span>
                                                     <div className='font-mono text-sm break-all'>{panelUrl}</div>
                                                 </div>
-                                                <div className='space-y-1 rounded-lg border border-[var(--fp-surface-border)] bg-white/5 p-3'>
+                                                <div className='fp-surface-inset space-y-1 rounded-lg border p-3'>
                                                     <span className='text-muted-foreground text-xs font-medium uppercase'>
                                                         {t('admin.pterodactyl_importer.cli.step2.api_key')}
                                                     </span>
@@ -629,7 +629,7 @@ export default function PterodactylImporterPage() {
                                                 <p className='text-muted-foreground text-sm'>
                                                     {t('admin.pterodactyl_importer.cli.step4.description')}
                                                 </p>
-                                                <div className='rounded-xl border border-[var(--fp-surface-border)] bg-black/50 p-4'>
+                                                <div className='fp-surface-inset rounded-xl border p-4'>
                                                     <code className='font-mono text-sm text-green-400'>
                                                         feathercli migrate
                                                     </code>

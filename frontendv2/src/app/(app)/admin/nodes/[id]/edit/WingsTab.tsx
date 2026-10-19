@@ -186,7 +186,7 @@ export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }:
                     <div className='space-y-4 border-t border-[var(--fp-surface-border)] pt-6'>
                         <div className='flex items-center justify-between'>
                             <div>
-                                <h4 className='text-sm font-bold text-white'>{t('admin.node.wings.reset_key')}</h4>
+                                <h4 className='text-foreground text-sm font-bold'>{t('admin.node.wings.reset_key')}</h4>
                                 <p className='text-muted-foreground mt-1 text-xs'>
                                     {t('admin.node.wings.reset_key_help')}
                                 </p>
