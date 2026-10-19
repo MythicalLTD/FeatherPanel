@@ -1065,9 +1065,7 @@ export default function LoginForm() {
             <div className='w-full space-y-3'>
                 <div className='flex items-center gap-3'>
                     <div className='bg-border/70 h-px flex-1' />
-                    <span className='text-muted-foreground text-[11px] font-semibold tracking-wide uppercase'>
-                        {t('auth.login.or')}
-                    </span>
+                    <span className='text-muted-foreground text-xs font-medium'>{t('auth.login.or')}</span>
                     <div className='bg-border/70 h-px flex-1' />
                 </div>
                 <div className='grid grid-cols-1 gap-2 min-[380px]:grid-cols-2 [&>*:last-child:nth-child(odd)]:min-[380px]:col-span-2'>
@@ -1086,7 +1084,7 @@ export default function LoginForm() {
                 <AuthHeroCard icon={<Building2 className='h-6 w-6' />} title={ssoHeadline} subtitle={ssoSubtitle} />
 
                 <div className='space-y-2'>
-                    <p className='text-muted-foreground text-center text-[10px] font-medium tracking-[0.14em] uppercase'>
+                    <p className='text-muted-foreground text-center text-xs font-medium'>
                         {t('auth.sso.chooseProvider')}
                     </p>
                     {oidcProviders.map((provider) => (
@@ -1177,7 +1175,7 @@ export default function LoginForm() {
 
             <div
                 className={cn(
-                    'bg-card/95 flex w-full flex-col overflow-hidden rounded-xl shadow-2xl',
+                    'fp-surface flex w-full flex-col overflow-hidden rounded-2xl border',
                     showQrLogin && 'md:flex-row',
                 )}
             >
@@ -1725,7 +1723,7 @@ export default function LoginForm() {
                 </div>
 
                 {showQrLogin ? (
-                    <div className='border-border/30 bg-muted/20 flex w-[17.5rem] shrink-0 items-center justify-center border-l px-5 py-8 lg:w-[19rem]'>
+                    <div className='fp-surface-inset flex w-[17.5rem] shrink-0 items-center justify-center border-l px-5 py-8 lg:w-[19rem]'>
                         <LoginQrPanel />
                     </div>
                 ) : null}
