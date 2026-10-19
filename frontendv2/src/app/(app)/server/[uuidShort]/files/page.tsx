@@ -28,6 +28,7 @@ import { FileList } from './components/FileList';
 import { FileListControls } from './components/FileListControls';
 import { FileTransferDialog } from './components/FileTransferDialog';
 import { FileTransfersPanel } from './components/FileTransfersPanel';
+import { FileInfoSheet } from './components/FileInfoSheet';
 import { FileQuickAccess, FileQuickAccessPanel } from './components/FileQuickAccess';
 import { PanelRightOpen } from 'lucide-react';
 import { useFilesViewPrefs, useFilesQuickAccess, sortAndFilterFiles } from '@/lib/files-view-prefs';
@@ -244,6 +245,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const [permissionsOpen, setPermissionsOpen] = useState(false);
     const [compressOpen, setCompressOpen] = useState(false);
     const [transferOpen, setTransferOpen] = useState(false);
+    const [infoFile, setInfoFile] = useState<FileObject | null>(null);
     const [transferKey, setTransferKey] = useState(0);
     const [fileHashOpen, setFileHashOpen] = useState(false);
     const [archiveBrowseOpen, setArchiveBrowseOpen] = useState(false);
@@ -687,6 +689,12 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         }
 
         switch (action) {
+            case 'info':
+                setInfoFile(file);
+                return;
+            case 'duplicate':
+                void handleDuplicate(file);
+                return;
             case 'edit':
                 {
                     const editPath = `/server/${uuidShort}/files/edit?file=${encodeURIComponent(
@@ -785,6 +793,23 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 await handleDownloadDirectory(entry.name);
             }
             await new Promise((r) => setTimeout(r, 300));
+        }
+    };
+
+    const handleDuplicate = async (file: FileObject) => {
+        const names = new Set(visibleFiles.map((f) => f.name));
+        const dot = file.isFile ? file.name.lastIndexOf('.') : -1;
+        const base = dot > 0 ? file.name.slice(0, dot) : file.name;
+        const ext = dot > 0 ? file.name.slice(dot) : '';
+        let candidate = `${base} copy${ext}`;
+        for (let n = 2; names.has(candidate); n++) candidate = `${base} copy ${n}${ext}`;
+        const toastId = toast.loading(t('files.messages.duplicating'));
+        try {
+            await filesApi.copyFile(uuidShort, currentDirectory || '/', file.name, candidate);
+            toast.success(t('files.messages.duplicated', { name: candidate }), { id: toastId });
+            refresh();
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t, 'files.messages.duplicate_failed'), { id: toastId });
         }
     };
 
@@ -1320,6 +1345,13 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                         onDropFilesToPath={canUpdate || canArchive ? handleDropOnPath : undefined}
                         onToggleFilters={fileSearchEnabled ? () => setSearchFiltersOpen(true) : undefined}
                         activeFiltersCount={activeAdvancedFiltersCount}
+                        listFolders={async (path) => {
+                            const res = await filesApi.getFiles(uuidShort, path);
+                            return res.contents
+                                .filter((f) => !f.isFile)
+                                .map((f) => f.name)
+                                .sort((a, b) => a.localeCompare(b));
+                        }}
                     />
                 </div>
                 <WidgetRenderer widgets={getWidgets('server-files', 'after-search-bar')} />
@@ -1704,6 +1736,22 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             <div className='min-w-0 flex-1'>
                                 <FileList
                                     view={viewPrefs.view}
+                                    emptyActions={
+                                        canCreate ? (
+                                            <>
+                                                <Button onClick={() => fileInputRef.current?.click()} className='gap-2'>
+                                                    <Upload className='h-4 w-4' />
+                                                    {t('files.list.empty_upload')}
+                                                </Button>
+                                                <Button variant='outline' onClick={() => setCreateFileOpen(true)}>
+                                                    {t('files.toolbar.new_file')}
+                                                </Button>
+                                                <Button variant='outline' onClick={() => setCreateFolderOpen(true)}>
+                                                    {t('files.toolbar.new_folder')}
+                                                </Button>
+                                            </>
+                                        ) : undefined
+                                    }
                                     files={visibleFiles}
                                     loading={loading || searchLoading}
                                     selectedFiles={selectedFiles}
@@ -1875,6 +1923,16 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 onSuccess={() => {
                     refresh();
                     setSelectedFiles([]);
+                }}
+            />
+            <FileInfoSheet
+                file={infoFile}
+                directory={currentDirectory || '/'}
+                open={infoFile !== null}
+                onOpenChange={(open) => !open && setInfoFile(null)}
+                onChecksum={(file) => {
+                    setInfoFile(null);
+                    handleAction('hash', file);
                 }}
             />
             <FileTransferDialog

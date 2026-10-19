@@ -14,7 +14,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import { Button } from '@/components/featherui/Button';
-import { Check, ChevronRight, Copy, Home, Search, Settings2, X } from 'lucide-react';
+import { Check, ChevronRight, Copy, Folder, Home, Search, Settings2, X } from 'lucide-react';
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { toast } from 'sonner';
 import { Input } from '@/components/featherui/Input';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -30,6 +31,8 @@ interface FileBreadcrumbsProps {
     onDropFilesToPath?: (destinationPath: string, event: React.DragEvent) => void;
     onToggleFilters?: () => void;
     activeFiltersCount?: number;
+    /** Lists sibling folders behind each separator when set. */
+    listFolders?: (path: string) => Promise<string[]>;
 }
 
 const DRAG_MIME = 'application/x-featherpanel-files';
@@ -101,6 +104,66 @@ function CrumbButton({ path, isCurrent, onDropFilesToPath, onClick, className, t
     );
 }
 
+/** Separator that opens a list of the folders next to the following crumb. */
+function SiblingFolders({
+    parent,
+    current,
+    listFolders,
+    onNavigate,
+}: {
+    parent: string;
+    current: string;
+    listFolders: (path: string) => Promise<string[]>;
+    onNavigate: (path: string) => void;
+}) {
+    const { t } = useTranslation();
+    const [folders, setFolders] = useState<string[] | null>(null);
+    return (
+        <Menu as='div' className='relative'>
+            <MenuButton
+                onClick={() => {
+                    if (folders === null) {
+                        listFolders(parent)
+                            .then(setFolders)
+                            .catch(() => setFolders([]));
+                    }
+                }}
+                className='text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 flex h-7 w-5 items-center justify-center rounded-md'
+                aria-label={t('files.breadcrumbs.siblings')}
+                title={t('files.breadcrumbs.siblings')}
+            >
+                <ChevronRight className='h-4 w-4' />
+            </MenuButton>
+            <MenuItems
+                anchor='bottom start'
+                className='fp-menu-surface z-50 mt-1 max-h-72 w-56 overflow-y-auto rounded-xl border p-1 shadow-xl focus:outline-none'
+            >
+                {folders === null ? (
+                    <div className='text-muted-foreground px-3 py-2 text-xs'>{t('common.loading')}</div>
+                ) : folders.length === 0 ? (
+                    <div className='text-muted-foreground px-3 py-2 text-xs'>{t('files.transfer.no_folders')}</div>
+                ) : (
+                    folders.map((name) => (
+                        <MenuItem key={name}>
+                            <button
+                                type='button'
+                                onClick={() => onNavigate(parent === '/' ? `/${name}` : `${parent}/${name}`)}
+                                className={cn(
+                                    'data-focus:bg-primary/10 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm',
+                                    name === current && 'text-primary font-medium',
+                                )}
+                            >
+                                <Folder className='h-4 w-4 shrink-0 text-amber-500' />
+                                <span className='truncate'>{name}</span>
+                            </button>
+                        </MenuItem>
+                    ))
+                )}
+            </MenuItems>
+        </Menu>
+    );
+}
+
 export function FileBreadcrumbs({
     currentDirectory,
     onNavigate,
@@ -109,6 +172,7 @@ export function FileBreadcrumbs({
     onDropFilesToPath,
     onToggleFilters,
     activeFiltersCount = 0,
+    listFolders,
 }: FileBreadcrumbsProps) {
     const { t } = useTranslation();
     const segments = (currentDirectory || '').split('/').filter(Boolean);
@@ -152,7 +216,16 @@ export function FileBreadcrumbs({
                     const isCurrent = index === segments.length - 1;
                     return (
                         <div key={index} className='flex shrink-0 items-center gap-1'>
-                            <ChevronRight className='text-muted-foreground/40 h-4 w-4' />
+                            {listFolders ? (
+                                <SiblingFolders
+                                    parent={index === 0 ? '/' : getPath(index - 1)}
+                                    current={segment}
+                                    listFolders={listFolders}
+                                    onNavigate={onNavigate}
+                                />
+                            ) : (
+                                <ChevronRight className='text-muted-foreground/40 h-4 w-4' />
+                            )}
                             <CrumbButton
                                 path={path}
                                 isCurrent={isCurrent}

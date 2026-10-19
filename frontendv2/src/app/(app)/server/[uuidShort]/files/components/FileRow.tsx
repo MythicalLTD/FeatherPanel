@@ -14,6 +14,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import { RowActionsMenu } from '@/components/featherui/DataTable';
+import { FileThumbnail } from './FileThumbnail';
 import { FileObject } from '@/types/server';
 import { formatFileSize } from '@/lib/utils';
 import { formatDateTimeInTz, formatRelativeTime, parseApiDate } from '@/lib/dateUtils';
@@ -34,6 +35,8 @@ import {
     PackageSearch,
     Share2,
     type LucideIcon,
+    CopyPlus,
+    Info,
 } from 'lucide-react';
 import { isTrashShortcut } from '@/lib/feather-trash';
 import Link from 'next/link';
@@ -302,6 +305,7 @@ export function FileRow({
             items.push({ key: 'download-directory', label: t('files.row.download_folder'), Icon: Download });
         }
         if (canEdit) {
+            items.push({ key: 'duplicate', label: t('files.row.duplicate'), Icon: CopyPlus });
             items.push({ key: 'copy', label: t('files.row.copy'), Icon: Copy });
             items.push({ key: 'move', label: t('files.row.move'), Icon: FileIcon });
         }
@@ -318,6 +322,7 @@ export function FileRow({
             items.push({ key: 'compress', label: t('files.row.compress'), Icon: Archive });
             items.push({ key: 'permissions', label: t('files.row.permissions'), Icon: Settings });
         }
+        items.push({ key: 'info', label: t('files.row.info'), Icon: Info, separatorBefore: true });
         if (canDelete) {
             items.push({
                 key: 'delete',
@@ -454,31 +459,70 @@ export function FileRow({
                 />
             </div>
 
-            <div
-                className={cn(
-                    'flex shrink-0 items-center justify-center rounded-lg border border-[var(--fp-surface-border)] transition-all',
-                    grid ? 'h-12 w-12' : 'h-9 w-9',
-                    virtualTrash
-                        ? 'border-primary/20 bg-primary/10 text-primary'
-                        : file.isFile
-                          ? 'bg-muted text-muted-foreground'
-                          : 'bg-amber-500/10 text-amber-500',
-                )}
-            >
-                {virtualTrash ? (
-                    <Trash2 className='h-4.5 w-4.5' />
-                ) : file.isFile ? (
-                    isImageName(file.name) ? (
-                        <Eye className='h-4.5 w-4.5' />
-                    ) : canBrowseArchive ? (
-                        <Archive className='h-4.5 w-4.5' />
+            {grid && file.isFile && isImageName(file.name) ? (
+                <FileThumbnail
+                    serverUuid={serverUuid}
+                    path={
+                        currentDirectory.endsWith('/')
+                            ? `${currentDirectory}${file.name}`
+                            : `${currentDirectory}/${file.name}`
+                    }
+                    size={file.size}
+                    fallback={
+                        <div
+                            className={cn(
+                                'flex shrink-0 items-center justify-center rounded-lg border border-[var(--fp-surface-border)] transition-all',
+                                grid ? 'h-12 w-12' : 'h-9 w-9',
+                                virtualTrash
+                                    ? 'border-primary/20 bg-primary/10 text-primary'
+                                    : file.isFile
+                                      ? 'bg-muted text-muted-foreground'
+                                      : 'bg-amber-500/10 text-amber-500',
+                            )}
+                        >
+                            {virtualTrash ? (
+                                <Trash2 className='h-4.5 w-4.5' />
+                            ) : file.isFile ? (
+                                isImageName(file.name) ? (
+                                    <Eye className='h-4.5 w-4.5' />
+                                ) : canBrowseArchive ? (
+                                    <Archive className='h-4.5 w-4.5' />
+                                ) : (
+                                    <FileText className='h-4.5 w-4.5' />
+                                )
+                            ) : (
+                                <Folder className='h-4.5 w-4.5 fill-amber-500/10' />
+                            )}
+                        </div>
+                    }
+                />
+            ) : (
+                <div
+                    className={cn(
+                        'flex shrink-0 items-center justify-center rounded-lg border border-[var(--fp-surface-border)] transition-all',
+                        grid ? 'h-12 w-12' : 'h-9 w-9',
+                        virtualTrash
+                            ? 'border-primary/20 bg-primary/10 text-primary'
+                            : file.isFile
+                              ? 'bg-muted text-muted-foreground'
+                              : 'bg-amber-500/10 text-amber-500',
+                    )}
+                >
+                    {virtualTrash ? (
+                        <Trash2 className='h-4.5 w-4.5' />
+                    ) : file.isFile ? (
+                        isImageName(file.name) ? (
+                            <Eye className='h-4.5 w-4.5' />
+                        ) : canBrowseArchive ? (
+                            <Archive className='h-4.5 w-4.5' />
+                        ) : (
+                            <FileText className='h-4.5 w-4.5' />
+                        )
                     ) : (
-                        <FileText className='h-4.5 w-4.5' />
-                    )
-                ) : (
-                    <Folder className='h-4.5 w-4.5 fill-amber-500/10' />
-                )}
-            </div>
+                        <Folder className='h-4.5 w-4.5 fill-amber-500/10' />
+                    )}
+                </div>
+            )}
 
             <div className={cn('pointer-events-auto min-w-0 overflow-hidden', grid ? 'w-full' : 'flex-1')}>
                 {(() => {

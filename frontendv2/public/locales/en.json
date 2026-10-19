@@ -5572,7 +5572,8 @@
 			"home": "Home",
 			"search_placeholder": "Search files...",
 			"copy_path": "Copy path",
-			"path_copied": "Path copied"
+			"path_copied": "Path copied",
+			"siblings": "Show folders here"
 		},
 		"toolbar": {
 			"selected": "Selected",
@@ -5611,7 +5612,10 @@
 			"empty_title": "No Files Found",
 			"empty_search_title": "No Matching Files",
 			"empty_search_description": "No files in this folder match your search.",
-			"truncated": "Showing {shown} of {total} items. Use search to find files beyond this limit."
+			"truncated": "Showing {shown} of {total} items. Use search to find files beyond this limit.",
+			"loading": "Loading files...",
+			"empty_upload": "Upload files",
+			"empty_drop_hint": "Or drop files anywhere on this page"
 		},
 		"trash": {
 			"title": "Trash",
@@ -5717,7 +5721,10 @@
 			"file_operation_completed": "File operation completed",
 			"file_operation_failed": "File operation failed",
 			"file_operation_aborted": "File operation aborted",
-			"download_selected_files_only": "Folders are skipped because this node cannot download folders."
+			"download_selected_files_only": "Folders are skipped because this node cannot download folders.",
+			"duplicating": "Duplicating...",
+			"duplicated": "Created {name}",
+			"duplicate_failed": "Could not duplicate this item"
 		},
 		"editor": {
 			"title": "Editing: {file}",
@@ -5740,7 +5747,9 @@
 			"engine_monaco": "Monaco Editor Engine v0.34.1",
 			"engine_codemirror": "CodeMirror Engine",
 			"switch_to_monaco": "Use Monaco",
-			"switch_to_codemirror": "Use CodeMirror"
+			"switch_to_codemirror": "Use CodeMirror",
+			"unsaved": "Unsaved changes",
+			"close_tab": "Close tab"
 		},
 		"search": {
 			"files_placeholder": "Filter files in this folder...",
@@ -6539,7 +6548,9 @@
 			"browse_archive": "Browse archive",
 			"compress": "Compress",
 			"permissions": "Permissions",
-			"delete": "Delete"
+			"delete": "Delete",
+			"duplicate": "Duplicate",
+			"info": "Details"
 		},
 		"dialogs": {
 			"archive_browse": {
@@ -6562,7 +6573,8 @@
 				"create": "Create",
 				"creating": "Creating...",
 				"success": "File created successfully.",
-				"error": "Failed to create file."
+				"error": "Failed to create file.",
+				"templates": "Start from a template"
 			},
 			"create_folder": {
 				"title": "Create New Folder",
@@ -6810,6 +6822,22 @@
 				"done": "Done",
 				"failed": "Failed"
 			}
+		},
+		"info": {
+			"path": "Path",
+			"type": "Type",
+			"type_file": "File",
+			"type_folder": "Folder",
+			"size": "Size",
+			"permissions": "Permissions",
+			"owner": "Owner",
+			"owner_value": "Server user (container)",
+			"mime": "MIME type",
+			"modified": "Modified",
+			"created": "Created",
+			"symlink": "This entry is a symbolic link.",
+			"checksum": "Compute checksum",
+			"description": "File details"
 		}
 	},
 	"admin": {
