@@ -2568,7 +2568,10 @@
 			"loadClientsFailed": "Failed to load API clients",
 			"loadClientFailed": "Failed to load API client",
 			"updateClientFailed": "Failed to update API client",
-			"regenerateFailed": "Failed to regenerate API keys"
+			"regenerateFailed": "Failed to regenerate API keys",
+			"table": {
+				"status": "Status"
+			}
 		},
 		"calagopus": {
 			"createTitle": "Connect VS Code",
@@ -7128,6 +7131,12 @@
 					"item2": "Avoid giving 'admin' permissions to untrusted roles.",
 					"item3": "Regularly audit role assignments and permissions."
 				}
+			},
+			"table": {
+				"role": "Role",
+				"badge": "Badge",
+				"permissions": "Permissions",
+				"created": "Created"
 			}
 		},
 		"locations": {
@@ -8464,6 +8473,13 @@
 					"description": "Pick this node in the server wizard. When there is only one, it is filled in for you.",
 					"action": "Create server"
 				}
+			},
+			"table": {
+				"node": "Node",
+				"status": "Status",
+				"location": "Location",
+				"capacity": "Memory / Disk",
+				"daemon": "Daemon"
 			}
 		},
 		"mounts": {
@@ -9002,6 +9018,13 @@
 					"reconcile_success": "Runtime reconcile completed",
 					"reconcile_failed": "Failed to reconcile server runtime"
 				}
+			},
+			"table": {
+				"server": "Server",
+				"owner": "Owner",
+				"node": "Node",
+				"status": "Status",
+				"resources": "Resources"
 			}
 		},
 		"tickets": {
@@ -10659,7 +10682,12 @@
 			"clear_all_devices_confirm": "Clear every browser/device fingerprint record in the panel? This resets alt detection and registration device limits until users browse again.",
 			"clear_all_devices_success": "All device fingerprint records cleared",
 			"clear_all_devices_failed": "Failed to clear device fingerprint records",
-			"table": {},
+			"table": {
+				"user": "User",
+				"role": "Role",
+				"status": "Status",
+				"auth": "Sign-in"
+			},
 			"actions": {
 				"force_verify_email": "Force verify email"
 			},
@@ -10890,6 +10918,14 @@
 					"resend_success": "Email queued for resend",
 					"resend_failed": "Failed to resend email",
 					"no_mails": "No mails found."
+				},
+				"groups": {
+					"profile": "Profile",
+					"profile_hint": "Name and contact details shown across the panel.",
+					"access": "Access",
+					"access_hint": "Role, self-service limits and external references.",
+					"security": "Security",
+					"security_hint": "Set a new password only when the user needs one."
 				}
 			},
 			"servers": {

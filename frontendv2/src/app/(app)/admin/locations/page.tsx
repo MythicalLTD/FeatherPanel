@@ -24,7 +24,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
@@ -512,7 +512,7 @@ export default function LocationsPage() {
                     onClearFilters={resetFilters}
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <ResourceTable>
                     {locations.map((location) => (
                         <ResourceCard
                             key={location.id}
@@ -589,7 +589,7 @@ export default function LocationsPage() {
                             }
                         />
                     ))}
-                </div>
+                </ResourceTable>
             )}
 
             {pagination.totalPages > 1 && (

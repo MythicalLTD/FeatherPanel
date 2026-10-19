@@ -25,7 +25,7 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
@@ -249,7 +249,7 @@ export default function RealmsPage() {
                     onClearFilters={resetFilters}
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <ResourceTable>
                     <WidgetRenderer widgets={getWidgets('admin-realms', 'before-list')} />
                     {realms.map((realm) => (
                         <ResourceCard
@@ -290,7 +290,7 @@ export default function RealmsPage() {
                             }
                         />
                     ))}
-                </div>
+                </ResourceTable>
             )}
 
             {pagination.totalPages > 1 && (

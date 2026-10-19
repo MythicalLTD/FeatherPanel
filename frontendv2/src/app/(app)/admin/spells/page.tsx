@@ -24,7 +24,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Select } from '@/components/ui/select-native';
@@ -547,7 +547,7 @@ export default function SpellsPage() {
                     </PageCard>
                 </div>
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <ResourceTable>
                     <WidgetRenderer widgets={getWidgets('admin-spells', 'before-list')} />
                     {spells.map((spell) => (
                         <ResourceCard
@@ -594,7 +594,7 @@ export default function SpellsPage() {
                             }
                         />
                     ))}
-                </div>
+                </ResourceTable>
             )}
 
             {pagination.totalPages > 1 && !isReorderMode && (
