@@ -17,7 +17,7 @@ import { FileObject } from '@/types/server';
 import { filterSelectableFiles } from '@/lib/feather-trash';
 import { FileRow } from './FileRow';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, FolderOpen } from 'lucide-react';
+import { Loader2, FolderOpen, SearchX, UploadCloud } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { formatBytes } from '@/lib/format';
 
@@ -48,6 +48,8 @@ interface FileListProps {
     anchorName?: string | null;
     isSearching?: boolean;
     view?: 'list' | 'grid';
+    /** Buttons shown in the empty folder state (upload, new file, new folder). */
+    emptyActions?: React.ReactNode;
 }
 
 export function FileList({
@@ -76,6 +78,7 @@ export function FileList({
     anchorName = null,
     isSearching = false,
     view = 'list',
+    emptyActions,
 }: FileListProps) {
     const { t } = useTranslation();
 
@@ -95,27 +98,54 @@ export function FileList({
 
     if (loading && files.length === 0) {
         return (
-            <div className='fp-surface flex h-64 items-center justify-center rounded-xl border'>
-                <Loader2 className='text-primary h-8 w-8 animate-spin' />
+            <div className='fp-surface overflow-hidden rounded-xl border' aria-busy='true'>
+                <div className='flex items-center gap-2 border-b border-[var(--fp-surface-border)] px-4 py-3'>
+                    <Loader2 className='text-primary h-4 w-4 animate-spin' />
+                    <span className='text-muted-foreground text-xs'>{t('files.list.loading')}</span>
+                </div>
+                <div className='divide-y divide-[var(--fp-surface-border)]'>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className='flex min-h-14 items-center gap-3 px-4'>
+                            <div className='bg-muted h-4 w-4 animate-pulse rounded' />
+                            <div className='bg-muted h-9 w-9 animate-pulse rounded-lg' />
+                            <div
+                                className='bg-muted h-3.5 animate-pulse rounded'
+                                style={{ width: `${30 + ((i * 17) % 40)}%` }}
+                            />
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     }
 
     if (files.length === 0) {
         return (
-            <div className='fp-surface text-muted-foreground flex h-[400px] flex-col items-center justify-center gap-6 rounded-xl border border-dashed'>
-                <div className='fp-icon-tile flex h-24 w-24 items-center justify-center rounded-2xl'>
-                    <FolderOpen className='h-10 w-10 opacity-40' />
+            <div className='fp-surface text-muted-foreground flex min-h-[420px] flex-col items-center justify-center gap-6 rounded-xl border border-dashed px-6 py-12'>
+                <div className='relative'>
+                    <div className='bg-primary/10 absolute inset-0 -z-10 scale-150 rounded-full blur-2xl' aria-hidden />
+                    <div className='fp-icon-tile text-primary flex h-28 w-28 items-center justify-center rounded-3xl'>
+                        {isSearching ? <SearchX className='h-12 w-12' /> : <FolderOpen className='h-12 w-12' />}
+                    </div>
                 </div>
 
                 <div className='space-y-2 text-center'>
-                    <h3 className='text-foreground text-xl font-bold'>
+                    <h3 className='text-foreground text-2xl font-semibold'>
                         {isSearching ? t('files.list.empty_search_title') : t('files.list.empty_title')}
                     </h3>
-                    <p className='text-muted-foreground mx-auto max-w-[280px] text-sm leading-relaxed'>
+                    <p className='text-muted-foreground mx-auto max-w-sm text-sm leading-relaxed'>
                         {isSearching ? t('files.list.empty_search_description') : t('files.list.empty_description')}
                     </p>
                 </div>
+                {!isSearching && emptyActions && (
+                    <div className='flex flex-wrap justify-center gap-2'>{emptyActions}</div>
+                )}
+                {!isSearching && (
+                    <p className='text-muted-foreground/80 flex items-center gap-1.5 text-xs'>
+                        <UploadCloud className='h-3.5 w-3.5' />
+                        {t('files.list.empty_drop_hint')}
+                    </p>
+                )}
             </div>
         );
     }

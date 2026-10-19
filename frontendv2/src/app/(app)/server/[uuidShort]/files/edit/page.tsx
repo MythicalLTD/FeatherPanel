@@ -31,6 +31,7 @@ import { ServerPageHeader } from '@/components/server/ServerPageHeader';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { FileTextEditor } from '@/components/server/files/FileTextEditor';
+import { EditorTabs, editorDrafts } from '@/components/server/files/EditorTabs';
 import { MinecraftServerPropertiesEditor } from '@/components/server/files/editors/MinecraftServerPropertiesEditor';
 import { SpigotConfigurationEditor } from '@/components/server/files/editors/SpigotConfigurationEditor';
 import { OpsEditor } from '@/components/server/files/editors/OpsEditor';
@@ -242,7 +243,8 @@ export default function FileEditorPage({
             ]);
 
             clearTimeout(timeoutId);
-            setContent(data);
+            const draft = editorDrafts.get(uuidShort, fullPath);
+            setContent(draft !== null && draft !== data ? draft : data);
             setOriginalContent(data);
         } catch (error) {
             console.error(error);
@@ -273,6 +275,11 @@ export default function FileEditorPage({
     useEffect(() => {
         fetchWidgets();
     }, [fetchWidgets]);
+
+    useEffect(() => {
+        if (loading || !fullPath) return;
+        editorDrafts.set(uuidShort, fullPath, content !== originalContent ? content : null);
+    }, [content, originalContent, loading, fullPath, uuidShort]);
 
     const handleSave = useCallback(
         async (newContent?: string) => {
@@ -386,6 +393,12 @@ export default function FileEditorPage({
                 description={t('files.editor.description', { path: fullPath })}
             />
             <WidgetRenderer widgets={getWidgets('server-file-editor', 'after-header')} />
+            <EditorTabs
+                serverUuid={uuidShort}
+                directory={directory}
+                file={fileName}
+                activeDirty={!loading && content !== originalContent}
+            />
 
             {!loading && content && useMinecraftEditor && shouldOfferMinecraftEditor ? (
                 <MinecraftServerPropertiesEditor
