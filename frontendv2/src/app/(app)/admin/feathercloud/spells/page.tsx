@@ -541,8 +541,8 @@ export default function SpellsPage() {
                                 <article
                                     key={spell.identifier}
                                     className={cn(
-                                        'fp-surface ring-border/40 flex flex-col overflow-hidden rounded-2xl border ring-1 transition',
-                                        'hover:bg-card hover:shadow-md',
+                                        'fp-surface hover:border-primary/30 flex flex-col overflow-hidden rounded-2xl border transition-colors',
+                                        'hover:border-primary/30',
                                     )}
                                 >
                                     <div className='flex flex-1 flex-col space-y-3 p-4'>
@@ -568,7 +568,7 @@ export default function SpellsPage() {
                                             </div>
                                             <div className='flex shrink-0 flex-col items-end gap-1'>
                                                 {installed ? (
-                                                    <span className='rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400'>
+                                                    <span className='bg-primary/10 text-primary rounded-md px-1.5 py-0.5 text-[10px] font-medium'>
                                                         {t('admin.marketplace.plugins.installed')}
                                                     </span>
                                                 ) : null}
@@ -772,7 +772,7 @@ export default function SpellsPage() {
                             {realmInstallMode === 'new' ? (
                                 <div className='space-y-4'>
                                     <div className='space-y-2'>
-                                        <label className='text-muted-foreground text-xs font-bold tracking-wide uppercase'>
+                                        <label className='text-muted-foreground text-xs font-medium'>
                                             {t('admin.marketplace.spells.dialog.new_realm_name')}
                                         </label>
                                         <Input
@@ -786,7 +786,7 @@ export default function SpellsPage() {
                                         />
                                     </div>
                                     <div className='space-y-2'>
-                                        <label className='text-muted-foreground text-xs font-bold tracking-wide uppercase'>
+                                        <label className='text-muted-foreground text-xs font-medium'>
                                             {t('admin.marketplace.spells.dialog.new_realm_description')}
                                         </label>
                                         <Textarea
@@ -971,7 +971,7 @@ export default function SpellsPage() {
 
                         <div className='bg-muted/25 space-y-4 rounded-2xl p-4 sm:p-5'>
                             <div>
-                                <p className='text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase'>
+                                <p className='text-foreground mb-2 text-sm font-semibold'>
                                     {t('ui.admin.feathercloud.spells.yourRating')}
                                 </p>
                                 <StarRatingInput
@@ -981,7 +981,7 @@ export default function SpellsPage() {
                                 />
                             </div>
                             <div>
-                                <p className='text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase'>
+                                <p className='text-foreground mb-2 text-sm font-semibold'>
                                     {t('ui.admin.feathercloud.spells.comment')}
                                 </p>
                                 <Textarea
