@@ -25,10 +25,9 @@ import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { DataTable, RowActionsMenu, TableIdentity } from '@/components/featherui/DataTable';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
-import { PageCard } from '@/components/featherui/PageCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -39,8 +38,6 @@ import {
     Search,
     Pencil,
     Trash2,
-    ChevronLeft,
-    ChevronRight,
     Eye,
     ShieldCheck,
     ArrowLeftRight,
@@ -52,11 +49,9 @@ import {
     User,
     Layers,
     Gauge,
-    HelpCircle,
     AlertTriangle,
     Network,
     Terminal,
-    Clock,
 } from 'lucide-react';
 import { StatusBadge } from '@/components/servers/StatusBadge';
 import { displayStatus } from '@/lib/server-utils';
@@ -116,6 +111,68 @@ const SERVERS_LIST_FILTERS_DEFAULTS = {
     filterSpell: null as { id: number; name: string } | null,
     filterLocation: null as { id: number; name: string } | null,
 };
+
+const formatMemory = (mb: number) => {
+    if (mb === 0) return '∞';
+    if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
+    return `${mb} MB`;
+};
+
+const formatDisk = (mb: number) => {
+    if (mb === 0) return '∞';
+    if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
+    return `${mb} MB`;
+};
+
+const formatCpu = (cpu: number) => {
+    if (cpu === 0) return '∞';
+    return `${cpu}%`;
+};
+
+function ServerOwner({ server }: { server: ApiServer }) {
+    const { t } = useTranslation();
+    if (!server.owner) {
+        return <span className='text-muted-foreground text-xs'>{t('ui.admin.servers.system')}</span>;
+    }
+    const avatar = resolveAvatarSrc(server.owner.avatar);
+    return (
+        <div className='flex min-w-0 items-center gap-2'>
+            <Avatar className='h-6 w-6 shrink-0'>
+                {avatar && <AvatarImage src={avatar} alt={server.owner.username} />}
+            </Avatar>
+            {server.owner.uuid ? (
+                <Link
+                    href={`/admin/users/${server.owner.uuid}/edit`}
+                    onClick={(e) => e.stopPropagation()}
+                    className='text-foreground hover:text-primary truncate text-sm font-medium underline-offset-4 transition-colors hover:underline'
+                >
+                    {server.owner.username}
+                </Link>
+            ) : (
+                <span className='truncate text-sm font-medium'>{server.owner.username}</span>
+            )}
+        </div>
+    );
+}
+
+function ServerResources({ server }: { server: ApiServer }) {
+    return (
+        <div className='text-muted-foreground flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs whitespace-nowrap lg:flex-nowrap'>
+            <span className='inline-flex items-center gap-1'>
+                <Database className='h-3.5 w-3.5' />
+                {formatMemory(server.memory)}
+            </span>
+            <span className='inline-flex items-center gap-1'>
+                <Cpu className='h-3.5 w-3.5' />
+                {formatCpu(server.cpu)}
+            </span>
+            <span className='inline-flex items-center gap-1'>
+                <HardDrive className='h-3.5 w-3.5' />
+                {formatDisk(server.disk)}
+            </span>
+        </div>
+    );
+}
 
 export default function ServersPage() {
     const { t } = useTranslation();
@@ -373,23 +430,6 @@ export default function ServersPage() {
         }
     };
 
-    const formatMemory = (mb: number) => {
-        if (mb === 0) return '∞';
-        if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
-        return `${mb} MB`;
-    };
-
-    const formatDisk = (mb: number) => {
-        if (mb === 0) return '∞';
-        if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
-        return `${mb} MB`;
-    };
-
-    const formatCpu = (cpu: number) => {
-        if (cpu === 0) return '∞';
-        return `${cpu}%`;
-    };
-
     const formatBackupLimit = (limit: number | undefined) => {
         if (limit === undefined || limit === null) return '-';
         if (limit === 0) return t('admin.servers.form.disabled');
@@ -634,227 +674,150 @@ export default function ServersPage() {
                         onSelectAll={selectAllVisible}
                         onClear={clearSelection}
                     />
+                    <DataTable
+                        rows={servers}
+                        rowKey={(server) => server.id}
+                        onRowClick={(server) => router.push(`/admin/servers/${server.id}/edit`)}
+                        columns={[
+                            {
+                                key: 'select',
+                                header: null,
+                                className: 'w-10 pr-0',
+                                cell: (server) => (
+                                    <span onClick={(e) => e.stopPropagation()} className='inline-flex'>
+                                        <Checkbox
+                                            checked={selectedServerIds.includes(server.id)}
+                                            onCheckedChange={() => toggleServerSelection(server.id)}
+                                            className='h-4 w-4'
+                                        />
+                                    </span>
+                                ),
+                            },
+                            {
+                                key: 'server',
+                                header: t('admin.servers.table.server'),
+                                className: 'w-[26%]',
+                                cell: (server) => (
+                                    <TableIdentity
+                                        title={server.name}
+                                        subtitle={<span className='font-mono'>{server.uuidShort}</span>}
+                                        icon={Server}
+                                    />
+                                ),
+                            },
+                            {
+                                key: 'owner',
+                                header: t('admin.servers.table.owner'),
+                                cell: (server) => <ServerOwner server={server} />,
+                            },
+                            {
+                                key: 'node',
+                                header: t('admin.servers.table.node'),
+                                className: 'text-muted-foreground text-xs whitespace-nowrap',
+                                cell: (server) => server.node?.name || t('ui.admin.servers.unknownNode'),
+                            },
+                            {
+                                key: 'status',
+                                header: t('admin.servers.table.status'),
+                                cell: (server) => (
+                                    <StatusBadge status={displayStatus(server as unknown as ServerType)} t={t} />
+                                ),
+                            },
+                            {
+                                key: 'resources',
+                                header: t('admin.servers.table.resources'),
+                                className: 'hidden 2xl:table-cell',
+                                cell: (server) => <ServerResources server={server} />,
+                            },
+                        ]}
+                        mobileCard={(server) => (
+                            <div className='space-y-2.5'>
+                                <div className='flex items-start justify-between gap-3'>
+                                    <TableIdentity
+                                        title={server.name}
+                                        subtitle={<span className='font-mono'>{server.uuidShort}</span>}
+                                        icon={Server}
+                                    />
+                                    <span onClick={(e) => e.stopPropagation()} className='inline-flex pt-1'>
+                                        <Checkbox
+                                            checked={selectedServerIds.includes(server.id)}
+                                            onCheckedChange={() => toggleServerSelection(server.id)}
+                                            className='h-4 w-4'
+                                        />
+                                    </span>
+                                </div>
+                                <div className='flex flex-wrap items-center gap-3'>
+                                    <StatusBadge status={displayStatus(server as unknown as ServerType)} t={t} />
+                                    <ServerOwner server={server} />
+                                    <span className='text-muted-foreground text-xs'>
+                                        {server.node?.name || t('ui.admin.servers.unknownNode')}
+                                    </span>
+                                </div>
+                                <ServerResources server={server} />
+                            </div>
+                        )}
+                        actions={(server) => (
+                            <>
+                                <ServerPowerMenu
+                                    uuidShort={server.uuidShort}
+                                    serverName={server.name}
+                                    disabled={server.status === 'transferring'}
+                                />
+                                <Button
+                                    size='sm'
+                                    variant='ghost'
+                                    onClick={() => router.push(`/server/${server.uuidShort}`)}
+                                    title={t('admin.servers.details.view_console')}
+                                >
+                                    <Terminal className='h-4 w-4' />
+                                </Button>
+                                <RowActionsMenu
+                                    items={[
+                                        {
+                                            label: t('admin.servers.actions.view'),
+                                            icon: Eye,
+                                            onClick: () => handleView(server),
+                                        },
+                                        {
+                                            label: t('admin.servers.actions.edit'),
+                                            icon: Pencil,
+                                            href: `/admin/servers/${server.id}/edit`,
+                                        },
+                                        server.status === 'transferring'
+                                            ? {
+                                                  label: t('common.cancel'),
+                                                  icon: X,
+                                                  disabled: cancellingTransferId === server.id,
+                                                  onClick: () => handleCancelTransfer(server),
+                                              }
+                                            : {
+                                                  label: t('admin.servers.actions.transfer'),
+                                                  icon: ArrowLeftRight,
+                                                  onClick: () => openTransferDialog(server),
+                                              },
+                                        {
+                                            label: t('admin.servers.actions.delete'),
+                                            icon: Trash2,
+                                            destructive: true,
+                                            separated: true,
+                                            onClick: () => handleDelete(server),
+                                        },
+                                    ]}
+                                />
+                            </>
+                        )}
+                    />
+
                     {pagination.totalPages > 1 && (
                         <ListPagination
                             page={page}
                             totalPages={pagination.totalPages}
                             onPageChange={(nextPage) => patchFilters({ page: nextPage })}
-                            className='mb-4'
+                            className='mt-4'
                         />
-                    )}
-                    <div className='grid grid-cols-1 gap-4'>
-                        {servers.map((server) => {
-                            const badges: ResourceBadge[] = [
-                                {
-                                    label: server.node?.name || t('ui.admin.servers.unknownNode'),
-                                    className: 'bg-primary/10 text-primary border-primary/20',
-                                },
-                                {
-                                    label: server.uuidShort,
-                                    className: 'bg-muted/50 text-muted-foreground border-border/50 font-mono',
-                                },
-                            ];
-
-                            const ownerAvatarSrc = resolveAvatarSrc(server.owner?.avatar);
-                            const serverStatus = displayStatus(server as unknown as ServerType);
-                            return (
-                                <ResourceCard
-                                    key={server.id}
-                                    title={server.name}
-                                    subtitle={
-                                        server.owner ? (
-                                            <div className='flex items-center gap-2'>
-                                                <Avatar className='h-6 w-6 shrink-0'>
-                                                    {ownerAvatarSrc && (
-                                                        <AvatarImage src={ownerAvatarSrc} alt={server.owner.username} />
-                                                    )}
-                                                </Avatar>
-                                                {server.owner.uuid ? (
-                                                    <Link
-                                                        href={`/admin/users/${server.owner.uuid}/edit`}
-                                                        className='text-primary hover:text-primary/80 font-medium underline-offset-4 transition-colors hover:underline'
-                                                    >
-                                                        {server.owner.username}
-                                                    </Link>
-                                                ) : (
-                                                    <span className='text-foreground font-medium'>
-                                                        {server.owner.username}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <span className='text-muted-foreground font-medium'>
-                                                {t('ui.admin.servers.system')}
-                                            </span>
-                                        )
-                                    }
-                                    icon={Server}
-                                    badges={badges}
-                                    description={
-                                        <div className='mt-2 flex flex-wrap items-center gap-4'>
-                                            <StatusBadge status={serverStatus} t={t} />
-                                            <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
-                                                <Database className='h-3.5 w-3.5' />
-                                                <span>{formatMemory(server.memory)}</span>
-                                            </div>
-                                            <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
-                                                <Cpu className='h-3.5 w-3.5' />
-                                                <span>{formatCpu(server.cpu)}</span>
-                                            </div>
-                                            <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
-                                                <HardDrive className='h-3.5 w-3.5' />
-                                                <span>{formatDisk(server.disk)}</span>
-                                            </div>
-                                            {server.owner?.last_seen && (
-                                                <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
-                                                    <Clock className='h-3.5 w-3.5' />
-                                                    <span>
-                                                        {t('admin.servers.owner_last_seen')}:{' '}
-                                                        <span
-                                                            title={
-                                                                server.owner.last_seen
-                                                                    ? formatDateTimeInTz(
-                                                                          server.owner.last_seen,
-                                                                          dateOpts,
-                                                                      )
-                                                                    : undefined
-                                                            }
-                                                        >
-                                                            {formatRelativeTime(server.owner.last_seen, dateOpts)}
-                                                        </span>
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    }
-                                    actions={
-                                        <div className='flex items-center gap-2'>
-                                            <Checkbox
-                                                checked={selectedServerIds.includes(server.id)}
-                                                onCheckedChange={() => toggleServerSelection(server.id)}
-                                                className='h-4 w-4'
-                                            />
-                                            <ServerPowerMenu
-                                                uuidShort={server.uuidShort}
-                                                serverName={server.name}
-                                                disabled={server.status === 'transferring'}
-                                            />
-                                            <Button
-                                                size='sm'
-                                                variant='ghost'
-                                                onClick={() => router.push(`/server/${server.uuidShort}`)}
-                                                title={t('admin.servers.details.view_console')}
-                                            >
-                                                <Terminal className='h-4 w-4' />
-                                            </Button>
-                                            <Button
-                                                size='sm'
-                                                variant='ghost'
-                                                onClick={() => handleView(server)}
-                                                title={t('admin.servers.actions.view')}
-                                            >
-                                                <Eye className='h-4 w-4' />
-                                            </Button>
-                                            <Button
-                                                size='sm'
-                                                variant='ghost'
-                                                onClick={() => router.push(`/admin/servers/${server.id}/edit`)}
-                                                title={t('admin.servers.actions.edit')}
-                                            >
-                                                <Pencil className='h-4 w-4' />
-                                            </Button>
-                                            {server.status === 'transferring' ? (
-                                                <Button
-                                                    size='sm'
-                                                    variant='ghost'
-                                                    className='text-amber-500 hover:bg-amber-500/10 hover:text-amber-600'
-                                                    onClick={() => handleCancelTransfer(server)}
-                                                    loading={cancellingTransferId === server.id}
-                                                    title={t('common.cancel')}
-                                                >
-                                                    <X className='h-4 w-4' />
-                                                </Button>
-                                            ) : (
-                                                <Button
-                                                    size='sm'
-                                                    variant='ghost'
-                                                    onClick={() => openTransferDialog(server)}
-                                                    title={t('admin.servers.actions.transfer')}
-                                                >
-                                                    <ArrowLeftRight className='h-4 w-4' />
-                                                </Button>
-                                            )}
-
-                                            <Button
-                                                size='sm'
-                                                variant='ghost'
-                                                className='text-destructive hover:text-destructive hover:bg-destructive/10'
-                                                onClick={() => handleDelete(server)}
-                                                title={t('admin.servers.actions.delete')}
-                                            >
-                                                <Trash2 className='h-4 w-4' />
-                                            </Button>
-                                        </div>
-                                    }
-                                />
-                            );
-                        })}
-                    </div>
-
-                    {pagination.totalPages > 1 && (
-                        <div className='mt-8 flex items-center justify-center gap-2'>
-                            <Button
-                                variant='outline'
-                                size='icon'
-                                disabled={!pagination.hasPrev}
-                                onClick={() => patchFilters({ page: page - 1 })}
-                            >
-                                <ChevronLeft className='h-4 w-4' />
-                            </Button>
-                            <span className='text-sm font-medium'>
-                                {page} / {pagination.totalPages}
-                            </span>
-                            <Button
-                                variant='outline'
-                                size='icon'
-                                disabled={!pagination.hasNext}
-                                onClick={() => patchFilters({ page: page + 1 })}
-                            >
-                                <ChevronRight className='h-4 w-4' />
-                            </Button>
-                        </div>
                     )}
                 </>
             )}
-
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
-                <PageCard title={t('admin.servers.help.managing.title')} icon={Server}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.servers.help.managing.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.servers.help.relationships.title')} icon={Layers}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.servers.help.relationships.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.servers.help.resources.title')} icon={Gauge}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.servers.help.resources.description')}
-                    </p>
-                </PageCard>
-                <PageCard
-                    title={t('admin.servers.help.tips.title')}
-                    icon={HelpCircle}
-                    className='md:col-span-2 lg:col-span-3'
-                >
-                    <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm leading-relaxed'>
-                        <li>{t('admin.servers.help.tips.item1')}</li>
-                        <li>{t('admin.servers.help.tips.item2')}</li>
-                        <li>{t('admin.servers.help.tips.item3')}</li>
-                    </ul>
-                </PageCard>
-            </div>
 
             <Sheet open={isViewDrawerOpen} onOpenChange={setIsViewDrawerOpen}>
                 <SheetContent side='right' className='custom-scrollbar overflow-y-auto sm:max-w-2xl'>

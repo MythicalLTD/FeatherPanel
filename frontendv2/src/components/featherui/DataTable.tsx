@@ -61,7 +61,7 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
     return (
         <div className={className}>
-            <div className='fp-surface hidden overflow-hidden rounded-xl border lg:block'>
+            <div className='fp-surface hidden overflow-x-auto rounded-xl border lg:block'>
                 <table className='w-full text-sm'>
                     <thead>
                         <tr className='border-b border-[var(--fp-surface-border)]'>

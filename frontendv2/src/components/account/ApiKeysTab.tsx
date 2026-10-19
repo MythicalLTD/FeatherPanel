@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { DataTable, RowActionsMenu, StatusDot, TableIdentity } from '@/components/featherui/DataTable';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
@@ -49,6 +50,21 @@ interface ApiClient {
 
 interface ApiKeysTabProps {
     slug?: string;
+}
+
+function ApiKeyStatus({ client }: { client: { allowed_ips?: unknown } }) {
+    const { t } = useTranslation();
+    const locked = client.allowed_ips != null && String(client.allowed_ips).trim() !== '';
+    return (
+        <div className='flex flex-wrap items-center gap-2'>
+            <StatusDot tone='success'>{t('account.apiKeys.statuses.active')}</StatusDot>
+            {locked ? (
+                <span className='rounded-md border border-amber-500/25 bg-amber-500/10 px-1.5 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400'>
+                    {t('account.apiKeys.badges.ipLocked')}
+                </span>
+            ) : null}
+        </div>
+    );
 }
 
 export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProps) {
@@ -321,74 +337,89 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                     )}
                 </div>
             ) : (
-                <div className='space-y-3'>
-                    {filteredClients.map((client) => (
-                        <div
-                            key={client.id}
-                            className='border-border/50 bg-card/50 rounded-lg border p-4 backdrop-blur-xl'
-                        >
-                            <div className='mb-3 flex items-start justify-between'>
-                                <div className='flex-1'>
-                                    <h4 className='text-foreground text-sm font-semibold'>{client.name}</h4>
-                                    <p className='text-muted-foreground mt-1 truncate font-mono text-xs'>
+                <DataTable
+                    rows={filteredClients}
+                    rowKey={(client) => client.id}
+                    onRowClick={(client) => viewClient(client)}
+                    columns={[
+                        {
+                            key: 'name',
+                            header: t('account.apiKeys.clientName'),
+                            className: 'w-[34%]',
+                            cell: (client) => (
+                                <TableIdentity
+                                    title={client.name}
+                                    subtitle={
+                                        <span className='font-mono'>
+                                            {client.public_key ? client.public_key.substring(0, 20) + '...' : ''}
+                                        </span>
+                                    }
+                                    icon={Key}
+                                />
+                            ),
+                        },
+                        {
+                            key: 'status',
+                            header: t('account.apiKeys.table.status'),
+                            cell: (client) => <ApiKeyStatus client={client} />,
+                        },
+                        {
+                            key: 'created',
+                            header: t('account.apiKeys.createdAt'),
+                            className: 'text-muted-foreground text-xs whitespace-nowrap',
+                            cell: (client) => new Date(client.created_at).toLocaleDateString(),
+                        },
+                    ]}
+                    mobileCard={(client) => (
+                        <div className='space-y-2.5'>
+                            <TableIdentity
+                                title={client.name}
+                                subtitle={
+                                    <span className='font-mono'>
                                         {client.public_key ? client.public_key.substring(0, 20) + '...' : ''}
-                                    </p>
-                                    <p className='text-muted-foreground mt-2 text-xs'>
-                                        {t('account.apiKeys.createdAt')}:{' '}
-                                        {new Date(client.created_at).toLocaleDateString()}
-                                    </p>
-                                    {client.allowed_ips != null && String(client.allowed_ips).trim() !== '' && (
-                                        <p className='mt-1 text-xs text-amber-700 dark:text-amber-300'>
-                                            {t('account.apiKeys.ipRestrictedLabel')}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className='flex flex-col items-end gap-1'>
-                                    {client.allowed_ips != null && String(client.allowed_ips).trim() !== '' && (
-                                        <div className='rounded bg-amber-100 px-2 py-1 text-xs font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200'>
-                                            {t('account.apiKeys.badges.ipLocked')}
-                                        </div>
-                                    )}
-                                    <div className='rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-200'>
-                                        {t('account.apiKeys.statuses.active')}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className='flex flex-wrap gap-2'>
-                                <Button variant='outline' size='sm' onClick={() => viewClient(client)}>
-                                    <Eye className='mr-1 h-4 w-4' />
-                                    {t('account.apiKeys.viewDetails')}
-                                </Button>
-                                <Button variant='outline' size='sm' onClick={() => editClient(client)}>
-                                    <Pencil className='mr-1 h-4 w-4' />
-                                    {t('account.apiKeys.edit')}
-                                </Button>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    onClick={() => {
-                                        setSelectedClient(client);
-                                        setRegenerateModal(true);
-                                    }}
-                                >
-                                    <RefreshCw className='mr-1 h-4 w-4' />
-                                    {t('account.apiKeys.regenerateKeys')}
-                                </Button>
-                                <Button
-                                    variant='destructive'
-                                    size='sm'
-                                    onClick={() => {
-                                        setSelectedClient(client);
-                                        setDeleteModal(true);
-                                    }}
-                                >
-                                    <Trash2 className='mr-1 h-4 w-4' />
-                                    {t('account.apiKeys.delete')}
-                                </Button>
+                                    </span>
+                                }
+                                icon={Key}
+                            />
+                            <div className='flex flex-wrap items-center gap-3'>
+                                <ApiKeyStatus client={client} />
+                                <span className='text-muted-foreground text-xs'>
+                                    {t('account.apiKeys.createdAt')}: {new Date(client.created_at).toLocaleDateString()}
+                                </span>
                             </div>
                         </div>
-                    ))}
-                </div>
+                    )}
+                    actions={(client) => (
+                        <RowActionsMenu
+                            items={[
+                                {
+                                    label: t('account.apiKeys.viewDetails'),
+                                    icon: Eye,
+                                    onClick: () => viewClient(client),
+                                },
+                                { label: t('account.apiKeys.edit'), icon: Pencil, onClick: () => editClient(client) },
+                                {
+                                    label: t('account.apiKeys.regenerateKeys'),
+                                    icon: RefreshCw,
+                                    onClick: () => {
+                                        setSelectedClient(client);
+                                        setRegenerateModal(true);
+                                    },
+                                },
+                                {
+                                    label: t('account.apiKeys.delete'),
+                                    icon: Trash2,
+                                    destructive: true,
+                                    separated: true,
+                                    onClick: () => {
+                                        setSelectedClient(client);
+                                        setDeleteModal(true);
+                                    },
+                                },
+                            ]}
+                        />
+                    )}
+                />
             )}
 
             <Dialog

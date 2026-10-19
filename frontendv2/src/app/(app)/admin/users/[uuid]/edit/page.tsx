@@ -82,6 +82,7 @@ import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 import { RoleBadge } from '@/components/RoleBadge';
 import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { FormGroup } from '@/components/featherui/FormSection';
 import { useFormBaseline } from '@/hooks/useFormBaseline';
 import { Sensitive } from '@/components/common/Sensitive';
 
@@ -691,122 +692,138 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 <div className='space-y-6 lg:col-span-2'>
                     <PageCard title={t('admin.users.edit.form.title')} icon={User} className='h-full'>
                         <form onSubmit={handleSubmit} className='space-y-6' data-fp-save-shortcut>
-                            <div>
-                                <Label htmlFor='edit-username'>{t('admin.users.edit.form.username')}</Label>
-                                <Input
-                                    id='edit-username'
-                                    value={editForm.username}
-                                    onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
-                                    placeholder={t('admin.users.create.form.username_placeholder')}
-                                    required
-                                    className='mt-2'
-                                />
-                            </div>
-
-                            <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                            <FormGroup
+                                title={t('admin.users.edit.groups.profile')}
+                                description={t('admin.users.edit.groups.profile_hint')}
+                            >
                                 <div>
-                                    <Label htmlFor='edit-firstname'>{t('admin.users.edit.form.first_name')}</Label>
+                                    <Label htmlFor='edit-username'>{t('admin.users.edit.form.username')}</Label>
                                     <Input
-                                        id='edit-firstname'
-                                        value={editForm.first_name}
-                                        onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })}
-                                        placeholder={t('admin.users.create.form.first_name_placeholder')}
+                                        id='edit-username'
+                                        value={editForm.username}
+                                        onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+                                        placeholder={t('admin.users.create.form.username_placeholder')}
+                                        required
                                         className='mt-2'
                                     />
                                 </div>
+
+                                <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                                    <div>
+                                        <Label htmlFor='edit-firstname'>{t('admin.users.edit.form.first_name')}</Label>
+                                        <Input
+                                            id='edit-firstname'
+                                            value={editForm.first_name}
+                                            onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })}
+                                            placeholder={t('admin.users.create.form.first_name_placeholder')}
+                                            className='mt-2'
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor='edit-lastname'>{t('admin.users.edit.form.last_name')}</Label>
+                                        <Input
+                                            id='edit-lastname'
+                                            value={editForm.last_name}
+                                            onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })}
+                                            placeholder={t('admin.users.create.form.last_name_placeholder')}
+                                            className='mt-2'
+                                        />
+                                    </div>
+                                </div>
+
                                 <div>
-                                    <Label htmlFor='edit-lastname'>{t('admin.users.edit.form.last_name')}</Label>
+                                    <Label htmlFor='edit-email'>{t('admin.users.edit.form.email')}</Label>
                                     <Input
-                                        id='edit-lastname'
-                                        value={editForm.last_name}
-                                        onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })}
-                                        placeholder={t('admin.users.create.form.last_name_placeholder')}
+                                        id='edit-email'
+                                        type='email'
+                                        data-fp-sensitive=''
+                                        value={editForm.email}
+                                        onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                                        placeholder={t('admin.users.create.form.email_placeholder')}
+                                        required
                                         className='mt-2'
                                     />
                                 </div>
-                            </div>
+                            </FormGroup>
+                            <FormGroup
+                                title={t('admin.users.edit.groups.access')}
+                                description={t('admin.users.edit.groups.access_hint')}
+                            >
+                                <div>
+                                    <Label htmlFor='edit-role'>{t('admin.users.edit.form.role')}</Label>
+                                    <Select
+                                        id='edit-role'
+                                        value={editForm.role_id}
+                                        onChange={(e) => setEditForm({ ...editForm, role_id: e.target.value })}
+                                        required
+                                        className='mt-2 w-full'
+                                    >
+                                        <option value=''>{t('admin.users.create.form.select_role')}</option>
+                                        {availableRoles.map((role) => (
+                                            <option key={role.id} value={role.id}>
+                                                {role.display_name}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                </div>
 
-                            <div>
-                                <Label htmlFor='edit-email'>{t('admin.users.edit.form.email')}</Label>
-                                <Input
-                                    id='edit-email'
-                                    type='email'
-                                    data-fp-sensitive=''
-                                    value={editForm.email}
-                                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                                    placeholder={t('admin.users.create.form.email_placeholder')}
-                                    required
-                                    className='mt-2'
-                                />
-                            </div>
+                                <div>
+                                    <Label htmlFor='edit-webspace-limit'>
+                                        {t('ui.admin.users.edit.webSpaceLimit')}
+                                    </Label>
+                                    <Input
+                                        id='edit-webspace-limit'
+                                        type='number'
+                                        min={0}
+                                        value={editForm.webspace_limit ?? '0'}
+                                        onChange={(e) => setEditForm({ ...editForm, webspace_limit: e.target.value })}
+                                        className='mt-2'
+                                    />
+                                    <p className='text-muted-foreground mt-1 text-xs'>
+                                        0 = unlimited self-service orders
+                                    </p>
+                                </div>
 
-                            <div>
-                                <Label htmlFor='edit-role'>{t('admin.users.edit.form.role')}</Label>
-                                <Select
-                                    id='edit-role'
-                                    value={editForm.role_id}
-                                    onChange={(e) => setEditForm({ ...editForm, role_id: e.target.value })}
-                                    required
-                                    className='mt-2 w-full'
-                                >
-                                    <option value=''>{t('admin.users.create.form.select_role')}</option>
-                                    {availableRoles.map((role) => (
-                                        <option key={role.id} value={role.id}>
-                                            {role.display_name}
-                                        </option>
-                                    ))}
-                                </Select>
-                            </div>
-
-                            <div>
-                                <Label htmlFor='edit-webspace-limit'>{t('ui.admin.users.edit.webSpaceLimit')}</Label>
-                                <Input
-                                    id='edit-webspace-limit'
-                                    type='number'
-                                    min={0}
-                                    value={editForm.webspace_limit ?? '0'}
-                                    onChange={(e) => setEditForm({ ...editForm, webspace_limit: e.target.value })}
-                                    className='mt-2'
-                                />
-                                <p className='text-muted-foreground mt-1 text-xs'>0 = unlimited self-service orders</p>
-                            </div>
-
-                            <div>
-                                <Label htmlFor='edit-externalid'>{t('admin.users.edit.form.external_id')}</Label>
-                                <Input
-                                    id='edit-externalid'
-                                    type='number'
-                                    value={editForm.external_id ?? ''}
-                                    onChange={(e) =>
-                                        setEditForm({
-                                            ...editForm,
-                                            external_id: e.target.value === '' ? undefined : Number(e.target.value),
-                                        })
-                                    }
-                                    placeholder={t('admin.users.edit.form.external_id_help')}
-                                    className='mt-2'
-                                />
-                                <p className='text-muted-foreground mt-1.5 text-xs'>
-                                    {t('admin.users.edit.form.external_id_help')}
-                                </p>
-                            </div>
-
-                            <div>
-                                <Label htmlFor='edit-password'>{t('admin.users.edit.form.password')}</Label>
-                                <Input
-                                    id='edit-password'
-                                    type='password'
-                                    value={editForm.password}
-                                    onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-                                    placeholder={t('admin.users.edit.form.password_placeholder')}
-                                    className='mt-2'
-                                />
-                                <p className='text-muted-foreground mt-1.5 text-xs'>
-                                    {t('admin.users.edit.form.password_help')}
-                                </p>
-                            </div>
-
-                            <div className='border-border/50 flex justify-end border-t pt-4'>
+                                <div>
+                                    <Label htmlFor='edit-externalid'>{t('admin.users.edit.form.external_id')}</Label>
+                                    <Input
+                                        id='edit-externalid'
+                                        type='number'
+                                        value={editForm.external_id ?? ''}
+                                        onChange={(e) =>
+                                            setEditForm({
+                                                ...editForm,
+                                                external_id: e.target.value === '' ? undefined : Number(e.target.value),
+                                            })
+                                        }
+                                        placeholder={t('admin.users.edit.form.external_id_help')}
+                                        className='mt-2'
+                                    />
+                                    <p className='text-muted-foreground mt-1.5 text-xs'>
+                                        {t('admin.users.edit.form.external_id_help')}
+                                    </p>
+                                </div>
+                            </FormGroup>
+                            <FormGroup
+                                title={t('admin.users.edit.groups.security')}
+                                description={t('admin.users.edit.groups.security_hint')}
+                            >
+                                <div>
+                                    <Label htmlFor='edit-password'>{t('admin.users.edit.form.password')}</Label>
+                                    <Input
+                                        id='edit-password'
+                                        type='password'
+                                        value={editForm.password}
+                                        onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                                        placeholder={t('admin.users.edit.form.password_placeholder')}
+                                        className='mt-2'
+                                    />
+                                    <p className='text-muted-foreground mt-1.5 text-xs'>
+                                        {t('admin.users.edit.form.password_help')}
+                                    </p>
+                                </div>
+                            </FormGroup>
+                            <div className='flex justify-end border-t border-[var(--fp-surface-border)] pt-4'>
                                 <Button type='submit' disabled={submitting}>
                                     {submitting ? (
                                         <>

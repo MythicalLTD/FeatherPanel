@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -285,7 +285,7 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                 })}
                             />
                         ) : (
-                            <div className='grid grid-cols-1 gap-4'>
+                            <ResourceTable>
                                 {servers.map((server) => {
                                     const badges: ResourceBadge[] = [
                                         {
@@ -358,7 +358,7 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                         />
                                     );
                                 })}
-                            </div>
+                            </ResourceTable>
                         )}
 
                         {pagination.total_pages > 1 && (
@@ -413,7 +413,7 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                     })}
                                 />
                             ) : (
-                                <div className='grid grid-cols-1 gap-4'>
+                                <ResourceTable>
                                     {vms.map((vm) => {
                                         const vmBadges: ResourceBadge[] = [
                                             {
@@ -492,7 +492,7 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                             />
                                         );
                                     })}
-                                </div>
+                                </ResourceTable>
                             )}
                         </div>
                     </>
