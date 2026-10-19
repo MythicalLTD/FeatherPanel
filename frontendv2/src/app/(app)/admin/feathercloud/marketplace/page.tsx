@@ -15,15 +15,39 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { TipCard } from '@/components/featherui/TipCard';
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
+import { StatusDot } from '@/components/featherui/DataTable';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
-import { Puzzle, Sparkles, Languages, Info, Store } from 'lucide-react';
+import { ArrowRight, Info, Languages, Link2, Puzzle, Sparkles, Store } from 'lucide-react';
+
+const SECTIONS = [
+    {
+        href: '/admin/feathercloud/products',
+        icon: Puzzle,
+        title: 'admin.marketplace.index.plugins.title',
+        description: 'ui.admin.feathercloud.marketplace.teamMythicMarketplaceProductsReleasesFpa',
+        badge: 'admin.marketplace.index.plugins.available',
+    },
+    {
+        href: '/admin/feathercloud/spells',
+        icon: Sparkles,
+        title: 'admin.marketplace.index.spells.title',
+        description: 'admin.marketplace.index.spells.description',
+        badge: 'admin.marketplace.index.spells.available',
+    },
+    {
+        href: '/admin/feathercloud/translations',
+        icon: Languages,
+        title: 'admin.marketplace.index.translations.title',
+        description: 'admin.marketplace.index.translations.description',
+        badge: 'admin.marketplace.index.translations.available',
+    },
+] as const;
 
 export default function MarketplacePage() {
     const { t } = useTranslation();
@@ -36,7 +60,7 @@ export default function MarketplacePage() {
     }, [fetchWidgets]);
 
     return (
-        <div className='space-y-8'>
+        <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-marketplace', 'top-of-page')} />
 
             <PageHeader
@@ -49,66 +73,47 @@ export default function MarketplacePage() {
 
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-marketplace', 'before-content')} />
 
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
-                <ResourceCard
-                    title={t('admin.marketplace.index.plugins.title')}
-                    description={t('ui.admin.feathercloud.marketplace.teamMythicMarketplaceProductsReleasesFpa')}
-                    icon={Puzzle}
-                    badges={[
-                        {
-                            label: t('admin.marketplace.index.plugins.available'),
-                            className: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-                        },
-                    ]}
-                    onClick={() => router.push('/admin/feathercloud/products')}
-                    className='border-blue-500/20 hover:border-blue-500/40'
-                    highlightClassName='bg-linear-to-br from-blue-500/10 via-transparent to-transparent'
-                    iconClassName='text-blue-500'
-                    iconWrapperClassName='bg-blue-500/10 border-blue-500/20'
-                />
-
-                <ResourceCard
-                    title={t('admin.marketplace.index.spells.title')}
-                    description={t('admin.marketplace.index.spells.description')}
-                    icon={Sparkles}
-                    badges={[
-                        {
-                            label: t('admin.marketplace.index.spells.available'),
-                            className: 'bg-primary/10 text-primary border-primary/20',
-                        },
-                    ]}
-                    onClick={() => router.push('/admin/feathercloud/spells')}
-                    className='border-primary/20 hover:border-purple-500/40'
-                    highlightClassName='bg-linear-to-br from-primary/10 via-transparent to-transparent'
-                    iconClassName='text-primary'
-                    iconWrapperClassName='bg-primary/10 border-primary/20'
-                />
-
-                <ResourceCard
-                    title={t('admin.marketplace.index.translations.title')}
-                    description={t('admin.marketplace.index.translations.description')}
-                    icon={Languages}
-                    badges={[
-                        {
-                            label: t('admin.marketplace.index.translations.available'),
-                            className: 'bg-green-500/10 text-green-600 border-green-500/20',
-                        },
-                    ]}
-                    onClick={() => router.push('/admin/feathercloud/translations')}
-                    className='border-green-500/20 hover:border-green-500/40'
-                    highlightClassName='bg-linear-to-br from-green-500/10 via-transparent to-transparent'
-                    iconClassName='text-green-500'
-                    iconWrapperClassName='bg-green-500/10 border-green-500/20'
-                />
+            <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
+                {SECTIONS.map((section) => (
+                    <button
+                        key={section.href}
+                        type='button'
+                        onClick={() => router.push(section.href)}
+                        className='fp-surface group hover:border-primary/30 flex flex-col gap-4 rounded-2xl border p-5 text-left transition-colors'
+                    >
+                        <div className='flex items-center justify-between'>
+                            <div className='fp-icon-tile flex h-11 w-11 items-center justify-center rounded-xl'>
+                                <section.icon className='h-5 w-5' />
+                            </div>
+                            <StatusDot tone='success'>{t(section.badge)}</StatusDot>
+                        </div>
+                        <div className='space-y-1'>
+                            <h2 className='text-base font-semibold'>{t(section.title)}</h2>
+                            <p className='text-muted-foreground text-sm leading-relaxed'>{t(section.description)}</p>
+                        </div>
+                        <span className='text-primary mt-auto inline-flex items-center gap-1.5 text-sm font-medium'>
+                            {t('admin.marketplace.index.browse')}
+                            <ArrowRight className='h-4 w-4 transition-transform group-hover:translate-x-0.5' />
+                        </span>
+                    </button>
+                ))}
             </div>
 
-            <div className='pt-4'>
-                <TipCard title={t('admin.marketplace.index.about.title')} icon={Info}>
-                    <p className='text-muted-foreground text-base leading-relaxed'>
-                        {t('admin.marketplace.index.about.description')}
-                    </p>
+            <TipCard title={t('admin.marketplace.index.about.title')} icon={Info}>
+                <p>{t('admin.marketplace.index.about.description')}</p>
+            </TipCard>
+
+            <TipGrid>
+                <TipCard title={t('admin.marketplace.index.tips.start_title')} icon={Link2}>
+                    <p>{t('admin.marketplace.index.tips.start_body')}</p>
                 </TipCard>
-            </div>
+                <TipCard title={t('admin.marketplace.index.tips.spells_title')} icon={Sparkles}>
+                    <p>{t('admin.marketplace.index.tips.spells_body')}</p>
+                </TipCard>
+                <TipCard title={t('admin.marketplace.index.tips.translations_title')} icon={Languages}>
+                    <p>{t('admin.marketplace.index.tips.translations_body')}</p>
+                </TipCard>
+            </TipGrid>
 
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-marketplace', 'bottom-of-page')} />
         </div>

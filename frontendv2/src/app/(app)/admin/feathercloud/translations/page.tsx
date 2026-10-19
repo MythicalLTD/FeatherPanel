@@ -465,9 +465,9 @@ export default function MythicTranslationsPage() {
                             <article
                                 key={code}
                                 className={cn(
-                                    'fp-surface flex flex-col overflow-hidden rounded-2xl border ring-1 transition',
-                                    'hover:bg-card hover:shadow-md',
-                                    checked ? 'ring-primary/50' : 'ring-border/40',
+                                    'fp-surface flex flex-col overflow-hidden rounded-2xl border ring-1 transition-colors',
+                                    'hover:border-primary/30',
+                                    checked ? 'ring-primary/50' : 'ring-transparent',
                                 )}
                             >
                                 <div className='flex flex-1 flex-col space-y-3 p-4'>
@@ -490,7 +490,7 @@ export default function MythicTranslationsPage() {
                                         </div>
                                         <div className='flex shrink-0 flex-col items-end gap-1'>
                                             {installed ? (
-                                                <span className='rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400'>
+                                                <span className='bg-primary/10 text-primary rounded-md px-1.5 py-0.5 text-[10px] font-medium'>
                                                     {t('admin.feathercloud.translations.labels.installed')}
                                                 </span>
                                             ) : null}

@@ -319,7 +319,7 @@ export default function ProductDetailPage() {
                                                 {t('admin.marketplace.plugins.labels.update_available')}
                                             </span>
                                         ) : installed ? (
-                                            <span className='rounded-md bg-blue-500/15 px-1.5 py-0.5 text-xs font-medium text-blue-600 dark:text-blue-400'>
+                                            <span className='bg-primary/10 text-primary rounded-md px-1.5 py-0.5 text-xs font-medium'>
                                                 {t('admin.marketplace.plugins.labels.installed')}
                                             </span>
                                         ) : null}
@@ -465,7 +465,7 @@ export default function ProductDetailPage() {
                             <div className='space-y-6'>
                                 <div className='bg-muted/25 space-y-4 rounded-2xl p-4 sm:p-5'>
                                     <div>
-                                        <p className='text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase'>
+                                        <p className='text-foreground mb-2 text-sm font-semibold'>
                                             {t('admin.marketplace.plugins.detail.your_rating')}
                                         </p>
                                         <StarRatingInput
@@ -484,7 +484,7 @@ export default function ProductDetailPage() {
                                         />
                                     </div>
                                     <div>
-                                        <p className='text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase'>
+                                        <p className='text-foreground mb-2 text-sm font-semibold'>
                                             {t('admin.marketplace.plugins.detail.comment')}
                                         </p>
                                         <Textarea

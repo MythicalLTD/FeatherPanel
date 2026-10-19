@@ -10063,6 +10063,15 @@
 				"about": {
 					"title": "About the Marketplace",
 					"description": "Browse official and community plugins and spells for FeatherPanel. Install what you need from here."
+				},
+				"browse": "Browse",
+				"tips": {
+					"start_title": "Link FeatherCloud first",
+					"start_body": "Connect your account under Cloud Connections to browse paid products and download what you own.",
+					"spells_title": "Spells are server templates",
+					"spells_body": "Import spells to add new games and apps that users can deploy on their servers.",
+					"translations_title": "Translations are live",
+					"translations_body": "Installed translations show up for every user right away. No restart needed."
 				}
 			},
 			"common": {
@@ -10126,13 +10135,15 @@
 					"versions_line": "Installed v{installed} · Store v{store}",
 					"info": "Info",
 					"reviews": "Reviews",
-					"empty_price": "N/A"
+					"empty_price": "N/A",
+					"not_installed": "Not installed"
 				},
 				"actions": {
 					"install": "Install",
 					"update_to": "Update to v{version}",
 					"already_up_to_date": "Already up to date",
-					"installing": "Installing..."
+					"installing": "Installing...",
+					"update": "Update"
 				},
 				"toasts": {
 					"cannot_install": "This product cannot be installed from the panel.",
@@ -10294,6 +10305,17 @@
 					"official_name": "FeatherPanel Official Repository",
 					"official_badge": "Official",
 					"locked_notice": "This repository is managed by FeatherPanel. Adding more repositories will be available soon."
+				},
+				"count_of": "{shown} of {total} plugins",
+				"selected_count": "{count} selected",
+				"select_one": "Select for bulk install",
+				"tips": {
+					"install_title": "One click installs",
+					"install_body": "Plugins download straight from FeatherCloud and install into the panel. No manual uploads needed.",
+					"updates_title": "Keep plugins current",
+					"updates_body": "Cards marked Update have a newer release. Select several and apply them together.",
+					"trust_title": "Review before installing",
+					"trust_body": "Plugins run with panel permissions. Check the seller, reviews and changelog before you install."
 				}
 			},
 			"spells": {
