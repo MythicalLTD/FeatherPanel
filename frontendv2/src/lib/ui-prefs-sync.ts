@@ -363,6 +363,12 @@ function localSyncedKeys(): string[] {
 
 function reloadOnce(): boolean {
     try {
+        if (typeof window !== 'undefined' && window.location.pathname.startsWith('/auth')) {
+            // Never reload while on an authentication page. A login flow is either in
+            // progress or in-flight; reloading cancels the navigation timer and keeps
+            // the user trapped on the login screen.
+            return false;
+        }
         const last = Number(sessionStorage.getItem(RELOAD_GUARD_KEY) || '0');
         if (Date.now() - last < RELOAD_GUARD_MS) return false;
         sessionStorage.setItem(RELOAD_GUARD_KEY, String(Date.now()));
@@ -475,7 +481,10 @@ async function pullAndMerge(userUuid: string): Promise<UiPrefsSyncResult> {
 
     if (applied.some((key) => !isLiveKey(key))) {
         await flushing;
-        return { applied, uploaded, reloading: reloadOnce() };
+        const reloading = reloadOnce();
+        if (reloading) {
+            return { applied, uploaded, reloading: true };
+        }
     }
     for (const key of applied) {
         try {

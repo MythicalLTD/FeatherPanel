@@ -61,7 +61,7 @@ export default function LoginForm() {
     const { t } = useTranslation();
     const { settings } = useSettings();
     const showCaptcha = isCaptchaConfigured(settings);
-    const { fetchSession } = useSession();
+    const { user, isSessionChecked, fetchSession } = useSession();
     const { getWidgets, fetchWidgets } = usePluginWidgets('auth-login');
     const loginFormsRootRef = useRef<HTMLDivElement | null>(null);
     /** QR is desktop-only - mounting it on phones starts useless challenges and wrecks the layout. */
@@ -75,6 +75,14 @@ export default function LoginForm() {
     const formGap = authFormGapClass(formDensity);
 
     useEffect(() => {
+        if (!isSessionChecked) return;
+        if (user) {
+            const target = resolvePostLoginPath(searchParams.get('redirect'));
+            window.location.assign(target);
+        }
+    }, [user, isSessionChecked, searchParams]);
+
+    useEffect(() => {
         const mq = window.matchMedia('(min-width: 768px)');
         const apply = () => setIsDesktopLayout(mq.matches);
         apply();
@@ -82,10 +90,9 @@ export default function LoginForm() {
         return () => mq.removeEventListener('change', apply);
     }, []);
 
-    /** Load session after Set-Cookie; soft-nav if ready, otherwise full reload. */
+    /** Load session after Set-Cookie; navigate directly to target. */
     const completeLoginNavigation = async (options?: { delayMs?: number; hardNavigate?: boolean }) => {
         const delayMs = options?.delayMs ?? 0;
-        const hardNavigate = options?.hardNavigate === true;
         const target = resolvePostLoginPath(searchParams.get('redirect'));
 
         let ok = await fetchSession(true);
@@ -95,11 +102,7 @@ export default function LoginForm() {
         }
 
         const navigate = () => {
-            if (hardNavigate || !ok) {
-                window.location.assign(target);
-            } else {
-                router.push(target);
-            }
+            window.location.assign(target);
         };
 
         if (delayMs > 0) {
@@ -1168,6 +1171,14 @@ export default function LoginForm() {
           : isEmailLoginVerifyStep
             ? t('auth.emailLogin.codeSentTo', { email: emailForLoginCodeSubtitle })
             : t('auth.login.subtitle');
+
+    if (isSessionChecked && user) {
+        return (
+            <div className='flex min-h-[400px] w-full items-center justify-center'>
+                <div className='border-primary h-8 w-8 animate-spin rounded-full border-2 border-t-transparent' />
+            </div>
+        );
+    }
 
     return (
         <div ref={loginFormsRootRef} className='w-full'>

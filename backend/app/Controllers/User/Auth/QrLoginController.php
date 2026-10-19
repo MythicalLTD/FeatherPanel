@@ -129,9 +129,9 @@ class QrLoginController
         }
 
         $pollKey = self::POLL_PREFIX . hash('sha256', $challengeId);
-        $now = time();
+        $now = microtime(true);
         $lastPoll = Cache::get($pollKey);
-        if (is_numeric($lastPoll) && ($now - (int) $lastPoll) < self::POLL_INTERVAL_SECONDS) {
+        if (is_numeric($lastPoll) && ($now - (float) $lastPoll) < (self::POLL_INTERVAL_SECONDS - 0.5)) {
             return ApiResponse::error('Slow down', 'SLOW_DOWN', 429, [
                 'status' => $challenge['status'],
                 'interval' => self::POLL_INTERVAL_SECONDS,
