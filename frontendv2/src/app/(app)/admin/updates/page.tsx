@@ -439,7 +439,7 @@ export default function AdminUpdatesPage() {
             />
 
             <div className='grid gap-3 sm:grid-cols-3'>
-                <div className='bg-card/60 rounded-2xl px-4 py-3'>
+                <div className='fp-surface rounded-xl border px-4 py-3'>
                     <p className='text-muted-foreground text-xs'>{t('admin_updates.overview.panel')}</p>
                     <p className='mt-1 text-sm font-medium'>
                         {panelVersion?.update_available
@@ -453,7 +453,7 @@ export default function AdminUpdatesPage() {
                               : t('admin_updates.overview.checking')}
                     </p>
                 </div>
-                <div className='bg-card/60 rounded-2xl px-4 py-3'>
+                <div className='fp-surface rounded-xl border px-4 py-3'>
                     <p className='text-muted-foreground text-xs'>{t('admin_updates.overview.plugins')}</p>
                     <p className='mt-1 text-sm font-medium'>
                         {pluginUpdateCount > 0
@@ -468,7 +468,7 @@ export default function AdminUpdatesPage() {
                               : t('admin_updates.overview.up_to_date')}
                     </p>
                 </div>
-                <div className='bg-card/60 rounded-2xl px-4 py-3'>
+                <div className='fp-surface rounded-xl border px-4 py-3'>
                     <p className='text-muted-foreground text-xs'>{t('admin_updates.overview.wings')}</p>
                     <p className='mt-1 text-sm font-medium'>
                         {nodeUpdateCount > 0

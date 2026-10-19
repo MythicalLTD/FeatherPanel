@@ -541,7 +541,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
             </PageCard>
 
             <div className='mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
-                <div className='bg-card/40 border-border/50 space-y-3 rounded-2xl border p-6'>
+                <div className='fp-surface space-y-3 rounded-2xl border p-6'>
                     <div className='text-primary flex items-center gap-3'>
                         <Network className='h-5 w-5' />
                         <h4 className='font-bold'>{t('admin.node.allocations.help.what_are_allocations')}</h4>
@@ -550,7 +550,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                         {t('admin.node.allocations.help.what_are_allocations_text')}
                     </p>
                 </div>
-                <div className='bg-card/40 border-border/50 space-y-3 rounded-2xl border p-6'>
+                <div className='fp-surface space-y-3 rounded-2xl border p-6'>
                     <div className='text-primary flex items-center gap-3'>
                         <MapPin className='h-5 w-5' />
                         <h4 className='font-bold'>{t('admin.node.allocations.help.what_you_will_need')}</h4>
@@ -562,7 +562,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                         <li>{t('admin.node.allocations.help.what_you_will_need_notes')}</li>
                     </ul>
                 </div>
-                <div className='bg-card/40 border-border/50 space-y-3 rounded-2xl border p-6'>
+                <div className='fp-surface space-y-3 rounded-2xl border p-6'>
                     <div className='text-primary flex items-center gap-3'>
                         <Gamepad2 className='h-5 w-5' />
                         <h4 className='font-bold'>{t('admin.node.allocations.help.popular_game_ranges')}</h4>
@@ -571,7 +571,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                         {t('admin.node.allocations.help.recommendation')}
                     </p>
                 </div>
-                <div className='bg-card/40 border-border/50 space-y-3 rounded-2xl border p-6 md:col-span-2 lg:col-span-3'>
+                <div className='fp-surface space-y-3 rounded-2xl border p-6 md:col-span-2 lg:col-span-3'>
                     <div className='text-primary flex items-center gap-3'>
                         <Shield className='h-5 w-5' />
                         <h4 className='font-bold'>{t('admin.node.allocations.help.protocols_and_firewall')}</h4>

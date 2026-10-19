@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
@@ -352,25 +353,25 @@ export default function DatabaseManagementPage() {
                 </div>
             </div>
 
-            <div className='grid gap-6 md:grid-cols-3'>
-                <PageCard title={t('admin.database_management.help.what_is.title')} icon={Info} className='h-full'>
+            <TipGrid>
+                <TipCard title={t('admin.database_management.help.what_is.title')} icon={Info} className='h-full'>
                     <p className='text-muted-foreground text-sm'>
                         {t('admin.database_management.help.what_is.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.database_management.help.metrics.title')} icon={Activity} className='h-full'>
+                </TipCard>
+                <TipCard title={t('admin.database_management.help.metrics.title')} icon={Activity} className='h-full'>
                     <p className='text-muted-foreground text-sm'>
                         {t('admin.database_management.help.metrics.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.database_management.help.migrations.title')} icon={Wrench} className='h-full'>
+                </TipCard>
+                <TipCard title={t('admin.database_management.help.migrations.title')} icon={Wrench} className='h-full'>
                     <p className='text-muted-foreground text-sm'>
                         {t('admin.database_management.help.migrations.description')}
                     </p>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
 
-            <div className='flex gap-4 rounded-lg border border-amber-500/20 bg-amber-500/10 p-4'>
+            <div className='flex gap-4 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] p-4'>
                 <AlertTriangle className='h-5 w-5 shrink-0 text-amber-500' />
                 <div className='space-y-1'>
                     <h3 className='text-sm font-semibold text-amber-500'>

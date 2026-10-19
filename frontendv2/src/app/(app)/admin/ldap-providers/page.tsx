@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -788,6 +789,8 @@ export default function LdapProvidersPage() {
                     </PageCard>
                 )}
             </div>
+            <AdminPageTips page='ldap-providers' />
+
             <WidgetRenderer widgets={getWidgets('admin-ldap-providers', 'bottom-of-page')} />
         </>
     );

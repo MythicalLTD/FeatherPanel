@@ -311,7 +311,7 @@ export function SpellPickerSheet({
                                 return (
                                     <article
                                         key={spell.identifier}
-                                        className='bg-card/80 ring-border/40 flex flex-col overflow-hidden rounded-2xl shadow-sm ring-1'
+                                        className='fp-surface ring-border/40 flex flex-col overflow-hidden rounded-2xl border ring-1'
                                     >
                                         <div className='flex flex-1 flex-col gap-3 p-4'>
                                             <div className='flex items-start gap-3'>
@@ -449,7 +449,7 @@ export function SpellPickerSheet({
                         key={spell.id}
                         type='button'
                         onClick={() => onSelectSpell(spell)}
-                        className='bg-card/80 hover:bg-card ring-border/40 w-full cursor-pointer rounded-2xl p-4 text-left shadow-sm ring-1 transition hover:shadow-md'
+                        className='fp-surface fp-surface-interactive w-full cursor-pointer rounded-xl border p-4 text-left transition hover:shadow-md'
                     >
                         <div className='flex items-start gap-3'>
                             <div className='bg-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-xl'>

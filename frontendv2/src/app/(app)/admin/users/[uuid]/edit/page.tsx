@@ -883,7 +883,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         {t('admin.users.badges.oidc')}
                                     </Badge>
                                 ) : (
-                                    <Badge className='border-gray-500/20 bg-gray-500/10 text-gray-600'>
+                                    <Badge className='border-[var(--fp-surface-border)] bg-gray-500/10 text-gray-600'>
                                         {t('admin.users.badges.local')}
                                     </Badge>
                                 )}
@@ -1126,7 +1126,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         <div className='overflow-x-auto'>
                             <table className='w-full text-sm'>
                                 <thead>
-                                    <tr className='border-b border-white/5 text-left'>
+                                    <tr className='border-b border-[var(--fp-surface-border)] text-left'>
                                         <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.servers.name')}
                                         </th>
@@ -1152,7 +1152,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         ownedServers.map((server) => (
                                             <tr
                                                 key={server.id}
-                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
+                                                className='border-b border-[var(--fp-surface-border)] transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4'>
                                                     <div className='font-medium'>{server.name}</div>
@@ -1206,7 +1206,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         <div className='overflow-x-auto'>
                             <table className='w-full text-sm'>
                                 <thead>
-                                    <tr className='border-b border-white/5 text-left'>
+                                    <tr className='border-b border-[var(--fp-surface-border)] text-left'>
                                         <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.activities.name')}
                                         </th>
@@ -1232,7 +1232,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         user.activities.map((activity, index) => (
                                             <tr
                                                 key={index}
-                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
+                                                className='border-b border-[var(--fp-surface-border)] transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4 font-medium'>{activity.name}</td>
                                                 <td className='text-muted-foreground p-4'>{activity.context}</td>
@@ -1272,7 +1272,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             {t('admin.users.edit.potential_alts.description')}
                         </p>
                         {altSourceIps.length > 0 && (
-                            <div className='mb-6 rounded-lg border border-white/5 bg-white/5 p-4'>
+                            <div className='mb-6 rounded-lg border border-[var(--fp-surface-border)] bg-white/5 p-4'>
                                 <p className='text-muted-foreground mb-2 text-xs font-bold tracking-wider uppercase'>
                                     {t('admin.users.edit.potential_alts.source_ips')}
                                 </p>
@@ -1286,7 +1286,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             </div>
                         )}
                         {altSourceDevices.length > 0 && (
-                            <div className='mb-6 rounded-lg border border-white/5 bg-white/5 p-4'>
+                            <div className='mb-6 rounded-lg border border-[var(--fp-surface-border)] bg-white/5 p-4'>
                                 <p className='text-muted-foreground mb-2 text-xs font-bold tracking-wider uppercase'>
                                     {t('admin.users.edit.potential_alts.source_devices')}
                                 </p>
@@ -1302,7 +1302,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         <div className='overflow-x-auto'>
                             <table className='w-full text-sm'>
                                 <thead>
-                                    <tr className='border-b border-white/5 text-left'>
+                                    <tr className='border-b border-[var(--fp-surface-border)] text-left'>
                                         <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.potential_alts.user')}
                                         </th>
@@ -1334,7 +1334,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         potentialAlts.map((alt) => (
                                             <tr
                                                 key={alt.uuid}
-                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
+                                                className='border-b border-[var(--fp-surface-border)] transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4'>
                                                     <div className='flex items-center gap-3'>
@@ -1475,7 +1475,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         <div className='overflow-x-auto'>
                             <table className='w-full text-sm'>
                                 <thead>
-                                    <tr className='border-b border-white/5 text-left'>
+                                    <tr className='border-b border-[var(--fp-surface-border)] text-left'>
                                         <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.vds.hostname', { defaultValue: 'Hostname' })}
                                         </th>
@@ -1506,7 +1506,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         ownedVms.map((vm) => (
                                             <tr
                                                 key={vm.id}
-                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
+                                                className='border-b border-[var(--fp-surface-border)] transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4'>
                                                     <div className='font-medium'>{vm.hostname || `VM #${vm.id}`}</div>
@@ -1571,7 +1571,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         <div className='overflow-x-auto'>
                             <table className='w-full text-sm'>
                                 <thead>
-                                    <tr className='border-b border-white/5 text-left'>
+                                    <tr className='border-b border-[var(--fp-surface-border)] text-left'>
                                         <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.mails.subject')}
                                         </th>
@@ -1597,7 +1597,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         user.mails.map((mail) => (
                                             <tr
                                                 key={mail.id}
-                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
+                                                className='border-b border-[var(--fp-surface-border)] transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4 font-medium'>{mail.subject}</td>
                                                 <td className='p-4'>

@@ -5,6 +5,20 @@
    keys `dark:` off prefers-color-scheme - so OS light + panel dark = white text on light panels. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * Tailwind 4 draws a bare `border` in currentColor, which is near white in dark mode. Give every
+ * border the same subtle surface edge unless a class picks a colour.
+ */
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--fp-surface-border, hsl(var(--border)));
+    }
+}
+
 :root {
     --background: 0 0% 100%;
     --foreground: 0 0% 9%;
@@ -905,4 +919,20 @@ html.fp-privacy [data-fp-sensitive]:not(:focus) {
 }
 .fp-pack-grid [data-pack-id] > .fp-pack-cell:not(:has(* * *)) {
     display: none;
+}
+
+/* Admin pages with a PageHeader show the breadcrumb trail inside the header card instead. */
+body:has([data-fp-page-header]) .fp-shell-crumbs {
+    display: none;
+}
+
+/* Popovers and menus: the card glass, denser so menu text stays readable over busy backgrounds. */
+@utility fp-menu-surface {
+    background-color: hsl(var(--fp-surface-tint) / max(var(--fp-surface-alpha), 0.94));
+    border-color: var(--fp-surface-border);
+    box-shadow:
+        inset 0 1px 0 0 hsl(var(--fp-surface-highlight)),
+        0 16px 40px -12px rgb(0 0 0 / 0.55);
+    -webkit-backdrop-filter: blur(20px) saturate(var(--fp-surface-saturate));
+    backdrop-filter: blur(20px) saturate(var(--fp-surface-saturate));
 }

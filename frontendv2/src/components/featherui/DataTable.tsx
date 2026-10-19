@@ -180,7 +180,7 @@ export function RowActionsMenu({ items }: { items: RowAction[] }) {
             >
                 <MoreHorizontal className='h-4 w-4' />
             </DropdownMenuTrigger>
-            <DropdownMenuContent className='fp-surface min-w-44 border'>
+            <DropdownMenuContent className='min-w-44'>
                 {visible.map((item, i) => {
                     const Icon = item.icon;
                     const inner = (

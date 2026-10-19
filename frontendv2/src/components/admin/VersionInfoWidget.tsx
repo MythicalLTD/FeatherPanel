@@ -265,7 +265,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
 
                 {version?.current_listed_on_update_server === false && Boolean(current?.version) ? (
                     <div
-                        className='flex items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/10 p-3 text-amber-600 md:rounded-2xl md:p-4 dark:text-amber-400'
+                        className='flex items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-3 text-amber-600 md:rounded-2xl md:p-4 dark:text-amber-400'
                         role='status'
                     >
                         <AlertTriangle className='mt-0.5 h-5 w-5 shrink-0' aria-hidden />
@@ -421,7 +421,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
             {showUpdateModal && !updateInProgress && (
                 <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm'>
                     <div className='bg-background border-border animate-in fade-in zoom-in-95 w-full max-w-xl rounded-2xl border shadow-2xl duration-300 md:rounded-2xl'>
-                        <div className='border-border bg-card/50 border-b p-4 backdrop-blur-xl md:p-6'>
+                        <div className='fp-surface border border-b p-4 md:p-6'>
                             <h2 className='text-lg font-black md:text-2xl'>
                                 {t('admin.settings.docker_update.confirm_modal.title')}
                             </h2>
@@ -446,7 +446,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
             {showUpdateModal && updateInProgress && (
                 <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm'>
                     <div className='bg-background border-border animate-in fade-in zoom-in-95 w-full max-w-xl rounded-2xl border shadow-2xl duration-300 md:rounded-2xl'>
-                        <div className='border-border bg-card/50 flex items-center justify-between border-b p-4 backdrop-blur-xl md:p-6'>
+                        <div className='fp-surface flex items-center justify-between border border-b p-4 md:p-6'>
                             <div>
                                 <h2 className='text-lg font-black md:text-2xl'>
                                     {t('admin.settings.docker_update.progress_modal.title')}

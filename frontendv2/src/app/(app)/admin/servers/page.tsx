@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useState, useEffect, useCallback, type ReactNode, type ElementType } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -1666,6 +1667,7 @@ function RelationCard({
                     {secondary}
                 </p>
             )}
+            <AdminPageTips page='servers' />
         </div>
     );
 }

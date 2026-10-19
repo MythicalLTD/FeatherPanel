@@ -54,13 +54,13 @@ interface CommandBlockProps {
 
 function CommandBlock({ command, copyLabel, onCopy, preClassName }: CommandBlockProps) {
     return (
-        <div className='overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950'>
-            <div className='flex justify-end border-b border-zinc-800 bg-zinc-900 px-3 py-2'>
+        <div className='overflow-hidden rounded-xl border border-[var(--fp-surface-border)] bg-zinc-950'>
+            <div className='flex justify-end border-b border-[var(--fp-surface-border)] bg-zinc-900 px-3 py-2'>
                 <Button
                     type='button'
                     variant='plain'
                     size='sm'
-                    className='border border-zinc-600 bg-zinc-800 text-zinc-100 hover:border-zinc-500 hover:bg-zinc-700 hover:text-white'
+                    className='border border-[var(--fp-surface-border)] bg-zinc-800 text-zinc-100 hover:border-[var(--fp-surface-border)] hover:bg-zinc-700 hover:text-white'
                     onClick={onCopy}
                 >
                     <Copy className='mr-2 h-4 w-4 shrink-0' />
@@ -141,7 +141,7 @@ export function FeatherQuilldTab({ nodeId, handleResetToken, resetting, configRe
                         </p>
                     ) : null}
                     {setupLoading ? (
-                        <div className='text-muted-foreground rounded-xl border border-white/5 bg-zinc-950/50 p-4 text-sm'>
+                        <div className='text-muted-foreground rounded-xl border border-[var(--fp-surface-border)] bg-zinc-950/50 p-4 text-sm'>
                             {t('common.loading')}...
                         </div>
                     ) : setupData ? (
@@ -214,7 +214,7 @@ export function FeatherQuilldTab({ nodeId, handleResetToken, resetting, configRe
                 <div className='space-y-6'>
                     <p className='text-muted-foreground text-sm'>{t('admin.webNodes.quilld.runtime_config_help')}</p>
                     {configLoading ? (
-                        <div className='text-muted-foreground rounded-xl border border-white/5 bg-zinc-950/50 p-4 text-sm'>
+                        <div className='text-muted-foreground rounded-xl border border-[var(--fp-surface-border)] bg-zinc-950/50 p-4 text-sm'>
                             {t('common.loading')}...
                         </div>
                     ) : runtimeYaml ? (
@@ -228,7 +228,7 @@ export function FeatherQuilldTab({ nodeId, handleResetToken, resetting, configRe
                         <p className='text-muted-foreground text-sm'>{t('admin.webNodes.quilld.config_unavailable')}</p>
                     )}
 
-                    <div className='space-y-4 border-t border-white/5 pt-6'>
+                    <div className='space-y-4 border-t border-[var(--fp-surface-border)] pt-6'>
                         <div className='flex items-center justify-between'>
                             <div>
                                 <h4 className='text-sm font-bold text-white'>{t('admin.webNodes.daemon.reset_key')}</h4>

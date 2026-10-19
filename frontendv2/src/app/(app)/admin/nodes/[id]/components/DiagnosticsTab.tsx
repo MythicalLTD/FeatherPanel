@@ -364,7 +364,7 @@ export function DiagnosticsTab({ nodeId, systemLogsEnabled = false }: Diagnostic
                     <div className='space-y-6'>
                         {result.format === 'url' && result.url ? (
                             <div className='space-y-4'>
-                                <div className='flex items-center gap-3 rounded-2xl border border-green-500/20 bg-green-500/10 p-4'>
+                                <div className='fp-surface flex items-center gap-3 rounded-2xl border p-4'>
                                     <CheckCircle2 className='h-5 w-5 text-green-500' />
                                     <p className='text-sm font-bold text-green-500'>
                                         {t('admin.node.view.diagnostics.upload_success')}

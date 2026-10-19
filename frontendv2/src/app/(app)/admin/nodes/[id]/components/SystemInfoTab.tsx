@@ -117,7 +117,7 @@ export function SystemInfoTab({ nodeId, loading, data, error, onRefresh }: Syste
                             </span>
                         </div>
                     ) : versionStatus?.update_available ? (
-                        <div className='flex items-start gap-4 rounded-2xl border border-orange-500/20 bg-orange-500/10 p-4'>
+                        <div className='flex items-start gap-4 rounded-2xl border border-orange-500/25 bg-orange-500/[0.06] p-4'>
                             <div className='h-fit rounded-xl bg-orange-500/20 p-2'>
                                 <AlertTriangle className='h-5 w-5 text-orange-500' />
                             </div>
@@ -137,7 +137,7 @@ export function SystemInfoTab({ nodeId, loading, data, error, onRefresh }: Syste
                             </div>
                         </div>
                     ) : versionStatus?.is_up_to_date ? (
-                        <div className='flex items-center gap-4 rounded-2xl border border-green-500/20 bg-green-500/10 p-4'>
+                        <div className='fp-surface flex items-center gap-4 rounded-2xl border p-4'>
                             <div className='h-fit rounded-xl bg-green-500/20 p-2'>
                                 <Check className='h-5 w-5 text-green-500' />
                             </div>

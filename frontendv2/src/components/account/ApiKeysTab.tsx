@@ -15,6 +15,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { PageHeader } from '@/components/featherui/PageHeader';
+import { ListEmptyState } from '@/components/featherui/ListEmptyState';
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { DataTable, RowActionsMenu, StatusDot, TableIdentity } from '@/components/featherui/DataTable';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -28,7 +31,7 @@ import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import { copyToClipboard, isEnabledUnlessExplicitlyFalse } from '@/lib/utils';
 import Permissions from '@/lib/permissions';
-import { Key, Plus, Trash2, Eye, Pencil, RefreshCw, Copy, Info } from 'lucide-react';
+import { Key, Plus, Trash2, Eye, Pencil, RefreshCw, Copy, Info, BookOpen, Search, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
@@ -242,100 +245,93 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
     return (
         <div className='space-y-5'>
             <WidgetRenderer widgets={getWidgets(slug, 'top-of-page')} />
-            <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
-                <div className='border-border/50 bg-muted/20 min-w-0 flex-1 rounded-xl border p-4'>
-                    <h3 className='text-foreground text-lg font-semibold'>{t('account.apiKeys.title')}</h3>
-                    <p className='text-muted-foreground mt-1 text-sm'>{t('account.apiKeys.description')}</p>
-                </div>
-                <div className='flex flex-wrap gap-2 sm:ml-3 sm:shrink-0 sm:justify-end'>
-                    <Button
-                        onClick={() => window.open('/icanhasfeatherpanel/api/index.html', '_blank')}
-                        variant='outline'
-                        size='sm'
-                    >
-                        {t('account.apiKeys.apiDocs')}
-                    </Button>
-                    <Button onClick={fetchClients} variant='outline' size='sm'>
-                        <RefreshCw className='mr-2 h-4 w-4' />
-                        {t('account.apiKeys.refresh')}
-                    </Button>
-                    {canCreateApiKeys && (
+            <PageHeader
+                title={t('account.apiKeys.title')}
+                description={t('account.apiKeys.description')}
+                icon={Key}
+                actions={
+                    <>
                         <Button
-                            onClick={() => router.push('/dashboard/account/oauth2/api/new')}
+                            onClick={() => window.open('/icanhasfeatherpanel/api/index.html', '_blank')}
                             variant='outline'
                             size='sm'
                         >
-                            {t('account.apiKeys.oauth2.consentButton')}
+                            <BookOpen className='mr-2 h-4 w-4' />
+                            {t('account.apiKeys.apiDocs')}
                         </Button>
-                    )}
-                    {canCreateApiKeys && (
-                        <Button
-                            onClick={() => {
-                                setClientName('');
-                                setAllowedIpsText('');
-                                setNotifyForeignIp(false);
-                                setIsOpen(true);
-                            }}
-                            size='sm'
-                        >
-                            <Plus className='mr-2 h-4 w-4' />
-                            {t('account.apiKeys.addKey')}
+                        <Button onClick={fetchClients} variant='outline' size='sm'>
+                            <RefreshCw className='mr-2 h-4 w-4' />
+                            {t('account.apiKeys.refresh')}
                         </Button>
-                    )}
-                </div>
-            </div>
+                        {canCreateApiKeys && (
+                            <Button
+                                onClick={() => router.push('/dashboard/account/oauth2/api/new')}
+                                variant='outline'
+                                size='sm'
+                            >
+                                <ShieldCheck className='mr-2 h-4 w-4' />
+                                {t('account.apiKeys.oauth2.consentButton')}
+                            </Button>
+                        )}
+                        {canCreateApiKeys && (
+                            <Button
+                                onClick={() => {
+                                    setClientName('');
+                                    setAllowedIpsText('');
+                                    setNotifyForeignIp(false);
+                                    setIsOpen(true);
+                                }}
+                                size='sm'
+                            >
+                                <Plus className='mr-2 h-4 w-4' />
+                                {t('account.apiKeys.addKey')}
+                            </Button>
+                        )}
+                    </>
+                }
+            />
 
             <WidgetRenderer widgets={getWidgets(slug, 'after-header')} />
 
-            <div className='rounded-xl border border-blue-200/70 bg-blue-50/80 p-4 dark:border-blue-800/70 dark:bg-blue-950/50'>
-                <div className='flex items-start gap-3'>
-                    <Info className='mt-0.5 h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400' />
-                    <div className='space-y-2'>
-                        <h4 className='text-sm font-medium text-blue-800 dark:text-blue-200'>
-                            {t('account.apiKeys.importantInfo.title')}
-                        </h4>
-                        <div className='space-y-1 text-sm text-blue-700 dark:text-blue-300'>
-                            <p>{t('account.apiKeys.importantInfo.persistent')}</p>
-                            <p>{t('account.apiKeys.importantInfo.accessScope')}</p>
-                            <p>{t('account.apiKeys.importantInfo.security')}</p>
-                            <p>{t('account.apiKeys.importantInfo.ipRestriction')}</p>
-                        </div>
-                    </div>
+            <div className='fp-surface flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-center'>
+                <div className='relative min-w-0 flex-1'>
+                    <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
+                    <Input
+                        type='text'
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder={t('account.apiKeys.searchPlaceholder')}
+                        className='pl-9'
+                    />
                 </div>
-            </div>
-
-            <div className='relative'>
-                <Input
-                    type='text'
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={t('account.apiKeys.searchPlaceholder')}
-                />
-            </div>
-
-            <div className='text-muted-foreground text-center text-sm'>
-                {t('account.apiKeys.totalKeys', { count: String(filteredClients.length) })}
+                <span className='text-muted-foreground shrink-0 px-1 text-sm'>
+                    {t('account.apiKeys.totalKeys', { count: String(filteredClients.length) })}
+                </span>
             </div>
 
             {filteredClients.length === 0 ? (
-                <div className='border-border bg-muted/20 rounded-lg border-2 border-dashed p-12 text-center'>
-                    <Key className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
-                    <h4 className='text-foreground mb-2 text-sm font-semibold'>{t('account.apiKeys.noKeys')}</h4>
-                    <p className='text-muted-foreground mb-4 text-sm'>{t('account.apiKeys.createFirst')}</p>
-                    {canCreateApiKeys && (
-                        <Button
-                            onClick={() => {
-                                setClientName('');
-                                setAllowedIpsText('');
-                                setNotifyForeignIp(false);
-                                setIsOpen(true);
-                            }}
-                            variant='outline'
-                        >
-                            {t('account.apiKeys.addKey')}
-                        </Button>
-                    )}
-                </div>
+                <ListEmptyState
+                    icon={Key}
+                    title={t('account.apiKeys.noKeys')}
+                    description={t('account.apiKeys.createFirst')}
+                    filtered={Boolean(searchQuery.trim())}
+                    onClearFilters={() => setSearchQuery('')}
+                    action={
+                        canCreateApiKeys ? (
+                            <Button
+                                onClick={() => {
+                                    setClientName('');
+                                    setAllowedIpsText('');
+                                    setNotifyForeignIp(false);
+                                    setIsOpen(true);
+                                }}
+                            >
+                                <Plus className='mr-2 h-4 w-4' />
+                                {t('account.apiKeys.addKey')}
+                            </Button>
+                        ) : undefined
+                    }
+                />
             ) : (
                 <DataTable
                     rows={filteredClients}
@@ -421,6 +417,17 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                     )}
                 />
             )}
+
+            <TipGrid className='md:grid-cols-2 xl:grid-cols-2'>
+                <TipCard icon={Info} title={t('account.apiKeys.tips.keys_title')}>
+                    <p>{t('account.apiKeys.importantInfo.persistent')}</p>
+                    <p>{t('account.apiKeys.importantInfo.accessScope')}</p>
+                </TipCard>
+                <TipCard icon={ShieldCheck} title={t('account.apiKeys.tips.security_title')}>
+                    <p>{t('account.apiKeys.importantInfo.security')}</p>
+                    <p>{t('account.apiKeys.importantInfo.ipRestriction')}</p>
+                </TipCard>
+            </TipGrid>
 
             <Dialog
                 open={isOpen || editModal}

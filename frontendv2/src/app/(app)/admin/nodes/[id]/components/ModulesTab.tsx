@@ -199,7 +199,7 @@ export function ModulesTab({ node }: ModulesTabProps) {
                                 {modules.map((module) => (
                                     <Card
                                         key={module.name}
-                                        className={`group border-border/50 bg-muted/10 hover:bg-muted/20 hover:border-primary/30 hover:shadow-primary/5 relative overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-xl`}
+                                        className={`group border-border/50 bg-muted/10 hover:bg-muted/20 hover:border-primary/30 relative overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-xl`}
                                     >
                                         <CardHeader className='pb-4'>
                                             <div className='flex items-start justify-between'>
@@ -287,7 +287,7 @@ export function ModulesTab({ node }: ModulesTabProps) {
 
                 <div className='space-y-4 py-4'>
                     {selectedModule?.enabled && (
-                        <div className='flex items-center gap-3 rounded-xl border border-orange-500/20 bg-orange-500/10 p-4 text-xs text-orange-500'>
+                        <div className='flex items-center gap-3 rounded-xl border border-orange-500/25 bg-orange-500/[0.06] p-4 text-xs text-orange-500'>
                             <AlertTriangle className='h-4 w-4 shrink-0' />
                             {t('admin.node.view.modules.configure_disabled_notice')}
                         </div>

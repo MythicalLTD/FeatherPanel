@@ -15,12 +15,12 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { Flag, Plus, Pencil, Trash2, Search, Zap, Palette, AlertTriangle, ChevronUp, ChevronDown } from 'lucide-react';
-import { PageCard } from '@/components/featherui/PageCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
@@ -390,18 +390,18 @@ export default function TicketPrioritiesPage() {
                     </div>
                 </Sheet>
 
-                <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
-                    <PageCard title={t('admin.tickets.priorities.help.levels.title')} icon={Zap}>
+                <TipGrid>
+                    <TipCard title={t('admin.tickets.priorities.help.levels.title')} icon={Zap}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.priorities.help.levels.description')}
                         </p>
-                    </PageCard>
-                    <PageCard title={t('admin.tickets.priorities.help.visuals.title')} icon={Palette}>
+                    </TipCard>
+                    <TipCard title={t('admin.tickets.priorities.help.visuals.title')} icon={Palette}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.priorities.help.visuals.description')}
                         </p>
-                    </PageCard>
-                    <PageCard
+                    </TipCard>
+                    <TipCard
                         title={t('admin.tickets.priorities.help.urgent.title')}
                         icon={AlertTriangle}
                         variant='danger'
@@ -409,8 +409,8 @@ export default function TicketPrioritiesPage() {
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.priorities.help.urgent.description')}
                         </p>
-                    </PageCard>
-                </div>
+                    </TipCard>
+                </TipGrid>
             </div>
             <WidgetRenderer widgets={getWidgets('admin-tickets-priorities', 'bottom-of-page')} />
         </>

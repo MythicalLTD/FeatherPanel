@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -762,6 +763,8 @@ export default function UsersPage() {
                     />
                 </div>
             )}
+
+            <AdminPageTips page='users' />
 
             <WidgetRenderer widgets={getWidgets('admin-users', 'bottom-of-page')} />
         </div>

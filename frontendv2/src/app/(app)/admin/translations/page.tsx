@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -24,7 +25,6 @@ import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
@@ -330,7 +330,7 @@ export default function TranslationsPage() {
                             {t('admin.translations.create')}
                         </Button>
                         <DropdownMenu>
-                            <DropdownMenuTrigger className='focus-visible:ring-ring text-foreground relative inline-flex h-11 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5 px-6 text-sm font-bold whitespace-nowrap backdrop-blur-sm transition-all hover:bg-white/10 focus-visible:ring-1 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50'>
+                            <DropdownMenuTrigger className='focus-visible:ring-ring text-foreground relative inline-flex h-11 items-center justify-center overflow-hidden rounded-2xl border border-[var(--fp-surface-border)] bg-white/5 px-6 text-sm font-bold whitespace-nowrap backdrop-blur-sm transition-all hover:bg-white/10 focus-visible:ring-1 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50'>
                                 <MoreHorizontal className='mr-2 h-4 w-4' />
                                 {t('common.actions')}
                             </DropdownMenuTrigger>
@@ -469,18 +469,18 @@ export default function TranslationsPage() {
                 </ResourceTable>
             )}
 
-            <div className='grid grid-cols-1 gap-6 pt-6 md:grid-cols-2'>
-                <PageCard title={t('admin.translations.help.what_is.title')} icon={Globe}>
+            <TipGrid>
+                <TipCard title={t('admin.translations.help.what_is.title')} icon={Globe}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.translations.help.what_is.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.translations.help.fallback.title')} icon={Globe}>
+                </TipCard>
+                <TipCard title={t('admin.translations.help.fallback.title')} icon={Globe}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.translations.help.fallback.description')}
                     </p>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
 
             <Sheet open={editOpen} onOpenChange={guardEditClose(setEditOpen)} className='max-w-6xl'>
                 <div className='space-y-6'>

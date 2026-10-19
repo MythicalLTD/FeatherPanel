@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
@@ -486,6 +487,8 @@ export default function AnalyticsDashboardPage() {
                     </div>
                 </section>
             </div>
+            <AdminPageTips page='analytics' />
+
             <WidgetRenderer widgets={getWidgets('admin-analytics', 'bottom-of-page')} />
         </>
     );
