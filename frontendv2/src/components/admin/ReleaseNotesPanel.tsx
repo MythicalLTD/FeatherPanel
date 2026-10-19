@@ -82,6 +82,8 @@ interface ReleaseNotesPanelProps {
     latest?: ReleaseNotesVersion | null;
     updateAvailable?: boolean;
     defaultOpen?: boolean;
+    /** Render the notes directly, without the collapsible toggle (for a dedicated changelog card). */
+    embedded?: boolean;
     className?: string;
 }
 
@@ -90,6 +92,7 @@ export function ReleaseNotesPanel({
     latest,
     updateAvailable = false,
     defaultOpen = false,
+    embedded = false,
     className,
 }: ReleaseNotesPanelProps) {
     const { t } = useTranslation();
@@ -153,31 +156,37 @@ export function ReleaseNotesPanel({
 
     return (
         <div className={cn('space-y-3', className)}>
-            <button
-                type='button'
-                onClick={() => setOpen((prev) => !prev)}
-                className='bg-muted/10 border-border/40 hover:bg-muted/20 group flex w-full items-center justify-between rounded-xl border p-3 transition-all md:rounded-2xl md:p-4'
-            >
-                <div className='flex min-w-0 items-center gap-2'>
-                    <Package className='text-primary h-4 w-4 shrink-0' />
-                    <span className='truncate text-[9px] font-black tracking-widest uppercase md:text-[10px]'>
-                        {t('admin.version.view_changelog')}
+            {embedded ? null : (
+                <button
+                    type='button'
+                    onClick={() => setOpen((prev) => !prev)}
+                    className='fp-surface-inset hover:bg-muted/20 group flex w-full items-center justify-between rounded-xl border p-3 transition-colors'
+                >
+                    <div className='flex min-w-0 items-center gap-2'>
+                        <Package className='text-primary h-4 w-4 shrink-0' />
+                        <span className='truncate text-sm font-medium'>{t('admin.version.view_changelog')}</span>
+                        {tabs.length > 1 ? (
+                            <span className='text-muted-foreground hidden text-xs sm:inline'>
+                                · {t('admin.version.changelog_both_hint')}
+                            </span>
+                        ) : null}
+                    </div>
+                    <span className='text-muted-foreground text-xs font-medium'>
+                        {open ? t('common.hide') : t('common.view')}
                     </span>
-                    {tabs.length > 1 ? (
-                        <span className='text-muted-foreground hidden text-[9px] font-medium tracking-normal normal-case sm:inline md:text-[10px]'>
-                            · {t('admin.version.changelog_both_hint')}
-                        </span>
-                    ) : null}
-                </div>
-                <span className='text-muted-foreground text-[10px] font-bold tracking-widest uppercase opacity-60'>
-                    {open ? t('common.hide') : t('common.view')}
-                </span>
-            </button>
+                </button>
+            )}
 
-            {open ? (
-                <div className='bg-muted/5 border-border/30 animate-in fade-in slide-in-from-top-2 space-y-4 rounded-2xl border p-4 duration-300 md:space-y-5 md:rounded-3xl md:p-6'>
+            {open || embedded ? (
+                <div
+                    className={cn(
+                        'space-y-4 md:space-y-5',
+                        !embedded &&
+                            'fp-surface-inset animate-in fade-in slide-in-from-top-2 rounded-xl border p-4 duration-300 md:p-5',
+                    )}
+                >
                     {tabs.length > 1 ? (
-                        <div className='bg-muted/20 flex flex-wrap gap-1 rounded-xl p-1'>
+                        <div className='fp-surface-inset inline-flex flex-wrap gap-0.5 rounded-lg border p-0.5'>
                             {tabs.map((tab) => (
                                 <button
                                     key={tab.id}
@@ -187,9 +196,9 @@ export function ReleaseNotesPanel({
                                         setActiveTab(tab.id);
                                     }}
                                     className={cn(
-                                        'rounded-lg px-3 py-1.5 text-[10px] font-semibold transition-colors',
+                                        'rounded-md px-3 py-1 text-xs font-medium transition-colors',
                                         active.id === tab.id
-                                            ? 'bg-background text-foreground shadow-sm'
+                                            ? 'bg-primary/10 text-primary'
                                             : 'text-muted-foreground hover:text-foreground',
                                     )}
                                 >
@@ -201,16 +210,16 @@ export function ReleaseNotesPanel({
 
                     <div className='space-y-1'>
                         <div className='flex flex-wrap items-center gap-2'>
-                            <h4 className='text-base font-black md:text-lg'>
+                            <h4 className='text-base font-semibold md:text-lg'>
                                 {data?.release_name || data?.version || '-'}
                             </h4>
                             {data?.type ? (
-                                <span className='bg-primary/15 text-primary border-primary/25 rounded-full border px-2 py-0.5 text-[9px] font-black tracking-widest uppercase'>
+                                <span className='bg-primary/10 text-primary border-primary/25 rounded-full border px-2 py-0.5 text-xs font-medium'>
                                     {data.type}
                                 </span>
                             ) : null}
                             {data?.is_security_release ? (
-                                <span className='inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-[9px] font-black tracking-widest text-rose-500 uppercase'>
+                                <span className='inline-flex items-center gap-1 rounded-full border border-rose-500/25 bg-rose-500/[0.06] px-2 py-0.5 text-xs font-medium text-rose-500'>
                                     <ShieldAlert className='h-3 w-3' />
                                     {t('admin.version.security_release')}
                                 </span>
@@ -221,7 +230,7 @@ export function ReleaseNotesPanel({
                         </p>
                     </div>
 
-                    <div className='text-muted-foreground flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-bold md:text-xs'>
+                    <div className='text-muted-foreground flex flex-wrap gap-x-4 gap-y-2 text-xs'>
                         {published ? (
                             <span className='inline-flex items-center gap-1.5'>
                                 <Calendar className='h-3.5 w-3.5' />
@@ -249,11 +258,11 @@ export function ReleaseNotesPanel({
                     </div>
 
                     {description ? (
-                        <div className='bg-muted/20 border-border/40 rounded-xl border p-3 md:p-4'>
-                            <p className='text-muted-foreground mb-2 text-[9px] font-black tracking-widest uppercase'>
+                        <div className='fp-surface-inset rounded-xl border p-3 md:p-4'>
+                            <p className='text-foreground mb-2 text-sm font-semibold'>
                                 {t('admin.version.release_summary')}
                             </p>
-                            <div className='prose prose-sm dark:prose-invert text-muted-foreground max-w-none text-[10px] leading-relaxed md:text-xs'>
+                            <div className='prose prose-sm dark:prose-invert text-muted-foreground max-w-none text-sm leading-relaxed'>
                                 <ReactMarkdown>{description}</ReactMarkdown>
                             </div>
                         </div>

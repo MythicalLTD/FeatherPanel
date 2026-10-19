@@ -3806,7 +3806,8 @@
 			"no_nodes_search": "No nodes matching your search",
 			"filter_needs_update": "Needs update",
 			"filter_all": "All nodes",
-			"loading": "Loading nodes…"
+			"loading": "Loading nodes…",
+			"column_node": "Node"
 		},
 		"plugins": {
 			"title": "Plugins",
@@ -3826,7 +3827,8 @@
 			"current_suffix": "current",
 			"not_in_store": "not in store",
 			"status_up_to_date": "Up to date",
-			"status_no_match": "No match"
+			"status_no_match": "No match",
+			"column_plugin": "Plugin"
 		},
 		"bulk": {
 			"items_selected": "{count} items selected",
@@ -3848,6 +3850,44 @@
 			"bulk_failed": "Some updates failed to start.",
 			"cloud_not_linked": "Mythic Cloud is not linked. Connect under Cloud Connections to check plugin updates.",
 			"store_check_failed": "Failed to check Mythic store for plugin updates"
+		},
+		"column_version": "Version",
+		"column_status": "Status",
+		"hero": {
+			"available_title": "FeatherPanel {version} is available",
+			"latest_title": "FeatherPanel is up to date",
+			"channel": "Channel",
+			"php": "PHP",
+			"running": "running {version}",
+			"checked": "Last checked",
+			"latest_body": "You are running the newest release on this channel. Release notes for your version are below."
+		},
+		"changelog": {
+			"title": "Changelog"
+		},
+		"steps": {
+			"title": "How updating works",
+			"backup_title": "Back up first",
+			"backup_body": "Take a database backup and keep a copy of your .env before you start.",
+			"changelog_title": "Read the changelog",
+			"changelog_body": "Check the release notes for breaking changes, new PHP requirements or manual steps.",
+			"update_title": "Run the update",
+			"update_body": "Update now pulls the new image and restarts the panel. It is usually back within a minute.",
+			"verify_title": "Verify and follow up",
+			"verify_body": "Run pending migrations, then update plugins and Wings nodes from the lists below."
+		},
+		"status": {
+			"update_available": "Update available",
+			"up_to_date": "Up to date",
+			"unreachable": "Unreachable"
+		},
+		"tips": {
+			"backup_title": "Always keep a backup",
+			"backup_body": "Updates run migrations on your database. A recent backup lets you roll back if something goes wrong.",
+			"plugins_title": "Plugins come from the store",
+			"plugins_body": "Plugin updates are matched against the FeatherCloud store. Plugins installed by hand show as not in the store.",
+			"wings_title": "Wings updates per node",
+			"wings_body": "Nodes that cannot self update are marked Manual update. Update those on the node itself."
 		}
 	},
 	"sidebar": {
@@ -11832,19 +11872,34 @@
 				"queries_total": "Total Queries",
 				"questions_total": "Total Questions",
 				"bytes_received": "Bytes Received",
-				"bytes_sent": "Bytes Sent"
+				"bytes_sent": "Bytes Sent",
+				"details": "Engine details",
+				"queries_hint": "{count} queries in total",
+				"running_hint": "{count} running now",
+				"received_hint": "Sent, {size} received"
 			},
 			"migrations": {
 				"title": "Migration Output",
 				"running": "Running migrations...",
 				"success": "Migrations completed successfully",
-				"failed": "Migration failed"
+				"failed": "Migration failed",
+				"section_title": "Migrations",
+				"section_description": "Apply pending schema changes after an update or plugin install. Output appears below.",
+				"idle": "No migration run yet. Output shows here once you start one."
 			},
 			"pma": {
 				"already_installed": "phpMyAdmin is already installed",
 				"installed_success": "phpMyAdmin installed successfully",
 				"deleted_success": "phpMyAdmin deleted successfully",
-				"confirm_delete": "Are you sure you want to delete phpMyAdmin? This action cannot be undone."
+				"confirm_delete": "Are you sure you want to delete phpMyAdmin? This action cannot be undone.",
+				"title": "phpMyAdmin",
+				"status_installed": "Installed",
+				"status_not_installed": "Not installed",
+				"description": "Install phpMyAdmin once and every database in the panel gets an Open in phpMyAdmin button. Users manage tables, run queries and import dumps from the browser without extra credentials.",
+				"benefit_one_click": "One click from server and webspace databases",
+				"benefit_auto_login": "Signed in automatically with the database user",
+				"benefit_users": "Available to your users, not only admins",
+				"open": "Open phpMyAdmin"
 			},
 			"toasts": {
 				"failed_status": "Failed to fetch database status",
