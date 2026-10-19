@@ -5590,7 +5590,9 @@
 			"ignored_content": "Ignored Content",
 			"wipe_all": "Wipe All",
 			"trash": "Trash",
-			"more_actions": "More actions"
+			"more_actions": "More actions",
+			"download_selected": "Download selected",
+			"chmod": "Permissions"
 		},
 		"list": {
 			"header_name": "Name",
@@ -5707,7 +5709,8 @@
 			"file_operation_progress": "File operation in progress…",
 			"file_operation_completed": "File operation completed",
 			"file_operation_failed": "File operation failed",
-			"file_operation_aborted": "File operation aborted"
+			"file_operation_aborted": "File operation aborted",
+			"download_selected_files_only": "Folders are skipped because this node cannot download folders."
 		},
 		"editor": {
 			"title": "Editing: {file}",
@@ -6756,7 +6759,14 @@
 			"pin": "Pin folder",
 			"unpin": "Unpin folder",
 			"recent": "Recent files",
-			"clear_recent": "Clear recent files"
+			"clear_recent": "Clear recent files",
+			"title": "Quick access",
+			"collapse": "Hide quick access",
+			"expand": "Show quick access",
+			"pinned": "Pinned folders",
+			"no_pins": "Pin folders you use often.",
+			"no_recent": "Files you open show up here.",
+			"clear": "Clear"
 		},
 		"footer": {
 			"summary": "{folders} folders, {files} files, {size}",

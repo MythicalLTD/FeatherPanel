@@ -26,7 +26,8 @@ import { FileActionToolbar } from './components/FileActionToolbar';
 import { FileBreadcrumbs } from './components/FileBreadcrumbs';
 import { FileList } from './components/FileList';
 import { FileListControls } from './components/FileListControls';
-import { FileQuickAccess } from './components/FileQuickAccess';
+import { FileQuickAccess, FileQuickAccessPanel } from './components/FileQuickAccess';
+import { PanelRightOpen } from 'lucide-react';
 import { useFilesViewPrefs, useFilesQuickAccess, sortAndFilterFiles } from '@/lib/files-view-prefs';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import {
@@ -767,6 +768,22 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         }
     };
 
+    const handleDownloadSelected = async () => {
+        const entries = visibleFiles.filter((f) => selectedFiles.includes(f.name) && !isTrashShortcut(f));
+        const folders = entries.filter((f) => !f.isFile);
+        if (folders.length > 0 && !directoryDownloadEnabled) {
+            toast.info(t('files.messages.download_selected_files_only'));
+        }
+        for (const entry of entries) {
+            if (entry.isFile) {
+                await handleDownload(entry.name);
+            } else if (directoryDownloadEnabled) {
+                await handleDownloadDirectory(entry.name);
+            }
+            await new Promise((r) => setTimeout(r, 300));
+        }
+    };
+
     const handleCompress = (files: string[]) => {
         setFilesToCompress(files);
         setCompressOpen(true);
@@ -1336,6 +1353,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                 setDeleteOpen(true);
                             }}
                             onArchiveSelected={() => handleCompress(selectedFiles)}
+                            onDownloadSelected={canRead ? handleDownloadSelected : undefined}
                             onClearSelection={() => setSelectedFiles([])}
                             onPullFile={() => setPullFileOpen(true)}
                             onWipeAll={() => setWipeAllOpen(true)}
@@ -1649,54 +1667,86 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                         />
 
                         <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
-                            <FileQuickAccess
-                                currentDirectory={currentDirectory || '/'}
-                                pins={quickAccess.pins}
-                                recent={quickAccess.recent}
-                                onTogglePin={quickAccess.togglePin}
-                                onClearRecent={quickAccess.clearRecent}
-                                onNavigate={(path) => navigateAndCloseArchive(path)}
-                            />
-                            <FileListControls prefs={viewPrefs} onChange={updateViewPrefs} />
+                            <div className='lg:hidden'>
+                                <FileQuickAccess
+                                    currentDirectory={currentDirectory || '/'}
+                                    pins={quickAccess.pins}
+                                    recent={quickAccess.recent}
+                                    onTogglePin={quickAccess.togglePin}
+                                    onClearRecent={quickAccess.clearRecent}
+                                    onNavigate={(path) => navigateAndCloseArchive(path)}
+                                />
+                            </div>
+                            <div className='flex flex-wrap items-center gap-2 lg:ml-auto'>
+                                <FileListControls prefs={viewPrefs} onChange={updateViewPrefs} />
+                                {!viewPrefs.sidePanel && (
+                                    <button
+                                        type='button'
+                                        onClick={() => updateViewPrefs({ sidePanel: true })}
+                                        className='fp-surface-inset text-muted-foreground hover:text-foreground hidden h-9 items-center gap-1.5 rounded-xl border px-2.5 text-xs lg:inline-flex'
+                                        title={t('files.quick.expand')}
+                                    >
+                                        <PanelRightOpen className='h-3.5 w-3.5' />
+                                        {t('files.quick.title')}
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
-                        <FileList
-                            view={viewPrefs.view}
-                            files={visibleFiles}
-                            loading={loading || searchLoading}
-                            selectedFiles={selectedFiles}
-                            onSelect={handleSelectToggle}
-                            onSelectAll={handleSelectAllToggle}
-                            onModifierClick={handleModifierClick}
-                            anchorName={anchorName}
-                            isSearching={Boolean(searchQuery.trim()) || searchResults !== null}
-                            onNavigate={(name) => {
-                                if (name === FEATHER_TRASH_DIR) {
-                                    router.push(`/server/${uuidShort}/files/trash`);
-                                    return;
-                                }
-                                navigateAndCloseArchive(resolveDirectoryTarget(currentDirectory || '/', name));
-                            }}
-                            onAction={(action, file) => {
-                                if (file.isFile && (action === 'edit' || action === 'preview')) {
-                                    quickAccess.addRecent(joinPath(currentDirectory || '/', file.name));
-                                }
-                                handleAction(action, file);
-                            }}
-                            onRowDragStart={canUpdate ? handleRowDragStart : undefined}
-                            onRowDragEnd={canUpdate ? handleRowDragEnd : undefined}
-                            onDropFiles={canUpdate || canArchive ? handleDropOnFolder : undefined}
-                            draggingFileNames={draggingFileNames}
-                            canEdit={canUpdate}
-                            canDelete={canDelete}
-                            canDownload={canRead}
-                            acceptArchiveExtract={canArchive && archiveBrowseEnabled}
-                            canShare={shareEnabled}
-                            canBrowseArchiveFeature={archiveBrowseEnabled}
-                            canDownloadDirectory={directoryDownloadEnabled}
-                            serverUuid={uuidShort}
-                            currentDirectory={currentDirectory || '/'}
-                        />
+                        <div className='flex items-start gap-4'>
+                            <div className='min-w-0 flex-1'>
+                                <FileList
+                                    view={viewPrefs.view}
+                                    files={visibleFiles}
+                                    loading={loading || searchLoading}
+                                    selectedFiles={selectedFiles}
+                                    onSelect={handleSelectToggle}
+                                    onSelectAll={handleSelectAllToggle}
+                                    onModifierClick={handleModifierClick}
+                                    anchorName={anchorName}
+                                    isSearching={Boolean(searchQuery.trim()) || searchResults !== null}
+                                    onNavigate={(name) => {
+                                        if (name === FEATHER_TRASH_DIR) {
+                                            router.push(`/server/${uuidShort}/files/trash`);
+                                            return;
+                                        }
+                                        navigateAndCloseArchive(resolveDirectoryTarget(currentDirectory || '/', name));
+                                    }}
+                                    onAction={(action, file) => {
+                                        if (file.isFile && (action === 'edit' || action === 'preview')) {
+                                            quickAccess.addRecent(joinPath(currentDirectory || '/', file.name));
+                                        }
+                                        handleAction(action, file);
+                                    }}
+                                    onRowDragStart={canUpdate ? handleRowDragStart : undefined}
+                                    onRowDragEnd={canUpdate ? handleRowDragEnd : undefined}
+                                    onDropFiles={canUpdate || canArchive ? handleDropOnFolder : undefined}
+                                    draggingFileNames={draggingFileNames}
+                                    canEdit={canUpdate}
+                                    canDelete={canDelete}
+                                    canDownload={canRead}
+                                    acceptArchiveExtract={canArchive && archiveBrowseEnabled}
+                                    canShare={shareEnabled}
+                                    canBrowseArchiveFeature={archiveBrowseEnabled}
+                                    canDownloadDirectory={directoryDownloadEnabled}
+                                    serverUuid={uuidShort}
+                                    currentDirectory={currentDirectory || '/'}
+                                />
+                            </div>
+                            {viewPrefs.sidePanel && (
+                                <div className='hidden lg:block'>
+                                    <FileQuickAccessPanel
+                                        currentDirectory={currentDirectory || '/'}
+                                        pins={quickAccess.pins}
+                                        recent={quickAccess.recent}
+                                        onTogglePin={quickAccess.togglePin}
+                                        onClearRecent={quickAccess.clearRecent}
+                                        onNavigate={(path) => navigateAndCloseArchive(path)}
+                                        onCollapse={() => updateViewPrefs({ sidePanel: false })}
+                                    />
+                                </div>
+                            )}
+                        </div>
 
                         <WidgetRenderer widgets={getWidgets('server-files', 'after-files-list')} />
                     </>
