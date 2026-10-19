@@ -26,6 +26,8 @@ export interface FilesViewPrefs {
     sortKey: FilesSortKey;
     sortDir: 'asc' | 'desc';
     showHidden: boolean;
+    /** Desktop quick access side panel open. */
+    sidePanel: boolean;
 }
 
 /** Synced to the UI preferences in the database (see ui-prefs-sync). */
@@ -33,7 +35,13 @@ export const FILES_VIEW_PREFS_KEY = 'featherpanel_files_view_prefs';
 /** Per server pinned folders and recent files, also synced. */
 export const FILES_QUICK_ACCESS_KEY = 'featherpanel_files_quick_access';
 
-const DEFAULT_PREFS: FilesViewPrefs = { view: 'list', sortKey: 'name', sortDir: 'asc', showHidden: true };
+const DEFAULT_PREFS: FilesViewPrefs = {
+    view: 'list',
+    sortKey: 'name',
+    sortDir: 'asc',
+    showHidden: true,
+    sidePanel: true,
+};
 
 function readJson<T>(key: string, fallback: T): T {
     if (typeof window === 'undefined') return fallback;

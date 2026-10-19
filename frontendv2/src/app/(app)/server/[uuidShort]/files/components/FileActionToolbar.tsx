@@ -61,6 +61,8 @@ interface FileActionToolbarProps {
     onCopySelected: () => void;
     onMoveSelected: () => void;
     onPermissionsSelected: () => void;
+    /** Download every selected entry (files directly, folders when the daemon supports it). */
+    onDownloadSelected?: () => void;
     onOpenInIDE?: () => void;
     onOpenInCalagopus?: () => void;
     canCreate: boolean;
@@ -86,6 +88,7 @@ export function FileActionToolbar({
     onCopySelected,
     onMoveSelected,
     onPermissionsSelected,
+    onDownloadSelected,
     onOpenInIDE,
     onOpenInCalagopus,
     canCreate,
@@ -118,14 +121,44 @@ export function FileActionToolbar({
                             </Button>
                         </div>
                         <div className='no-scrollbar flex items-center gap-1.5 overflow-x-auto pl-2'>
+                            <Button variant='secondary' size='sm' onClick={onArchiveSelected} className='h-9 px-3'>
+                                <Archive className='mr-2 h-4 w-4' />
+                                <span className='hidden sm:inline'>{t('files.toolbar.compress')}</span>
+                            </Button>
+                            {onDownloadSelected && (
+                                <Button
+                                    variant='secondary'
+                                    size='sm'
+                                    onClick={onDownloadSelected}
+                                    className='h-9 px-3'
+                                    title={t('files.toolbar.download_selected')}
+                                    aria-label={t('files.toolbar.download_selected')}
+                                >
+                                    <Download className='h-4 w-4 sm:mr-2' />
+                                    <span className='hidden sm:inline'>{t('files.toolbar.download')}</span>
+                                </Button>
+                            )}
                             <Button
                                 variant='secondary'
                                 size='sm'
-                                onClick={onArchiveSelected}
-                                className='h-9 bg-black/5 px-4 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20'
+                                onClick={onPermissionsSelected}
+                                className='h-9 px-3'
+                                title={t('files.toolbar.permissions')}
+                                aria-label={t('files.toolbar.permissions')}
                             >
-                                <Archive className='mr-2 h-4 w-4' />
-                                <span className='hidden sm:inline'>{t('files.toolbar.compress')}</span>
+                                <ShieldCheck className='h-4 w-4 sm:mr-2' />
+                                <span className='hidden sm:inline'>{t('files.toolbar.chmod')}</span>
+                            </Button>
+                            <Button
+                                variant='secondary'
+                                size='sm'
+                                onClick={onMoveSelected}
+                                className='h-9 px-3'
+                                title={t('files.toolbar.move')}
+                                aria-label={t('files.toolbar.move')}
+                            >
+                                <Move className='h-4 w-4 sm:mr-2' />
+                                <span className='hidden sm:inline'>{t('files.toolbar.move')}</span>
                             </Button>
                             <Button
                                 variant='secondary'
