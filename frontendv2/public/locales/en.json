@@ -1522,7 +1522,10 @@
 			"BULK_ACTION_FAILED": "The action failed on this server.",
 			"DASHBOARD_LAYOUT_TOO_LARGE": "That dashboard layout is too large to save.",
 			"INVALID_DASHBOARD_LAYOUT": "That dashboard layout is not valid.",
-			"INVALID_NOTIFICATION_KEYS": "Some notifications could not be found. Refresh and try again."
+			"INVALID_NOTIFICATION_KEYS": "Some notifications could not be found. Refresh and try again.",
+			"CURRENT_SESSION": "Use sign out to end the current session",
+			"SESSION_NOT_FOUND": "Session not found",
+			"SESSION_REQUIRED": "Sessions are only available for browser sign-ins"
 		},
 		"global": {}
 	},
