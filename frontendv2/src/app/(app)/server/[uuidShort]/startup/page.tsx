@@ -419,7 +419,7 @@ export default function ServerStartupPage() {
                             size='default'
                             onClick={() => fetchData()}
                             disabled={loading || saving}
-                            className='order-2 border border-transparent bg-transparent text-[10px] hover:border-white/10 hover:bg-white/5 sm:order-1'
+                            className='hover:border-border hover:bg-muted/60 order-2 border border-transparent bg-transparent text-[10px] sm:order-1'
                             aria-label={t('common.refresh')}
                         >
                             <RefreshCw className={cn('h-3 w-3 sm:mr-2', loading && 'animate-spin')} />
@@ -553,7 +553,7 @@ export default function ServerStartupPage() {
                             </div>
                         )}
 
-                        <div className='mt-10 space-y-6 border-t border-white/5 pt-8'>
+                        <div className='border-border/50 mt-10 space-y-6 border-t pt-8'>
                             <div className='flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between'>
                                 <div>
                                     <h3 className='text-sm font-black tracking-widest uppercase'>
@@ -657,7 +657,7 @@ export default function ServerStartupPage() {
                                                 }))
                                             }
                                             disabled={customVariableSaving}
-                                            className='mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5'
+                                            className='bg-muted/40 mt-0.5 h-4 w-4 rounded border-white/20'
                                         />
                                         <span>{t('serverStartup.customEnv.encrypt')}</span>
                                     </label>

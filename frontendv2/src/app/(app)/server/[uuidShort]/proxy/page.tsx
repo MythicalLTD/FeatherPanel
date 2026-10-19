@@ -166,7 +166,7 @@ export default function ServerProxyPage() {
                 description={
                     <>
                         {t('serverProxy.description')}
-                        <span className='ml-2 rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-sm font-bold'>
+                        <span className='border-border/60 bg-muted/40 ml-2 rounded-md border px-2 py-0.5 text-sm font-bold'>
                             {proxies.length} / {maxProxies > 0 ? maxProxies : '∞'}
                         </span>
                     </>
@@ -245,7 +245,7 @@ export default function ServerProxyPage() {
                             iconWrapperClassName={
                                 proxy.ssl
                                     ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
-                                    : 'bg-white/5 border-white/10 text-muted-foreground'
+                                    : 'bg-muted/40 border-border/60 text-muted-foreground'
                             }
                             title={proxy.domain}
                             description={

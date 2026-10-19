@@ -107,7 +107,7 @@ export function IgnoredContentDialog({ open, onOpenChange, uuid, onSuccess }: Ig
                             value={newPattern}
                             onChange={(e) => setNewPattern(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && addPattern()}
-                            className='border-white/10 bg-white/5'
+                            className='border-border/60 bg-muted/30'
                         />
                         <Button variant='secondary' size='icon' onClick={addPattern} className='shrink-0'>
                             <Plus className='h-4 w-4' />
@@ -116,19 +116,19 @@ export function IgnoredContentDialog({ open, onOpenChange, uuid, onSuccess }: Ig
 
                     <div className='custom-scrollbar flex max-h-50 flex-wrap gap-2 overflow-y-auto pr-2'>
                         {patterns.length === 0 ? (
-                            <p className='text-muted-foreground w-full rounded-xl border border-dashed border-white/10 bg-white/5 py-8 text-center text-xs italic'>
+                            <p className='text-muted-foreground border-border/60 bg-muted/30 w-full rounded-xl border border-dashed py-8 text-center text-xs italic'>
                                 {t('files.dialogs.ignored.empty')}
                             </p>
                         ) : (
                             patterns.map((pattern) => (
                                 <div
                                     key={pattern}
-                                    className='group flex items-center gap-2 rounded-lg border border-white/5 bg-white/10 px-3 py-1.5'
+                                    className='group border-border/50 bg-muted/50 flex items-center gap-2 rounded-lg border px-3 py-1.5'
                                 >
-                                    <span className='text-xs font-medium text-white/80'>{pattern}</span>
+                                    <span className='text-foreground text-xs font-medium'>{pattern}</span>
                                     <button
                                         onClick={() => removePattern(pattern)}
-                                        className='text-white/40 transition-colors hover:text-red-400'
+                                        className='text-muted-foreground transition-colors hover:text-red-400'
                                     >
                                         <X className='h-3 w-3' />
                                     </button>

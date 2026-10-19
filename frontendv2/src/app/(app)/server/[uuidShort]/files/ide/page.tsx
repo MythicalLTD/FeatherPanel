@@ -368,7 +368,7 @@ export default function ServerFilesIDEPage({
 
     return (
         <div className='bg-background flex h-full min-h-0 flex-col gap-3 p-4'>
-            <div className='bg-card/80 border-border/50 flex items-center justify-between rounded-2xl border px-4 py-2 backdrop-blur-xl'>
+            <div className='fp-surface flex items-center justify-between rounded-xl border px-4 py-2'>
                 <div className='flex items-center gap-3'>
                     <div className='bg-primary/20 border-primary/40 flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl border'>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -401,7 +401,7 @@ export default function ServerFilesIDEPage({
 
             <div className='flex min-h-0 flex-1 gap-4'>
                 {/* Sidebar file tree */}
-                <aside className='border-border/50 bg-card/50 flex w-64 shrink-0 flex-col overflow-hidden rounded-2xl border backdrop-blur-xl'>
+                <aside className='fp-surface flex w-64 shrink-0 flex-col overflow-hidden rounded-xl border'>
                     <div className='border-border/50 flex items-center justify-between border-b px-3 py-2'>
                         <div className='flex items-center gap-2'>
                             <Folder className='text-primary h-4 w-4' />
@@ -989,7 +989,7 @@ export default function ServerFilesIDEPage({
                 </aside>
 
                 {/* Editor area */}
-                <section className='border-border/50 bg-card/50 flex flex-1 flex-col overflow-hidden rounded-3xl border backdrop-blur-3xl'>
+                <section className='fp-surface flex flex-1 flex-col overflow-hidden rounded-xl border'>
                     <div className='border-border/40 bg-muted/30 flex items-center justify-between border-b px-4 py-3'>
                         <div className='flex items-center gap-3'>
                             <div className='bg-primary/10 text-primary border-primary/20 flex h-9 w-9 items-center justify-center rounded-xl border'>

@@ -130,7 +130,7 @@ export default function KnowledgeBasePage() {
                     </p>
                 </div>
             ) : (
-                <div className='bg-card/50 border-border/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
+                <div className='fp-surface overflow-hidden rounded-xl border'>
                     <div className='divide-border/50 divide-y'>
                         {categories.map((cat) => (
                             <Link key={cat.id} href={`${knowledgebaseBasePath}/category/${cat.id}`} className='block'>

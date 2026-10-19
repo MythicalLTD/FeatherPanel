@@ -790,7 +790,7 @@ export default function WebSpaceEmailPage() {
                 )}
 
                 {dns?.client_settings && (
-                    <div className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'>
+                    <div className='fp-surface rounded-xl border p-4'>
                         <h3 className='mb-2 text-sm font-medium'>{t('webSpaces.email.clientSettings')}</h3>
                         <p className='text-muted-foreground font-mono text-xs'>
                             {t('ui.webspace.email.iMAP')} {dns.client_settings.imap_host}:
@@ -807,10 +807,7 @@ export default function WebSpaceEmailPage() {
                         <p className='text-muted-foreground text-sm'>{t('webSpaces.email.deliverability.help')}</p>
                         <div className='grid grid-cols-1 gap-4'>
                             {deliverability.map((block) => (
-                                <div
-                                    key={block.domain}
-                                    className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'
-                                >
+                                <div key={block.domain} className='fp-surface rounded-xl border p-4'>
                                     <div className='mb-3 flex flex-wrap items-center justify-between gap-2'>
                                         <p className='font-mono text-sm font-medium'>{block.domain}</p>
                                         <span
@@ -868,10 +865,7 @@ export default function WebSpaceEmailPage() {
                         <h2 className='text-lg font-semibold'>{t('webSpaces.email.dnsChecklist')}</h2>
                         <div className='grid grid-cols-1 gap-4'>
                             {dns.domains.map((block) => (
-                                <div
-                                    key={block.domain}
-                                    className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'
-                                >
+                                <div key={block.domain} className='fp-surface rounded-xl border p-4'>
                                     <div className='mb-2 flex flex-wrap items-center justify-between gap-2'>
                                         <p className='font-mono text-sm font-medium'>{block.domain}</p>
                                         <div className='flex flex-wrap items-center gap-2'>

@@ -193,7 +193,7 @@ export function MoveCopyDialog({ open, onOpenChange, uuid, root, files, action, 
                             <p className='text-muted-foreground text-xs'>
                                 {t('files.dialogs.move_copy.destination_selected', { path: destination })}
                             </p>
-                            <div className='bg-muted/30 animate-in fade-in slide-in-from-top-1 rounded-lg border border-white/10 p-2 duration-200'>
+                            <div className='bg-muted/30 animate-in fade-in slide-in-from-top-1 border-border/60 rounded-lg border p-2 duration-200'>
                                 <p className='text-muted-foreground mb-2 text-[11px] font-semibold tracking-wider uppercase'>
                                     {t('files.dialogs.move_copy.path_quick_pick')}
                                 </p>
@@ -206,7 +206,7 @@ export function MoveCopyDialog({ open, onOpenChange, uuid, root, files, action, 
                                             className={`rounded-md border px-2 py-1 text-xs transition-all ${
                                                 destination === segment
                                                     ? 'bg-primary/20 text-primary border-primary/30'
-                                                    : 'border-white/10 bg-white/5 hover:bg-white/10'
+                                                    : 'border-border/60 bg-muted/40 hover:bg-muted/70'
                                             }`}
                                         >
                                             {segment}
@@ -220,7 +220,7 @@ export function MoveCopyDialog({ open, onOpenChange, uuid, root, files, action, 
                                         placeholder='/'
                                         value={destination}
                                         onChange={(e) => setDestination(e.target.value)}
-                                        className='border-white/10 bg-white/5'
+                                        className='border-border/60 bg-muted/40'
                                     />
                                 </div>
                             )}
@@ -237,10 +237,10 @@ export function MoveCopyDialog({ open, onOpenChange, uuid, root, files, action, 
                                     })}
                                     value={newName}
                                     onChange={(e) => setNewName(e.target.value)}
-                                    className='border-white/10 bg-white/5'
+                                    className='border-border/60 bg-muted/40'
                                 />
                             ) : (
-                                <p className='text-muted-foreground rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm'>
+                                <p className='text-muted-foreground border-border/60 bg-muted/40 rounded-md border px-3 py-2 text-sm'>
                                     {t('files.dialogs.move_copy.new_name_multi_hint')}
                                 </p>
                             )}

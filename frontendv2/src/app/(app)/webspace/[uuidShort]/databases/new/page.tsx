@@ -201,7 +201,7 @@ export default function CreateWebSpaceDatabasePage() {
                 )}
 
                 <form onSubmit={(e) => void handleCreate(e)} className='space-y-8' data-fp-save-shortcut>
-                    <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                    <div className='fp-surface space-y-6 rounded-xl border p-8'>
                         <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                             <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
                                 <ServerIcon className='text-primary h-5 w-5' />
@@ -243,7 +243,7 @@ export default function CreateWebSpaceDatabasePage() {
                         </div>
                     </div>
 
-                    <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                    <div className='fp-surface space-y-6 rounded-xl border p-8'>
                         <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                             <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
                                 <Database className='text-primary h-5 w-5' />

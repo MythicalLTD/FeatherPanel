@@ -91,7 +91,7 @@ export function VmCard({ vm, layout }: VmCardProps) {
     if (layout === 'list') {
         return (
             <Link href={`/vds/${vm.id}`}>
-                <div className='border-border/40 bg-card/40 hover:bg-card/70 hover:border-primary/30 group flex items-center gap-4 rounded-xl border p-4 backdrop-blur-sm transition-all duration-200'>
+                <div className='fp-surface fp-surface-interactive group flex items-center gap-4 rounded-xl border p-4 transition-all duration-200'>
                     {/* Icon */}
                     <div className='bg-primary/10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl'>
                         <Server className='text-primary h-5 w-5' />
@@ -138,7 +138,7 @@ export function VmCard({ vm, layout }: VmCardProps) {
     // Grid layout
     return (
         <Link href={`/vds/${vm.id}`}>
-            <div className='border-border/40 bg-card/40 hover:bg-card/70 hover:border-primary/30 group flex h-full flex-col rounded-xl border p-4 backdrop-blur-sm transition-all duration-200'>
+            <div className='fp-surface fp-surface-interactive group flex h-full flex-col rounded-xl border p-4 transition-all duration-200'>
                 {/* Header */}
                 <div className='mb-3 flex items-start justify-between gap-2'>
                     <div className='flex min-w-0 flex-1 items-center gap-2.5'>

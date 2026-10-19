@@ -118,7 +118,7 @@ export function VdsNetworkCard({
     );
 
     return (
-        <div className={cn('border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl', className)}>
+        <div className={cn('fp-surface rounded-xl border p-4', className)}>
             <h3 className='text-muted-foreground mb-3 flex items-center gap-2 text-sm font-medium'>
                 <Wifi className='h-4 w-4' />
                 {t('servers.console.info_cards.network_title')}
@@ -253,7 +253,7 @@ export default React.memo(function VdsInfoCards({
 
     return (
         <div className={cn('space-y-4', className)}>
-            <div className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'>
+            <div className='fp-surface rounded-xl border p-4'>
                 <h3 className='text-muted-foreground mb-3 text-sm font-medium'>
                     {t('servers.console.info_cards.resources_title')}
                 </h3>
@@ -344,7 +344,7 @@ export default React.memo(function VdsInfoCards({
                 </div>
             </div>
 
-            <div className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'>
+            <div className='fp-surface rounded-xl border p-4'>
                 <h3 className='text-muted-foreground mb-3 flex items-center gap-2 text-sm font-medium'>
                     <Monitor className='h-4 w-4' />
                     {t('vds.console.console_access.title')}

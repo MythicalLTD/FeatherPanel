@@ -1438,7 +1438,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                     </div>
                                                     {!allDone && !hasError && (
                                                         <div className='space-y-1.5'>
-                                                            <div className='flex justify-between text-[10px] font-bold tracking-tighter text-white/40 uppercase'>
+                                                            <div className='text-muted-foreground flex justify-between text-[10px] font-bold tracking-tighter uppercase'>
                                                                 <span>
                                                                     {t('files.messages.uploading_folder_progress', {
                                                                         current: String(currentLabel),
@@ -1447,7 +1447,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                                 </span>
                                                                 <span className='text-primary'>{batchProgress}%</span>
                                                             </div>
-                                                            <div className='h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-white/5'>
+                                                            <div className='border-border/50 bg-muted/40 h-1.5 w-full overflow-hidden rounded-full border'>
                                                                 <div
                                                                     className='from-primary to-primary-foreground h-full bg-linear-to-r transition-all duration-300'
                                                                     style={{ width: `${batchProgress}%` }}
@@ -1514,7 +1514,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                 </div>
                                                 {(item.status === 'uploading' || item.status === 'pending') && (
                                                     <div className='space-y-1.5'>
-                                                        <div className='flex justify-between text-[10px] font-bold tracking-tighter text-white/40 uppercase'>
+                                                        <div className='text-muted-foreground flex justify-between text-[10px] font-bold tracking-tighter uppercase'>
                                                             <span>
                                                                 {item.status === 'uploading'
                                                                     ? t('files.messages.uploading', {
@@ -1524,7 +1524,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                             </span>
                                                             <span className='text-primary'>{item.progress}%</span>
                                                         </div>
-                                                        <div className='h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-white/5'>
+                                                        <div className='border-border/50 bg-muted/40 h-1.5 w-full overflow-hidden rounded-full border'>
                                                             <div
                                                                 className='from-primary to-primary-foreground h-full bg-linear-to-r transition-all duration-300'
                                                                 style={{ width: `${item.progress}%` }}
@@ -1580,7 +1580,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                 </Button>
                                             </div>
                                             <div className='space-y-1.5'>
-                                                <div className='flex justify-between text-[10px] font-bold tracking-tighter text-white/40 uppercase'>
+                                                <div className='text-muted-foreground flex justify-between text-[10px] font-bold tracking-tighter uppercase'>
                                                     <span>
                                                         {t('files.messages.task_id', {
                                                             id: pull.Identifier.slice(0, 8),
@@ -1589,7 +1589,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                     </span>
                                                     <span className='text-primary'>{pull.Progress}%</span>
                                                 </div>
-                                                <div className='h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-white/5'>
+                                                <div className='border-border/50 bg-muted/40 h-1.5 w-full overflow-hidden rounded-full border'>
                                                     <div
                                                         className='from-primary to-primary-foreground h-full bg-linear-to-r transition-all duration-500'
                                                         style={{ width: `${pull.Progress}%` }}

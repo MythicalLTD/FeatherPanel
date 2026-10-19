@@ -449,7 +449,7 @@ export default function ServerSettingsPage() {
                                             setDescription(server?.description || '');
                                         }}
                                         disabled={saving || !hasChanges}
-                                        className='text-muted-foreground hover:text-foreground h-10 rounded-xl border-white/10 bg-transparent px-4 transition-all hover:bg-white/5'
+                                        className='text-muted-foreground hover:text-foreground border-border/60 hover:bg-muted/60 h-10 rounded-xl bg-transparent px-4 transition-all'
                                     >
                                         <RotateCcw className='mr-2 h-4 w-4' />
                                         {t('serverSettings.reset')}
@@ -625,7 +625,7 @@ export default function ServerSettingsPage() {
                                     <Button
                                         variant='ghost'
                                         size='sm'
-                                        className='text-muted-foreground h-8 w-8 rounded-lg p-0 hover:bg-white/10 hover:text-blue-400'
+                                        className='text-muted-foreground hover:bg-muted/70 h-8 w-8 rounded-lg p-0 hover:text-blue-400'
                                         onClick={() =>
                                             copyToClipboard(resolvedSftpHost ? `sftp://${resolvedSftpHost}` : '')
                                         }
@@ -651,7 +651,7 @@ export default function ServerSettingsPage() {
                                     <Button
                                         variant='ghost'
                                         size='sm'
-                                        className='text-muted-foreground h-8 w-8 rounded-lg p-0 hover:bg-white/10 hover:text-blue-400'
+                                        className='text-muted-foreground hover:bg-muted/70 h-8 w-8 rounded-lg p-0 hover:text-blue-400'
                                         onClick={() => copyToClipboard(server?.sftp?.port?.toString() || '')}
                                     >
                                         <Copy className='h-3.5 w-3.5' />
@@ -675,7 +675,7 @@ export default function ServerSettingsPage() {
                                     <Button
                                         variant='ghost'
                                         size='sm'
-                                        className='text-muted-foreground h-8 w-8 rounded-lg p-0 hover:bg-white/10 hover:text-blue-400'
+                                        className='text-muted-foreground hover:bg-muted/70 h-8 w-8 rounded-lg p-0 hover:text-blue-400'
                                         onClick={() => copyToClipboard(server?.sftp?.username || '')}
                                     >
                                         <Copy className='h-3.5 w-3.5' />
@@ -701,14 +701,14 @@ export default function ServerSettingsPage() {
                                 <LinkIcon className='h-3 w-3' />
                                 {t('serverSettings.sftpUrl')}
                             </Label>
-                            <div className='group/input flex items-center gap-2 rounded-xl border border-white/5 bg-white/5 p-1 pr-1 pl-4 transition-colors hover:border-blue-500/30'>
+                            <div className='group/input border-border/50 bg-muted/40 flex items-center gap-2 rounded-xl border p-1 pr-1 pl-4 transition-colors hover:border-blue-500/30'>
                                 <code className='text-foreground/80 flex-1 truncate font-mono text-xs'>
                                     {resolvedSftpUrl ? <Sensitive>{resolvedSftpUrl}</Sensitive> : t('common.nA')}
                                 </code>
                                 <Button
                                     variant='ghost'
                                     size='sm'
-                                    className='text-muted-foreground h-8 w-8 rounded-lg p-0 hover:bg-white/10 hover:text-blue-400'
+                                    className='text-muted-foreground hover:bg-muted/70 h-8 w-8 rounded-lg p-0 hover:text-blue-400'
                                     onClick={() => copyToClipboard(resolvedSftpUrl || '')}
                                 >
                                     <Copy className='h-3.5 w-3.5' />
@@ -716,7 +716,7 @@ export default function ServerSettingsPage() {
                                 <Button
                                     variant='ghost'
                                     size='sm'
-                                    className='text-muted-foreground h-8 w-8 rounded-lg p-0 hover:bg-white/10 hover:text-blue-400'
+                                    className='text-muted-foreground hover:bg-muted/70 h-8 w-8 rounded-lg p-0 hover:text-blue-400'
                                     onClick={() => {
                                         if (resolvedSftpUrl) {
                                             window.open(resolvedSftpUrl, '_blank');
@@ -920,7 +920,7 @@ export default function ServerSettingsPage() {
                                     {t('serverSettings.deleteServerStep4Description')}
                                 </p>
                                 <div className='space-y-2'>
-                                    <p className='rounded border border-white/10 bg-white/5 p-2 font-mono text-xs'>
+                                    <p className='border-border/60 bg-muted/40 rounded border p-2 font-mono text-xs'>
                                         {server?.name}
                                     </p>
                                     <Input

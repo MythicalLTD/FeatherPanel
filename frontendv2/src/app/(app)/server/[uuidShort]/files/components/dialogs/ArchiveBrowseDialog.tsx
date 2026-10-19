@@ -154,7 +154,7 @@ export function ArchiveBrowsePanel({
     if (!open || !archiveFileName) return null;
 
     return (
-        <section className='border-primary/20 bg-card/70 animate-in fade-in slide-in-from-top-2 overflow-hidden rounded-3xl border shadow-sm backdrop-blur-xl'>
+        <section className='fp-surface border-primary/20 animate-in fade-in slide-in-from-top-2 overflow-hidden rounded-xl border'>
             <div className='border-border/60 flex flex-col gap-4 border-b p-5 lg:flex-row lg:items-start lg:justify-between'>
                 <div className='flex min-w-0 gap-4'>
                     <div className='bg-primary/10 text-primary flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl'>

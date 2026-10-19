@@ -114,7 +114,7 @@ function StatCard({
     className?: string;
 }) {
     return (
-        <div className={cn('border-border/50 bg-card/50 rounded-xl border p-5 backdrop-blur-xl', className)}>
+        <div className={cn('fp-surface rounded-xl border p-5', className)}>
             <p className='text-3xl font-semibold tracking-tight'>{value}</p>
             <p className='text-muted-foreground mt-1 text-sm'>{label}</p>
             {hint ? <p className='text-muted-foreground/80 mt-2 text-xs'>{hint}</p> : null}
@@ -379,7 +379,7 @@ export default function WebSpaceAnalyticsPage() {
                                     </div>
 
                                     {bandwidthPct != null ? (
-                                        <div className='border-border/50 bg-card/50 rounded-xl border p-5 backdrop-blur-xl'>
+                                        <div className='fp-surface rounded-xl border p-5'>
                                             <div className='mb-2 flex items-center justify-between text-sm'>
                                                 <span className='font-medium'>
                                                     {t('webSpaces.analytics.bandwidthQuota')}
@@ -398,7 +398,7 @@ export default function WebSpaceAnalyticsPage() {
                                         </div>
                                     ) : null}
 
-                                    <div className='border-border/50 bg-card/50 rounded-xl border p-5 backdrop-blur-xl'>
+                                    <div className='fp-surface rounded-xl border p-5'>
                                         <h3 className='mb-4 text-sm font-medium'>
                                             {t('webSpaces.analytics.httpByDay')}
                                         </h3>
@@ -406,7 +406,7 @@ export default function WebSpaceAnalyticsPage() {
                                     </div>
 
                                     <div className='grid gap-4 lg:grid-cols-2'>
-                                        <div className='border-border/50 bg-card/50 rounded-xl border p-5 backdrop-blur-xl'>
+                                        <div className='fp-surface rounded-xl border p-5'>
                                             <h3 className='mb-4 text-sm font-medium'>
                                                 {t('webSpaces.analytics.statusGroups')}
                                             </h3>
@@ -435,7 +435,7 @@ export default function WebSpaceAnalyticsPage() {
                                             </ul>
                                         </div>
 
-                                        <div className='border-border/50 bg-card/50 rounded-xl border p-5 backdrop-blur-xl'>
+                                        <div className='fp-surface rounded-xl border p-5'>
                                             <h3 className='mb-4 text-sm font-medium'>
                                                 {t('webSpaces.analytics.statusCodes')}
                                             </h3>
@@ -467,7 +467,7 @@ export default function WebSpaceAnalyticsPage() {
                                     </div>
 
                                     {domainRows.length > 1 ? (
-                                        <div className='border-border/50 bg-card/50 rounded-xl border p-5 backdrop-blur-xl'>
+                                        <div className='fp-surface rounded-xl border p-5'>
                                             <h3 className='mb-4 text-sm font-medium'>
                                                 {t('webSpaces.analytics.byDomain')}
                                             </h3>
@@ -523,7 +523,7 @@ export default function WebSpaceAnalyticsPage() {
                                         value={(summary?.total ?? 0).toLocaleString()}
                                         hint={t('webSpaces.analytics.periodHint', { days: String(dayCount) })}
                                     />
-                                    <div className='border-border/50 bg-card/50 rounded-xl border p-5 backdrop-blur-xl lg:col-span-2'>
+                                    <div className='fp-surface rounded-xl border p-5 lg:col-span-2'>
                                         <div className='mb-4 flex items-center gap-2'>
                                             <TrendingUp className='text-muted-foreground h-4 w-4' />
                                             <h3 className='text-sm font-medium'>{t('webSpaces.analytics.byDay')}</h3>
@@ -535,7 +535,7 @@ export default function WebSpaceAnalyticsPage() {
                                             barClassName='bg-violet-500/80 group-hover:bg-violet-500'
                                         />
                                     </div>
-                                    <div className='border-border/50 bg-card/50 rounded-xl border p-5 backdrop-blur-xl lg:col-span-3'>
+                                    <div className='fp-surface rounded-xl border p-5 lg:col-span-3'>
                                         <h3 className='mb-4 text-sm font-medium'>
                                             {t('webSpaces.analytics.topEvents')}
                                         </h3>

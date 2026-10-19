@@ -203,7 +203,7 @@ export function ShareFileDialog({ open, onOpenChange, uuid, filePath, fileName }
                             <Select
                                 value={String(ttlDays)}
                                 onChange={(e) => setTtlDays(Number(e.target.value) === 5 ? 5 : 1)}
-                                className='focus:border-primary/50 border-white/10 bg-white/5'
+                                className='focus:border-primary/50 border-border/60 bg-muted/40'
                                 disabled={loading}
                             >
                                 <option value='1'>{t('files.dialogs.share.ttl_1')}</option>
@@ -219,7 +219,7 @@ export function ShareFileDialog({ open, onOpenChange, uuid, filePath, fileName }
                                 placeholder={t('files.dialogs.share.password_placeholder')}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className='focus:border-primary/50 border-white/10 bg-white/5'
+                                className='focus:border-primary/50 border-border/60 bg-muted/40'
                                 disabled={loading}
                             />
                         </div>
@@ -231,7 +231,7 @@ export function ShareFileDialog({ open, onOpenChange, uuid, filePath, fileName }
                                 placeholder={t('files.dialogs.share.delete_key_placeholder')}
                                 value={deleteKey}
                                 onChange={(e) => setDeleteKey(e.target.value)}
-                                className='focus:border-primary/50 border-white/10 bg-white/5'
+                                className='focus:border-primary/50 border-border/60 bg-muted/40'
                                 disabled={loading}
                             />
                         </div>
@@ -247,7 +247,7 @@ export function ShareFileDialog({ open, onOpenChange, uuid, filePath, fileName }
                                 <Input
                                     readOnly
                                     value={result.url}
-                                    className='focus:border-primary/50 border-white/10 bg-white/5'
+                                    className='focus:border-primary/50 border-border/60 bg-muted/40'
                                 />
                                 <Button
                                     type='button'
@@ -268,7 +268,7 @@ export function ShareFileDialog({ open, onOpenChange, uuid, filePath, fileName }
                                 <Input
                                     readOnly
                                     value={result.delete_key}
-                                    className='focus:border-primary/50 border-white/10 bg-white/5'
+                                    className='focus:border-primary/50 border-border/60 bg-muted/40'
                                 />
                                 <Button
                                     type='button'

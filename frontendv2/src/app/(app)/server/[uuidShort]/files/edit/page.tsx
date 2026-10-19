@@ -350,11 +350,11 @@ export default function FileEditorPage({
         return (
             <div className='relative flex min-h-screen flex-col gap-6 overflow-hidden pb-20'>
                 <div className='animate-pulse'>
-                    <div className='mb-2 h-8 w-48 rounded-lg bg-white/5' />
-                    <div className='h-4 w-96 rounded-lg bg-white/5' />
+                    <div className='bg-muted/40 mb-2 h-8 w-48 rounded-lg' />
+                    <div className='bg-muted/40 h-4 w-96 rounded-lg' />
                 </div>
 
-                <div className='border-border/50 bg-card/50 relative flex min-h-[600px] flex-1 items-center justify-center overflow-hidden rounded-4xl border p-1 backdrop-blur-3xl'>
+                <div className='fp-surface relative flex min-h-[600px] flex-1 items-center justify-center overflow-hidden rounded-xl border p-1'>
                     <div className='from-primary/5 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-30' />
                     <div className='relative z-10 flex flex-col items-center gap-6'>
                         <div className='relative'>
@@ -452,7 +452,7 @@ export default function FileEditorPage({
                     onSwitchToRaw={handleSwitchToRawEditor}
                 />
             ) : (
-                <div className='border-border/50 bg-card/50 group hover:border-border/80 relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-4xl border p-1 backdrop-blur-3xl transition-all'>
+                <div className='fp-surface group hover:border-border/80 relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border p-1 transition-all'>
                     <div className='border-border/10 bg-muted/30 flex shrink-0 items-center justify-between border-b p-3'>
                         <div className='flex items-center gap-3'>
                             <div className='bg-primary/10 text-primary border-primary/20 flex h-9 w-9 items-center justify-center rounded-xl border'>

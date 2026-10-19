@@ -93,7 +93,7 @@ export function PullFileDialog({ open, onOpenChange, uuid, root, onSuccess }: Pu
                             placeholder={t('files.dialogs.pull.url_placeholder')}
                             value={url}
                             onChange={(e) => setUrl(e.target.value)}
-                            className='focus:border-primary/50 border-white/10 bg-white/5'
+                            className='focus:border-primary/50 border-border/60 bg-muted/40'
                         />
                     </div>
                     <div className='space-y-2'>
@@ -104,7 +104,7 @@ export function PullFileDialog({ open, onOpenChange, uuid, root, onSuccess }: Pu
                             placeholder={t('files.dialogs.pull.name_placeholder')}
                             value={filename}
                             onChange={(e) => setFilename(e.target.value)}
-                            className='focus:border-primary/50 border-white/10 bg-white/5'
+                            className='focus:border-primary/50 border-border/60 bg-muted/40'
                         />
                     </div>
                 </div>
