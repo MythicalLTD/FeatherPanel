@@ -483,6 +483,12 @@ interface ConfigInterface
     public const MODULE_VDS_ENABLED = 'module_vds_enabled';
 
     /**
+     * First-install setup wizard. 'true' once an admin finished or the install was upgraded.
+     * Missing means a fresh install that still needs the wizard.
+     */
+    public const SETUP_COMPLETED = 'setup_completed';
+
+    /**
      * Pterodactyl importer visibility: auto (listed while the panel still meets the import
      * requirements), always, or hidden (dismissed by an admin).
      */

@@ -15,6 +15,21 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import type { NavigationItem } from '@/types/navigation';
 
+/** Pages that are not in the sidebar but belong to a sidebar entry, so the top bar shows that entry's title. */
+const ROUTE_ALIASES: readonly [string, string][] = [
+    ['/admin/feathercloud/products', '/admin/feathercloud/marketplace'],
+    ['/admin/feathercloud/plugins', '/admin/feathercloud/marketplace'],
+    ['/admin/feathercloud/spells', '/admin/feathercloud/marketplace'],
+    ['/admin/feathercloud/translations', '/admin/feathercloud/marketplace'],
+];
+
+function applyAlias(pathname: string): string {
+    for (const [from, to] of ROUTE_ALIASES) {
+        if (pathname === from || pathname.startsWith(from + '/')) return to;
+    }
+    return pathname;
+}
+
 /**
  * Returns the title of the navigation item whose URL is the longest prefix of `pathname`
  * (children included), or null when nothing matches. `ignoreUrls` skips section roots whose
@@ -25,6 +40,7 @@ export function resolveNavigationTitle(
     items: NavigationItem[],
     ignoreUrls: readonly string[] = [],
 ): string | null {
+    pathname = applyAlias(pathname);
     let best: { len: number; title: string } | null = null;
     const visit = (list: NavigationItem[]) => {
         for (const item of list) {

@@ -16591,5 +16591,141 @@
 	},
 	"uiSync": {
 		"applied": "Your interface settings from another device were applied."
+	},
+	"setup_wizard": {
+		"title": "Panel setup",
+		"progress": "Step {current} of {total}",
+		"loading": "Loading your settings...",
+		"rerun": "Run setup wizard",
+		"banner": {
+			"title": "Finish setting up your panel",
+			"body": "A few basics are still open: app URL, mail, modules and your first node.",
+			"action": "Continue setup"
+		},
+		"errors": {
+			"load": "Could not load settings",
+			"save": "Could not save settings"
+		},
+		"actions": {
+			"back": "Back",
+			"next": "Save and continue",
+			"finish": "Finish setup",
+			"skip": "Skip",
+			"finish_later": "Finish later",
+			"go_admin": "Go to Admin Home"
+		},
+		"steps": {
+			"welcome": {
+				"title": "Welcome to FeatherPanel",
+				"description": "Confirm the address people use to reach this panel and give it a name."
+			},
+			"locale": {
+				"title": "Time and language",
+				"description": "Defaults for dates, schedules and the language new users see."
+			},
+			"mail": {
+				"title": "Mail",
+				"description": "Optional. Needed for password resets, verification and notifications."
+			},
+			"modules": {
+				"title": "Modules",
+				"description": "Turn on the parts of the panel you plan to offer. You can change this later."
+			},
+			"security": {
+				"title": "Security basics",
+				"description": "Decide who can sign up and how admins sign in."
+			},
+			"infrastructure": {
+				"title": "Location and node",
+				"description": "Add where your servers live, then connect your first node."
+			},
+			"done": {
+				"title": "You are all set",
+				"description": "Your panel is configured. Here is what to do next."
+			}
+		},
+		"welcome": {
+			"url_label": "App URL",
+			"url_help": "The public address of this panel, used in emails, links and Wings configuration.",
+			"url_invalid": "Enter a full URL starting with https:// or http://",
+			"url_check": "Check this address",
+			"url_http": "This URL uses http. Use https in production so logins and API keys are encrypted.",
+			"url_mismatch": "This differs from the address you are using right now ({origin}). Links and Wings may break if it is wrong.",
+			"url_path": "The URL should not include a path. Use only the domain, like https://panel.example.com.",
+			"use_current": "Use {origin}",
+			"name_label": "Panel name",
+			"name_required": "Enter a panel name",
+			"logo_label": "Logo URL",
+			"logo_help": "Optional. A square image works best. You can upload one later in Settings."
+		},
+		"locale": {
+			"timezone_label": "Timezone",
+			"timezone_help": "Used for schedules, logs and dates.",
+			"language_label": "Default language",
+			"language_help": "Users can still pick their own language.",
+			"use_browser": "Use my timezone ({zone})"
+		},
+		"mail": {
+			"enable_title": "Send mail over SMTP",
+			"enable_body": "Turn this on to send password resets, verification codes and notifications.",
+			"host": "SMTP host",
+			"port": "Port",
+			"encryption": "Encryption",
+			"user": "Username",
+			"password": "Password",
+			"from": "From address",
+			"send_test": "Save and send test mail",
+			"test_sent": "Test mail sent to your account email",
+			"test_failed": "Could not send the test mail",
+			"later_title": "You can set this up later",
+			"later_body": "Without mail, users cannot reset passwords by email. Configure it any time under Settings, Mail."
+		},
+		"modules": {
+			"game_title": "Game servers",
+			"game_body": "Wings nodes, game servers, spells and realms.",
+			"web_title": "Web hosting",
+			"web_body": "Web nodes, webspaces, domains and mail hosting.",
+			"vds_title": "Virtual servers",
+			"vds_body": "Proxmox nodes and VDS instances.",
+			"note": "Turning a module off hides it for everyone. Existing data is kept."
+		},
+		"security": {
+			"registration_title": "Allow registration",
+			"registration_body": "Anyone can create an account. Turn off if you add users yourself.",
+			"two_fa_title": "Require 2FA for admins",
+			"two_fa_body": "Admins must set up an authenticator app before using the admin area.",
+			"turnstile_title": "Cloudflare Turnstile",
+			"turnstile_body": "Adds a captcha to login and registration to stop bots.",
+			"site_key": "Site key",
+			"secret_key": "Secret key"
+		},
+		"infrastructure": {
+			"location_title": "First location",
+			"location_body": "Locations group nodes by region, like Frankfurt or US East.",
+			"location_done": "{count} location(s) ready",
+			"location_placeholder": "e.g. Frankfurt",
+			"location_created": "Location created",
+			"location_failed": "Could not create the location",
+			"create": "Create",
+			"node_title": "First node",
+			"node_body": "Connect a machine running Wings. The node page walks you through the install checklist.",
+			"node_done": "{count} node(s) connected",
+			"add_node": "Add a node",
+			"view_nodes": "View nodes",
+			"done": "Done",
+			"tip_title": "No machine yet?",
+			"tip_body": "Skip this step. Your progress is kept and the node checklist is always available under Nodes."
+		},
+		"done": {
+			"saved": "Setup is complete. You can rerun this wizard any time from Settings.",
+			"node_title": "Add a node",
+			"node_body": "Install Wings and connect your first machine.",
+			"marketplace_title": "Browse the marketplace",
+			"marketplace_body": "Add plugins, spells and translations.",
+			"users_title": "Invite users",
+			"users_body": "Create accounts and assign roles.",
+			"settings_title": "Fine tune settings",
+			"settings_body": "Branding, mail templates, limits and more."
+		}
 	}
 }
