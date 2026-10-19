@@ -20,14 +20,27 @@ import { cn } from '@/lib/utils';
 
 export interface FormSectionProps extends React.HTMLAttributes<HTMLDivElement> {
     children: React.ReactNode;
+    /**
+     * 'inset' for a section that sits inside another card (PageCard...): a flat panel instead of a
+     * second glass layer, so nested sections do not stack shadows and darken.
+     */
+    variant?: 'surface' | 'inset';
 }
 
 /**
  * Shared wizard/form shell: same glass surface, radius and edge as PageCard.
  */
-export function FormSection({ children, className, ...props }: FormSectionProps) {
+export function FormSection({ children, className, variant = 'surface', ...props }: FormSectionProps) {
     return (
-        <div className={cn('fp-surface space-y-6 rounded-xl border p-4 sm:p-6', className)} {...props}>
+        <div
+            className={cn(
+                variant === 'inset'
+                    ? 'fp-surface-inset space-y-5 rounded-xl border p-4 sm:p-5'
+                    : 'fp-surface space-y-6 rounded-xl border p-4 sm:p-6',
+                className,
+            )}
+            {...props}
+        >
             {children}
         </div>
     );

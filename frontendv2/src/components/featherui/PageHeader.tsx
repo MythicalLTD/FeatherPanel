@@ -16,7 +16,6 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import React, { ComponentType } from 'react';
-import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
 
@@ -29,13 +28,12 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ title, description, icon: Icon, actions, className }: PageHeaderProps) {
-    // Admin pages put the header on a glass card, like the Admin Home hero.
-    const carded = usePathname()?.startsWith('/admin') ?? false;
+    // Every page header sits on the same glass card (admin, account, server, WebSpace...), so the
+    // top of a page looks the same wherever you are.
     return (
         <div
             className={cn(
-                'flex flex-wrap items-center justify-between gap-x-6 gap-y-3',
-                carded ? 'fp-surface rounded-2xl border p-4 sm:p-5' : 'pt-2',
+                'fp-surface flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-xl border p-4 sm:p-5',
                 className,
             )}
         >

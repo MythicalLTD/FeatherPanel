@@ -734,7 +734,7 @@ export default function SettingsTab() {
                 <p className='text-muted-foreground mt-1 text-sm'>{t('account.preferences.description')}</p>
             </div>
 
-            <div className='border-border/50 bg-card/50 rounded-lg border p-6 backdrop-blur-xl'>
+            <div className='fp-surface-inset rounded-xl border p-6'>
                 <div className='flex items-start gap-4'>
                     <div className='shrink-0'>
                         <div className='bg-primary/10 flex h-12 w-12 items-center justify-center rounded-lg'>
@@ -783,7 +783,7 @@ export default function SettingsTab() {
 
             <Link
                 href='/dashboard/account/login-device'
-                className='border-border/50 bg-card/50 hover:border-primary/30 flex items-start gap-4 rounded-lg border p-5 transition-colors'
+                className='fp-surface-inset hover:border-primary/30 flex items-start gap-4 rounded-xl border p-5 transition-colors'
             >
                 <div className='bg-primary/10 flex h-12 w-12 shrink-0 items-center justify-center rounded-lg'>
                     <Smartphone className='text-primary h-6 w-6' />
@@ -794,7 +794,7 @@ export default function SettingsTab() {
                 </div>
             </Link>
 
-            <div className='border-border/50 bg-card/50 rounded-lg border p-6 backdrop-blur-xl'>
+            <div className='fp-surface-inset rounded-xl border p-6'>
                 <div className='flex items-start gap-4'>
                     <div className='shrink-0'>
                         <div className='bg-primary/10 flex h-12 w-12 items-center justify-center rounded-lg'>
@@ -853,7 +853,7 @@ export default function SettingsTab() {
                 </div>
             </div>
 
-            <div className='border-border/50 bg-card/50 rounded-lg border p-6 backdrop-blur-xl'>
+            <div className='fp-surface-inset rounded-xl border p-6'>
                 <div className='flex items-start gap-4'>
                     <div className='shrink-0'>
                         <div className='bg-primary/10 flex h-12 w-12 items-center justify-center rounded-lg'>
@@ -947,7 +947,7 @@ export default function SettingsTab() {
             </div>
 
             {isEnabled(settings?.discord_oauth_enabled) && (
-                <div className='border-border/50 bg-card/50 rounded-lg border p-6 backdrop-blur-xl'>
+                <div className='fp-surface-inset rounded-xl border p-6'>
                     <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                         <div className='flex-1'>
                             <h4 className='text-foreground text-sm font-medium'>{t('account.discordAccount')}</h4>
@@ -985,7 +985,7 @@ export default function SettingsTab() {
             )}
 
             {oidcProviders.length > 0 && (
-                <div className='border-border/50 bg-card/50 rounded-lg border p-6 backdrop-blur-xl'>
+                <div className='fp-surface-inset rounded-xl border p-6'>
                     <div className='flex items-start gap-4'>
                         <div className='shrink-0'>
                             <div className='bg-primary/10 flex h-12 w-12 items-center justify-center rounded-lg'>
@@ -1055,7 +1055,7 @@ export default function SettingsTab() {
             )}
 
             {ldapProviders.length > 0 && (
-                <div className='border-border/50 bg-card/50 rounded-lg border p-6 backdrop-blur-xl'>
+                <div className='fp-surface-inset rounded-xl border p-6'>
                     <div className='flex items-start gap-4'>
                         <div className='shrink-0'>
                             <div className='bg-primary/10 flex h-12 w-12 items-center justify-center rounded-lg'>
@@ -1133,7 +1133,7 @@ export default function SettingsTab() {
                 </div>
             )}
 
-            <div className='border-border/50 bg-card/50 rounded-lg border p-6 backdrop-blur-xl'>
+            <div className='fp-surface-inset rounded-xl border p-6'>
                 <div className='flex items-start gap-4'>
                     <div className='shrink-0'>
                         <div className='bg-primary/10 flex h-12 w-12 items-center justify-center rounded-lg'>
@@ -1180,7 +1180,7 @@ export default function SettingsTab() {
             </div>
 
             {isEnabled(settings?.user_allow_account_deletion) && (
-                <div className='border-destructive/30 bg-card/50 rounded-lg border p-6 backdrop-blur-xl'>
+                <div className='border-destructive/30 bg-destructive/5 rounded-xl border p-6'>
                     <div className='flex items-start gap-4'>
                         <div className='shrink-0'>
                             <div className='bg-destructive/10 flex h-12 w-12 items-center justify-center rounded-lg'>
@@ -1240,7 +1240,7 @@ export default function SettingsTab() {
                 </div>
             )}
 
-            <div className='border-border/50 bg-card/50 rounded-lg border p-6 backdrop-blur-xl'>
+            <div className='fp-surface-inset rounded-xl border p-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='flex-1'>
                         <h4 className='text-foreground text-sm font-medium'>{t('account.sessionManagement')}</h4>

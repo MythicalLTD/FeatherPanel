@@ -160,11 +160,11 @@ function SegmentButton({
             disabled={disabled}
             onClick={onClick}
             className={cn(
-                'border-border/60 bg-muted/20 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all',
-                active && 'border-primary bg-primary/15 text-primary',
-                !active &&
-                    !disabled &&
-                    'text-muted-foreground hover:border-primary/30 hover:bg-accent/40 hover:text-foreground',
+                'flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors',
+                active
+                    ? 'border-primary/40 bg-primary/10 text-primary'
+                    : 'border-border/60 bg-background/40 text-muted-foreground',
+                !active && !disabled && 'hover:border-border hover:bg-muted/50 hover:text-foreground',
                 disabled && 'cursor-not-allowed opacity-50',
                 className,
             )}
@@ -272,7 +272,7 @@ function MotionOptionCard({
                 'flex flex-col gap-2 rounded-2xl border p-5 text-left transition-all',
                 active
                     ? 'border-primary bg-primary/10'
-                    : 'border-border/50 bg-card/40 hover:border-primary/30 hover:bg-card/70',
+                    : 'border-border/60 bg-background/40 hover:border-primary/30 hover:bg-muted/50',
             )}
         >
             <div className='flex items-center justify-between gap-2'>
@@ -314,7 +314,7 @@ function LanguageOptionCard({
                 'group relative flex items-center gap-3 rounded-2xl border p-4 text-left transition-all',
                 active
                     ? 'border-primary bg-primary/10'
-                    : 'border-border/50 bg-card/40 hover:border-primary/30 hover:bg-card/70',
+                    : 'border-border/60 bg-background/40 hover:border-primary/30 hover:bg-muted/50',
                 disabled && 'cursor-not-allowed opacity-50',
             )}
         >
@@ -473,7 +473,7 @@ export default function AppearanceSettingsPanel() {
         <div className='grid gap-6 lg:grid-cols-[minmax(0,220px)_1fr]'>
             <nav
                 ref={navRef}
-                className='fp-scroll-fade-x -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:[mask-image:none] lg:px-0 lg:pb-0 lg:[-webkit-mask-image:none]'
+                className='fp-surface flex gap-1 self-start overflow-x-auto rounded-2xl border p-2 lg:sticky lg:top-24 lg:flex-col lg:overflow-visible'
             >
                 {NAV_ITEMS.map((item) => {
                     const Icon = item.icon;
@@ -487,8 +487,8 @@ export default function AppearanceSettingsPanel() {
                             className={cn(
                                 'flex shrink-0 items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-left transition-colors lg:w-full',
                                 active
-                                    ? 'border-primary/40 bg-primary/10 text-primary'
-                                    : 'border-border/40 bg-card/40 text-muted-foreground hover:bg-accent/40 hover:text-foreground',
+                                    ? 'border-primary/15 bg-primary/10 text-primary'
+                                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground border-transparent',
                             )}
                         >
                             <Icon className='h-4 w-4 shrink-0' aria-hidden />
@@ -504,7 +504,7 @@ export default function AppearanceSettingsPanel() {
                 {/* THEME */}
                 {section === 'theme' && (
                     <div className='space-y-6'>
-                        <FormSection>
+                        <FormSection variant='inset'>
                             <SegmentGroup label={t('appearance.theme.modeTitle')} columns={2}>
                                 <SegmentButton
                                     active={theme === 'dark'}
@@ -526,7 +526,7 @@ export default function AppearanceSettingsPanel() {
                         </FormSection>
 
                         {(themePacks.length > 1 || uiPacks.length > 0) && (
-                            <FormSection className='space-y-4'>
+                            <FormSection variant='inset' className='space-y-4'>
                                 {themePacks.length > 1 && (
                                     <div>
                                         <p className='text-foreground mb-1 text-sm font-semibold'>
@@ -546,7 +546,7 @@ export default function AppearanceSettingsPanel() {
                                                         'rounded-xl border px-3.5 py-3 text-left transition-colors',
                                                         themePackId === pack.id
                                                             ? 'border-primary/40 bg-primary/10'
-                                                            : 'border-border/40 bg-card/40 hover:bg-accent/40',
+                                                            : 'border-border/60 bg-background/40 hover:bg-muted/50',
                                                         isThemePackLocked && 'cursor-not-allowed opacity-50',
                                                     )}
                                                 >
@@ -581,7 +581,7 @@ export default function AppearanceSettingsPanel() {
                                                     'rounded-xl border px-3.5 py-3 text-left transition-colors',
                                                     uiPackId === 'none' || !uiPackId
                                                         ? 'border-primary/40 bg-primary/10'
-                                                        : 'border-border/40 bg-card/40 hover:bg-accent/40',
+                                                        : 'border-border/60 bg-background/40 hover:bg-muted/50',
                                                     isUiPackLocked && 'cursor-not-allowed opacity-50',
                                                 )}
                                             >
@@ -599,7 +599,7 @@ export default function AppearanceSettingsPanel() {
                                                         'rounded-xl border px-3.5 py-3 text-left transition-colors',
                                                         uiPackId === pack.id
                                                             ? 'border-primary/40 bg-primary/10'
-                                                            : 'border-border/40 bg-card/40 hover:bg-accent/40',
+                                                            : 'border-border/60 bg-background/40 hover:bg-muted/50',
                                                         isUiPackLocked && 'cursor-not-allowed opacity-50',
                                                     )}
                                                 >
@@ -620,7 +620,7 @@ export default function AppearanceSettingsPanel() {
                             </FormSection>
                         )}
 
-                        <FormSection>
+                        <FormSection variant='inset'>
                             <p className='text-foreground mb-4 text-sm font-semibold'>{t('appearance.accentColor')}</p>
                             <div className='grid grid-cols-5 gap-3 sm:grid-cols-8 lg:grid-cols-10'>
                                 {ACCENT_PRESET_IDS.map((presetId) => {
@@ -661,7 +661,7 @@ export default function AppearanceSettingsPanel() {
                             </div>
                         </FormSection>
 
-                        <FormSection className='space-y-4'>
+                        <FormSection variant='inset' className='space-y-4'>
                             <div>
                                 <p className='text-foreground text-sm font-semibold'>
                                     {t('appearance.customAccent.title')}
@@ -729,7 +729,7 @@ export default function AppearanceSettingsPanel() {
                 {section === 'background' && (
                     <div className='space-y-6'>
                         {isBackgroundDisabled ? (
-                            <FormSection className='border-amber-500/20 bg-amber-500/5'>
+                            <FormSection variant='inset' className='border-amber-500/20 bg-amber-500/5'>
                                 <p className='text-foreground text-sm font-medium'>
                                     {theme === 'light'
                                         ? t('appearance.background.notAvailableInLight')
@@ -802,7 +802,7 @@ export default function AppearanceSettingsPanel() {
                                 )}
 
                                 {backgroundTab === 'custom' && (
-                                    <FormSection className='space-y-5'>
+                                    <FormSection variant='inset' className='space-y-5'>
                                         <StaticPreviewTile
                                             active={backgroundType === 'image'}
                                             onClick={() => setBackgroundType('image')}
@@ -882,7 +882,7 @@ export default function AppearanceSettingsPanel() {
                                     </FormSection>
                                 )}
 
-                                <FormSection className='space-y-6'>
+                                <FormSection variant='inset' className='space-y-6'>
                                     <SegmentGroup label={t('appearance.background.backdropBlur')} columns={3}>
                                         {BLUR_STEPS.map((px) => (
                                             <SegmentButton
@@ -960,7 +960,7 @@ export default function AppearanceSettingsPanel() {
                                     type='button'
                                     onClick={() => setFontFamily(font.value)}
                                     className={cn(
-                                        'border-border/60 bg-card/50 hover:border-primary/40 flex flex-col rounded-2xl border p-4 text-left transition-all',
+                                        'border-border/60 bg-background/40 hover:border-primary/40 flex flex-col rounded-xl border p-4 text-left transition-colors',
                                         fontFamily === font.value && 'border-primary bg-primary/10',
                                     )}
                                 >
@@ -998,7 +998,7 @@ export default function AppearanceSettingsPanel() {
                 {/* LAYOUT */}
                 {section === 'layout' && (
                     <div>
-                        <FormSection className='space-y-6'>
+                        <FormSection variant='inset' className='space-y-6'>
                             <SegmentGroup
                                 label={t('appearance.density.title')}
                                 hint={t('appearance.density.hint')}
@@ -1061,7 +1061,7 @@ export default function AppearanceSettingsPanel() {
                 {/* SIDEBAR */}
                 {section === 'sidebar' && (
                     <div>
-                        <FormSection className='space-y-6'>
+                        <FormSection variant='inset' className='space-y-6'>
                             <SegmentGroup label={t('appearance.sidebar.positionTitle')} columns={3}>
                                 <SegmentButton
                                     active={sidebar.sidebarPosition === 'left'}
@@ -1258,13 +1258,13 @@ export default function AppearanceSettingsPanel() {
                 {section === 'language' && (
                     <div className='space-y-4'>
                         {isLocaleLocked && (
-                            <FormSection className='border-amber-500/20 bg-amber-500/5'>
+                            <FormSection variant='inset' className='border-amber-500/20 bg-amber-500/5'>
                                 <p className='text-foreground text-sm font-medium'>
                                     {t('appearance.languageLockedByAdmin')}
                                 </p>
                             </FormSection>
                         )}
-                        <FormSection>
+                        <FormSection variant='inset'>
                             <div className='mb-4 flex items-start gap-3'>
                                 <div className='bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-xl'>
                                     <Globe className='h-5 w-5' aria-hidden />
