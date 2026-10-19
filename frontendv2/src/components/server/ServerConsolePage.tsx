@@ -918,9 +918,11 @@ export default function ServerConsolePage() {
                     <WidgetRenderer widgets={getWidgets('server-console', 'after-terminal')} />
                 </div>
 
-                <div className='min-w-0 space-y-4'>
+                {/* Desktop: the stat cards share out the column height, so they end level with the console. */}
+                <div className='flex min-w-0 flex-col gap-4'>
                     {shouldConnectToWings && (
                         <ServerConsoleStats
+                            className='xl:flex-1 xl:auto-rows-fr'
                             statsReady={connectionStatus === 'connected'}
                             diskReady={diskKnown || connectionStatus === 'connected'}
                             cpuUsage={currentCpu}
