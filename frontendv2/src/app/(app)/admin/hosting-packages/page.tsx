@@ -19,6 +19,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { Loader2, Package, Plus, Trash2 } from 'lucide-react';
@@ -225,6 +226,7 @@ export default function HostingPackagesPage() {
                     </ul>
                 )}
             </PageCard>
+            <AdminPageTips page='hosting-packages' />
         </div>
     );
 }

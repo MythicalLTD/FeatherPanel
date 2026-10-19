@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -43,7 +44,6 @@ import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageCard } from '@/components/featherui/PageCard';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
@@ -468,23 +468,23 @@ export default function KnowledgeBaseCategoriesPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
-                <PageCard title={t('admin.knowledgebase.help.managing.title')} icon={Layout}>
+            <TipGrid>
+                <TipCard title={t('admin.knowledgebase.help.managing.title')} icon={Layout}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.knowledgebase.help.managing.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.knowledgebase.help.content.title')} icon={Info}>
+                </TipCard>
+                <TipCard title={t('admin.knowledgebase.help.content.title')} icon={Info}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.knowledgebase.help.content.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.knowledgebase.help.attachments.title')} icon={Shield} variant='danger'>
+                </TipCard>
+                <TipCard title={t('admin.knowledgebase.help.attachments.title')} icon={Shield} variant='danger'>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.knowledgebase.help.attachments.description')}
                     </p>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
 
             <Sheet open={createOpen} onOpenChange={setCreateOpen}>
                 <div className='flex h-full flex-col p-6'>

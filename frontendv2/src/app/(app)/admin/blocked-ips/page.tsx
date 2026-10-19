@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import axios from 'axios';
@@ -357,6 +358,7 @@ export default function BlockedIpsPage() {
             )}
 
             {bottomWidgets.length > 0 ? <WidgetRenderer widgets={bottomWidgets} /> : null}
+            <AdminPageTips page='blocked-ips' />
         </div>
     );
 }

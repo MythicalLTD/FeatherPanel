@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
@@ -598,6 +599,7 @@ export default function AdminMailHostsPage() {
                     </PageCard>
                 </>
             )}
+            <AdminPageTips page='mail-hosts' />
         </div>
     );
 }

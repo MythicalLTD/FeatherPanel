@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -487,6 +488,8 @@ export default function ConsolePage() {
                     </div>
                 </PageCard>
             </div>
+            <AdminPageTips page='dev-console' />
+
             <WidgetRenderer widgets={getWidgets('admin-dev-console', 'bottom-of-page')} />
         </>
     );

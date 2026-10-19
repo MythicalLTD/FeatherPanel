@@ -2568,7 +2568,14 @@
 			"loadClientsFailed": "Failed to load API clients",
 			"loadClientFailed": "Failed to load API client",
 			"updateClientFailed": "Failed to update API client",
-			"regenerateFailed": "Failed to regenerate API keys"
+			"regenerateFailed": "Failed to regenerate API keys",
+			"table": {
+				"status": "Status"
+			},
+			"tips": {
+				"keys_title": "How API keys work",
+				"security_title": "Keeping keys safe"
+			}
 		},
 		"calagopus": {
 			"createTitle": "Connect VS Code",
@@ -3799,7 +3806,8 @@
 			"no_nodes_search": "No nodes matching your search",
 			"filter_needs_update": "Needs update",
 			"filter_all": "All nodes",
-			"loading": "Loading nodes…"
+			"loading": "Loading nodes…",
+			"column_node": "Node"
 		},
 		"plugins": {
 			"title": "Plugins",
@@ -3819,7 +3827,8 @@
 			"current_suffix": "current",
 			"not_in_store": "not in store",
 			"status_up_to_date": "Up to date",
-			"status_no_match": "No match"
+			"status_no_match": "No match",
+			"column_plugin": "Plugin"
 		},
 		"bulk": {
 			"items_selected": "{count} items selected",
@@ -3841,6 +3850,44 @@
 			"bulk_failed": "Some updates failed to start.",
 			"cloud_not_linked": "Mythic Cloud is not linked. Connect under Cloud Connections to check plugin updates.",
 			"store_check_failed": "Failed to check Mythic store for plugin updates"
+		},
+		"column_version": "Version",
+		"column_status": "Status",
+		"hero": {
+			"available_title": "FeatherPanel {version} is available",
+			"latest_title": "FeatherPanel is up to date",
+			"channel": "Channel",
+			"php": "PHP",
+			"running": "running {version}",
+			"checked": "Last checked",
+			"latest_body": "You are running the newest release on this channel. Release notes for your version are below."
+		},
+		"changelog": {
+			"title": "Changelog"
+		},
+		"steps": {
+			"title": "How updating works",
+			"backup_title": "Back up first",
+			"backup_body": "Take a database backup and keep a copy of your .env before you start.",
+			"changelog_title": "Read the changelog",
+			"changelog_body": "Check the release notes for breaking changes, new PHP requirements or manual steps.",
+			"update_title": "Run the update",
+			"update_body": "Update now pulls the new image and restarts the panel. It is usually back within a minute.",
+			"verify_title": "Verify and follow up",
+			"verify_body": "Run pending migrations, then update plugins and Wings nodes from the lists below."
+		},
+		"status": {
+			"update_available": "Update available",
+			"up_to_date": "Up to date",
+			"unreachable": "Unreachable"
+		},
+		"tips": {
+			"backup_title": "Always keep a backup",
+			"backup_body": "Updates run migrations on your database. A recent backup lets you roll back if something goes wrong.",
+			"plugins_title": "Plugins come from the store",
+			"plugins_body": "Plugin updates are matched against the FeatherCloud store. Plugins installed by hand show as not in the store.",
+			"wings_title": "Wings updates per node",
+			"wings_body": "Nodes that cannot self update are marked Manual update. Update those on the node itself."
 		}
 	},
 	"sidebar": {
@@ -7128,6 +7175,12 @@
 					"item2": "Avoid giving 'admin' permissions to untrusted roles.",
 					"item3": "Regularly audit role assignments and permissions."
 				}
+			},
+			"table": {
+				"role": "Role",
+				"badge": "Badge",
+				"permissions": "Permissions",
+				"created": "Created"
 			}
 		},
 		"locations": {
@@ -8464,6 +8517,13 @@
 					"description": "Pick this node in the server wizard. When there is only one, it is filled in for you.",
 					"action": "Create server"
 				}
+			},
+			"table": {
+				"node": "Node",
+				"status": "Status",
+				"location": "Location",
+				"capacity": "Memory / Disk",
+				"daemon": "Daemon"
 			}
 		},
 		"mounts": {
@@ -9002,6 +9062,13 @@
 					"reconcile_success": "Runtime reconcile completed",
 					"reconcile_failed": "Failed to reconcile server runtime"
 				}
+			},
+			"table": {
+				"server": "Server",
+				"owner": "Owner",
+				"node": "Node",
+				"status": "Status",
+				"resources": "Resources"
 			}
 		},
 		"tickets": {
@@ -10659,7 +10726,12 @@
 			"clear_all_devices_confirm": "Clear every browser/device fingerprint record in the panel? This resets alt detection and registration device limits until users browse again.",
 			"clear_all_devices_success": "All device fingerprint records cleared",
 			"clear_all_devices_failed": "Failed to clear device fingerprint records",
-			"table": {},
+			"table": {
+				"user": "User",
+				"role": "Role",
+				"status": "Status",
+				"auth": "Sign-in"
+			},
 			"actions": {
 				"force_verify_email": "Force verify email"
 			},
@@ -10890,6 +10962,14 @@
 					"resend_success": "Email queued for resend",
 					"resend_failed": "Failed to resend email",
 					"no_mails": "No mails found."
+				},
+				"groups": {
+					"profile": "Profile",
+					"profile_hint": "Name and contact details shown across the panel.",
+					"access": "Access",
+					"access_hint": "Role, self-service limits and external references.",
+					"security": "Security",
+					"security_hint": "Set a new password only when the user needs one."
 				}
 			},
 			"servers": {
@@ -11792,19 +11872,34 @@
 				"queries_total": "Total Queries",
 				"questions_total": "Total Questions",
 				"bytes_received": "Bytes Received",
-				"bytes_sent": "Bytes Sent"
+				"bytes_sent": "Bytes Sent",
+				"details": "Engine details",
+				"queries_hint": "{count} queries in total",
+				"running_hint": "{count} running now",
+				"received_hint": "Sent, {size} received"
 			},
 			"migrations": {
 				"title": "Migration Output",
 				"running": "Running migrations...",
 				"success": "Migrations completed successfully",
-				"failed": "Migration failed"
+				"failed": "Migration failed",
+				"section_title": "Migrations",
+				"section_description": "Apply pending schema changes after an update or plugin install. Output appears below.",
+				"idle": "No migration run yet. Output shows here once you start one."
 			},
 			"pma": {
 				"already_installed": "phpMyAdmin is already installed",
 				"installed_success": "phpMyAdmin installed successfully",
 				"deleted_success": "phpMyAdmin deleted successfully",
-				"confirm_delete": "Are you sure you want to delete phpMyAdmin? This action cannot be undone."
+				"confirm_delete": "Are you sure you want to delete phpMyAdmin? This action cannot be undone.",
+				"title": "phpMyAdmin",
+				"status_installed": "Installed",
+				"status_not_installed": "Not installed",
+				"description": "Install phpMyAdmin once and every database in the panel gets an Open in phpMyAdmin button. Users manage tables, run queries and import dumps from the browser without extra credentials.",
+				"benefit_one_click": "One click from server and webspace databases",
+				"benefit_auto_login": "Signed in automatically with the database user",
+				"benefit_users": "Available to your users, not only admins",
+				"open": "Open phpMyAdmin"
 			},
 			"toasts": {
 				"failed_status": "Failed to fetch database status",
@@ -13911,6 +14006,186 @@
 				"empty": "No backups yet.",
 				"download": "Download",
 				"restore": "Restore"
+			}
+		},
+		"tips": {
+			"users": {
+				"t1_title": "Managing accounts",
+				"t1_body": "Open a row to edit profile details, reset a password or change the role. Use the menu on the right for quick actions.",
+				"t2_title": "Roles decide access",
+				"t2_body": "What a user can do in the admin area comes from their role. Keep administrator roles for the few people who really need them.",
+				"t3_title": "Account safety",
+				"t3_body": "Encourage two factor authentication, ban accounts instead of deleting them when you may need the history, and check the last IP when something looks off."
+			},
+			"servers": {
+				"t1_title": "Managing servers",
+				"t1_body": "Click a row to edit limits, startup and allocations. The power button and console stay in the row for quick checks.",
+				"t2_title": "Bulk actions",
+				"t2_body": "Tick several servers to start, stop, restart or reinstall them together. Selection only covers the current page.",
+				"t3_title": "Transfers",
+				"t3_body": "Moving a server to another node copies its files while it is offline. You can cancel a transfer from the row menu while it runs."
+			},
+			"roles": {
+				"t1_title": "How roles work",
+				"t1_body": "Each user has one role. A role is a named set of permissions plus the badge and colour shown next to the user.",
+				"t2_title": "Start from a copy",
+				"t2_body": "Duplicate an existing role to get the same permissions, then remove what the new role should not have.",
+				"t3_title": "Default roles",
+				"t3_body": "The built in roles cannot be deleted. Change their permissions carefully, every user on that role is affected at once."
+			},
+			"tickets": {
+				"t1_title": "Working the queue",
+				"t1_body": "Filter by status and category to see what needs attention. Click a ticket to read the thread and reply.",
+				"t2_title": "Statuses and priorities",
+				"t2_body": "Statuses, priorities and categories are yours to define. Keep the list short so users pick the right one.",
+				"t3_title": "Deleting tickets",
+				"t3_body": "Deleting removes the ticket and its replies for good. Close tickets instead when you want to keep the history."
+			},
+			"plugins": {
+				"t1_title": "Installed plugins",
+				"t1_body": "Every plugin here runs inside your panel. Open one to change its settings, hide its pages or limit it to some spells.",
+				"t2_title": "Updates",
+				"t2_body": "Check updates compares your versions with the store. Update one plugin from its row, or all of them at once from the header.",
+				"t3_title": "Only trusted code",
+				"t3_body": "Plugins have full access to the panel. Install them only from the store or from authors you trust."
+			},
+			"settings": {
+				"t1_title": "Finding a setting",
+				"t1_body": "Pick a section on the left or search by name. Changes are saved together with the bar at the bottom of the screen.",
+				"t2_title": "Where changes apply",
+				"t2_body": "Most settings apply right away. Some, such as mail or caching, are only picked up by new requests."
+			},
+			"ldap_providers": {
+				"t1_title": "Connecting a directory",
+				"t1_body": "Add the host, base DN and a bind account that can read users. Use Test connection before you enable the provider.",
+				"t2_title": "Use TLS",
+				"t2_body": "Prefer LDAPS or StartTLS so passwords never cross the network in clear text."
+			},
+			"oidc_providers": {
+				"t1_title": "Single sign on",
+				"t1_body": "Register the callback URL above in your identity provider, then add the issuer, client ID and secret here.",
+				"t2_title": "First login",
+				"t2_body": "When auto provisioning is on, users who sign in for the first time get an account with the default role."
+			},
+			"logs": {
+				"t1_title": "Reading logs",
+				"t1_body": "Pick a source, then filter by level or search. Errors are the place to start when something breaks.",
+				"t2_title": "Sharing logs",
+				"t2_body": "Upload creates a link you can send to support. Check the content first, logs can contain addresses and paths."
+			},
+			"nodes_status": {
+				"t1_title": "Live node health",
+				"t1_body": "Each card shows whether Wings answers and how its resources are used. Refresh to get a new reading.",
+				"t2_title": "A node is offline",
+				"t2_body": "Check that Wings is running on the machine, the FQDN resolves and the daemon port is reachable from the panel."
+			},
+			"rate_limits": {
+				"t1_title": "What rate limits do",
+				"t1_body": "Limits cap how many requests one client can make in a time window, which keeps bots and scripts from overloading the panel.",
+				"t2_title": "Tuning",
+				"t2_body": "Start with the defaults. Raise a limit only for routes your users hit often, such as the console or file manager."
+			},
+			"storage_sense": {
+				"t1_title": "Freeing space",
+				"t1_body": "Storage Sense finds old logs, caches and leftovers the panel no longer needs. Review each group before cleaning it.",
+				"t2_title": "Cleaning is final",
+				"t2_body": "Removed files cannot be restored. Take a backup first if you are unsure."
+			},
+			"subdomains": {
+				"t1_title": "Subdomains for servers",
+				"t1_body": "Add a domain and its DNS provider, then users can pick a subdomain for their server instead of an IP and port.",
+				"t2_title": "DNS records",
+				"t2_body": "The panel creates the records for you. Changes can take a few minutes to reach every resolver."
+			},
+			"pterodactyl_importer": {
+				"t1_title": "Moving from Pterodactyl",
+				"t1_body": "The importer copies users, nodes, nests and servers from a Pterodactyl database into FeatherPanel.",
+				"t2_title": "Before you start",
+				"t2_body": "Run it on a fresh panel and keep a backup of both databases. Server files stay on your nodes."
+			},
+			"featherzerotrust": {
+				"t1_title": "Zero Trust scanning",
+				"t1_body": "The scanner checks server files for known malware hashes and suspicious patterns.",
+				"t2_title": "Your own hashes",
+				"t2_body": "Add hashes you have seen in the wild so the scanner flags them on every node."
+			},
+			"ai_agent": {
+				"t1_title": "Assistant setup",
+				"t1_body": "Pick a provider and model, then decide which parts of the panel the assistant may read.",
+				"t2_title": "Keys and privacy",
+				"t2_body": "Provider keys stay on your server. Requests go only to the provider you configure here."
+			},
+			"dev_console": {
+				"t1_title": "Developer console",
+				"t1_body": "Run panel commands without SSH. Output appears as it streams from the server.",
+				"t2_title": "Use with care",
+				"t2_body": "Commands run with the panel user and can change data. Prefer the dedicated admin pages for routine work."
+			},
+			"dev_plugins": {
+				"t1_title": "Building plugins",
+				"t1_body": "Create a plugin skeleton, edit its manifest and export a .fpa file when it is ready to share.",
+				"t2_title": "Test locally",
+				"t2_body": "Install your plugin on a test panel before publishing so you can check migrations and settings."
+			},
+			"analytics": {
+				"t1_title": "Reading the numbers",
+				"t1_body": "KPIs cover the selected range. Pick a preset at the top to compare a week, a month or a year.",
+				"t2_title": "Detailed reports",
+				"t2_body": "Each report below drills into one area, such as users, servers or tickets, with its own charts."
+			},
+			"abuseipdb": {
+				"t1_title": "Blocking known abusers",
+				"t1_body": "With an AbuseIPDB key the panel checks visitor IPs against public abuse reports and blocks the worst ones.",
+				"t2_title": "Picking a threshold",
+				"t2_body": "A higher confidence score blocks fewer IPs but with more certainty. Start around 75 and adjust after a week."
+			},
+			"blocked_email_domains": {
+				"t1_title": "Stopping throwaway signups",
+				"t1_body": "Users cannot register with an address on a blocked domain. Existing accounts are not affected.",
+				"t2_title": "Keep it focused",
+				"t2_body": "Block disposable mail services rather than large providers, so real customers can still sign up."
+			},
+			"blocked_ips": {
+				"t1_title": "Blocking an address",
+				"t1_body": "Requests from a blocked IP are refused before they reach the panel. Add a note so others know why.",
+				"t2_title": "Do not lock yourself out",
+				"t2_body": "Check your own IP before blocking a range. Remove the entry here if you block someone by mistake."
+			},
+			"dns_hosts": {
+				"t1_title": "DNS providers",
+				"t1_body": "Connect the DNS service that hosts your domains so the panel can create records for subdomains and webspaces.",
+				"t2_title": "API tokens",
+				"t2_body": "Give the token access only to the zones the panel needs."
+			},
+			"hosting_packages": {
+				"t1_title": "Hosting packages",
+				"t1_body": "Packages bundle the limits a webspace gets: disk, databases, mail accounts and domains.",
+				"t2_title": "Changing a package",
+				"t2_body": "Edits apply to new webspaces. Existing ones keep their limits until you change them."
+			},
+			"mail_hosts": {
+				"t1_title": "Mail servers",
+				"t1_body": "Mail hosts provide mailboxes for webspaces. Add the server and its admin credentials, then assign it to web nodes.",
+				"t2_title": "Check delivery",
+				"t2_body": "After adding a host, create a test mailbox and send a message to confirm SPF and DKIM are set."
+			},
+			"mounts": {
+				"t1_title": "Shared folders",
+				"t1_body": "A mount binds a folder from the node into server containers, for example a shared mod pack.",
+				"t2_title": "Read only by default",
+				"t2_body": "Keep mounts read only unless servers really need to write to them."
+			},
+			"cloud_management": {
+				"t1_title": "FeatherCloud link",
+				"t1_body": "Linking the panel unlocks the marketplace, update checks and premium features.",
+				"t2_title": "Keys stay private",
+				"t2_body": "The cloud keys identify this panel. Regenerate them if you think they leaked."
+			},
+			"premium": {
+				"t1_title": "Branding",
+				"t1_body": "Set your own logo and decide whether the FeatherPanel credit and version appear in the sidebar.",
+				"t2_title": "Custom sidebar",
+				"t2_body": "Reorder or hide items per area and add your own links. Use reset to go back to the defaults."
 			}
 		}
 	},

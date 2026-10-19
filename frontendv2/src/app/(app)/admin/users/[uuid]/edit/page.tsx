@@ -82,6 +82,7 @@ import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 import { RoleBadge } from '@/components/RoleBadge';
 import { UnsavedChangesBar } from '@/components/featherui/UnsavedChangesBar';
+import { FormGroup } from '@/components/featherui/FormSection';
 import { useFormBaseline } from '@/hooks/useFormBaseline';
 import { Sensitive } from '@/components/common/Sensitive';
 
@@ -691,122 +692,138 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 <div className='space-y-6 lg:col-span-2'>
                     <PageCard title={t('admin.users.edit.form.title')} icon={User} className='h-full'>
                         <form onSubmit={handleSubmit} className='space-y-6' data-fp-save-shortcut>
-                            <div>
-                                <Label htmlFor='edit-username'>{t('admin.users.edit.form.username')}</Label>
-                                <Input
-                                    id='edit-username'
-                                    value={editForm.username}
-                                    onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
-                                    placeholder={t('admin.users.create.form.username_placeholder')}
-                                    required
-                                    className='mt-2'
-                                />
-                            </div>
-
-                            <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                            <FormGroup
+                                title={t('admin.users.edit.groups.profile')}
+                                description={t('admin.users.edit.groups.profile_hint')}
+                            >
                                 <div>
-                                    <Label htmlFor='edit-firstname'>{t('admin.users.edit.form.first_name')}</Label>
+                                    <Label htmlFor='edit-username'>{t('admin.users.edit.form.username')}</Label>
                                     <Input
-                                        id='edit-firstname'
-                                        value={editForm.first_name}
-                                        onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })}
-                                        placeholder={t('admin.users.create.form.first_name_placeholder')}
+                                        id='edit-username'
+                                        value={editForm.username}
+                                        onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+                                        placeholder={t('admin.users.create.form.username_placeholder')}
+                                        required
                                         className='mt-2'
                                     />
                                 </div>
+
+                                <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                                    <div>
+                                        <Label htmlFor='edit-firstname'>{t('admin.users.edit.form.first_name')}</Label>
+                                        <Input
+                                            id='edit-firstname'
+                                            value={editForm.first_name}
+                                            onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })}
+                                            placeholder={t('admin.users.create.form.first_name_placeholder')}
+                                            className='mt-2'
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor='edit-lastname'>{t('admin.users.edit.form.last_name')}</Label>
+                                        <Input
+                                            id='edit-lastname'
+                                            value={editForm.last_name}
+                                            onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })}
+                                            placeholder={t('admin.users.create.form.last_name_placeholder')}
+                                            className='mt-2'
+                                        />
+                                    </div>
+                                </div>
+
                                 <div>
-                                    <Label htmlFor='edit-lastname'>{t('admin.users.edit.form.last_name')}</Label>
+                                    <Label htmlFor='edit-email'>{t('admin.users.edit.form.email')}</Label>
                                     <Input
-                                        id='edit-lastname'
-                                        value={editForm.last_name}
-                                        onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })}
-                                        placeholder={t('admin.users.create.form.last_name_placeholder')}
+                                        id='edit-email'
+                                        type='email'
+                                        data-fp-sensitive=''
+                                        value={editForm.email}
+                                        onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                                        placeholder={t('admin.users.create.form.email_placeholder')}
+                                        required
                                         className='mt-2'
                                     />
                                 </div>
-                            </div>
+                            </FormGroup>
+                            <FormGroup
+                                title={t('admin.users.edit.groups.access')}
+                                description={t('admin.users.edit.groups.access_hint')}
+                            >
+                                <div>
+                                    <Label htmlFor='edit-role'>{t('admin.users.edit.form.role')}</Label>
+                                    <Select
+                                        id='edit-role'
+                                        value={editForm.role_id}
+                                        onChange={(e) => setEditForm({ ...editForm, role_id: e.target.value })}
+                                        required
+                                        className='mt-2 w-full'
+                                    >
+                                        <option value=''>{t('admin.users.create.form.select_role')}</option>
+                                        {availableRoles.map((role) => (
+                                            <option key={role.id} value={role.id}>
+                                                {role.display_name}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                </div>
 
-                            <div>
-                                <Label htmlFor='edit-email'>{t('admin.users.edit.form.email')}</Label>
-                                <Input
-                                    id='edit-email'
-                                    type='email'
-                                    data-fp-sensitive=''
-                                    value={editForm.email}
-                                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                                    placeholder={t('admin.users.create.form.email_placeholder')}
-                                    required
-                                    className='mt-2'
-                                />
-                            </div>
+                                <div>
+                                    <Label htmlFor='edit-webspace-limit'>
+                                        {t('ui.admin.users.edit.webSpaceLimit')}
+                                    </Label>
+                                    <Input
+                                        id='edit-webspace-limit'
+                                        type='number'
+                                        min={0}
+                                        value={editForm.webspace_limit ?? '0'}
+                                        onChange={(e) => setEditForm({ ...editForm, webspace_limit: e.target.value })}
+                                        className='mt-2'
+                                    />
+                                    <p className='text-muted-foreground mt-1 text-xs'>
+                                        0 = unlimited self-service orders
+                                    </p>
+                                </div>
 
-                            <div>
-                                <Label htmlFor='edit-role'>{t('admin.users.edit.form.role')}</Label>
-                                <Select
-                                    id='edit-role'
-                                    value={editForm.role_id}
-                                    onChange={(e) => setEditForm({ ...editForm, role_id: e.target.value })}
-                                    required
-                                    className='mt-2 w-full'
-                                >
-                                    <option value=''>{t('admin.users.create.form.select_role')}</option>
-                                    {availableRoles.map((role) => (
-                                        <option key={role.id} value={role.id}>
-                                            {role.display_name}
-                                        </option>
-                                    ))}
-                                </Select>
-                            </div>
-
-                            <div>
-                                <Label htmlFor='edit-webspace-limit'>{t('ui.admin.users.edit.webSpaceLimit')}</Label>
-                                <Input
-                                    id='edit-webspace-limit'
-                                    type='number'
-                                    min={0}
-                                    value={editForm.webspace_limit ?? '0'}
-                                    onChange={(e) => setEditForm({ ...editForm, webspace_limit: e.target.value })}
-                                    className='mt-2'
-                                />
-                                <p className='text-muted-foreground mt-1 text-xs'>0 = unlimited self-service orders</p>
-                            </div>
-
-                            <div>
-                                <Label htmlFor='edit-externalid'>{t('admin.users.edit.form.external_id')}</Label>
-                                <Input
-                                    id='edit-externalid'
-                                    type='number'
-                                    value={editForm.external_id ?? ''}
-                                    onChange={(e) =>
-                                        setEditForm({
-                                            ...editForm,
-                                            external_id: e.target.value === '' ? undefined : Number(e.target.value),
-                                        })
-                                    }
-                                    placeholder={t('admin.users.edit.form.external_id_help')}
-                                    className='mt-2'
-                                />
-                                <p className='text-muted-foreground mt-1.5 text-xs'>
-                                    {t('admin.users.edit.form.external_id_help')}
-                                </p>
-                            </div>
-
-                            <div>
-                                <Label htmlFor='edit-password'>{t('admin.users.edit.form.password')}</Label>
-                                <Input
-                                    id='edit-password'
-                                    type='password'
-                                    value={editForm.password}
-                                    onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-                                    placeholder={t('admin.users.edit.form.password_placeholder')}
-                                    className='mt-2'
-                                />
-                                <p className='text-muted-foreground mt-1.5 text-xs'>
-                                    {t('admin.users.edit.form.password_help')}
-                                </p>
-                            </div>
-
-                            <div className='border-border/50 flex justify-end border-t pt-4'>
+                                <div>
+                                    <Label htmlFor='edit-externalid'>{t('admin.users.edit.form.external_id')}</Label>
+                                    <Input
+                                        id='edit-externalid'
+                                        type='number'
+                                        value={editForm.external_id ?? ''}
+                                        onChange={(e) =>
+                                            setEditForm({
+                                                ...editForm,
+                                                external_id: e.target.value === '' ? undefined : Number(e.target.value),
+                                            })
+                                        }
+                                        placeholder={t('admin.users.edit.form.external_id_help')}
+                                        className='mt-2'
+                                    />
+                                    <p className='text-muted-foreground mt-1.5 text-xs'>
+                                        {t('admin.users.edit.form.external_id_help')}
+                                    </p>
+                                </div>
+                            </FormGroup>
+                            <FormGroup
+                                title={t('admin.users.edit.groups.security')}
+                                description={t('admin.users.edit.groups.security_hint')}
+                            >
+                                <div>
+                                    <Label htmlFor='edit-password'>{t('admin.users.edit.form.password')}</Label>
+                                    <Input
+                                        id='edit-password'
+                                        type='password'
+                                        value={editForm.password}
+                                        onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                                        placeholder={t('admin.users.edit.form.password_placeholder')}
+                                        className='mt-2'
+                                    />
+                                    <p className='text-muted-foreground mt-1.5 text-xs'>
+                                        {t('admin.users.edit.form.password_help')}
+                                    </p>
+                                </div>
+                            </FormGroup>
+                            <div className='flex justify-end border-t border-[var(--fp-surface-border)] pt-4'>
                                 <Button type='submit' disabled={submitting}>
                                     {submitting ? (
                                         <>
@@ -866,7 +883,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         {t('admin.users.badges.oidc')}
                                     </Badge>
                                 ) : (
-                                    <Badge className='border-gray-500/20 bg-gray-500/10 text-gray-600'>
+                                    <Badge className='border-[var(--fp-surface-border)] bg-gray-500/10 text-gray-600'>
                                         {t('admin.users.badges.local')}
                                     </Badge>
                                 )}
@@ -1109,7 +1126,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         <div className='overflow-x-auto'>
                             <table className='w-full text-sm'>
                                 <thead>
-                                    <tr className='border-b border-white/5 text-left'>
+                                    <tr className='border-b border-[var(--fp-surface-border)] text-left'>
                                         <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.servers.name')}
                                         </th>
@@ -1135,7 +1152,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         ownedServers.map((server) => (
                                             <tr
                                                 key={server.id}
-                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
+                                                className='border-b border-[var(--fp-surface-border)] transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4'>
                                                     <div className='font-medium'>{server.name}</div>
@@ -1189,7 +1206,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         <div className='overflow-x-auto'>
                             <table className='w-full text-sm'>
                                 <thead>
-                                    <tr className='border-b border-white/5 text-left'>
+                                    <tr className='border-b border-[var(--fp-surface-border)] text-left'>
                                         <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.activities.name')}
                                         </th>
@@ -1215,7 +1232,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         user.activities.map((activity, index) => (
                                             <tr
                                                 key={index}
-                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
+                                                className='border-b border-[var(--fp-surface-border)] transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4 font-medium'>{activity.name}</td>
                                                 <td className='text-muted-foreground p-4'>{activity.context}</td>
@@ -1255,7 +1272,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             {t('admin.users.edit.potential_alts.description')}
                         </p>
                         {altSourceIps.length > 0 && (
-                            <div className='mb-6 rounded-lg border border-white/5 bg-white/5 p-4'>
+                            <div className='mb-6 rounded-lg border border-[var(--fp-surface-border)] bg-white/5 p-4'>
                                 <p className='text-muted-foreground mb-2 text-xs font-bold tracking-wider uppercase'>
                                     {t('admin.users.edit.potential_alts.source_ips')}
                                 </p>
@@ -1269,7 +1286,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             </div>
                         )}
                         {altSourceDevices.length > 0 && (
-                            <div className='mb-6 rounded-lg border border-white/5 bg-white/5 p-4'>
+                            <div className='mb-6 rounded-lg border border-[var(--fp-surface-border)] bg-white/5 p-4'>
                                 <p className='text-muted-foreground mb-2 text-xs font-bold tracking-wider uppercase'>
                                     {t('admin.users.edit.potential_alts.source_devices')}
                                 </p>
@@ -1285,7 +1302,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         <div className='overflow-x-auto'>
                             <table className='w-full text-sm'>
                                 <thead>
-                                    <tr className='border-b border-white/5 text-left'>
+                                    <tr className='border-b border-[var(--fp-surface-border)] text-left'>
                                         <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.potential_alts.user')}
                                         </th>
@@ -1317,7 +1334,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         potentialAlts.map((alt) => (
                                             <tr
                                                 key={alt.uuid}
-                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
+                                                className='border-b border-[var(--fp-surface-border)] transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4'>
                                                     <div className='flex items-center gap-3'>
@@ -1458,7 +1475,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         <div className='overflow-x-auto'>
                             <table className='w-full text-sm'>
                                 <thead>
-                                    <tr className='border-b border-white/5 text-left'>
+                                    <tr className='border-b border-[var(--fp-surface-border)] text-left'>
                                         <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.vds.hostname', { defaultValue: 'Hostname' })}
                                         </th>
@@ -1489,7 +1506,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         ownedVms.map((vm) => (
                                             <tr
                                                 key={vm.id}
-                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
+                                                className='border-b border-[var(--fp-surface-border)] transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4'>
                                                     <div className='font-medium'>{vm.hostname || `VM #${vm.id}`}</div>
@@ -1554,7 +1571,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         <div className='overflow-x-auto'>
                             <table className='w-full text-sm'>
                                 <thead>
-                                    <tr className='border-b border-white/5 text-left'>
+                                    <tr className='border-b border-[var(--fp-surface-border)] text-left'>
                                         <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.mails.subject')}
                                         </th>
@@ -1580,7 +1597,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         user.mails.map((mail) => (
                                             <tr
                                                 key={mail.id}
-                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
+                                                className='border-b border-[var(--fp-surface-border)] transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4 font-medium'>{mail.subject}</td>
                                                 <td className='p-4'>

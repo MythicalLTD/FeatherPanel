@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -162,7 +163,7 @@ function SettingFieldRow({
         (currentSetting.type as string) === 'boolean'
     ) {
         return (
-            <div className='border-border/50 bg-card/30 hover:bg-card/50 flex flex-row items-center justify-between gap-4 rounded-2xl border p-4 transition-colors'>
+            <div className='fp-surface-inset hover:border-primary/25 flex flex-row items-center justify-between gap-4 rounded-xl border p-4 transition-colors'>
                 <div className='min-w-0 space-y-0.5 pr-2'>
                     <Label htmlFor={settingKey} className='text-base font-medium'>
                         {formattedName}
@@ -784,7 +785,7 @@ export default function SettingsPage() {
                                                                 </Button>
                                                             </div>
                                                         </div>
-                                                        <div className='rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20'>
+                                                        <div className='rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-4'>
                                                             <p className='font-mono text-xs text-amber-900 dark:text-amber-200'>
                                                                 <strong className='font-semibold'>
                                                                     {t('ui.admin.settings.troubleshooting')}
@@ -900,6 +901,8 @@ export default function SettingsPage() {
                     )}
                 </DialogContent>
             </Dialog>
+
+            <AdminPageTips page='settings' />
 
             <WidgetRenderer widgets={getWidgets('admin-settings', 'bottom-of-page')} />
 

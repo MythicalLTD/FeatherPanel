@@ -40,15 +40,15 @@ const variantStyles = {
         title: '',
     },
     danger: {
-        surface: 'border-red-500/35 bg-linear-to-b from-red-500/[0.07] to-transparent',
-        accent: 'via-red-500/70',
+        surface: '',
+        accent: 'via-red-500/40',
         iconTile: 'bg-red-500/12 ring-1 ring-inset ring-red-500/25',
         iconColor: 'text-red-600 dark:text-red-400',
         title: 'text-red-600 dark:text-red-400',
     },
     warning: {
-        surface: 'border-amber-500/35 bg-linear-to-b from-amber-500/[0.07] to-transparent',
-        accent: 'via-amber-500/70',
+        surface: '',
+        accent: 'via-amber-500/40',
         iconTile: 'bg-amber-500/12 ring-1 ring-inset ring-amber-500/25',
         iconColor: 'text-amber-600 dark:text-amber-400',
         title: 'text-amber-700 dark:text-amber-400',
@@ -87,7 +87,7 @@ export function PageCard({
                     )}
                 />
             )}
-            <div className='border-border/60 relative flex min-w-0 flex-wrap items-start justify-between gap-3 border-b pb-4'>
+            <div className='relative flex min-w-0 flex-wrap items-start justify-between gap-3 border-b border-[var(--fp-surface-border)] pb-4'>
                 <div className='flex min-w-48 flex-1 items-center gap-3'>
                     {(Icon || iconSrc) && (
                         <div

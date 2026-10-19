@@ -366,7 +366,7 @@ export default function CreateVdsNodePage() {
 
                         <PageCard title={t('admin.vdsNodes.form.proxmox')} icon={Server}>
                             <div className='space-y-6'>
-                                <div className='rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100'>
+                                <div className='rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-4 text-sm text-amber-100'>
                                     {t('ui.admin.vdsNodes.create.forVDSConsoleAccessOverVNC')}
                                     <div className='mt-2 rounded-md bg-black/30 px-3 py-2 font-mono text-xs break-all'>
                                         curl -sSL https://get.featherpanel.com/installer.sh | bash
@@ -388,7 +388,7 @@ export default function CreateVdsNodePage() {
                                     )}
                                 </div>
                                 <div className='space-y-2'>
-                                    <div className='rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-100'>
+                                    <div className='fp-surface rounded-xl border p-4 text-sm'>
                                         {t('ui.admin.vdsNodes.create.whenCreatingTheAPITokenMake')}{' '}
                                         <span className='font-semibold'>root</span> with{' '}
                                         <span className='font-semibold'>no privilege separation</span>.

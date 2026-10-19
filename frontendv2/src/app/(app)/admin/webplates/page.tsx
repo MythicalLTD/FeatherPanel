@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -23,7 +24,6 @@ import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
@@ -332,34 +332,34 @@ export default function WebPlatesPage() {
                 </div>
             )}
 
-            <PageCard title={t('admin.webPlates.help.cross_compatible.title')} icon={LayoutTemplate} variant='default'>
+            <TipCard title={t('admin.webPlates.help.cross_compatible.title')} icon={LayoutTemplate} variant='default'>
                 <p className='text-muted-foreground text-sm leading-relaxed'>
                     {t('admin.webPlates.help.cross_compatible.description')}
                 </p>
-            </PageCard>
+            </TipCard>
 
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4'>
-                <PageCard title={t('admin.webPlates.help.what_are_webplates.title')} icon={BookOpen}>
+            <TipGrid>
+                <TipCard title={t('admin.webPlates.help.what_are_webplates.title')} icon={BookOpen}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.webPlates.help.what_are_webplates.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.webPlates.help.how_to_use.title')} icon={Box}>
+                </TipCard>
+                <TipCard title={t('admin.webPlates.help.how_to_use.title')} icon={Box}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.webPlates.help.how_to_use.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.webPlates.help.under_the_hood.title')} icon={Wrench}>
+                </TipCard>
+                <TipCard title={t('admin.webPlates.help.under_the_hood.title')} icon={Wrench}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.webPlates.help.under_the_hood.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.webPlates.help.sources.title')} icon={GitBranch}>
+                </TipCard>
+                <TipCard title={t('admin.webPlates.help.sources.title')} icon={GitBranch}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.webPlates.help.sources.description')}
                     </p>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
 
             <AlertDialog
                 open={confirmDeleteId !== null}

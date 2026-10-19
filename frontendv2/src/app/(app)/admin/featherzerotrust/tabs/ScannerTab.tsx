@@ -232,7 +232,7 @@ const ScannerTab = () => {
                                     className={cn(
                                         'group relative overflow-hidden rounded-2xl border-2 p-4 text-left transition-all',
                                         scanMode === mode.id
-                                            ? 'border-primary bg-primary/5 shadow-[0_0_20px_rgba(var(--primary),0.1)]'
+                                            ? 'border-primary bg-primary/5'
                                             : 'border-border/50 hover:border-primary/30 hover:bg-muted/30',
                                     )}
                                 >
@@ -381,7 +381,7 @@ const ScannerTab = () => {
                                 style={{ width: `${Math.min((scanProgress.filesScanned / 1500) * 100, 98)}%` }}
                             />
                         </div>
-                        <div className='rounded-lg border border-white/5 bg-black/50 p-3 font-mono text-[10px] text-green-500/80'>
+                        <div className='rounded-lg border border-[var(--fp-surface-border)] bg-black/50 p-3 font-mono text-[10px] text-green-500/80'>
                             <div className='flex items-center gap-2'>
                                 <span className='opacity-50'>CUR_DIR:</span>
                                 <span className='truncate'>{scanProgress.currentDirectory}</span>
@@ -451,7 +451,7 @@ const ScannerTab = () => {
                                             return (
                                                 <div
                                                     key={i}
-                                                    className='flex items-start gap-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3'
+                                                    className='flex items-start gap-4 rounded-xl border border-red-500/25 bg-red-500/[0.06] p-3'
                                                 >
                                                     <div className='rounded-lg bg-red-500/20 p-2 text-red-500'>
                                                         <AlertTriangle className='h-4 w-4' />

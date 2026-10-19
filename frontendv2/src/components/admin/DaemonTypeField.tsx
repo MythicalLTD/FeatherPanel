@@ -80,7 +80,7 @@ export function DaemonTypeField({
                 </div>
             ) : (
                 <div className='space-y-3'>
-                    <div className='rounded-xl border border-amber-500/30 bg-amber-500/10 p-4'>
+                    <div className='rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-4'>
                         <div className='flex gap-3'>
                             <Zap className='mt-0.5 h-5 w-5 shrink-0 text-amber-500' />
                             <div className='space-y-1'>
@@ -93,7 +93,7 @@ export function DaemonTypeField({
                             </div>
                         </div>
                     </div>
-                    <div className='rounded-xl border border-red-500/40 bg-red-500/10 p-4'>
+                    <div className='rounded-xl border border-red-500/25 bg-red-500/[0.06] p-4'>
                         <div className='flex gap-3'>
                             <AlertTriangle className='mt-0.5 h-5 w-5 shrink-0 text-red-500' />
                             <div className='space-y-1'>
@@ -107,7 +107,7 @@ export function DaemonTypeField({
                         </div>
                     </div>
                     {requireConfirmation ? (
-                        <div className='rounded-xl border border-red-500/50 bg-red-500/10 p-4'>
+                        <div className='rounded-xl border border-red-500/25 bg-red-500/[0.06] p-4'>
                             <label className='flex cursor-pointer items-start gap-3'>
                                 <Checkbox
                                     checked={confirmed}

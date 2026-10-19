@@ -31,7 +31,7 @@ export function WebHostingAlphaNotice({ accepted, onAcceptedChange }: WebHosting
     const checkboxId = useId();
 
     return (
-        <div role='note' className='flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4'>
+        <div role='note' className='flex gap-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-4'>
             <AlertTriangle className='mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400' aria-hidden='true' />
             <div className='min-w-0 space-y-1'>
                 <p className='text-sm font-bold text-amber-900 dark:text-amber-200'>

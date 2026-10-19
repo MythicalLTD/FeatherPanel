@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -625,7 +626,7 @@ export default function AdminSubdomainsPage() {
                                             : t('admin.subdomains.statusInactive'),
                                         className: Number(domain.is_active)
                                             ? 'bg-green-500/10 text-green-600 border-green-500/20'
-                                            : 'bg-zinc-500/10 text-zinc-600 border-zinc-500/20',
+                                            : 'bg-zinc-500/10 text-zinc-600 border-[var(--fp-surface-border)]',
                                     },
                                     {
                                         label: `${t('admin.subdomains.mappingsColumn')}: ${domain.spells?.length || 0}`,
@@ -897,7 +898,7 @@ export default function AdminSubdomainsPage() {
 
                             <div className='bg-border/50 h-px' />
 
-                            <div className='fp-surface space-y-4 rounded-3xl border border-white/5 p-6'>
+                            <div className='fp-surface space-y-4 rounded-3xl border border-[var(--fp-surface-border)] p-6'>
                                 <div className='flex items-center justify-between'>
                                     <Label className='text-foreground/80 flex items-center gap-2 font-semibold'>
                                         <Cloud className='text-primary h-4 w-4' />
@@ -947,7 +948,7 @@ export default function AdminSubdomainsPage() {
                                     {domainForm.spells.map((mapping, idx) => (
                                         <div
                                             key={idx}
-                                            className='group/mapping rounded-3xl border border-white/5 bg-white/2 p-6 transition-all hover:border-white/10 hover:bg-white/4'
+                                            className='group/mapping rounded-3xl border border-[var(--fp-surface-border)] bg-white/2 p-6 transition-all hover:border-[var(--fp-surface-border)] hover:bg-white/4'
                                         >
                                             <div className='mb-6 flex items-start justify-between gap-4'>
                                                 <div className='flex-1'>
@@ -1035,7 +1036,7 @@ export default function AdminSubdomainsPage() {
                                         </div>
                                     ))}
                                     {domainForm.spells.length === 0 && (
-                                        <div className='rounded-3xl border border-dashed border-white/5 bg-white/1 py-12 text-center'>
+                                        <div className='rounded-3xl border border-dashed border-[var(--fp-surface-border)] bg-white/1 py-12 text-center'>
                                             <Zap className='text-muted-foreground/20 mx-auto mb-3 h-8 w-8' />
                                             <p className='text-muted-foreground/40 text-sm'>
                                                 {t('admin.subdomains.spellRequired')}
@@ -1102,6 +1103,8 @@ export default function AdminSubdomainsPage() {
                     </div>
                 </div>
             </Sheet>
+            <AdminPageTips page='subdomains' />
+
             <WidgetRenderer widgets={getWidgets('admin-subdomains', 'bottom-of-page')} />
         </div>
     );

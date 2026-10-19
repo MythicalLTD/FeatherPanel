@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -433,6 +434,8 @@ export default function PluginManagerPage() {
                         </Button>
                     }
                 />
+                <AdminPageTips page='dev-plugins' />
+
                 <WidgetRenderer widgets={getWidgets('admin-dev-plugins', 'bottom-of-page')} />
             </div>
         );
@@ -953,7 +956,7 @@ export default function PluginManagerPage() {
                                         </Label>
                                         {field.type === 'file' && (
                                             <div className='mb-2'>
-                                                <div className='mb-2 flex items-center gap-2 rounded-xl border border-yellow-300 bg-yellow-100 p-3 text-xs text-yellow-800 dark:border-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200'>
+                                                <div className='mb-2 flex items-center gap-2 rounded-xl border border-yellow-500/25 bg-yellow-500/[0.06] p-3 text-xs text-yellow-800 dark:text-yellow-200'>
                                                     <AlertCircle className='h-4 w-4 shrink-0 font-bold' />
                                                     <span>{t('admin.dev.plugins.create_action.file_warning')}</span>
                                                 </div>

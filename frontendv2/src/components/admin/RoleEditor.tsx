@@ -317,19 +317,19 @@ export function RoleEditor({
                     </div>
                     {canEditPermissions && (
                         <div className='grid w-full grid-cols-3 gap-3 sm:ml-auto sm:w-auto sm:min-w-[280px]'>
-                            <div className='bg-card/60 border-border/50 rounded-xl border px-3 py-2 text-center sm:text-left'>
+                            <div className='fp-surface rounded-xl border px-3 py-2 text-center sm:text-left'>
                                 <p className='text-muted-foreground text-[10px] font-bold tracking-wider uppercase'>
                                     {t('admin.roles.stats.assigned')}
                                 </p>
                                 <p className='text-lg font-bold'>{assignedCount}</p>
                             </div>
-                            <div className='bg-card/60 border-border/50 rounded-xl border px-3 py-2 text-center sm:text-left'>
+                            <div className='fp-surface rounded-xl border px-3 py-2 text-center sm:text-left'>
                                 <p className='text-muted-foreground text-[10px] font-bold tracking-wider uppercase'>
                                     {t('admin.roles.stats.total')}
                                 </p>
                                 <p className='text-lg font-bold'>{totalCount}</p>
                             </div>
-                            <div className='bg-card/60 border-border/50 rounded-xl border px-3 py-2 text-center sm:text-left'>
+                            <div className='fp-surface rounded-xl border px-3 py-2 text-center sm:text-left'>
                                 <p className='text-muted-foreground text-[10px] font-bold tracking-wider uppercase'>
                                     {t('admin.roles.stats.coverage')}
                                 </p>
@@ -483,7 +483,7 @@ export function RoleEditor({
                                             className={cn(
                                                 'aspect-square rounded-xl border-2 transition-all hover:scale-105',
                                                 form.color.toLowerCase() === preset.toLowerCase()
-                                                    ? 'border-foreground scale-105 shadow-md'
+                                                    ? 'scale-105 border-[var(--fp-surface-border)] shadow-md'
                                                     : 'border-transparent opacity-90 hover:opacity-100',
                                             )}
                                             style={{ backgroundColor: preset }}
@@ -617,7 +617,7 @@ export function RoleEditor({
                                         return (
                                             <div
                                                 key={category}
-                                                className='bg-card/40 border-border/60 overflow-hidden rounded-xl border'
+                                                className='fp-surface overflow-hidden rounded-xl border'
                                             >
                                                 <button
                                                     type='button'

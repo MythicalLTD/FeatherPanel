@@ -15,7 +15,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
+import { useState, useEffect, useCallback, type ComponentType } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -26,19 +27,29 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import axios from 'axios';
 import {
     Activity,
-    Database,
-    RefreshCw,
-    Play,
-    Terminal,
-    Download,
-    Trash2,
-    Wrench,
     AlertTriangle,
-    Server,
-    Network,
-    HardDrive,
+    ArrowDownUp,
+    Clock,
+    Database,
+    Download,
+    ExternalLink,
+    Gauge,
     Info,
+    KeyRound,
+    MousePointerClick,
+    Network,
+    Play,
+    RefreshCw,
+    Server,
+    TableProperties,
+    Terminal,
+    Trash2,
+    Users,
+    Wrench,
 } from 'lucide-react';
+import { StatusDot } from '@/components/featherui/DataTable';
+import { formatBytes } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface DatabaseStatus {
@@ -133,7 +144,7 @@ export default function DatabaseManagementPage() {
                 toast.error(t('admin.database_management.migrations.failed'));
             }
         } catch (error) {
-            setMigOutput(`Error: ${error}`);
+            setMigOutput(getApiErrorMessage(error, t, 'admin.database_management.migrations.failed'));
             toast.error(getApiErrorMessage(error, t, 'admin.database_management.migrations.failed'));
         } finally {
             setMigRunning(false);
@@ -199,15 +210,10 @@ export default function DatabaseManagementPage() {
         checkPhpMyAdminStatus();
     }, [fetchStatus, checkPhpMyAdminStatus]);
 
-    const StatItem = ({ label, value }: { label: string; value: string | number }) => (
-        <div className='flex items-center justify-between py-1'>
-            <span className='text-muted-foreground text-sm'>{label}</span>
-            <span className='font-mono text-sm'>{value}</span>
-        </div>
-    );
+    const uptime = status ? formatUptime(status.uptime_seconds) : '';
 
     return (
-        <div className='space-y-6 p-6'>
+        <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('admin-databases-management', 'top-of-page')} />
 
             <PageHeader
@@ -215,174 +221,246 @@ export default function DatabaseManagementPage() {
                 description={t('admin.database_management.subtitle')}
                 icon={Database}
                 actions={
-                    <div className='flex flex-wrap gap-2'>
-                        <Button
-                            variant='outline'
-                            onClick={fetchStatus}
-                            disabled={loading}
-                            className='bg-card hover:bg-card/80'
-                        >
-                            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                            {t('admin.database_management.actions.refresh')}
-                        </Button>
-                        <Button onClick={runMigrations} disabled={migRunning}>
-                            <Play className='mr-2 h-4 w-4' />
-                            {t('admin.database_management.actions.run_migrations')}
-                        </Button>
-                        {pmaInstalled ? (
-                            <Button
-                                variant='destructive'
-                                onClick={deletePhpMyAdmin}
-                                disabled={pmaDeleting || pmaStatusLoading}
-                            >
-                                <Trash2 className='mr-2 h-4 w-4' />
-                                {t('admin.database_management.actions.delete_pma')}
-                            </Button>
-                        ) : (
-                            <Button
-                                variant='outline'
-                                onClick={installPhpMyAdmin}
-                                disabled={pmaInstalling || pmaStatusLoading}
-                            >
-                                <Download className='mr-2 h-4 w-4' />
-                                {t('admin.database_management.actions.install_pma')}
-                            </Button>
-                        )}
-                    </div>
+                    <Button variant='outline' size='sm' onClick={fetchStatus} disabled={loading}>
+                        <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                        {t('admin.database_management.actions.refresh')}
+                    </Button>
                 }
             />
 
             <WidgetRenderer widgets={getWidgets('admin-databases-management', 'after-header')} />
 
-            {status && (
-                <div className='animate-fade-in-up grid gap-6 sm:grid-cols-2 lg:grid-cols-4'>
-                    <PageCard title={t('admin.database_management.stats.overview')} icon={Server}>
-                        <div className='space-y-2'>
-                            <StatItem label={t('admin.database_management.stats.engine')} value={status.engine} />
-                            <StatItem label={t('admin.database_management.stats.version')} value={status.version} />
-                            <StatItem
-                                label={t('admin.database_management.stats.uptime')}
-                                value={`${status.uptime_seconds}s`}
-                            />
-                            <StatItem label={t('admin.database_management.stats.qps')} value={status.qps.toFixed(2)} />
+            <section className='fp-surface from-primary/20 via-primary/5 relative overflow-hidden rounded-2xl border bg-linear-to-br to-transparent p-5 sm:p-6'>
+                <div className='flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between'>
+                    <div className='flex min-w-0 gap-4'>
+                        <div className='fp-icon-tile flex h-12 w-12 shrink-0 items-center justify-center rounded-xl'>
+                            <TableProperties className='h-6 w-6' />
                         </div>
-                    </PageCard>
-
-                    <PageCard title={t('admin.database_management.stats.connections')} icon={Network}>
-                        <div className='space-y-2'>
-                            <StatItem
-                                label={t('admin.database_management.stats.threads_connected')}
-                                value={status.threads_connected}
-                            />
-                            <StatItem
-                                label={t('admin.database_management.stats.threads_running')}
-                                value={status.threads_running}
-                            />
-                            <StatItem
-                                label={t('admin.database_management.stats.connections_total')}
-                                value={status.connections_total}
-                            />
-                            <StatItem
-                                label={t('admin.database_management.stats.aborted_connects')}
-                                value={status.aborted_connects}
-                            />
+                        <div className='min-w-0 space-y-2'>
+                            <div className='flex flex-wrap items-center gap-2'>
+                                <h2 className='text-lg font-semibold tracking-tight'>
+                                    {t('admin.database_management.pma.title')}
+                                </h2>
+                                {pmaStatusLoading ? null : pmaInstalled ? (
+                                    <StatusDot tone='success'>
+                                        {t('admin.database_management.pma.status_installed')}
+                                    </StatusDot>
+                                ) : (
+                                    <StatusDot tone='muted'>
+                                        {t('admin.database_management.pma.status_not_installed')}
+                                    </StatusDot>
+                                )}
+                            </div>
+                            <p className='text-muted-foreground max-w-2xl text-sm'>
+                                {t('admin.database_management.pma.description')}
+                            </p>
+                            <ul className='grid gap-2 pt-1 text-sm sm:grid-cols-3'>
+                                {[
+                                    { icon: MousePointerClick, key: 'admin.database_management.pma.benefit_one_click' },
+                                    { icon: KeyRound, key: 'admin.database_management.pma.benefit_auto_login' },
+                                    { icon: Users, key: 'admin.database_management.pma.benefit_users' },
+                                ].map((b) => (
+                                    <li key={b.key} className='flex items-start gap-2'>
+                                        <b.icon className='text-primary mt-0.5 h-4 w-4 shrink-0' />
+                                        <span>{t(b.key)}</span>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
-                    </PageCard>
-
-                    <PageCard title={t('admin.database_management.stats.queries')} icon={Database}>
-                        <div className='space-y-2'>
-                            <StatItem
-                                label={t('admin.database_management.stats.queries_total')}
-                                value={status.queries_total}
-                            />
-                            <StatItem
-                                label={t('admin.database_management.stats.questions_total')}
-                                value={status.questions_total}
-                            />
-                        </div>
-                    </PageCard>
-
-                    <PageCard title={t('admin.database_management.stats.network')} icon={HardDrive}>
-                        <div className='space-y-2'>
-                            <StatItem
-                                label={t('admin.database_management.stats.bytes_received')}
-                                value={status.bytes_received}
-                            />
-                            <StatItem
-                                label={t('admin.database_management.stats.bytes_sent')}
-                                value={status.bytes_sent}
-                            />
-                        </div>
-                    </PageCard>
+                    </div>
+                    <div className='flex shrink-0 flex-wrap items-center gap-2 lg:flex-col lg:items-stretch'>
+                        {pmaInstalled ? (
+                            <>
+                                <Button asChild>
+                                    <a href='/pma/' target='_blank' rel='noreferrer'>
+                                        <ExternalLink className='mr-2 h-4 w-4' />
+                                        {t('admin.database_management.pma.open')}
+                                    </a>
+                                </Button>
+                                <Button
+                                    variant='destructive'
+                                    size='sm'
+                                    onClick={deletePhpMyAdmin}
+                                    loading={pmaDeleting}
+                                    disabled={pmaStatusLoading}
+                                >
+                                    <Trash2 className='mr-2 h-4 w-4' />
+                                    {t('admin.database_management.actions.delete_pma')}
+                                </Button>
+                            </>
+                        ) : (
+                            <Button
+                                size='lg'
+                                onClick={installPhpMyAdmin}
+                                loading={pmaInstalling}
+                                disabled={pmaStatusLoading}
+                            >
+                                {!pmaInstalling ? <Download className='mr-2 h-4 w-4' /> : null}
+                                {t('admin.database_management.actions.install_pma')}
+                            </Button>
+                        )}
+                    </div>
                 </div>
-            )}
+            </section>
 
-            {loading && !status && (
-                <div className='text-muted-foreground flex h-64 items-center justify-center rounded-xl border border-dashed'>
-                    <RefreshCw className='mr-2 h-5 w-5 animate-spin' />
-                    {t('admin.database_management.actions.loading_status')}
+            {loading && !status ? (
+                <div className='grid grid-cols-2 gap-3 xl:grid-cols-4' aria-busy='true'>
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className='fp-surface h-24 animate-pulse rounded-xl border' />
+                    ))}
                 </div>
-            )}
+            ) : null}
 
-            <div className='space-y-4'>
-                <div className='flex items-center justify-between'>
-                    <h2 className='flex items-center gap-2 text-lg font-semibold'>
-                        <Terminal className='h-5 w-5' />
-                        {t('admin.database_management.migrations.title')}
-                    </h2>
-                    {migOutput && (
-                        <Button
-                            variant='ghost'
-                            size='sm'
-                            onClick={() => setMigOutput('')}
-                            className='text-muted-foreground hover:text-foreground text-xs'
-                        >
-                            {t('admin.database_management.actions.clear_output')}
+            {status ? (
+                <>
+                    <div className='grid grid-cols-2 gap-3 xl:grid-cols-4'>
+                        <MetricTile
+                            icon={Clock}
+                            label={t('admin.database_management.stats.uptime')}
+                            value={uptime}
+                            hint={`${status.engine} ${status.version}`}
+                        />
+                        <MetricTile
+                            icon={Gauge}
+                            label={t('admin.database_management.stats.qps')}
+                            value={status.qps.toFixed(2)}
+                            hint={t('admin.database_management.stats.queries_hint', {
+                                count: status.queries_total.toLocaleString(),
+                            })}
+                        />
+                        <MetricTile
+                            icon={Network}
+                            label={t('admin.database_management.stats.connections')}
+                            value={String(status.threads_connected)}
+                            hint={t('admin.database_management.stats.running_hint', {
+                                count: String(status.threads_running),
+                            })}
+                        />
+                        <MetricTile
+                            icon={ArrowDownUp}
+                            label={t('admin.database_management.stats.network')}
+                            value={formatBytes(status.bytes_sent)}
+                            hint={t('admin.database_management.stats.received_hint', {
+                                size: formatBytes(status.bytes_received),
+                            })}
+                        />
+                    </div>
+
+                    <PageCard title={t('admin.database_management.stats.details')} icon={Server}>
+                        <dl className='grid gap-x-8 sm:grid-cols-2 xl:grid-cols-3'>
+                            {[
+                                [t('admin.database_management.stats.engine'), status.engine],
+                                [t('admin.database_management.stats.version'), status.version],
+                                [t('admin.database_management.stats.uptime'), uptime],
+                                [t('admin.database_management.stats.threads_connected'), status.threads_connected],
+                                [t('admin.database_management.stats.threads_running'), status.threads_running],
+                                [t('admin.database_management.stats.connections_total'), status.connections_total],
+                                [t('admin.database_management.stats.aborted_connects'), status.aborted_connects],
+                                [t('admin.database_management.stats.queries_total'), status.queries_total],
+                                [t('admin.database_management.stats.questions_total'), status.questions_total],
+                                [
+                                    t('admin.database_management.stats.bytes_received'),
+                                    formatBytes(status.bytes_received),
+                                ],
+                                [t('admin.database_management.stats.bytes_sent'), formatBytes(status.bytes_sent)],
+                            ].map(([label, value]) => (
+                                <div
+                                    key={String(label)}
+                                    className='flex items-center justify-between gap-4 border-b border-[var(--fp-surface-border)] py-2.5 text-sm'
+                                >
+                                    <dt className='text-muted-foreground'>{label}</dt>
+                                    <dd className='font-mono text-xs'>
+                                        {typeof value === 'number' ? value.toLocaleString() : value}
+                                    </dd>
+                                </div>
+                            ))}
+                        </dl>
+                    </PageCard>
+                </>
+            ) : null}
+
+            <PageCard
+                title={t('admin.database_management.migrations.section_title')}
+                description={t('admin.database_management.migrations.section_description')}
+                icon={Terminal}
+                action={
+                    <div className='flex items-center gap-2'>
+                        {migOutput ? (
+                            <Button variant='ghost' size='sm' onClick={() => setMigOutput('')}>
+                                {t('admin.database_management.actions.clear_output')}
+                            </Button>
+                        ) : null}
+                        <Button size='sm' onClick={runMigrations} loading={migRunning}>
+                            {!migRunning ? <Play className='mr-2 h-4 w-4' /> : null}
+                            {t('admin.database_management.actions.run_migrations')}
                         </Button>
+                    </div>
+                }
+            >
+                <pre
+                    className={cn(
+                        'fp-surface-inset max-h-96 min-h-32 overflow-auto rounded-lg border p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap',
+                        migOutput ? 'text-foreground/90' : 'text-muted-foreground',
                     )}
-                </div>
-                <div
-                    className={`min-h-35.7 max-h-100 overflow-auto rounded-xl border bg-black p-4 font-mono text-xs whitespace-pre-wrap text-green-400 shadow-inner transition-all ${migOutput ? 'opacity-100' : 'opacity-50'}`}
                 >
-                    {migOutput || (
-                        <span className='text-muted-foreground/50 select-none'>
-                            {'//'} {t('admin.database_management.migrations.running')}
-                        </span>
-                    )}
-                </div>
-            </div>
+                    {migRunning
+                        ? t('admin.database_management.migrations.running')
+                        : migOutput || t('admin.database_management.migrations.idle')}
+                </pre>
+            </PageCard>
 
-            <div className='grid gap-6 md:grid-cols-3'>
-                <PageCard title={t('admin.database_management.help.what_is.title')} icon={Info} className='h-full'>
-                    <p className='text-muted-foreground text-sm'>
-                        {t('admin.database_management.help.what_is.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.database_management.help.metrics.title')} icon={Activity} className='h-full'>
-                    <p className='text-muted-foreground text-sm'>
-                        {t('admin.database_management.help.metrics.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.database_management.help.migrations.title')} icon={Wrench} className='h-full'>
-                    <p className='text-muted-foreground text-sm'>
-                        {t('admin.database_management.help.migrations.description')}
-                    </p>
-                </PageCard>
-            </div>
-
-            <div className='flex gap-4 rounded-lg border border-amber-500/20 bg-amber-500/10 p-4'>
-                <AlertTriangle className='h-5 w-5 shrink-0 text-amber-500' />
-                <div className='space-y-1'>
-                    <h3 className='text-sm font-semibold text-amber-500'>
-                        {t('admin.database_management.help.safety.title')}
-                    </h3>
-                    <p className='text-sm text-amber-500/80'>
-                        {t('admin.database_management.help.safety.description')}
-                    </p>
-                </div>
-            </div>
+            <TipGrid className='xl:grid-cols-4'>
+                <TipCard title={t('admin.database_management.help.what_is.title')} icon={Info}>
+                    <p>{t('admin.database_management.help.what_is.description')}</p>
+                </TipCard>
+                <TipCard title={t('admin.database_management.help.metrics.title')} icon={Activity}>
+                    <p>{t('admin.database_management.help.metrics.description')}</p>
+                </TipCard>
+                <TipCard title={t('admin.database_management.help.migrations.title')} icon={Wrench}>
+                    <p>{t('admin.database_management.help.migrations.description')}</p>
+                </TipCard>
+                <TipCard
+                    title={t('admin.database_management.help.safety.title')}
+                    icon={AlertTriangle}
+                    variant='warning'
+                >
+                    <p>{t('admin.database_management.help.safety.description')}</p>
+                </TipCard>
+            </TipGrid>
 
             <WidgetRenderer widgets={getWidgets('admin-databases-management', 'bottom-of-page')} />
+        </div>
+    );
+}
+
+function formatUptime(seconds: number): string {
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    if (d > 0) return `${d}d ${h}h`;
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+}
+
+function MetricTile({
+    icon: Icon,
+    label,
+    value,
+    hint,
+}: {
+    icon: ComponentType<{ className?: string }>;
+    label: string;
+    value: string;
+    hint?: string;
+}) {
+    return (
+        <div className='fp-surface min-w-0 rounded-xl border p-4'>
+            <div className='text-muted-foreground flex items-center gap-2 text-xs font-medium'>
+                <Icon className='text-primary h-4 w-4' />
+                {label}
+            </div>
+            <div className='mt-2 truncate text-2xl font-semibold tracking-tight'>{value}</div>
+            {hint ? <div className='text-muted-foreground mt-0.5 truncate text-xs'>{hint}</div> : null}
         </div>
     );
 }

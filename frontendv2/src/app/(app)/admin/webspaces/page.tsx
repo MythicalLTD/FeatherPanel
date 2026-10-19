@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -27,7 +28,6 @@ import { Input } from '@/components/featherui/Input';
 import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
-import { PageCard } from '@/components/featherui/PageCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -635,25 +635,25 @@ export default function WebSpacesPage() {
                 </>
             )}
 
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-                <PageCard title={t('admin.webSpaces.help.managing.title')} icon={AppWindow}>
+            <TipGrid>
+                <TipCard title={t('admin.webSpaces.help.managing.title')} icon={AppWindow}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.webSpaces.help.managing.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.webSpaces.help.resources.title')} icon={Layers}>
+                </TipCard>
+                <TipCard title={t('admin.webSpaces.help.resources.title')} icon={Layers}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.webSpaces.help.resources.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.webSpaces.help.tips.title')} icon={HelpCircle} className='md:col-span-2'>
+                </TipCard>
+                <TipCard title={t('admin.webSpaces.help.tips.title')} icon={HelpCircle} className='md:col-span-2'>
                     <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm leading-relaxed'>
                         <li>{t('admin.webSpaces.help.tips.item1')}</li>
                         <li>{t('admin.webSpaces.help.tips.item2')}</li>
                         <li>{t('admin.webSpaces.help.tips.item3')}</li>
                     </ul>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
 
             <AlertDialog open={confirmDeleteUuid !== null} onOpenChange={() => setConfirmDeleteUuid(null)}>
                 <AlertDialogContent>

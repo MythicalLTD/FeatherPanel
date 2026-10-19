@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -23,8 +24,7 @@ import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
@@ -512,7 +512,7 @@ export default function LocationsPage() {
                     onClearFilters={resetFilters}
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <ResourceTable>
                     {locations.map((location) => (
                         <ResourceCard
                             key={location.id}
@@ -589,7 +589,7 @@ export default function LocationsPage() {
                             }
                         />
                     ))}
-                </div>
+                </ResourceTable>
             )}
 
             {pagination.totalPages > 1 && (
@@ -616,13 +616,13 @@ export default function LocationsPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
-                <PageCard title={t('admin.locations.help.what.title')} icon={MapPin}>
+            <TipGrid>
+                <TipCard title={t('admin.locations.help.what.title')} icon={MapPin}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.locations.help.what.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.locations.help.examples.title')} icon={Flag}>
+                </TipCard>
+                <TipCard title={t('admin.locations.help.examples.title')} icon={Flag}>
                     <div className='text-muted-foreground space-y-2 text-sm leading-relaxed'>
                         <ul className='list-inside list-disc space-y-1'>
                             <li>
@@ -636,8 +636,8 @@ export default function LocationsPage() {
                         </ul>
                         <p>{t('admin.locations.help.examples.naming')}</p>
                     </div>
-                </PageCard>
-                <PageCard title={t('admin.locations.help.getting_started.title')} icon={Rocket}>
+                </TipCard>
+                <TipCard title={t('admin.locations.help.getting_started.title')} icon={Rocket}>
                     <div className='text-muted-foreground text-sm leading-relaxed'>
                         <ol className='list-inside list-decimal space-y-1'>
                             <li>{t('admin.locations.help.getting_started.step1')}</li>
@@ -645,8 +645,8 @@ export default function LocationsPage() {
                             <li>{t('admin.locations.help.getting_started.step3')}</li>
                         </ol>
                     </div>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
 
             {/* Edit Sheet */}
             <Sheet open={editOpen} onOpenChange={guardClose(setEditOpen)}>

@@ -15,8 +15,23 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowUpCircle, CheckCircle2, Download, Loader2, Package, RefreshCw, Search, Server } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState, type ComponentType } from 'react';
+import {
+    ArrowRight,
+    ArrowUpCircle,
+    DatabaseBackup,
+    Download,
+    FileText,
+    ListChecks,
+    Loader2,
+    Package,
+    RefreshCw,
+    Search,
+    Server,
+    ShieldCheck,
+} from 'lucide-react';
+import { DataTable, StatusDot, TableIdentity, type DataTableColumn } from '@/components/featherui/DataTable';
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -419,6 +434,114 @@ export default function AdminUpdatesPage() {
     };
 
     const selectionCount = selectedNodes.size + selectedPlugins.size;
+    const panelUpdate = Boolean(panelVersion?.update_available);
+    const currentVersion = panelVersion?.current?.version || '-';
+    const latestVersion = panelVersion?.latest?.version || panelVersion?.current?.version || '-';
+    const channel = panelVersion?.current?.type || panelVersion?.project?.default_type || 'Stable';
+    const phpLabel = (
+        panelVersion?.current?.php_version ||
+        [panelVersion?.project?.min_supported_php, panelVersion?.project?.max_supported_php]
+            .filter(Boolean)
+            .join(' to ') ||
+        '-'
+    ).replace(/\s*[\u2013\u2014]\s*/g, ' to ');
+
+    const pluginColumns: DataTableColumn<PluginRow>[] = [
+        {
+            key: 'select',
+            header: '',
+            className: 'w-10',
+            cell: (plugin) => (
+                <PluginCheckbox
+                    plugin={plugin}
+                    update={pluginUpdates[plugin.identifier]}
+                    checked={selectedPlugins.has(plugin.identifier)}
+                    disabled={isBulkUpdating || updatingPluginId !== null}
+                    onChange={(value) =>
+                        setSelectedPlugins((prev) => {
+                            const next = new Set(prev);
+                            if (value) next.add(plugin.identifier);
+                            else next.delete(plugin.identifier);
+                            return next;
+                        })
+                    }
+                />
+            ),
+        },
+        {
+            key: 'plugin',
+            header: t('admin_updates.plugins.column_plugin'),
+            cell: (plugin) => (
+                <TableIdentity
+                    title={plugin.name || plugin.identifier}
+                    subtitle={plugin.identifier}
+                    avatarUrl={plugin.icon}
+                    icon={Package}
+                />
+            ),
+        },
+        {
+            key: 'version',
+            header: t('admin_updates.column_version'),
+            cell: (plugin) => <VersionPair from={plugin.version} to={pluginUpdates[plugin.identifier]} />,
+        },
+        {
+            key: 'status',
+            header: t('admin_updates.column_status'),
+            cell: (plugin) => <PluginStatus update={pluginUpdates[plugin.identifier]} t={t} />,
+        },
+    ];
+
+    const nodeColumns: DataTableColumn<NodeRow>[] = [
+        {
+            key: 'select',
+            header: '',
+            className: 'w-10',
+            cell: (node) => {
+                const version = nodeVersions[node.id];
+                return (
+                    <Checkbox
+                        checked={selectedNodes.has(node.id)}
+                        disabled={
+                            !version?.update_available || version?.self_update_supported === false || isBulkUpdating
+                        }
+                        onCheckedChange={(value) =>
+                            setSelectedNodes((prev) => {
+                                const next = new Set(prev);
+                                if (value) next.add(node.id);
+                                else next.delete(node.id);
+                                return next;
+                            })
+                        }
+                    />
+                );
+            },
+        },
+        {
+            key: 'node',
+            header: t('admin_updates.wings.column_node'),
+            cell: (node) => (
+                <TableIdentity title={node.name} subtitle={<Sensitive>{node.fqdn}</Sensitive>} icon={Server} />
+            ),
+        },
+        {
+            key: 'version',
+            header: t('admin_updates.column_version'),
+            cell: (node) => <NodeVersion info={nodeVersions[node.id]} t={t} />,
+        },
+        {
+            key: 'status',
+            header: t('admin_updates.column_status'),
+            cell: (node) => <NodeStatus info={nodeVersions[node.id]} t={t} />,
+        },
+    ];
+
+    const steps = [
+        { icon: DatabaseBackup, key: 'backup' },
+        { icon: FileText, key: 'changelog' },
+        { icon: Download, key: 'update' },
+        { icon: ListChecks, key: 'verify' },
+    ] as const;
 
     return (
         <div className='space-y-6'>
@@ -438,25 +561,122 @@ export default function AdminUpdatesPage() {
                 }
             />
 
-            <div className='grid gap-3 sm:grid-cols-3'>
-                <div className='bg-card/60 rounded-2xl px-4 py-3'>
-                    <p className='text-muted-foreground text-xs'>{t('admin_updates.overview.panel')}</p>
-                    <p className='mt-1 text-sm font-medium'>
-                        {panelVersion?.update_available
-                            ? t('admin_updates.overview.update_to', {
-                                  version: panelVersion?.latest?.version || '-',
-                              })
-                            : panelVersion?.current?.version
-                              ? t('admin_updates.overview.up_to_date_version', {
-                                    version: panelVersion.current.version,
-                                })
-                              : t('admin_updates.overview.checking')}
-                    </p>
+            <section
+                className={cn(
+                    'fp-surface relative overflow-hidden rounded-2xl border bg-linear-to-br to-transparent p-5 sm:p-6',
+                    panelUpdate ? 'from-primary/20 via-primary/5' : 'from-emerald-500/10 via-transparent',
+                )}
+            >
+                <div className='flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between'>
+                    <div className='flex min-w-0 gap-4'>
+                        <div
+                            className={cn(
+                                'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl',
+                                panelUpdate ? 'fp-icon-tile' : 'bg-emerald-500/10 text-emerald-500',
+                            )}
+                        >
+                            {panelUpdate ? <ArrowUpCircle className='h-6 w-6' /> : <ShieldCheck className='h-6 w-6' />}
+                        </div>
+                        <div className='min-w-0 space-y-3'>
+                            <div>
+                                <h2 className='text-lg font-semibold tracking-tight'>
+                                    {!panelVersion
+                                        ? t('admin_updates.overview.checking')
+                                        : panelUpdate
+                                          ? t('admin_updates.hero.available_title', { version: latestVersion })
+                                          : t('admin_updates.hero.latest_title')}
+                                </h2>
+                                <p className='text-muted-foreground text-sm'>
+                                    {panelUpdate
+                                        ? t('admin_updates.panel.update_available')
+                                        : t('admin_updates.hero.latest_body')}
+                                </p>
+                            </div>
+                            <div className='flex flex-wrap items-center gap-2'>
+                                <VersionChip label={t('admin_updates.panel.current')} value={currentVersion} />
+                                {panelUpdate ? (
+                                    <>
+                                        <ArrowRight className='text-muted-foreground h-4 w-4' />
+                                        <VersionChip
+                                            label={t('admin_updates.panel.latest')}
+                                            value={latestVersion}
+                                            highlight
+                                        />
+                                    </>
+                                ) : null}
+                                {panelVersion?.latest?.is_security_release ||
+                                panelVersion?.current?.is_security_release ? (
+                                    <span className='rounded-full border border-rose-500/25 bg-rose-500/[0.06] px-2.5 py-1 text-xs font-medium text-rose-500'>
+                                        {t('admin.version.security_release')}
+                                    </span>
+                                ) : null}
+                                {panelVersion?.current_listed_on_update_server === false ? (
+                                    <span className='rounded-full border border-amber-500/25 bg-amber-500/[0.06] px-2.5 py-1 text-xs font-medium text-amber-600 dark:text-amber-400'>
+                                        {t('admin.version.unlisted_update_server_badge')}
+                                    </span>
+                                ) : null}
+                            </div>
+                            <dl className='text-muted-foreground flex flex-wrap gap-x-6 gap-y-1 text-xs'>
+                                <div className='flex gap-1.5'>
+                                    <dt>{t('admin_updates.hero.channel')}</dt>
+                                    <dd className='text-foreground font-medium'>{channel}</dd>
+                                </div>
+                                <div className='flex gap-1.5'>
+                                    <dt>{t('admin_updates.hero.php')}</dt>
+                                    <dd className='text-foreground font-medium'>
+                                        {phpLabel}
+                                        {panelVersion?.runtime_php
+                                            ? ` (${t('admin_updates.hero.running', { version: panelVersion.runtime_php })})`
+                                            : ''}
+                                    </dd>
+                                </div>
+                                {panelVersion?.last_checked ? (
+                                    <div className='flex gap-1.5'>
+                                        <dt>{t('admin_updates.hero.checked')}</dt>
+                                        <dd className='text-foreground font-medium'>
+                                            {new Date(panelVersion.last_checked).toLocaleString()}
+                                        </dd>
+                                    </div>
+                                ) : null}
+                            </dl>
+                        </div>
+                    </div>
+                    <div className='shrink-0'>
+                        {panelUpdate ? (
+                            <Button size='lg' onClick={() => void handleUpdatePanel()} disabled={isUpdatingPanel}>
+                                {isUpdatingPanel ? (
+                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                ) : (
+                                    <Download className='mr-2 h-4 w-4' />
+                                )}
+                                {t('admin_updates.panel.update_now')}
+                            </Button>
+                        ) : panelVersion ? (
+                            <StatusDot tone='success'>{t('admin_updates.panel.running_latest')}</StatusDot>
+                        ) : null}
+                    </div>
                 </div>
-                <div className='bg-card/60 rounded-2xl px-4 py-3'>
-                    <p className='text-muted-foreground text-xs'>{t('admin_updates.overview.plugins')}</p>
-                    <p className='mt-1 text-sm font-medium'>
-                        {pluginUpdateCount > 0
+            </section>
+
+            <div className='grid gap-3 sm:grid-cols-3'>
+                <SummaryTile
+                    icon={ArrowUpCircle}
+                    label={t('admin_updates.overview.panel')}
+                    tone={panelUpdate ? 'warning' : 'success'}
+                    value={
+                        panelUpdate
+                            ? t('admin_updates.overview.update_to', { version: latestVersion })
+                            : panelVersion?.current?.version
+                              ? t('admin_updates.overview.up_to_date_version', { version: currentVersion })
+                              : t('admin_updates.overview.checking')
+                    }
+                />
+                <SummaryTile
+                    icon={Package}
+                    label={t('admin_updates.overview.plugins')}
+                    tone={pluginUpdateCount > 0 ? 'warning' : storeError ? 'muted' : 'success'}
+                    value={
+                        pluginUpdateCount > 0
                             ? t(
                                   pluginUpdateCount === 1
                                       ? 'admin_updates.overview.plugin_update_available_one'
@@ -465,39 +685,72 @@ export default function AdminUpdatesPage() {
                               )
                             : storeError
                               ? t('admin_updates.overview.store_unavailable')
-                              : t('admin_updates.overview.up_to_date')}
-                    </p>
-                </div>
-                <div className='bg-card/60 rounded-2xl px-4 py-3'>
-                    <p className='text-muted-foreground text-xs'>{t('admin_updates.overview.wings')}</p>
-                    <p className='mt-1 text-sm font-medium'>
-                        {nodeUpdateCount > 0
+                              : t('admin_updates.overview.up_to_date')
+                    }
+                />
+                <SummaryTile
+                    icon={Server}
+                    label={t('admin_updates.overview.wings')}
+                    tone={nodeUpdateCount > 0 ? 'warning' : 'success'}
+                    value={
+                        nodeUpdateCount > 0
                             ? t(
                                   nodeUpdateCount === 1
                                       ? 'admin_updates.overview.node_needs_updates_one'
                                       : 'admin_updates.overview.nodes_need_updates',
                                   { count: String(nodeUpdateCount) },
                               )
-                            : t('admin_updates.overview.up_to_date')}
-                    </p>
-                </div>
+                            : t('admin_updates.overview.up_to_date')
+                    }
+                />
             </div>
 
-            <div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
+            <div className='grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]'>
+                <PageCard title={t('admin_updates.changelog.title')} icon={FileText}>
+                    <ReleaseNotesPanel
+                        current={panelVersion?.current}
+                        latest={panelVersion?.latest}
+                        updateAvailable={panelUpdate}
+                        embedded
+                    />
+                </PageCard>
+                <PageCard title={t('admin_updates.steps.title')} icon={ListChecks}>
+                    <ol className='space-y-4'>
+                        {steps.map((step, index) => (
+                            <li key={step.key} className='flex gap-3'>
+                                <span className='fp-icon-tile flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-semibold'>
+                                    {index + 1}
+                                </span>
+                                <div className='min-w-0'>
+                                    <p className='flex items-center gap-1.5 text-sm font-medium'>
+                                        <step.icon className='text-muted-foreground h-3.5 w-3.5' />
+                                        {t(STEP_TITLES[step.key])}
+                                    </p>
+                                    <p className='text-muted-foreground mt-0.5 text-xs leading-relaxed'>
+                                        {t(STEP_BODIES[step.key])}
+                                    </p>
+                                </div>
+                            </li>
+                        ))}
+                    </ol>
+                </PageCard>
+            </div>
+
+            <div className='fp-surface flex flex-col gap-3 rounded-xl border p-2 sm:flex-row sm:items-center'>
                 <div className='relative min-w-0 flex-1'>
                     <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                     <Input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={t('admin_updates.search_placeholder')}
-                        className='pl-9'
+                        className='border-0 bg-transparent pl-9 shadow-none focus-visible:ring-0'
                     />
                 </div>
                 {selectionCount > 0 ? (
-                    <div className='flex flex-wrap gap-2'>
+                    <div className='flex flex-wrap gap-2 px-1'>
                         <Button
                             size='sm'
-                            variant='outline'
+                            variant='ghost'
                             onClick={() => {
                                 setSelectedNodes(new Set());
                                 setSelectedPlugins(new Set());
@@ -518,116 +771,6 @@ export default function AdminUpdatesPage() {
             </div>
 
             <PageCard
-                title={t('admin_updates.panel.title')}
-                description={
-                    panelVersion?.update_available
-                        ? t('admin_updates.panel.update_available')
-                        : t('admin_updates.panel.up_to_date')
-                }
-                icon={ArrowUpCircle}
-                action={
-                    panelVersion?.update_available ? (
-                        <Button size='sm' onClick={() => void handleUpdatePanel()} disabled={isUpdatingPanel}>
-                            {isUpdatingPanel ? (
-                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                            ) : (
-                                <Download className='mr-2 h-4 w-4' />
-                            )}
-                            {t('admin_updates.panel.update_now')}
-                        </Button>
-                    ) : null
-                }
-            >
-                <div className='space-y-4'>
-                    <div className='flex flex-wrap items-end gap-8'>
-                        <div>
-                            <p className='text-muted-foreground text-xs'>{t('admin_updates.panel.current')}</p>
-                            <p className='mt-1 text-lg font-medium'>{panelVersion?.current?.version || '-'}</p>
-                            {panelVersion?.current?.release_name ? (
-                                <p className='text-muted-foreground mt-0.5 text-xs'>
-                                    {panelVersion.current.release_name}
-                                </p>
-                            ) : null}
-                        </div>
-                        <div>
-                            <p className='text-muted-foreground text-xs'>{t('admin_updates.panel.latest')}</p>
-                            <p
-                                className={cn(
-                                    'mt-1 text-lg font-medium',
-                                    panelVersion?.update_available && 'text-amber-600 dark:text-amber-400',
-                                )}
-                            >
-                                {panelVersion?.latest?.version || panelVersion?.current?.version || '-'}
-                            </p>
-                            {panelVersion?.latest?.release_name ? (
-                                <p className='text-muted-foreground mt-0.5 text-xs'>
-                                    {panelVersion.latest.release_name}
-                                </p>
-                            ) : null}
-                        </div>
-                        <div>
-                            <p className='text-muted-foreground text-xs'>{t('admin.version.release_type')}</p>
-                            <p className='mt-1 text-lg font-medium'>
-                                {panelVersion?.current?.type || panelVersion?.project?.default_type || 'Stable'}
-                            </p>
-                        </div>
-                        <div>
-                            <p className='text-muted-foreground text-xs'>PHP</p>
-                            <p className='mt-1 text-lg font-medium'>
-                                {panelVersion?.current?.php_version ||
-                                    [panelVersion?.project?.min_supported_php, panelVersion?.project?.max_supported_php]
-                                        .filter(Boolean)
-                                        .join('–') ||
-                                    '-'}
-                            </p>
-                            {panelVersion?.runtime_php ? (
-                                <p className='text-muted-foreground mt-0.5 text-xs'>
-                                    {t('admin.version.running_php')}
-                                    {panelVersion.runtime_php}
-                                </p>
-                            ) : null}
-                        </div>
-                        {!panelVersion?.update_available ? (
-                            <div className='text-muted-foreground ml-auto flex items-center gap-2 text-sm'>
-                                <CheckCircle2 className='h-4 w-4 text-emerald-500' />
-                                {t('admin_updates.panel.running_latest')}
-                            </div>
-                        ) : null}
-                    </div>
-                    {(panelVersion?.latest?.is_security_release ||
-                        panelVersion?.current?.is_security_release ||
-                        panelVersion?.current_listed_on_update_server === false) && (
-                        <div className='flex flex-wrap gap-2'>
-                            {(panelVersion?.latest?.is_security_release ||
-                                panelVersion?.current?.is_security_release) && (
-                                <span className='rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-rose-500 uppercase'>
-                                    {t('admin.version.security_release')}
-                                </span>
-                            )}
-                            {panelVersion?.current_listed_on_update_server === false && (
-                                <span className='rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-amber-600 uppercase dark:text-amber-400'>
-                                    {t('admin.version.unlisted_update_server_badge')}
-                                </span>
-                            )}
-                        </div>
-                    )}
-                    {panelVersion?.last_checked ? (
-                        <p className='text-muted-foreground text-xs'>
-                            {t('admin_updates.panel.last_checked', {
-                                date: new Date(panelVersion.last_checked).toLocaleString(),
-                            })}
-                        </p>
-                    ) : null}
-                    <ReleaseNotesPanel
-                        current={panelVersion?.current}
-                        latest={panelVersion?.latest}
-                        updateAvailable={Boolean(panelVersion?.update_available)}
-                        defaultOpen={Boolean(panelVersion?.update_available)}
-                    />
-                </div>
-            </PageCard>
-
-            <PageCard
                 title={t('admin_updates.plugins.title')}
                 description={
                     storeError
@@ -643,7 +786,13 @@ export default function AdminUpdatesPage() {
                 }
                 icon={Package}
                 action={
-                    <div className='flex flex-wrap gap-2'>
+                    <div className='flex flex-wrap items-center gap-2'>
+                        <FilterTabs
+                            value={pluginFilter}
+                            onChange={setPluginFilter}
+                            updatesLabel={t('admin_updates.plugins.filter_needs_update')}
+                            allLabel={t('admin_updates.plugins.filter_all')}
+                        />
                         {storeError ? (
                             <Button size='sm' variant='outline' onClick={() => router.push('/admin/cloud-management')}>
                                 {t('admin_updates.cloud_connections')}
@@ -663,21 +812,6 @@ export default function AdminUpdatesPage() {
                     </div>
                 }
             >
-                <div className='mb-4 flex gap-2'>
-                    {(['updates', 'all'] as const).map((key) => (
-                        <Button
-                            key={key}
-                            size='sm'
-                            variant={pluginFilter === key ? 'default' : 'outline'}
-                            onClick={() => setPluginFilter(key)}
-                        >
-                            {key === 'updates'
-                                ? t('admin_updates.plugins.filter_needs_update')
-                                : t('admin_updates.plugins.filter_all')}
-                        </Button>
-                    ))}
-                </div>
-
                 {pluginsLoading || (isChecking && Object.keys(pluginUpdates).length === 0 && !storeError) ? (
                     <div className='text-muted-foreground flex items-center gap-2 py-10 text-sm'>
                         <Loader2 className='h-4 w-4 animate-spin' /> {t('admin_updates.plugins.checking')}
@@ -695,84 +829,46 @@ export default function AdminUpdatesPage() {
                         icon={Package}
                     />
                 ) : (
-                    <div className='divide-border/60 divide-y'>
-                        {filteredPlugins.map((plugin) => {
+                    <DataTable
+                        rows={filteredPlugins}
+                        columns={pluginColumns}
+                        rowKey={(plugin) => plugin.identifier}
+                        actionsHeader={t('common.actions')}
+                        actions={(plugin) => {
                             const update = pluginUpdates[plugin.identifier];
-                            const needsUpdate = Boolean(update?.update_available);
-                            const checked = selectedPlugins.has(plugin.identifier);
-                            const busy = updatingPluginId === plugin.identifier || isBulkUpdating;
-
+                            if (!update?.update_available) return null;
                             return (
-                                <div
-                                    key={plugin.identifier}
-                                    className='flex flex-wrap items-center gap-3 py-3 first:pt-0 last:pb-0'
+                                <Button
+                                    size='sm'
+                                    disabled={
+                                        isBulkUpdating || updatingPluginId !== null || update.can_download === false
+                                    }
+                                    onClick={() => void updateOnePlugin(plugin.identifier)}
                                 >
-                                    <Checkbox
-                                        checked={checked}
-                                        disabled={!needsUpdate || busy || update?.can_download === false}
-                                        onCheckedChange={(value) => {
-                                            setSelectedPlugins((prev) => {
-                                                const next = new Set(prev);
-                                                if (value) next.add(plugin.identifier);
-                                                else next.delete(plugin.identifier);
-                                                return next;
-                                            });
-                                        }}
-                                    />
-                                    <div className='bg-muted flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg'>
-                                        {plugin.icon ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={plugin.icon} alt='' className='h-full w-full object-cover' />
-                                        ) : (
-                                            <Package className='text-muted-foreground h-4 w-4' />
-                                        )}
-                                    </div>
-                                    <div className='min-w-0 flex-1'>
-                                        <p className='truncate text-sm font-medium'>
-                                            {plugin.name || plugin.identifier}
-                                        </p>
-                                        <p className='text-muted-foreground truncate font-mono text-[11px]'>
-                                            {plugin.identifier}
-                                        </p>
-                                    </div>
-                                    <div className='text-muted-foreground text-xs'>
-                                        v{plugin.version}
-                                        {needsUpdate ? (
-                                            <span className='text-amber-600 dark:text-amber-400'>
-                                                {' '}
-                                                → v{update?.latest_version}
-                                            </span>
-                                        ) : update?.latest_version ? (
-                                            <span> · {t('admin_updates.plugins.current_suffix')}</span>
-                                        ) : (
-                                            <span> · {t('admin_updates.plugins.not_in_store')}</span>
-                                        )}
-                                    </div>
-                                    {needsUpdate ? (
-                                        <Button
-                                            size='sm'
-                                            disabled={busy || update?.can_download === false}
-                                            onClick={() => void updateOnePlugin(plugin.identifier)}
-                                        >
-                                            {updatingPluginId === plugin.identifier ? (
-                                                <Loader2 className='mr-2 h-3.5 w-3.5 animate-spin' />
-                                            ) : (
-                                                <Download className='mr-2 h-3.5 w-3.5' />
-                                            )}
-                                            {t('admin_updates.plugins.update')}
-                                        </Button>
+                                    {updatingPluginId === plugin.identifier ? (
+                                        <Loader2 className='mr-2 h-3.5 w-3.5 animate-spin' />
                                     ) : (
-                                        <span className='text-muted-foreground inline-flex items-center gap-1 text-xs'>
-                                            <CheckCircle2 className='h-3.5 w-3.5 text-emerald-500' />
-                                            {update?.latest_version
-                                                ? t('admin_updates.plugins.status_up_to_date')
-                                                : t('admin_updates.plugins.status_no_match')}
-                                        </span>
+                                        <Download className='mr-2 h-3.5 w-3.5' />
                                     )}
-                                </div>
+                                    {t('admin_updates.plugins.update')}
+                                </Button>
                             );
-                        })}
-                    </div>
+                        }}
+                        mobileCard={(plugin) => (
+                            <div className='space-y-2'>
+                                <TableIdentity
+                                    title={plugin.name || plugin.identifier}
+                                    subtitle={plugin.identifier}
+                                    avatarUrl={plugin.icon}
+                                    icon={Package}
+                                />
+                                <div className='flex items-center justify-between gap-2'>
+                                    <VersionPair from={plugin.version} to={pluginUpdates[plugin.identifier]} />
+                                    <PluginStatus update={pluginUpdates[plugin.identifier]} t={t} />
+                                </div>
+                            </div>
+                        )}
+                    />
                 )}
             </PageCard>
 
@@ -781,31 +877,24 @@ export default function AdminUpdatesPage() {
                 description={t('admin_updates.wings.description')}
                 icon={Server}
                 action={
-                    <Button
-                        size='sm'
-                        variant='outline'
-                        onClick={() => setSelectedNodes(new Set(selectableNodeIds))}
-                        disabled={selectableNodeIds.length === 0}
-                    >
-                        {t('admin_updates.select_updates')}
-                    </Button>
+                    <div className='flex flex-wrap items-center gap-2'>
+                        <FilterTabs
+                            value={nodeFilter}
+                            onChange={setNodeFilter}
+                            updatesLabel={t('admin_updates.wings.filter_needs_update')}
+                            allLabel={t('admin_updates.wings.filter_all')}
+                        />
+                        <Button
+                            size='sm'
+                            variant='outline'
+                            onClick={() => setSelectedNodes(new Set(selectableNodeIds))}
+                            disabled={selectableNodeIds.length === 0}
+                        >
+                            {t('admin_updates.select_updates')}
+                        </Button>
+                    </div>
                 }
             >
-                <div className='mb-4 flex gap-2'>
-                    {(['updates', 'all'] as const).map((key) => (
-                        <Button
-                            key={key}
-                            size='sm'
-                            variant={nodeFilter === key ? 'default' : 'outline'}
-                            onClick={() => setNodeFilter(key)}
-                        >
-                            {key === 'updates'
-                                ? t('admin_updates.wings.filter_needs_update')
-                                : t('admin_updates.wings.filter_all')}
-                        </Button>
-                    ))}
-                </div>
-
                 {nodesLoading ? (
                     <div className='text-muted-foreground flex items-center gap-2 py-10 text-sm'>
                         <Loader2 className='h-4 w-4 animate-spin' /> {t('admin_updates.wings.loading')}
@@ -820,80 +909,206 @@ export default function AdminUpdatesPage() {
                         icon={Server}
                     />
                 ) : (
-                    <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-3'>
-                        {filteredNodes.map((node) => {
-                            const version = nodeVersions[node.id];
-                            const needsUpdate = Boolean(version?.update_available);
-                            const selfUpdateSupported = version?.self_update_supported !== false;
-                            const checked = selectedNodes.has(node.id);
-
-                            return (
-                                <div
-                                    key={node.id}
-                                    className={cn('bg-muted/20 rounded-2xl p-4', checked && 'ring-primary/40 ring-1')}
-                                >
-                                    <div className='flex items-start gap-3'>
-                                        <Checkbox
-                                            checked={checked}
-                                            disabled={!needsUpdate || !selfUpdateSupported || isBulkUpdating}
-                                            onCheckedChange={(value) => {
-                                                setSelectedNodes((prev) => {
-                                                    const next = new Set(prev);
-                                                    if (value) next.add(node.id);
-                                                    else next.delete(node.id);
-                                                    return next;
-                                                });
-                                            }}
-                                        />
-                                        <div className='min-w-0 flex-1'>
-                                            <p className='truncate text-sm font-medium'>{node.name}</p>
-                                            <p className='text-muted-foreground truncate text-xs'>
-                                                <Sensitive>{node.fqdn}</Sensitive>
-                                            </p>
-                                            <p className='text-muted-foreground mt-2 text-xs'>
-                                                {version?.loading ? (
-                                                    <span className='inline-flex items-center gap-1'>
-                                                        <Loader2 className='h-3 w-3 animate-spin' />
-                                                        {t('ui.admin.updates.checking')}
-                                                    </span>
-                                                ) : version?.error ? (
-                                                    version.error
-                                                ) : (
-                                                    <>
-                                                        v{version?.current_version || '-'}
-                                                        {needsUpdate ? (
-                                                            <span className='text-amber-600 dark:text-amber-400'>
-                                                                {' '}
-                                                                → v{version?.latest_version}
-                                                            </span>
-                                                        ) : (
-                                                            <span> · current</span>
-                                                        )}
-                                                    </>
-                                                )}
-                                            </p>
-                                        </div>
-                                        {version?.self_update_supported === false &&
-                                        needsUpdate &&
-                                        !version?.loading &&
-                                        !version?.error ? (
-                                            <span className='rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400'>
-                                                {t('admin_updates.wings.manual_update_required')}
-                                            </span>
-                                        ) : needsUpdate ? (
-                                            <span className='rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400'>
-                                                {t('ui.admin.updates.update')}
-                                            </span>
-                                        ) : !version?.loading && !version?.error ? (
-                                            <CheckCircle2 className='h-4 w-4 shrink-0 text-emerald-500' />
-                                        ) : null}
-                                    </div>
+                    <DataTable
+                        rows={filteredNodes}
+                        columns={nodeColumns}
+                        rowKey={(node) => node.id}
+                        mobileCard={(node) => (
+                            <div className='space-y-2'>
+                                <TableIdentity
+                                    title={node.name}
+                                    subtitle={<Sensitive>{node.fqdn}</Sensitive>}
+                                    icon={Server}
+                                />
+                                <div className='flex items-center justify-between gap-2'>
+                                    <NodeVersion info={nodeVersions[node.id]} t={t} />
+                                    <NodeStatus info={nodeVersions[node.id]} t={t} />
                                 </div>
-                            );
-                        })}
-                    </div>
+                            </div>
+                        )}
+                    />
                 )}
             </PageCard>
+
+            <TipGrid>
+                <TipCard title={t('admin_updates.tips.backup_title')} icon={DatabaseBackup} variant='warning'>
+                    <p>{t('admin_updates.tips.backup_body')}</p>
+                </TipCard>
+                <TipCard title={t('admin_updates.tips.plugins_title')} icon={Package}>
+                    <p>{t('admin_updates.tips.plugins_body')}</p>
+                </TipCard>
+                <TipCard title={t('admin_updates.tips.wings_title')} icon={Server}>
+                    <p>{t('admin_updates.tips.wings_body')}</p>
+                </TipCard>
+            </TipGrid>
         </div>
     );
+}
+
+type TFn = (key: string, params?: Record<string, string>) => string;
+
+const STEP_TITLES = {
+    backup: 'admin_updates.steps.backup_title',
+    changelog: 'admin_updates.steps.changelog_title',
+    update: 'admin_updates.steps.update_title',
+    verify: 'admin_updates.steps.verify_title',
+} as const;
+
+const STEP_BODIES = {
+    backup: 'admin_updates.steps.backup_body',
+    changelog: 'admin_updates.steps.changelog_body',
+    update: 'admin_updates.steps.update_body',
+    verify: 'admin_updates.steps.verify_body',
+} as const;
+
+function VersionChip({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+    return (
+        <span
+            className={cn(
+                'inline-flex items-center gap-2 rounded-lg border px-2.5 py-1 text-xs',
+                highlight
+                    ? 'border-primary/30 bg-primary/10 text-primary'
+                    : 'fp-surface-inset border-[var(--fp-surface-border)]',
+            )}
+        >
+            <span className={highlight ? 'text-primary/80' : 'text-muted-foreground'}>{label}</span>
+            <span className='font-mono font-semibold'>v{value}</span>
+        </span>
+    );
+}
+
+function SummaryTile({
+    icon: Icon,
+    label,
+    value,
+    tone,
+}: {
+    icon: ComponentType<{ className?: string }>;
+    label: string;
+    value: string;
+    tone: 'success' | 'warning' | 'muted';
+}) {
+    return (
+        <div className='fp-surface flex items-center gap-3 rounded-xl border px-4 py-3'>
+            <div className='fp-icon-tile flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
+                <Icon className='h-4 w-4' />
+            </div>
+            <div className='min-w-0'>
+                <p className='text-muted-foreground text-xs'>{label}</p>
+                <StatusDot tone={tone} className='mt-0.5 text-sm font-medium'>
+                    {value}
+                </StatusDot>
+            </div>
+        </div>
+    );
+}
+
+function FilterTabs({
+    value,
+    onChange,
+    updatesLabel,
+    allLabel,
+}: {
+    value: 'updates' | 'all';
+    onChange: (value: 'updates' | 'all') => void;
+    updatesLabel: string;
+    allLabel: string;
+}) {
+    return (
+        <div className='fp-surface-inset inline-flex rounded-lg border p-0.5'>
+            {(['updates', 'all'] as const).map((key) => (
+                <button
+                    key={key}
+                    type='button'
+                    onClick={() => onChange(key)}
+                    className={cn(
+                        'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+                        value === key ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground',
+                    )}
+                >
+                    {key === 'updates' ? updatesLabel : allLabel}
+                </button>
+            ))}
+        </div>
+    );
+}
+
+function VersionPair({ from, to }: { from: string; to?: PluginUpdateInfo }) {
+    return (
+        <span className='inline-flex items-center gap-1.5 font-mono text-xs'>
+            <span className='text-muted-foreground'>v{from}</span>
+            {to?.update_available ? (
+                <>
+                    <ArrowRight className='text-muted-foreground h-3 w-3' />
+                    <span className='text-primary font-semibold'>v{to.latest_version}</span>
+                </>
+            ) : null}
+        </span>
+    );
+}
+
+function PluginStatus({ update, t }: { update?: PluginUpdateInfo; t: TFn }) {
+    if (update?.update_available) {
+        return <StatusDot tone='warning'>{t('admin_updates.status.update_available')}</StatusDot>;
+    }
+    if (update?.latest_version) {
+        return <StatusDot tone='success'>{t('admin_updates.plugins.status_up_to_date')}</StatusDot>;
+    }
+    return <StatusDot tone='muted'>{t('admin_updates.plugins.status_no_match')}</StatusDot>;
+}
+
+function PluginCheckbox({
+    update,
+    checked,
+    disabled,
+    onChange,
+}: {
+    plugin: PluginRow;
+    update?: PluginUpdateInfo;
+    checked: boolean;
+    disabled: boolean;
+    onChange: (value: boolean) => void;
+}) {
+    return (
+        <Checkbox
+            checked={checked}
+            disabled={!update?.update_available || update?.can_download === false || disabled}
+            onCheckedChange={(value) => onChange(Boolean(value))}
+        />
+    );
+}
+
+function NodeVersion({ info, t }: { info?: NodeVersionInfo; t: TFn }) {
+    if (info?.loading) {
+        return (
+            <span className='text-muted-foreground inline-flex items-center gap-1 text-xs'>
+                <Loader2 className='h-3 w-3 animate-spin' />
+                {t('ui.admin.updates.checking')}
+            </span>
+        );
+    }
+    if (info?.error || !info) return <span className='text-muted-foreground text-xs'>-</span>;
+    return (
+        <span className='inline-flex items-center gap-1.5 font-mono text-xs'>
+            <span className='text-muted-foreground'>v{info.current_version || '-'}</span>
+            {info.update_available ? (
+                <>
+                    <ArrowRight className='text-muted-foreground h-3 w-3' />
+                    <span className='text-primary font-semibold'>v{info.latest_version}</span>
+                </>
+            ) : null}
+        </span>
+    );
+}
+
+function NodeStatus({ info, t }: { info?: NodeVersionInfo; t: TFn }) {
+    if (!info || info.loading) return null;
+    if (info.error) return <StatusDot tone='danger'>{t('admin_updates.status.unreachable')}</StatusDot>;
+    if (info.update_available && info.self_update_supported === false) {
+        return <StatusDot tone='warning'>{t('admin_updates.wings.manual_update_required')}</StatusDot>;
+    }
+    if (info.update_available) {
+        return <StatusDot tone='warning'>{t('admin_updates.status.update_available')}</StatusDot>;
+    }
+    return <StatusDot tone='success'>{t('admin_updates.status.up_to_date')}</StatusDot>;
 }

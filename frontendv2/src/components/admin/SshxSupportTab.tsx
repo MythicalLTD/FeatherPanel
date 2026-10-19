@@ -35,7 +35,7 @@ export function SshxSupportTab() {
     return (
         <div className='space-y-6'>
             <div
-                className='flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-700 dark:text-amber-300'
+                className='flex items-start gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] p-4 text-amber-700 dark:text-amber-300'
                 role='alert'
             >
                 <ShieldAlert className='mt-0.5 h-5 w-5 shrink-0' aria-hidden />
@@ -76,7 +76,7 @@ export function SshxSupportTab() {
                         />
                     </div>
 
-                    <div className='space-y-3 border-t border-white/5 pt-6'>
+                    <div className='space-y-3 border-t border-[var(--fp-surface-border)] pt-6'>
                         <p className='text-foreground text-xs font-semibold'>{t('admin.support.sshx.output_title')}</p>
                         <p className='text-muted-foreground text-sm'>{t('admin.support.sshx.output_help')}</p>
                         <pre className='bg-muted/30 border-border/50 overflow-x-auto rounded-2xl border p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-zinc-300'>

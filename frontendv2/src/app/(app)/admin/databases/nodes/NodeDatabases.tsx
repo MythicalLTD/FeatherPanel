@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -22,7 +23,6 @@ import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
@@ -493,7 +493,8 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                     ? [
                                           {
                                               label: t('admin.node_databases.status.all_nodes'),
-                                              className: 'bg-slate-500/10 text-slate-300 border-slate-500/25',
+                                              className:
+                                                  'bg-slate-500/10 text-slate-300 border-[var(--fp-surface-border)]',
                                           },
                                       ]
                                     : [
@@ -600,11 +601,11 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             )}
 
             <div className='pt-6'>
-                <PageCard title={t('admin.node_databases.help.about_databases.title')} icon={DatabaseIcon}>
+                <TipCard title={t('admin.node_databases.help.about_databases.title')} icon={DatabaseIcon}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.node_databases.help.about_databases.description')}
                     </p>
-                </PageCard>
+                </TipCard>
             </div>
 
             <WidgetRenderer widgets={getWidgets(slug, 'bottom-of-page')} context={widgetContext} />

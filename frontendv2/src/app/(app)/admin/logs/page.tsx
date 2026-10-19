@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -807,7 +808,7 @@ export default function AdminLogsPage() {
                                     <ChevronDown className='h-3 w-3' />
                                 </button>
                                 {panelLineDropdownOpen && (
-                                    <div className='bg-popover border-border absolute top-full left-0 z-50 mt-1 min-w-22.5 overflow-hidden rounded-xl border shadow-xl'>
+                                    <div className='fp-menu-surface absolute top-full left-0 z-50 mt-1 min-w-22.5 overflow-hidden rounded-xl border shadow-xl'>
                                         {LINE_OPTIONS.map((n) => (
                                             <button
                                                 key={n}
@@ -985,7 +986,7 @@ export default function AdminLogsPage() {
                                     <ChevronDown className='h-3 w-3 shrink-0' />
                                 </button>
                                 {wingsNodeDropdownOpen && nodes.length > 0 && (
-                                    <div className='bg-popover border-border absolute top-full left-0 z-50 mt-1 max-h-60 min-w-50 overflow-hidden overflow-y-auto rounded-xl border shadow-xl'>
+                                    <div className='fp-menu-surface absolute top-full left-0 z-50 mt-1 max-h-60 min-w-50 overflow-hidden overflow-y-auto rounded-xl border shadow-xl'>
                                         {nodes.map((node) => (
                                             <button
                                                 key={node.id}
@@ -1019,7 +1020,7 @@ export default function AdminLogsPage() {
                                     </div>
                                 )}
                                 {wingsNodeDropdownOpen && !nodesLoading && nodes.length === 0 && (
-                                    <div className='bg-popover border-border text-muted-foreground absolute top-full left-0 z-50 mt-1 min-w-45 rounded-xl border p-3 text-xs shadow-xl'>
+                                    <div className='fp-menu-surface text-muted-foreground absolute top-full left-0 z-50 mt-1 min-w-45 rounded-xl border p-3 text-xs shadow-xl'>
                                         {t('admin.logs.wings_no_nodes')}
                                     </div>
                                 )}
@@ -1035,7 +1036,7 @@ export default function AdminLogsPage() {
                                     <ChevronDown className='h-3 w-3' />
                                 </button>
                                 {wingsLineDropdownOpen && (
-                                    <div className='bg-popover border-border absolute top-full left-0 z-50 mt-1 min-w-22.5 overflow-hidden rounded-xl border shadow-xl'>
+                                    <div className='fp-menu-surface absolute top-full left-0 z-50 mt-1 min-w-22.5 overflow-hidden rounded-xl border shadow-xl'>
                                         {LINE_OPTIONS.map((n) => (
                                             <button
                                                 key={n}
@@ -1228,6 +1229,8 @@ export default function AdminLogsPage() {
                     </div>
                 )}
             </div>
+
+            <AdminPageTips page='logs' />
 
             <WidgetRenderer widgets={getWidgets('admin-logs', 'bottom-of-page')} />
         </>

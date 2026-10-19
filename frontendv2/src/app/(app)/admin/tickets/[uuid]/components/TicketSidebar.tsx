@@ -77,8 +77,7 @@ export function TicketSidebar({
             {userDetails ? (
                 <>
                     <Card className='fp-surface overflow-hidden border'>
-                        <div className='from-primary/10 via-primary/5 border-border/5 group/avatar relative overflow-hidden border-b bg-linear-to-br to-transparent p-6 text-center'>
-                            <div className='bg-primary/5 absolute inset-0 scale-150 animate-pulse rounded-full blur-3xl transition-transform duration-1000 group-hover/avatar:scale-110' />
+                        <div className='group/avatar relative overflow-hidden border-b p-6 text-center'>
                             <div className='relative space-y-3'>
                                 <div className='relative inline-block'>
                                     <Avatar className='border-background mx-auto h-20 w-20 border-4 transition-all duration-500 group-hover/avatar:scale-105'>
@@ -250,7 +249,7 @@ export function TicketSidebar({
                                     <Button
                                         variant='outline'
                                         size='sm'
-                                        className='h-9 w-full rounded-xl text-xs font-bold tracking-wide uppercase'
+                                        className='h-9 w-full rounded-xl text-xs font-semibold'
                                     >
                                         <Eye className='mr-2 h-3 w-3' />
                                         {t('admin.tickets.sidebar.labels.profile')}

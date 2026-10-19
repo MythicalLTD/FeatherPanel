@@ -205,7 +205,7 @@ export function StartupTab({
                                 }))
                             }
                             disabled={customVariableSaving}
-                            className='mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5'
+                            className='mt-0.5 h-4 w-4 rounded border-[var(--fp-surface-border)] bg-white/5'
                         />
                         <span>{t('serverStartup.customEnv.encrypt')}</span>
                     </label>

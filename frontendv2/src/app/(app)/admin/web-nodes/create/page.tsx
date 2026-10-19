@@ -300,7 +300,7 @@ export default function CreateWebNodePage() {
                     orientation='vertical'
                     className='flex w-full flex-col gap-6 md:flex-row'
                 >
-                    <aside className='w-full shrink-0 md:w-64'>
+                    <aside className='w-full shrink-0 md:sticky md:top-24 md:w-64 md:self-start'>
                         <ScrollableTabsList className='fp-surface flex h-auto w-full flex-row gap-2 rounded-2xl border p-2 md:flex-col md:gap-1 md:overflow-visible'>
                             {tabs.map((tab) => {
                                 const Icon = tab.icon;

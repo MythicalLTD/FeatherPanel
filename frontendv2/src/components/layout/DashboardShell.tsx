@@ -187,7 +187,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                                                     <AdminOpenTicketsBanner className='mb-5 shrink-0' />
                                                 )}
                                                 {!useFullBleedLayout && pathname?.startsWith('/admin/') ? (
-                                                    <AdminBreadcrumbs className='mb-1 shrink-0' />
+                                                    <AdminBreadcrumbs className='fp-shell-crumbs mb-2 shrink-0 px-1' />
                                                 ) : null}
                                             </PluginSlot>
                                             <ModuleRouteGuard>

@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
@@ -24,7 +25,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
 import { Select } from '@/components/ui/select-native';
@@ -500,7 +501,7 @@ export default function SpellsPage() {
             ) : isReorderMode ? (
                 <div className='space-y-6'>
                     {hasOrderChanges && (
-                        <div className='flex items-center gap-2 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-600'>
+                        <div className='flex items-center gap-2 rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] p-4 text-sm text-amber-600'>
                             <AlertCircle className='h-4 w-4' />
                             {t('admin.spells.order.unsaved_changes')}
                         </div>
@@ -547,7 +548,7 @@ export default function SpellsPage() {
                     </PageCard>
                 </div>
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <ResourceTable>
                     <WidgetRenderer widgets={getWidgets('admin-spells', 'before-list')} />
                     {spells.map((spell) => (
                         <ResourceCard
@@ -594,7 +595,7 @@ export default function SpellsPage() {
                             }
                         />
                     ))}
-                </div>
+                </ResourceTable>
             )}
 
             {pagination.totalPages > 1 && !isReorderMode && (
@@ -622,36 +623,36 @@ export default function SpellsPage() {
             )}
 
             {!isReorderMode && (
-                <PageCard title={t('admin.spells.help.cross_compatible.title')} icon={Sparkles} variant='default'>
+                <TipCard title={t('admin.spells.help.cross_compatible.title')} icon={Sparkles} variant='default'>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.spells.help.cross_compatible.description')}
                     </p>
-                </PageCard>
+                </TipCard>
             )}
 
             {!isReorderMode && (
-                <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4'>
-                    <PageCard title={t('admin.spells.help.what_are_spells.title')} icon={BookOpen}>
+                <TipGrid>
+                    <TipCard title={t('admin.spells.help.what_are_spells.title')} icon={BookOpen}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.spells.help.what_are_spells.description')}
                         </p>
-                    </PageCard>
-                    <PageCard title={t('admin.spells.help.how_to_use.title')} icon={Box}>
+                    </TipCard>
+                    <TipCard title={t('admin.spells.help.how_to_use.title')} icon={Box}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.spells.help.how_to_use.description')}
                         </p>
-                    </PageCard>
-                    <PageCard title={t('admin.spells.help.under_the_hood.title')} icon={Wrench}>
+                    </TipCard>
+                    <TipCard title={t('admin.spells.help.under_the_hood.title')} icon={Wrench}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.spells.help.under_the_hood.description')}
                         </p>
-                    </PageCard>
-                    <PageCard title={t('admin.spells.help.sources.title')} icon={GitBranch}>
+                    </TipCard>
+                    <TipCard title={t('admin.spells.help.sources.title')} icon={GitBranch}>
                         <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.spells.help.sources.description')}
                         </p>
-                    </PageCard>
-                </div>
+                    </TipCard>
+                </TipGrid>
             )}
 
             <Dialog

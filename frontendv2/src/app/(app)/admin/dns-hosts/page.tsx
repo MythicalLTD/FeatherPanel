@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -336,6 +337,7 @@ export default function AdminDnsHostsPage() {
                     })}
                 </ResourceTable>
             )}
+            <AdminPageTips page='dns-hosts' />
         </div>
     );
 }

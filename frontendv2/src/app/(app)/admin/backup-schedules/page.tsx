@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -23,7 +24,6 @@ import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
@@ -273,23 +273,23 @@ export default function AdminBackupSchedulesPage() {
                 </ResourceTable>
             )}
 
-            <div className='grid gap-4 md:grid-cols-3'>
-                <PageCard title={t('adminBackupSchedules.help.schedules.title')} icon={CalendarClock}>
+            <TipGrid>
+                <TipCard title={t('adminBackupSchedules.help.schedules.title')} icon={CalendarClock}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('adminBackupSchedules.help.schedules.body')}
                     </p>
-                </PageCard>
-                <PageCard title={t('adminBackupSchedules.help.retention.title')} icon={Shield}>
+                </TipCard>
+                <TipCard title={t('adminBackupSchedules.help.retention.title')} icon={Shield}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('adminBackupSchedules.help.retention.body')}
                     </p>
-                </PageCard>
-                <PageCard title={t('adminBackupSchedules.help.tips.title')} icon={HelpCircle}>
+                </TipCard>
+                <TipCard title={t('adminBackupSchedules.help.tips.title')} icon={HelpCircle}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('adminBackupSchedules.help.tips.body')}
                     </p>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
         </div>
     );
 }

@@ -61,7 +61,7 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
     return (
         <div className={className}>
-            <div className='fp-surface hidden overflow-hidden rounded-xl border lg:block'>
+            <div className='fp-surface hidden overflow-x-auto rounded-xl border lg:block'>
                 <table className='w-full text-sm'>
                     <thead>
                         <tr className='border-b border-[var(--fp-surface-border)]'>
@@ -180,7 +180,7 @@ export function RowActionsMenu({ items }: { items: RowAction[] }) {
             >
                 <MoreHorizontal className='h-4 w-4' />
             </DropdownMenuTrigger>
-            <DropdownMenuContent className='fp-surface min-w-44 border'>
+            <DropdownMenuContent className='min-w-44'>
                 {visible.map((item, i) => {
                     const Icon = item.icon;
                     const inner = (
@@ -258,9 +258,11 @@ export function TableIdentity({
 export function StatusDot({
     tone,
     children,
+    className,
 }: {
     tone: 'success' | 'warning' | 'danger' | 'muted';
     children: ReactNode;
+    className?: string;
 }) {
     const dot = {
         success: 'bg-emerald-500',
@@ -269,7 +271,7 @@ export function StatusDot({
         muted: 'bg-muted-foreground/50',
     }[tone];
     return (
-        <span className='inline-flex items-center gap-2 text-xs font-medium whitespace-nowrap'>
+        <span className={cn('inline-flex items-center gap-2 text-xs font-medium whitespace-nowrap', className)}>
             <span className={cn('h-2 w-2 rounded-full', dot)} aria-hidden />
             {children}
         </span>

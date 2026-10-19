@@ -45,3 +45,30 @@ export function FormSection({ children, className, variant = 'surface', ...props
         </div>
     );
 }
+
+export interface FormGroupProps {
+    title: React.ReactNode;
+    description?: React.ReactNode;
+    children: React.ReactNode;
+    className?: string;
+}
+
+/** Titled group of related fields: heading on the left on wide screens, fields on the right. */
+export function FormGroup({ title, description, children, className }: FormGroupProps) {
+    return (
+        <section
+            className={cn(
+                'grid gap-4 border-t border-[var(--fp-surface-border)] pt-6 first:border-t-0 first:pt-0 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-8',
+                className,
+            )}
+        >
+            <div>
+                <h3 className='text-foreground text-sm font-semibold'>{title}</h3>
+                {description ? (
+                    <p className='text-muted-foreground mt-1 text-xs leading-relaxed'>{description}</p>
+                ) : null}
+            </div>
+            <div className='min-w-0 space-y-5'>{children}</div>
+        </section>
+    );
+}

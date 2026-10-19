@@ -24,12 +24,12 @@ const Alert = React.forwardRef<
         ref={ref}
         role='alert'
         className={cn(
-            '[&>svg]:text-foreground relative w-full rounded-xl border p-4 [&>svg]:absolute [&>svg]:top-4 [&>svg]:left-4 [&>svg+div]:translate-y-[-3px] [&>svg~*]:pl-7',
-            variant === 'default' && 'bg-background text-foreground',
+            'relative w-full rounded-xl border p-4 [&>svg]:absolute [&>svg]:top-4 [&>svg]:left-4 [&>svg+div]:translate-y-[-3px] [&>svg~*]:pl-7',
+            variant === 'default' && 'fp-surface text-foreground [&>svg]:text-primary',
             variant === 'destructive' &&
-                'border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive bg-destructive/10',
+                'text-foreground border-red-500/25 bg-red-500/[0.06] [&_h5]:text-red-500 [&>svg]:text-red-500',
             variant === 'warning' &&
-                'border-warning/50 text-warning dark:border-warning [&>svg]:text-warning bg-warning/10',
+                'text-foreground border-amber-500/25 bg-amber-500/[0.06] [&_h5]:text-amber-500 [&>svg]:text-amber-500',
             className,
         )}
         {...props}

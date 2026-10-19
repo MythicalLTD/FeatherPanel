@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard, TipGrid } from '@/components/featherui/TipCard';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
@@ -43,7 +44,6 @@ import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
-import { PageCard } from '@/components/featherui/PageCard';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { SaveShortcutHint } from '@/components/featherui/SaveShortcutHint';
 import { toast } from 'sonner';
@@ -584,25 +584,25 @@ export default function NotificationsPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
-                <PageCard title={t('admin.notifications.help.alerts.title')} icon={Bell}>
+            <TipGrid>
+                <TipCard title={t('admin.notifications.help.alerts.title')} icon={Bell}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.notifications.help.alerts.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.notifications.help.markdown.title')} icon={Info}>
+                </TipCard>
+                <TipCard title={t('admin.notifications.help.markdown.title')} icon={Info}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.notifications.help.markdown.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.notifications.help.delivery.title')} icon={KeyRound} variant='danger'>
+                </TipCard>
+                <TipCard title={t('admin.notifications.help.delivery.title')} icon={KeyRound} variant='danger'>
                     <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm'>
                         <li>{t('admin.notifications.help.delivery.item1')}</li>
                         <li>{t('admin.notifications.help.delivery.item2')}</li>
                         <li>{t('admin.notifications.help.delivery.item3')}</li>
                     </ul>
-                </PageCard>
-            </div>
+                </TipCard>
+            </TipGrid>
 
             <Sheet open={createOpen} onOpenChange={guardClose(setCreateOpen)}>
                 <div className='space-y-6'>

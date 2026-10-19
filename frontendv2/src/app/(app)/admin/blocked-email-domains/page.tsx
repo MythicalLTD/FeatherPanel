@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { AdminPageTips } from '@/components/admin/AdminPageTips';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import axios from 'axios';
@@ -705,6 +706,7 @@ export default function BlockedEmailDomainsPage() {
                     <WidgetRenderer widgets={bottomWidgets} />
                 </div>
             ) : null}
+            <AdminPageTips page='blocked-email-domains' />
         </div>
     );
 }

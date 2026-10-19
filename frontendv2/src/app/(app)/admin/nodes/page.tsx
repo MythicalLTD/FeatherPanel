@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
@@ -23,10 +24,9 @@ import { getApiErrorMessage } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { DataTable, RowActionsMenu, StatusDot, TableIdentity } from '@/components/featherui/DataTable';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
-import { PageCard } from '@/components/featherui/PageCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -39,11 +39,8 @@ import {
     RefreshCw,
     Pencil,
     Trash2,
-    ChevronLeft,
-    ChevronRight,
     MapPin,
     Shield,
-    Network,
     ArrowLeftRight,
     X,
 } from 'lucide-react';
@@ -95,6 +92,28 @@ const NODES_LIST_FILTERS_DEFAULTS = {
     page: 1,
     pageSize: 10,
 };
+
+function formatNodeMb(mb: number): string {
+    if (!mb) return '0 MB';
+    if (mb >= 1024 * 1024) return `${(mb / 1024 / 1024).toFixed(1)} TB`;
+    if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
+    return `${mb} MB`;
+}
+
+function NodeHealth({ node, health }: { node: Node; health: string }) {
+    const { t } = useTranslation();
+    const tone = health === 'online' ? 'success' : health === 'offline' ? 'danger' : 'muted';
+    return (
+        <div className='flex flex-wrap items-center gap-2'>
+            <StatusDot tone={tone}>{t(`admin.node.health.${health}`)}</StatusDot>
+            {node.maintenance_mode ? (
+                <span className='rounded-md border border-yellow-500/25 bg-yellow-500/10 px-1.5 py-0.5 text-[11px] font-medium text-yellow-600 dark:text-yellow-400'>
+                    {t('ui.admin.nodes.maintenance')}
+                </span>
+            ) : null}
+        </div>
+    );
+}
 
 export default function NodesPage() {
     const { t } = useTranslation();
@@ -384,159 +403,134 @@ export default function NodesPage() {
                     }}
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
-                    {nodes.map((node) => {
-                        const health = getNodeHealthStatus(node.id);
-                        const badges: ResourceBadge[] = [
-                            {
-                                label: t(`admin.node.health.${health}`),
-                                className:
-                                    health === 'online'
-                                        ? 'bg-green-500/10 text-green-500 border-green-500/20'
-                                        : health === 'offline'
-                                          ? 'bg-red-500/10 text-red-500 border-red-500/20'
-                                          : 'bg-muted text-muted-foreground',
-                            },
-                            {
-                                label: getLocationName(node.location_id),
-                                className: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-                            },
-                        ];
-
-                        if (node.maintenance_mode) {
-                            badges.push({
-                                label: t('ui.admin.nodes.maintenance'),
-                                className: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-                            });
-                        }
-
-                        return (
-                            <ResourceCard
-                                key={node.id}
-                                title={node.name}
-                                subtitle={privacyMask.text(node.fqdn)}
-                                icon={Server}
-                                badges={badges}
-                                description={
-                                    <div className='text-muted-foreground mt-1 line-clamp-1 text-sm'>
-                                        {node.description || t('common.nA')}
-                                    </div>
-                                }
-                                actions={
-                                    <div className='flex items-center gap-2'>
-                                        <Button
-                                            size='sm'
-                                            variant='ghost'
-                                            onClick={() => router.push(`/admin/nodes/${node.id}/databases`)}
-                                            title={t('admin.node.actions.databases')}
-                                        >
-                                            <DatabaseIcon className='h-4 w-4' />
-                                        </Button>
-                                        <Button
-                                            size='sm'
-                                            variant='ghost'
-                                            onClick={() => setMassTransferNode(node)}
-                                            title={t('admin.node.mass_transfer.button')}
-                                        >
-                                            <ArrowLeftRight className='h-4 w-4' />
-                                        </Button>
-                                        <Button
-                                            size='sm'
-                                            variant='ghost'
-                                            onClick={() => router.push(`/admin/nodes/${node.id}/edit`)}
-                                            title={t('admin.node.actions.edit')}
-                                        >
-                                            <Pencil className='h-4 w-4' />
-                                        </Button>
-                                        {confirmDeleteId === node.id ? (
-                                            <>
-                                                <Button
-                                                    size='sm'
-                                                    variant='destructive'
-                                                    onClick={() => confirmDelete(node.id)}
-                                                    loading={deleting}
-                                                >
-                                                    {t('admin.node.actions.confirm_delete')}
-                                                </Button>
-                                                <Button
-                                                    size='sm'
-                                                    variant='outline'
-                                                    onClick={() => setConfirmDeleteId(null)}
-                                                    disabled={deleting}
-                                                >
-                                                    {t('admin.node.actions.cancel_delete')}
-                                                </Button>
-                                            </>
-                                        ) : (
-                                            <Button
-                                                size='sm'
-                                                variant='ghost'
-                                                className='text-destructive hover:text-destructive hover:bg-destructive/10'
-                                                onClick={() => handleDelete(node.id)}
-                                                title={t('admin.node.actions.delete')}
-                                            >
-                                                <Trash2 className='h-4 w-4' />
-                                            </Button>
-                                        )}
-                                    </div>
-                                }
+                <DataTable
+                    rows={nodes}
+                    rowKey={(node) => node.id}
+                    onRowClick={(node) => router.push(`/admin/nodes/${node.id}/edit`)}
+                    columns={[
+                        {
+                            key: 'node',
+                            header: t('admin.node.table.node'),
+                            className: 'w-[30%]',
+                            cell: (node) => (
+                                <TableIdentity title={node.name} subtitle={privacyMask.text(node.fqdn)} icon={Server} />
+                            ),
+                        },
+                        {
+                            key: 'status',
+                            header: t('admin.node.table.status'),
+                            cell: (node) => <NodeHealth node={node} health={getNodeHealthStatus(node.id)} />,
+                        },
+                        {
+                            key: 'location',
+                            header: t('admin.node.table.location'),
+                            className: 'text-muted-foreground text-xs',
+                            cell: (node) => (
+                                <span className='inline-flex items-center gap-1.5'>
+                                    <MapPin className='h-3.5 w-3.5' />
+                                    {getLocationName(node.location_id)}
+                                </span>
+                            ),
+                        },
+                        {
+                            key: 'capacity',
+                            header: t('admin.node.table.capacity'),
+                            className: 'text-muted-foreground text-xs whitespace-nowrap',
+                            cell: (node) => (
+                                <span>
+                                    {formatNodeMb(node.memory)} / {formatNodeMb(node.disk)}
+                                </span>
+                            ),
+                        },
+                        {
+                            key: 'daemon',
+                            header: t('admin.node.table.daemon'),
+                            className: 'text-muted-foreground hidden font-mono text-xs xl:table-cell',
+                            cell: (node) => `${node.scheme}:${node.daemonListen}`,
+                        },
+                    ]}
+                    mobileCard={(node) => (
+                        <div className='space-y-2.5'>
+                            <TableIdentity title={node.name} subtitle={privacyMask.text(node.fqdn)} icon={Server} />
+                            <div className='text-muted-foreground flex flex-wrap items-center gap-3 text-xs'>
+                                <NodeHealth node={node} health={getNodeHealthStatus(node.id)} />
+                                <span className='inline-flex items-center gap-1.5'>
+                                    <MapPin className='h-3.5 w-3.5' />
+                                    {getLocationName(node.location_id)}
+                                </span>
+                                <span>
+                                    {formatNodeMb(node.memory)} / {formatNodeMb(node.disk)}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                    actions={(node) =>
+                        confirmDeleteId === node.id ? (
+                            <>
+                                <Button
+                                    size='sm'
+                                    variant='destructive'
+                                    onClick={() => confirmDelete(node.id)}
+                                    loading={deleting}
+                                >
+                                    {t('admin.node.actions.confirm_delete')}
+                                </Button>
+                                <Button
+                                    size='sm'
+                                    variant='outline'
+                                    onClick={() => setConfirmDeleteId(null)}
+                                    disabled={deleting}
+                                >
+                                    {t('admin.node.actions.cancel_delete')}
+                                </Button>
+                            </>
+                        ) : (
+                            <RowActionsMenu
+                                items={[
+                                    {
+                                        label: t('admin.node.actions.edit'),
+                                        icon: Pencil,
+                                        href: `/admin/nodes/${node.id}/edit`,
+                                    },
+                                    {
+                                        label: t('admin.node.actions.databases'),
+                                        icon: DatabaseIcon,
+                                        href: `/admin/nodes/${node.id}/databases`,
+                                    },
+                                    {
+                                        label: t('admin.node.mass_transfer.button'),
+                                        icon: ArrowLeftRight,
+                                        onClick: () => setMassTransferNode(node),
+                                    },
+                                    {
+                                        label: t('admin.node.actions.delete'),
+                                        icon: Trash2,
+                                        destructive: true,
+                                        separated: true,
+                                        onClick: () => handleDelete(node.id),
+                                    },
+                                ]}
                             />
-                        );
-                    })}
-                </div>
+                        )
+                    }
+                />
             )}
 
             {pagination.totalPages > 1 && (
-                <div className='mt-8 flex items-center justify-center gap-2'>
-                    <Button
-                        variant='outline'
-                        size='icon'
-                        disabled={page === 1}
-                        onClick={() => patchFilters({ page: page - 1 })}
-                    >
-                        <ChevronLeft className='h-4 w-4' />
-                    </Button>
-                    <span className='text-sm font-medium'>
-                        {page} / {pagination.totalPages}
-                    </span>
-                    <Button
-                        variant='outline'
-                        size='icon'
-                        disabled={page === pagination.totalPages}
-                        onClick={() => patchFilters({ page: page + 1 })}
-                    >
-                        <ChevronRight className='h-4 w-4' />
-                    </Button>
-                </div>
+                <ListPagination
+                    page={page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                    className='mt-4'
+                />
             )}
 
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
-                <PageCard title={t('admin.node.help.what.title')} icon={Server}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.node.help.what.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.node.help.utility.title')} icon={Network}>
-                    <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm leading-relaxed'>
-                        <li>{t('admin.node.help.utility.deploy')}</li>
-                        <li>{t('admin.node.help.utility.health')}</li>
-                        <li>{t('admin.node.help.utility.limits')}</li>
-                        <li>{t('admin.node.help.utility.storage')}</li>
-                    </ul>
-                </PageCard>
-                <PageCard title={t('admin.node.help.locations.title')} icon={MapPin}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.node.help.locations.description')}
-                    </p>
-                </PageCard>
-            </div>
-
-            <PageCard title={t('admin.node.help.wings.title')} icon={Shield} className='mt-6'>
+            <TipCard title={t('admin.node.help.wings.title')} icon={Shield} className='mt-6'>
                 <div className='text-muted-foreground space-y-4 text-sm'>
                     <p>{t('admin.node.help.wings.p1')}</p>
                     <p>{t('admin.node.help.wings.p2')}</p>
                 </div>
-            </PageCard>
+            </TipCard>
 
             <WidgetRenderer widgets={getWidgets('admin-nodes', 'bottom-of-page')} />
 

@@ -15,13 +15,13 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { TipCard } from '@/components/featherui/TipCard';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { getApiErrorMessage, getApiErrorMessageFromPayload } from '@/lib/api-errors';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { ListEmptyState } from '@/components/featherui/ListEmptyState';
@@ -435,21 +435,21 @@ export default function MailTemplatesPage() {
             )}
 
             <div className='border-border/50 grid grid-cols-1 gap-6 border-t pt-6 md:grid-cols-2 lg:grid-cols-3'>
-                <PageCard title={t('admin.mail_templates.help.what_is.title')} icon={FileText}>
+                <TipCard title={t('admin.mail_templates.help.what_is.title')} icon={FileText}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.mail_templates.help.what_is.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.mail_templates.help.mass_email.title')} icon={Send}>
+                </TipCard>
+                <TipCard title={t('admin.mail_templates.help.mass_email.title')} icon={Send}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.mail_templates.help.mass_email.description')}
                     </p>
-                </PageCard>
-                <PageCard title={t('admin.mail_templates.help.legal.title')} icon={Scale}>
+                </TipCard>
+                <TipCard title={t('admin.mail_templates.help.legal.title')} icon={Scale}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.mail_templates.help.legal.description')}
                     </p>
-                </PageCard>
+                </TipCard>
             </div>
 
             <Sheet open={createOpen} onOpenChange={guardClose(setCreateOpen)} className='max-w-7xl'>
