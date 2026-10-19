@@ -20,6 +20,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { ShieldCheck, User, Link, Key, Lock, Mail, Hash, Users, Shield, KeyRound, Plus } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -229,21 +230,23 @@ export default function OidcProvidersPage() {
                             className='border-0 bg-transparent py-8'
                         />
                     ) : (
-                        <div className='space-y-3'>
+                        <ResourceTable>
                             {providers.map((provider) => {
                                 const isEnabled = provider.enabled === 'true';
                                 return (
-                                    <div
+                                    <ResourceCard
                                         key={provider.uuid}
-                                        className='border-border flex items-center justify-between rounded-lg border px-4 py-3'
-                                    >
-                                        <div>
-                                            <div className='flex items-center gap-2 font-medium'>
-                                                <ShieldCheck className='text-primary h-4 w-4' />
-                                                <span>{provider.name}</span>
-                                            </div>
-                                            <div className='text-muted-foreground text-xs'>{provider.issuer_url}</div>
-                                            <div className='mt-1'>
+                                        icon={ShieldCheck}
+                                        title={provider.name}
+                                        subtitle={
+                                            <>
+                                                <div className='text-muted-foreground text-xs'>
+                                                    {provider.issuer_url}
+                                                </div>
+                                            </>
+                                        }
+                                        badges={
+                                            <>
                                                 <span
                                                     className={
                                                         'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ' +
@@ -256,67 +259,73 @@ export default function OidcProvidersPage() {
                                                         ? t('admin.oidcProviders.enabled')
                                                         : t('admin.oidcProviders.disabled')}
                                                 </span>
-                                            </div>
-                                        </div>
-                                        <div className='flex items-center gap-2'>
-                                            <Button variant='outline' size='sm' onClick={() => handleEdit(provider)}>
-                                                {t('admin.oidcProviders.edit')}
-                                            </Button>
-                                            <Button
-                                                variant='outline'
-                                                size='sm'
-                                                onClick={async () => {
-                                                    const next = isEnabled ? 'false' : 'true';
-                                                    try {
-                                                        const res = await fetch(
-                                                            `/api/admin/oidc/providers/${provider.uuid}`,
-                                                            {
-                                                                method: 'PATCH',
-                                                                headers: {
-                                                                    'Content-Type': 'application/json',
+                                            </>
+                                        }
+                                        actions={
+                                            <div className='flex items-center gap-2'>
+                                                <Button
+                                                    variant='outline'
+                                                    size='sm'
+                                                    onClick={() => handleEdit(provider)}
+                                                >
+                                                    {t('admin.oidcProviders.edit')}
+                                                </Button>
+                                                <Button
+                                                    variant='outline'
+                                                    size='sm'
+                                                    onClick={async () => {
+                                                        const next = isEnabled ? 'false' : 'true';
+                                                        try {
+                                                            const res = await fetch(
+                                                                `/api/admin/oidc/providers/${provider.uuid}`,
+                                                                {
+                                                                    method: 'PATCH',
+                                                                    headers: {
+                                                                        'Content-Type': 'application/json',
+                                                                    },
+                                                                    body: JSON.stringify({ enabled: next }),
                                                                 },
-                                                                body: JSON.stringify({ enabled: next }),
-                                                            },
-                                                        );
-                                                        const json = await res.json();
-                                                        if (json.success) {
-                                                            fetchProviders();
-                                                        } else {
+                                                            );
+                                                            const json = await res.json();
+                                                            if (json.success) {
+                                                                fetchProviders();
+                                                            } else {
+                                                                toast.error(
+                                                                    getApiErrorMessageFromPayload(
+                                                                        json,
+                                                                        t,
+                                                                        'admin.oidcProviders.messages.toggle_failed',
+                                                                    ),
+                                                                );
+                                                            }
+                                                        } catch (error) {
                                                             toast.error(
-                                                                getApiErrorMessageFromPayload(
-                                                                    json,
+                                                                getApiErrorMessage(
+                                                                    error,
                                                                     t,
                                                                     'admin.oidcProviders.messages.toggle_failed',
                                                                 ),
                                                             );
                                                         }
-                                                    } catch (error) {
-                                                        toast.error(
-                                                            getApiErrorMessage(
-                                                                error,
-                                                                t,
-                                                                'admin.oidcProviders.messages.toggle_failed',
-                                                            ),
-                                                        );
-                                                    }
-                                                }}
-                                            >
-                                                {isEnabled
-                                                    ? t('admin.oidcProviders.disable')
-                                                    : t('admin.oidcProviders.enable')}
-                                            </Button>
-                                            <Button
-                                                variant='destructive'
-                                                size='sm'
-                                                onClick={() => handleDelete(provider)}
-                                            >
-                                                {t('admin.oidcProviders.delete')}
-                                            </Button>
-                                        </div>
-                                    </div>
+                                                    }}
+                                                >
+                                                    {isEnabled
+                                                        ? t('admin.oidcProviders.disable')
+                                                        : t('admin.oidcProviders.enable')}
+                                                </Button>
+                                                <Button
+                                                    variant='destructive'
+                                                    size='sm'
+                                                    onClick={() => handleDelete(provider)}
+                                                >
+                                                    {t('admin.oidcProviders.delete')}
+                                                </Button>
+                                            </div>
+                                        }
+                                    />
                                 );
                             })}
-                        </div>
+                        </ResourceTable>
                     )}
                 </PageCard>
 

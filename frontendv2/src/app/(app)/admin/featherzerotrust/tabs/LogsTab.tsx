@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/featherui/Button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import {
@@ -199,7 +199,7 @@ const LogsTab = () => {
                             className='mb-4'
                         />
                     )}
-                    <div className='grid grid-cols-1 gap-6'>
+                    <ResourceTable>
                         {logs.map((log) => (
                             <ResourceCard
                                 key={log.execution_id}
@@ -268,7 +268,7 @@ const LogsTab = () => {
                                 }
                             />
                         ))}
-                    </div>
+                    </ResourceTable>
                     {pagination.totalPages > 1 && (
                         <div className='mt-8 flex items-center justify-center gap-2'>
                             <Button

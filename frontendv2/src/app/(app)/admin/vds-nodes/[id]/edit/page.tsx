@@ -375,7 +375,7 @@ export default function EditVdsNodePage() {
             <div className='block'>
                 <Tabs defaultValue='details' orientation='vertical' className='flex w-full flex-col gap-6 md:flex-row'>
                     <aside className='w-full shrink-0 md:w-64'>
-                        <ScrollableTabsList className='bg-card/30 border-border/50 flex h-auto w-full flex-row gap-2 rounded-2xl border p-2 md:flex-col md:gap-1 md:overflow-visible'>
+                        <ScrollableTabsList className='fp-surface flex h-auto w-full flex-row gap-2 rounded-2xl border p-2 md:flex-col md:gap-1 md:overflow-visible'>
                             {tabs.map((tab) => {
                                 const Icon = tab.icon;
 

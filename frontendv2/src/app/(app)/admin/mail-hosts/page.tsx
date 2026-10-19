@@ -25,7 +25,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Select } from '@/components/ui/select-native';
@@ -288,7 +288,7 @@ export default function AdminMailHostsPage() {
                             description={t('admin.mailHosts.setupHint')}
                             icon={Server}
                         >
-                            <div className='space-y-3'>
+                            <ResourceTable>
                                 {nodesWithoutMail.map((node) => (
                                     <ResourceCard
                                         key={node.id}
@@ -317,7 +317,7 @@ export default function AdminMailHostsPage() {
                                         }
                                     />
                                 ))}
-                            </div>
+                            </ResourceTable>
                         </PageCard>
                     )}
 
@@ -327,7 +327,7 @@ export default function AdminMailHostsPage() {
                             description={t('admin.mailHosts.builtinHint')}
                             icon={Mail}
                         >
-                            <div className='space-y-3'>
+                            <ResourceTable>
                                 {builtinHosts.map((row) => (
                                     <ResourceCard
                                         key={row.id}
@@ -394,7 +394,7 @@ export default function AdminMailHostsPage() {
                                         }
                                     />
                                 ))}
-                            </div>
+                            </ResourceTable>
                         </PageCard>
                     )}
 
@@ -404,7 +404,7 @@ export default function AdminMailHostsPage() {
                             description={t('admin.mailHosts.externalHint')}
                             icon={Mail}
                         >
-                            <div className='space-y-3'>
+                            <ResourceTable>
                                 {externalHosts.map((row) => (
                                     <ResourceCard
                                         key={row.id}
@@ -430,7 +430,7 @@ export default function AdminMailHostsPage() {
                                         }
                                     />
                                 ))}
-                            </div>
+                            </ResourceTable>
                         </PageCard>
                     )}
 

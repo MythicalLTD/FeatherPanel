@@ -37,7 +37,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import { getApiErrorMessage } from '@/lib/api-errors';
 import { cn } from '@/lib/utils';
-import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { ResourceCard, ResourceTable } from '@/components/featherui/ResourceCard';
 import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -376,7 +376,7 @@ const HashesTab = () => {
 
     return (
         <div className='space-y-6'>
-            <div className='bg-card/50 border-border/50 flex flex-col items-center justify-between gap-4 rounded-2xl border p-4 shadow-lg backdrop-blur-md sm:flex-row'>
+            <div className='fp-surface flex flex-col items-center justify-between gap-4 rounded-2xl border p-4 shadow-lg sm:flex-row'>
                 <div className='flex items-center gap-3'>
                     <Button onClick={() => setAddHashDialogOpen(true)}>
                         <Plus className='mr-2 h-4 w-4' />
@@ -509,7 +509,7 @@ const HashesTab = () => {
                     icon={Database}
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <ResourceTable>
                     {filteredHashes.map((h) => (
                         <ResourceCard
                             key={h.hash}
@@ -608,7 +608,7 @@ const HashesTab = () => {
                             }
                         />
                     ))}
-                </div>
+                </ResourceTable>
             )}
 
             <Dialog open={addHashDialogOpen} onOpenChange={setAddHashDialogOpen}>

@@ -238,7 +238,7 @@ export default function AdminDashboardPage() {
             {error && (
                 <div
                     role='alert'
-                    className='bg-card/50 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-500/30 p-4 backdrop-blur-sm'
+                    className='fp-surface flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-500/30 p-4'
                 >
                     <p className='text-sm text-red-700 dark:text-red-400'>{error}</p>
                     <Button
@@ -256,7 +256,7 @@ export default function AdminDashboardPage() {
             {showAppUrlWarning && (
                 <div
                     role='alert'
-                    className='bg-card/50 rounded-2xl border border-red-500/30 p-4 text-red-700 backdrop-blur-sm dark:text-red-400'
+                    className='fp-surface rounded-2xl border border-red-500/30 p-4 text-red-700 dark:text-red-400'
                 >
                     <div className='relative z-10 flex flex-col justify-between gap-4 md:flex-row md:items-center md:gap-6'>
                         <div className='flex min-w-0 flex-1 items-start gap-3 md:gap-4'>
@@ -292,7 +292,7 @@ export default function AdminDashboardPage() {
             {updateAvailable && latestVersion && !showAppUrlWarning && (
                 <div
                     role='status'
-                    className='bg-card/50 rounded-2xl border border-amber-500/30 p-4 text-amber-800 backdrop-blur-sm dark:text-amber-400'
+                    className='fp-surface rounded-2xl border border-amber-500/30 p-4 text-amber-800 dark:text-amber-400'
                 >
                     <div className='relative z-10 flex flex-col justify-between gap-3 sm:flex-row sm:items-center'>
                         <div className='flex min-w-0 items-start gap-3'>

@@ -27,18 +27,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
-import {
-    Loader2,
-    Plus,
-    Trash2,
-    RefreshCw,
-    Upload,
-    MailX,
-    ShieldCheck,
-    Search,
-    X,
-    AlertCircle,
-} from 'lucide-react';
+import { Loader2, Plus, Trash2, RefreshCw, Upload, MailX, ShieldCheck, Search, X, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -565,7 +554,7 @@ export default function BlockedEmailDomainsPage() {
                 </div>
             </PageCard>
 
-            <div className='border-border bg-card/50 flex flex-col gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md sm:flex-row sm:items-center'>
+            <div className='fp-surface flex flex-col gap-4 rounded-2xl border p-4 sm:flex-row sm:items-center'>
                 <div className='group relative w-full min-w-0 flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -640,7 +629,7 @@ export default function BlockedEmailDomainsPage() {
                     }
                 />
             ) : (
-                <div className='border-border/80 bg-card/40 overflow-hidden rounded-2xl border shadow-sm backdrop-blur-sm'>
+                <div className='fp-surface overflow-hidden rounded-2xl border'>
                     <div className='overflow-x-auto'>
                         <table className='w-full min-w-[640px] text-sm'>
                             <thead>

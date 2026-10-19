@@ -299,7 +299,7 @@ export default function StorageSensePage() {
         sub?: string;
         icon: LucideIcon;
     }) => (
-        <div className='border-border/60 bg-card/60 flex gap-3 rounded-xl border p-4 backdrop-blur-sm'>
+        <div className='fp-surface flex gap-3 rounded-xl border p-4'>
             <div className='bg-primary/10 text-primary h-fit rounded-lg p-2.5'>
                 <Icon className='h-5 w-5' />
             </div>

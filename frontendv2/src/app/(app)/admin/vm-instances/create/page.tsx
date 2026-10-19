@@ -734,7 +734,7 @@ export default function VmInstancesCreatePage() {
             <WidgetRenderer widgets={getWidgets('admin-vm-instances-create', 'after-header')} />
 
             {infraGate.status === 'blocked' && (
-                <div className='border-border/50 bg-card/70 mt-6 rounded-2xl border shadow-sm backdrop-blur-md'>
+                <div className='fp-surface mt-6 rounded-2xl border'>
                     <div className='flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6'>
                         <div className='flex min-w-0 flex-1 gap-3'>
                             <div className='bg-primary/12 text-primary ring-primary/20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1'>
@@ -791,7 +791,7 @@ export default function VmInstancesCreatePage() {
                 </div>
             )}
 
-            <div className='bg-card/50 border-border/50 mt-8 mb-12 rounded-2xl border p-6 backdrop-blur-xl'>
+            <div className='fp-surface mt-8 mb-12 rounded-2xl border p-6'>
                 <StepIndicator steps={wizardSteps} currentStep={currentStep} onStepClick={setCurrentStep} />
                 {loadingPlans && (
                     <p className='text-muted-foreground mt-4 flex items-center gap-2 text-sm'>
@@ -1350,7 +1350,7 @@ export default function VmInstancesCreatePage() {
                     </p>
                 )}
 
-                <div className='bg-card/50 border-border/50 mt-8 flex items-center justify-between rounded-2xl border p-6 backdrop-blur-xl'>
+                <div className='fp-surface mt-8 flex items-center justify-between rounded-2xl border p-6'>
                     <Button
                         type='button'
                         variant='outline'
