@@ -42,13 +42,20 @@ function AnnouncementMessage({ markdown }: { markdown: string }) {
 export function AnnouncementBanner({
     serverId,
     compact = false,
+    initialNotifications,
 }: {
     serverId?: number | null;
     /** Dashboard side column: tighter cards, no outer margin. */
     compact?: boolean;
+    /**
+     * Announcements fetched on the server for the first paint. Used until the client fetch
+     * finishes, so the banner is in the HTML instead of pushing the page down after load.
+     */
+    initialNotifications?: Notification[] | null;
 } = {}) {
-    const { notifications, dismissNotification } = useNotifications();
+    const { notifications: liveNotifications, loading, dismissNotification } = useNotifications();
     const { t } = useTranslation();
+    const notifications = loading && initialNotifications ? initialNotifications : liveNotifications;
 
     const visibleNotifications =
         serverId != null ? notifications.filter((n) => n.server_id == null || n.server_id === serverId) : notifications;

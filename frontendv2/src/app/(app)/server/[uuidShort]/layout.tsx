@@ -26,6 +26,7 @@ import { ServerSuspendedWrapper } from '@/components/server/ServerSuspendedWrapp
 import { getBaseUrl } from '@/lib/settings-api';
 import { cookies } from 'next/headers';
 import { Server } from '@/types/server';
+import type { Notification, NotificationsResponse } from '@/types/notification';
 
 type Props = {
     params: Promise<{ uuidShort: string }>;
@@ -36,18 +37,22 @@ type Props = {
  * visitor or a server the user cannot see simply gets no metadata. cache() shares one request
  * between generateMetadata and the layout within a render.
  */
+async function cookieHeader(): Promise<string> {
+    const cookieStore = await cookies();
+    return cookieStore
+        .getAll()
+        .map((c) => `${c.name}=${c.value}`)
+        .join('; ');
+}
+
 const getServer = cache(async (uuidShort: string): Promise<Server | null> => {
     try {
-        const cookieStore = await cookies();
-        const cookieHeader = cookieStore
-            .getAll()
-            .map((c) => `${c.name}=${c.value}`)
-            .join('; ');
+        const cookie = await cookieHeader();
 
         const url = `${getBaseUrl()}/api/user/servers/${uuidShort}`;
         const res = await fetch(url, {
             headers: {
-                Cookie: cookieHeader,
+                Cookie: cookie,
                 Accept: 'application/json',
             },
             // Per-user data (limits, permissions): never serve a cached copy, or a limit changed
@@ -70,6 +75,24 @@ const getServer = cache(async (uuidShort: string): Promise<Server | null> => {
         return null;
     }
 });
+
+/**
+ * Announcements for the first paint, fetched alongside the server. Without them the banner
+ * arrives after hydration and pushes the whole page down (CLS ~0.78 on the file manager).
+ */
+async function getAnnouncements(): Promise<Notification[] | null> {
+    try {
+        const res = await fetch(`${getBaseUrl()}/api/user/notifications`, {
+            headers: { Cookie: await cookieHeader(), Accept: 'application/json' },
+            cache: 'no-store',
+        });
+        if (!res.ok) return null;
+        const data = (await res.json()) as NotificationsResponse;
+        return data.success && Array.isArray(data.data?.notifications) ? data.data.notifications : null;
+    } catch {
+        return null;
+    }
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { uuidShort } = await params;
@@ -96,7 +119,7 @@ export default async function ServerLayout({
     params: Promise<{ uuidShort: string }>;
 }) {
     const { uuidShort } = await params;
-    const server = await getServer(uuidShort);
+    const [server, announcements] = await Promise.all([getServer(uuidShort), getAnnouncements()]);
 
     return (
         <ServerProvider uuidShort={uuidShort} initialServer={server}>
@@ -104,7 +127,7 @@ export default async function ServerLayout({
                 <DashboardShell>
                     <ServerSuspendedWrapper>
                         <ServerSpellBackdrop>
-                            <ServerAnnouncementBanner />
+                            <ServerAnnouncementBanner initialNotifications={announcements} />
                             <ServerNodeConnectionBanner />
                             {children}
                         </ServerSpellBackdrop>
