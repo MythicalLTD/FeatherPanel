@@ -253,7 +253,7 @@ Optional environment variables for `build:public-docs`:
 
 <!-- COUNT-STATS:START -->
 
-_Last updated: 2026-10-19T00:23:14.906Z_
+_Last updated: 2026-10-19T00:47:12.433Z_
 
 | Extension | Files | Lines |
 | --- | ---: | ---: |
