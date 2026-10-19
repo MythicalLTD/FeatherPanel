@@ -16748,5 +16748,29 @@
 			"settings_title": "Fine tune settings",
 			"settings_body": "Branding, mail templates, limits and more."
 		}
+	},
+	"onboarding": {
+		"tour": {
+			"menu": "Take the tour",
+			"progress": "{current} of {total}",
+			"close": "Close tour",
+			"back": "Back",
+			"next": "Next",
+			"skip": "Skip tour",
+			"finish": "Got it",
+			"not_visible": "It is not on screen right now, so here is the short version.",
+			"welcome_title": "Welcome aboard",
+			"welcome_body": "A quick tour of the places you will use most. It takes under a minute and you can leave any time.",
+			"dashboard_title": "Your dashboard",
+			"dashboard_body": "Your servers, websites and virtual machines at a glance, with shortcuts and search to jump anywhere.",
+			"arrange_title": "Make it yours",
+			"arrange_body": "Use Arrange to reorder, hide and resize dashboard sections. Your layout follows you to every device.",
+			"notifications_title": "Notifications",
+			"notifications_body": "Announcements, server alerts and ticket replies land here. A badge shows how many are unread.",
+			"server_title": "Server page",
+			"server_body": "Open a server to reach its console, files, backups, schedules and settings from one place.",
+			"account_title": "Account and help",
+			"account_body": "Your profile, security, API keys and appearance live in this menu. You can restart this tour from here too."
+		}
 	}
 }
