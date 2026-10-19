@@ -365,7 +365,7 @@ class RegisterController
             // Set session/cookie
             if (isset($createdUser['remember_token'])) {
                 $token = $createdUser['remember_token'];
-                SessionCookieHelper::set($token, time() + 60 * 60 * 24 * 30);
+                SessionCookieHelper::startSession($createdUser, $token, time() + 60 * 60 * 24 * 30);
                 User::updateUser($createdUser['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
 
                 // Create login activity (user is automatically logged in)

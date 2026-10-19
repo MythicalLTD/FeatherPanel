@@ -351,7 +351,7 @@ class TwoFactorController
             return ApiResponse::error('Remember token not set', 'REMEMBER_TOKEN_NOT_SET');
         }
         $userInfo['remember_token'] = $token;
-        SessionCookieHelper::set($token, time() + 60 * 60 * 24 * 30);
+        SessionCookieHelper::startSession($userInfo, $token, time() + 60 * 60 * 24 * 30);
         User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
 
         Activity::createActivity([
