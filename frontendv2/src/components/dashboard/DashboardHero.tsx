@@ -191,7 +191,10 @@ export function DashboardHero({ panelName, name, subtitle, subtitleTone = 'neutr
 
     return (
         <div className='grid min-w-0 gap-4 lg:grid-cols-3'>
-            <section className='fp-surface from-primary/25 via-primary/10 relative min-w-0 overflow-hidden rounded-2xl border bg-linear-to-br p-5 sm:p-6 lg:col-span-2'>
+            <section
+                data-tour='dashboard-hero'
+                className='fp-surface from-primary/25 via-primary/10 relative min-w-0 overflow-hidden rounded-2xl border bg-linear-to-br p-5 sm:p-6 lg:col-span-2'
+            >
                 <span
                     className='bg-primary/15 pointer-events-none absolute -top-24 -right-16 h-64 w-64 rounded-full blur-2xl'
                     aria-hidden
@@ -248,6 +251,7 @@ export function DashboardHero({ panelName, name, subtitle, subtitleTone = 'neutr
                             {onArrange && (
                                 <button
                                     type='button'
+                                    data-tour='dashboard-arrange'
                                     onClick={onArrange}
                                     className='text-muted-foreground hover:text-foreground hover:bg-background/50 inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors'
                                 >

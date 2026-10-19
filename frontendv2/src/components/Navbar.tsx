@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useContext, useEffect, useMemo, useState } from 'react';
-import { CircleUser, Smartphone } from 'lucide-react';
+import { CircleUser, Compass, Smartphone } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession } from '@/contexts/SessionContext';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -83,6 +83,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     const userNavigation = [
         { name: t('navbar.profile'), href: '/dashboard/account', icon: CircleUser },
         { name: t('account.loginDevice.menuLabel'), href: '/dashboard/account/login-device', icon: Smartphone },
+        { name: t('onboarding.tour.menu'), href: '/dashboard?tour=1', icon: Compass },
     ];
 
     const handleLogout = async () => {

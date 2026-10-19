@@ -173,6 +173,7 @@ export function NavbarUserMenu({
     return (
         <Menu as='div' className='relative shrink-0'>
             <Menu.Button
+                data-tour='user-menu'
                 className={cn(
                     'group focus-visible:ring-ring focus-visible:ring-offset-background flex items-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                     isModern
