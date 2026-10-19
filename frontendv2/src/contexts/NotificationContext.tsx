@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { useLiveRefresh } from '@/hooks/useLiveRefresh';
 import { realtimeTopics } from '@/lib/realtime';
@@ -125,20 +125,22 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         });
     }, []);
 
-    const activeNotifications = notifications.filter((n) => !dismissedIds.includes(n.id));
-
-    return (
-        <NotificationContext.Provider
-            value={{
-                notifications: activeNotifications,
-                loading,
-                dismissNotification,
-                refreshNotifications: fetchNotifications,
-            }}
-        >
-            {children}
-        </NotificationContext.Provider>
+    const activeNotifications = useMemo(
+        () => notifications.filter((n) => !dismissedIds.includes(n.id)),
+        [notifications, dismissedIds],
     );
+
+    const contextValue = useMemo(
+        () => ({
+            notifications: activeNotifications,
+            loading,
+            dismissNotification,
+            refreshNotifications: fetchNotifications,
+        }),
+        [activeNotifications, loading, dismissNotification, fetchNotifications],
+    );
+
+    return <NotificationContext.Provider value={contextValue}>{children}</NotificationContext.Provider>;
 }
 
 export function useNotifications() {
