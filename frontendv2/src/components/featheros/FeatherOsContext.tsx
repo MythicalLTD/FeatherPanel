@@ -48,11 +48,7 @@ import {
 } from './types';
 import { clamp, joinPath, normalizeDir, uid } from './utils';
 
-const NODE_UNREACHABLE_CODES = new Set([
-    'DAEMON_UNREACHABLE',
-    'WINGS_CONNECTION_UNAVAILABLE',
-    'NODE_UNREACHABLE',
-]);
+const NODE_UNREACHABLE_CODES = new Set(['DAEMON_UNREACHABLE', 'WINGS_CONNECTION_UNAVAILABLE', 'NODE_UNREACHABLE']);
 
 /** Wings / node offline — map to a calm FeatherOS string instead of raw API dump. */
 function isNodeUnreachableError(error: unknown, code: string | null, message: string): boolean {
@@ -72,10 +68,7 @@ function isNodeUnreachableError(error: unknown, code: string | null, message: st
     if (status === 502 || status === 503 || status === 504) return true;
     if (
         status === 500 &&
-        (genericTransport ||
-            !code ||
-            code === 'INTERNAL_SERVER_ERROR' ||
-            /WINGS|DAEMON|NODE|FETCH_FILES/i.test(code))
+        (genericTransport || !code || code === 'INTERNAL_SERVER_ERROR' || /WINGS|DAEMON|NODE|FETCH_FILES/i.test(code))
     ) {
         return true;
     }
@@ -376,20 +369,13 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
     const errorMessage = useCallback(
         (error: unknown, fallback?: string) => {
             const code = getFeatherpanelApiErrorCode(error);
-            const raw =
-                getFeatherpanelApiErrorMessage(error) ||
-                (error instanceof Error ? error.message : '') ||
-                '';
+            const raw = getFeatherpanelApiErrorMessage(error) || (error instanceof Error ? error.message : '') || '';
             if (isNodeUnreachableError(error, code, raw)) {
                 return t('featheros.errors.node_unreachable', {
                     defaultValue: "Can't reach this server's node. It may be offline or Wings may be down.",
                 });
             }
-            return (
-                raw ||
-                fallback ||
-                t('featheros.errors.generic', { defaultValue: 'Something went wrong' })
-            );
+            return raw || fallback || t('featheros.errors.generic', { defaultValue: 'Something went wrong' });
         },
         [t],
     );
@@ -773,9 +759,7 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
         setSettings((s) => ({
             ...s,
             ...patch,
-            ...(patch.hotCorners
-                ? { hotCorners: { ...s.hotCorners, ...patch.hotCorners } }
-                : {}),
+            ...(patch.hotCorners ? { hotCorners: { ...s.hotCorners, ...patch.hotCorners } } : {}),
         }));
     }, []);
 

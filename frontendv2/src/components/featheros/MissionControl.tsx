@@ -151,7 +151,10 @@ export function MissionControl() {
                 )}
             </div>
 
-            <p className='shrink-0 px-6 pb-2 text-center text-[11px] text-white/55' onClick={(e) => e.stopPropagation()}>
+            <p
+                className='shrink-0 px-6 pb-2 text-center text-[11px] text-white/55'
+                onClick={(e) => e.stopPropagation()}
+            >
                 {t('featheros.mission.drag_hint', {
                     defaultValue: 'Drag a window onto a desktop above, or use Move to…',
                 })}

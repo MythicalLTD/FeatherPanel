@@ -1079,7 +1079,9 @@ export default function EditSpellPage() {
                                                         }
                                                         className='text-xs'
                                                     >
-                                                        {isEnabled(variable.user_viewable) ? t('common.yes') : t('common.no')}
+                                                        {isEnabled(variable.user_viewable)
+                                                            ? t('common.yes')
+                                                            : t('common.no')}
                                                     </Badge>
                                                 </div>
                                                 <div className='flex justify-between'>
@@ -1092,7 +1094,9 @@ export default function EditSpellPage() {
                                                         }
                                                         className='text-xs'
                                                     >
-                                                        {isEnabled(variable.user_editable) ? t('common.yes') : t('common.no')}
+                                                        {isEnabled(variable.user_editable)
+                                                            ? t('common.yes')
+                                                            : t('common.no')}
                                                     </Badge>
                                                 </div>
                                             </div>

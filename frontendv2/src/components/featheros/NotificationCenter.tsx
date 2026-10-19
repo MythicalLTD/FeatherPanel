@@ -61,9 +61,7 @@ export function NotificationCenter() {
                                 <div className='min-w-0 flex-1'>
                                     <div className='text-[13px] font-medium'>{n.title}</div>
                                     {n.body && <div className='mt-0.5 text-[11px] opacity-60'>{n.body}</div>}
-                                    <div className='mt-1 text-[10px] opacity-40'>
-                                        {new Date(n.at).toLocaleString()}
-                                    </div>
+                                    <div className='mt-1 text-[10px] opacity-40'>{new Date(n.at).toLocaleString()}</div>
                                 </div>
                                 <button
                                     type='button'

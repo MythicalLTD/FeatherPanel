@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import NextImage from 'next/image';
-import { ChevronsDown, ChevronsUp } from 'lucide-react';
+import { ChevronsDown, ChevronsUp, Monitor } from 'lucide-react';
 import type { DockDisplay, DockSize, SidebarGlow } from '@/hooks/useSidebarPreferences';
 import type { NavigationItem } from '@/types/navigation';
 import { PanelIcon } from '@/components/icons/PanelIcon';
@@ -47,6 +47,7 @@ type SidebarBottomDockProps = {
     unreadTicketCount: number;
     adminOpenTicketCount: number;
     showCollapseToggle?: boolean;
+    gameEnabled?: boolean;
 };
 
 export function SidebarBottomDock({
@@ -62,6 +63,7 @@ export function SidebarBottomDock({
     unreadTicketCount,
     adminOpenTicketCount,
     showCollapseToggle = true,
+    gameEnabled = false,
 }: SidebarBottomDockProps) {
     const [openSubmenuId, setOpenSubmenuId] = useState<string | null>(null);
 
@@ -255,6 +257,26 @@ export function SidebarBottomDock({
                     return entries;
                 })}
             </MacDockTrack>
+
+            {gameEnabled && (
+                <>
+                    <div
+                        className='from-primary/25 mx-0.5 h-6 w-px shrink-0 self-center bg-gradient-to-b to-transparent'
+                        aria-hidden
+                    />
+                    <MacDockItem label={`${appName} OS`}>
+                        <a
+                            href='/os'
+                            target='_blank'
+                            rel='noopener noreferrer'
+                            className='flex h-full w-full items-center justify-center outline-none'
+                            aria-label={`${appName} OS`}
+                        >
+                            <Monitor style={{ width: iconPx, height: iconPx }} className='shrink-0' aria-hidden />
+                        </a>
+                    </MacDockItem>
+                </>
+            )}
 
             {showCollapseToggle && (
                 <>

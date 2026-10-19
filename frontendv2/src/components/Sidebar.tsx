@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { Fragment, useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Dialog, Transition } from '@headlessui/react';
-import { X, ChevronRight, ChevronDown } from 'lucide-react';
+import { X, ChevronRight, ChevronDown, ArrowUpRight, Monitor } from 'lucide-react';
 import NextImage from 'next/image';
 import Link from 'next/link';
 import axios from 'axios';
@@ -27,10 +27,12 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn, isEnabled } from '@/lib/utils';
+import { isModuleEnabled } from '@/lib/modules';
 import { ModuleBadge } from '@/components/ui/module-badge';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import type { NavigationItem } from '@/types/navigation';
+import type { AppSettings } from '@/types/settings';
 import { type ChromeLayout, useChromeLayout } from '@/hooks/useChromeLayout';
 import {
     type DockDisplay,
@@ -89,14 +91,7 @@ function SidebarContent({
 }: {
     mobile?: boolean;
     collapsed: boolean;
-    settings: {
-        app_name?: string;
-        app_version?: string;
-        app_logo_white?: string;
-        app_logo_dark?: string;
-        ticket_system_enabled?: string;
-        branding_show_version?: string;
-    } | null;
+    settings: AppSettings | null;
     pathname: string;
     router: ReturnType<typeof useRouter>;
     setMobileOpen: (open: boolean) => void;
@@ -257,6 +252,9 @@ function SidebarContent({
         (sidebarTogglePlacement === 'sidebar' || sidebarTogglePlacement === 'both') &&
         (!isBottomDock || sidebarTogglePlacement === 'both');
 
+    const gameEnabled = isModuleEnabled(settings, 'game');
+    const osTitle = `${settings?.app_name || 'FeatherPanel'} OS`;
+
     if (isBottomDock) {
         return (
             <SidebarBottomDock
@@ -271,6 +269,7 @@ function SidebarContent({
                 isActive={isActive}
                 unreadTicketCount={unreadTicketCount}
                 adminOpenTicketCount={adminOpenTicketCount}
+                gameEnabled={gameEnabled}
             />
         );
     }
@@ -800,10 +799,65 @@ function SidebarContent({
                 )}
             </nav>
 
-            {!mobile && (
+            {gameEnabled && (
                 <div
                     className={cn(
                         'mt-auto shrink-0 border-t',
+                        isClassicChrome ? 'border-border/40' : 'border-border/30',
+                    )}
+                >
+                    {collapsed && !mobile ? (
+                        <div className='flex justify-center py-2'>
+                            <a
+                                href='/os'
+                                target='_blank'
+                                rel='noopener'
+                                {...collapsedTip(osTitle)}
+                                className='group border-primary/25 bg-primary/10 text-primary hover:border-primary/50 hover:bg-primary/20 focus-visible:ring-primary/50 relative flex h-10 w-10 items-center justify-center rounded-xl border transition-all duration-200 hover:scale-105 focus-visible:ring-2 focus-visible:outline-none'
+                                aria-label={osTitle}
+                            >
+                                <Monitor className='h-5 w-5' aria-hidden />
+                            </a>
+                        </div>
+                    ) : (
+                        <div className={cn(isClassicChrome ? 'p-3 pb-2' : 'p-2 pb-1.5')}>
+                            <a
+                                href='/os'
+                                target='_blank'
+                                rel='noopener'
+                                onClick={() => {
+                                    if (mobile) setMobileOpen(false);
+                                }}
+                                className='group border-primary/20 bg-primary/5 hover:border-primary/45 hover:bg-primary/10 focus-visible:ring-primary/50 relative flex items-center gap-2.5 rounded-xl border p-2.5 transition-all duration-200 hover:shadow-xs focus-visible:ring-2 focus-visible:outline-none'
+                            >
+                                <div className='bg-primary/15 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-105'>
+                                    <Monitor className='h-5 w-5' aria-hidden />
+                                </div>
+                                <div className='min-w-0 flex-1'>
+                                    <div className='flex items-center gap-1.5'>
+                                        <span className='text-foreground truncate text-xs font-semibold tracking-tight'>
+                                            {osTitle}
+                                        </span>
+                                        <ArrowUpRight
+                                            className='text-muted-foreground h-3 w-3 shrink-0 opacity-60 transition-opacity group-hover:opacity-100'
+                                            aria-hidden
+                                        />
+                                    </div>
+                                    <p className='text-muted-foreground truncate text-[11px]'>
+                                        {t('featheros.nav_open_hint')}
+                                    </p>
+                                </div>
+                            </a>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {!mobile && (
+                <div
+                    className={cn(
+                        'shrink-0',
+                        !gameEnabled && 'mt-auto border-t',
                         isClassicChrome ? 'border-border/40' : 'border-border/30',
                     )}
                 >

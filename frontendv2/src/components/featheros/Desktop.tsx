@@ -48,15 +48,7 @@ import { useFeatherOs } from './FeatherOsContext';
 import { AppIcon } from './AppIcon';
 import { DesktopWidgets } from './DesktopWidgets';
 import { OS_FILE_DRAG_MIME, type OsAppId, type OsDesktopIcon, type OsFileDragPayload } from './types';
-import {
-    joinPath,
-    parentDir,
-    serverState,
-    stateColor,
-    isTextLike,
-    formatDiskPair,
-    serverDiskUsage,
-} from './utils';
+import { joinPath, parentDir, serverState, stateColor, isTextLike, formatDiskPair, serverDiskUsage } from './utils';
 
 interface RenderedIcon extends OsDesktopIcon {
     label: string;
@@ -705,8 +697,7 @@ export function Desktop() {
                     icon.kind === 'server' && icon.serverUuid
                         ? serverDiskUsage(server, live[icon.serverUuid]?.stats?.diskUsage)
                         : null;
-                const diskTone =
-                    disk && disk.pct >= 90 ? 'is-crit' : disk && disk.pct >= 75 ? 'is-warn' : '';
+                const diskTone = disk && disk.pct >= 90 ? 'is-crit' : disk && disk.pct >= 75 ? 'is-warn' : '';
                 return (
                     <button
                         key={icon.id}

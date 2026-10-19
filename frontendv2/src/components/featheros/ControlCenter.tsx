@@ -96,7 +96,11 @@ export function ControlCenter() {
                             </span>
                             <span>
                                 {t('featheros.settings.appearance')}
-                                <small>{t(`featheros.settings.theme_${os.isDark ? 'dark' : 'light'}`)}</small>
+                                <small>
+                                    {os.isDark
+                                        ? t('featheros.settings.theme_dark')
+                                        : t('featheros.settings.theme_light')}
+                                </small>
                             </span>
                         </button>
                         <button

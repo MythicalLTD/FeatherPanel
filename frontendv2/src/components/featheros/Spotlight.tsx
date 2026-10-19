@@ -136,10 +136,7 @@ export function Spotlight() {
             out.push({
                 id: `srv:${s.uuidShort}`,
                 title: s.name,
-                subtitle: [
-                    t(`featheros.state.${st}`, { defaultValue: st }),
-                    formatDiskPair(disk.used, disk.limit),
-                ]
+                subtitle: [t(`featheros.state.${st}`, { defaultValue: st }), formatDiskPair(disk.used, disk.limit)]
                     .filter(Boolean)
                     .join(' · '),
                 group: t('featheros.spotlight.group_servers'),

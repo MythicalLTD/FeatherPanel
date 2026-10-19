@@ -32,13 +32,7 @@ import { AppIcon } from '../AppIcon';
 import type { OsHotCornerAction, OsTheme } from '../types';
 import type { OsAppProps } from './index';
 
-const HOT_CORNER_ACTIONS: OsHotCornerAction[] = [
-    'mission',
-    'launchpad',
-    'desktop',
-    'notifications',
-    'none',
-];
+const HOT_CORNER_ACTIONS: OsHotCornerAction[] = ['mission', 'launchpad', 'desktop', 'notifications', 'none'];
 
 type HotCornerKey = 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
 
@@ -47,7 +41,12 @@ function HotCornersMap({
     hover,
     onHoverChange,
 }: {
-    corners: { topLeft: OsHotCornerAction; topRight: OsHotCornerAction; bottomLeft: OsHotCornerAction; bottomRight: OsHotCornerAction };
+    corners: {
+        topLeft: OsHotCornerAction;
+        topRight: OsHotCornerAction;
+        bottomLeft: OsHotCornerAction;
+        bottomRight: OsHotCornerAction;
+    };
     hover: HotCornerKey | null;
     onHoverChange: (key: HotCornerKey | null) => void;
 }) {
@@ -212,10 +211,7 @@ export default function SettingsApp({ win }: OsAppProps) {
                                             setAccentColor(id);
                                             updateSettings({ accent: id });
                                         }}
-                                        className={cn(
-                                            'fos-settings-swatch',
-                                            currentAccent === id && 'is-active',
-                                        )}
+                                        className={cn('fos-settings-swatch', currentAccent === id && 'is-active')}
                                         style={{ background: ACCENT_PRESETS[id].hex }}
                                     >
                                         {currentAccent === id && <Check className='h-3 w-3 text-white drop-shadow' />}
@@ -349,9 +345,7 @@ export default function SettingsApp({ win }: OsAppProps) {
                                 <OsSelect
                                     ariaLabel={t('featheros.settings.dock_position')}
                                     value={settings.dockPosition}
-                                    onChange={(v) =>
-                                        updateSettings({ dockPosition: v as 'bottom' | 'left' | 'right' })
-                                    }
+                                    onChange={(v) => updateSettings({ dockPosition: v as 'bottom' | 'left' | 'right' })}
                                     options={[
                                         { value: 'bottom', label: t('featheros.settings.dock_bottom') },
                                         { value: 'left', label: t('featheros.settings.dock_left') },

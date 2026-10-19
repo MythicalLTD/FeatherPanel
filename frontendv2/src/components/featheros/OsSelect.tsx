@@ -49,10 +49,7 @@ export function OsSelect({
     const [active, setActive] = useState(0);
     const [flipUp, setFlipUp] = useState(false);
 
-    const selected = useMemo(
-        () => options.find((o) => o.value === value) ?? options[0],
-        [options, value],
-    );
+    const selected = useMemo(() => options.find((o) => o.value === value) ?? options[0], [options, value]);
 
     useLayoutEffect(() => {
         if (!open || !rootRef.current) return;
@@ -105,11 +102,7 @@ export function OsSelect({
         <div ref={rootRef} className={cn('fos-select', className)}>
             <button
                 type='button'
-                className={cn(
-                    'fos-select-trigger',
-                    size === 'toolbar' && 'is-toolbar',
-                    open && 'is-open',
-                )}
+                className={cn('fos-select-trigger', size === 'toolbar' && 'is-toolbar', open && 'is-open')}
                 aria-haspopup='listbox'
                 aria-expanded={open}
                 aria-controls={listId}

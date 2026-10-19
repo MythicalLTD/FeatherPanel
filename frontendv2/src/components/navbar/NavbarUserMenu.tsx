@@ -18,7 +18,19 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import type { Dispatch, SetStateAction } from 'react';
 import { Fragment } from 'react';
 import { Menu, Transition } from '@headlessui/react';
-import { CircleUser, ChevronDown, Copy, Database, Eye, EyeOff, LogOut, Palette, ShieldCheck } from 'lucide-react';
+import {
+    ArrowUpRight,
+    CircleUser,
+    ChevronDown,
+    Copy,
+    Database,
+    Eye,
+    EyeOff,
+    LogOut,
+    Monitor,
+    Palette,
+    ShieldCheck,
+} from 'lucide-react';
 import { usePrivacyModeToggle } from '@/components/common/PrivacyModeButton';
 import { Switch } from '@/components/ui/switch';
 import { HIDDEN_IP_PLACEHOLDER } from '@/lib/ip-mask';
@@ -28,6 +40,8 @@ import { RoleBadge } from '@/components/RoleBadge';
 import { cn, copyToClipboard } from '@/lib/utils';
 import { PoweredByFeatherPanel } from '@/components/branding/PoweredByFeatherPanel';
 import type { UserInfo } from '@/contexts/SessionContext';
+import type { AppSettings } from '@/types/settings';
+import { isModuleEnabled } from '@/lib/modules';
 
 type NavbarUserMenuProps = {
     variant: 'classic' | 'modern';
@@ -45,6 +59,7 @@ type NavbarUserMenuProps = {
     handleLogout: () => Promise<void>;
     /** When set, phones get an "Admin area" entry (the top bar button is hidden there). */
     adminAreaHref?: string;
+    settings?: AppSettings | null;
 };
 
 function UserAvatar({
@@ -146,10 +161,13 @@ export function NavbarUserMenu({
     getLegalName,
     handleLogout,
     adminAreaHref,
+    settings,
 }: NavbarUserMenuProps) {
     const isModern = variant === 'modern';
     const roleColor = user?.role?.color?.trim() || null;
     const privacy = usePrivacyModeToggle();
+    const gameEnabled = isModuleEnabled(settings, 'game');
+    const osTitle = `${settings?.app_name || 'FeatherPanel'} OS`;
 
     if (userLoading) {
         return (
@@ -288,6 +306,27 @@ export function NavbarUserMenu({
                                         icon={ShieldCheck}
                                         label={t('navbar.adminArea')}
                                     />
+                                )}
+                            </Menu.Item>
+                        ) : null}
+                        {gameEnabled ? (
+                            <Menu.Item as='div'>
+                                {({ active }) => (
+                                    <a
+                                        href='/os'
+                                        target='_blank'
+                                        rel='noopener'
+                                        className={cn(
+                                            'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors',
+                                            active
+                                                ? 'bg-muted/70 text-foreground'
+                                                : 'text-foreground hover:bg-muted/45',
+                                        )}
+                                    >
+                                        <Monitor className='text-muted-foreground h-4 w-4 shrink-0' />
+                                        <span className='font-medium'>{osTitle}</span>
+                                        <ArrowUpRight className='text-muted-foreground ml-auto h-3.5 w-3.5 opacity-60' />
+                                    </a>
                                 )}
                             </Menu.Item>
                         ) : null}

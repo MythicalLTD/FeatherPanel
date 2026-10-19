@@ -72,15 +72,7 @@ export interface OsDesktopIcon {
 }
 
 export type OsWidgetType =
-    | 'clock'
-    | 'calendar'
-    | 'servers'
-    | 'resources'
-    | 'network'
-    | 'storage'
-    | 'shortcuts'
-    | 'status'
-    | 'uptime';
+    'clock' | 'calendar' | 'servers' | 'resources' | 'network' | 'storage' | 'shortcuts' | 'status' | 'uptime';
 
 export interface OsDesktopWidget {
     id: string;

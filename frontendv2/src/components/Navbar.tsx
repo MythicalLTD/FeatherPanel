@@ -158,6 +158,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         sidebarPosition,
         sidebarTogglePlacement,
         sidebarGlow,
+        settings,
     };
 
     const Chrome = chromeLayout === 'classic' ? NavbarClassicChrome : NavbarModernChrome;

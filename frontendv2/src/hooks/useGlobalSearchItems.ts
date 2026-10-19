@@ -33,11 +33,12 @@ import {
     Type,
     User,
     Zap,
+    Monitor,
 } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePterodactylImporterVisible, withoutPterodactylImporter } from '@/hooks/usePterodactylImporterVisibility';
-import { getModuleStates } from '@/lib/modules';
+import { getModuleStates, isModuleEnabled } from '@/lib/modules';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useDeveloperMode } from '@/hooks/useDeveloperMode';
 import { usePluginRoutes } from '@/hooks/usePluginRoutes';
@@ -338,6 +339,19 @@ export function useGlobalSearchItems(open: boolean, query: string) {
         );
 
         items.push(...navigationToSearchResults(mainItems, 'pages', t('globalSearch.categories.pages')));
+
+        if (isModuleEnabled(settings, 'game')) {
+            const osTitle = `${settings?.app_name || 'FeatherPanel'} OS`;
+            items.push({
+                id: 'featheros',
+                title: t('featheros.nav_open', { name: osTitle }),
+                subtitle: t('featheros.nav_open_hint'),
+                href: '/os',
+                category: 'pages',
+                icon: Monitor,
+                keywords: [osTitle, 'featheros', 'desktop', 'workspace', 'os', 'windows', 'apps'],
+            });
+        }
 
         if (pluginRoutes?.client) {
             items.push(

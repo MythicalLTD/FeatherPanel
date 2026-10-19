@@ -164,14 +164,7 @@ function Shell() {
         };
         window.addEventListener('keydown', onKey, true);
         return () => window.removeEventListener('keydown', onKey, true);
-    }, [
-        spotlightOpen,
-        setSpotlightOpen,
-        launchpadOpen,
-        setLaunchpadOpen,
-        missionControlOpen,
-        setMissionControlOpen,
-    ]);
+    }, [spotlightOpen, setSpotlightOpen, launchpadOpen, setLaunchpadOpen, missionControlOpen, setMissionControlOpen]);
 
     // The panel page behind stays mounted (providers), but the OS owns the whole viewport.
     useEffect(() => {
@@ -188,11 +181,7 @@ function Shell() {
             data-fos-motion={settings.reduceMotion ? 'reduced' : 'full'}
             data-fos-theme={isDark ? 'dark' : 'light'}
             style={{
-                background: resolveWallpaper(
-                    settings.wallpaper,
-                    isDark,
-                    settings.customWallpaperUrl,
-                ),
+                background: resolveWallpaper(settings.wallpaper, isDark, settings.customWallpaperUrl),
                 fontSize: `${Math.round(15 * (settings.fontScale || 1))}px`,
                 ['--fos-speed' as string]: String(settings.animationSpeed || 1),
                 ['--fos-accent' as string]: settings.accent?.startsWith('#') ? settings.accent : undefined,

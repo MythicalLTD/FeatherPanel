@@ -1540,7 +1540,8 @@
             "FEATHEROS_NOTE_UPDATE_FAILED": "Failed to update the note",
             "FEATHEROS_NOTE_DELETE_FAILED": "Failed to delete the note",
             "FEATHEROS_STATE_RESET_FAILED": "Failed to reset the desktop state",
-            "FEATHEROS_WALLPAPER_SAVE_FAILED": "Failed to save wallpaper"
+            "FEATHEROS_WALLPAPER_SAVE_FAILED": "Failed to save wallpaper",
+            "FEATHEROS_TRASH_UNAVAILABLE": "Trash is unavailable. Run database migrations, then try again."
         },
         "global": {}
     },

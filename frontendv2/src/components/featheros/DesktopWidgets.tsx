@@ -35,14 +35,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
 import { useFeatherOs } from './FeatherOsContext';
 import { OS_WIDGET_TYPES, type OsDesktopWidget, type OsWidgetType } from './types';
-import {
-    formatBytes,
-    formatDiskPair,
-    formatUptime,
-    serverDiskUsage,
-    serverState,
-    stateColor,
-} from './utils';
+import { formatBytes, formatDiskPair, formatUptime, serverDiskUsage, serverState, stateColor } from './utils';
 
 function WidgetShell({
     editing,
@@ -67,6 +60,7 @@ function WidgetShell({
     children: ReactNode;
     onClick?: () => void;
 }) {
+    const { t } = useTranslation();
     return (
         <div
             data-fos-widget
@@ -103,7 +97,7 @@ function WidgetShell({
                                 e.stopPropagation();
                                 onRemove();
                             }}
-                            aria-label='Remove'
+                            aria-label={t('common.remove')}
                         >
                             <X className='h-3 w-3' strokeWidth={2.5} />
                         </button>
@@ -115,15 +109,7 @@ function WidgetShell({
     );
 }
 
-function ClockBody({
-    now,
-    clock24h,
-    clockSeconds,
-}: {
-    now: Date;
-    clock24h: boolean;
-    clockSeconds: boolean;
-}) {
+function ClockBody({ now, clock24h, clockSeconds }: { now: Date; clock24h: boolean; clockSeconds: boolean }) {
     const time = now.toLocaleTimeString(undefined, {
         hour: '2-digit',
         minute: '2-digit',
@@ -154,16 +140,7 @@ function CalendarBody({ now }: { now: Date }) {
 
 export function DesktopWidgets() {
     const { t } = useTranslation();
-    const {
-        servers,
-        live,
-        settings,
-        openApp,
-        widgets,
-        addWidget,
-        removeWidget,
-        reorderWidgets,
-    } = useFeatherOs();
+    const { servers, live, settings, openApp, widgets, addWidget, removeWidget, reorderWidgets } = useFeatherOs();
     const [now, setNow] = useState(() => new Date());
     const [editing, setEditing] = useState(false);
     const [galleryOpen, setGalleryOpen] = useState(false);
@@ -193,20 +170,19 @@ export function DesktopWidgets() {
 
     const label = (type: OsWidgetType) =>
         t(`featheros.widgets.${type}`, {
-            defaultValue:
-                (
-                    {
-                        clock: 'Clock',
-                        calendar: 'Calendar',
-                        servers: 'Servers',
-                        resources: 'Resources',
-                        network: 'Network',
-                        storage: 'Storage',
-                        shortcuts: 'Shortcuts',
-                        status: 'Status',
-                        uptime: 'Uptime',
-                    } as Record<OsWidgetType, string>
-                )[type],
+            defaultValue: (
+                {
+                    clock: 'Clock',
+                    calendar: 'Calendar',
+                    servers: 'Servers',
+                    resources: 'Resources',
+                    network: 'Network',
+                    storage: 'Storage',
+                    shortcuts: 'Shortcuts',
+                    status: 'Status',
+                    uptime: 'Uptime',
+                } as Record<OsWidgetType, string>
+            )[type],
         });
 
     const onDragStart = (id: string) => (e: DragEvent) => {
@@ -326,9 +302,7 @@ export function DesktopWidgets() {
                             return (
                                 <div key={s.uuidShort} className='fos-widget-disk-row'>
                                     <span className='fos-widget-disk-name'>{s.name}</span>
-                                    <span className='fos-widget-disk-val'>
-                                        {formatDiskPair(info.used, info.limit)}
-                                    </span>
+                                    <span className='fos-widget-disk-val'>{formatDiskPair(info.used, info.limit)}</span>
                                     <div className='fos-widget-disk-track'>
                                         <span
                                             className={tone}
@@ -347,16 +321,28 @@ export function DesktopWidgets() {
                     <WidgetShell key={w.id} {...shell} className='fos-widget--shortcuts'>
                         <div className='fos-widget-kicker'>{label('shortcuts')}</div>
                         <div className='fos-widget-shortcuts'>
-                            <button type='button' onClick={() => openApp('finder')} title='Finder'>
+                            <button type='button' onClick={() => openApp('finder')} title={t('featheros.apps.finder')}>
                                 <FolderOpen className='h-4 w-4' />
                             </button>
-                            <button type='button' onClick={() => openApp('terminal')} title='Terminal'>
+                            <button
+                                type='button'
+                                onClick={() => openApp('terminal')}
+                                title={t('featheros.apps.terminal')}
+                            >
                                 <SquareTerminal className='h-4 w-4' />
                             </button>
-                            <button type='button' onClick={() => openApp('servers')} title='Servers'>
+                            <button
+                                type='button'
+                                onClick={() => openApp('servers')}
+                                title={t('featheros.apps.servers')}
+                            >
                                 <Server className='h-4 w-4' />
                             </button>
-                            <button type='button' onClick={() => openApp('monitor')} title='Monitor'>
+                            <button
+                                type='button'
+                                onClick={() => openApp('monitor')}
+                                title={t('featheros.apps.monitor')}
+                            >
                                 <Activity className='h-4 w-4' />
                             </button>
                         </div>
@@ -437,11 +423,7 @@ export function DesktopWidgets() {
                     </button>
                 ) : (
                     <>
-                        <button
-                            type='button'
-                            className='fos-widget-add-btn'
-                            onClick={() => setGalleryOpen((v) => !v)}
-                        >
+                        <button type='button' className='fos-widget-add-btn' onClick={() => setGalleryOpen((v) => !v)}>
                             <Plus className='h-3.5 w-3.5' />
                             {t('featheros.widgets.add', { defaultValue: 'Add Widget' })}
                         </button>

@@ -54,12 +54,7 @@ import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { filesApi } from '@/lib/files-api';
 import { moveToFeatherOsTrash } from '@/lib/featheros-trash';
-import {
-    canFeatherOsUndo,
-    performFeatherOsUndo,
-    pushFeatherOsUndo,
-    undoRefreshDirs,
-} from '@/lib/featheros-undo';
+import { canFeatherOsUndo, performFeatherOsUndo, pushFeatherOsUndo, undoRefreshDirs } from '@/lib/featheros-undo';
 import { triggerSignedUrlDownload } from '@/lib/trigger-signed-download';
 import { copyToClipboard, cn } from '@/lib/utils';
 import type { FileObject } from '@/types/server';
@@ -87,7 +82,13 @@ const CODE_RE = /\.(js|ts|tsx|jsx|json|ya?ml|toml|php|py|java|go|rs|sh|lua|xml|h
 function FileGlyph({ file, size = 18 }: { file: FileObject; size?: number }) {
     const style = { width: size, height: size };
     if (!file.isFile)
-        return <Folder style={style} className='shrink-0 fill-[#4BA3F5] text-[#2B84D6] drop-shadow-sm' strokeWidth={1.25} />;
+        return (
+            <Folder
+                style={style}
+                className='shrink-0 fill-[#4BA3F5] text-[#2B84D6] drop-shadow-sm'
+                strokeWidth={1.25}
+            />
+        );
     if (isArchive(file.name)) return <FileArchive style={style} className='shrink-0 text-amber-500' />;
     if (IMAGE_RE.test(file.name)) return <FileImage style={style} className='shrink-0 text-pink-500' />;
     if (CODE_RE.test(file.name)) return <FileCode style={style} className='shrink-0 text-indigo-500' />;
@@ -141,8 +142,7 @@ export default function FinderApp({ win }: OsAppProps) {
     const uuid = win.serverUuid as string;
     const server = getServer(uuid);
     const path = normalizeDir(typeof win.props?.path === 'string' ? (win.props.path as string) : '/');
-    const view: FinderView =
-        win.props?.view === 'list' ? 'list' : win.props?.view === 'columns' ? 'columns' : 'grid';
+    const view: FinderView = win.props?.view === 'list' ? 'list' : win.props?.view === 'columns' ? 'columns' : 'grid';
 
     const [files, setFiles] = useState<FileObject[]>([]);
     const [loading, setLoading] = useState(true);
@@ -423,11 +423,7 @@ export default function FinderApp({ win }: OsAppProps) {
         if (!clip) return;
         const { payload, mode } = clip;
         if (mode === 'cut') setFinderClipboard(null);
-        const ok = await moveOrCopyFiles(
-            payload,
-            { serverUuid: uuid, dir: path },
-            mode === 'cut' ? 'move' : 'copy',
-        );
+        const ok = await moveOrCopyFiles(payload, { serverUuid: uuid, dir: path }, mode === 'cut' ? 'move' : 'copy');
         if (ok && mode === 'cut' && payload.serverUuid === uuid) {
             pushFeatherOsUndo({
                 kind: 'move',
@@ -765,10 +761,7 @@ export default function FinderApp({ win }: OsAppProps) {
         ) {
             e.preventDefault();
             const el = listRef.current;
-            const cols =
-                view === 'grid'
-                    ? Math.max(1, Math.floor(((el?.clientWidth ?? 400) - 28) / 116))
-                    : 1;
+            const cols = view === 'grid' ? Math.max(1, Math.floor(((el?.clientWidth ?? 400) - 28) / 116)) : 1;
             const rowH = view === 'grid' ? 108 : view === 'list' ? 28 : 26;
             const pageRows = Math.max(1, Math.floor((el?.clientHeight ?? 320) / rowH) - 1);
             const pageJump = view === 'grid' ? pageRows * cols : pageRows;
@@ -845,11 +838,7 @@ export default function FinderApp({ win }: OsAppProps) {
                         return;
                     const mode = dropModeFor(e, payload.serverUuid === targetUuid);
                     void moveOrCopyFiles(payload, { serverUuid: targetUuid, dir }, mode).then((ok) => {
-                        if (
-                            ok &&
-                            mode === 'move' &&
-                            payload.serverUuid === targetUuid
-                        ) {
+                        if (ok && mode === 'move' && payload.serverUuid === targetUuid) {
                             pushFeatherOsUndo({
                                 kind: 'move',
                                 label: t('featheros.files.undo_move', { defaultValue: 'Undo Move' }),
@@ -952,7 +941,7 @@ export default function FinderApp({ win }: OsAppProps) {
                         className={cn(
                             'fos-finder-location',
                             s.uuidShort === uuid && 'is-active',
-                            dropTarget === `srv:${s.uuidShort}` && 'ring-2 ring-[#0a84ff] bg-[#0a84ff]/15',
+                            dropTarget === `srv:${s.uuidShort}` && 'bg-[#0a84ff]/15 ring-2 ring-[#0a84ff]',
                         )}
                     >
                         <HardDrive className='h-3.5 w-3.5 shrink-0 text-[#6e6e73]' strokeWidth={1.75} />
@@ -1133,7 +1122,7 @@ export default function FinderApp({ win }: OsAppProps) {
                     />
                 </div>
 
-                <nav className='fos-finder-pathbar' aria-label='Path'>
+                <nav className='fos-finder-pathbar' aria-label={t('files.info.path')}>
                     {crumbs.map((c, i) => (
                         <span key={c.path} className='fos-finder-pathbar-seg'>
                             {i > 0 && <span className='fos-finder-pathbar-sep'>/</span>}
@@ -1169,11 +1158,12 @@ export default function FinderApp({ win }: OsAppProps) {
                         <div className='fos-finder-error'>
                             <AlertTriangle className='h-7 w-7 text-amber-500' aria-hidden />
                             <p className='fos-finder-error-title'>{loadError}</p>
-                            {(loadError.includes('node') || loadError.includes('Wings') || loadError.includes('offline')) && (
+                            {(loadError.includes('node') ||
+                                loadError.includes('Wings') ||
+                                loadError.includes('offline')) && (
                                 <p>
                                     {t('featheros.errors.node_unreachable_hint', {
-                                        defaultValue:
-                                            'Files stay on the node. Try again once the node is back online.',
+                                        defaultValue: 'Files stay on the node. Try again once the node is back online.',
                                     })}
                                 </p>
                             )}
@@ -1189,7 +1179,11 @@ export default function FinderApp({ win }: OsAppProps) {
                                     dir === path
                                         ? visible
                                         : (columnFiles[dir] ?? [])
-                                              .filter((f) => !query.trim() || f.name.toLowerCase().includes(query.trim().toLowerCase()))
+                                              .filter(
+                                                  (f) =>
+                                                      !query.trim() ||
+                                                      f.name.toLowerCase().includes(query.trim().toLowerCase()),
+                                              )
                                               .sort((a, b) =>
                                                   a.isFile === b.isFile
                                                       ? a.name.localeCompare(b.name)
@@ -1210,9 +1204,7 @@ export default function FinderApp({ win }: OsAppProps) {
                                     >
                                         {listing.map((f) => {
                                             const isSel =
-                                                dir === path
-                                                    ? selected.has(f.name)
-                                                    : selectedChild === f.name;
+                                                dir === path ? selected.has(f.name) : selectedChild === f.name;
                                             const key = `col:${dir}:${f.name}`;
                                             return (
                                                 <button
@@ -1232,13 +1224,9 @@ export default function FinderApp({ win }: OsAppProps) {
                                                     )}
                                                     draggable={dir === path}
                                                     onPointerDown={
-                                                        dir === path
-                                                            ? (e) => onItemPointerDown(f, e)
-                                                            : undefined
+                                                        dir === path ? (e) => onItemPointerDown(f, e) : undefined
                                                     }
-                                                    onDragStart={
-                                                        dir === path ? (e) => onDragStart(f, e) : undefined
-                                                    }
+                                                    onDragStart={dir === path ? (e) => onDragStart(f, e) : undefined}
                                                     onClick={() => {
                                                         if (!f.isFile) {
                                                             navigate(joinPath(dir, f.name));
@@ -1258,19 +1246,9 @@ export default function FinderApp({ win }: OsAppProps) {
                                                             openFile(f);
                                                         }
                                                     }}
-                                                    onContextMenu={
-                                                        dir === path
-                                                            ? (e) => rowMenu(f, e)
-                                                            : undefined
-                                                    }
-                                                    onDragOver={
-                                                        f.isFile ? undefined : allowDrop(key)
-                                                    }
-                                                    onDrop={
-                                                        f.isFile
-                                                            ? undefined
-                                                            : dropInto(joinPath(dir, f.name))
-                                                    }
+                                                    onContextMenu={dir === path ? (e) => rowMenu(f, e) : undefined}
+                                                    onDragOver={f.isFile ? undefined : allowDrop(key)}
+                                                    onDrop={f.isFile ? undefined : dropInto(joinPath(dir, f.name))}
                                                 >
                                                     <FileGlyph file={f} size={16} />
                                                     <span className='truncate'>{f.name}</span>
@@ -1284,9 +1262,7 @@ export default function FinderApp({ win }: OsAppProps) {
                                             );
                                         })}
                                         {!loading && listing.length === 0 && (
-                                            <div className='fos-finder-column-empty'>
-                                                {t('featheros.files.empty')}
-                                            </div>
+                                            <div className='fos-finder-column-empty'>{t('featheros.files.empty')}</div>
                                         )}
                                     </div>
                                 );

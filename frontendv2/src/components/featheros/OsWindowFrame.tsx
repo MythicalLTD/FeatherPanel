@@ -230,10 +230,10 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
                 data-minimized={win.minimized ? 'true' : 'false'}
                 data-anim={animateGeometry ? 'geometry' : undefined}
                 onPointerDownCapture={() => !focused && focusWindow(win.id)}
-                    className={cn(
-                        'fos-window absolute flex flex-col overflow-visible',
-                        win.maximized ? 'rounded-none' : 'rounded-[12px]',
-                    )}
+                className={cn(
+                    'fos-window absolute flex flex-col overflow-visible',
+                    win.maximized ? 'rounded-none' : 'rounded-[12px]',
+                )}
                 style={{
                     left: geo.x,
                     top: geo.y,

@@ -43,10 +43,7 @@ export function BootScreen({
             <img src={logoUrl} alt={osName} className='h-20 w-20 object-contain' />
             <div className='mt-7 text-[17px] font-medium tracking-tight text-white/90'>{osName}</div>
             <div className='mt-10 h-[3px] w-44 overflow-hidden rounded-full bg-white/12'>
-                <div
-                    className='fos-boot-bar-fill h-full rounded-full bg-white/85'
-                    style={{ width: `${pct * 100}%` }}
-                />
+                <div className='fos-boot-bar-fill h-full rounded-full bg-white/85' style={{ width: `${pct * 100}%` }} />
             </div>
             {status && (
                 <div className='mt-3 text-[11px] tracking-wide text-white/45' aria-live='polite'>

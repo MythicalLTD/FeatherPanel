@@ -559,13 +559,7 @@
     color: var(--fos-ink);
     color-scheme: light;
     font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        'SF Pro Text',
-        'SF Pro Display',
-        'Helvetica Neue',
-        'Segoe UI',
-        sans-serif;
+        -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', 'Segoe UI', sans-serif;
 }
 
 /*
@@ -1049,7 +1043,9 @@
     --fos-window-fill: transparent;
     background: transparent;
     border-color: var(--fos-hairline);
-    box-shadow: var(--fos-shadow), 0 0 0 0.5px var(--fos-hairline);
+    box-shadow:
+        var(--fos-shadow),
+        0 0 0 0.5px var(--fos-hairline);
 }
 
 .fos-window-surface--finder .fos-window-body {
@@ -1067,12 +1063,7 @@
     background: transparent;
     user-select: none;
     -webkit-user-select: none;
-    font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        'SF Pro Text',
-        'Helvetica Neue',
-        sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
 }
 
 .fos-finder input,
@@ -1581,19 +1572,16 @@
     --fos-window-fill: transparent;
     background: transparent;
     border-color: var(--fos-hairline);
-    box-shadow: var(--fos-shadow), 0 0 0 0.5px var(--fos-hairline);
+    box-shadow:
+        var(--fos-shadow),
+        0 0 0 0.5px var(--fos-hairline);
 }
 
 .fos-settings {
     display: flex;
     height: 100%;
     color: var(--fos-window-ink);
-    font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        'SF Pro Text',
-        'Helvetica Neue',
-        sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
 }
 
 .fos-window .fos-settings-sidebar {

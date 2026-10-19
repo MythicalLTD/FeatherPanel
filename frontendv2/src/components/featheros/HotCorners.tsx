@@ -125,13 +125,7 @@ export function HotCorners() {
             window.removeEventListener('pointermove', onMove);
             clearDwell();
         };
-    }, [
-        setMissionControlOpen,
-        setLaunchpadOpen,
-        setNotificationsOpen,
-        setSpotlightOpen,
-        minimizeWindow,
-    ]);
+    }, [setMissionControlOpen, setLaunchpadOpen, setNotificationsOpen, setSpotlightOpen, minimizeWindow]);
 
     return null;
 }

@@ -409,11 +409,7 @@ export function MenuBar() {
                             }}
                             aria-expanded={open === m.id}
                             onMouseEnter={() => open && setOpen(m.id)}
-                            className={cn(
-                                item,
-                                m.bold && 'font-semibold',
-                                open === m.id && 'is-open',
-                            )}
+                            className={cn(item, m.bold && 'font-semibold', open === m.id && 'is-open')}
                         >
                             {m.label}
                         </button>

@@ -390,11 +390,11 @@ export function Dock() {
     };
 
     const sections: DockEntry[][] = [
-        [{ key: 'launcher', kind: 'launcher' }],
+        [{ key: 'launcher', kind: 'launcher' as const }],
         pinnedEntries,
         unpinnedEntries,
         minimizedEntries,
-        [{ key: 'trash', kind: 'trash' }],
+        [{ key: 'trash', kind: 'trash' as const }],
     ].filter((section) => section.length > 0);
 
     return (
