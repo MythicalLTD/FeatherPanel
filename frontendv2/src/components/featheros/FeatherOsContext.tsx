@@ -340,7 +340,7 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
     const { theme: panelTheme, setTheme: setPanelTheme, setAccentColor } = useTheme();
     const { serverLiveData, syncServers, disconnectAll } = useServersWebSocket();
 
-    const panelName = (panelSettings?.app_name || 'FeatherPanel').trim() || 'FeatherPanel';
+    const panelName = (panelSettings?.app_name || 'Panel').trim() || 'Panel';
     const osName = `${panelName} OS`;
     const logoUrl =
         (panelTheme === 'dark' ? panelSettings?.app_logo_dark : panelSettings?.app_logo_white) ||

@@ -403,7 +403,7 @@ function PowerToolbar({ uuid, meta }: { uuid: string; meta: SessionMeta | undefi
     return (
         <div className='flex shrink-0 items-center gap-0.5 border-l border-[var(--fos-glass-edge-soft)] pl-1.5'>
             {meta?.stats && state === 'running' && (
-                <span className='mr-1 hidden text-[10px] text-[var(--fos-secondary)] tabular-nums sm:inline'>
+                <span className='mr-1 hidden text-[10px] text-[var(--fos-secondary)] tabular-nums select-none sm:inline'>
                     {Math.round(meta.stats.cpu_absolute ?? 0)}% · {formatBytes(meta.stats.memory_bytes ?? 0)}
                 </span>
             )}
@@ -523,7 +523,7 @@ export default function TerminalApp({ win }: OsAppProps) {
     if (tabs.length === 0) {
         return (
             <div className='fos-term-app flex h-full flex-col'>
-                <div className='fos-term-chrome' data-fos-window-drag>
+                <div className='fos-term-chrome select-none' data-fos-window-drag>
                     <span className='fos-term-chrome-title'>{t('featheros.apps.terminal')}</span>
                 </div>
                 <div className='min-h-0 flex-1 overflow-hidden'>
@@ -537,7 +537,7 @@ export default function TerminalApp({ win }: OsAppProps) {
 
     return (
         <div className='fos-term-app flex h-full flex-col'>
-            <div className='fos-term-chrome' data-fos-window-drag>
+            <div className='fos-term-chrome select-none' data-fos-window-drag>
                 <div className='fos-scroll flex max-w-[55%] min-w-0 shrink items-center gap-1 overflow-x-auto'>
                     {tabs.map((uuid) => {
                         const server = getServer(uuid);

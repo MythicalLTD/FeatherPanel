@@ -48,7 +48,7 @@ export function buildPanelDebugSnapshot(opts: {
     return {
         generatedAt: new Date().toISOString(),
         panel: {
-            name: opts.settings?.app_name ?? 'FeatherPanel',
+            name: opts.settings?.app_name ?? 'Panel',
             url: opts.settings?.app_url ?? null,
             developerMode: opts.settings?.app_developer_mode ?? null,
         },

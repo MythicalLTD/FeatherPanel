@@ -26,7 +26,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 export function OAuthConsentShell({ children, className }: { children: ReactNode; className?: string }) {
     const { settings } = useSettings();
     const { theme } = useTheme();
-    const appName = settings?.app_name || 'FeatherPanel';
+    const appName = settings?.app_name || 'Panel';
     const logo =
         theme === 'dark'
             ? settings?.app_logo_dark || settings?.app_logo_white || '/assets/logo.png'

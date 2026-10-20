@@ -7,7 +7,7 @@
         },
         "login": {
             "title": "Sign in to your panel",
-            "subtitle": "Use your FeatherPanel credentials to continue.",
+            "subtitle": "Use your panel credentials to continue.",
             "username": "Username or Email",
             "password": "Password",
             "submit": "Sign in",
@@ -173,7 +173,7 @@
         "discordLoggingIn": "Logging in via Discord...",
         "discordLinking": {
             "title": "Link your Discord account",
-            "subtitle": "Enter your FeatherPanel credentials to link your Discord account",
+            "subtitle": "Enter your panel credentials to link your Discord account",
             "submit": "Link Account",
             "success": "Discord account linked successfully! Redirecting...",
             "cancel": "Cancel",
@@ -181,7 +181,7 @@
         },
         "discordRegistration": {
             "title": "Register with Discord",
-            "question": "Would you like to create a new FeatherPanel account using your Discord account?",
+            "question": "Would you like to create a new account using your Discord account?",
             "submit": "Yes, Create Account",
             "cancel": "No, Cancel"
         },
@@ -207,7 +207,7 @@
         },
         "qr": {
             "title": "Log in with QR Code",
-            "subtitle": "Scan with a phone that is already logged in to FeatherPanel.",
+            "subtitle": "Scan with a phone that is already logged in to the panel.",
             "waiting": "Waiting for approval…",
             "scanned": "Confirm on your phone…",
             "scannedTitle": "Successful scan",
@@ -416,7 +416,7 @@
             "CLOUD_CREDENTIALS_NOT_CONFIGURED": "Mythic Cloud is not linked. Connect under Cloud Connections.",
             "CLOUD_CREDENTIALS_REQUIRED": "Missing FeatherCloud authentication headers.",
             "CLOUD_CREDENTIALS_ROTATION_FAILED": "Failed to rotate FeatherCloud credentials",
-            "CLOUD_DISABLED_IN_DEMO": "FeatherPanel Cloud is not available on demo instances.",
+            "CLOUD_DISABLED_IN_DEMO": "Cloud features are not available on demo instances.",
             "CLOUD_DISCONNECT_FAILED": "Failed to disconnect Mythic Cloud",
             "CLOUD_FEATHERCLOUD_CREDENTIALS_FAILED": "Failed to store FeatherCloud credentials",
             "CLOUD_INTEGRATION_NOT_CONFIGURED": "FeatherCloud integration is not configured on this panel.",
@@ -1185,7 +1185,7 @@
             "PLUGIN_INSTALL_QUEUE_CYCLE": "Circular dependency when resolving queued plugin installations. Install one of the queued plugins first, or adjust your download list.",
             "PLUGIN_NOT_FOUND": "Plugin not found",
             "PORT_RANGE_TOO_LARGE": "Port range too large. Maximum 1000 ports allowed per request",
-            "PREMIUM_REQUIRED": "FeatherPanel Premium is required for this feature.",
+            "PREMIUM_REQUIRED": "Premium is required for this feature.",
             "PRIMARY_ALLOCATION_CLEANUP_FAILED": "Failed to unassign previous primary allocation",
             "PRIMARY_ALLOCATION_DELETE": "Cannot delete primary allocation",
             "PRIMARY_ALLOCATION_NOT_FOUND": "Server primary allocation not found",
@@ -1556,7 +1556,7 @@
         },
         "cloud": {
             "title": "Cloud unavailable on demo",
-            "description": "FeatherPanel Cloud / Mythic Cloud cannot be linked on DEMO instances. Install your own panel for marketplace, premium, and cloud features."
+            "description": "Cloud features cannot be linked on DEMO instances. Install your own panel for marketplace, premium, and cloud features."
         },
         "features": {
             "title": "Demo notes",
@@ -1573,7 +1573,7 @@
                 "databases": "Mail lists, Zero Trust logs, example plugins"
             },
             "disabled": {
-                "cloud": "FeatherPanel Cloud / marketplace / premium",
+                "cloud": "Cloud / marketplace / premium",
                 "plugins": "Plugin upload / uninstall",
                 "console": "Dev console and node token reset",
                 "snapshots": "DB snapshot restore / storage purge"
@@ -2330,14 +2330,14 @@
         "discordUnlinkFailed": "Failed to unlink Discord account",
         "discordLinkedSuccessfully": "Discord account linked successfully",
         "discordLinkFailed": "Failed to link Discord account",
-        "discordAlreadyLinked": "This Discord account is already linked to another FeatherPanel user.",
+        "discordAlreadyLinked": "This Discord account is already linked to another user.",
         "discordDisabled": "Discord login is disabled on this panel.",
         "discordNotConfigured": "Discord OAuth is not configured correctly.",
         "discordTokenFailed": "Discord authorization failed. Please try again.",
         "discordUserFailed": "Could not retrieve your Discord profile. Please try again.",
-        "discordUserNotFound": "Your FeatherPanel account could not be found. Please log in and try again.",
+        "discordUserNotFound": "Your account could not be found. Please log in and try again.",
         "oidcAccount": "OIDC Account",
-        "oidcAccountDescription": "Link an external single sign-on account to this FeatherPanel account.",
+        "oidcAccountDescription": "Link an external single sign-on account to your account.",
         "linkOidc": "Link OIDC",
         "unlinkOidc": "Unlink OIDC",
         "selectOidcProvider": "Please select an OIDC provider",
@@ -2347,7 +2347,7 @@
         "oidcAccessDenied": "OIDC access was denied by the provider.",
         "oidcDiscoveryFailed": "OIDC discovery failed. Please check the provider issuer URL.",
         "oidcEmailNotVerified": "Your OIDC email address is not verified. Verify your email with the identity provider, then try again.",
-        "oidcInvalidAudience": "The OIDC token audience does not match this FeatherPanel client.",
+        "oidcInvalidAudience": "The OIDC token audience does not match this client.",
         "oidcInvalidIdToken": "The identity provider returned an invalid OIDC ID token.",
         "oidcInvalidIssuer": "The OIDC token issuer does not match the configured provider.",
         "oidcInvalidState": "The OIDC login session expired or is invalid. Please try again.",
@@ -2357,7 +2357,7 @@
         "oidcProviderMissing": "Please select an OIDC provider.",
         "oidcProviderNotFound": "The selected OIDC provider is unavailable.",
         "oidcTokenFailed": "The identity provider rejected the token request. Please check the OIDC client configuration.",
-        "oidcUserNotFound": "No FeatherPanel account matches this OIDC identity.",
+        "oidcUserNotFound": "No account matches this OIDC identity.",
         "oidcUnlinkFailed": "Failed to unlink OIDC account",
         "ldapAccount": "LDAP Account",
         "ldapAccountDescription": "Link your directory credentials so this account can sign in with LDAP.",
@@ -2448,7 +2448,7 @@
         },
         "mcp": {
             "title": "MCP",
-            "description": "Connect Claude, Cursor, and other MCP clients to FeatherPanel using OAuth or your API key.",
+            "description": "Connect Claude, Cursor, and other MCP clients to the panel using OAuth or your API key.",
             "endpointLabel": "MCP endpoint",
             "endpointHelp": "Use this URL with OAuth (Claude Connect) or a Bearer API key. Permissions match whatever that key can do in the panel.",
             "copyUrl": "Copy URL",
@@ -2471,13 +2471,13 @@
             "remoteTitle": "Cursor / JSON config",
             "remoteHelp": "Paste this into Cursor MCP settings (or similar clients) and replace YOUR_API_KEY with a key from Account → API Keys.",
             "claudeConnectorTitle": "Claude custom connector",
-            "claudeConnectorHelp": "In Claude: Settings → Connectors → Add custom connector. Claude will open FeatherPanel sign-in (OAuth), with no API key in the URL.",
-            "claudeStepName": "Name: FeatherPanel (or anything you like).",
+            "claudeConnectorHelp": "In Claude: Settings → Connectors → Add custom connector. Claude will open panel sign-in (OAuth), with no API key in the URL.",
+            "claudeStepName": "Name: Panel (or anything you like).",
             "claudeStepUrl": "Remote MCP server URL:",
-            "claudeStepConnect": "Click Continue, then Connect. Claude starts OAuth with FeatherPanel.",
-            "claudeStepConsent": "Sign in to FeatherPanel and approve (creates an API key) or paste an existing fp_ key.",
+            "claudeStepConnect": "Click Continue, then Connect. Claude starts OAuth with the panel.",
+            "claudeStepConsent": "Sign in to the panel and approve (creates an API key) or paste an existing fp_ key.",
             "claudeStepHeader": "Optional: under Request headers, add authorization = Bearer YOUR_API_KEY (skips interactive OAuth).",
-            "claudeStepAltHeader": "Alternatively use header x-api-key = YOUR_API_KEY (same FeatherPanel API key, no Bearer prefix).",
+            "claudeStepAltHeader": "Alternatively use header x-api-key = YOUR_API_KEY (same panel API key, no Bearer prefix).",
             "claudeHeadersOptional": "API-key request headers still work for Cursor and clients that support static headers. Claude.ai prefers the OAuth Connect button.",
             "claudeHeadersBeta": "If you do not see Request headers, that Claude feature may still be rolling out on your account. Use Cursor JSON config or Claude Desktop config instead.",
             "claudeCursorConfig": "Cursor / generic remote config",
@@ -2633,13 +2633,13 @@
             "featureSnippets": "Command snippets",
             "featureSnippetsDesc": "Save and run console command snippets from your account.",
             "featureAccount": "Account servers",
-            "featureAccountDesc": "Access servers available on your FeatherPanel account.",
+            "featureAccountDesc": "Access servers available on your account.",
             "rawPermissions": "Requested permissions",
             "adminPermissions": "Admin",
             "userPermissions": "User",
             "serverPermissions": "Server",
             "errorTitle": "Cannot continue",
-            "permissionsNote": "This VS Code API key grants full access to your FeatherPanel account. The permissions below are what the extension requests, not a hard limit.",
+            "permissionsNote": "This VS Code API key grants full access to your account. The permissions below are what the extension requests, not a hard limit.",
             "approve": "Authorize",
             "deny": "Deny",
             "denied": "Authorization denied",
@@ -3279,7 +3279,7 @@
             "iconLibraryTabler": "Tabler",
             "iconLibraryMdi": "MDI",
             "iconLibraryPhosphor": "Phosphor",
-            "iconLibraryLucideHint": "Default FeatherPanel icons.",
+            "iconLibraryLucideHint": "Default panel icons.",
             "iconLibraryTablerHint": "Tabler icon set via Iconify.",
             "iconLibraryMdiHint": "Material Design Icons via Iconify.",
             "iconLibraryPhosphorHint": "Phosphor icons via Iconify.",
@@ -3300,7 +3300,7 @@
             "compactHint": "Tighter navigation for smaller screens or power users.",
             "glassHint": "Translucent sidebar with backdrop blur.",
             "solidHint": "Opaque sidebar with a flat card surface.",
-            "osShortcutTitle": "FeatherPanel OS shortcut",
+            "osShortcutTitle": "Panel OS shortcut",
             "osShortcutShow": "Show in sidebar",
             "osShortcutHide": "Hide from sidebar",
             "osShortcutHint": "On the dashboard sidebar and dock only (not server, VDS, or admin). Still available from the account menu."
@@ -4075,7 +4075,7 @@
         "emptyDefault": "Start typing to search the panel",
         "emptySearch": "No results found",
         "emptyHint": "Try a page name (e.g. files, backups), server, WebSpace, VM, account action, or panel setting.",
-        "scopeHint": "Filter with @admin, @settings, @account, #servers, #webspace, #vds, or #infra. Developers: type ##icanhasfeatherpanel for the debug menu.",
+        "scopeHint": "Filter with @admin, @settings, @account, #servers, #webspace, #vds, or #infra.",
         "footerHint": "Permission-aware results from across the panel",
         "navigate": "Navigate",
         "openItem": "Open",
@@ -4103,7 +4103,7 @@
             "admin": "Administration"
         },
         "debug": {
-            "title": "FeatherPanel debug console",
+            "title": "Panel debug console",
             "subtitle": "Developer tools · diagnostics · logs · benchmarks",
             "footer": "Developer mode only · actions here are local to your browser unless noted",
             "loading": "Checking developer mode…",
@@ -4116,7 +4116,7 @@
             "openConsole": "Open debug console",
             "copySnapshot": "Copy debug snapshot",
             "storageCount": "{count} storage keys",
-            "clearPanelStorage": "Clear featherpanel:* keys",
+            "clearPanelStorage": "Clear panel storage keys",
             "storageCleared": "Removed {count} panel storage keys",
             "refreshStorage": "Refresh storage",
             "networkHint": "Probe common panel API endpoints and measure round-trip latency from this browser.",
@@ -4462,7 +4462,7 @@
         "fileBackupTypeHelp": "Full server file archive managed by Wings. Counts toward your backup limit.",
         "databaseBackupTypeHelp": "MySQL/MariaDB SQL dumps saved on the server filesystem. Unlimited by the Wings backup quota.",
         "fullBackupTypeHelp": "Dumps databases, optional panel metadata, then a Wings file archive of everything.",
-        "fullBackupHint": "Creates a Wings archive that includes SQL dumps and optional FeatherPanel metadata. Limit: {limit}.",
+        "fullBackupHint": "Creates a Wings archive that includes SQL dumps and optional panel metadata. Limit: {limit}.",
         "fullBackupSuccess": "Full backup started. Database dumps and metadata are included in the archive.",
         "fullBackupFailed": "Failed to create full backup",
         "databaseBackupSuccess": "Created {count} database dump(s) in {directory}",
@@ -4910,7 +4910,7 @@
         "databaseDirectoryHelp": "SQL dumps are written into this folder on the server (one file per database).",
         "noDatabasesAvailable": "No MySQL/MariaDB databases found on this server.",
         "fullMetadataSection": "Databases & metadata",
-        "includeMetadata": "Include FeatherPanel metadata",
+        "includeMetadata": "Include panel metadata",
         "includeMetadataHelp": "Writes schedules, allocations, firewall, proxies, hooks, subusers (with avatars), env, and more into /.featherpanel-backup/ as JSON, Markdown, text, and dark-mode Tailwind HTML.",
         "includeEncrypted": "Include encrypted secrets",
         "includeEncryptedHelp": "Decrypts custom env vars and includes database passwords and proxy TLS keys in the metadata pack. Treat the backup as highly sensitive.",
@@ -12001,7 +12001,13 @@
             "info": {
                 "title": "Excluded Data",
                 "description": "The following items are excluded from migration to ensure a clean import.",
-                "items": [null, null, null, null, null],
+                "items": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                ],
                 "footer": "Excluding this data significantly reduces migration time."
             },
             "create_key": {
@@ -12017,7 +12023,12 @@
                 "creating": "Creating..."
             },
             "warning_dialog": {
-                "items": [null, null, null, null]
+                "items": [
+                    null,
+                    null,
+                    null,
+                    null
+                ]
             },
             "visibility": {
                 "hide": "Hide importer",
@@ -15340,14 +15351,14 @@
         },
         "hosting": {
             "title": "Web hosting readiness",
-            "subtitle": "What FeatherPanel can sell today vs what you still need to wire up on your nodes.",
+            "subtitle": "What the panel can sell today vs what you still need to wire up on your nodes.",
             "refresh": "Recheck",
             "loading": "Assessing platform…",
             "fetchFailed": "Could not load hosting maturity.",
             "scoreHelp": "{ready} of {total} operator setup steps complete",
             "scoreCaption": "Score reflects infrastructure you control not customer-facing features already built into WebSpaces.",
             "setupTitle": "Operator setup checklist",
-            "builtinTitle": "Already in FeatherPanel",
+            "builtinTitle": "Already in the panel",
             "roadmapTitle": "Not in the panel yet",
             "roadmapCount": "items",
             "roadmapHelp": "These are common retail-hosting features that still need product work the core WebSpace stack (files, SSL, DB, DNS, mail, backups) is already built in.",
@@ -15450,7 +15461,7 @@
     },
     "landing": {
         "hero": {
-            "title": "FeatherPanel"
+            "title": "Panel"
         }
     },
     "plugins": {
@@ -15778,9 +15789,9 @@
         }
     },
     "chatbot": {
-        "title": "FeatherPanel AI",
+        "title": "Panel AI",
         "description": "Your intelligent assistant for server management",
-        "welcome": "Hi {name}! 👋 I'm your FeatherPanel AI assistant. How can I help you manage your servers today?",
+        "welcome": "Hi {name}! 👋 I'm your AI assistant. How can I help you manage your servers today?",
         "placeholder": "Type your message...",
         "sendMessage": "Send message",
         "thinking": "Thinking...",
@@ -15822,12 +15833,12 @@
         "pressEnterToSend": "Press Enter to send, Shift+Enter for new line",
         "conversations": "Conversations",
         "closeChat": "Close chat",
-        "welcomeVds": "Hi {name}! 👋 I'm your FeatherPanel VDS AI. I can help you manage your virtual servers check status, control power, manage backups, and more!",
+        "welcomeVds": "Hi {name}! 👋 I'm your VDS AI assistant. I can help you manage your virtual servers check status, control power, manage backups, and more!",
         "you": "You",
         "toolActionSuccess": "Action '{action}' completed successfully",
         "toolActionFailed": "Action '{action}' failed",
         "toggleSidebar": "Toggle sidebar",
-        "welcomeDashboard": "Hi {name}! I'm your FeatherPanel Dashboard AI. I can help you find servers, manage VDS instances, navigate the dashboard, and look up knowledgebase articles when you ask.",
+        "welcomeDashboard": "Hi {name}! I'm your Dashboard AI assistant. I can help you find servers, manage VDS instances, navigate the dashboard, and look up knowledgebase articles when you ask.",
         "commandsHint": "Type /help for commands.",
         "availableCommands": "Available commands:\n\n- `/help` or `/commands`: show chatbot commands\n- `/context`: show current chat mode, route, and context limits\n- `/compact`: compact the visible conversation locally\n- `/clear`: start a fresh chat",
         "contextCommand": "Current context:\n\n- Mode: {mode}\n- Route: {route}\n- History sent to AI: compacted server-side, recent turns only\n- Server/VDS/KB details: fetched with tools only when needed\n- Logs: not included unless troubleshooting is requested",
@@ -16825,7 +16836,7 @@
         },
         "steps": {
             "welcome": {
-                "title": "Welcome to FeatherPanel",
+                "title": "Welcome to the Panel",
                 "description": "Confirm the address people use to reach this panel and give it a name."
             },
             "locale": {

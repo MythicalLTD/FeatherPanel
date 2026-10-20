@@ -29,7 +29,7 @@ const nextConfig: NextConfig = {
         // Turbopack in Next 16.3 fails next/font/google when many families load at once.
         turbopackFileSystemCacheForDev: false,
         ...(process.env.NODE_ENV === 'development'
-            ? { serverComponentsHmrCache: false, staleTimes: { dynamic: 0, static: 0 } }
+            ? { serverComponentsHmrCache: false, staleTimes: { dynamic: 0, static: 30 } }
             : {}),
         // TypeScript 7 has no programmatic compiler API; Next must shell out to `tsc`.
         useTypeScriptCli: true,

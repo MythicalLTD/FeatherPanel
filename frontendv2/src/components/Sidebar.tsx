@@ -257,7 +257,7 @@ function SidebarContent({
     const { showOsInSidebar } = useFeatherOsSidebarShortcut();
     const isDashboardArea = pathname === '/dashboard' || pathname.startsWith('/dashboard/');
     const showOsShortcut = gameEnabled && showOsInSidebar && isDashboardArea;
-    const osTitle = `${settings?.app_name || 'FeatherPanel'} OS`;
+    const osTitle = `${settings?.app_name || 'Panel'} OS`;
 
     if (isBottomDock) {
         return (
@@ -268,7 +268,7 @@ function SidebarContent({
                 sidebarGlow={sidebarGlow}
                 groupedItems={groupedItems}
                 logoUrl={logoUrl}
-                appName={settings?.app_name || 'FeatherPanel'}
+                appName={settings?.app_name || 'Panel'}
                 t={t}
                 isActive={isActive}
                 unreadTicketCount={unreadTicketCount}
@@ -348,7 +348,7 @@ function SidebarContent({
             <div className='bg-background/40 ring-border/30 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1'>
                 <NextImage
                     src={logoUrl}
-                    alt={settings?.app_name || 'FeatherPanel'}
+                    alt={settings?.app_name || 'Panel'}
                     width={40}
                     height={40}
                     className={cn('object-contain', collapsed && !mobile ? 'h-6 w-6' : 'h-7 w-7')}
@@ -359,7 +359,7 @@ function SidebarContent({
             {(!collapsed || mobile) && (
                 <div className='flex min-w-0 flex-col gap-0.5'>
                     <span className='text-foreground truncate text-sm font-semibold tracking-tight'>
-                        {settings?.app_name || 'FeatherPanel'}
+                        {settings?.app_name || 'Panel'}
                     </span>
                     {showVersion && (
                         <span className='border-primary/20 bg-primary/10 text-primary inline-flex w-fit items-center rounded-md border px-1.5 py-px text-[10px] font-semibold tracking-wider uppercase'>
@@ -381,7 +381,7 @@ function SidebarContent({
             <div className='flex h-10 w-10 shrink-0 items-center justify-center'>
                 <NextImage
                     src={logoUrl}
-                    alt={settings?.app_name || 'FeatherPanel'}
+                    alt={settings?.app_name || 'Panel'}
                     width={40}
                     height={40}
                     className='h-full w-full object-contain'
@@ -391,7 +391,7 @@ function SidebarContent({
 
             {(!collapsed || mobile) && (
                 <div className='flex min-w-0 flex-col gap-0.5'>
-                    <span className='truncate text-base font-semibold'>{settings?.app_name || 'FeatherPanel'}</span>
+                    <span className='truncate text-base font-semibold'>{settings?.app_name || 'Panel'}</span>
                     {showVersion && (
                         <span className='border-primary/20 bg-primary/10 text-primary inline-flex w-fit items-center rounded-md border px-2 py-0.5 text-[10px] font-medium'>
                             v{settings?.app_version || '1.0.0'}
@@ -416,7 +416,7 @@ function SidebarContent({
                         href='/dashboard'
                         prefetch={true}
                         className='focus-visible:ring-ring shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent'
-                        {...collapsedTip(settings?.app_name || 'FeatherPanel')}
+                        {...collapsedTip(settings?.app_name || 'Panel')}
                     >
                         {classicBrandInner}
                     </Link>
@@ -425,7 +425,7 @@ function SidebarContent({
                         href='/dashboard'
                         prefetch={true}
                         className='focus-visible:ring-ring block min-w-0 shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent'
-                        {...collapsedTip(settings?.app_name || 'FeatherPanel')}
+                        {...collapsedTip(settings?.app_name || 'Panel')}
                     >
                         {classicBrandInner}
                     </Link>
@@ -447,7 +447,7 @@ function SidebarContent({
                     <div className='bg-background/40 ring-primary/15 flex h-9 w-9 items-center justify-center rounded-xl ring-1'>
                         <NextImage
                             src={logoUrl}
-                            alt={settings?.app_name || 'FeatherPanel'}
+                            alt={settings?.app_name || 'Panel'}
                             width={32}
                             height={32}
                             className='h-6 w-6 object-contain'
@@ -463,7 +463,7 @@ function SidebarContent({
                         'focus-visible:ring-ring mx-2 mt-3 block min-w-0 shrink-0 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
                         collapsed && 'mx-1.5 mt-2',
                     )}
-                    {...collapsedTip(settings?.app_name || 'FeatherPanel')}
+                    {...collapsedTip(settings?.app_name || 'Panel')}
                 >
                     {modernBrandInner}
                 </Link>

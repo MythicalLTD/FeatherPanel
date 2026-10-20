@@ -341,7 +341,7 @@ export function useGlobalSearchItems(open: boolean, query: string) {
         items.push(...navigationToSearchResults(mainItems, 'pages', t('globalSearch.categories.pages')));
 
         if (isModuleEnabled(settings, 'game')) {
-            const osTitle = `${settings?.app_name || 'FeatherPanel'} OS`;
+            const osTitle = `${settings?.app_name || 'Panel'} OS`;
             items.push({
                 id: 'featheros',
                 title: t('featheros.nav_open', { name: osTitle }),

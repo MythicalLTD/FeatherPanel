@@ -23,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
         cookieStore.get(LOCALE_COOKIE_NAME)?.value,
         cookieStore.get(ICON_LIBRARY_COOKIE_NAME)?.value,
     );
-    const panelName = boot.settings?.app_name?.trim() || 'FeatherPanel';
+    const panelName = boot.settings?.app_name?.trim() || 'Panel';
     return {
         title: { absolute: `${panelName} OS` },
         robots: { index: false, follow: false },

@@ -19,10 +19,14 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/featherui/Button';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSettings } from '@/contexts/SettingsContext';
 
 export default function MaintenancePage() {
     const router = useRouter();
     const { t } = useTranslation();
+    const { settings } = useSettings();
+    const panelName = settings?.app_name || 'Panel';
+
     return (
         <div className='bg-background selection:bg-primary/20 relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 text-center'>
             <div className='from-primary/10 via-background to-background absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,var(--tw-gradient-stops))]' />
@@ -97,7 +101,7 @@ export default function MaintenancePage() {
 
             <div className='absolute right-0 bottom-6 left-0 text-center'>
                 <p className='text-muted-foreground/50 text-sm font-medium'>
-                    &copy; {new Date().getFullYear()} FeatherPanel
+                    &copy; {new Date().getFullYear()} {panelName}
                 </p>
             </div>
         </div>

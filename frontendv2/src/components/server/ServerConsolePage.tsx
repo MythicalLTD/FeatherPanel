@@ -93,7 +93,7 @@ function replaceLegacyPanelNameInConsoleOutput(text: string, appDisplayName: str
 export default function ServerConsolePage() {
     const { t } = useTranslation();
     const { settings } = useSettings();
-    const consoleAppDisplayName = settings?.app_name?.trim() || 'FeatherPanel';
+    const consoleAppDisplayName = settings?.app_name?.trim() || 'Panel';
     const params = useParams();
     const searchParams = useSearchParams();
     const serverUuid = params.uuidShort as string;

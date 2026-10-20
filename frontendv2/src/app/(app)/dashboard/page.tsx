@@ -827,7 +827,7 @@ export default function DashboardPage() {
         },
         serverTotal > 0 && {
             key: 'featheros',
-            label: t('featheros.nav_open', { name: `${settings?.app_name || 'FeatherPanel'} OS` }),
+            label: t('featheros.nav_open', { name: `${settings?.app_name || 'Panel'} OS` }),
             href: '/os',
             icon: QUICK_ACTION_ICONS.os,
             external: true,
@@ -888,7 +888,7 @@ export default function DashboardPage() {
             case 'greeting':
                 return (
                     <DashboardHero
-                        panelName={settings?.app_name || 'FeatherPanel'}
+                        panelName={settings?.app_name || 'Panel'}
                         name={user ? user.first_name || user.username : sessionLoading ? null : ''}
                         subtitle={statusLine ?? t('dashboard.hero.subtitle')}
                         subtitleTone={statusTone}

@@ -331,7 +331,7 @@ export function SetupWizard() {
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                                 src={logoUrl}
-                                alt={settings?.app_name || 'FeatherPanel'}
+                                alt={settings?.app_name || 'Panel'}
                                 className='h-full w-full object-contain'
                             />
                         </div>

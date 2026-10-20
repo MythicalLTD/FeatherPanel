@@ -43,7 +43,7 @@ export default function AuthShell({ children }: { children: ReactNode }) {
     const { settings } = useSettings();
     const { t } = useTranslation();
 
-    const appName = settings?.app_name || 'FeatherPanel';
+    const appName = settings?.app_name || 'Panel';
     const logoUrl =
         theme === 'dark'
             ? settings?.app_logo_dark || settings?.app_logo_white || '/assets/logo.png'

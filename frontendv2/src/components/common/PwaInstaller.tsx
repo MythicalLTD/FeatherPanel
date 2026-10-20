@@ -63,7 +63,7 @@ export function PwaInstaller() {
     const { theme } = useTheme();
 
     const enabled = settings?.app_pwa_enabled === 'true';
-    const appName = settings?.app_name?.trim() || 'FeatherPanel';
+    const appName = settings?.app_name?.trim() || 'Panel';
     const logoUrl =
         theme === 'dark'
             ? settings?.app_logo_dark || settings?.app_logo_white || '/assets/logo.png'

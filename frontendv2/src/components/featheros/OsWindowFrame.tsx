@@ -122,11 +122,15 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
     const maxH = Math.max(240, vpH - bottomInset - 16);
     const boundedW = Math.min(rawGeo.w, maxW);
     const boundedH = Math.min(rawGeo.h, maxH);
+    const minX = leftInset + 8;
+    const maxX = Math.max(minX, vpW - rightInset - boundedW - 8);
+    const minY = 0;
+    const maxY = Math.max(minY, vpH - bottomInset - boundedH - 8);
     const geo = win.maximized
         ? rawGeo
         : {
-              x: Math.max(leftInset + 8, Math.min(rawGeo.x, vpW - rightInset - boundedW - 8)),
-              y: Math.max(0, Math.min(rawGeo.y, vpH - bottomInset - boundedH - 8)),
+              x: Math.max(minX, Math.min(rawGeo.x, maxX)),
+              y: Math.max(minY, Math.min(rawGeo.y, maxY)),
               w: boundedW,
               h: boundedH,
           };
@@ -134,10 +138,14 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
     const startMove = useCallback(
         (e: React.PointerEvent) => {
             if (e.button !== 0) return;
-            if ((e.target as HTMLElement).closest('button, input, select, [data-no-drag]')) return;
+            const target = e.target as HTMLElement;
+            if (target.closest('button, input, select, textarea, a, [data-no-drag]')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            window.getSelection()?.removeAllRanges();
             focusWindow(win.id);
-            const startX = e.clientX;
-            const startY = e.clientY;
+            let startX = e.clientX;
+            let startY = e.clientY;
             let origin = win.maximized
                 ? { x: e.clientX - win.w / 2, y: 0, w: win.w, h: win.h }
                 : { x: win.x, y: win.y, w: win.w, h: win.h };
@@ -146,6 +154,10 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
             let zone: SnapZone | 'max' | null = null;
             let zoneKey = '';
             const area = workArea(settings, vpW, vpH);
+
+            const prevUserSelect = document.body.style.userSelect;
+            document.body.style.userSelect = 'none';
+
             const onMove = (ev: PointerEvent) => {
                 const dx = ev.clientX - startX;
                 const dy = ev.clientY - startY;
@@ -159,10 +171,22 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
                     if (win.maximized) setWindowGeometry(win.id, origin);
                 }
                 moved = true;
+                const nextX = origin.x + dx;
+                const nextY = origin.y + dy;
+                const clampedX = Math.max(minX, Math.min(maxX, nextX));
+                const clampedY = Math.max(minY, Math.min(maxY, nextY));
+
+                if (nextX !== clampedX) {
+                    startX += nextX - clampedX;
+                }
+                if (nextY !== clampedY) {
+                    startY += nextY - clampedY;
+                }
+
                 last = {
                     ...origin,
-                    x: origin.x + dx,
-                    y: Math.max(0, Math.min(origin.y + dy, vpH - 32)),
+                    x: clampedX,
+                    y: clampedY,
                 };
                 setDrag(last);
                 zone = edgeZoneAt(ev.clientX, ev.clientY);
@@ -186,6 +210,7 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
             const onUp = () => {
                 window.removeEventListener('pointermove', onMove);
                 window.removeEventListener('pointerup', onUp);
+                document.body.style.userSelect = prevUserSelect;
                 setDrag(null);
                 setSnapPreview(null);
                 if (!moved) return;
@@ -209,7 +234,22 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
             window.addEventListener('pointermove', onMove);
             window.addEventListener('pointerup', onUp);
         },
-        [win, settings, focusWindow, setWindowGeometry, toggleMaximize, vpH, vpW, leftInset, rightInset, bottomInset],
+        [
+            win,
+            settings,
+            focusWindow,
+            setWindowGeometry,
+            toggleMaximize,
+            vpH,
+            vpW,
+            leftInset,
+            rightInset,
+            bottomInset,
+            minX,
+            maxX,
+            minY,
+            maxY,
+        ],
     );
 
     const clearSnapMenuTimer = () => {
@@ -240,25 +280,37 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
             if (e.button !== 0) return;
             e.stopPropagation();
             e.preventDefault();
+            window.getSelection()?.removeAllRanges();
+            const prevUserSelect = document.body.style.userSelect;
+            document.body.style.userSelect = 'none';
+
             focusWindow(win.id);
             const startX = e.clientX;
             const startY = e.clientY;
             const origin = win.maximized
-                ? { x: 0, y: 0, w: vpW, h: vpH - bottomInset }
+                ? { x: leftInset, y: 0, w: vpW - leftInset - rightInset, h: vpH - bottomInset }
                 : { x: win.x, y: win.y, w: win.w, h: win.h };
             let last = origin;
             const onMove = (ev: PointerEvent) => {
                 const dx = ev.clientX - startX;
                 const dy = ev.clientY - startY;
                 let { x, y, w, h } = origin;
-                if (edge.includes('e')) w = Math.max(def.minSize.w, origin.w + dx);
-                if (edge.includes('s')) h = Math.max(def.minSize.h, origin.h + dy);
+                if (edge.includes('e')) {
+                    const maxEastW = Math.max(def.minSize.w, vpW - rightInset - 8 - origin.x);
+                    w = Math.max(def.minSize.w, Math.min(maxEastW, origin.w + dx));
+                }
+                if (edge.includes('s')) {
+                    const maxSouthH = Math.max(def.minSize.h, vpH - bottomInset - 8 - origin.y);
+                    h = Math.max(def.minSize.h, Math.min(maxSouthH, origin.h + dy));
+                }
                 if (edge.includes('w')) {
-                    w = Math.max(def.minSize.w, origin.w - dx);
+                    const maxWestW = Math.max(def.minSize.w, origin.x + origin.w - (leftInset + 8));
+                    w = Math.max(def.minSize.w, Math.min(maxWestW, origin.w - dx));
                     x = origin.x + (origin.w - w);
                 }
                 if (edge.includes('n')) {
-                    h = Math.max(def.minSize.h, origin.h - dy);
+                    const maxNorthH = Math.max(def.minSize.h, origin.y + origin.h - 0);
+                    h = Math.max(def.minSize.h, Math.min(maxNorthH, origin.h - dy));
                     y = Math.max(0, origin.y + (origin.h - h));
                 }
                 last = { x, y, w, h };
@@ -267,6 +319,7 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
             const onUp = () => {
                 window.removeEventListener('pointermove', onMove);
                 window.removeEventListener('pointerup', onUp);
+                document.body.style.userSelect = prevUserSelect;
                 setDrag(null);
                 setWindowGeometry(win.id, {
                     x: Math.round(last.x),
@@ -278,7 +331,7 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
             window.addEventListener('pointermove', onMove);
             window.addEventListener('pointerup', onUp);
         },
-        [win, def.minSize, focusWindow, setWindowGeometry, vpW, vpH, bottomInset],
+        [win, def.minSize, focusWindow, setWindowGeometry, vpW, vpH, leftInset, rightInset, bottomInset],
     );
 
     const zoom = () => {

@@ -81,6 +81,19 @@
         transform 260ms var(--fos-ease),
         opacity 220ms var(--fos-ease),
         box-shadow 200ms ease;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.fos-window input,
+.fos-window textarea,
+.fos-window [contenteditable='true'],
+.fos-window .monaco-editor,
+.fos-window .xterm,
+.fos-window .select-text,
+.fos-window [data-selectable='true'] {
+    user-select: text;
+    -webkit-user-select: text;
 }
 
 .fos-window[data-anim='geometry'] {
@@ -634,6 +647,8 @@
     color: var(--fos-window-ink);
     backdrop-filter: blur(calc(24px * var(--fos-blur-scale, 1))) saturate(180%);
     cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .fos-term-chrome:active {

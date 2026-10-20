@@ -142,7 +142,7 @@ export default function ServerFilesIDEPage({
     const { theme } = useTheme();
     const { settings } = useSettings();
 
-    const appName = settings?.app_name || 'FeatherPanel';
+    const appName = settings?.app_name || 'Panel';
     const appLogo = settings?.app_logo_dark || settings?.app_logo_white || '/assets/logo.png';
 
     const fullPath = useMemo(

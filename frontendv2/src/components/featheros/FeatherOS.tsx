@@ -203,7 +203,7 @@ function Shell() {
                         .filter((win) => (win.space ?? 0) === activeSpace || missionControlOpen)
                         .map((win) => (
                             <OsWindowFrame key={win.id} win={win}>
-                                <div className='h-full w-full select-text'>
+                                <div className='h-full w-full select-none'>
                                     <AppHost win={win} />
                                 </div>
                             </OsWindowFrame>

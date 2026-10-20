@@ -41,7 +41,7 @@ export default function PublicSiteShell({ children, fillViewport = false }: Publ
     const { t } = useTranslation();
     const { pages: pluginPublicPages } = usePluginPublicPages();
 
-    const appName = settings?.app_name?.trim() || 'FeatherPanel';
+    const appName = settings?.app_name?.trim() || 'Panel';
     const appDescription =
         settings?.app_seo_description?.trim() ||
         settings?.app_pwa_description?.trim() ||

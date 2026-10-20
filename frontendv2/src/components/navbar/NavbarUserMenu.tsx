@@ -167,7 +167,7 @@ export function NavbarUserMenu({
     const roleColor = user?.role?.color?.trim() || null;
     const privacy = usePrivacyModeToggle();
     const gameEnabled = isModuleEnabled(settings, 'game');
-    const osTitle = `${settings?.app_name || 'FeatherPanel'} OS`;
+    const osTitle = `${settings?.app_name || 'Panel'} OS`;
 
     if (userLoading) {
         return (
