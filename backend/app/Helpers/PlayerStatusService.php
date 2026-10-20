@@ -19,9 +19,9 @@ declare(strict_types=1);
 
 namespace App\Helpers;
 
+use App\Chat\Node;
 use App\Cache\Cache;
 use App\Chat\Database;
-use App\Chat\Node;
 use App\Services\Wings\Wings;
 
 /**
@@ -384,7 +384,6 @@ class PlayerStatusService
             return null;
         }
     }
-
 
     /**
      * Query an ARK: Survival Ascended server via RCON "ListPlayers" through the

@@ -403,9 +403,7 @@ export default function EditorApp({ win }: OsAppProps) {
         editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyS, () =>
             saveAllRef.current(),
         );
-        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyI, () =>
-            formatRef.current(),
-        );
+        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyI, () => formatRef.current());
         editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyG, () => goToLineRef.current());
         editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Equal, () => {
             setPrefs({ fontSize: Math.min(22, prefsRef.current.fontSize + 1) });
@@ -755,9 +753,7 @@ export default function EditorApp({ win }: OsAppProps) {
                                                     aria-label={t('featheros.editor.explorer')}
                                                     onKeyDown={(event) => {
                                                         if (
-                                                            !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(
-                                                                event.key,
-                                                            )
+                                                            !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)
                                                         )
                                                             return;
                                                         const rows = Array.from(
@@ -774,9 +770,7 @@ export default function EditorApp({ win }: OsAppProps) {
                                                                 : event.key === 'End'
                                                                   ? rows.length - 1
                                                                   : index + (event.key === 'ArrowDown' ? 1 : -1);
-                                                        rows[
-                                                            Math.max(0, Math.min(rows.length - 1, next))
-                                                        ]?.focus();
+                                                        rows[Math.max(0, Math.min(rows.length - 1, next))]?.focus();
                                                     }}
                                                 >
                                                     {visibleFiles.map((file) => (

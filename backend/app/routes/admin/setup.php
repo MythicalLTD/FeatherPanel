@@ -17,9 +17,9 @@
 
 use App\App;
 use App\Permissions;
-use App\Controllers\Admin\SetupWizardController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\Admin\SetupWizardController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(

@@ -1840,11 +1840,15 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                                 type='text'
                                                 className={cn(
                                                     'text-foreground placeholder:text-muted-foreground/50 relative h-full w-full min-w-0 bg-transparent py-1.5 font-mono text-xs font-semibold outline-none',
-                                                    isGlass && 'font-normal text-[var(--fos-ink)] placeholder:text-[var(--fos-secondary)]',
+                                                    isGlass &&
+                                                        'font-normal text-[var(--fos-ink)] placeholder:text-[var(--fos-secondary)]',
                                                 )}
                                                 style={
                                                     isGlass
-                                                        ? { fontFamily: GLASS_TERMINAL_FONT, caretColor: 'currentColor' }
+                                                        ? {
+                                                              fontFamily: GLASS_TERMINAL_FONT,
+                                                              caretColor: 'currentColor',
+                                                          }
                                                         : undefined
                                                 }
                                                 placeholder={

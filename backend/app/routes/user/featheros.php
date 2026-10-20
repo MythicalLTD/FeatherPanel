@@ -200,5 +200,4 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(60),
         'user-featheros'
     );
-
 };

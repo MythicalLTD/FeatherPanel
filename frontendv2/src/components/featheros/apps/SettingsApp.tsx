@@ -52,13 +52,7 @@ import {
     type OsTheme,
     type OsThemeValues,
 } from '../types';
-import {
-    BUILTIN_THEMES,
-    MAX_SAVED_THEMES,
-    downloadThemeFile,
-    pickThemeValues,
-    readThemeFile,
-} from '../themes';
+import { BUILTIN_THEMES, MAX_SAVED_THEMES, downloadThemeFile, pickThemeValues, readThemeFile } from '../themes';
 import { confirmRestoreWorkspace, promptSaveWorkspace } from '../workspaces';
 import { uid } from '../utils';
 import { lockOs } from '../LockScreen';
@@ -379,7 +373,11 @@ export default function SettingsApp({ win }: OsAppProps) {
                                 <span className='fos-settings-row-text'>
                                     <span className='fos-settings-row-hint'>{t('featheros.themes.hint')}</span>
                                 </span>
-                                <button type='button' className='fos-settings-btn' onClick={() => void saveCurrentTheme()}>
+                                <button
+                                    type='button'
+                                    className='fos-settings-btn'
+                                    onClick={() => void saveCurrentTheme()}
+                                >
                                     <Plus className='h-3.5 w-3.5' /> {t('featheros.themes.save_current')}
                                 </button>
                                 <button
@@ -886,7 +884,11 @@ export default function SettingsApp({ win }: OsAppProps) {
                                     <span className='fos-settings-row-label'>{t('featheros.lock.lock_screen')}</span>
                                     <span className='fos-settings-row-hint'>{t('featheros.lock.shortcut_hint')}</span>
                                 </span>
-                                <button type='button' className='fos-settings-btn is-secondary' onClick={() => lockOs()}>
+                                <button
+                                    type='button'
+                                    className='fos-settings-btn is-secondary'
+                                    onClick={() => lockOs()}
+                                >
                                     <Lock className='h-3.5 w-3.5' /> {t('featheros.lock.lock_now')}
                                 </button>
                             </div>

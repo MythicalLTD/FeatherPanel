@@ -739,7 +739,9 @@ export function Desktop() {
                                 <OsIcon art={FOLDER_ART} size={iconPx} bare />
                             ) : (
                                 <OsIcon
-                                    art={fileArt(icon.label.includes('.') ? icon.label.split('.').pop() || 'file' : 'file')}
+                                    art={fileArt(
+                                        icon.label.includes('.') ? icon.label.split('.').pop() || 'file' : 'file',
+                                    )}
                                     size={iconPx}
                                     bare
                                 />

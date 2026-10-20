@@ -61,7 +61,13 @@ export function OsIcon({
             ) : (
                 <>
                     <g clipPath={clip}>{art(u)}</g>
-                    <path d={SQUIRCLE_PATH} fill='none' stroke={`url(#${u('rim')})`} strokeWidth='1.4' clipPath={clip} />
+                    <path
+                        d={SQUIRCLE_PATH}
+                        fill='none'
+                        stroke={`url(#${u('rim')})`}
+                        strokeWidth='1.4'
+                        clipPath={clip}
+                    />
                 </>
             )}
         </svg>

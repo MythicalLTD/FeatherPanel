@@ -669,7 +669,9 @@ export default function TerminalApp({ win }: OsAppProps) {
                     <div
                         key={uuid}
                         className={cn('fos-term-pane', split && uuid === active && 'is-active')}
-                        onPointerDownCapture={() => split && uuid !== active && updateWindowProps(win.id, { active: uuid })}
+                        onPointerDownCapture={() =>
+                            split && uuid !== active && updateWindowProps(win.id, { active: uuid })
+                        }
                     >
                         <ConsoleSession
                             uuid={uuid}

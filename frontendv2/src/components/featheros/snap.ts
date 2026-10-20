@@ -89,7 +89,10 @@ export function zoneRect(area: Rect, zone: SnapZone): Rect {
 }
 
 const sameZone = (a: SnapZone, b: SnapZone) =>
-    Math.abs(a.x - b.x) < 0.01 && Math.abs(a.y - b.y) < 0.01 && Math.abs(a.w - b.w) < 0.01 && Math.abs(a.h - b.h) < 0.01;
+    Math.abs(a.x - b.x) < 0.01 &&
+    Math.abs(a.y - b.y) < 0.01 &&
+    Math.abs(a.w - b.w) < 0.01 &&
+    Math.abs(a.h - b.h) < 0.01;
 
 export function locateZone(zone: SnapZone): { layout: number; index: number } | null {
     for (let layout = 0; layout < SNAP_LAYOUTS.length; layout++) {

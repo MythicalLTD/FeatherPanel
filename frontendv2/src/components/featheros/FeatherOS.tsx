@@ -177,7 +177,8 @@ function Shell() {
             data-fos-dim-inactive={settings.dimInactive ? 'true' : undefined}
             data-fos-solid={settings.reduceTransparency ? 'true' : undefined}
             style={{
-                background: dim > 0 ? `linear-gradient(rgb(0 0 0 / ${dim}), rgb(0 0 0 / ${dim})), ${wallpaper}` : wallpaper,
+                background:
+                    dim > 0 ? `linear-gradient(rgb(0 0 0 / ${dim}), rgb(0 0 0 / ${dim})), ${wallpaper}` : wallpaper,
                 fontSize: `${Math.round(15 * (settings.fontScale || 1))}px`,
                 ['--fos-speed' as string]: String(settings.animationSpeed || 1),
                 ['--fos-accent' as string]: settings.accent?.startsWith('#') ? settings.accent : undefined,

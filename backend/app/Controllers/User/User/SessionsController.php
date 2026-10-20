@@ -22,8 +22,8 @@ use App\Chat\Activity;
 use App\Chat\UserSession;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
-use App\Helpers\SessionCookieHelper;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\SessionCookieHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 

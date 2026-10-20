@@ -17,14 +17,14 @@
 
 namespace App\Controllers\User\FeatherOs;
 
+use App\App;
+use App\Chat\Server;
 use App\Chat\FeatherOsNote;
-use App\Chat\FeatherOsSession;
 use App\Chat\FeatherOsState;
 use App\Chat\FeatherOsTrash;
-use App\Chat\Server;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
-use App\App;
+use App\Chat\FeatherOsSession;
 use App\Config\ConfigInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -372,48 +372,6 @@ class FeatherOsController
         return ApiResponse::success([], 'Note deleted', 200);
     }
 
-    /**
-     * Picks and validates the note fields present in the body.
-     *
-     * @param array<string, mixed> $data
-     *
-     * @return array<string, mixed>|Response
-     */
-    private function validateNoteFields(array $data): array | Response
-    {
-        $fields = [];
-        if (array_key_exists('title', $data)) {
-            if (!is_string($data['title'])) {
-                return ApiResponse::error('Title must be a string', 'FEATHEROS_INVALID_NOTE', 400);
-            }
-            $title = trim($data['title']);
-            if (mb_strlen($title) > self::MAX_NOTE_TITLE) {
-                return ApiResponse::error('Title is too long', 'FEATHEROS_INVALID_NOTE', 400);
-            }
-            $fields['title'] = $title;
-        }
-        if (array_key_exists('content', $data)) {
-            if (!is_string($data['content'])) {
-                return ApiResponse::error('Content must be a string', 'FEATHEROS_INVALID_NOTE', 400);
-            }
-            if (strlen($data['content']) > self::MAX_NOTE_BYTES) {
-                return ApiResponse::error('Note is too large', 'FEATHEROS_NOTE_TOO_LARGE', 413);
-            }
-            $fields['content'] = $data['content'];
-        }
-        if (array_key_exists('color', $data)) {
-            if (!is_string($data['color']) || !in_array($data['color'], self::NOTE_COLORS, true)) {
-                return ApiResponse::error('Unknown note color', 'FEATHEROS_INVALID_NOTE', 400);
-            }
-            $fields['color'] = $data['color'];
-        }
-        if (array_key_exists('pinned', $data)) {
-            $fields['pinned'] = (bool) $data['pinned'];
-        }
-
-        return $fields;
-    }
-
     #[OA\Post(
         path: '/api/user/featheros/wallpaper',
         summary: 'Upload a custom FeatherOS wallpaper',
@@ -513,7 +471,6 @@ class FeatherOsController
         }
     }
 
-
     #[OA\Get(path: '/api/user/featheros/trash', summary: 'List FeatherOS trash entries', tags: ['User - FeatherOS'])]
     public function listTrash(Request $request): Response
     {
@@ -605,4 +562,45 @@ class FeatherOsController
         return ApiResponse::success(['deleted' => $n], 'Trash metadata removed', 200);
     }
 
+    /**
+     * Picks and validates the note fields present in the body.
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>|Response
+     */
+    private function validateNoteFields(array $data): array | Response
+    {
+        $fields = [];
+        if (array_key_exists('title', $data)) {
+            if (!is_string($data['title'])) {
+                return ApiResponse::error('Title must be a string', 'FEATHEROS_INVALID_NOTE', 400);
+            }
+            $title = trim($data['title']);
+            if (mb_strlen($title) > self::MAX_NOTE_TITLE) {
+                return ApiResponse::error('Title is too long', 'FEATHEROS_INVALID_NOTE', 400);
+            }
+            $fields['title'] = $title;
+        }
+        if (array_key_exists('content', $data)) {
+            if (!is_string($data['content'])) {
+                return ApiResponse::error('Content must be a string', 'FEATHEROS_INVALID_NOTE', 400);
+            }
+            if (strlen($data['content']) > self::MAX_NOTE_BYTES) {
+                return ApiResponse::error('Note is too large', 'FEATHEROS_NOTE_TOO_LARGE', 413);
+            }
+            $fields['content'] = $data['content'];
+        }
+        if (array_key_exists('color', $data)) {
+            if (!is_string($data['color']) || !in_array($data['color'], self::NOTE_COLORS, true)) {
+                return ApiResponse::error('Unknown note color', 'FEATHEROS_INVALID_NOTE', 400);
+            }
+            $fields['color'] = $data['color'];
+        }
+        if (array_key_exists('pinned', $data)) {
+            $fields['pinned'] = (bool) $data['pinned'];
+        }
+
+        return $fields;
+    }
 }

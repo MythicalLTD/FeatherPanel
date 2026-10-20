@@ -64,7 +64,7 @@ export function LockScreen() {
     const isLocked = useOsLocked();
     const [now, setNow] = useState(() => new Date());
     const [leaving, setLeaving] = useState(false);
-    const lastActivity = useRef(Date.now());
+    const lastActivity = useRef(0);
     const lockAfter = Math.max(0, settings.lockAfterMinutes ?? 0);
 
     useEffect(() => {
@@ -84,7 +84,11 @@ export function LockScreen() {
         events.forEach((ev) => window.addEventListener(ev, bump, { capture: true, passive: true }));
         bump();
         const timer = window.setInterval(() => {
-            if (!locked && document.visibilityState === 'visible' && Date.now() - lastActivity.current > lockAfter * 60_000) {
+            if (
+                !locked &&
+                document.visibilityState === 'visible' &&
+                Date.now() - lastActivity.current > lockAfter * 60_000
+            ) {
                 setLocked(true);
             }
         }, 10_000);

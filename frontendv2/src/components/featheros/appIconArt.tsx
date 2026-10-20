@@ -111,14 +111,32 @@ function calendarFace(u: IconIds) {
     );
 }
 
-const LAUNCHER_COLORS = ['#FF5F57', '#FF9F0A', '#FFD60A', '#30D158', '#64D2FF', '#0A84FF', '#BF5AF2', '#FF375F', '#C8A27A'];
+const LAUNCHER_COLORS = [
+    '#FF5F57',
+    '#FF9F0A',
+    '#FFD60A',
+    '#30D158',
+    '#64D2FF',
+    '#0A84FF',
+    '#BF5AF2',
+    '#FF375F',
+    '#C8A27A',
+];
 
 export const LAUNCHER_ART = (u: IconIds) => (
     <>
         {background(u, '#4A4A51', '#1C1C20')}
         <g filter={url(u('sh'))}>
             {LAUNCHER_COLORS.map((color, i) => (
-                <rect key={color} x={19 + (i % 3) * 22} y={19 + Math.floor(i / 3) * 22} width='18' height='18' rx='5.5' fill={color} />
+                <rect
+                    key={color}
+                    x={19 + (i % 3) * 22}
+                    y={19 + Math.floor(i / 3) * 22}
+                    width='18'
+                    height='18'
+                    rx='5.5'
+                    fill={color}
+                />
             ))}
         </g>
     </>
@@ -164,7 +182,10 @@ export function fileArt(ext: string) {
             <>
                 <defs>{vgrad(u('page'), '#FFFFFF', '#EEF0F4')}</defs>
                 <g filter={url(u('sh'))}>
-                    <path d='M24 6h37l21 21v61a6 6 0 0 1-6 6H24a6 6 0 0 1-6-6V12a6 6 0 0 1 6-6z' fill={url(u('page'))} />
+                    <path
+                        d='M24 6h37l21 21v61a6 6 0 0 1-6 6H24a6 6 0 0 1-6-6V12a6 6 0 0 1 6-6z'
+                        fill={url(u('page'))}
+                    />
                 </g>
                 <path d='M61 6v16a5 5 0 0 0 5 5h16' fill='#DCE0E7' />
                 <text
@@ -198,7 +219,10 @@ export const APP_ICON_ART: Record<OsAppId, (u: IconIds) => ReactNode> = {
                     fill={url(u('back'))}
                 />
                 <rect x='22' y='33' width='56' height='30' rx='3' fill='#fff' opacity='0.96' />
-                <path d='M16 44a6 6 0 0 1 6-6h56a6 6 0 0 1 6 6v30a7 7 0 0 1-7 7H23a7 7 0 0 1-7-7z' fill={url(u('front'))} />
+                <path
+                    d='M16 44a6 6 0 0 1 6-6h56a6 6 0 0 1 6 6v30a7 7 0 0 1-7 7H23a7 7 0 0 1-7-7z'
+                    fill={url(u('front'))}
+                />
                 <path d='M22 39.4h56' stroke='#fff' strokeOpacity='0.5' strokeWidth='1.2' />
                 <path
                     d='M44 58c4-1.6 8.6-6.2 12-10.6-1.2 6.8-4.6 11.6-9.4 14.2M44 58l-3.4 6'
@@ -224,7 +248,14 @@ export const APP_ICON_ART: Record<OsAppId, (u: IconIds) => ReactNode> = {
                 <rect x='11' y='13' width='78' height='74' rx='10' fill={url(u('screen'))} />
             </g>
             <rect x='11' y='13' width='78' height='30' rx='10' fill={url(u('glare'))} />
-            <path d='M24 33l12 9-12 9' fill='none' stroke='#F5F5F7' strokeWidth='5' strokeLinecap='round' strokeLinejoin='round' />
+            <path
+                d='M24 33l12 9-12 9'
+                fill='none'
+                stroke='#F5F5F7'
+                strokeWidth='5'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+            />
             <rect x='41' y='47' width='15' height='5' rx='1.6' fill='#4ADE80' />
             <rect x='24' y='63' width='34' height='3.6' rx='1.8' fill='#fff' opacity='0.22' />
             <rect x='24' y='71' width='22' height='3.6' rx='1.8' fill='#fff' opacity='0.14' />
@@ -338,7 +369,13 @@ export const APP_ICON_ART: Record<OsAppId, (u: IconIds) => ReactNode> = {
                 <ellipse cx='50' cy='27' rx='27' ry='9.5' fill='#F2FAFF' />
             </g>
             <ellipse cx='50' cy='27' rx='27' ry='9.5' fill='none' stroke='#7CC6EE' strokeWidth='1.4' />
-            <path d='M23 42.5A27 9.5 0 0 0 77 42.5' fill='none' stroke='#2A9BD8' strokeOpacity='0.6' strokeWidth='2.2' />
+            <path
+                d='M23 42.5A27 9.5 0 0 0 77 42.5'
+                fill='none'
+                stroke='#2A9BD8'
+                strokeOpacity='0.6'
+                strokeWidth='2.2'
+            />
             <path d='M23 58A27 9.5 0 0 0 77 58' fill='none' stroke='#2A9BD8' strokeOpacity='0.6' strokeWidth='2.2' />
             <circle cx='68' cy='50' r='2.4' fill='#22C55E' />
             <circle cx='68' cy='65.5' r='2.4' fill='#22C55E' />
@@ -351,7 +388,16 @@ export const APP_ICON_ART: Record<OsAppId, (u: IconIds) => ReactNode> = {
             <defs>{vgrad(u('bind'), '#45454D', '#232327')}</defs>
             <rect width='100' height='24' fill={url(u('bind'))} />
             {[22, 36, 50, 64, 78].map((x) => (
-                <circle key={x} cx={x} cy='24' r='3.4' fill='#FFF6C2' stroke='#1C1C1E' strokeOpacity='0.35' strokeWidth='1' />
+                <circle
+                    key={x}
+                    cx={x}
+                    cy='24'
+                    r='3.4'
+                    fill='#FFF6C2'
+                    stroke='#1C1C1E'
+                    strokeOpacity='0.35'
+                    strokeWidth='1'
+                />
             ))}
             {[42, 54, 66, 78, 90].map((y) => (
                 <path key={y} d={`M10 ${y}H92`} stroke='#8CB8F0' strokeWidth='1.6' />
@@ -386,7 +432,13 @@ export const APP_ICON_ART: Record<OsAppId, (u: IconIds) => ReactNode> = {
             </g>
             <circle cx='50' cy='50' r='21' fill={url(u('hub'))} />
             <circle cx='50' cy='50' r='21' fill='none' stroke='#fff' strokeOpacity='0.5' strokeWidth='1' />
-            <path d={gearPath(50, 50, 15, 11.5, 8)} fill='#E9E9EE' stroke='#E9E9EE' strokeWidth='1.6' strokeLinejoin='round' />
+            <path
+                d={gearPath(50, 50, 15, 11.5, 8)}
+                fill='#E9E9EE'
+                stroke='#E9E9EE'
+                strokeWidth='1.6'
+                strokeLinejoin='round'
+            />
             <circle cx='50' cy='50' r='5.5' fill='#5C5C63' />
         </>
     ),
@@ -406,7 +458,14 @@ export const APP_ICON_ART: Record<OsAppId, (u: IconIds) => ReactNode> = {
             <g filter={url(u('sh'))}>
                 <circle cx='50' cy='52' r='22' fill={url(u('face'))} />
             </g>
-            <path d='M50 38V52L60 58' fill='none' stroke='#C0123E' strokeWidth='4.4' strokeLinecap='round' strokeLinejoin='round' />
+            <path
+                d='M50 38V52L60 58'
+                fill='none'
+                stroke='#C0123E'
+                strokeWidth='4.4'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+            />
             <circle cx='50' cy='52' r='3' fill='#C0123E' />
         </>
     ),
@@ -430,7 +489,14 @@ export const APP_ICON_ART: Record<OsAppId, (u: IconIds) => ReactNode> = {
     transfers: (u) => (
         <>
             {background(u, '#FFB36B', '#E4510A')}
-            <g fill='none' stroke='#fff' strokeWidth='7.5' strokeLinecap='round' strokeLinejoin='round' filter={url(u('sh'))}>
+            <g
+                fill='none'
+                stroke='#fff'
+                strokeWidth='7.5'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                filter={url(u('sh'))}
+            >
                 <path d='M37 76V26M24 39L37 26L50 39' />
                 <path d='M63 24V74M50 61L63 74L76 61' strokeOpacity='0.82' />
             </g>
@@ -473,12 +539,24 @@ export const APP_ICON_ART: Record<OsAppId, (u: IconIds) => ReactNode> = {
             {background(u, '#F7F7FA', '#CFCFD6')}
             <defs>{vgrad(u('can'), '#D2D2D8', '#94949C')}</defs>
             <g filter={url(u('sh'))}>
-                <path d='M41.5 22v-3.5a2.5 2.5 0 0 1 2.5-2.5h12a2.5 2.5 0 0 1 2.5 2.5V22' fill='none' stroke='#8A8A92' strokeWidth='3.2' />
+                <path
+                    d='M41.5 22v-3.5a2.5 2.5 0 0 1 2.5-2.5h12a2.5 2.5 0 0 1 2.5 2.5V22'
+                    fill='none'
+                    stroke='#8A8A92'
+                    strokeWidth='3.2'
+                />
                 <rect x='24' y='21' width='52' height='8' rx='4' fill='#8A8A92' />
                 <path d='M29 33H71L67.2 80.4A5 5 0 0 1 62.2 85H37.8A5 5 0 0 1 32.8 80.4Z' fill={url(u('can'))} />
             </g>
             {[41, 50, 59].map((x) => (
-                <path key={x} d={`M${x} 42V76`} stroke='#F4F4F7' strokeOpacity='0.75' strokeWidth='3' strokeLinecap='round' />
+                <path
+                    key={x}
+                    d={`M${x} 42V76`}
+                    stroke='#F4F4F7'
+                    strokeOpacity='0.75'
+                    strokeWidth='3'
+                    strokeLinecap='round'
+                />
             ))}
         </>
     ),

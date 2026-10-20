@@ -20,10 +20,7 @@ import Link from 'next/link';
 import axios from 'axios';
 import { Loader2, Monitor, RefreshCw, ShieldAlert } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import {
-    featherOsApi,
-    type FeatherOsSessionInfo,
-} from '@/lib/featheros-api';
+import { featherOsApi, type FeatherOsSessionInfo } from '@/lib/featheros-api';
 
 const INSTANCE_KEY = 'featherpanel_fos_instance_id';
 const CHANNEL_NAME = 'featherpanel-fos-session';
@@ -252,13 +249,11 @@ export function OsSessionGate({ children }: { children: ReactNode }) {
         if (status !== 'active') return;
 
         const heartbeat = window.setInterval(() => {
-            void featherOsApi
-                .heartbeatSession(instanceRef.current)
-                .catch((err) => {
-                    if (axios.isAxiosError(err) && err.response?.status === 409) {
-                        becomeBlocked('device', conflictFromAxios(err));
-                    }
-                });
+            void featherOsApi.heartbeatSession(instanceRef.current).catch((err) => {
+                if (axios.isAxiosError(err) && err.response?.status === 409) {
+                    becomeBlocked('device', conflictFromAxios(err));
+                }
+            });
             post({ type: 'claim', instanceId: instanceRef.current, at: Date.now() });
         }, HEARTBEAT_MS);
 

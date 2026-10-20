@@ -27,11 +27,10 @@ use App\Cache\Cache;
  */
 class FeatherOsSession
 {
-    /** Cache TTL in minutes. Heartbeat should renew well before this. */
-    private const TTL_MINUTES = 2;
-
     /** Treat a lease as dead if the last heartbeat is older than this (seconds). */
     public const STALE_AFTER_SECONDS = 90;
+    /** Cache TTL in minutes. Heartbeat should renew well before this. */
+    private const TTL_MINUTES = 2;
 
     /**
      * @return array{instance_id: string, started_at: int, heartbeat_at: int, user_agent: string, label: string}|null
@@ -149,6 +148,36 @@ class FeatherOsSession
         Cache::forget(self::cacheKey($userId));
     }
 
+    public static function labelFromUa(string $ua): string
+    {
+        $ua = $ua !== '' ? $ua : 'Unknown';
+        $browser = 'Browser';
+        if (preg_match('/Edg\//i', $ua)) {
+            $browser = 'Edge';
+        } elseif (preg_match('/Chrome\//i', $ua) && !preg_match('/Chromium/i', $ua)) {
+            $browser = 'Chrome';
+        } elseif (preg_match('/Firefox\//i', $ua)) {
+            $browser = 'Firefox';
+        } elseif (preg_match('/Safari\//i', $ua) && !preg_match('/Chrome/i', $ua)) {
+            $browser = 'Safari';
+        }
+
+        $os = 'device';
+        if (preg_match('/Windows/i', $ua)) {
+            $os = 'Windows';
+        } elseif (preg_match('/Android/i', $ua)) {
+            $os = 'Android';
+        } elseif (preg_match('/iPhone|iPad|iPod/i', $ua)) {
+            $os = 'iOS';
+        } elseif (preg_match('/Mac OS X|Macintosh/i', $ua)) {
+            $os = 'macOS';
+        } elseif (preg_match('/Linux/i', $ua)) {
+            $os = 'Linux';
+        }
+
+        return $browser . ' on ' . $os;
+    }
+
     private static function cacheKey(int $userId): string
     {
         return 'featheros:session:' . $userId;
@@ -182,35 +211,5 @@ class FeatherOsSession
         }
 
         return substr($label, 0, 80);
-    }
-
-    public static function labelFromUa(string $ua): string
-    {
-        $ua = $ua !== '' ? $ua : 'Unknown';
-        $browser = 'Browser';
-        if (preg_match('/Edg\//i', $ua)) {
-            $browser = 'Edge';
-        } elseif (preg_match('/Chrome\//i', $ua) && !preg_match('/Chromium/i', $ua)) {
-            $browser = 'Chrome';
-        } elseif (preg_match('/Firefox\//i', $ua)) {
-            $browser = 'Firefox';
-        } elseif (preg_match('/Safari\//i', $ua) && !preg_match('/Chrome/i', $ua)) {
-            $browser = 'Safari';
-        }
-
-        $os = 'device';
-        if (preg_match('/Windows/i', $ua)) {
-            $os = 'Windows';
-        } elseif (preg_match('/Android/i', $ua)) {
-            $os = 'Android';
-        } elseif (preg_match('/iPhone|iPad|iPod/i', $ua)) {
-            $os = 'iOS';
-        } elseif (preg_match('/Mac OS X|Macintosh/i', $ua)) {
-            $os = 'macOS';
-        } elseif (preg_match('/Linux/i', $ua)) {
-            $os = 'Linux';
-        }
-
-        return $browser . ' on ' . $os;
     }
 }

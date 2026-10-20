@@ -269,14 +269,18 @@ export default function LogViewerApp({ win }: OsAppProps) {
                                 l.level === 'warn' && 'bg-amber-500/10 text-amber-800 dark:text-amber-200',
                             )}
                         >
-                            <span className='w-10 shrink-0 text-right text-zinc-400 select-none dark:text-zinc-600'>{l.i + 1}</span>
+                            <span className='w-10 shrink-0 text-right text-zinc-400 select-none dark:text-zinc-600'>
+                                {l.i + 1}
+                            </span>
                             <span className={wrap ? 'break-all whitespace-pre-wrap' : 'whitespace-pre'}>
                                 {highlight(l.text)}
                             </span>
                         </div>
                     ))}
                     {!loading && filtered.length === 0 && (
-                        <div className='py-10 text-center text-zinc-400 dark:text-zinc-500'>{t('featheros.logs.empty')}</div>
+                        <div className='py-10 text-center text-zinc-400 dark:text-zinc-500'>
+                            {t('featheros.logs.empty')}
+                        </div>
                     )}
                 </div>
             )}

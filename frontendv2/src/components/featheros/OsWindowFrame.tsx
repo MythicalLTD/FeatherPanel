@@ -171,7 +171,12 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
                     zoneKey = key;
                     setSnapPreview(
                         zone === 'max'
-                            ? { x: leftInset, y: 0, w: vpW - leftInset - rightInset, h: Math.max(240, vpH - bottomInset) }
+                            ? {
+                                  x: leftInset,
+                                  y: 0,
+                                  w: vpW - leftInset - rightInset,
+                                  h: Math.max(240, vpH - bottomInset),
+                              }
                             : zone
                               ? zoneRect(area, zone)
                               : null,

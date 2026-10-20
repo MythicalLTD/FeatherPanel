@@ -540,28 +540,6 @@ class User
     }
 
     /**
-     * Resolve a per-device session token (see UserSession) to its user.
-     * The session only counts while the user's account token is the one it was issued for.
-     */
-    private static function getUserBySessionToken(string $token): ?array
-    {
-        $session = UserSession::findActive($token);
-        if ($session === null) {
-            return null;
-        }
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
-        $stmt->execute(['id' => (int) $session['user_id']]);
-        $user = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
-        if ($user === null || !hash_equals((string) $session['account_token_hash'], UserSession::hash((string) ($user['remember_token'] ?? '')))) {
-            return null;
-        }
-        UserSession::touch($session, \App\CloudFlare\CloudFlareRealIP::getRealIP());
-
-        return AvatarHelper::enrichUser($user);
-    }
-
-    /**
      * Remove secret columns from a user row before it is serialized into an API response.
      *
      * @param array|null $user The user row
@@ -889,5 +867,27 @@ class User
             'source_devices' => $sourceDevices,
             'potential_alts' => $alts,
         ];
+    }
+
+    /**
+     * Resolve a per-device session token (see UserSession) to its user.
+     * The session only counts while the user's account token is the one it was issued for.
+     */
+    private static function getUserBySessionToken(string $token): ?array
+    {
+        $session = UserSession::findActive($token);
+        if ($session === null) {
+            return null;
+        }
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => (int) $session['user_id']]);
+        $user = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        if ($user === null || !hash_equals((string) $session['account_token_hash'], UserSession::hash((string) ($user['remember_token'] ?? '')))) {
+            return null;
+        }
+        UserSession::touch($session, \App\CloudFlare\CloudFlareRealIP::getRealIP());
+
+        return AvatarHelper::enrichUser($user);
     }
 }

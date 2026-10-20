@@ -49,7 +49,10 @@ export function AboutDialog() {
         const start = { x: e.clientX, y: e.clientY, ox: offset.x, oy: offset.y };
         const minTop = 28 - rect.top;
         const onMove = (ev: PointerEvent) => {
-            const dx = Math.max(-rect.left - rect.width + 80, Math.min(window.innerWidth - rect.left - 80, ev.clientX - start.x));
+            const dx = Math.max(
+                -rect.left - rect.width + 80,
+                Math.min(window.innerWidth - rect.left - 80, ev.clientX - start.x),
+            );
             const dy = Math.max(minTop, Math.min(window.innerHeight - rect.top - 44, ev.clientY - start.y));
             setOffset({ x: start.ox + dx, y: start.oy + dy });
         };

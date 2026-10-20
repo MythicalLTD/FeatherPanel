@@ -100,7 +100,8 @@ export function sanitizeThemeValues(raw: unknown): OsThemeValues | null {
     if (typeof out.accent === 'string' && out.accent && !isValidAccentValue(out.accent)) delete out.accent;
     if (typeof out.customWallpaperUrl === 'string') {
         const url = out.customWallpaperUrl;
-        if (url.length > MAX_URL_LENGTH || (url && !/^(https?:|data:image\/)/i.test(url))) delete out.customWallpaperUrl;
+        if (url.length > MAX_URL_LENGTH || (url && !/^(https?:|data:image\/)/i.test(url)))
+            delete out.customWallpaperUrl;
     }
     return Object.keys(out).length > 0 ? (out as OsThemeValues) : null;
 }

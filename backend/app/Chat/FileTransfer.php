@@ -82,7 +82,7 @@ class FileTransfer
     {
         $pdo = Database::getPdoConnection();
         // Jobs stuck for over an hour are reported as failed (worker died mid run).
-        $pdo->prepare("UPDATE " . self::$table . " SET status = 'failed', error = 'Timed out', finished_at = NOW() WHERE user_id = :u AND status IN ('pending', 'running') AND updated_at < (NOW() - INTERVAL 1 HOUR)")->execute(['u' => $userId]);
+        $pdo->prepare('UPDATE ' . self::$table . " SET status = 'failed', error = 'Timed out', finished_at = NOW() WHERE user_id = :u AND status IN ('pending', 'running') AND updated_at < (NOW() - INTERVAL 1 HOUR)")->execute(['u' => $userId]);
         $stmt = $pdo->prepare('SELECT t.uuid, t.mode, t.source_root, t.files, t.destination, t.status, t.progress, t.stage, t.method, t.error, t.created_at, t.finished_at, s.uuidShort AS source_server, s.name AS source_name, d.uuidShort AS target_server, d.name AS target_name FROM ' . self::$table . ' t JOIN featherpanel_servers s ON s.id = t.source_server_id JOIN featherpanel_servers d ON d.id = t.target_server_id WHERE t.user_id = :u AND t.created_at > (NOW() - INTERVAL 1 DAY) ORDER BY t.id DESC LIMIT :l');
         $stmt->bindValue('u', $userId, \PDO::PARAM_INT);
         $stmt->bindValue('l', $limit, \PDO::PARAM_INT);

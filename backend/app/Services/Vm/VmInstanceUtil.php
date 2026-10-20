@@ -747,12 +747,10 @@ final class VmInstanceUtil
      * is stored in `featherpanel_vnc_tickets`; otherwise the direct Proxmox
      * `vncwebsocket` URL is returned.
      *
-     * @param array<string, mixed> $instance VM instance row.
-     * @param array<string, mixed> $vmNode   VM node row.
-     * @param int                  $httpCode  Proxmox HTTP status.
-     * @param array<string, mixed> $payload   Proxmox vncproxy response data.
+     * @param array<string, mixed> $instance VM instance row
+     * @param array<string, mixed> $vmNode VM node row
      *
-     * @return array<string, mixed> response body for the API call.
+     * @return array<string, mixed> response body for the API call
      */
     public static function createVncTicketPayload(array $instance, array $vmNode, int $instanceIdForLabel): array
     {

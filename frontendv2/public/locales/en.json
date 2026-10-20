@@ -1532,6 +1532,9 @@
             "FEATHEROS_STATE_SAVE_FAILED": "Failed to save the desktop state",
             "FEATHEROS_STATE_TOO_LARGE": "Desktop state is too large",
             "FEATHEROS_INVALID_STATE": "Invalid desktop state",
+            "FEATHEROS_INVALID_INSTANCE": "Missing or invalid instance_id",
+            "FEATHEROS_SESSION_ACTIVE": "FeatherOS is already open in another tab or device",
+            "FEATHEROS_SESSION_STOLEN": "This FeatherOS session was moved elsewhere",
             "FEATHEROS_NOTE_LIMIT": "Too many notes",
             "INVALID_NOTE_ID": "Missing or invalid note ID",
             "FEATHEROS_NOTE_CREATE_FAILED": "Failed to create the note",
@@ -11998,13 +12001,7 @@
             "info": {
                 "title": "Excluded Data",
                 "description": "The following items are excluded from migration to ensure a clean import.",
-                "items": [
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-                ],
+                "items": [null, null, null, null, null],
                 "footer": "Excluding this data significantly reduces migration time."
             },
             "create_key": {
@@ -12020,12 +12017,7 @@
                 "creating": "Creating..."
             },
             "warning_dialog": {
-                "items": [
-                    null,
-                    null,
-                    null,
-                    null
-                ]
+                "items": [null, null, null, null]
             },
             "visibility": {
                 "hide": "Hide importer",
@@ -17540,6 +17532,7 @@
             "broadcast_placeholder": "Command for {count} servers",
             "broadcast_sent": "Sent to {count} servers",
             "broadcast_title": "Send a command to several servers",
+            "command_placeholder": "Command…",
             "conn_connected": "Connected",
             "conn_connecting": "Connecting…",
             "conn_disconnected": "Disconnected",

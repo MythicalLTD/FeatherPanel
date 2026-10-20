@@ -195,7 +195,8 @@ export function SnapAssist() {
                                     {candidates.map((w) => {
                                         const def = OS_APPS[w.app];
                                         const server = getServer(w.serverUuid);
-                                        const custom = typeof w.props?.title === 'string' ? (w.props.title as string) : '';
+                                        const custom =
+                                            typeof w.props?.title === 'string' ? (w.props.title as string) : '';
                                         return (
                                             <button
                                                 key={w.id}

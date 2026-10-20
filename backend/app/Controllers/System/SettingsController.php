@@ -18,7 +18,6 @@
 namespace App\Controllers\System;
 
 use App\App;
-
 use App\Config\PublicConfig;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;

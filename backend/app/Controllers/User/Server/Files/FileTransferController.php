@@ -22,8 +22,8 @@ use App\Chat\Server;
 use App\Chat\Subuser;
 use App\Chat\FileTransfer;
 use App\Helpers\UUIDUtils;
-use App\Helpers\ApiResponse;
 use App\SubuserPermissions;
+use App\Helpers\ApiResponse;
 use App\Helpers\SubuserPermissionChecker;
 use App\Services\Files\CrossServerTransfer;
 use Symfony\Component\HttpFoundation\Request;
@@ -106,8 +106,10 @@ class FileTransferController
         if ($mode === 'move') {
             $needed[] = SubuserPermissions::FILE_DELETE;
         }
-        if (!SubuserPermissionChecker::hasAllPermissions($uid, (int) $source['id'], $needed)
-            || !SubuserPermissionChecker::hasPermission($uid, (int) $target['id'], SubuserPermissions::FILE_CREATE)) {
+        if (
+            !SubuserPermissionChecker::hasAllPermissions($uid, (int) $source['id'], $needed)
+            || !SubuserPermissionChecker::hasPermission($uid, (int) $target['id'], SubuserPermissions::FILE_CREATE)
+        ) {
             return ApiResponse::error('You do not have permission to perform this action', 'PERMISSION_DENIED', 403);
         }
         if ((int) ($source['suspended'] ?? 0) === 1 || (int) ($target['suspended'] ?? 0) === 1) {

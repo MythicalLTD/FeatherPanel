@@ -1200,7 +1200,7 @@ export default function AppearanceSettingsPanel() {
                                 </SegmentButton>
                             </SegmentGroup>
                             <SegmentGroup label={t('appearance.sidebar.iconLibraryTitle')} columns={2}>
-                                    <SegmentButton
+                                <SegmentButton
                                     active={sidebar.iconLibrary === 'lucide'}
                                     onClick={() => sidebar.setIconLibrary('lucide')}
                                 >
@@ -1231,16 +1231,10 @@ export default function AppearanceSettingsPanel() {
                                     hint={t('appearance.sidebar.osShortcutHint')}
                                     columns={2}
                                 >
-                                    <SegmentButton
-                                        active={showOsInSidebar}
-                                        onClick={() => setShowOsInSidebar(true)}
-                                    >
+                                    <SegmentButton active={showOsInSidebar} onClick={() => setShowOsInSidebar(true)}>
                                         {t('appearance.sidebar.osShortcutShow')}
                                     </SegmentButton>
-                                    <SegmentButton
-                                        active={!showOsInSidebar}
-                                        onClick={() => setShowOsInSidebar(false)}
-                                    >
+                                    <SegmentButton active={!showOsInSidebar} onClick={() => setShowOsInSidebar(false)}>
                                         {t('appearance.sidebar.osShortcutHide')}
                                     </SegmentButton>
                                 </SegmentGroup>

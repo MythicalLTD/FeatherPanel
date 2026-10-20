@@ -144,40 +144,43 @@ export function OsSelect({
                 <span className='fos-select-label'>{selected?.label ?? value}</span>
                 <ChevronDown className='fos-select-chevron h-3.5 w-3.5' strokeWidth={2} />
             </button>
-            {open && anchor && portalRoot() && createPortal(
-                <div
-                    ref={menuRef}
-                    id={listId}
-                    role='listbox'
-                    aria-label={ariaLabel}
-                    className={cn(menuSurface, 'fos-select-menu fos-scroll')}
-                    style={menuPosition(anchor, options.length)}
-                >
-                    {options.map((opt, i) => (
-                        <button
-                            key={opt.value}
-                            type='button'
-                            role='option'
-                            aria-selected={opt.value === value}
-                            disabled={opt.disabled}
-                            className={cn(
-                                'fos-select-option',
-                                opt.value === value && 'is-selected',
-                                i === active && 'is-active',
-                                opt.disabled && 'opacity-40',
-                            )}
-                            onMouseEnter={() => setActive(i)}
-                            onClick={() => commit(i)}
-                        >
-                            <span className='fos-select-check'>
-                                {opt.value === value ? <Check className='h-3.5 w-3.5' /> : null}
-                            </span>
-                            <span className='truncate'>{opt.label}</span>
-                        </button>
-                    ))}
-                </div>,
-                portalRoot()!,
-            )}
+            {open &&
+                anchor &&
+                portalRoot() &&
+                createPortal(
+                    <div
+                        ref={menuRef}
+                        id={listId}
+                        role='listbox'
+                        aria-label={ariaLabel}
+                        className={cn(menuSurface, 'fos-select-menu fos-scroll')}
+                        style={menuPosition(anchor, options.length)}
+                    >
+                        {options.map((opt, i) => (
+                            <button
+                                key={opt.value}
+                                type='button'
+                                role='option'
+                                aria-selected={opt.value === value}
+                                disabled={opt.disabled}
+                                className={cn(
+                                    'fos-select-option',
+                                    opt.value === value && 'is-selected',
+                                    i === active && 'is-active',
+                                    opt.disabled && 'opacity-40',
+                                )}
+                                onMouseEnter={() => setActive(i)}
+                                onClick={() => commit(i)}
+                            >
+                                <span className='fos-select-check'>
+                                    {opt.value === value ? <Check className='h-3.5 w-3.5' /> : null}
+                                </span>
+                                <span className='truncate'>{opt.label}</span>
+                            </button>
+                        ))}
+                    </div>,
+                    portalRoot()!,
+                )}
         </div>
     );
 }

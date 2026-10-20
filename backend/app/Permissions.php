@@ -291,6 +291,7 @@ class Permissions
     /** Bypass API rate limits and restrictions */
     public const ADMIN_API_BYPASS_RESTRICTIONS = 'admin.api.bypass_restrictions';
 
+    // User API Permissions
     /** Create personal API keys even when user API key creation is disabled panel-wide */
     public const USER_API_KEYS_CREATE = 'user.api_keys.create';
 
