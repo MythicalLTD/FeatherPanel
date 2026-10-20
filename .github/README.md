@@ -253,11 +253,11 @@ Optional environment variables for `build:public-docs`:
 
 <!-- COUNT-STATS:START -->
 
-_Last updated: 2026-10-20T11:00:52.429Z_
+_Last updated: 2026-10-20T11:48:01.809Z_
 
 | Extension | Files | Lines |
 | --- | ---: | ---: |
-| `.tsx` | 687 | 198,448 |
+| `.tsx` | 687 | 198,458 |
 | `.php` | 796 | 197,432 |
 | `.ts` | 232 | 29,262 |
 | `.json` | 19 | 19,196 |
@@ -266,7 +266,7 @@ _Last updated: 2026-10-20T11:00:52.429Z_
 | `.rs` | 17 | 3,641 |
 | `.sql` | 224 | 3,594 |
 | `.yml` | 26 | 2,947 |
-| **Total** | 2,014 | 468,037 |
+| **Total** | 2,014 | 468,047 |
 
 <!-- COUNT-STATS:END -->
 
