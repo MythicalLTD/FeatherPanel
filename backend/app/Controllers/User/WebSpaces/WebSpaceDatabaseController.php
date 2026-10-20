@@ -34,7 +34,7 @@ use Symfony\Component\HttpFoundation\Response;
 class WebSpaceDatabaseController
 {
     /**
-     * GET …/databases — lists databases owned by this WebSpace.
+     * GET …/databases - lists databases owned by this WebSpace.
      */
     public function index(Request $request, string $uuidShort): Response
     {
@@ -59,7 +59,7 @@ class WebSpaceDatabaseController
     }
 
     /**
-     * GET …/databases/hosts — database hosts available for this WebSpace.
+     * GET …/databases/hosts - database hosts available for this WebSpace.
      */
     public function hosts(Request $request, string $uuidShort): Response
     {
@@ -80,7 +80,7 @@ class WebSpaceDatabaseController
     }
 
     /**
-     * POST /api/user/webspaces/{uuidShort}/databases — provisions a new database on a shared host for this WebSpace.
+     * POST /api/user/webspaces/{uuidShort}/databases - provisions a new database on a shared host for this WebSpace.
      */
     public function create(Request $request, string $uuidShort): Response
     {
@@ -185,7 +185,7 @@ class WebSpaceDatabaseController
     }
 
     /**
-     * DELETE …/databases/{id} — drops the database and user on the remote host.
+     * DELETE …/databases/{id} - drops the database and user on the remote host.
      */
     public function delete(Request $request, string $uuidShort, int $databaseId): Response
     {
@@ -232,7 +232,7 @@ class WebSpaceDatabaseController
     }
 
     /**
-     * POST …/databases/{id}/reset-password — rotates the DB user password.
+     * POST …/databases/{id}/reset-password - rotates the DB user password.
      */
     public function resetPassword(Request $request, string $uuidShort, int $databaseId): Response
     {
@@ -275,7 +275,7 @@ class WebSpaceDatabaseController
     }
 
     /**
-     * GET …/databases/{id}/dump — exports the database content for download.
+     * GET …/databases/{id}/dump - exports the database content for download.
      */
     public function dump(Request $request, string $uuidShort, int $databaseId): Response
     {
@@ -324,7 +324,7 @@ class WebSpaceDatabaseController
     }
 
     /**
-     * POST …/databases/{id}/dump — imports an uploaded dump into the database.
+     * POST …/databases/{id}/dump - imports an uploaded dump into the database.
      */
     public function restoreDump(Request $request, string $uuidShort, int $databaseId): Response
     {
@@ -371,7 +371,7 @@ class WebSpaceDatabaseController
     }
 
     /**
-     * GET …/databases/{id}/pma — checks whether phpMyAdmin is deployed for the host.
+     * GET …/databases/{id}/pma - checks whether phpMyAdmin is deployed for the host.
      */
     public function checkPhpMyAdminInstalled(Request $request, string $uuidShort): Response
     {
@@ -388,7 +388,7 @@ class WebSpaceDatabaseController
     }
 
     /**
-     * POST …/databases/{id}/pma — issues a phpMyAdmin SSO token.
+     * POST …/databases/{id}/pma - issues a phpMyAdmin SSO token.
      */
     public function generatePhpMyAdminToken(Request $request, string $uuidShort, int $databaseId): Response
     {
@@ -456,7 +456,7 @@ class WebSpaceDatabaseController
     }
 
     /**
-     * GET …/databases/{id}/pgadmin — checks whether phpPgAdmin is deployed for the host.
+     * GET …/databases/{id}/pgadmin - checks whether phpPgAdmin is deployed for the host.
      */
     public function checkPhpPgAdminInstalled(Request $request, string $uuidShort): Response
     {
@@ -473,7 +473,7 @@ class WebSpaceDatabaseController
     }
 
     /**
-     * POST …/databases/{id}/pgadmin — issues a phpPgAdmin SSO token.
+     * POST …/databases/{id}/pgadmin - issues a phpPgAdmin SSO token.
      */
     public function generatePhpPgAdminToken(Request $request, string $uuidShort, int $databaseId): Response
     {

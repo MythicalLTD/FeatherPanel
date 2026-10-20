@@ -250,7 +250,7 @@ export default function FinderApp({ win }: OsAppProps) {
         files: list.map((f) => ({ name: f.name, isFile: f.isFile })),
     });
 
-    // ---------- actions ----------
+    // Actions
     const run = async (label: string, fn: () => Promise<void>, refreshDirs: string[] = [path]) => {
         setBusy(label);
         try {
@@ -459,7 +459,7 @@ export default function FinderApp({ win }: OsAppProps) {
         emitFilesChanged(uuid, path);
     };
 
-    // ---------- selection ----------
+    // Selection
     const selectFile = (file: FileObject, e: { metaKey?: boolean; ctrlKey?: boolean; shiftKey?: boolean }) => {
         if (e.metaKey || e.ctrlKey) {
             setSelected((s) => {
@@ -497,7 +497,7 @@ export default function FinderApp({ win }: OsAppProps) {
         dragReady.current = true;
     };
 
-    /** Hit-test in viewport/client space — matches getBoundingClientRect of items 1:1. */
+    /** Hit-test in viewport/client space - matches getBoundingClientRect of items 1:1. */
     const hitTestMarquee = (box: { x: number; y: number; w: number; h: number }) => {
         const hit = new Set<string>();
         itemRefs.current.forEach((el, name) => {
@@ -549,7 +549,7 @@ export default function FinderApp({ win }: OsAppProps) {
         window.addEventListener('pointercancel', onUp);
     };
 
-    // ---------- menus ----------
+    // Menus
     const rowMenu = (file: FileObject, e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -716,7 +716,7 @@ export default function FinderApp({ win }: OsAppProps) {
         ]);
     };
 
-    // ---------- keyboard ----------
+    // Keyboard
     const onKeyDown = (e: React.KeyboardEvent) => {
         if ((e.target as HTMLElement).tagName === 'INPUT') return;
         const mod = e.metaKey || e.ctrlKey;
@@ -790,7 +790,7 @@ export default function FinderApp({ win }: OsAppProps) {
         }
     };
 
-    // ---------- drag & drop ----------
+    // Drag & drop
     const onDragStart = (file: FileObject, e: React.DragEvent) => {
         if (!dragReady.current && !selected.has(file.name)) {
             e.preventDefault();

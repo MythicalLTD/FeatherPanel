@@ -1297,7 +1297,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                 className={cn(
                     'flex w-full min-w-0 flex-col',
                     className,
-                    // fillContainer lives inside absolute/h-full parents (OS windows) — use
+                    // fillContainer lives inside absolute/h-full parents (OS windows) - use
                     // h-full, not flex-1, so the xterm host actually gets a real height.
                     'h-full min-h-0',
                     isFullscreen && 'bg-background p-2',
@@ -1681,7 +1681,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                     {onSendCommand && (
                         <CardFooter
                             className={cn(
-                                'border-border/50 bg-card flex w-full min-w-0 shrink-0 flex-col items-stretch gap-1.5 border-t px-3 py-2 sm:px-4 sm:py-2.5',
+                                'border-border/50 flex w-full min-w-0 shrink-0 flex-col items-stretch gap-1.5 border-t px-3 py-2 sm:px-4 sm:py-2.5',
                                 isGlass && 'border-t-0 px-3 py-1.5 sm:px-3 sm:py-1.5',
                             )}
                         >

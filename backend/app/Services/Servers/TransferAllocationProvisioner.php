@@ -216,7 +216,7 @@ class TransferAllocationProvisioner
 
         $wingsIps = $this->extractWingsIpAddresses($ipsResponse);
         if (empty($wingsIps)) {
-            // Calagopus has no /api/system/ips — use node public IPs when configured.
+            // Calagopus has no /api/system/ips - use node public IPs when configured.
             foreach (['public_ip_v4', 'public_ip_v6'] as $key) {
                 $value = trim((string) ($destinationNode[$key] ?? ''));
                 if ($value !== '') {

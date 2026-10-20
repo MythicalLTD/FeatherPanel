@@ -1280,7 +1280,7 @@ export default function LoginForm() {
                                 {/* Multi-step login flow when email login is enabled */}
                                 {isMultiStepEmailLoginFlow ? (
                                     loginStep === 'identifier' ? (
-                                        // Step 1: Enter email/username
+                                        // Enter email/username
                                         <form onSubmit={handleIdentifierSubmit} className='space-y-4'>
                                             <Input
                                                 label={t('auth.login.username')}
@@ -1406,7 +1406,7 @@ export default function LoginForm() {
                                             </form>
                                         )
                                     ) : (
-                                        // Step 2: Password (+ captcha) then sign-in, passkey, or email code
+                                        // Password (+ captcha) then sign-in, passkey, or email code
                                         <form onSubmit={handlePasswordLoginFromMethod} className='space-y-4'>
                                             <Input
                                                 label={t('auth.login.password')}

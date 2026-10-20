@@ -23,7 +23,7 @@ use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\Admin\KnowledgebaseController;
 
 return function (RouteCollection $routes): void {
-    // ==================== CATEGORIES ====================
+    // Categories
 
     // LIST - GET /api/admin/knowledgebase/categories
     App::getInstance(true)->registerAdminRoute(
@@ -98,7 +98,7 @@ return function (RouteCollection $routes): void {
         ['DELETE']
     );
 
-    // ==================== ARTICLES ====================
+    // Articles
 
     // LIST - GET /api/admin/knowledgebase/articles
     App::getInstance(true)->registerAdminRoute(
@@ -185,7 +185,7 @@ return function (RouteCollection $routes): void {
         ['POST']
     );
 
-    // ==================== FILE UPLOADS ====================
+    // File uploads
 
     // UPLOAD ICON - POST /api/admin/knowledgebase/upload-icon
     App::getInstance(true)->registerAdminRoute(
@@ -253,7 +253,7 @@ return function (RouteCollection $routes): void {
         ['DELETE']
     );
 
-    // ==================== TAGS ====================
+    // Tags
 
     // GET TAGS - GET /api/admin/knowledgebase/articles/{id}/tags
     App::getInstance(true)->registerAdminRoute(

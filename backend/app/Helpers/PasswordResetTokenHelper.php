@@ -36,7 +36,7 @@ namespace App\Helpers;
  * A password reset therefore never turns an unverified address into a verified
  * one, and a stored reset token is never mistaken for an email-verification
  * token (only an empty value means "verified"). Raw legacy reset tokens do not
- * by themselves decide verified vs unverified — they keep a compatibility state.
+ * by themselves decide verified vs unverified - they keep a compatibility state.
  */
 final class PasswordResetTokenHelper
 {
@@ -186,7 +186,7 @@ final class PasswordResetTokenHelper
             return self::STATE_UNVERIFIED;
         }
 
-        // Raw legacy reset token (no prefix): state unknown — do not treat as unverified.
+        // Raw legacy reset token (no prefix): state unknown - do not treat as unverified.
         if (self::isLegacyResetTokenShape($value)) {
             return self::STATE_LEGACY;
         }

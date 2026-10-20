@@ -300,8 +300,8 @@ return static function (RouteCollection $routes): void {
                         }
                     }
 
-                    // Always require panel identity keys. Omitting them must fail closed —
-                    // not skip verification — or unauthenticated callers can overwrite ACCESS credentials.
+                    // Always require panel identity keys. Omitting them must fail closed -
+                    // not skip verification - or unauthenticated callers can overwrite ACCESS credentials.
                     if ($panelPublicFromRequest === '' || $panelPrivateFromRequest === '') {
                         return ApiResponse::error(
                             'Missing required parameters: panel_public_key, panel_private_key.',

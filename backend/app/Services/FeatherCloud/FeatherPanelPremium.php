@@ -84,7 +84,7 @@ class FeatherPanelPremium
     }
 
     /**
-     * Hard clear — disconnect / rotate / intentional wipe.
+     * Hard clear - disconnect / rotate / intentional wipe.
      */
     public static function clear(): void
     {

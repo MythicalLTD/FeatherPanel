@@ -521,7 +521,7 @@ class FeatherOsController
             // we still refuse to register against servers that are not owned and not shared to this user.
             $ownerId = (int) ($server['owner_id'] ?? 0);
             if ($ownerId !== (int) $user['id'] && empty($user['is_admin'])) {
-                // Allow if they can reach the server listing — lightweight check via Subuser table when available.
+                // Allow if they can reach the server listing - lightweight check via Subuser table when available.
                 // Soft fail: still require matching authenticated session; file ops already needed file.delete.
             }
             $row = FeatherOsTrash::create([

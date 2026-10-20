@@ -25,7 +25,7 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * Blocks destructive / insecure mutations that would break the shared public demo
  * or expose host-level control (shell, snapshots, node tokens, plugin upload/uninstall).
- * Admin settings writes are allowed — the demo reset loop restores defaults.
+ * Admin settings writes are allowed - the demo reset loop restores defaults.
  */
 class DemoGuard
 {

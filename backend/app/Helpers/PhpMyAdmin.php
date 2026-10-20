@@ -79,7 +79,7 @@ class PhpMyAdmin
             throw new \Exception('Failed to create public directory: ' . $publicDir);
         }
 
-        // Docker mounts public/pma as a volume — empty contents, never remove the mountpoint
+        // Docker mounts public/pma as a volume - empty contents, never remove the mountpoint
         if (is_dir($targetPath)) {
             $logger->info('Clearing incomplete phpMyAdmin directory at ' . $targetPath);
             self::emptyDirectory($targetPath);
@@ -782,7 +782,7 @@ class PhpMyAdmin
             return;
         }
 
-        // Docker named volumes bind-mount public/pma — the mountpoint cannot be removed
+        // Docker named volumes bind-mount public/pma - the mountpoint cannot be removed
         if (self::isMountPoint($dir) || self::isDirectoryEmpty($dir)) {
             return;
         }

@@ -351,7 +351,7 @@ class GameServerQuery
         }
     }
 
-    // --- Minecraft Protocol Helpers ---
+    // Minecraft protocol helpers
 
     /**
      * Pack an integer as a Minecraft VarInt.

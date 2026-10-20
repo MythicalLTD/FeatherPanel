@@ -3875,7 +3875,7 @@ class SettingsController
     ),]
     public function update(Request $request): Response
     {
-        // Demo panels may change settings — periodic wipe / reset restores defaults.
+        // Demo panels may change settings - periodic wipe / reset restores defaults.
 
         $raw = $request->getContent();
         $data = json_decode($raw ?? '', true);

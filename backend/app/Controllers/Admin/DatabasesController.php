@@ -172,7 +172,7 @@ class DatabasesController
         ]
     )]
     /**
-     * GET /api/admin/databases — lists registered database hosts.
+     * GET /api/admin/databases - lists registered database hosts.
      */
     public function index(Request $request): Response
     {
@@ -261,7 +261,7 @@ class DatabasesController
         ]
     )]
     /**
-     * GET /api/admin/databases/{id} — returns one database host.
+     * GET /api/admin/databases/{id} - returns one database host.
      */
     public function show(Request $request, int $id): Response
     {
@@ -303,7 +303,7 @@ class DatabasesController
         ]
     )]
     /**
-     * POST /api/admin/databases — registers a new remote database host.
+     * POST /api/admin/databases - registers a new remote database host.
      */
     public function create(Request $request): Response
     {
@@ -499,7 +499,7 @@ class DatabasesController
         ]
     )]
     /**
-     * PUT /api/admin/databases/{id} — updates an existing database host configuration.
+     * PUT /api/admin/databases/{id} - updates an existing database host configuration.
      */
     public function update(Request $request, int $id): Response
     {
@@ -661,7 +661,7 @@ class DatabasesController
         ]
     )]
     /**
-     * DELETE /api/admin/databases/{id} — removes a database host.
+     * DELETE /api/admin/databases/{id} - removes a database host.
      */
     public function delete(Request $request, int $id): Response
     {
@@ -767,7 +767,7 @@ class DatabasesController
         ]
     )]
     /**
-     * GET /api/admin/databases/node/{nodeId} — lists hosts bound to a node.
+     * GET /api/admin/databases/node/{nodeId} - lists hosts bound to a node.
      */
     public function getByNode(Request $request, int $nodeId): Response
     {
@@ -861,7 +861,7 @@ class DatabasesController
         ]
     )]
     /**
-     * POST /api/admin/databases/{id}/health-check — re-tests connectivity of a host.
+     * POST /api/admin/databases/{id}/health-check - re-tests connectivity of a host.
      */
     public function healthCheck(Request $request, int $id): Response
     {
@@ -907,7 +907,7 @@ class DatabasesController
         ]
     )]
     /**
-     * POST /api/admin/databases/test — connectivity check for unsaved credentials.
+     * POST /api/admin/databases/test - connectivity check for unsaved credentials.
      */
     public function testConnection(Request $request): Response
     {

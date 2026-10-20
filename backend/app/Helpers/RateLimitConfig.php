@@ -27,7 +27,7 @@ class RateLimitConfig
      * route) is enforced even without a matching ratelimit.json entry.
      *
      * Deliberately limited to authentication, public webhooks and API-client
-     * endpoints — the brute-force and abuse targets. Other routes stay opt-in
+     * endpoints - the brute-force and abuse targets. Other routes stay opt-in
      * as before, so a running installation does not suddenly answer HTTP 429
      * on busy UI polling routes.
      */
@@ -236,7 +236,7 @@ class RateLimitConfig
     {
         $config = self::loadConfig();
 
-        // Do not manufacture `_enabled: false` when the key is absent — callers
+        // Do not manufacture `_enabled: false` when the key is absent - callers
         // that need the effective flag should use isGloballyEnabled().
         if (!isset($config['routes'])) {
             $config['routes'] = [];
@@ -432,7 +432,7 @@ class RateLimitConfig
                 return self::$config;
             }
 
-            // Do not inject `_enabled: false` when missing — leave the key absent
+            // Do not inject `_enabled: false` when missing - leave the key absent
             // so isGloballyEnabled() can apply enabled-by-default.
             if (!isset($decoded['routes'])) {
                 $decoded['routes'] = [];

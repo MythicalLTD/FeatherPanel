@@ -63,7 +63,7 @@ class Migrate extends App implements CommandBuilder
 
             $db = new Database((string) MainApp::env('DATABASE_HOST', '127.0.0.1'), (string) MainApp::env('DATABASE_DATABASE', ''), (string) MainApp::env('DATABASE_USER', ''), (string) MainApp::env('DATABASE_PASSWORD', ''), (int) MainApp::env('DATABASE_PORT', '3306'));
 
-            // --- Fix duplicate settings before running migrations that add unique constraints ---
+            // Fix duplicate settings before running migrations that add unique constraints
             $pdo = $db->getPdo();
             $tableExists = $pdo->query("SHOW TABLES LIKE 'featherpanel_settings'")->rowCount() > 0;
             if ($tableExists) {
@@ -76,7 +76,7 @@ class Migrate extends App implements CommandBuilder
                     $cliApp->send('&a&l✅ No duplicate settings found');
                 }
             }
-            // --- End fix ---
+            // End fix
         } catch (\Exception $e) {
             $cliApp->send('&c&l❌ Database Connection Failed: &r' . $e->getMessage());
             exit(1);

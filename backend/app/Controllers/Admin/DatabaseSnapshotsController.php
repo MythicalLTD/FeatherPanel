@@ -800,11 +800,11 @@ class DatabaseSnapshotsController
             $pdo->exec('START TRANSACTION');
 
             try {
-                // Step 1: Get all existing table names
+                // Get all existing table names
                 $stmt = $pdo->query('SHOW TABLES');
                 $tables = $stmt->fetchAll(\PDO::FETCH_COLUMN);
 
-                // Step 2: Drop ALL existing tables (no exclusions for fresh restore)
+                // Drop ALL existing tables (no exclusions for fresh restore)
                 if (!empty($tables)) {
                     foreach ($tables as $table) {
                         $tableName = str_replace('`', '``', $table);
@@ -816,16 +816,16 @@ class DatabaseSnapshotsController
                 $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
                 $pdo->exec('SET AUTOCOMMIT = 1');
 
-                // Step 3: Run migrations
+                // Run migrations
                 $this->runMigrations($pdo);
 
-                // Step 4: Recreate user with preserved data (including remember_token)
+                // Recreate user with preserved data (including remember_token)
                 $userId = User::createUser($preservedUserData);
                 if (!$userId) {
                     return ApiResponse::error('Failed to recreate user after fresh restore', 'USER_RECREATE_FAILED', 500);
                 }
 
-                // Step 5: If this was the first user (ID 1), ensure they have admin role (role_id 1 = Admin)
+                // If this was the first user (ID 1), ensure they have admin role (role_id 1 = Admin)
                 if ($userId == 1) {
                     User::updateUser($preservedUserData['uuid'], ['role_id' => 4]);
                 }
@@ -1010,11 +1010,11 @@ class DatabaseSnapshotsController
         $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
 
         try {
-            // Step 1: Get all existing table names
+            // Get all existing table names
             $stmt = $pdo->query('SHOW TABLES');
             $tables = $stmt->fetchAll(\PDO::FETCH_COLUMN);
 
-            // Step 2: Drop all existing tables one by one (excluding log/activity tables)
+            // Drop all existing tables one by one (excluding log/activity tables)
             if (!empty($tables)) {
                 foreach ($tables as $table) {
                     // Skip excluded tables during drop (these tables are not in the backup)
@@ -1027,7 +1027,7 @@ class DatabaseSnapshotsController
                 }
             }
 
-            // Step 3: Write SQL to temporary file and use mysql command to import
+            // Write SQL to temporary file and use mysql command to import
             // This properly handles multi-line statements, comments, and all SQL (like MythicalDash)
             $tempFile = sys_get_temp_dir() . '/featherpanel_restore_' . uniqid() . '.sql';
             if (file_put_contents($tempFile, $sql) === false) {

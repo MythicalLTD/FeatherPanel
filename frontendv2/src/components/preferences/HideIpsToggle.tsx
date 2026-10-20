@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils';
  * Toggle for the per-user "hide server IP addresses" preference.
  *
  * Drop it into any settings surface (preferences page, server settings, the
- * server creation wizard) — it always writes the same account-wide preference,
+ * server creation wizard) - it always writes the same account-wide preference,
  * so switching it in one place is reflected everywhere.
  */
 export function HideIpsToggle({ className, hideExample = false }: { className?: string; hideExample?: boolean }) {

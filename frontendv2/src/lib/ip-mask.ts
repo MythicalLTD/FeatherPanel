@@ -19,8 +19,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
  *
  * The masking happens in the UI only: the API keeps returning the real
  * allocation data so actions that need it (firewall rules, proxies,
- * allocation management) keep working. What the user sees on screen — and
- * therefore what ends up in a screen share, recording or stream — is the
+ * allocation management) keep working. What the user sees on screen - and
+ * therefore what ends up in a screen share, recording or stream - is the
  * placeholder.
  */
 
@@ -31,7 +31,7 @@ const IPV4_PATTERN = /^(?:\d{1,3}\.){3}\d{1,3}$/;
 const IPV6_CHARS_PATTERN = /^[0-9a-f:.]+$/i;
 // IPv4 inside text, IPv6 in brackets ([2001:db8::1]:25565), compressed IPv6
 // containing `::` (2001:db8::1, fe80::1, ::1) and bare IPv6 with at least
-// three colon groups — timestamps like 12:30:00 have neither and stay.
+// three colon groups - timestamps like 12:30:00 have neither and stay.
 const IP_IN_TEXT_PATTERN =
     /\b(?:\d{1,3}\.){3}\d{1,3}\b|\[(?:[0-9a-f]{0,4}:){2,}[0-9a-f:.]*\]|(?<![0-9a-z:])(?:[0-9a-f]{1,4}(?::[0-9a-f]{1,4})*::(?:[0-9a-f]{1,4}(?::[0-9a-f]{1,4})*)?|::[0-9a-f]{1,4}(?::[0-9a-f]{1,4})*)(?::(?:\d{1,3}\.){3}\d{1,3})?(?![0-9a-z:.])|\b(?:[0-9a-f]{1,4}:){3,}[0-9a-f]{0,4}\b/gi;
 
@@ -46,7 +46,7 @@ export function maskIpsInText(text: string, hidden: boolean): string {
 
 /**
  * Whether a value is an IP address (v4 or a v6-looking string) rather than a
- * hostname. Used where the API returns either — e.g. allocation aliases and
+ * hostname. Used where the API returns either - e.g. allocation aliases and
  * SFTP/database hosts, which may point at a node IP or at a domain.
  */
 export function looksLikeIp(value: string | null | undefined): boolean {

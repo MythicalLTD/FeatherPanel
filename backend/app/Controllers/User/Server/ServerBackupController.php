@@ -1681,7 +1681,7 @@ class ServerBackupController
             );
         }
 
-        // Database dumps need password access; allow full without dumps only if explicitly none — always dump all MySQL when permitted
+        // Database dumps need password access; allow full without dumps only if explicitly none - always dump all MySQL when permitted
         if (!$canViewPassword) {
             return ApiResponse::error(
                 'Insufficient permissions to create a full backup (database.view_password required)',

@@ -480,7 +480,7 @@ class WebSpaceScheduleController
 
     /**
      * Push schedule config to FeatherQuilld. Failures are logged but do not fail the
-     * panel mutation — otherwise a slow/unreachable daemon hangs the UI (HTTP 499 /
+     * panel mutation - otherwise a slow/unreachable daemon hangs the UI (HTTP 499 /
      * proxy socket hang up) after the DB write already succeeded.
      *
      * @param array<string, mixed> $space

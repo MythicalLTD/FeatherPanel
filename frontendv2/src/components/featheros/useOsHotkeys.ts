@@ -312,7 +312,7 @@ export function useOsHotkeys() {
                 return;
             }
 
-            // Classic window manager chords — work even while typing in apps.
+            // Classic window manager chords - work even while typing in apps.
             if (e.altKey && !e.ctrlKey && !e.metaKey) {
                 if (key === 'F4') {
                     e.preventDefault();
@@ -334,7 +334,7 @@ export function useOsHotkeys() {
                 }
             }
 
-            // Ctrl+F4 / Ctrl+W — close focused window (skip when typing in editors/terminals).
+            // Ctrl+F4 / Ctrl+W - close focused window (skip when typing in editors/terminals).
             if (e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey && (key === 'F4' || (lower === 'w' && !typing))) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -342,7 +342,7 @@ export function useOsHotkeys() {
                 return;
             }
 
-            // Immersive mode — Ctrl+Alt+F or Ctrl+Shift+F11. Windows reports Ctrl+Alt as
+            // Immersive mode - Ctrl+Alt+F or Ctrl+Shift+F11. Windows reports Ctrl+Alt as
             // AltGr, so match on the physical key instead of the produced character.
             if (e.ctrlKey && e.altKey && !e.metaKey && code === 'KeyL') {
                 e.preventDefault();

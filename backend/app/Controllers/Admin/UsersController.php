@@ -151,14 +151,13 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
     ]
 )]
-/* ---------------------------
- * Author: Cassian Gherman Date: 2025-07-25
+/**
+ * Author: Cassian Gherman Date: 2025-07-25.
  *
  * Changes:
  * - Added support so we can get the activities of a user
  * - Added support so we can get the mails the user got!
- *
- * ---------------------------*/
+ */
 class UsersController
 {
     #[OA\Get(

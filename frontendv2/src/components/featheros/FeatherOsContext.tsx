@@ -53,7 +53,7 @@ import { clamp, joinPath, normalizeDir, uid } from './utils';
 
 const NODE_UNREACHABLE_CODES = new Set(['DAEMON_UNREACHABLE', 'WINGS_CONNECTION_UNAVAILABLE', 'NODE_UNREACHABLE']);
 
-/** Wings / node offline — map to a calm FeatherOS string instead of raw API dump. */
+/** Wings / node offline - map to a calm FeatherOS string instead of raw API dump. */
 function isNodeUnreachableError(error: unknown, code: string | null, message: string): boolean {
     if (code && NODE_UNREACHABLE_CODES.has(code)) return true;
 
@@ -395,7 +395,7 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
         [t],
     );
 
-    // ---------- servers ----------
+    // Servers
     const refreshServers = useCallback(async () => {
         setServersLoading(true);
         try {
@@ -450,7 +450,7 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => () => disconnectAll(), [disconnectAll]);
 
-    // ---------- boot: load saved desktop + servers ----------
+    // Boot: load saved desktop + servers
     useEffect(() => {
         if (!isSessionChecked) {
             setBootPhase('session');
@@ -499,7 +499,7 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
         })();
     }, [isSessionChecked, user, refreshServers]);
 
-    // ---------- persistence ----------
+    // Persistence
     const persisted = useMemo<OsPersistedState>(
         () => ({ version: 1, windows, icons, dock, settings, widgets, activeSpace }),
         [windows, icons, dock, settings, widgets, activeSpace],
@@ -533,7 +533,7 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
         return () => window.removeEventListener('pagehide', onHide);
     }, []);
 
-    // ---------- theme ----------
+    // Theme
     useEffect(() => {
         if (!ready || !settings.accent) return;
         setAccentColor(settings.accent);
@@ -568,7 +568,7 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
         [setPanelTheme],
     );
 
-    // ---------- windows ----------
+    // Windows
     // Every window change goes through mutate() so callers can read the result synchronously
     // (openApp returns the new id, close picks the next focused window...).
     const mutate = useCallback((fn: (ws: OsWindow[]) => OsWindow[]) => {
@@ -621,7 +621,7 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
             }
             const vp = viewport();
             const count = ws.filter((w) => !w.minimized).length;
-            // Terminal needs a taller first open — short+wide windows look broken with xterm.
+            // Terminal needs a taller first open - short+wide windows look broken with xterm.
             const preferW =
                 app === 'terminal' ? Math.min(def.defaultSize.w, Math.round(vp.w * 0.7)) : def.defaultSize.w;
             const preferH =
@@ -738,7 +738,7 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
         [updateWindowProps, focusWindow, openApp],
     );
 
-    // ---------- desktop / dock / settings ----------
+    // Desktop / dock / settings
     const upsertIcon = useCallback((icon: OsDesktopIcon) => {
         setIcons((list) => {
             const idx = list.findIndex((i) => i.id === icon.id);
@@ -783,7 +783,7 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
         }));
     }, []);
 
-    // ---------- workspaces ----------
+    // Workspaces
     const saveWorkspace = useCallback(
         (name: string) => {
             const label = name.trim().slice(0, 40);
@@ -795,11 +795,16 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
                 windows: windowsRef.current
                     .slice()
                     .sort((a, b) => a.z - b.z)
-                    .map(({ id: _id, z: _z, ...rest }) => ({
-                        ...rest,
-                        // Keep layouts small: drop window state that is large (editor buffers etc.).
-                        props: JSON.stringify(rest.props ?? {}).length > 4000 ? {} : rest.props,
-                    })),
+                    .map((w) => {
+                        const { id: _unusedId, z: _unusedZ, ...rest } = w;
+                        void _unusedId;
+                        void _unusedZ;
+                        return {
+                            ...rest,
+                            // Keep layouts small: drop window state that is large (editor buffers etc.).
+                            props: JSON.stringify(rest.props ?? {}).length > 4000 ? {} : rest.props,
+                        };
+                    }),
             };
             setSettings((s) => ({
                 ...s,
@@ -849,7 +854,7 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
         setFocusedId(null);
     }, []);
 
-    // ---------- menus & dialogs ----------
+    // Menus & dialogs
     const openContextMenu = useCallback((pos: { x: number; y: number }, items: OsContextMenuItem[]) => {
         setContextMenu({ x: pos.x, y: pos.y, items });
     }, []);
@@ -894,7 +899,7 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
         });
     }, []);
 
-    // ---------- files bus ----------
+    // Files bus
     const emitFilesChanged = useCallback((serverUuid: string, dir: string) => {
         const norm = normalizeDir(dir);
         filesListeners.current.forEach((fn) => fn(serverUuid, norm));
@@ -925,7 +930,7 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
         [],
     );
 
-    // ---------- cross server transfers ----------
+    // Cross server transfers
     const transfersRef = useRef<OsTransfer[]>([]);
     const refreshTransfers = useCallback(async () => {
         try {

@@ -805,7 +805,7 @@ class Node
             $cachedNodeId = Cache::get($cacheKey);
             if (is_numeric($cachedNodeId) && (int) $cachedNodeId > 0) {
                 $cachedNode = self::getNodeById((int) $cachedNodeId);
-                // getNodeById already decrypts tokens — compare plaintext
+                // getNodeById already decrypts tokens - compare plaintext
                 if (
                     $cachedNode !== null
                     && ($cachedNode['daemon_token_id'] ?? '') === $tokenId

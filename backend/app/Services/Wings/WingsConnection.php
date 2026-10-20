@@ -745,7 +745,7 @@ class WingsConnection
             $requestId = isset($responseData['request_id']) ? (string) $responseData['request_id'] : null;
         }
 
-        // Keep the Wings message clean — do not dump the whole JSON body into the message
+        // Keep the Wings message clean - do not dump the whole JSON body into the message
         // (that made MCP/Claude see only "unexpected error" + truncated Response blobs).
         $message = match ($httpCode) {
             401 => "Authentication failed: {$errorMessage}",

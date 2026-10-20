@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 
 /**
  * Compact eye button that flips the account-wide "hide IP addresses"
- * preference — meant to sit right next to a rendered server address so the
+ * preference - meant to sit right next to a rendered server address so the
  * user can hide it in one click before sharing their screen.
  */
 export function IpVisibilityButton({ className }: { className?: string }) {

@@ -26,7 +26,7 @@ use Symfony\Component\HttpFoundation\Response;
  * Authenticates FeatherQuilld (web hosting) daemons only.
  *
  * Uses featherpanel_web_nodes credentials. Game node (FeatherWings) tokens are
- * rejected — they must use /api/remote/* with WingsMiddleware instead.
+ * rejected - they must use /api/remote/* with WingsMiddleware instead.
  */
 class FeatherQuilldMiddleware implements MiddlewareInterface
 {

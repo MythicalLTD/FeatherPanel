@@ -21,7 +21,7 @@ namespace App\Helpers;
  * Bundled WebPlate catalog.
  *
  * Stable UUIDs so migrate/seed can upsert without breaking webspace FKs.
- * Only rows that still have author = "system" are overwritten — fork a plate
+ * Only rows that still have author = "system" are overwritten - fork a plate
  * (change author) to keep local customizations.
  */
 final class WebPlateDefaults

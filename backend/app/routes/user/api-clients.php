@@ -168,7 +168,7 @@ return function (RouteCollection $routes): void {
             return (new ApiClientController())->validateApiClient($request);
         },
         ['POST'],
-        // Unauthenticated public-key probe — stricter than the default user-api-clients bucket.
+        // Unauthenticated public-key probe - stricter than the default user-api-clients bucket.
         Rate::perMinute(10),
         'user-api-clients-validate'
     );

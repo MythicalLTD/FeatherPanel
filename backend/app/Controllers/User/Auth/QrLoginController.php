@@ -212,7 +212,7 @@ class QrLoginController
         }
 
         if ($status === 'approved') {
-            // Already approved — phone can still show confirmation state.
+            // Already approved - phone can still show confirmation state.
         } elseif ($status === 'scanned') {
             $boundUuid = isset($challenge['user_uuid']) && is_string($challenge['user_uuid'])
                 ? $challenge['user_uuid']

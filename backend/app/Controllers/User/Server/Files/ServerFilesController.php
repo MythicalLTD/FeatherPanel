@@ -237,7 +237,7 @@ class ServerFilesController
             } elseif (isset($contents['entries']) && is_array($contents['entries'])) {
                 $contents = array_values($contents['entries']);
             } elseif (array_is_list($contents)) {
-                // FeatherWings flat list — keep as-is
+                // FeatherWings flat list - keep as-is
             } elseif (isset($contents['files']) && is_array($contents['files']) && array_is_list($contents['files'])) {
                 $contents = $contents['files'];
             } else {
@@ -2913,7 +2913,7 @@ class ServerFilesController
             ? $e->getCode()
             : 500;
 
-        // Offline / unreachable node — stable code, no raw stack or curl dump for the client.
+        // Offline / unreachable node - stable code, no raw stack or curl dump for the client.
         if (
             $e instanceof \App\Services\Wings\Exceptions\WingsConnectionException
             || $this->isWingsConnectionUnavailableError($error)

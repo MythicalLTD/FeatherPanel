@@ -3,6 +3,7 @@ parameters:
 	paths:
 		- app
 	bootstrapFiles:
+		- boot/constants.php
 		- storage/packages/autoload.php
 	excludePaths:
 		- app/routes

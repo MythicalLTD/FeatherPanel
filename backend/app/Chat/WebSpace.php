@@ -20,8 +20,8 @@ namespace App\Chat;
 use App\App;
 
 /**
- * WebSpace model — FeatherQuilld hosted workspaces (panel-owned; daemon pulls config).
- * Templates are WebPlates — never Spells.
+ * WebSpace model - FeatherQuilld hosted workspaces (panel-owned; daemon pulls config).
+ * Templates are WebPlates - never Spells.
  */
 class WebSpace
 {

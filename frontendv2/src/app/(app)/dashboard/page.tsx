@@ -562,7 +562,7 @@ export default function DashboardPage() {
         statusLine = parts.join(' · ');
     }
 
-    // ---- Widgets ------------------------------------------------------------------------------
+    // Widgets
 
     const statTiles = [
         modules.game &&

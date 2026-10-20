@@ -527,7 +527,7 @@ async fn handle_delete_task(
     let vm_type = VmType::from_str(vm_type_str);
     let instance_id = meta["instance_id"].as_i64().unwrap_or(0);
 
-    // Step 1: Delete all backups for this VM
+    // Delete all backups for this VM
     if instance_id > 0 {
         info!("🗑️ Checking for backups to delete...");
         let backups = sqlx::query("SELECT id, volid FROM featherpanel_vm_instance_backups WHERE vm_instance_id = ?")
@@ -558,7 +558,7 @@ async fn handle_delete_task(
         }
     }
 
-    // Step 2: Stop the VM (ignore errors if already stopped)
+    // Stop the VM (ignore errors if already stopped)
     if !target_node.is_empty() && vmid > 0 {
         info!("🛑 Stopping VM {} (if running)...", vmid);
         match client.stop_vm(&target_node, vmid as u32, vm_type).await {
@@ -576,7 +576,7 @@ async fn handle_delete_task(
             }
         }
         
-        // Step 3: Delete the VM from Proxmox (purge=1) and wait for the task so disks
+        // Delete the VM from Proxmox (purge=1) and wait for the task so disks
         // (cloud-init, EFI, data volumes) are actually removed otherwise JSON returns
         // before Proxmox finishes and space/orphans can linger.
         info!("🗑️ Deleting VM {} from Proxmox...", vmid);
@@ -605,14 +605,14 @@ async fn handle_delete_task(
         }
     }
 
-    // Step 4: Queue email notification before deletion
+    // Queue email notification before deletion
     if instance_id > 0 {
         if let Err(e) = queue_vm_deleted_email(pool, instance_id).await {
             warn!("⚠️ Failed to queue VM deleted email: {}", e);
         }
     }
 
-    // Step 5: Delete from database
+    // Delete from database
     if instance_id > 0 {
         info!("🗑️ Removing VM instance {} from database...", instance_id);
         sqlx::query("DELETE FROM featherpanel_vm_instances WHERE id = ?")

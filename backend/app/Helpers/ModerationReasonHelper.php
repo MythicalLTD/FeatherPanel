@@ -165,7 +165,7 @@ class ModerationReasonHelper
     }
 
     /**
-     * @return array<string, null>
+     * @return array<string, string|null>
      */
     public static function banClearedFields(): array
     {

@@ -236,7 +236,7 @@ async fn bridge(client: WebSocket, ticket: VncTicket) {
 
 /// Builds the TLS connector for the upstream Proxmox socket.
 ///
-/// `tls_no_verify` maps to `danger_accept_invalid_certs` — needed for the
+/// `tls_no_verify` maps to `danger_accept_invalid_certs` - needed for the
 /// self-signed certs Proxmox ships by default.
 fn build_connector(tls_no_verify: bool) -> Result<Connector> {
     let mut builder = native_tls::TlsConnector::builder();
@@ -250,7 +250,7 @@ fn build_connector(tls_no_verify: bool) -> Result<Connector> {
 
 /// Converts an axum WebSocket message to its tungstenite equivalent.
 ///
-/// Ping/Pong return `None` — axum handles liveness on the client side;
+/// Ping/Pong return `None` - axum handles liveness on the client side;
 /// upstream we forward data frames only.
 fn to_tungstenite(m: AxumMessage) -> Option<tungstenite::Message> {
     match m {

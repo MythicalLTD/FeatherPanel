@@ -628,13 +628,13 @@
 }
 
 /* Classic macOS Terminal.app look inside FeatherOS */
-/* Glass terminal — translucent chrome, transparent body */
+/* Glass terminal - translucent chrome, transparent body */
 .fos-term-app,
 .fos-glass-console {
     background: transparent;
 }
 
-/* Same unified 52px toolbar as Finder / Servers — traffic lights overlay left. */
+/* Same unified 52px toolbar as Finder / Servers - traffic lights overlay left. */
 .fos-term-chrome {
     display: flex;
     height: 52px;
@@ -2015,7 +2015,7 @@ html:has(.fos-root[data-fos-theme='dark']) {
 
 .fos-finder-grid {
     display: grid;
-    /* Fixed column width — icons stay centered in their hit box (no 1fr stretch). */
+    /* Fixed column width - icons stay centered in their hit box (no 1fr stretch). */
     grid-template-columns: repeat(auto-fill, 104px);
     justify-content: start;
     align-content: start;
@@ -3156,7 +3156,7 @@ html:has(.fos-root[data-fos-theme='dark']) {
     backdrop-filter: blur(calc(24px * var(--fos-blur-scale, 1))) saturate(180%);
 }
 
-/* Server Manager — unified chrome (traffic lights over toolbar, no caption strip) */
+/* Server Manager - unified chrome (traffic lights over toolbar, no caption strip) */
 .fos-servers {
     display: flex;
     height: 100%;
@@ -3257,7 +3257,7 @@ html:has(.fos-root[data-fos-theme='dark']) {
     background: color-mix(in srgb, var(--fos-sidebar) 75%, transparent);
 }
 
-/* Generic app asides only — Finder/Settings own their sidebar materials. */
+/* Generic app asides only - Finder/Settings own their sidebar materials. */
 .fos-window aside:not(.fos-finder-sidebar):not(.fos-settings-sidebar) {
     background: color-mix(in oklab, var(--fos-glass) 85%, transparent);
     border-color: color-mix(in oklab, var(--fos-ink) 10%, transparent);

@@ -21,7 +21,7 @@ use App\Plugins\Events\PluginEvent;
 
 class KnowledgebaseEvent implements PluginEvent
 {
-    // ==================== ADMIN - CATEGORIES ====================
+    // Admin - categories
 
     /**
      * Callback: array categories, array pagination, array search.
@@ -63,7 +63,7 @@ class KnowledgebaseEvent implements PluginEvent
         return 'featherpanel:admin:knowledgebase:category:deleted';
     }
 
-    // ==================== ADMIN - ARTICLES ====================
+    // Admin - articles
 
     /**
      * Callback: array articles, array pagination, array search.
@@ -113,7 +113,7 @@ class KnowledgebaseEvent implements PluginEvent
         return 'featherpanel:admin:knowledgebase:articles:reordered';
     }
 
-    // ==================== ADMIN - FILES & ATTACHMENTS ====================
+    // Admin - files & attachments
 
     /**
      * Callback: string filename, string url, array uploaded_by.
@@ -147,7 +147,7 @@ class KnowledgebaseEvent implements PluginEvent
         return 'featherpanel:admin:knowledgebase:attachment:deleted';
     }
 
-    // ==================== ADMIN - TAGS ====================
+    // Admin - tags
 
     /**
      * Callback: array article, array tags.
@@ -173,7 +173,7 @@ class KnowledgebaseEvent implements PluginEvent
         return 'featherpanel:admin:knowledgebase:tag:deleted';
     }
 
-    // ==================== USER - KNOWLEDGEBASE ====================
+    // User - knowledgebase
 
     /**
      * Callback: array categories, array pagination.

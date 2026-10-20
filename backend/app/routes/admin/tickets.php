@@ -28,7 +28,7 @@ use App\Controllers\Admin\TicketPrioritiesController;
 use App\Controllers\Admin\TicketAttachmentsController;
 
 return function (RouteCollection $routes): void {
-    // ==================== TICKETS (Base Routes) ====================
+    // Tickets (base routes)
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
@@ -51,7 +51,7 @@ return function (RouteCollection $routes): void {
         ['PUT']
     );
 
-    // ==================== TICKET CATEGORIES (Specific routes before parameterized) ====================
+    // Ticket categories (specific routes before parameterized)
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
@@ -132,7 +132,7 @@ return function (RouteCollection $routes): void {
         ['DELETE']
     );
 
-    // ==================== TICKET PRIORITIES ====================
+    // Ticket priorities
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
@@ -202,7 +202,7 @@ return function (RouteCollection $routes): void {
         ['DELETE']
     );
 
-    // ==================== TICKET STATUSES ====================
+    // Ticket statuses
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
@@ -272,7 +272,7 @@ return function (RouteCollection $routes): void {
         ['DELETE']
     );
 
-    // ==================== TICKET MESSAGES ====================
+    // Ticket messages
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
@@ -367,7 +367,7 @@ return function (RouteCollection $routes): void {
         ['DELETE']
     );
 
-    // ==================== TICKET ATTACHMENTS ====================
+    // Ticket attachments
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
@@ -422,7 +422,7 @@ return function (RouteCollection $routes): void {
         ['DELETE']
     );
 
-    // ==================== TICKETS (Parameterized routes - must come AFTER specific routes) ====================
+    // Tickets (parameterized routes - must come after specific routes)
 
     App::getInstance(true)->registerAdminRoute(
         $routes,

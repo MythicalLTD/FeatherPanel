@@ -29,7 +29,7 @@ class Database
     private $password;
     private $port;
 
-    /** Request-scoped shared PDO — required for transactions that span helper methods. */
+    /** Request-scoped shared PDO - required for transactions that span helper methods. */
     private static ?\PDO $sharedPdo = null;
 
     private static ?float $lastRequestFinishedAt = null;

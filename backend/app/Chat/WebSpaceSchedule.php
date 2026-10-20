@@ -422,7 +422,7 @@ class WebSpaceSchedule
             return false;
         }
 
-        // Must use one PDO for the whole transaction — createTask() used to open a
+        // Must use one PDO for the whole transaction - createTask() used to open a
         // second connection and deadlock on the DELETE row locks (lock wait timeout).
         $pdo = Database::getPdoConnection();
         try {

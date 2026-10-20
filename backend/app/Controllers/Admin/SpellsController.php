@@ -1249,7 +1249,7 @@ class SpellsController
         return $response;
     }
 
-    // --- Spell Variables CRUD ---
+    // Spell variables crud
     #[OA\Get(
         path: '/api/admin/spells/{spellId}/variables',
         summary: 'List spell variables',

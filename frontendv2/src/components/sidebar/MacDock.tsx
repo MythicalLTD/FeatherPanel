@@ -342,14 +342,14 @@ export const DOCK_PANEL_HEIGHT_CLASS: Record<DockSize, string> = {
 
 export const DOCK_PANEL_COLLAPSED_CLASS = 'h-[50px]';
 
-/** Icons-only expanded dock — room for tiles + hover scale without clipping. */
+/** Icons-only expanded dock - room for tiles + hover scale without clipping. */
 export const DOCK_PANEL_EXPANDED_CLASS: Record<DockSize, string> = {
     sm: 'h-[64px]',
     md: 'h-[72px]',
     lg: 'h-[80px]',
 };
 
-/** Icons + labels — sized per dock size so sm/md/lg stay vertically centered. */
+/** Icons + labels - sized per dock size so sm/md/lg stay vertically centered. */
 export const DOCK_PANEL_LABELS_CLASS: Record<DockSize, string> = {
     sm: 'h-[78px]',
     md: 'h-[88px]',

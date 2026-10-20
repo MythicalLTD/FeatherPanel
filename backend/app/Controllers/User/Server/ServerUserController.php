@@ -2656,7 +2656,7 @@ class ServerUserController
                 $subuserPerms = [];
             }
 
-            // Always include websocket.connect — required for Wings JWT/WebSocket access.
+            // Always include websocket.connect - required for Wings JWT/WebSocket access.
             // generateServerJwt already gates on this permission before minting.
             if (!in_array(SubuserPermissions::WEBSOCKET_CONNECT, $subuserPerms, true) && !in_array('*', $subuserPerms, true)) {
                 $subuserPerms[] = SubuserPermissions::WEBSOCKET_CONNECT;

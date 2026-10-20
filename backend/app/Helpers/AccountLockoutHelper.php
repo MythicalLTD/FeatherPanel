@@ -120,7 +120,7 @@ class AccountLockoutHelper
      * caller may proceed; on success call clear(), on failure the counter
      * already reflects this attempt.
      *
-     * Fails closed (returns false) when no counter store is usable — do not
+     * Fails closed (returns false) when no counter store is usable - do not
      * allow unbounded 2FA verification attempts without a working counter store.
      */
     public static function reserveHardLockAttempt(

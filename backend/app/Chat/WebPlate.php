@@ -21,7 +21,7 @@ use App\App;
 use App\Helpers\WebPlateDefaults;
 
 /**
- * WebPlate — web-hosting templates for FeatherQuilld (not Spells / game eggs).
+ * WebPlate - web-hosting templates for FeatherQuilld (not Spells / game eggs).
  */
 class WebPlate
 {

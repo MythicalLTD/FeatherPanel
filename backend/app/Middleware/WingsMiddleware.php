@@ -49,7 +49,7 @@ class WingsMiddleware implements MiddlewareInterface
         $tokenId = $parts[0] ?? '';
         $tokenSecret = $parts[1] ?? '';
 
-        // Game nodes (FeatherWings) only — web nodes use FeatherQuilldMiddleware on /api/quilld-remote/*
+        // Game nodes (FeatherWings) only - web nodes use FeatherQuilldMiddleware on /api/quilld-remote/*
         $node = Node::getNodeByWingsAuth($tokenId, $tokenSecret);
         if ($node === null) {
             self::emitWings(WingsEvent::onWingsError(), [

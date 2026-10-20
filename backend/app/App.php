@@ -864,7 +864,7 @@ class App
     /**
      * Register a FeatherQuilld remote route (web hosting daemons only).
      *
-     * Uses FeatherQuilldMiddleware — game node (FeatherWings) tokens are rejected.
+     * Uses FeatherQuilldMiddleware - game node (FeatherWings) tokens are rejected.
      *
      * @param RouteCollection $routes The Symfony RouteCollection instance to add the route to
      * @param string $name The name of the route
@@ -1102,8 +1102,8 @@ class App
             $code = str_replace('+', '', $code);
 
             return str_replace('/', '', $code);
-        } catch (RandomException) {
-            $this->getLogger()->error('Failed to generate code: ' . $code);
+        } catch (RandomException $e) {
+            $this->getLogger()->error('Failed to generate code: ' . $e->getMessage());
 
             return '';
         }

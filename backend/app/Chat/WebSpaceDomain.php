@@ -121,7 +121,7 @@ class WebSpaceDomain
         // A domain may already be owned by another WebSpace (e.g. moved between
         // spaces or left over from a deleted one). Instead of aborting the whole
         // listing with a 500, keep the conflicting domains out and migrate the
-        // rest — the conflict is logged so an admin can resolve it.
+        // rest - the conflict is logged so an admin can resolve it.
         $kept = [];
         foreach ($routes as $route) {
             if (self::findOwnerId($route['domain'], $webspaceId) !== null) {

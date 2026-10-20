@@ -156,7 +156,7 @@ use App\Plugins\Events\Events\KnowledgebaseEvent;
 )]
 class KnowledgebaseController
 {
-    // ==================== CATEGORIES ====================
+    // Categories
 
     #[OA\Get(
         path: '/api/admin/knowledgebase/categories',
@@ -606,7 +606,7 @@ class KnowledgebaseController
         return ApiResponse::success([], 'Category deleted successfully', 200);
     }
 
-    // ==================== ARTICLES ====================
+    // Articles
 
     #[OA\Get(
         path: '/api/admin/knowledgebase/articles',
@@ -1205,7 +1205,7 @@ class KnowledgebaseController
         return ApiResponse::success([], 'Articles reordered successfully', 200);
     }
 
-    // ==================== FILE UPLOADS ====================
+    // File uploads
 
     #[OA\Post(
         path: '/api/admin/knowledgebase/upload-icon',
@@ -1712,7 +1712,7 @@ class KnowledgebaseController
         return ApiResponse::success([], 'Attachment deleted successfully', 200);
     }
 
-    // ==================== TAGS ====================
+    // Tags
 
     #[OA\Get(
         path: '/api/admin/knowledgebase/articles/{id}/tags',

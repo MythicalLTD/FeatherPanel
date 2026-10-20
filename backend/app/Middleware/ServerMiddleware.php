@@ -104,10 +104,6 @@ class ServerMiddleware implements MiddlewareInterface
             App::getInstance(true)->getLogger()->warning('Error getting server by UUID: ' . $e->getMessage());
 
             return null;
-        } catch (\PDOException $e) {
-            App::getInstance(true)->getLogger()->warning('Error getting server by UUID: ' . $e->getMessage());
-
-            return null;
         }
     }
 

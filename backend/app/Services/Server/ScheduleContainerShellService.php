@@ -198,7 +198,7 @@ class ScheduleContainerShellService
         ];
     }
 
-    // --- Seams (config / daemon / database access), overridden in unit tests -----------------
+    // Seams (config / daemon / database access), overridden in unit tests
 
     protected function isEnabled(): bool
     {

@@ -449,17 +449,7 @@ export default function EditorApp({ win }: OsAppProps) {
             void saveTab(tab, { quiet: true });
         }, prefs.autoSaveDelayMs);
         return () => window.clearTimeout(timer);
-    }, [
-        prefs.autoSave,
-        prefs.autoSaveDelayMs,
-        readOnly,
-        ready,
-        dirty,
-        active?.serverUuid,
-        active?.path,
-        activeState?.current,
-        saveTab,
-    ]);
+    }, [prefs.autoSave, prefs.autoSaveDelayMs, readOnly, ready, dirty, active, saveTab]);
 
     if (picking)
         return (

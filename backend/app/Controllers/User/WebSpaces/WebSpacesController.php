@@ -85,9 +85,14 @@ class WebSpacesController
     #[OA\Get(path: '/api/user/webspaces/{uuidShort}/infrastructure-readiness', summary: 'Infrastructure readiness for this WebSpace', tags: ['User - WebSpaces'])]
     public function infrastructureReadiness(Request $request, string $uuidShort): Response
     {
-        $resolved = $this->resolveAccessible($request, $uuidShort, WebSpaceSubuserPermissions::SETTINGS_READ);
+        $resolved = $this->resolveAccessible($request, $uuidShort);
         if ($resolved instanceof Response) {
             return $resolved;
+        }
+
+        $denied = CheckWebSpacePermission::require($request, $resolved['space'], WebSpaceSubuserPermissions::SETTINGS_READ);
+        if ($denied instanceof Response) {
+            return $denied;
         }
 
         $space = $resolved['space'];

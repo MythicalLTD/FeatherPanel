@@ -801,7 +801,7 @@ class PluginManagerController
         }
     }
 
-    // ===== DEV TOOLS FUNCTIONALITY =====
+    // Dev tools functionality
 
     #[OA\Post(
         path: '/api/admin/plugin-tools/create-file',
@@ -1745,9 +1745,7 @@ class {$className}CronExample implements TimeTask
             ],
         ], JSON_PRETTY_PRINT);
 
-        $frontendJsExample = "// ===============================================
-// {$className} Plugin - Frontend JavaScript
-// ===============================================
+        $frontendJsExample = "// {$className} Plugin - Frontend JavaScript
 
 console.log('🚀 {$className} Plugin Loading...');
 
@@ -2207,9 +2205,7 @@ init{$className}Plugin();
 
 console.log('🚀 {$className} Plugin script loaded');";
 
-        $frontendCssExample = "/* ===============================================
-{$className} Plugin - Frontend CSS
-=============================================== */
+        $frontendCssExample = "/* {$className} Plugin - Frontend CSS */
 
 .{$className}-container {
 	padding: 20px;

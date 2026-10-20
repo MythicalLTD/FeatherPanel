@@ -1875,7 +1875,7 @@ class ServersController
             }
 
             // Changing primary only updates which allocation is primary.
-            // Never unassign the previous primary here — that drops extra ports on save.
+            // Never unassign the previous primary here - that drops extra ports on save.
             if (isset($data['allocation_id']) && (int) $data['allocation_id'] !== (int) $server['allocation_id']) {
                 $newAllocation = Allocation::getById((int) $data['allocation_id']);
                 if (!$newAllocation) {

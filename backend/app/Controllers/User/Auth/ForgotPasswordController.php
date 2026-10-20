@@ -167,7 +167,7 @@ class ForgotPasswordController
         $storedMailVerify = PasswordResetTokenHelper::mailVerifyForNewRequest($userInfo['mail_verify'] ?? null, $resetToken);
 
         if (User::updateUser($userInfo['uuid'], ['mail_verify' => $storedMailVerify])) {
-            // Queue reset email asynchronously (MailQueue) — do not wait for SMTP.
+            // Queue reset email asynchronously (MailQueue) - do not wait for SMTP.
             $appUrl = $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
             if (!preg_match('#^https?://#i', $appUrl)) {
                 $appUrl = 'https://' . ltrim($appUrl, '/');

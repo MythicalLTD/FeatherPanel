@@ -40,7 +40,7 @@ use Symfony\Component\HttpFoundation\Response;
 use App\Helpers\WebSpaceInfrastructureReadiness;
 
 /**
- * Admin CRUD for WebSpaces — persists on the panel, then tells FeatherQuilld to pull.
+ * Admin CRUD for WebSpaces - persists on the panel, then tells FeatherQuilld to pull.
  */
 class WebSpacesController
 {

@@ -849,12 +849,10 @@ html.fp-privacy [data-fp-sensitive]:not(:focus) {
     }
 }
 
-/* ---------------------------------------------------------------------------------------------
-   Card surfaces. One definition for every shared building block (PageCard, ResourceCard,
+/* Card surfaces. One definition for every shared building block (PageCard, ResourceCard,
    FormSection, EmptyState, ui/card...), so the panel reads as a single material: translucent
    glass that lets the theme background through, a hairline edge and a faint top highlight.
-   fp-surface-inset is for panels nested inside a surface (no second blur layer).
-   --------------------------------------------------------------------------------------------- */
+   fp-surface-inset is for panels nested inside a surface (no second blur layer). */
 @utility fp-surface {
     background-color: hsl(var(--fp-surface-tint) / var(--fp-surface-alpha));
     border-color: var(--fp-surface-border);

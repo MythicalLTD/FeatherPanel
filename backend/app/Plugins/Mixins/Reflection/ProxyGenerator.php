@@ -34,8 +34,8 @@ class ProxyGenerator
      * Create a proxy class for a target class.
      *
      * @param string $targetClass The class to proxy
-     * @param array $interceptMethods Methods to intercept (true for all methods)
-     * @param array $interceptProperties Properties to intercept (true for all properties)
+     * @param array|bool $interceptMethods Methods to intercept (true for all methods)
+     * @param array|bool $interceptProperties Properties to intercept (true for all properties)
      *
      * @return string The proxy class name
      */

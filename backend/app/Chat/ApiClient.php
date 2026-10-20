@@ -27,8 +27,8 @@ class ApiClient
     /**
      * Explicit versioned marker stored ahead of ciphertext in private_key.
      * decryptValue() heuristically treats any base64 blob whose decoded length is
-     * at least a 24-byte nonce as ciphertext — including normal fp_ keys and
-     * other base64-shaped legacy plaintext — so unmarked rows must never be
+     * at least a 24-byte nonce as ciphertext - including normal fp_ keys and
+     * other base64-shaped legacy plaintext - so unmarked rows must never be
      * passed through decryptValue().
      */
     public const PRIVATE_KEY_ENC_PREFIX = 'enc:v1:';

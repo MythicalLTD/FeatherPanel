@@ -95,7 +95,7 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_ROOT,
     );
 
-    // ===== DEV TOOLS ROUTES =====
+    // Dev tools routes
 
     App::getInstance(true)->registerAdminRoute(
         $routes,

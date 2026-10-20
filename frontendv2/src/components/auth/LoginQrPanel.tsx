@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import QRCode from 'react-qr-code';
 import axios from 'axios';
 import { Check, Loader2, RefreshCw } from 'lucide-react';
@@ -66,7 +66,6 @@ function initials(name: string): string {
 
 export default function LoginQrPanel({ className, compact = false }: { className?: string; compact?: boolean }) {
     const { t } = useTranslation();
-    const router = useRouter();
     const searchParams = useSearchParams();
     const { fetchSession } = useSession();
 

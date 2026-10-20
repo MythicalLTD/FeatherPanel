@@ -103,7 +103,7 @@ export async function playGenieMinimize(el: HTMLElement, to: DOMRect | null): Pr
                     filter: 'blur(0px)',
                 },
                 {
-                    // Pull downward and start narrowing — the “sucked into dock” look.
+                    // Pull downward and start narrowing - the “sucked into dock” look.
                     offset: 0.45,
                     transform: `translate(${dx * 0.35}px, ${dy * 0.55}px) scale(${Math.max(sx, 0.55)}, ${Math.max(sy, 0.35)})`,
                     opacity: 0.95,

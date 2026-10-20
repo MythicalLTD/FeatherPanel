@@ -401,7 +401,7 @@ class ServerAllocationsController
             }
 
             // Update the server's primary allocation pointer only.
-            // Keep the previous primary assigned — "set primary" must not drop other allocations.
+            // Keep the previous primary assigned - "set primary" must not drop other allocations.
             $success = Server::updateServerById($serverId, ['allocation_id' => $allocationId]);
             if (!$success) {
                 return ApiResponse::error('Failed to set primary allocation', 'PRIMARY_ALLOCATION_UPDATE_FAILED', 500);

@@ -422,7 +422,7 @@ class SystemService
         // Prefer nested FeatherWings shape; also accept already-normalized payloads.
         $memoryTotal = (int) ($systemInfo['system']['memory_bytes'] ?? 0);
 
-        // Flat Calagopus /api/system has no memory totals — leave zeros (caller should prefer stats).
+        // Flat Calagopus /api/system has no memory totals - leave zeros (caller should prefer stats).
         return self::emptyUtilization([
             'memory_total' => $memoryTotal,
         ]);

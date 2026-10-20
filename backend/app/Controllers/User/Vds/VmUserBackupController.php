@@ -642,15 +642,7 @@ class VmUserBackupController
             return ApiResponse::error('User not authenticated', 'NOT_AUTHENTICATED', 401);
         }
 
-        // We don't need the client here, as the task status is already updated by the worker
-        // when the Proxmox task completes.
-        try {
-            // $client = VmInstanceUtil::buildProxmoxClientForNode($vmNode);
-        } catch (\Throwable $e) {
-            App::getInstance(true)->getLogger()->error('Proxmox client build failed: ' . $e->getMessage());
-
-            return ApiResponse::error('Failed to connect to Proxmox node', 'PROXMOX_ERROR', 500);
-        }
+        // Task status is already updated by the worker when the Proxmox task completes.
         $task = VmTask::getByTaskId($restoreId);
         if (!$task) {
             return ApiResponse::error('Restore task not found', 'NOT_FOUND', 404);

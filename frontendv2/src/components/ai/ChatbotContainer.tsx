@@ -506,7 +506,7 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
     const executeAIActions = async (responseText: string, latestMessage: string) => {
         const commands = filterAuthorizedCommands(parseActionCommands(responseText), latestMessage);
 
-        // --- VDS-specific action patterns ---
+        // Vds-specific action patterns
         // VDS power and backup actions are handled entirely by backend tools (TOOL_CALL).
         // The frontend only handles navigation ACTION commands for VDS.
         // ACTION: navigate vds [instance_id] to [page_name]
