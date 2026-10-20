@@ -19,6 +19,7 @@ import { useEffect, useRef, useState } from 'react';
 import { SlidersHorizontal, Moon, Sun, Monitor, Columns2, Settings2, HardDrive } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useFeatherOs } from './FeatherOsContext';
+import { OsRange, OsSwitch } from './controls';
 import { formatBytes, formatDiskPair, serverDiskUsage } from './utils';
 
 export function ControlCenter() {
@@ -151,39 +152,37 @@ export function ControlCenter() {
                         )}
                     </div>
                     <div className='fos-control-section mt-3'>
-                        <label htmlFor='fos-dock-size' className='mb-3 flex justify-between text-xs font-medium'>
+                        <div className='mb-3 flex justify-between text-xs font-medium'>
                             {t('featheros.settings.dock')}
                             <span>{os.settings.dockSize}px</span>
-                        </label>
-                        <input
-                            id='fos-dock-size'
-                            type='range'
+                        </div>
+                        <OsRange
                             min={32}
                             max={72}
                             step={4}
                             value={os.settings.dockSize}
-                            onChange={(e) => os.updateSettings({ dockSize: Number(e.target.value) })}
-                            className='w-full accent-[var(--fos-accent-color)]'
+                            onChange={(v) => os.updateSettings({ dockSize: v })}
+                            className='w-full'
+                            aria-label={t('featheros.settings.dock')}
                         />
-                        {(['dockAutoHide', 'reduceMotion'] as const).map((key) => (
-                            <label
-                                key={key}
-                                className='mt-3 flex cursor-pointer items-center justify-between gap-3 text-xs'
-                            >
-                                {t(
-                                    key === 'dockAutoHide'
-                                        ? 'featheros.settings.dock_autohide'
-                                        : 'featheros.settings.reduce_motion',
-                                )}
-                                <input
-                                    type='checkbox'
-                                    role='switch'
-                                    checked={os.settings[key]}
-                                    onChange={(e) => os.updateSettings({ [key]: e.target.checked })}
-                                    className='fos-switch'
-                                />
-                            </label>
-                        ))}
+                        {(['dockAutoHide', 'reduceMotion'] as const).map((key) => {
+                            const label = t(
+                                key === 'dockAutoHide'
+                                    ? 'featheros.settings.dock_autohide'
+                                    : 'featheros.settings.reduce_motion',
+                            );
+                            return (
+                                <div key={key} className='mt-3 flex items-center justify-between gap-3 text-xs'>
+                                    {label}
+                                    <OsSwitch
+                                        size='sm'
+                                        checked={os.settings[key]}
+                                        onChange={(next) => os.updateSettings({ [key]: next })}
+                                        aria-label={label}
+                                    />
+                                </div>
+                            );
+                        })}
                     </div>
                     <button
                         type='button'

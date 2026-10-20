@@ -45,7 +45,10 @@ import {
     type OsSettings,
     type OsWidgetType,
     type OsWindow,
+    type OsWorkspace,
 } from './types';
+
+const MAX_WORKSPACES = 12;
 import { clamp, joinPath, normalizeDir, uid } from './utils';
 
 const NODE_UNREACHABLE_CODES = new Set(['DAEMON_UNREACHABLE', 'WINGS_CONNECTION_UNAVAILABLE', 'NODE_UNREACHABLE']);
@@ -181,6 +184,9 @@ interface FeatherOsContextValue {
     setDock: (dock: OsAppId[]) => void;
     settings: OsSettings;
     updateSettings: (patch: Partial<OsSettings>) => void;
+    saveWorkspace: (name: string) => OsWorkspace;
+    restoreWorkspace: (id: string) => boolean;
+    deleteWorkspace: (id: string) => void;
     isDark: boolean;
     setOsTheme: (theme: OsSettings['theme']) => void;
     resetDesktop: () => Promise<void>;
@@ -253,8 +259,15 @@ function viewport() {
 function fitWindow(win: OsWindow): OsWindow {
     const vp = viewport();
     const def = OS_APPS[win.app];
-    const w = clamp(Math.round(win.w || def.defaultSize.w), def.minSize.w, vp.w);
-    const h = clamp(Math.round(win.h || def.defaultSize.h), def.minSize.h, vp.h - 8);
+    let nextW = Math.round(win.w || def.defaultSize.w);
+    let nextH = Math.round(win.h || def.defaultSize.h);
+    // Old terminal sessions were saved short+wide; bump them so xterm isn't a flat strip.
+    if (win.app === 'terminal' && !win.maximized && nextH < 420 && nextW > 700) {
+        nextH = Math.min(def.defaultSize.h, vp.h - 90);
+        nextW = Math.min(Math.max(nextW, def.defaultSize.w), vp.w - 40);
+    }
+    const w = clamp(nextW, def.minSize.w, vp.w);
+    const h = clamp(nextH, def.minSize.h, vp.h - 8);
     const x = clamp(Math.round(win.x || 0), -w + 120, vp.w - 120);
     const y = clamp(Math.round(win.y || 0), 0, vp.h - 40);
     return { ...win, w, h, x, y };
@@ -296,6 +309,8 @@ function sanitizeState(raw: unknown): OsPersistedState | null {
                 : {}),
         },
     };
+    if (!Array.isArray(settings.workspaces)) settings.workspaces = [];
+    if (!Array.isArray(settings.savedThemes)) settings.savedThemes = [];
     const activeSpace = typeof s.activeSpace === 'number' ? Math.max(0, Math.min(15, s.activeSpace)) : 0;
     const widgetTypeSet = new Set<string>(OS_WIDGET_TYPES);
     const widgets = Array.isArray(s.widgets)
@@ -606,15 +621,20 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
             }
             const vp = viewport();
             const count = ws.filter((w) => !w.minimized).length;
-            const w = Math.min(def.defaultSize.w, vp.w - 40);
-            const h = Math.min(def.defaultSize.h, vp.h - 90);
+            // Terminal needs a taller first open — short+wide windows look broken with xterm.
+            const preferW =
+                app === 'terminal' ? Math.min(def.defaultSize.w, Math.round(vp.w * 0.7)) : def.defaultSize.w;
+            const preferH =
+                app === 'terminal' ? Math.min(def.defaultSize.h, Math.round(vp.h * 0.68)) : def.defaultSize.h;
+            const w = Math.min(preferW, vp.w - 40);
+            const h = Math.min(preferH, vp.h - 90);
             const offset = (count % 8) * 28;
             const win: OsWindow = fitWindow({
                 id: uid('w'),
                 app,
                 serverUuid: options.serverUuid ?? null,
-                x: Math.round((vp.w - w) / 2 - 120 + offset),
-                y: Math.round(Math.max(12, (vp.h - h) / 2 - 60 + offset)),
+                x: Math.round((vp.w - w) / 2 + (app === 'terminal' ? 0 : -120) + offset),
+                y: Math.round(Math.max(16, (vp.h - h) / 2 - (app === 'terminal' ? 12 : 60) + offset)),
                 w,
                 h,
                 z,
@@ -761,6 +781,61 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
             ...patch,
             ...(patch.hotCorners ? { hotCorners: { ...s.hotCorners, ...patch.hotCorners } } : {}),
         }));
+    }, []);
+
+    // ---------- workspaces ----------
+    const saveWorkspace = useCallback(
+        (name: string) => {
+            const label = name.trim().slice(0, 40);
+            const entry: OsWorkspace = {
+                id: uid('ws'),
+                name: label,
+                savedAt: Date.now(),
+                activeSpace,
+                windows: windowsRef.current
+                    .slice()
+                    .sort((a, b) => a.z - b.z)
+                    .map(({ id: _id, z: _z, ...rest }) => ({
+                        ...rest,
+                        // Keep layouts small: drop window state that is large (editor buffers etc.).
+                        props: JSON.stringify(rest.props ?? {}).length > 4000 ? {} : rest.props,
+                    })),
+            };
+            setSettings((s) => ({
+                ...s,
+                workspaces: [entry, ...(s.workspaces ?? []).filter((w) => w.name !== label)].slice(0, MAX_WORKSPACES),
+            }));
+            return entry;
+        },
+        [activeSpace],
+    );
+
+    const restoreWorkspace = useCallback(
+        (id: string) => {
+            const entry = (settings.workspaces ?? []).find((w) => w.id === id);
+            if (!entry) return false;
+            const maxSpace = Math.max(0, (settings.spaceCount || 1) - 1);
+            const next = entry.windows
+                .filter((w) => isOsAppId(w.app))
+                .map((w) => {
+                    zCounter.current += 1;
+                    return fitWindow({
+                        ...w,
+                        id: uid('w'),
+                        z: zCounter.current,
+                        space: Math.min(maxSpace, Math.max(0, w.space ?? 0)),
+                    });
+                });
+            mutate(() => next);
+            setActiveSpace(Math.min(maxSpace, Math.max(0, entry.activeSpace ?? 0)));
+            focusTop(next);
+            return true;
+        },
+        [settings.workspaces, settings.spaceCount, mutate, focusTop],
+    );
+
+    const deleteWorkspace = useCallback((id: string) => {
+        setSettings((s) => ({ ...s, workspaces: (s.workspaces ?? []).filter((w) => w.id !== id) }));
     }, []);
 
     const resetDesktop = useCallback(async () => {
@@ -1048,6 +1123,9 @@ export function FeatherOsProvider({ children }: { children: ReactNode }) {
         setDock,
         settings,
         updateSettings,
+        saveWorkspace,
+        restoreWorkspace,
+        deleteWorkspace,
         isDark,
         setOsTheme,
         resetDesktop,

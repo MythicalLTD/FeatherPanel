@@ -525,7 +525,70 @@ interface ServerTerminalProps {
     showPopoutButton?: boolean;
     onUploadLogs?: () => void;
     subtitle?: string;
+    /**
+     * `glass` = translucent FeatherOS console (soft mono, no card chrome).
+     * The panel server page keeps `default`.
+     */
+    appearance?: 'default' | 'glass';
+    /** Palette for the glass appearance; follows the FeatherOS theme. */
+    glassTone?: 'dark' | 'light';
 }
+
+const GLASS_TERMINAL_FONT = '"SF Mono", Menlo, Monaco, ui-monospace, "Cascadia Mono", "Courier New", monospace';
+
+const GLASS_TERMINAL_THEME = {
+    background: '#00000000',
+    foreground: '#e8e8ed',
+    cursor: '#f5f5f7',
+    cursorAccent: '#1c1c1e',
+    selectionBackground: 'rgba(10, 132, 255, 0.35)',
+    selectionForeground: '#ffffff',
+    black: '#1c1c1e',
+    red: '#ff453a',
+    green: '#32d74b',
+    yellow: '#ffd60a',
+    blue: '#0a84ff',
+    magenta: '#bf5af2',
+    cyan: '#64d2ff',
+    white: '#e8e8ed',
+    brightBlack: '#8e8e93',
+    brightRed: '#ff6961',
+    brightGreen: '#30db5b',
+    brightYellow: '#ffd426',
+    brightBlue: '#409cff',
+    brightMagenta: '#da8fff',
+    brightCyan: '#70d7ff',
+    brightWhite: '#ffffff',
+} as const;
+
+/** Terminal.app "Basic" style: ANSI colours darkened so they stay readable on a light glass. */
+const GLASS_TERMINAL_THEME_LIGHT = {
+    background: '#00000000',
+    foreground: '#1d1d1f',
+    cursor: '#1d1d1f',
+    cursorAccent: '#ffffff',
+    selectionBackground: 'rgba(0, 113, 227, 0.22)',
+    selectionForeground: '#000000',
+    black: '#1d1d1f',
+    red: '#c41a16',
+    green: '#1f7a1f',
+    yellow: '#9a6700',
+    blue: '#0058c4',
+    magenta: '#9b2fb5',
+    cyan: '#007a8a',
+    white: '#48484a',
+    brightBlack: '#6e6e73',
+    brightRed: '#d70015',
+    brightGreen: '#248a3d',
+    brightYellow: '#a05a00',
+    brightBlue: '#0071e3',
+    brightMagenta: '#ad44ab',
+    brightCyan: '#0080a0',
+    brightWhite: '#1d1d1f',
+} as const;
+
+const glassTheme = (tone: 'dark' | 'light') =>
+    tone === 'light' ? { ...GLASS_TERMINAL_THEME_LIGHT } : { ...GLASS_TERMINAL_THEME };
 
 const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
     (
@@ -541,9 +604,16 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             fillContainer = false,
             showPopoutButton = true,
             onUploadLogs,
+            appearance = 'default',
+            glassTone = 'dark',
         },
         ref,
     ) => {
+        const isGlass = appearance === 'glass';
+        const appearanceRef = useRef(appearance);
+        appearanceRef.current = appearance;
+        const glassToneRef = useRef(glassTone);
+        glassToneRef.current = glassTone;
         const terminalRef = useRef<HTMLDivElement>(null);
         const terminalInstanceRef = useRef<Terminal | null>(null);
         const fitAddonRef = useRef<FitAddon | null>(null);
@@ -615,11 +685,26 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
 
         const applyTerminalTheme = useCallback(
             (terminal: Terminal) => {
+                if (appearanceRef.current === 'glass') {
+                    terminal.options.fontFamily = GLASS_TERMINAL_FONT;
+                    terminal.options.fontSize = 12.5;
+                    terminal.options.lineHeight = 1.35;
+                    terminal.options.cursorStyle = 'bar';
+                    terminal.options.cursorBlink = true;
+                    terminal.options.theme = glassTheme(glassToneRef.current);
+                    terminal.refresh(0, terminal.rows - 1);
+                    return;
+                }
+
                 const monoRaw = getComputedStyle(document.documentElement).getPropertyValue('--font-mono').trim();
                 const fontStack = resolveMonoFontFamily(monoRaw);
 
                 const bufBg = terminalBufferBackground();
                 terminal.options.fontFamily = fontStack;
+                terminal.options.fontSize = 13;
+                terminal.options.lineHeight = 1.35;
+                terminal.options.cursorStyle = 'block';
+                terminal.options.cursorBlink = false;
                 terminal.options.theme = {
                     background: bufBg,
                     foreground: hslFromVar('--foreground', '#f4f4f5'),
@@ -631,6 +716,11 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             },
             [hslFromVar, hslaFromVar, terminalBufferBackground],
         );
+
+        useEffect(() => {
+            const terminal = terminalInstanceRef.current;
+            if (terminal) applyTerminalTheme(terminal);
+        }, [appearance, glassTone, applyTerminalTheme]);
 
         const fitTerminal = useCallback(() => {
             const host = terminalRef.current;
@@ -794,23 +884,27 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
 
             const secRaw = getComputedStyle(document.documentElement).getPropertyValue('--secondary').trim();
             const initialBg = secRaw ? `hsl(${secRaw})` : 'hsl(0 0% 15%)';
+            const glass = appearanceRef.current === 'glass';
 
             const terminal = new Terminal({
-                cursorBlink: false,
-                fontSize: 13,
-                lineHeight: 1.35,
-                fontFamily: APP_MONO_FONT_STACK,
-                theme: {
-                    background: initialBg,
-                    foreground: '#e4e4e7',
-                    cursor: '#a78bfa',
-                    selectionBackground: 'rgba(167, 139, 250, 0.2)',
-                },
+                cursorBlink: glass,
+                cursorStyle: glass ? 'bar' : 'block',
+                fontSize: glass ? 12.5 : 13,
+                lineHeight: glass ? 1.35 : 1.35,
+                fontFamily: glass ? GLASS_TERMINAL_FONT : APP_MONO_FONT_STACK,
+                theme: glass
+                    ? glassTheme(glassToneRef.current)
+                    : {
+                          background: initialBg,
+                          foreground: '#e4e4e7',
+                          cursor: '#a78bfa',
+                          selectionBackground: 'rgba(167, 139, 250, 0.2)',
+                      },
                 scrollback: 10000,
                 // Avoid smooth scrollbar animation fighting touch pans / live output.
                 smoothScrollDuration: 0,
                 allowProposedApi: true,
-                allowTransparency: false,
+                allowTransparency: glass,
                 disableStdin: true,
             });
 
@@ -1203,19 +1297,26 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                 className={cn(
                     'flex w-full min-w-0 flex-col',
                     className,
-                    fillContainer ? 'min-h-0 flex-1' : 'h-full',
-                    isFullscreen && 'bg-background h-full p-2',
+                    // fillContainer lives inside absolute/h-full parents (OS windows) — use
+                    // h-full, not flex-1, so the xterm host actually gets a real height.
+                    'h-full min-h-0',
+                    isFullscreen && 'bg-background p-2',
+                    isGlass && 'fos-term-glass',
                 )}
             >
                 <Card
                     className={cn(
-                        'w-full min-w-0 gap-0 overflow-hidden py-0',
-                        fillContainer || isFullscreen
-                            ? 'flex min-h-0 flex-1 flex-col'
-                            : 'flex h-full min-h-[22rem] flex-col sm:min-h-[26rem]',
+                        'flex h-full min-h-0 w-full min-w-0 flex-col gap-0 overflow-hidden py-0',
+                        !fillContainer && !isFullscreen && 'min-h-[22rem] sm:min-h-[26rem]',
+                        isGlass && 'border-0 bg-transparent shadow-none ring-0',
                     )}
                 >
-                    <CardHeader className='border-border/50 shrink-0 gap-0 border-b px-3 py-1.5 sm:px-4'>
+                    <CardHeader
+                        className={cn(
+                            'border-border/50 shrink-0 gap-0 border-b px-3 py-1.5 sm:px-4',
+                            isGlass && 'hidden',
+                        )}
+                    >
                         <div className='flex items-center justify-between gap-2'>
                             <h3 className='flex min-w-0 items-center gap-2 text-sm font-medium'>
                                 <span
@@ -1550,11 +1651,16 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                         <div className='relative isolate flex min-h-0 flex-1 flex-col'>
                             <div
                                 ref={terminalRef}
-                                className={
-                                    fullHeight
-                                        ? 'bg-secondary h-[calc(100dvh-132px)] w-full min-w-0 touch-none overflow-hidden overscroll-none'
-                                        : 'bg-secondary min-h-[16rem] w-full min-w-0 flex-1 touch-none overflow-hidden overscroll-none sm:min-h-[20rem]'
-                                }
+                                className={cn(
+                                    'w-full min-w-0 touch-none overflow-hidden overscroll-none',
+                                    fullHeight && 'bg-secondary h-[calc(100dvh-132px)]',
+                                    !fullHeight &&
+                                        fillContainer &&
+                                        (isGlass ? 'h-full min-h-0 bg-transparent' : 'bg-secondary h-full min-h-0'),
+                                    !fullHeight &&
+                                        !fillContainer &&
+                                        'bg-secondary min-h-[16rem] flex-1 sm:min-h-[20rem]',
+                                )}
                             />
                             {showScrollButton && (
                                 <Button
@@ -1573,7 +1679,12 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                         </div>
                     </CardContent>
                     {onSendCommand && (
-                        <CardFooter className='border-border/50 bg-card flex w-full min-w-0 shrink-0 flex-col items-stretch gap-1.5 border-t px-3 py-2 sm:px-4 sm:py-2.5'>
+                        <CardFooter
+                            className={cn(
+                                'border-border/50 bg-card flex w-full min-w-0 shrink-0 flex-col items-stretch gap-1.5 border-t px-3 py-2 sm:px-4 sm:py-2.5',
+                                isGlass && 'border-t-0 px-3 py-1.5 sm:px-3 sm:py-1.5',
+                            )}
+                        >
                             <div className='flex w-full min-w-0 items-center gap-2'>
                                 <div className='relative min-w-0 flex-1'>
                                     {suggestionMenu && suggestionMenu.suggestions.length > 0 && (
@@ -1603,13 +1714,18 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                             suggestionMenu &&
                                                 suggestionMenu.suggestions.length > 0 &&
                                                 'border-primary/30 ring-primary/10 ring-1',
+                                            isGlass &&
+                                                'h-8 rounded-md border border-[var(--fos-hairline)] bg-[var(--fos-hover)] px-2.5 focus-within:border-[color-mix(in_srgb,var(--fos-accent-color)_55%,transparent)] focus-within:ring-0',
                                         )}
                                     >
                                         <span
-                                            className='text-primary shrink-0 font-mono text-xs font-bold select-none'
+                                            className={cn(
+                                                'text-primary shrink-0 font-mono text-xs font-bold select-none',
+                                                isGlass && 'font-medium text-[var(--fos-secondary)]',
+                                            )}
                                             aria-hidden
                                         >
-                                            &gt;
+                                            {isGlass ? '❯' : '>'}
                                         </span>
                                         <div className='relative min-w-0 flex-1'>
                                             {completionGhostText && (
@@ -1722,8 +1838,22 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                                     }
                                                 }}
                                                 type='text'
-                                                className='text-foreground placeholder:text-muted-foreground/50 relative h-full w-full min-w-0 bg-transparent py-1.5 font-mono text-xs font-semibold outline-none'
-                                                placeholder={t('servers.console.terminal.placeholder')}
+                                                className={cn(
+                                                    'text-foreground placeholder:text-muted-foreground/50 relative h-full w-full min-w-0 bg-transparent py-1.5 font-mono text-xs font-semibold outline-none',
+                                                    isGlass && 'font-normal text-[var(--fos-ink)] placeholder:text-[var(--fos-secondary)]',
+                                                )}
+                                                style={
+                                                    isGlass
+                                                        ? { fontFamily: GLASS_TERMINAL_FONT, caretColor: 'currentColor' }
+                                                        : undefined
+                                                }
+                                                placeholder={
+                                                    isGlass
+                                                        ? t('featheros.terminal.command_placeholder', {
+                                                              defaultValue: 'Command…',
+                                                          })
+                                                        : t('servers.console.terminal.placeholder')
+                                                }
                                                 title={t('servers.console.terminal.input_hint')}
                                                 disabled={!canSend}
                                                 autoComplete='off'
@@ -1737,7 +1867,10 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                     type='button'
                                     variant='outline'
                                     size='icon'
-                                    className='text-primary hover:bg-primary/10 hover:text-primary border-primary/35 focus:ring-primary/15 h-9 w-9 shrink-0 rounded-lg focus:ring-2'
+                                    className={cn(
+                                        'text-primary hover:bg-primary/10 hover:text-primary border-primary/35 focus:ring-primary/15 h-9 w-9 shrink-0 rounded-lg focus:ring-2',
+                                        isGlass && 'hidden',
+                                    )}
                                     onClick={sendCommand}
                                     disabled={!canSend || !commandInput.trim()}
                                     aria-label={t('servers.console.terminal.send')}

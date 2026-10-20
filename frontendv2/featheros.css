@@ -1,0 +1,140 @@
+
+/* ── Lock screen ──────────────────────────────────────────────── */
+.fos-lock {
+    position: fixed;
+    inset: 0;
+    z-index: 9800;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9vh 24px 8vh;
+    overflow: hidden;
+    color: #fff;
+    cursor: default;
+    user-select: none;
+    animation: fos-lock-in calc(380ms / var(--fos-speed, 1)) var(--fos-ease) backwards;
+}
+.fos-lock[data-leaving='true'] {
+    pointer-events: none;
+    animation: fos-lock-out calc(420ms / var(--fos-speed, 1)) var(--fos-ease) forwards;
+}
+@keyframes fos-lock-in {
+    from {
+        opacity: 0;
+    }
+}
+@keyframes fos-lock-out {
+    to {
+        opacity: 0;
+        transform: translateY(-4%);
+    }
+}
+.fos-lock-wallpaper {
+    position: absolute;
+    inset: -4%;
+    background-size: cover !important;
+    background-position: center !important;
+    filter: blur(calc(26px * var(--fos-blur-scale, 1))) saturate(140%);
+    transform: scale(1.06);
+    animation: fos-lock-kenburns 60s ease-in-out infinite alternate;
+}
+@keyframes fos-lock-kenburns {
+    to {
+        transform: scale(1.14) translate(-1.5%, 1%);
+    }
+}
+.fos-lock-shade {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 50% 25%, rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.35) 70%),
+        linear-gradient(rgb(0 0 0 / 0.12), rgb(0 0 0 / 0.3));
+}
+.fos-lock-clock,
+.fos-lock-user {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-shadow: 0 2px 24px rgb(0 0 0 / 0.35);
+}
+.fos-lock-clock {
+    animation: fos-lock-drift 90s ease-in-out infinite alternate;
+}
+@keyframes fos-lock-drift {
+    50% {
+        transform: translate(-2vw, 1.5vh);
+    }
+    to {
+        transform: translate(2vw, 0.5vh);
+    }
+}
+.fos-lock-date {
+    font-size: clamp(16px, 1.6vw, 22px);
+    font-weight: 600;
+    opacity: 0.9;
+}
+.fos-lock-time {
+    margin-top: 2px;
+    font-size: clamp(72px, 10vw, 136px);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(rgb(255 255 255 / 0.98), rgb(255 255 255 / 0.72));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+.fos-lock-user {
+    gap: 8px;
+}
+.fos-lock-avatar {
+    display: flex;
+    height: 72px;
+    width: 72px;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 999px;
+    font-size: 26px;
+    font-weight: 600;
+    background: rgb(255 255 255 / 0.18);
+    backdrop-filter: blur(calc(20px * var(--fos-blur-scale, 1)));
+    -webkit-backdrop-filter: blur(calc(20px * var(--fos-blur-scale, 1)));
+    box-shadow:
+        0 12px 32px -12px rgb(0 0 0 / 0.5),
+        inset 0 0 0 1px rgb(255 255 255 / 0.25);
+}
+.fos-lock-avatar img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+}
+.fos-lock-name {
+    font-size: 15px;
+    font-weight: 600;
+}
+.fos-lock-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    background: rgb(255 255 255 / 0.14);
+    backdrop-filter: blur(calc(16px * var(--fos-blur-scale, 1)));
+    -webkit-backdrop-filter: blur(calc(16px * var(--fos-blur-scale, 1)));
+    animation: fos-lock-pulse 2.6s ease-in-out infinite;
+}
+@keyframes fos-lock-pulse {
+    50% {
+        opacity: 0.6;
+    }
+}
+.fos-root[data-fos-motion='reduced'] .fos-lock-wallpaper,
+.fos-root[data-fos-motion='reduced'] .fos-lock-clock,
+.fos-root[data-fos-motion='reduced'] .fos-lock-hint {
+    animation: none;
+}

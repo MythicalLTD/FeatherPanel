@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import type { ReactNode } from 'react';
-import { Menu as MenuIcon, Monitor, Search, ShieldCheck } from 'lucide-react';
+import { Menu as MenuIcon, Search, ShieldCheck } from 'lucide-react';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { CircleUser } from 'lucide-react';
 import { NavbarUserMenu } from '@/components/navbar/NavbarUserMenu';
@@ -31,7 +31,6 @@ import type { SidebarPosition, SidebarTogglePlacement, SidebarGlow } from '@/hoo
 import { getChromeGlowClass } from '@/lib/sidebarLayout';
 import type { UserInfo } from '@/contexts/SessionContext';
 import type { AppSettings } from '@/types/settings';
-import { isModuleEnabled } from '@/lib/modules';
 
 export type NavbarChromeProps = {
     onMenuClick: () => void;
@@ -175,30 +174,6 @@ function NavbarActionsCluster({
         </button>
     ) : null;
 
-    const settings = userMenuProps.settings;
-    const gameEnabled = isModuleEnabled(settings, 'game');
-    const osTitle = `${settings?.app_name || 'FeatherPanel'} OS`;
-    const osTooltip = t('featheros.nav_open', { name: osTitle });
-
-    const osButton = gameEnabled ? (
-        <a
-            href='/os'
-            target='_blank'
-            rel='noopener'
-            className={cn(
-                'text-muted-foreground hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background hidden shrink-0 items-center gap-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:flex',
-                isModern
-                    ? 'hover:bg-muted/50 rounded-lg px-2 py-1.5 sm:rounded-xl sm:px-2.5 sm:py-2'
-                    : 'hover:bg-accent/50 sm:hover:bg-accent rounded-lg p-2 sm:px-3',
-            )}
-            title={osTooltip}
-            aria-label={osTooltip}
-        >
-            <Monitor className={cn('shrink-0', isModern ? 'h-4 w-4 sm:h-[1.05rem] sm:w-[1.05rem]' : 'h-5 w-5')} />
-            <span className='hidden 2xl:inline'>{osTitle}</span>
-        </a>
-    ) : null;
-
     if (isModern) {
         return (
             <div className='relative z-10 flex shrink-0 items-center gap-1 sm:gap-2'>
@@ -208,7 +183,6 @@ function NavbarActionsCluster({
                     {showAdminAreaButton && (
                         <div className='bg-border/50 hidden h-6 w-px sm:block xl:hidden' aria-hidden />
                     )}
-                    {osButton}
                     <div className='flex items-center [&>button]:rounded-lg sm:[&>button]:rounded-xl [&>div>button]:rounded-lg sm:[&>div>button]:rounded-xl'>
                         <NotificationBell />
                         <PrivacyModeButton className='hidden sm:flex' />
@@ -232,7 +206,6 @@ function NavbarActionsCluster({
         <div className='relative z-10 flex shrink-0 items-center gap-x-1.5 sm:gap-x-2 lg:gap-x-3'>
             <NavbarMobileSearchButton t={t} compact={compactSearch} />
             {adminButton}
-            {osButton}
             <NotificationBell />
             <PrivacyModeButton className='hidden sm:flex' />
             <div className='hidden sm:flex'>

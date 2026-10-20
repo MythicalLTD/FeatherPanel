@@ -15,8 +15,22 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState } from 'react';
-import { Palette, PanelBottom, Monitor, Info, Check, RotateCcw } from 'lucide-react';
+import { useRef, useState } from 'react';
+import {
+    Palette,
+    PanelBottom,
+    Monitor,
+    Info,
+    Check,
+    RotateCcw,
+    LayoutDashboard,
+    Download,
+    Upload,
+    Trash2,
+    Plus,
+    RefreshCw,
+    Lock,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -29,7 +43,25 @@ import { OsSelect } from '../OsSelect';
 import { OS_WALLPAPERS, resolveWallpaper } from '../wallpapers';
 import { OS_APP_IDS, OS_APPS } from '../registry';
 import { AppIcon } from '../AppIcon';
-import type { OsHotCornerAction, OsTheme } from '../types';
+import { OsRange, OsSwitch } from '../controls';
+import {
+    DEFAULT_SETTINGS,
+    EFFECT_SETTING_KEYS,
+    type OsHotCornerAction,
+    type OsSavedTheme,
+    type OsTheme,
+    type OsThemeValues,
+} from '../types';
+import {
+    BUILTIN_THEMES,
+    MAX_SAVED_THEMES,
+    downloadThemeFile,
+    pickThemeValues,
+    readThemeFile,
+} from '../themes';
+import { confirmRestoreWorkspace, promptSaveWorkspace } from '../workspaces';
+import { uid } from '../utils';
+import { lockOs } from '../LockScreen';
 import type { OsAppProps } from './index';
 
 const HOT_CORNER_ACTIONS: OsHotCornerAction[] = ['mission', 'launchpad', 'desktop', 'notifications', 'none'];
@@ -73,7 +105,7 @@ function HotCornersMap({
     );
 }
 
-type Section = 'appearance' | 'dock' | 'desktop' | 'about';
+type Section = 'appearance' | 'dock' | 'desktop' | 'workspaces' | 'about';
 
 function Toggle({
     checked,
@@ -92,18 +124,56 @@ function Toggle({
                 <span className='fos-settings-row-label'>{label}</span>
                 {hint && <span className='fos-settings-row-hint'>{hint}</span>}
             </span>
-            <button
-                type='button'
-                role='switch'
-                aria-checked={checked}
-                onClick={() => onChange(!checked)}
-                className={cn('fos-settings-toggle', checked && 'is-on')}
-            >
-                <span />
-            </button>
+            <OsSwitch checked={checked} onChange={onChange} aria-label={label} />
         </label>
     );
 }
+
+function Range({
+    label,
+    hint,
+    value,
+    min,
+    max,
+    step = 1,
+    format,
+    onChange,
+}: {
+    label: string;
+    hint?: string;
+    value: number;
+    min: number;
+    max: number;
+    step?: number;
+    format: (v: number) => string;
+    onChange: (v: number) => void;
+}) {
+    return (
+        <div className='fos-settings-row'>
+            <span className='fos-settings-row-text'>
+                <span className='fos-settings-row-label'>{label}</span>
+                {hint && <span className='fos-settings-row-hint'>{hint}</span>}
+            </span>
+            <OsRange
+                min={min}
+                max={max}
+                step={step}
+                value={value}
+                onChange={onChange}
+                className='fos-settings-range'
+                aria-label={label}
+            />
+            <span className='fos-settings-range-val'>{format(value)}</span>
+        </div>
+    );
+}
+
+const GLASS_PRESETS = [
+    { id: 'clear', transparency: 85, blur: 60 },
+    { id: 'default', transparency: 50, blur: 100 },
+    { id: 'frosted', transparency: 35, blur: 170 },
+    { id: 'solid', transparency: 0, blur: 30 },
+] as const;
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
     return (
@@ -115,7 +185,8 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
 }
 
 export default function SettingsApp({ win }: OsAppProps) {
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
+    const os = useFeatherOs();
     const {
         settings,
         updateSettings,
@@ -130,7 +201,11 @@ export default function SettingsApp({ win }: OsAppProps) {
         version,
         panelName,
         updateWindowProps,
-    } = useFeatherOs();
+        prompt,
+        saveWorkspace,
+        deleteWorkspace,
+    } = os;
+    const themeFileRef = useRef<HTMLInputElement>(null);
     const { setAccentColor, accentColor } = useTheme();
     const section: Section = (win.props?.section as Section) ?? 'appearance';
     const [customUrl, setCustomUrl] = useState(settings.customWallpaperUrl);
@@ -147,6 +222,7 @@ export default function SettingsApp({ win }: OsAppProps) {
         { id: 'appearance', label: t('featheros.settings.appearance'), icon: Palette },
         { id: 'dock', label: t('featheros.settings.dock'), icon: PanelBottom },
         { id: 'desktop', label: t('featheros.settings.desktop'), icon: Monitor },
+        { id: 'workspaces', label: t('featheros.workspaces.title'), icon: LayoutDashboard },
         { id: 'about', label: t('featheros.settings.about'), icon: Info },
     ];
 
@@ -155,6 +231,121 @@ export default function SettingsApp({ win }: OsAppProps) {
         { id: 'light', label: t('featheros.settings.theme_light') },
         { id: 'dark', label: t('featheros.settings.theme_dark') },
     ];
+
+    const savedThemes = settings.savedThemes ?? [];
+    const workspaces = settings.workspaces ?? [];
+
+    const applyTheme = (values: OsThemeValues) => {
+        const { theme, accent, ...rest } = values;
+        updateSettings(rest);
+        if (theme) setOsTheme(theme);
+        if (accent) {
+            setAccentColor(accent);
+            updateSettings({ accent });
+        }
+        if (typeof rest.customWallpaperUrl === 'string') setCustomUrl(rest.customWallpaperUrl);
+    };
+
+    const addSavedTheme = (name: string, values: OsThemeValues) => {
+        const entry: OsSavedTheme = { id: uid('th'), name, savedAt: Date.now(), values };
+        updateSettings({
+            savedThemes: [entry, ...savedThemes.filter((th) => th.name !== name)].slice(0, MAX_SAVED_THEMES),
+        });
+    };
+
+    const saveCurrentTheme = async () => {
+        const name = await prompt({
+            title: t('featheros.themes.save_title'),
+            defaultValue: t('featheros.themes.default_name', { n: String(savedThemes.length + 1) }),
+            confirmLabel: t('featheros.themes.save'),
+        });
+        if (!name?.trim()) return;
+        addSavedTheme(name.trim().slice(0, 40), pickThemeValues(settings, accentColor));
+        toast.success(t('featheros.themes.saved', { name: name.trim() }));
+    };
+
+    const importTheme = async (file: File | undefined) => {
+        if (!file) return;
+        const parsed = await readThemeFile(file);
+        if (!parsed) {
+            toast.error(t('featheros.themes.import_failed'));
+            return;
+        }
+        addSavedTheme(parsed.name, parsed.values);
+        applyTheme(parsed.values);
+        toast.success(t('featheros.themes.imported', { name: parsed.name }));
+    };
+
+    const themePreview = (values: OsThemeValues) => {
+        const dark = values.theme ? values.theme === 'dark' || (values.theme === 'auto' && isDark) : isDark;
+        const accent = values.accent ?? '';
+        const accentHex =
+            accent in ACCENT_PRESETS
+                ? ACCENT_PRESETS[accent as keyof typeof ACCENT_PRESETS].hex
+                : isCustomAccent(accent)
+                  ? getCustomAccentHex(accent)
+                  : 'hsl(var(--primary))';
+        return {
+            dark,
+            accentHex,
+            background: resolveWallpaper(
+                values.wallpaper ?? settings.wallpaper,
+                dark,
+                values.customWallpaperUrl ?? settings.customWallpaperUrl,
+            ),
+        };
+    };
+
+    const renderThemeCard = (key: string, name: string, values: OsThemeValues, saved?: OsSavedTheme) => {
+        const p = themePreview(values);
+        return (
+            <div key={key} className='fos-theme-card'>
+                <button
+                    type='button'
+                    className='fos-theme-card-hit'
+                    onClick={() => applyTheme(values)}
+                    aria-label={t('featheros.themes.apply_named', { name })}
+                >
+                    <span className='fos-theme-card-preview' style={{ background: p.background }}>
+                        <span
+                            className={cn('fos-theme-card-window', p.dark && 'is-dark')}
+                            style={{ borderRadius: Math.round((values.windowRadius ?? 12) / 2) }}
+                        >
+                            <span className='fos-theme-card-dots'>
+                                <i />
+                                <i />
+                                <i />
+                            </span>
+                            <span className='fos-theme-card-accent' style={{ background: p.accentHex }} />
+                        </span>
+                    </span>
+                    <span className='fos-theme-card-name'>{name}</span>
+                </button>
+                {saved && (
+                    <span className='fos-theme-card-actions'>
+                        <button
+                            type='button'
+                            title={t('featheros.themes.export')}
+                            aria-label={t('featheros.themes.export')}
+                            onClick={() => downloadThemeFile(saved.name, saved.values)}
+                        >
+                            <Download className='h-3 w-3' />
+                        </button>
+                        <button
+                            type='button'
+                            title={t('featheros.common.delete')}
+                            aria-label={t('featheros.common.delete')}
+                            onClick={() =>
+                                updateSettings({ savedThemes: savedThemes.filter((th) => th.id !== saved.id) })
+                            }
+                        >
+                            <Trash2 className='h-3 w-3' />
+                        </button>
+                    </span>
+                )}
+            </div>
+        );
+    };
 
     return (
         <div className='fos-settings'>
@@ -177,6 +368,39 @@ export default function SettingsApp({ win }: OsAppProps) {
                 {section === 'appearance' && (
                     <>
                         <h2 className='fos-settings-heading'>{t('featheros.settings.appearance')}</h2>
+                        <Group title={t('featheros.themes.title')}>
+                            <div className='fos-theme-grid'>
+                                {BUILTIN_THEMES.map((th) =>
+                                    renderThemeCard(th.id, t(`featheros.themes.builtin_${th.id}`), th.values),
+                                )}
+                                {savedThemes.map((th) => renderThemeCard(th.id, th.name, th.values, th))}
+                            </div>
+                            <div className='fos-settings-row fos-theme-toolbar'>
+                                <span className='fos-settings-row-text'>
+                                    <span className='fos-settings-row-hint'>{t('featheros.themes.hint')}</span>
+                                </span>
+                                <button type='button' className='fos-settings-btn' onClick={() => void saveCurrentTheme()}>
+                                    <Plus className='h-3.5 w-3.5' /> {t('featheros.themes.save_current')}
+                                </button>
+                                <button
+                                    type='button'
+                                    className='fos-settings-btn is-secondary'
+                                    onClick={() => themeFileRef.current?.click()}
+                                >
+                                    <Upload className='h-3.5 w-3.5' /> {t('featheros.themes.import')}
+                                </button>
+                                <input
+                                    ref={themeFileRef}
+                                    type='file'
+                                    accept='.json,application/json'
+                                    hidden
+                                    onChange={(e) => {
+                                        void importTheme(e.target.files?.[0]);
+                                        e.target.value = '';
+                                    }}
+                                />
+                            </div>
+                        </Group>
                         <Group title={t('featheros.settings.theme')}>
                             <div className='fos-settings-themes'>
                                 {themes.map((th) => (
@@ -238,6 +462,139 @@ export default function SettingsApp({ win }: OsAppProps) {
                                         }}
                                     />
                                 </label>
+                            </div>
+                        </Group>
+                        <Group title={t('featheros.settings.glass')}>
+                            <div className='fos-settings-glass'>
+                                <div
+                                    className='fos-settings-glass-preview'
+                                    style={{
+                                        background: resolveWallpaper(
+                                            settings.wallpaper,
+                                            isDark,
+                                            settings.customWallpaperUrl,
+                                        ),
+                                    }}
+                                    aria-hidden
+                                >
+                                    <div className='fos-settings-glass-blob' />
+                                    <div className='fos-settings-glass-pane'>
+                                        <span />
+                                        <span />
+                                        <span />
+                                    </div>
+                                </div>
+                                <div className='fos-settings-glass-presets'>
+                                    {GLASS_PRESETS.map((p) => {
+                                        const active =
+                                            !settings.reduceTransparency &&
+                                            settings.glassTransparency === p.transparency &&
+                                            settings.glassBlur === p.blur;
+                                        return (
+                                            <button
+                                                key={p.id}
+                                                type='button'
+                                                className={cn('fos-settings-glass-preset', active && 'is-active')}
+                                                onClick={() =>
+                                                    updateSettings({
+                                                        glassTransparency: p.transparency,
+                                                        glassBlur: p.blur,
+                                                        reduceTransparency: false,
+                                                    })
+                                                }
+                                            >
+                                                {t(`featheros.settings.glass_${p.id}`)}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            <Range
+                                label={t('featheros.settings.glass_transparency')}
+                                hint={t('featheros.settings.glass_transparency_hint')}
+                                value={settings.glassTransparency}
+                                min={0}
+                                max={100}
+                                format={(v) => `${v}%`}
+                                onChange={(v) => updateSettings({ glassTransparency: v, reduceTransparency: false })}
+                            />
+                            <Range
+                                label={t('featheros.settings.glass_blur')}
+                                value={settings.glassBlur}
+                                min={0}
+                                max={200}
+                                step={5}
+                                format={(v) => `${v}%`}
+                                onChange={(v) => updateSettings({ glassBlur: v, reduceTransparency: false })}
+                            />
+                            <Toggle
+                                checked={settings.reduceTransparency}
+                                onChange={(v) => updateSettings({ reduceTransparency: v })}
+                                label={t('featheros.settings.reduce_transparency')}
+                                hint={t('featheros.settings.reduce_transparency_hint')}
+                            />
+                        </Group>
+                        <Group title={t('featheros.settings.windows')}>
+                            <Range
+                                label={t('featheros.settings.window_radius')}
+                                value={settings.windowRadius}
+                                min={0}
+                                max={24}
+                                format={(v) => `${v}px`}
+                                onChange={(v) => updateSettings({ windowRadius: v })}
+                            />
+                            <Toggle
+                                checked={settings.focusRing}
+                                onChange={(v) => updateSettings({ focusRing: v })}
+                                label={t('featheros.settings.focus_ring')}
+                                hint={t('featheros.settings.focus_ring_hint')}
+                            />
+                            <Toggle
+                                checked={settings.dimInactive}
+                                onChange={(v) => updateSettings({ dimInactive: v })}
+                                label={t('featheros.settings.dim_inactive')}
+                            />
+                            <Toggle
+                                checked={settings.snapAssist !== false}
+                                onChange={(v) => updateSettings({ snapAssist: v })}
+                                label={t('featheros.settings.snap_assist')}
+                                hint={t('featheros.settings.snap_assist_hint')}
+                            />
+                            <Range
+                                label={t('featheros.settings.animation_speed')}
+                                value={settings.animationSpeed}
+                                min={0.5}
+                                max={2}
+                                step={0.25}
+                                format={(v) => `${v}×`}
+                                onChange={(v) => updateSettings({ animationSpeed: v })}
+                            />
+                            <Range
+                                label={t('featheros.settings.text_size')}
+                                value={settings.fontScale}
+                                min={0.85}
+                                max={1.25}
+                                step={0.05}
+                                format={(v) => `${Math.round(v * 100)}%`}
+                                onChange={(v) => updateSettings({ fontScale: v })}
+                            />
+                            <div className='fos-settings-row'>
+                                <span className='fos-settings-row-hint flex-1'>
+                                    {t('featheros.settings.effects_reset_hint')}
+                                </span>
+                                <button
+                                    type='button'
+                                    className='fos-settings-btn'
+                                    onClick={() =>
+                                        updateSettings(
+                                            Object.fromEntries(
+                                                EFFECT_SETTING_KEYS.map((k) => [k, DEFAULT_SETTINGS[k]]),
+                                            ) as Partial<typeof settings>,
+                                        )
+                                    }
+                                >
+                                    {t('featheros.settings.effects_reset')}
+                                </button>
                             </div>
                         </Group>
                         <Group title={t('featheros.settings.wallpaper')}>
@@ -303,6 +660,14 @@ export default function SettingsApp({ win }: OsAppProps) {
                                 />
                                 <span>{t('featheros.settings.wallpaper_upload_hint')}</span>
                             </div>
+                            <Range
+                                label={t('featheros.settings.wallpaper_dim')}
+                                value={settings.wallpaperDim}
+                                min={0}
+                                max={70}
+                                format={(v) => `${v}%`}
+                                onChange={(v) => updateSettings({ wallpaperDim: v })}
+                            />
                             {settings.wallpaper === 'custom' && (
                                 <div
                                     className='fos-settings-wallpaper-preview'
@@ -320,12 +685,11 @@ export default function SettingsApp({ win }: OsAppProps) {
                         <Group title={t('featheros.settings.dock')}>
                             <div className='fos-settings-row'>
                                 <span className='fos-settings-row-label'>{t('featheros.settings.dock_size')}</span>
-                                <input
-                                    type='range'
+                                <OsRange
                                     min={36}
                                     max={80}
                                     value={settings.dockSize}
-                                    onChange={(e) => updateSettings({ dockSize: Number(e.target.value) })}
+                                    onChange={(v) => updateSettings({ dockSize: v })}
                                     className='fos-settings-range'
                                 />
                                 <span className='fos-settings-range-val'>{settings.dockSize}px</span>
@@ -407,36 +771,33 @@ export default function SettingsApp({ win }: OsAppProps) {
                             />
                             <div className='fos-settings-row'>
                                 <span className='fos-settings-row-label'>{t('featheros.settings.icon_size')}</span>
-                                <input
-                                    type='range'
+                                <OsRange
                                     min={48}
                                     max={88}
                                     value={settings.iconSize}
-                                    onChange={(e) => updateSettings({ iconSize: Number(e.target.value) })}
+                                    onChange={(v) => updateSettings({ iconSize: v })}
                                     className='fos-settings-range'
                                 />
                                 <span className='fos-settings-range-val'>{settings.iconSize}px</span>
                             </div>
                             <div className='fos-settings-row'>
                                 <span className='fos-settings-row-label'>{t('featheros.settings.grid_spacing')}</span>
-                                <input
-                                    type='range'
+                                <OsRange
                                     min={80}
                                     max={140}
                                     value={settings.gridSpacing}
-                                    onChange={(e) => updateSettings({ gridSpacing: Number(e.target.value) })}
+                                    onChange={(v) => updateSettings({ gridSpacing: v })}
                                     className='fos-settings-range'
                                 />
                                 <span className='fos-settings-range-val'>{settings.gridSpacing}px</span>
                             </div>
                             <div className='fos-settings-row'>
                                 <span className='fos-settings-row-label'>{t('featheros.settings.spaces')}</span>
-                                <input
-                                    type='range'
+                                <OsRange
                                     min={1}
                                     max={6}
                                     value={settings.spaceCount}
-                                    onChange={(e) => updateSettings({ spaceCount: Number(e.target.value) })}
+                                    onChange={(v) => updateSettings({ spaceCount: v })}
                                     className='fos-settings-range'
                                 />
                                 <span className='fos-settings-range-val'>{settings.spaceCount}</span>
@@ -507,6 +868,29 @@ export default function SettingsApp({ win }: OsAppProps) {
                                 label={t('featheros.settings.clock_seconds')}
                             />
                         </Group>
+                        <Group title={t('featheros.lock.title')}>
+                            <Range
+                                label={t('featheros.lock.after')}
+                                hint={t('featheros.lock.after_hint')}
+                                value={settings.lockAfterMinutes ?? 0}
+                                min={0}
+                                max={60}
+                                step={1}
+                                format={(v) =>
+                                    v === 0 ? t('featheros.lock.never') : t('featheros.lock.minutes', { n: String(v) })
+                                }
+                                onChange={(v) => updateSettings({ lockAfterMinutes: v })}
+                            />
+                            <div className='fos-settings-row'>
+                                <span className='fos-settings-row-text'>
+                                    <span className='fos-settings-row-label'>{t('featheros.lock.lock_screen')}</span>
+                                    <span className='fos-settings-row-hint'>{t('featheros.lock.shortcut_hint')}</span>
+                                </span>
+                                <button type='button' className='fos-settings-btn is-secondary' onClick={() => lockOs()}>
+                                    <Lock className='h-3.5 w-3.5' /> {t('featheros.lock.lock_now')}
+                                </button>
+                            </div>
+                        </Group>
                         <Group title={t('featheros.settings.reset')}>
                             <div className='fos-settings-row'>
                                 <span className='fos-settings-row-hint flex-1'>
@@ -526,6 +910,93 @@ export default function SettingsApp({ win }: OsAppProps) {
                                     className='fos-settings-btn-danger'
                                 >
                                     <RotateCcw className='h-3.5 w-3.5' /> {t('featheros.settings.reset_confirm')}
+                                </button>
+                            </div>
+                        </Group>
+                    </>
+                )}
+                {section === 'workspaces' && (
+                    <>
+                        <h2 className='fos-settings-heading'>{t('featheros.workspaces.title')}</h2>
+                        <Group title={t('featheros.workspaces.saved_layouts')}>
+                            {workspaces.length === 0 && (
+                                <div className='fos-settings-row'>
+                                    <span className='fos-settings-row-text'>
+                                        <span className='fos-settings-row-label'>{t('featheros.workspaces.none')}</span>
+                                        <span className='fos-settings-row-hint'>
+                                            {t('featheros.workspaces.none_hint')}
+                                        </span>
+                                    </span>
+                                </div>
+                            )}
+                            {workspaces.map((ws) => (
+                                <div key={ws.id} className='fos-settings-row fos-workspace-row'>
+                                    <span className='fos-workspace-thumb' aria-hidden>
+                                        {ws.windows.slice(-6).map((w, i) => (
+                                            <i
+                                                key={i}
+                                                style={{
+                                                    left: `${Math.max(0, Math.min(90, (w.x / window.innerWidth) * 100))}%`,
+                                                    top: `${Math.max(0, Math.min(85, (w.y / window.innerHeight) * 100))}%`,
+                                                    width: `${w.maximized ? 100 : Math.max(10, Math.min(100, (w.w / window.innerWidth) * 100))}%`,
+                                                    height: `${w.maximized ? 100 : Math.max(12, Math.min(100, (w.h / window.innerHeight) * 100))}%`,
+                                                    ...(w.maximized ? { left: 0, top: 0 } : {}),
+                                                }}
+                                            />
+                                        ))}
+                                    </span>
+                                    <span className='fos-settings-row-text'>
+                                        <span className='fos-settings-row-label'>{ws.name}</span>
+                                        <span className='fos-settings-row-hint'>
+                                            {t('featheros.workspaces.meta', {
+                                                count: String(ws.windows.length),
+                                                date: new Date(ws.savedAt).toLocaleString(locale, {
+                                                    dateStyle: 'medium',
+                                                    timeStyle: 'short',
+                                                }),
+                                            })}
+                                        </span>
+                                    </span>
+                                    <button
+                                        type='button'
+                                        className='fos-settings-btn'
+                                        onClick={() => void confirmRestoreWorkspace(os, t, ws)}
+                                    >
+                                        {t('featheros.workspaces.restore')}
+                                    </button>
+                                    <button
+                                        type='button'
+                                        className='fos-settings-icon-btn'
+                                        title={t('featheros.workspaces.update')}
+                                        aria-label={t('featheros.workspaces.update')}
+                                        onClick={() => {
+                                            saveWorkspace(ws.name);
+                                            toast.success(t('featheros.workspaces.saved', { name: ws.name }));
+                                        }}
+                                    >
+                                        <RefreshCw className='h-3.5 w-3.5' />
+                                    </button>
+                                    <button
+                                        type='button'
+                                        className='fos-settings-icon-btn is-danger'
+                                        title={t('featheros.common.delete')}
+                                        aria-label={t('featheros.common.delete')}
+                                        onClick={() => deleteWorkspace(ws.id)}
+                                    >
+                                        <Trash2 className='h-3.5 w-3.5' />
+                                    </button>
+                                </div>
+                            ))}
+                            <div className='fos-settings-row'>
+                                <span className='fos-settings-row-text'>
+                                    <span className='fos-settings-row-hint'>{t('featheros.workspaces.hint')}</span>
+                                </span>
+                                <button
+                                    type='button'
+                                    className='fos-settings-btn'
+                                    onClick={() => void promptSaveWorkspace(os, t)}
+                                >
+                                    <Plus className='h-3.5 w-3.5' /> {t('featheros.workspaces.save_current')}
                                 </button>
                             </div>
                         </Group>

@@ -300,7 +300,7 @@ export default function DatabasesApp({ win }: OsAppProps) {
                             <input
                                 value={form.name}
                                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                className='bg-muted mt-1 h-8 w-full rounded-md px-2 outline-none'
+                                className='fos-field bg-muted mt-1 h-8 w-full rounded-md px-2 outline-none'
                             />
                         </label>
                         <label className='block text-[12px]'>
@@ -308,7 +308,7 @@ export default function DatabasesApp({ win }: OsAppProps) {
                             <input
                                 value={form.remote}
                                 onChange={(e) => setForm({ ...form, remote: e.target.value })}
-                                className='bg-muted mt-1 h-8 w-full rounded-md px-2 font-mono outline-none'
+                                className='fos-field bg-muted mt-1 h-8 w-full rounded-md px-2 font-mono outline-none'
                             />
                         </label>
                         <button

@@ -17,8 +17,6 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    HardDrive,
-    Folder,
     FolderOpen,
     SquareTerminal,
     Play,
@@ -45,7 +43,8 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
 import { moveToFeatherOsTrash } from '@/lib/featheros-trash';
 import { useFeatherOs } from './FeatherOsContext';
-import { AppIcon } from './AppIcon';
+import { AppIcon, OsIcon } from './AppIcon';
+import { FOLDER_ART, SERVER_DRIVE_ART, fileArt } from './appIconArt';
 import { DesktopWidgets } from './DesktopWidgets';
 import { OS_FILE_DRAG_MIME, type OsAppId, type OsDesktopIcon, type OsFileDragPayload } from './types';
 import { joinPath, parentDir, serverState, stateColor, isTextLike, formatDiskPair, serverDiskUsage } from './utils';
@@ -733,22 +732,17 @@ export function Desktop() {
                     >
                         <span className='relative' style={{ width: iconPx, height: iconPx }}>
                             {icon.kind === 'server' ? (
-                                <span className='flex h-full w-full items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-blue-700 shadow-lg'>
-                                    <HardDrive className='h-1/2 w-1/2' />
-                                </span>
+                                <OsIcon art={SERVER_DRIVE_ART} size={iconPx} />
                             ) : icon.kind === 'app' && icon.app ? (
                                 <AppIcon app={icon.app} size={iconPx} />
                             ) : icon.kind === 'folder' ? (
-                                <span className='flex h-full w-full items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 to-amber-600 shadow-lg'>
-                                    <Folder className='h-1/2 w-1/2' />
-                                </span>
+                                <OsIcon art={FOLDER_ART} size={iconPx} bare />
                             ) : (
-                                <span className='flex h-full w-full items-center justify-center rounded-2xl bg-gradient-to-br from-zinc-200 to-zinc-500 text-zinc-900 shadow-lg'>
-                                    <HardDrive className='h-1/2 w-1/2 opacity-0' />
-                                    <span className='absolute text-[10px] font-bold uppercase'>
-                                        {(icon.label.split('.').pop() || 'file').slice(0, 4)}
-                                    </span>
-                                </span>
+                                <OsIcon
+                                    art={fileArt(icon.label.includes('.') ? icon.label.split('.').pop() || 'file' : 'file')}
+                                    size={iconPx}
+                                    bare
+                                />
                             )}
                             {state && (
                                 <span

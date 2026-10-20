@@ -47,6 +47,8 @@ import { useNavbarHoverReveal } from '@/hooks/useNavbarHoverReveal';
 import { useNavbarSticky } from '@/hooks/useNavbarSticky';
 import { useChromeLayout } from '@/hooks/useChromeLayout';
 import { useSidebarPreferences } from '@/hooks/useSidebarPreferences';
+import { useFeatherOsSidebarShortcut } from '@/hooks/useFeatherOsSidebarShortcut';
+import { isModuleEnabled } from '@/lib/modules';
 import { BACKGROUND_ANIMATED_VARIANTS, type BackgroundAnimatedVariant } from '@/lib/background-variants';
 import { STATIC_BACKGROUND_PREVIEWS } from '@/lib/background-previews';
 import { fontsByCategory, type AppFontCategory } from '@/lib/app-fonts';
@@ -377,9 +379,11 @@ export default function AppearanceSettingsPanel() {
     const { navbarSticky, setNavbarSticky } = useNavbarSticky();
     const { chromeLayout, setChromeLayout } = useChromeLayout();
     const sidebar = useSidebarPreferences();
+    const { showOsInSidebar, setShowOsInSidebar } = useFeatherOsSidebarShortcut();
     const { packs: uiPacks, uiPackId, setUiPackId } = usePluginUi();
     const { t, availableLanguages, setLocale, locale, isLocaleLocked } = useTranslation();
     const { settings } = useSettings();
+    const gameModuleEnabled = isModuleEnabled(settings, 'game');
 
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -1196,7 +1200,7 @@ export default function AppearanceSettingsPanel() {
                                 </SegmentButton>
                             </SegmentGroup>
                             <SegmentGroup label={t('appearance.sidebar.iconLibraryTitle')} columns={2}>
-                                <SegmentButton
+                                    <SegmentButton
                                     active={sidebar.iconLibrary === 'lucide'}
                                     onClick={() => sidebar.setIconLibrary('lucide')}
                                 >
@@ -1221,6 +1225,26 @@ export default function AppearanceSettingsPanel() {
                                     {t('appearance.sidebar.iconLibraryPhosphor')}
                                 </SegmentButton>
                             </SegmentGroup>
+                            {gameModuleEnabled && (
+                                <SegmentGroup
+                                    label={t('appearance.sidebar.osShortcutTitle')}
+                                    hint={t('appearance.sidebar.osShortcutHint')}
+                                    columns={2}
+                                >
+                                    <SegmentButton
+                                        active={showOsInSidebar}
+                                        onClick={() => setShowOsInSidebar(true)}
+                                    >
+                                        {t('appearance.sidebar.osShortcutShow')}
+                                    </SegmentButton>
+                                    <SegmentButton
+                                        active={!showOsInSidebar}
+                                        onClick={() => setShowOsInSidebar(false)}
+                                    >
+                                        {t('appearance.sidebar.osShortcutHide')}
+                                    </SegmentButton>
+                                </SegmentGroup>
+                            )}
                         </FormSection>
                     </div>
                 )}

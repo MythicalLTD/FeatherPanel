@@ -3,7 +3,8 @@
 
 /* Class-based dark mode (matches ThemeContext / html.dark). Without this, Tailwind v4
    keys `dark:` off prefers-color-scheme - so OS light + panel dark = white text on light panels. */
-@custom-variant dark (&:where(.dark, .dark *));
+/* A light FeatherOS shell (data-fos-theme='light') opts its subtree out of html.dark. */
+@custom-variant dark (&:where(.dark, .dark *):not(:where([data-fos-theme='light'], [data-fos-theme='light'] *)));
 
 /*
  * Tailwind 4 draws a bare `border` in currentColor, which is near white in dark mode. Give every

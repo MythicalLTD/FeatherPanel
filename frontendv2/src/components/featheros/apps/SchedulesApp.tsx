@@ -23,6 +23,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
 import type { Schedule } from '@/types/server';
 import { useFeatherOs } from '../FeatherOsContext';
+import { OsSwitch } from '../controls';
 import type { OsAppProps } from './index';
 
 export default function SchedulesApp({ win }: OsAppProps) {
@@ -120,29 +121,17 @@ export default function SchedulesApp({ win }: OsAppProps) {
                                 </div>
                             </div>
                             {isBusy && <Loader2 className='text-muted-foreground h-4 w-4 animate-spin' />}
-                            <button
-                                type='button'
-                                role='switch'
-                                aria-checked={active}
+                            <OsSwitch
+                                size='sm'
+                                checked={active}
                                 aria-label={t('featheros.schedules.active')}
                                 disabled={isBusy || !canUpdate}
-                                onClick={() =>
+                                onChange={() =>
                                     void act(s.id, () =>
                                         axios.post(`/api/user/servers/${uuid}/schedules/${s.id}/toggle`),
                                     )
                                 }
-                                className={cn(
-                                    'relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-40',
-                                    active ? 'bg-primary' : 'bg-muted-foreground/30',
-                                )}
-                            >
-                                <span
-                                    className={cn(
-                                        'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform',
-                                        active ? 'translate-x-4' : 'translate-x-0.5',
-                                    )}
-                                />
-                            </button>
+                            />
                             <button
                                 type='button'
                                 className='hover:bg-muted rounded-md p-1 disabled:opacity-30'

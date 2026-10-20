@@ -110,7 +110,7 @@ export default function StartupApp({ win }: OsAppProps) {
                         disabled={!canUpdate}
                         onChange={(e) => setStartup(e.target.value)}
                         spellCheck={false}
-                        className='bg-muted mt-1 h-24 w-full resize-none rounded-md p-2 font-mono text-[11px] outline-none disabled:opacity-60'
+                        className='fos-field bg-muted mt-1 h-24 w-full resize-none rounded-md p-2 font-mono text-[11px] outline-none disabled:opacity-60'
                     />
                 </label>
                 {vars.map((v) => (
@@ -123,7 +123,7 @@ export default function StartupApp({ win }: OsAppProps) {
                             value={values[v.variable_id] ?? ''}
                             disabled={!canUpdate}
                             onChange={(e) => setValues((cur) => ({ ...cur, [v.variable_id]: e.target.value }))}
-                            className='bg-muted mt-1 h-8 w-full rounded-md px-2 font-mono text-[11px] outline-none disabled:opacity-60'
+                            className='fos-field bg-muted mt-1 h-8 w-full rounded-md px-2 font-mono text-[11px] outline-none disabled:opacity-60'
                         />
                     </label>
                 ))}

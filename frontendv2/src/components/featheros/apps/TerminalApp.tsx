@@ -30,6 +30,9 @@ import {
     Loader2,
     CheckSquare,
     Square as SquareIcon,
+    AppWindow,
+    Columns3,
+    Grid2x2,
 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -77,18 +80,29 @@ const ANSI: Record<NonNullable<ConsoleFilterRule['color']>, string> = {
     gray: '\u001b[90m',
 };
 
-/** One Wings console: the same websocket + terminal component the server console page uses. */
+type SessionMeta = {
+    status: string;
+    connectionStatus: 'connected' | 'connecting' | 'disconnected' | 'error';
+    stats: { cpu_absolute?: number; memory_bytes?: number } | null;
+    power: (action: 'start' | 'stop' | 'restart' | 'kill') => void;
+};
+
+/** One Wings console: same websocket + terminal as the server console page. */
 export function ConsoleSession({
     uuid,
     active,
     embedded = false,
+    onMeta,
+    onClose,
 }: {
     uuid: string;
     active: boolean;
     embedded?: boolean;
+    onMeta?: (uuid: string, meta: SessionMeta | null) => void;
+    onClose?: () => void;
 }) {
     const { t } = useTranslation();
-    const { getServer, can, panelName, errorMessage } = useFeatherOs();
+    const { getServer, can, panelName, errorMessage, isDark } = useFeatherOs();
     const server = getServer(uuid);
     const terminalRef = useRef<ServerTerminalRef>(null);
     const [status, setStatus] = useState<string>(server?.stats?.state || server?.status || 'offline');
@@ -163,96 +177,75 @@ export function ConsoleSession({
         return () => window.clearInterval(timer);
     }, [connectionStatus, requestLogs, requestStats]);
 
-    const power = async (action: 'start' | 'stop' | 'restart' | 'kill') => {
-        try {
-            await axios.post(`/api/user/servers/${uuid}/power/${action}`);
-        } catch (error) {
-            toast.error(errorMessage(error));
-        }
-    };
+    const power = useCallback(
+        async (action: 'start' | 'stop' | 'restart' | 'kill') => {
+            try {
+                await axios.post(`/api/user/servers/${uuid}/power/${action}`);
+            } catch (error) {
+                toast.error(errorMessage(error));
+            }
+        },
+        [errorMessage, uuid],
+    );
+
+    useEffect(() => {
+        if (!onMeta) return;
+        onMeta(uuid, {
+            status,
+            connectionStatus,
+            stats: stats ?? null,
+            power: (action) => void power(action),
+        });
+        return () => onMeta(uuid, null);
+    }, [connectionStatus, onMeta, power, stats, status, uuid]);
 
     const state = serverState(server, status);
-    const btn =
-        'flex h-6 items-center gap-1 rounded-md px-2 text-[11px] font-medium hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent';
 
     return (
         <div
-            className={cn('fos-mac-console absolute inset-0 flex flex-col', !active && 'pointer-events-none invisible')}
+            className={cn(
+                'fos-glass-console absolute inset-0 flex flex-col',
+                !active && 'pointer-events-none invisible',
+            )}
         >
-            <div
-                className={cn(
-                    'fos-console-session-bar flex h-10 shrink-0 items-center gap-3 border-b border-white/10 bg-[#1b1b1f] px-3 text-[12px] text-zinc-300',
-                    embedded && 'fos-console-session-embedded',
-                )}
-            >
-                {!embedded && (
-                    <div className='flex items-center gap-1.5' aria-hidden='true'>
-                        <span className='h-2.5 w-2.5 rounded-full bg-[#ff5f57]' />
-                        <span className='h-2.5 w-2.5 rounded-full bg-[#febc2e]' />
-                        <span className='h-2.5 w-2.5 rounded-full bg-[#28c840]' />
-                    </div>
-                )}
-                <span className={cn('h-2 w-2 rounded-full', stateColor(state))} />
-                <span className='font-medium'>{server?.name ?? uuid}</span>
-                <span className='text-zinc-500'>{t(`featheros.state.${state}`, { defaultValue: state })}</span>
-                {!embedded && stats && state === 'running' && (
-                    <span className='text-muted-foreground ml-2 tabular-nums'>
-                        {t('featheros.monitor.cpu')} {Math.round(stats.cpu_absolute ?? 0)}% ·{' '}
-                        {t('featheros.monitor.memory')} {formatBytes(stats.memory_bytes)}
+            {embedded && (
+                <div className='fos-term-embed-bar flex h-7 shrink-0 items-center gap-2 px-2.5 text-[11px]'>
+                    <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', stateColor(state))} />
+                    <span className='min-w-0 truncate text-[var(--fos-ink)]'>
+                        {server?.name ?? uuid}
+                        <span className='text-[var(--fos-secondary)]'>
+                            {' '}
+                            · {t(`featheros.state.${state}`, { defaultValue: state })}
+                        </span>
                     </span>
-                )}
-                <span className='ml-auto flex items-center gap-1'>
-                    {!embedded && (
-                        <>
-                            <button
-                                type='button'
-                                className={cn(btn, 'text-emerald-600 dark:text-emerald-400')}
-                                disabled={!can(uuid, 'control.start') || state === 'running'}
-                                onClick={() => void power('start')}
-                            >
-                                <Play className='h-3 w-3' /> {t('featheros.servers.start')}
-                            </button>
-                            <button
-                                type='button'
-                                className={btn}
-                                disabled={!can(uuid, 'control.restart')}
-                                onClick={() => void power('restart')}
-                            >
-                                <RotateCw className='h-3 w-3' /> {t('featheros.servers.restart')}
-                            </button>
-                            <button
-                                type='button'
-                                className={cn(btn, 'text-amber-600 dark:text-amber-400')}
-                                disabled={!can(uuid, 'control.stop') || state === 'offline'}
-                                onClick={() => void power('stop')}
-                            >
-                                <Square className='h-3 w-3' /> {t('featheros.servers.stop')}
-                            </button>
-                            <button
-                                type='button'
-                                className={cn(btn, 'text-red-600 dark:text-red-400')}
-                                disabled={!can(uuid, 'control.stop') || state === 'offline'}
-                                onClick={() => void power('kill')}
-                            >
-                                <Skull className='h-3 w-3' /> {t('featheros.servers.kill')}
-                            </button>
-                        </>
-                    )}
                     <span
-                        className='text-muted-foreground ml-1'
+                        className='ml-auto flex h-5 w-5 items-center justify-center'
                         title={t(`featheros.terminal.conn_${connectionStatus}`)}
                     >
                         {connectionStatus === 'connected' ? (
-                            <Wifi className='h-3.5 w-3.5 text-emerald-500' />
+                            <Wifi className='h-3 w-3 text-[#32d74b]' />
                         ) : connectionStatus === 'connecting' ? (
-                            <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                            <Loader2 className='h-3 w-3 animate-spin text-[var(--fos-secondary)]' />
                         ) : (
-                            <WifiOff className='h-3.5 w-3.5 text-red-500' />
+                            <WifiOff className='h-3 w-3 text-[#ff453a]' />
                         )}
                     </span>
-                </span>
-            </div>
-            <div className='relative min-h-0 flex-1 overflow-hidden bg-[#101012]'>
+                    {onClose && (
+                        <button
+                            type='button'
+                            aria-label={t('common.close')}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onClose();
+                            }}
+                            className='flex h-5 w-5 items-center justify-center rounded text-[var(--fos-secondary)] hover:bg-[var(--fos-hover)] hover:text-[var(--fos-ink)]'
+                        >
+                            <X className='h-3 w-3' />
+                        </button>
+                    )}
+                </div>
+            )}
+            <div className='relative min-h-0 flex-1 overflow-hidden'>
                 {canConnect ? (
                     <ServerTerminal
                         ref={terminalRef}
@@ -264,10 +257,12 @@ export function ConsoleSession({
                         onFiltersChange={setFilters}
                         fillContainer
                         showPopoutButton={false}
-                        className='fos-mac-terminal'
+                        appearance='glass'
+                        glassTone={isDark ? 'dark' : 'light'}
+                        className='fos-glass-terminal absolute inset-0'
                     />
                 ) : (
-                    <div className='text-muted-foreground flex h-full items-center justify-center text-sm'>
+                    <div className='flex h-full items-center justify-center text-sm text-[var(--fos-secondary)]'>
                         {t('featheros.terminal.no_access')}
                     </div>
                 )}
@@ -315,20 +310,30 @@ function BroadcastBar({ tabs, onClose }: { tabs: string[]; onClose: () => void }
     };
 
     return (
-        <div className='border-b bg-amber-500/10 px-3 py-2'>
-            <div className='mb-1.5 flex items-center gap-2 text-[11px] font-semibold text-amber-700 dark:text-amber-300'>
-                <Radio className='h-3.5 w-3.5' /> {t('featheros.terminal.broadcast_title')}
+        <div className='fos-term-broadcast px-3 py-2.5'>
+            <div className='mb-2 flex items-center gap-2 text-[11px] font-medium text-[var(--fos-ink)]'>
+                <Radio className='h-3.5 w-3.5 text-[#ff9f0a]' />
+                {t('featheros.terminal.broadcast_title')}
                 <button
                     type='button'
                     onClick={() => setTargets(new Set(eligible.map((s) => s.uuidShort)))}
-                    className='ml-auto font-normal underline'
+                    className='ml-auto text-[var(--fos-secondary)] underline-offset-2 hover:underline'
                 >
                     {t('featheros.common.select_all')}
                 </button>
-                <button type='button' onClick={() => setTargets(new Set())} className='font-normal underline'>
+                <button
+                    type='button'
+                    onClick={() => setTargets(new Set())}
+                    className='text-[var(--fos-secondary)] underline-offset-2 hover:underline'
+                >
                     {t('featheros.common.select_none')}
                 </button>
-                <button type='button' onClick={onClose} aria-label={t('common.close')}>
+                <button
+                    type='button'
+                    onClick={onClose}
+                    aria-label={t('common.close')}
+                    className='text-[var(--fos-secondary)] hover:text-[var(--fos-ink)]'
+                >
                     <X className='h-3.5 w-3.5' />
                 </button>
             </div>
@@ -348,8 +353,10 @@ function BroadcastBar({ tabs, onClose }: { tabs: string[]; onClose: () => void }
                                 })
                             }
                             className={cn(
-                                'flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px]',
-                                on ? 'border-amber-500 bg-amber-500/20' : 'opacity-70',
+                                'flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] transition-colors',
+                                on
+                                    ? 'border-[#ff9f0a]/40 bg-[#ff9f0a]/15 text-[var(--fos-ink)]'
+                                    : 'border-transparent bg-[var(--fos-hover)] text-[var(--fos-secondary)]',
                             )}
                         >
                             {on ? <CheckSquare className='h-3 w-3' /> : <SquareIcon className='h-3 w-3' />}
@@ -369,12 +376,12 @@ function BroadcastBar({ tabs, onClose }: { tabs: string[]; onClose: () => void }
                     value={command}
                     onChange={(e) => setCommand(e.target.value)}
                     placeholder={t('featheros.terminal.broadcast_placeholder', { count: String(targets.size) })}
-                    className='bg-background flex-1 rounded-md border px-2 py-1 font-mono text-[12px] outline-none focus:ring-2 focus:ring-amber-500/50'
+                    className='fos-term-broadcast-input flex-1 rounded-lg px-2.5 py-1.5 font-mono text-[12px] outline-none'
                 />
                 <button
                     type='submit'
                     disabled={sending || !command.trim() || targets.size === 0}
-                    className='flex items-center gap-1 rounded-md bg-amber-500 px-3 text-[12px] font-medium text-white disabled:opacity-40'
+                    className='flex items-center gap-1 rounded-lg bg-[#ff9f0a] px-3 text-[12px] font-medium text-white disabled:opacity-40'
                 >
                     {sending ? <Loader2 className='h-3.5 w-3.5 animate-spin' /> : <Send className='h-3.5 w-3.5' />}
                     {t('featheros.terminal.send')}
@@ -382,6 +389,95 @@ function BroadcastBar({ tabs, onClose }: { tabs: string[]; onClose: () => void }
             </form>
         </div>
     );
+}
+
+function PowerToolbar({ uuid, meta }: { uuid: string; meta: SessionMeta | undefined }) {
+    const { t } = useTranslation();
+    const { getServer, can, live } = useFeatherOs();
+    const server = getServer(uuid);
+    const state = serverState(server, meta?.status ?? live[uuid]?.status);
+    const conn = meta?.connectionStatus ?? 'disconnected';
+    const btn =
+        'inline-flex h-6 w-6 items-center justify-center rounded-md text-[var(--fos-secondary)] transition-colors hover:bg-[var(--fos-hover)] hover:text-[var(--fos-ink)] disabled:pointer-events-none disabled:opacity-25';
+
+    return (
+        <div className='flex shrink-0 items-center gap-0.5 border-l border-[var(--fos-glass-edge-soft)] pl-1.5'>
+            {meta?.stats && state === 'running' && (
+                <span className='mr-1 hidden text-[10px] text-[var(--fos-secondary)] tabular-nums sm:inline'>
+                    {Math.round(meta.stats.cpu_absolute ?? 0)}% · {formatBytes(meta.stats.memory_bytes ?? 0)}
+                </span>
+            )}
+            <button
+                type='button'
+                className={cn(btn, 'hover:text-[#32d74b]')}
+                disabled={!can(uuid, 'control.start') || state === 'running'}
+                onClick={() => meta?.power('start')}
+                title={t('featheros.servers.start')}
+                aria-label={t('featheros.servers.start')}
+            >
+                <Play className='h-3 w-3' />
+            </button>
+            <button
+                type='button'
+                className={btn}
+                disabled={!can(uuid, 'control.restart')}
+                onClick={() => meta?.power('restart')}
+                title={t('featheros.servers.restart')}
+                aria-label={t('featheros.servers.restart')}
+            >
+                <RotateCw className='h-3 w-3' />
+            </button>
+            <button
+                type='button'
+                className={cn(btn, 'hover:text-[#ffd60a]')}
+                disabled={!can(uuid, 'control.stop') || state === 'offline'}
+                onClick={() => meta?.power('stop')}
+                title={t('featheros.servers.stop')}
+                aria-label={t('featheros.servers.stop')}
+            >
+                <Square className='h-2.5 w-2.5' />
+            </button>
+            <button
+                type='button'
+                className={cn(btn, 'hover:text-[#ff453a]')}
+                disabled={!can(uuid, 'control.stop') || state === 'offline'}
+                onClick={() => meta?.power('kill')}
+                title={t('featheros.servers.kill')}
+                aria-label={t('featheros.servers.kill')}
+            >
+                <Skull className='h-3 w-3' />
+            </button>
+            <span
+                className='ml-0.5 flex h-6 w-6 items-center justify-center'
+                title={t(`featheros.terminal.conn_${conn}`)}
+            >
+                {conn === 'connected' ? (
+                    <Wifi className='h-3 w-3 text-[#32d74b]' />
+                ) : conn === 'connecting' ? (
+                    <Loader2 className='h-3 w-3 animate-spin text-[var(--fos-secondary)]' />
+                ) : (
+                    <WifiOff className='h-3 w-3 text-[#ff453a]' />
+                )}
+            </span>
+        </div>
+    );
+}
+
+type TermLayout = 'tabs' | 'columns' | 'grid';
+
+const TERM_LAYOUTS: { id: TermLayout; icon: React.ComponentType<{ className?: string }> }[] = [
+    { id: 'tabs', icon: AppWindow },
+    { id: 'columns', icon: Columns3 },
+    { id: 'grid', icon: Grid2x2 },
+];
+
+function paneGrid(layout: TermLayout, count: number): React.CSSProperties {
+    const cols = layout === 'columns' ? count : Math.ceil(Math.sqrt(count));
+    const rows = Math.ceil(count / cols);
+    return {
+        gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+        gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
+    };
 }
 
 export default function TerminalApp({ win }: OsAppProps) {
@@ -394,8 +490,26 @@ export default function TerminalApp({ win }: OsAppProps) {
         typeof win.props?.active === 'string' && tabs.includes(win.props.active as string)
             ? (win.props.active as string)
             : tabs[0];
+    const layout: TermLayout =
+        tabs.length > 1 && (win.props?.layout === 'columns' || win.props?.layout === 'grid')
+            ? (win.props.layout as TermLayout)
+            : 'tabs';
+    const split = layout !== 'tabs';
     const [adding, setAdding] = useState(false);
     const [broadcast, setBroadcast] = useState(false);
+    const [sessionMeta, setSessionMeta] = useState<Record<string, SessionMeta>>({});
+
+    const onMeta = useCallback((uuid: string, meta: SessionMeta | null) => {
+        setSessionMeta((cur) => {
+            if (!meta) {
+                if (!(uuid in cur)) return cur;
+                const next = { ...cur };
+                delete next[uuid];
+                return next;
+            }
+            return { ...cur, [uuid]: meta };
+        });
+    }, []);
 
     const addTab = (uuid: string) => {
         updateWindowProps(win.id, { tabs: tabs.includes(uuid) ? tabs : [...tabs, uuid], active: uuid });
@@ -407,30 +521,51 @@ export default function TerminalApp({ win }: OsAppProps) {
     };
 
     if (tabs.length === 0) {
-        return <ServerPicker permission='websocket.connect' onPick={addTab} title={t('featheros.terminal.pick')} />;
+        return (
+            <div className='fos-term-app flex h-full flex-col'>
+                <div className='fos-term-chrome' data-fos-window-drag>
+                    <span className='fos-term-chrome-title'>{t('featheros.apps.terminal')}</span>
+                </div>
+                <div className='min-h-0 flex-1 overflow-hidden'>
+                    <ServerPicker permission='websocket.connect' onPick={addTab} title={t('featheros.terminal.pick')} />
+                </div>
+            </div>
+        );
     }
 
     const candidates = serversWith('websocket.connect').filter((s) => !tabs.includes(s.uuidShort));
+
     return (
-        <div className='flex h-full flex-col'>
-            <div className='bg-muted/40 flex h-8 shrink-0 items-center gap-1 border-b px-1.5'>
-                <div className='fos-scroll flex min-w-0 flex-1 items-center gap-1 overflow-x-auto'>
+        <div className='fos-term-app flex h-full flex-col'>
+            <div className='fos-term-chrome' data-fos-window-drag>
+                <div className='fos-scroll flex max-w-[55%] min-w-0 shrink items-center gap-1 overflow-x-auto'>
                     {tabs.map((uuid) => {
                         const server = getServer(uuid);
-                        const state = serverState(server, live[uuid]?.status);
+                        const state = serverState(server, sessionMeta[uuid]?.status ?? live[uuid]?.status);
+                        const isActive = uuid === active;
                         return (
                             <div
                                 key={uuid}
+                                role='tab'
+                                data-no-drag
+                                aria-selected={isActive}
+                                tabIndex={0}
                                 onClick={() => updateWindowProps(win.id, { active: uuid })}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        updateWindowProps(win.id, { active: uuid });
+                                    }
+                                }}
                                 className={cn(
-                                    'group flex h-6 max-w-[200px] shrink-0 cursor-default items-center gap-1.5 rounded-md px-2 text-[12px]',
-                                    uuid === active
-                                        ? 'bg-background shadow-sm'
-                                        : 'hover:bg-background/50 text-muted-foreground',
+                                    'group flex h-7 max-w-[168px] shrink-0 cursor-default items-center gap-1.5 rounded-lg px-2.5 text-[11px] transition-colors',
+                                    isActive
+                                        ? 'fos-term-tab-active bg-[var(--fos-hover)] text-[var(--fos-ink)]'
+                                        : 'text-[var(--fos-secondary)] hover:bg-[var(--fos-hover)] hover:text-[var(--fos-ink)]',
                                 )}
                             >
                                 <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', stateColor(state))} />
-                                <span className='truncate'>{server?.name ?? uuid}</span>
+                                <span className='truncate font-medium'>{server?.name ?? uuid}</span>
                                 <button
                                     type='button'
                                     aria-label={t('common.close')}
@@ -438,19 +573,23 @@ export default function TerminalApp({ win }: OsAppProps) {
                                         e.stopPropagation();
                                         closeTab(uuid);
                                     }}
-                                    className='opacity-0 group-hover:opacity-70 hover:opacity-100'
+                                    className='rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-70 hover:bg-black/10 hover:opacity-100 dark:hover:bg-white/10'
                                 >
-                                    <X className='h-3 w-3' />
+                                    <X className='h-2.5 w-2.5' />
                                 </button>
                             </div>
                         );
                     })}
                 </div>
-                <div className='relative'>
+
+                {/* Always-available drag strip between tabs and actions (Finder-style). */}
+                <div className='fos-term-chrome-drag min-h-full min-w-8 flex-1' aria-hidden />
+
+                <div className='relative shrink-0' data-no-drag>
                     <button
                         type='button'
                         onClick={() => setAdding((a) => !a)}
-                        className='hover:bg-background/60 flex h-6 w-6 items-center justify-center rounded-md'
+                        className='flex h-7 w-7 items-center justify-center rounded-lg text-[var(--fos-secondary)] hover:bg-[var(--fos-hover)] hover:text-[var(--fos-ink)]'
                         title={t('featheros.terminal.new_tab')}
                     >
                         <Plus className='h-3.5 w-3.5' />
@@ -477,22 +616,69 @@ export default function TerminalApp({ win }: OsAppProps) {
                         </div>
                     )}
                 </div>
+
                 <button
                     type='button'
+                    data-no-drag
                     onClick={() => setBroadcast((b) => !b)}
                     className={cn(
-                        'flex h-6 items-center gap-1 rounded-md px-2 text-[11px] font-medium',
-                        broadcast ? 'bg-amber-500 text-white' : 'hover:bg-background/60',
+                        'flex h-7 items-center gap-1 rounded-lg px-2 text-[10px] font-medium transition-colors',
+                        broadcast
+                            ? 'bg-[#ff9f0a]/20 text-[#ff9f0a]'
+                            : 'text-[var(--fos-secondary)] hover:bg-[var(--fos-hover)] hover:text-[var(--fos-ink)]',
                     )}
                     title={t('featheros.terminal.broadcast_title')}
                 >
-                    <Radio className='h-3.5 w-3.5' /> {t('featheros.terminal.broadcast')}
+                    <Radio className='h-3 w-3' />
+                    <span className='hidden sm:inline'>{t('featheros.terminal.broadcast')}</span>
                 </button>
+
+                {tabs.length > 1 && (
+                    <div className='fos-term-layouts' role='radiogroup' data-no-drag>
+                        {TERM_LAYOUTS.map(({ id, icon: Icon }) => (
+                            <button
+                                key={id}
+                                type='button'
+                                role='radio'
+                                aria-checked={layout === id}
+                                title={t(`featheros.terminal.layout_${id}`)}
+                                aria-label={t(`featheros.terminal.layout_${id}`)}
+                                onClick={() => updateWindowProps(win.id, { layout: id })}
+                                className={cn(layout === id && 'is-active')}
+                            >
+                                <Icon className='h-3.5 w-3.5' />
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {active && (
+                    <div data-no-drag>
+                        <PowerToolbar uuid={active} meta={sessionMeta[active]} />
+                    </div>
+                )}
             </div>
+
             {broadcast && <BroadcastBar tabs={tabs} onClose={() => setBroadcast(false)} />}
-            <div className='relative min-h-0 flex-1'>
+
+            <div
+                className={cn('fos-term-panes relative min-h-0 flex-1', split && 'is-split')}
+                style={split ? paneGrid(layout, tabs.length) : undefined}
+            >
                 {tabs.map((uuid) => (
-                    <ConsoleSession key={uuid} uuid={uuid} active={uuid === active} />
+                    <div
+                        key={uuid}
+                        className={cn('fos-term-pane', split && uuid === active && 'is-active')}
+                        onPointerDownCapture={() => split && uuid !== active && updateWindowProps(win.id, { active: uuid })}
+                    >
+                        <ConsoleSession
+                            uuid={uuid}
+                            active={split || uuid === active}
+                            embedded={split}
+                            onMeta={onMeta}
+                            onClose={split ? () => closeTab(uuid) : undefined}
+                        />
+                    </div>
                 ))}
             </div>
         </div>

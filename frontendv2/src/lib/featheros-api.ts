@@ -50,6 +50,20 @@ export interface FeatherOsStateResponse<T> {
     updated_at: string | null;
 }
 
+export interface FeatherOsSessionInfo {
+    instance_id: string;
+    started_at: number;
+    heartbeat_at: number;
+    user_agent: string;
+    label: string;
+}
+
+export interface FeatherOsSessionAcquireResult {
+    session: FeatherOsSessionInfo;
+    stolen: boolean;
+    stale_after_seconds: number;
+}
+
 /** Client for the FeatherOS endpoints (desktop state + notes). Server actions use the normal server APIs. */
 export const featherOsApi = {
     getState: async <T>(): Promise<FeatherOsStateResponse<T>> => {
@@ -81,6 +95,45 @@ export const featherOsApi = {
 
     resetState: async (): Promise<void> => {
         await api.delete('/user/featheros/state');
+    },
+
+    acquireSession: async (payload: {
+        instance_id: string;
+        label?: string;
+        force?: boolean;
+    }): Promise<FeatherOsSessionAcquireResult> => {
+        const res = await api.post<ApiResponse<FeatherOsSessionAcquireResult>>(
+            '/user/featheros/session/acquire',
+            payload,
+        );
+        return res.data.data;
+    },
+
+    heartbeatSession: async (instance_id: string): Promise<{ session: FeatherOsSessionInfo }> => {
+        const res = await api.post<ApiResponse<{ session: FeatherOsSessionInfo }>>(
+            '/user/featheros/session/heartbeat',
+            { instance_id },
+        );
+        return res.data.data;
+    },
+
+    releaseSession: async (instance_id: string): Promise<void> => {
+        await api.post('/user/featheros/session/release', { instance_id });
+    },
+
+    /** Best-effort release while the tab is closing. */
+    releaseSessionOnUnload: (instance_id: string): void => {
+        try {
+            void fetch('/api/user/featheros/session/release', {
+                method: 'POST',
+                credentials: 'include',
+                keepalive: true,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ instance_id }),
+            });
+        } catch {
+            // ignore
+        }
     },
 
     listNotes: async (): Promise<FeatherOsNote[]> => {

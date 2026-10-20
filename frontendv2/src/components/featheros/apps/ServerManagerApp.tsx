@@ -229,22 +229,22 @@ export default function ServerManagerApp({ win }: OsAppProps) {
         'flex h-7 items-center gap-1 rounded-md border px-2 text-[12px] font-medium hover:bg-muted disabled:opacity-40';
 
     return (
-        <div className='flex h-full flex-col'>
-            <div className='flex h-11 shrink-0 items-center gap-2 border-b px-3'>
-                <div className='bg-muted flex rounded-md p-0.5 text-[12px]'>
+        <div className='fos-servers'>
+            <div className='fos-servers-toolbar' data-fos-window-drag>
+                <div className='fos-servers-filters' data-no-drag>
                     {(['all', 'running', 'offline'] as const).map((f) => (
                         <button
                             key={f}
                             type='button'
                             onClick={() => setFilter(f)}
-                            className={cn('rounded px-2 py-0.5', filter === f && 'bg-background shadow-sm')}
+                            className={cn(filter === f && 'is-active')}
                         >
                             {t(`featheros.servers.filter_${f}`)}
                         </button>
                     ))}
                 </div>
                 {selected.size > 0 && (
-                    <div className='flex items-center gap-1'>
+                    <div className='flex items-center gap-1' data-no-drag>
                         <span className='text-muted-foreground mr-1 text-[12px]'>
                             {t('featheros.servers.selected', { count: String(selected.size) })}
                         </span>
@@ -274,27 +274,27 @@ export default function ServerManagerApp({ win }: OsAppProps) {
                         </button>
                     </div>
                 )}
-                <div className='relative ml-auto'>
-                    <Search className='text-muted-foreground absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2' />
+                <div className='fos-servers-search' data-no-drag>
+                    <Search />
                     <input
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder={t('featheros.servers.search')}
-                        className='bg-muted/70 focus:ring-primary/50 h-7 w-48 rounded-md pr-2 pl-7 text-[12px] outline-none focus:ring-2'
                     />
                 </div>
                 <button
                     type='button'
                     className={iconBtn}
+                    data-no-drag
                     onClick={() => void refreshServers()}
                     title={t('featheros.common.refresh')}
                 >
                     <RefreshCw className={cn('h-3.5 w-3.5', serversLoading && 'animate-spin')} />
                 </button>
             </div>
-            <div className='fos-scroll min-h-0 flex-1 overflow-auto'>
+            <div className='fos-servers-body fos-scroll'>
                 <table className='w-full text-[12px]'>
-                    <thead className='bg-background/95 sticky top-0 backdrop-blur'>
+                    <thead className='sticky top-0'>
                         <tr className='text-muted-foreground border-b text-left text-[11px]'>
                             <th className='w-8 px-3 py-1.5'>
                                 <input

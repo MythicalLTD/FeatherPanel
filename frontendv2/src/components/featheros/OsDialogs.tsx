@@ -69,7 +69,7 @@ export function OsDialogs() {
                         value={value}
                         placeholder={current.placeholder}
                         onChange={(e) => setValue(e.target.value)}
-                        className='fos-dialog-input mt-3 w-full rounded-md px-2 py-1 text-[13px] outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]/60'
+                        className='fos-dialog-input fos-field mt-3 w-full rounded-md px-2 py-1 text-[13px] outline-none'
                     />
                 )}
                 <div className='mt-4 grid grid-cols-2 gap-2'>

@@ -181,7 +181,7 @@ export default function LogViewerApp({ win }: OsAppProps) {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder={t('featheros.logs.filter')}
-                        className='bg-muted/70 focus:ring-primary/50 h-6 w-44 rounded-md pr-2 pl-7 text-[12px] outline-none focus:ring-2'
+                        className='fos-field bg-muted/70 h-6 w-44 rounded-md pr-2 pl-7 text-[12px] outline-none'
                     />
                 </div>
                 {source !== 'activity' && (
@@ -253,30 +253,30 @@ export default function LogViewerApp({ win }: OsAppProps) {
             ) : (
                 <div
                     ref={scroller}
-                    className='fos-scroll min-h-0 flex-1 overflow-auto bg-[#0d1117] py-1 font-mono text-[12px] leading-[1.45] text-zinc-200'
+                    className='fos-scroll min-h-0 flex-1 overflow-auto bg-[#fbfbfd] py-1 font-mono text-[12px] leading-[1.45] text-zinc-800 dark:bg-[#0d1117] dark:text-zinc-200'
                 >
                     {loading && lines.length === 0 && (
                         <div className='flex h-full items-center justify-center'>
-                            <Loader2 className='h-5 w-5 animate-spin text-zinc-500' />
+                            <Loader2 className='h-5 w-5 animate-spin text-zinc-400 dark:text-zinc-500' />
                         </div>
                     )}
                     {filtered.map((l) => (
                         <div
                             key={l.i}
                             className={cn(
-                                'flex gap-3 px-3 hover:bg-white/5',
-                                l.level === 'error' && 'bg-red-500/10 text-red-300',
-                                l.level === 'warn' && 'bg-amber-500/10 text-amber-200',
+                                'flex gap-3 px-3 hover:bg-black/[0.04] dark:hover:bg-white/5',
+                                l.level === 'error' && 'bg-red-500/10 text-red-700 dark:text-red-300',
+                                l.level === 'warn' && 'bg-amber-500/10 text-amber-800 dark:text-amber-200',
                             )}
                         >
-                            <span className='w-10 shrink-0 text-right text-zinc-600 select-none'>{l.i + 1}</span>
+                            <span className='w-10 shrink-0 text-right text-zinc-400 select-none dark:text-zinc-600'>{l.i + 1}</span>
                             <span className={wrap ? 'break-all whitespace-pre-wrap' : 'whitespace-pre'}>
                                 {highlight(l.text)}
                             </span>
                         </div>
                     ))}
                     {!loading && filtered.length === 0 && (
-                        <div className='py-10 text-center text-zinc-500'>{t('featheros.logs.empty')}</div>
+                        <div className='py-10 text-center text-zinc-400 dark:text-zinc-500'>{t('featheros.logs.empty')}</div>
                     )}
                 </div>
             )}

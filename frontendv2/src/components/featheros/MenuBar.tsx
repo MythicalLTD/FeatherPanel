@@ -36,6 +36,12 @@ import {
     Maximize2,
     AppWindow,
     RotateCcw,
+    Keyboard,
+    Expand,
+    Shrink,
+    BookmarkPlus,
+    Lock,
+    LayoutDashboard,
 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
@@ -54,6 +60,10 @@ import { MenuList, menuSurface } from './ContextMenu';
 import { MENU_BAR_HEIGHT, type OsContextMenuItem } from './types';
 import { serverState } from './utils';
 import { ControlCenter } from './ControlCenter';
+import { ZONE_LEFT, ZONE_RIGHT, rememberPreSnap, requestSnapAssist, workArea, zoneRect } from './snap';
+import { confirmRestoreWorkspace, promptSaveWorkspace } from './workspaces';
+import { lockOs } from './LockScreen';
+import { FOS_SHORTCUTS_EVENT, FOS_SWITCHER_EVENT, toggleImmersiveWithFeedback, useImmersiveState } from './immersive';
 
 function Clock({ h24, seconds, locale }: { h24: boolean; seconds: boolean; locale: string }) {
     const [now, setNow] = useState<Date | null>(null);
@@ -114,6 +124,7 @@ export function MenuBar() {
     } = os;
     const [open, setOpen] = useState<string | null>(null);
     const [, setUndoTick] = useState(0);
+    const immersiveState = useImmersiveState();
     const barRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => subscribeFeatherOsUndo(() => setUndoTick((n) => n + 1)), []);
@@ -167,6 +178,13 @@ export function MenuBar() {
                     onSelect: () => window.open('/dashboard', '_blank', 'noopener'),
                 },
                 { id: 's2', separator: true },
+                {
+                    id: 'lock',
+                    label: t('featheros.lock.lock_screen'),
+                    icon: Lock,
+                    shortcut: 'Ctrl+Alt+L',
+                    onSelect: () => lockOs(),
+                },
                 {
                     id: 'reload',
                     label: t('featheros.menu.restart'),
@@ -234,6 +252,7 @@ export function MenuBar() {
                 {
                     id: 'close',
                     label: t('featheros.menu.close_window'),
+                    shortcut: 'Alt+F4',
                     disabled: !focused,
                     onSelect: () => focused && closeWindow(focused.id),
                 },
@@ -303,21 +322,25 @@ export function MenuBar() {
                     disabled: !focused,
                     onSelect: () => {
                         if (!focused) return;
-                        const inset = settings.dockAutoHide ? 8 : settings.dockSize + 30;
-                        const left = settings.dockPosition === 'left' ? inset : 8;
-                        const right = settings.dockPosition === 'right' ? inset : 8;
-                        const width = (window.innerWidth - left - right - 8) / 2;
-                        setWindowGeometry(focused.id, {
-                            x: side === 'left' ? left : left + width + 8,
-                            y: 8,
-                            w: width,
-                            h:
-                                window.innerHeight -
-                                MENU_BAR_HEIGHT -
-                                16 -
-                                (settings.dockPosition === 'bottom' ? inset : 0),
-                        });
+                        const zone = side === 'left' ? ZONE_LEFT : ZONE_RIGHT;
+                        rememberPreSnap(focused.id, { w: focused.w, h: focused.h });
+                        setWindowGeometry(focused.id, zoneRect(workArea(settings), zone));
+                        requestSnapAssist(zone, focused.id);
                     },
+                })),
+                { id: 's-ws', separator: true },
+                {
+                    id: 'ws-save',
+                    label: t('featheros.workspaces.save_current'),
+                    icon: BookmarkPlus,
+                    disabled: windows.length === 0,
+                    onSelect: () => void promptSaveWorkspace(os, t),
+                },
+                ...(settings.workspaces ?? []).map((ws) => ({
+                    id: `ws-${ws.id}`,
+                    label: ws.name,
+                    icon: LayoutDashboard,
+                    onSelect: () => void confirmRestoreWorkspace(os, t, ws),
                 })),
                 { id: 's', separator: true },
                 ...windows.map((w) => {
@@ -350,11 +373,18 @@ export function MenuBar() {
                     id: 'launchpad',
                     label: t('featheros.launchpad.title', { defaultValue: 'Launchpad' }),
                     icon: LayoutGrid,
-                    shortcut: '⌃L',
+                    shortcut: '⌘ / ⊞',
                     onSelect: () => {
                         setSpotlightOpen(false);
                         setLaunchpadOpen(true);
                     },
+                },
+                {
+                    id: 'switcher',
+                    label: t('featheros.switcher.title'),
+                    icon: AppWindow,
+                    shortcut: '⌥Tab',
+                    onSelect: () => window.dispatchEvent(new Event(FOS_SWITCHER_EVENT)),
                 },
                 {
                     id: 'mission',
@@ -362,6 +392,21 @@ export function MenuBar() {
                     icon: Columns2,
                     shortcut: 'F3',
                     onSelect: () => setMissionControlOpen(true),
+                },
+                {
+                    id: 'shortcuts',
+                    label: t('featheros.keys.title'),
+                    icon: Keyboard,
+                    shortcut: '⌃/',
+                    onSelect: () => window.dispatchEvent(new Event(FOS_SHORTCUTS_EVENT)),
+                },
+                {
+                    id: 'immersive',
+                    label: t('featheros.immersive.title'),
+                    icon: immersiveState !== 'off' ? Shrink : Expand,
+                    shortcut: '⌃⌥F',
+                    checked: immersiveState !== 'off',
+                    onSelect: () => toggleImmersiveWithFeedback(t),
                 },
                 {
                     id: 'about',
@@ -470,6 +515,23 @@ export function MenuBar() {
                     title={t('featheros.mission.title')}
                 >
                     <Columns2 className='h-3.5 w-3.5' />
+                </button>
+                <button
+                    type='button'
+                    className={cn(item, 'relative')}
+                    onClick={() => toggleImmersiveWithFeedback(t)}
+                    title={t(`featheros.immersive.status_${immersiveState}`)}
+                    aria-pressed={immersiveState !== 'off'}
+                >
+                    <Keyboard className='h-3.5 w-3.5' />
+                    {immersiveState !== 'off' && (
+                        <span
+                            className={cn(
+                                'absolute top-0.5 right-0.5 h-1.5 w-1.5 rounded-full',
+                                immersiveState === 'locked' ? 'bg-emerald-500' : 'bg-amber-500',
+                            )}
+                        />
+                    )}
                 </button>
                 <button
                     type='button'

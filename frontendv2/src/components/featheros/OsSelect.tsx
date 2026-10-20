@@ -15,7 +15,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { menuSurface } from './ContextMenu';
@@ -47,14 +48,14 @@ export function OsSelect({
     const rootRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
     const [active, setActive] = useState(0);
-    const [flipUp, setFlipUp] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+    const [anchor, setAnchor] = useState<DOMRect | null>(null);
 
     const selected = useMemo(() => options.find((o) => o.value === value) ?? options[0], [options, value]);
 
     useLayoutEffect(() => {
         if (!open || !rootRef.current) return;
-        const rect = rootRef.current.getBoundingClientRect();
-        setFlipUp(rect.bottom + 220 > window.innerHeight && rect.top > 240);
+        setAnchor(rootRef.current.getBoundingClientRect());
         const idx = Math.max(
             0,
             options.findIndex((o) => o.value === value),
@@ -64,22 +65,40 @@ export function OsSelect({
 
     useEffect(() => {
         if (!open) return;
-        const onDown = (e: MouseEvent) => {
-            if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+        const inside = (target: EventTarget | null) =>
+            !!target &&
+            (rootRef.current?.contains(target as Node) || menuRef.current?.contains(target as Node) || false);
+        const onDown = (e: PointerEvent) => {
+            if (!inside(e.target)) setOpen(false);
         };
         const onKey = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 e.preventDefault();
+                e.stopPropagation();
                 setOpen(false);
             }
         };
-        window.addEventListener('mousedown', onDown);
-        window.addEventListener('keydown', onKey);
+        // The menu is fixed-positioned, so it would drift away from its trigger on scroll.
+        const onScroll = (e: Event) => {
+            if (!inside(e.target)) setOpen(false);
+        };
+        const onResize = () => setOpen(false);
+        window.addEventListener('pointerdown', onDown, true);
+        window.addEventListener('keydown', onKey, true);
+        window.addEventListener('scroll', onScroll, true);
+        window.addEventListener('resize', onResize);
         return () => {
-            window.removeEventListener('mousedown', onDown);
-            window.removeEventListener('keydown', onKey);
+            window.removeEventListener('pointerdown', onDown, true);
+            window.removeEventListener('keydown', onKey, true);
+            window.removeEventListener('scroll', onScroll, true);
+            window.removeEventListener('resize', onResize);
         };
     }, [open]);
+
+    useEffect(() => {
+        if (!open) return;
+        menuRef.current?.querySelector<HTMLElement>('.is-active')?.scrollIntoView({ block: 'nearest' });
+    }, [open, active]);
 
     const moveActive = (delta: number) => {
         if (options.length === 0) return;
@@ -125,12 +144,14 @@ export function OsSelect({
                 <span className='fos-select-label'>{selected?.label ?? value}</span>
                 <ChevronDown className='fos-select-chevron h-3.5 w-3.5' strokeWidth={2} />
             </button>
-            {open && (
+            {open && anchor && portalRoot() && createPortal(
                 <div
+                    ref={menuRef}
                     id={listId}
                     role='listbox'
                     aria-label={ariaLabel}
-                    className={cn(menuSurface, 'fos-select-menu fos-scroll', flipUp && 'is-up')}
+                    className={cn(menuSurface, 'fos-select-menu fos-scroll')}
+                    style={menuPosition(anchor, options.length)}
                 >
                     {options.map((opt, i) => (
                         <button
@@ -154,8 +175,30 @@ export function OsSelect({
                             <span className='truncate'>{opt.label}</span>
                         </button>
                     ))}
-                </div>
+                </div>,
+                portalRoot()!,
             )}
         </div>
     );
+}
+
+const OPTION_H = 26;
+const MENU_MAX_H = 224;
+
+function portalRoot(): Element | null {
+    return typeof document !== 'undefined' ? (document.querySelector('.fos-root') ?? document.body) : null;
+}
+
+function menuPosition(anchor: DOMRect, count: number): CSSProperties {
+    const height = Math.min(MENU_MAX_H, count * OPTION_H + 8);
+    const below = window.innerHeight - anchor.bottom - 8;
+    const up = below < height && anchor.top - 8 > below;
+    const left = Math.max(8, Math.min(anchor.left, window.innerWidth - anchor.width - 8));
+    return {
+        position: 'fixed',
+        left,
+        minWidth: anchor.width,
+        maxHeight: Math.max(96, Math.min(MENU_MAX_H, (up ? anchor.top : below) - 12)),
+        ...(up ? { bottom: window.innerHeight - anchor.top + 4 } : { top: anchor.bottom + 4 }),
+    };
 }

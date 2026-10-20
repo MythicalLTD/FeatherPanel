@@ -76,7 +76,7 @@
 }
 
 .fos-window {
-    animation: fos-window-in 220ms var(--fos-ease) both;
+    animation: fos-window-in 220ms var(--fos-ease) backwards;
     transition:
         transform 260ms var(--fos-ease),
         opacity 220ms var(--fos-ease),
@@ -101,11 +101,11 @@
 }
 
 .fos-pop {
-    animation: fos-pop-in 140ms var(--fos-ease) both;
+    animation: fos-pop-in 140ms var(--fos-ease) backwards;
 }
 
 .fos-fade {
-    animation: fos-fade-in 200ms ease both;
+    animation: fos-fade-in 200ms ease backwards;
 }
 
 .fos-dock-item {
@@ -131,8 +131,458 @@
 }
 
 .fos-dock-indicator {
+    width: 4px;
+    height: 4px;
+    border-radius: 999px;
     background: var(--fos-ink);
     box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.2);
+    opacity: 0;
+}
+
+.fos-dock-indicator.is-running {
+    opacity: 0.75;
+}
+
+.fos-dock-indicator.is-focused {
+    width: 6px;
+    opacity: 1;
+    background: var(--fos-accent-color);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--fos-accent-color) 35%, transparent);
+}
+
+.fos-dock-indicator.is-multi {
+    width: 10px;
+    border-radius: 999px;
+}
+
+.fos-dock-count {
+    position: absolute;
+    top: -3px;
+    right: -4px;
+    z-index: 2;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    border-radius: 999px;
+    background: var(--fos-accent-color);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 14px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+    pointer-events: none;
+}
+
+/* Alt+Tab / Ctrl+Alt+Tab app switcher */
+.fos-switcher {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    pointer-events: none;
+    background: rgb(0 0 0 / 0.28);
+    backdrop-filter: blur(calc(10px * var(--fos-blur-scale, 1))) saturate(140%);
+    animation: fos-fade-in 120ms var(--fos-ease) backwards;
+}
+
+.fos-switcher-panel {
+    pointer-events: auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    max-width: min(960px, calc(100vw - 48px));
+    padding: 14px;
+    border-radius: 24px;
+    border: 0.5px solid var(--fos-glass-edge);
+    background: color-mix(in srgb, var(--fos-glass-thick) 86%, transparent);
+    backdrop-filter: blur(calc(40px * var(--fos-blur-scale, 1))) saturate(190%);
+    box-shadow:
+        0 40px 100px -24px rgb(0 0 0 / 0.65),
+        inset 0 0.5px 0 rgb(255 255 255 / 0.35);
+    animation: fos-switcher-pop calc(180ms / var(--fos-speed, 1)) var(--fos-ease) backwards;
+}
+
+@keyframes fos-switcher-pop {
+    from {
+        opacity: 0;
+        transform: scale(0.92) translateY(8px);
+    }
+}
+
+.fos-switcher-item {
+    position: relative;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    padding: 12px;
+    transition:
+        background 120ms ease,
+        transform 160ms var(--fos-ease),
+        box-shadow 160ms ease;
+}
+
+.fos-switcher-item.is-minimized .fos-app-icon {
+    opacity: 0.55;
+    filter: saturate(0.6);
+}
+
+.fos-switcher-item.is-selected {
+    background: color-mix(in srgb, var(--fos-ink) 12%, transparent);
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--fos-accent-color) 70%, transparent);
+    transform: scale(1.08);
+}
+
+.fos-switcher-space {
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    padding: 1px 6px;
+    background: var(--fos-accent-color);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.fos-switcher-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: min(640px, calc(100vw - 48px));
+    border-radius: 999px;
+    padding: 6px 14px;
+    background: color-mix(in srgb, var(--fos-glass-thick) 80%, transparent);
+    color: var(--fos-ink);
+    font-size: 13px;
+    box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.5);
+}
+
+.fos-switcher-title strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.fos-switcher-title span {
+    border-radius: 999px;
+    padding: 1px 7px;
+    background: var(--fos-hover);
+    color: var(--fos-secondary);
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.fos-switcher-keys {
+    display: flex;
+    gap: 14px;
+    color: rgb(255 255 255 / 0.85);
+    font-size: 11px;
+    text-shadow: 0 1px 6px rgb(0 0 0 / 0.5);
+}
+
+.fos-switcher-keys kbd,
+.fos-keys kbd {
+    display: inline-flex;
+    min-width: 20px;
+    height: 20px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    padding: 0 5px;
+    border: 0.5px solid var(--fos-hairline);
+    background: var(--fos-input-bg);
+    color: var(--fos-ink);
+    font-family: inherit;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-shadow: none;
+    box-shadow: 0 1px 0 var(--fos-hairline);
+}
+
+.fos-switcher-hint {
+    pointer-events: none;
+    margin: 0;
+    color: rgb(255 255 255 / 0.7);
+    font-size: 11px;
+    font-weight: 500;
+    text-shadow: 0 1px 8px rgb(0 0 0 / 0.45);
+}
+
+/* Holding Win/⌘ peeks dock slot numbers for Win+1–9 */
+.fos-dock-keyhint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 3;
+    display: flex;
+    width: 20px;
+    height: 20px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: rgb(0 0 0 / 0.72);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.6);
+    transition:
+        opacity 140ms ease,
+        transform 160ms var(--fos-ease);
+    pointer-events: none;
+}
+
+.fos-root[data-fos-meta-held='true'] .fos-dock-keyhint {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.fos-immersive-prompt {
+    position: fixed;
+    top: calc(var(--fos-menubar-h, 28px) + 14px);
+    left: 50%;
+    z-index: 8900;
+    display: flex;
+    width: min(560px, calc(100vw - 32px));
+    align-items: center;
+    gap: 12px;
+    border-radius: 16px;
+    border: 0.5px solid var(--fos-glass-edge);
+    padding: 12px 12px 12px 14px;
+    background: color-mix(in srgb, var(--fos-glass-thick) 92%, transparent);
+    color: var(--fos-ink);
+    backdrop-filter: var(--fos-blur-heavy);
+    box-shadow: 0 24px 60px -20px rgb(0 0 0 / 0.55);
+    transform: translateX(-50%);
+    animation: fos-immersive-drop calc(320ms / var(--fos-speed, 1)) var(--fos-ease) backwards;
+}
+
+@keyframes fos-immersive-drop {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -16px);
+    }
+}
+
+.fos-immersive-prompt-icon {
+    display: flex;
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: var(--fos-accent-color);
+    color: #fff;
+}
+
+.fos-immersive-prompt-copy {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 1px;
+    font-size: 12px;
+}
+
+.fos-immersive-prompt-copy strong {
+    font-size: 13px;
+}
+
+.fos-immersive-prompt-copy span {
+    color: var(--fos-secondary);
+}
+
+.fos-immersive-prompt-go {
+    flex-shrink: 0;
+    border-radius: 8px;
+    padding: 7px 14px;
+    background: var(--fos-accent-color);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.fos-immersive-prompt-go:hover {
+    filter: brightness(1.08);
+}
+
+.fos-immersive-prompt-close {
+    display: flex;
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    color: var(--fos-secondary);
+}
+
+.fos-immersive-prompt-close:hover {
+    background: var(--fos-hover);
+    color: var(--fos-ink);
+}
+
+/* Keyboard shortcuts cheat sheet */
+.fos-keys {
+    position: fixed;
+    inset: 0;
+    z-index: 9100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgb(0 0 0 / 0.35);
+    backdrop-filter: blur(calc(12px * var(--fos-blur-scale, 1)));
+    animation: fos-fade-in 140ms ease backwards;
+}
+
+.fos-keys-panel {
+    display: flex;
+    width: min(880px, 100%);
+    max-height: 100%;
+    flex-direction: column;
+    gap: 16px;
+    overflow: auto;
+    border-radius: 18px;
+    border: 0.5px solid var(--fos-glass-edge);
+    padding: 20px 22px 22px;
+    background: color-mix(in srgb, var(--fos-glass-thick) 92%, transparent);
+    color: var(--fos-ink);
+    box-shadow: 0 40px 100px -24px rgb(0 0 0 / 0.6);
+    animation: fos-switcher-pop calc(200ms / var(--fos-speed, 1)) var(--fos-ease) backwards;
+}
+
+.fos-keys-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.fos-keys-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.fos-keys-header p {
+    margin: 2px 0 0;
+    color: var(--fos-secondary);
+    font-size: 12px;
+}
+
+.fos-keys-close {
+    display: flex;
+    width: 28px;
+    height: 28px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    color: var(--fos-secondary);
+}
+
+.fos-keys-close:hover {
+    background: var(--fos-hover);
+    color: var(--fos-ink);
+}
+
+.fos-keys-immersive {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-radius: 12px;
+    padding: 12px 14px;
+    background: color-mix(in srgb, var(--fos-accent-color) 14%, transparent);
+    border: 0.5px solid color-mix(in srgb, var(--fos-accent-color) 40%, transparent);
+}
+
+.fos-keys-immersive > div {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+}
+
+.fos-keys-immersive strong {
+    font-size: 13px;
+}
+
+.fos-keys-immersive span {
+    color: var(--fos-secondary);
+}
+
+.fos-keys-immersive button {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 6px;
+    border-radius: 8px;
+    padding: 6px 12px;
+    background: var(--fos-accent-color);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.fos-keys-immersive button:hover {
+    filter: brightness(1.08);
+}
+
+.fos-keys-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 14px 22px;
+}
+
+.fos-keys-group h3 {
+    margin: 0 0 6px;
+    color: var(--fos-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.fos-keys-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-radius: 7px;
+    padding: 5px 6px;
+    font-size: 12.5px;
+}
+
+.fos-keys-row:hover {
+    background: var(--fos-hover);
+}
+
+.fos-keys-combos {
+    display: flex;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.fos-keys-combo {
+    display: inline-flex;
+    gap: 3px;
 }
 
 .fos-dock-launcher-button {
@@ -140,34 +590,15 @@
     border-radius: 22%;
 }
 
-.fos-dock-launcher-icon {
-    position: relative;
-    display: flex;
-    width: 100%;
-    height: 100%;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid color-mix(in oklab, var(--fos-accent-color) 40%, white);
-    border-radius: 22%;
-    background: linear-gradient(
-        160deg,
-        color-mix(in oklab, var(--fos-accent-color) 70%, white),
-        var(--fos-accent-color) 55%,
-        color-mix(in oklab, var(--fos-accent-color) 75%, black)
-    );
-    color: white;
-    box-shadow:
-        inset 0 1px 1px rgb(255 255 255 / 0.5),
-        0 8px 18px -10px color-mix(in oklab, var(--fos-accent-color) 70%, transparent);
+.fos-dock-trash-icon {
+    transition:
+        filter 160ms ease,
+        transform 160ms var(--fos-ease);
 }
 
-.fos-dock-launcher-icon::after {
-    position: absolute;
-    inset: 1px;
-    border-radius: inherit;
-    background: linear-gradient(180deg, rgb(255 255 255 / 0.38), transparent 46%);
-    content: '';
-    pointer-events: none;
+.fos-dock-trash-icon.is-drop-target {
+    filter: drop-shadow(0 0 0 transparent) drop-shadow(0 0 10px rgb(255 69 58 / 0.75)) saturate(1.2);
+    transform: scale(1.06);
 }
 
 .fos-dock-shell {
@@ -183,35 +614,198 @@
     animation: fos-dock-bounce 700ms var(--fos-ease) 1;
 }
 
-.fos-mac-terminal [data-slot='card'] {
+/* Classic macOS Terminal.app look inside FeatherOS */
+/* Glass terminal — translucent chrome, transparent body */
+.fos-term-app,
+.fos-glass-console {
+    background: transparent;
+}
+
+/* Same unified 52px toolbar as Finder / Servers — traffic lights overlay left. */
+.fos-term-chrome {
+    display: flex;
+    height: 52px;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px 0 72px;
+    border-bottom: 0.5px solid var(--fos-hairline);
+    background: color-mix(in srgb, var(--fos-content-soft) 70%, transparent);
+    color: var(--fos-window-ink);
+    backdrop-filter: blur(calc(24px * var(--fos-blur-scale, 1))) saturate(180%);
+    cursor: grab;
+}
+
+.fos-term-chrome:active {
+    cursor: grabbing;
+}
+
+.fos-term-chrome-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--fos-window-ink);
+    user-select: none;
+}
+
+.fos-term-chrome-drag {
+    align-self: stretch;
+    min-width: 48px;
+    cursor: grab;
+}
+.fos-term-chrome-drag:active {
+    cursor: grabbing;
+}
+
+/* Let empty chrome under the lights receive drag; only the buttons capture clicks. */
+.fos-term-traffic {
+    pointer-events: none;
+}
+.fos-term-traffic > * {
+    pointer-events: auto;
+}
+
+.fos-term-tab-active {
+    box-shadow: inset 0 0 0 0.5px var(--fos-glass-edge-soft);
+}
+
+.fos-term-layouts {
+    display: flex;
+    flex-shrink: 0;
+    gap: 1px;
+    padding: 2px;
+    border-radius: 9px;
+    background: var(--fos-hover);
+}
+.fos-term-layouts button {
+    display: flex;
+    height: 24px;
+    width: 26px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    color: var(--fos-secondary);
+    transition:
+        background-color 120ms ease,
+        color 120ms ease;
+}
+.fos-term-layouts button:hover {
+    color: var(--fos-ink);
+}
+.fos-term-layouts button.is-active {
+    color: var(--fos-ink);
+    background: color-mix(in srgb, var(--fos-glass-thick) 90%, transparent);
+    box-shadow:
+        0 1px 3px rgb(0 0 0 / 0.18),
+        inset 0 0 0 0.5px var(--fos-glass-edge-soft);
+}
+
+.fos-term-pane {
+    position: absolute;
+    inset: 0;
+}
+.fos-term-panes.is-split {
+    display: grid;
+    gap: 6px;
+    padding: 6px;
+}
+.fos-term-panes.is-split .fos-term-pane {
+    position: relative;
+    inset: auto;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+    border-radius: calc(var(--fos-radius, 12px) * 0.6);
+    box-shadow: inset 0 0 0 0.5px var(--fos-glass-edge-soft);
+    transition: box-shadow 140ms ease;
+}
+.fos-term-panes.is-split .fos-term-pane.is-active {
+    box-shadow:
+        0 0 0 1.5px color-mix(in srgb, var(--fos-accent-color) 75%, transparent),
+        0 8px 24px -12px rgb(0 0 0 / 0.5);
+}
+.fos-term-panes.is-split .fos-term-pane:not(.is-active) .fos-term-embed-bar {
+    opacity: 0.7;
+}
+
+.fos-term-embed-bar {
+    border-bottom: 0.5px solid var(--fos-glass-edge-soft);
+    background: color-mix(in srgb, var(--fos-glass) 55%, transparent);
+    color: var(--fos-ink);
+}
+
+.fos-term-broadcast {
+    border-bottom: 0.5px solid var(--fos-glass-edge-soft);
+    background: color-mix(in srgb, #ff9f0a 8%, var(--fos-glass));
+    backdrop-filter: blur(calc(12px * var(--fos-blur-scale, 1)));
+}
+
+.fos-term-broadcast-input {
+    border: 0.5px solid var(--fos-glass-edge-soft);
+    background: color-mix(in srgb, var(--fos-glass-thick) 70%, transparent);
+    color: var(--fos-ink);
+}
+.fos-term-broadcast-input::placeholder {
+    color: var(--fos-secondary);
+}
+.fos-term-broadcast-input:focus {
+    border-color: color-mix(in srgb, #ff9f0a 45%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, #ff9f0a 18%, transparent);
+}
+
+.fos-glass-terminal [data-slot='card'],
+.fos-term-glass [data-slot='card'] {
     border: 0;
     border-radius: 0;
-    background: #101012;
+    background: transparent;
     box-shadow: none;
 }
 
-.fos-mac-terminal [data-slot='card-header'] {
-    border-color: rgb(255 255 255 / 0.08);
-    background: #17171a;
+.fos-glass-terminal [data-slot='card-footer'],
+.fos-term-glass [data-slot='card-footer'] {
+    border-color: var(--fos-glass-edge-soft);
+    background: color-mix(in srgb, var(--fos-glass) 40%, transparent);
+    backdrop-filter: blur(calc(10px * var(--fos-blur-scale, 1)));
 }
 
-.fos-mac-terminal [data-slot='card-footer'] {
-    border-color: rgb(255 255 255 / 0.08);
-    background: #17171a;
+.fos-glass-terminal .xterm,
+.fos-glass-terminal .xterm-viewport,
+.fos-glass-terminal .xterm-screen,
+.fos-term-glass .xterm,
+.fos-term-glass .xterm-viewport,
+.fos-term-glass .xterm-screen {
+    border-radius: 0 !important;
+    background: transparent !important;
 }
 
-.fos-mac-terminal .xterm,
-.fos-mac-terminal .xterm-viewport {
-    border-radius: 10px;
+.fos-glass-terminal .xterm,
+.fos-term-glass .xterm {
+    padding: 8px 10px 4px;
 }
 
-.fos-mac-terminal .xterm-viewport {
-    background: #101012 !important;
+.fos-glass-terminal .xterm-viewport::-webkit-scrollbar,
+.fos-term-glass .xterm-viewport::-webkit-scrollbar {
+    width: 8px;
+}
+.fos-glass-terminal .xterm-viewport::-webkit-scrollbar-track,
+.fos-term-glass .xterm-viewport::-webkit-scrollbar-track {
+    background: transparent;
+}
+.fos-glass-terminal .xterm-viewport::-webkit-scrollbar-thumb,
+.fos-term-glass .xterm-viewport::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--fos-ink) 18%, transparent);
+    border-radius: 999px;
+}
+.fos-glass-terminal .xterm-viewport::-webkit-scrollbar-thumb:hover,
+.fos-term-glass .xterm-viewport::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--fos-ink) 32%, transparent);
 }
 
 .fos-boot-bar {
     transform-origin: left center;
-    animation: fos-boot-progress 1.1s var(--fos-ease) both;
+    animation: fos-boot-progress 1.1s var(--fos-ease) backwards;
 }
 
 .fos-boot-bar-fill {
@@ -320,19 +914,17 @@
 }
 
 .fos-select-menu {
-    position: absolute;
-    z-index: 80;
-    top: calc(100% + 4px);
-    left: 0;
-    min-width: 100%;
-    max-height: 14rem;
+    z-index: 9500;
     overflow-y: auto;
     padding: 4px;
+    animation: fos-select-in calc(120ms / var(--fos-speed, 1)) var(--fos-ease) backwards;
 }
 
-.fos-select-menu.is-up {
-    top: auto;
-    bottom: calc(100% + 4px);
+@keyframes fos-select-in {
+    from {
+        opacity: 0;
+        transform: translateY(-3px);
+    }
 }
 
 .fos-select-option {
@@ -440,7 +1032,7 @@
     to {
         opacity: 0;
         transform: scale(0.2) translateY(40vh);
-        filter: blur(2px);
+        filter: blur(calc(2px * var(--fos-blur-scale, 1)));
     }
 }
 
@@ -449,15 +1041,15 @@
 }
 
 .fos-mission {
-    animation: fos-fade-in calc(180ms / var(--fos-speed, 1)) var(--fos-ease) both;
+    animation: fos-fade-in calc(180ms / var(--fos-speed, 1)) var(--fos-ease) backwards;
 }
 
 .fos-mission-card {
-    animation: fos-pop-in calc(220ms / var(--fos-speed, 1)) var(--fos-spring) both;
+    animation: fos-pop-in calc(220ms / var(--fos-speed, 1)) var(--fos-spring) backwards;
 }
 
 .fos-notif {
-    animation: fos-slide-in-right calc(220ms / var(--fos-speed, 1)) var(--fos-ease) both;
+    animation: fos-slide-in-right calc(220ms / var(--fos-speed, 1)) var(--fos-ease) backwards;
 }
 
 @keyframes fos-slide-in-right {
@@ -531,31 +1123,31 @@
  */
 .fos-root {
     /* Shell chrome */
-    --fos-glass: rgb(246 248 252 / 0.62);
-    --fos-glass-thick: rgb(250 251 253 / 0.82);
+    --fos-glass: rgb(246 248 252 / min(1, calc(0.62 * var(--fos-alpha, 1))));
+    --fos-glass-thick: rgb(250 251 253 / min(1, calc(0.82 * var(--fos-alpha, 1))));
     --fos-glass-edge: rgb(255 255 255 / 0.55);
     --fos-glass-edge-soft: rgb(0 0 0 / 0.08);
-    --fos-surface: rgb(255 255 255 / 0.78);
+    --fos-surface: rgb(255 255 255 / min(1, calc(0.78 * var(--fos-alpha, 1))));
     --fos-ink: #1d1d1f;
     --fos-secondary: #6e6e73;
     /* Windows / apps */
-    --fos-window-fill: rgb(246 246 248 / 0.82);
+    --fos-window-fill: rgb(246 246 248 / min(1, calc(0.82 * var(--fos-alpha, 1))));
     --fos-window-ink: #1d1d1f;
     --fos-window-muted: #6e6e73;
     --fos-sidebar: #e8e8ed;
-    --fos-sidebar-soft: rgb(246 246 248 / 0.55);
+    --fos-sidebar-soft: rgb(246 246 248 / min(1, calc(0.55 * var(--fos-alpha, 1))));
     --fos-content: #f5f5f7;
-    --fos-content-soft: rgb(255 255 255 / 0.78);
+    --fos-content-soft: rgb(255 255 255 / min(1, calc(0.78 * var(--fos-alpha, 1))));
     --fos-card: #ffffff;
-    --fos-widget-bg: rgb(255 255 255 / 0.88);
+    --fos-widget-bg: rgb(255 255 255 / min(1, calc(0.88 * var(--fos-alpha, 1))));
     --fos-hover: rgb(0 0 0 / 0.05);
     --fos-active-fill: rgb(0 0 0 / 0.08);
     --fos-hairline: rgb(0 0 0 / 0.1);
     --fos-input-bg: rgb(255 255 255 / 0.92);
     --fos-shadow: 0 28px 90px -18px rgb(0 0 0 / 0.5);
     --fos-accent-color: var(--fos-accent, hsl(var(--primary)));
-    --fos-blur: blur(40px) saturate(180%);
-    --fos-blur-heavy: blur(48px) saturate(190%);
+    --fos-blur: blur(calc(40px * var(--fos-blur-scale, 1))) saturate(180%);
+    --fos-blur-heavy: blur(calc(48px * var(--fos-blur-scale, 1))) saturate(190%);
     color: var(--fos-ink);
     color-scheme: light;
     font-family:
@@ -566,22 +1158,22 @@
  * OS shell theme is owned by FeatherOS (data-fos-theme), not the panel's .dark class.
  */
 .fos-root[data-fos-theme='dark'] {
-    --fos-glass: rgb(40 40 44 / 0.55);
-    --fos-glass-thick: rgb(48 48 52 / 0.72);
+    --fos-glass: rgb(40 40 44 / min(1, calc(0.55 * var(--fos-alpha, 1))));
+    --fos-glass-thick: rgb(44 44 48 / min(1, calc(0.8 * var(--fos-alpha, 1))));
     --fos-glass-edge: rgb(255 255 255 / 0.16);
     --fos-glass-edge-soft: rgb(255 255 255 / 0.08);
-    --fos-surface: rgb(50 50 54 / 0.55);
+    --fos-surface: rgb(50 50 54 / min(1, calc(0.55 * var(--fos-alpha, 1))));
     --fos-ink: #f5f5f7;
     --fos-secondary: #a1a1a6;
-    --fos-window-fill: rgb(42 42 46 / 0.78);
+    --fos-window-fill: rgb(42 42 46 / min(1, calc(0.78 * var(--fos-alpha, 1))));
     --fos-window-ink: #f5f5f7;
     --fos-window-muted: #a1a1a6;
-    --fos-sidebar: rgb(44 44 48 / 0.94);
-    --fos-sidebar-soft: rgb(50 50 54 / 0.55);
+    --fos-sidebar: rgb(44 44 48 / min(1, calc(0.94 * var(--fos-alpha, 1))));
+    --fos-sidebar-soft: rgb(50 50 54 / min(1, calc(0.55 * var(--fos-alpha, 1))));
     --fos-content: #1c1c1e;
-    --fos-content-soft: rgb(36 36 40 / 0.82);
-    --fos-card: rgb(44 44 46 / 0.95);
-    --fos-widget-bg: rgb(44 44 46 / 0.78);
+    --fos-content-soft: rgb(36 36 40 / min(1, calc(0.82 * var(--fos-alpha, 1))));
+    --fos-card: rgb(44 44 46 / min(1, calc(0.95 * var(--fos-alpha, 1))));
+    --fos-widget-bg: rgb(44 44 46 / min(1, calc(0.78 * var(--fos-alpha, 1))));
     --fos-hover: rgb(255 255 255 / 0.08);
     --fos-active-fill: rgb(255 255 255 / 0.12);
     --fos-hairline: rgb(255 255 255 / 0.12);
@@ -590,18 +1182,81 @@
     color-scheme: dark;
 }
 
-/* Panel .dark must not recolor a light OS shell */
-.dark .fos-root:not([data-fos-theme='dark']) {
+/*
+ * Panel design tokens inside the OS follow data-fos-theme (not html.dark) and use the
+ * macOS neutral palette, so app content matches the window chrome in both modes.
+ * --primary / --ring are left alone: they carry the accent colour. The html:has() form
+ * covers portals (dialogs, toasts) rendered outside .fos-root.
+ */
+.fos-root[data-fos-theme='light'],
+html:has(.fos-root[data-fos-theme='light']) {
+    --background: 0 0% 100%;
+    --foreground: 240 3% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 3% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 3% 11%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 3% 11%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 2% 44%;
+    --accent: 240 5% 94%;
+    --accent-foreground: 240 3% 11%;
+    --border: 240 6% 88%;
+    --input: 240 6% 86%;
+    --fp-surface-alpha: 0.72;
+    --fp-surface-highlight: 0 0% 100% / 0.6;
+    --fp-surface-tint: var(--card);
+    --fp-surface-border: hsl(var(--border) / 0.8);
+    --fp-surface-saturate: 1.35;
+    --fp-chrome-alpha: 0.62;
+    --fp-inset-bg: hsl(var(--muted) / 0.5);
+    --fp-inset-border: hsl(var(--border) / 0.7);
     color-scheme: light;
 }
+.fos-root[data-fos-theme='dark'],
+html:has(.fos-root[data-fos-theme='dark']) {
+    --background: 240 3% 12%;
+    --foreground: 240 7% 97%;
+    --card: 240 3% 15%;
+    --card-foreground: 240 7% 97%;
+    --popover: 240 3% 16%;
+    --popover-foreground: 240 7% 97%;
+    --secondary: 240 3% 20%;
+    --secondary-foreground: 240 5% 92%;
+    --muted: 240 3% 19%;
+    --muted-foreground: 240 3% 64%;
+    --accent: 240 3% 22%;
+    --accent-foreground: 240 5% 94%;
+    --destructive: 3 100% 61%;
+    --border: 240 3% 23%;
+    --input: 240 3% 26%;
+    --fp-surface-alpha: 0.74;
+    --fp-surface-highlight: 0 0% 100% / 0.05;
+    --fp-surface-tint: 240 3% 10%;
+    --fp-surface-border: hsl(240 3% 20%);
+    --fp-surface-saturate: 1.1;
+    --fp-chrome-alpha: 0.76;
+    --fp-inset-bg: rgb(255 255 255 / 0.04);
+    --fp-inset-border: hsl(0 0% 100% / 0.07);
+}
 
+/* The glass lives on ::before: a backdrop-filter on the bar itself would make it the backdrop root,
+   and its dropdown menus could then only blur the bar instead of the desktop. */
 .fos-menubar {
-    background: var(--fos-glass);
     color: var(--fos-ink);
     border-bottom: 1px solid var(--fos-glass-edge-soft);
     box-shadow: inset 0 -0.5px 0 rgb(255 255 255 / 0.35);
+}
+
+.fos-menubar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--fos-glass);
     backdrop-filter: var(--fos-blur);
-    -webkit-backdrop-filter: var(--fos-blur);
+    pointer-events: none;
 }
 
 .fos-menubar-search {
@@ -760,10 +1415,9 @@
     box-shadow: inset 0 -0.5px 0 rgb(255 255 255 / 0.06);
 }
 
-.fos-menubar[data-opaque='true'] {
+.fos-menubar[data-opaque='true']::before {
     background: var(--fos-glass-thick);
     backdrop-filter: none;
-    -webkit-backdrop-filter: none;
 }
 
 .fos-glass-menu,
@@ -774,7 +1428,6 @@
     background: var(--fos-glass-thick);
     color: var(--fos-ink);
     backdrop-filter: var(--fos-blur-heavy);
-    -webkit-backdrop-filter: var(--fos-blur-heavy);
     box-shadow:
         inset 0 0.5px 0 rgb(255 255 255 / 0.45),
         inset 0 -0.5px 0 rgb(255 255 255 / 0.08),
@@ -795,8 +1448,7 @@
 /* Spotlight: thinner glass so wallpaper shows through (macOS Spotlight). */
 .fos-spotlight-scrim {
     background: rgb(0 0 0 / 0.18);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(calc(2px * var(--fos-blur-scale, 1)));
 }
 
 .fos-spotlight {
@@ -804,8 +1456,7 @@
     border-radius: 16px;
     background: rgb(246 248 252 / 0.52);
     color: var(--fos-ink);
-    backdrop-filter: blur(48px) saturate(190%);
-    -webkit-backdrop-filter: blur(48px) saturate(190%);
+    backdrop-filter: blur(calc(48px * var(--fos-blur-scale, 1))) saturate(190%);
     box-shadow:
         inset 0 0.5px 0 rgb(255 255 255 / 0.55),
         0 28px 80px -18px rgb(0 0 0 / 0.55),
@@ -998,16 +1649,17 @@
 }
 
 .fos-app-icon {
-    background-image: linear-gradient(165deg, rgb(255 255 255 / 0.38), transparent 48%, rgb(0 0 0 / 0.22));
-    box-shadow:
-        inset 0 1px 1px rgb(255 255 255 / 0.7),
-        inset 0 -2px 4px rgb(0 0 0 / 0.16),
-        0 6px 12px -4px rgb(0 0 0 / 0.4);
-    border: 1px solid rgb(255 255 255 / 0.28);
+    display: block;
+    overflow: visible;
+    filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.16)) drop-shadow(0 5px 9px rgb(0 0 0 / 0.22));
 }
 
-.fos-app-icon svg {
-    filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.22));
+.fos-app-icon.is-bare {
+    filter: drop-shadow(0 3px 5px rgb(0 0 0 / 0.22));
+}
+
+.fos-app-icon.is-small {
+    filter: drop-shadow(0 0.5px 1px rgb(0 0 0 / 0.25));
 }
 
 .fos-window-surface {
@@ -1015,13 +1667,33 @@
     background: var(--fos-window-fill);
     color: var(--fos-window-ink);
     border-color: var(--fos-glass-edge);
-    border-radius: 12px;
-    backdrop-filter: blur(50px) saturate(190%);
-    -webkit-backdrop-filter: blur(50px) saturate(190%);
+    border-radius: var(--fos-radius, 12px);
+    backdrop-filter: blur(calc(50px * var(--fos-blur-scale, 1))) saturate(190%);
     box-shadow:
         inset 0 0.5px 0 rgb(255 255 255 / 0.45),
         var(--fos-shadow),
         0 0 0 0.5px var(--fos-hairline);
+    transition: filter 200ms ease;
+}
+
+.fos-root[data-fos-focus-ring='true'] .fos-window[data-focused='true'] .fos-window-surface {
+    box-shadow:
+        0 0 0 1.5px color-mix(in srgb, var(--fos-accent-color) 85%, transparent),
+        0 0 28px -6px color-mix(in srgb, var(--fos-accent-color) 55%, transparent),
+        0 34px 90px -22px rgb(0 0 0 / 0.58) !important;
+}
+
+.fos-root[data-fos-dim-inactive='true'] .fos-window[data-focused='false'] .fos-window-surface {
+    filter: brightness(0.78) saturate(0.75) !important;
+    opacity: 0.92;
+}
+
+/* Reduce transparency: drop every backdrop blur so surfaces read as solid. */
+.fos-root[data-fos-solid='true'] *,
+.fos-root[data-fos-solid='true'] *::before,
+.fos-root[data-fos-solid='true'] *::after {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
 }
 
 .fos-window-body {
@@ -1078,8 +1750,7 @@
     padding: 52px 10px 14px;
     border-right: 0.5px solid var(--fos-hairline);
     background: var(--fos-sidebar-soft);
-    backdrop-filter: blur(50px) saturate(200%);
-    -webkit-backdrop-filter: blur(50px) saturate(200%);
+    backdrop-filter: blur(calc(50px * var(--fos-blur-scale, 1))) saturate(200%);
 }
 
 .fos-finder-sidebar-label {
@@ -1123,8 +1794,7 @@
     flex: 1;
     flex-direction: column;
     background: var(--fos-content-soft);
-    backdrop-filter: blur(40px) saturate(180%);
-    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    backdrop-filter: blur(calc(40px * var(--fos-blur-scale, 1))) saturate(180%);
 }
 
 .fos-finder-toolbar {
@@ -1441,8 +2111,7 @@
     top: 0;
     z-index: 1;
     background: color-mix(in srgb, var(--fos-content-soft) 92%, transparent);
-    backdrop-filter: blur(16px) saturate(160%);
-    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    backdrop-filter: blur(calc(16px * var(--fos-blur-scale, 1))) saturate(160%);
 }
 
 .fos-finder-list th {
@@ -1563,7 +2232,8 @@
 .fos-window[data-fos-app='finder'] .fos-window-body,
 .fos-window[data-fos-app='settings'] .fos-window-body,
 .fos-window[data-fos-app='terminal'] .fos-window-body,
-.fos-window[data-fos-app='editor'] .fos-window-body {
+.fos-window[data-fos-app='editor'] .fos-window-body,
+.fos-window[data-fos-app='servers'] .fos-window-body {
     background: transparent;
 }
 
@@ -1575,6 +2245,24 @@
     box-shadow:
         var(--fos-shadow),
         0 0 0 0.5px var(--fos-hairline);
+}
+
+.fos-window-surface--terminal {
+    --fos-window-fill: rgb(250 250 252 / min(1, calc(0.86 * var(--fos-alpha, 1))));
+    background: var(--fos-window-fill);
+}
+
+.fos-root[data-fos-theme='dark'] .fos-window-surface--terminal {
+    --fos-window-fill: rgb(16 16 20 / min(1, calc(0.8 * var(--fos-alpha, 1))));
+    border-color: rgb(255 255 255 / 0.14);
+    box-shadow:
+        inset 0 0.5px 0 rgb(255 255 255 / 0.18),
+        var(--fos-shadow),
+        0 0 0 0.5px rgb(0 0 0 / 0.35);
+}
+
+.fos-window[data-fos-app='terminal'][data-maximized='true'] .fos-window-surface--terminal {
+    border-radius: 0;
 }
 
 .fos-settings {
@@ -1711,34 +2399,197 @@
     color: var(--fos-secondary);
 }
 
-.fos-settings-toggle {
+/* ── Shared controls: OsSwitch, native checkbox, native range ── */
+.fos-switch {
+    --sw-w: 38px;
+    --sw-h: 22px;
+    --sw-pad: 2px;
     position: relative;
-    width: 38px;
-    height: 22px;
+    display: inline-block;
+    width: var(--sw-w);
+    height: var(--sw-h);
     flex-shrink: 0;
     border-radius: 999px;
-    background: #787880;
-    transition: background 160ms ease;
+    background: color-mix(in srgb, var(--fos-window-ink, #1d1d1f) 22%, transparent);
+    box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.08);
+    cursor: pointer;
+    transition:
+        background 180ms ease,
+        box-shadow 180ms ease;
 }
 
-.fos-settings-toggle.is-on {
-    background: #34c759;
+.fos-switch.is-sm {
+    --sw-w: 32px;
+    --sw-h: 18px;
 }
 
-.fos-settings-toggle > span {
+.fos-switch > span {
     position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
+    top: var(--sw-pad);
+    left: var(--sw-pad);
+    width: calc(var(--sw-h) - var(--sw-pad) * 2);
+    height: calc(var(--sw-h) - var(--sw-pad) * 2);
+    border-radius: 999px;
     background: #fff;
-    box-shadow: 0 1px 3px rgb(0 0 0 / 0.28);
-    transition: transform 160ms ease;
+    box-shadow:
+        0 1px 3px rgb(0 0 0 / 0.3),
+        0 0 0 0.5px rgb(0 0 0 / 0.04);
+    transition:
+        transform 220ms var(--fos-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
+        width 160ms ease;
 }
 
-.fos-settings-toggle.is-on > span {
-    transform: translateX(16px);
+.fos-switch:active:not(:disabled) > span {
+    width: calc(var(--sw-h) - var(--sw-pad) * 2 + 5px);
+}
+
+.fos-switch[aria-checked='true'] {
+    background: var(--fos-accent-color);
+}
+
+.fos-switch[aria-checked='true'] > span {
+    transform: translateX(calc(var(--sw-w) - var(--sw-h)));
+}
+
+.fos-switch[aria-checked='true']:active:not(:disabled) > span {
+    transform: translateX(calc(var(--sw-w) - var(--sw-h) - 5px));
+}
+
+.fos-switch:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--fos-accent-color) 40%, transparent);
+}
+
+.fos-switch:disabled {
+    cursor: default;
+    opacity: 0.4;
+}
+
+.fos-root input[type='checkbox'] {
+    appearance: none;
+    -webkit-appearance: none;
+    display: inline-grid;
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+    margin: 0;
+    place-content: center;
+    vertical-align: middle;
+    border: 1px solid color-mix(in srgb, var(--fos-window-ink, #1d1d1f) 30%, transparent);
+    border-radius: 4px;
+    background: var(--fos-input-bg);
+    box-shadow: 0 0.5px 1px rgb(0 0 0 / 0.08);
+    cursor: pointer;
+    transition:
+        background 120ms ease,
+        border-color 120ms ease,
+        box-shadow 120ms ease;
+}
+
+.fos-root input[type='checkbox']::before {
+    content: '';
+    width: 9px;
+    height: 9px;
+    background: #fff;
+    clip-path: polygon(12% 50%, 0 64%, 40% 100%, 100% 22%, 86% 8%, 39% 72%);
+    transform: scale(0);
+    transition: transform 160ms var(--fos-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+}
+
+.fos-root input[type='checkbox']:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--fos-accent-color) 70%, transparent);
+}
+
+.fos-root input[type='checkbox']:checked,
+.fos-root input[type='checkbox']:indeterminate {
+    border-color: transparent;
+    background: var(--fos-accent-color);
+}
+
+.fos-root input[type='checkbox']:checked::before {
+    transform: scale(1);
+}
+
+.fos-root input[type='checkbox']:indeterminate::before {
+    height: 2px;
+    border-radius: 2px;
+    clip-path: none;
+    transform: scale(1);
+}
+
+.fos-root input[type='checkbox']:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--fos-accent-color) 40%, transparent);
+}
+
+.fos-root input[type='checkbox']:disabled {
+    cursor: default;
+    opacity: 0.4;
+}
+
+.fos-root input[type='range'] {
+    appearance: none;
+    -webkit-appearance: none;
+    height: 20px;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.fos-root input[type='range']::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 999px;
+    background:
+        linear-gradient(var(--fos-accent-color), var(--fos-accent-color)) 0 / var(--fos-range-fill, 0%) 100% no-repeat,
+        color-mix(in srgb, var(--fos-window-ink, #1d1d1f) 16%, transparent);
+}
+
+.fos-root input[type='range']::-moz-range-track {
+    height: 4px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--fos-window-ink, #1d1d1f) 16%, transparent);
+}
+
+.fos-root input[type='range']::-moz-range-progress {
+    height: 4px;
+    border-radius: 999px;
+    background: var(--fos-accent-color);
+}
+
+.fos-root input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    margin-top: -6px;
+    border-radius: 999px;
+    background: #fff;
+    box-shadow:
+        0 1px 4px rgb(0 0 0 / 0.35),
+        0 0 0 0.5px rgb(0 0 0 / 0.08);
+    transition: transform 140ms var(--fos-ease);
+}
+
+.fos-root input[type='range']::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border: 0;
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+}
+
+.fos-root input[type='range']:active::-webkit-slider-thumb {
+    transform: scale(1.15);
+}
+
+.fos-root input[type='range']:focus-visible {
+    outline: none;
+}
+
+.fos-root input[type='range']:focus-visible::-webkit-slider-thumb {
+    box-shadow:
+        0 1px 4px rgb(0 0 0 / 0.35),
+        0 0 0 4px color-mix(in srgb, var(--fos-accent-color) 40%, transparent);
 }
 
 .fos-settings-themes {
@@ -1891,6 +2742,11 @@
 }
 
 .fos-settings-btn {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     height: 32px;
     border-radius: 8px;
     background: #0a84ff;
@@ -1930,6 +2786,103 @@
 
 .fos-settings-range {
     width: 140px;
+    accent-color: var(--fos-accent-color);
+}
+
+.fos-settings-glass {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 14px;
+}
+
+.fos-settings-glass-preview {
+    position: relative;
+    height: 120px;
+    overflow: hidden;
+    border-radius: 12px;
+    background-size: cover !important;
+    box-shadow: inset 0 0 0 0.5px var(--fos-hairline);
+}
+
+.fos-settings-glass-blob {
+    position: absolute;
+    top: 18px;
+    left: 22%;
+    width: 120px;
+    height: 120px;
+    border-radius: 999px;
+    background: radial-gradient(circle at 35% 35%, #fff 0%, var(--fos-accent-color) 45%, transparent 72%);
+    opacity: 0.85;
+    animation: fos-glass-blob 6s ease-in-out infinite alternate;
+}
+
+@keyframes fos-glass-blob {
+    to {
+        transform: translate(140px, 10px) scale(1.15);
+    }
+}
+
+.fos-settings-glass-pane {
+    position: absolute;
+    inset: 22px 18% 22px 18%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 18px;
+    border: 0.5px solid var(--fos-glass-edge);
+    border-radius: var(--fos-radius, 12px);
+    background: var(--fos-window-fill);
+    backdrop-filter: blur(calc(50px * var(--fos-blur-scale, 1))) saturate(190%);
+    box-shadow:
+        inset 0 0.5px 0 rgb(255 255 255 / 0.45),
+        0 12px 30px -12px rgb(0 0 0 / 0.5);
+}
+
+.fos-settings-glass-pane span {
+    height: 7px;
+    border-radius: 999px;
+    background: var(--fos-hairline);
+}
+
+.fos-settings-glass-pane span:nth-child(1) {
+    width: 45%;
+    background: color-mix(in srgb, var(--fos-window-ink) 35%, transparent);
+}
+
+.fos-settings-glass-pane span:nth-child(2) {
+    width: 80%;
+}
+
+.fos-settings-glass-pane span:nth-child(3) {
+    width: 62%;
+}
+
+.fos-settings-glass-presets {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.fos-settings-glass-preset {
+    height: 30px;
+    border-radius: 8px;
+    border: 0.5px solid var(--fos-hairline);
+    background: var(--fos-input-bg);
+    color: var(--fos-window-ink);
+    font-size: 12px;
+    font-weight: 550;
+}
+
+.fos-settings-glass-preset:hover {
+    background: var(--fos-hover);
+}
+
+.fos-settings-glass-preset.is-active {
+    border-color: transparent;
+    background: var(--fos-accent-color);
+    color: #fff;
 }
 
 .fos-settings-range-val {
@@ -2185,8 +3138,103 @@
     background: color-mix(in srgb, var(--fos-content-soft) 88%, transparent);
     border-bottom: 0.5px solid var(--fos-hairline);
     color: var(--fos-window-ink);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(calc(24px * var(--fos-blur-scale, 1))) saturate(180%);
+}
+
+/* Server Manager — unified chrome (traffic lights over toolbar, no caption strip) */
+.fos-servers {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    color: var(--fos-window-ink);
+    background: transparent;
+}
+
+.fos-servers-toolbar {
+    display: flex;
+    height: 52px;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px 0 72px;
+    border-bottom: 0.5px solid var(--fos-hairline);
+    background: color-mix(in srgb, var(--fos-content-soft) 70%, transparent);
+    color: var(--fos-window-ink);
+    backdrop-filter: blur(calc(24px * var(--fos-blur-scale, 1))) saturate(180%);
+}
+
+.fos-servers-filters {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    border-radius: 8px;
+    padding: 2px;
+    background: var(--fos-hover);
+    font-size: 12px;
+}
+
+.fos-servers-filters button {
+    border-radius: 6px;
+    padding: 3px 10px;
+    color: var(--fos-window-muted);
+}
+
+.fos-servers-filters button:hover {
+    color: var(--fos-window-ink);
+}
+
+.fos-servers-filters button.is-active {
+    background: var(--fos-content-soft);
+    color: var(--fos-window-ink);
+    box-shadow: 0 0.5px 1px rgb(0 0 0 / 0.18);
+}
+
+.fos-servers-search {
+    position: relative;
+    margin-left: auto;
+}
+
+.fos-servers-search svg {
+    position: absolute;
+    top: 50%;
+    left: 8px;
+    width: 14px;
+    height: 14px;
+    transform: translateY(-50%);
+    color: var(--fos-window-muted);
+    pointer-events: none;
+}
+
+.fos-servers-search input {
+    height: 28px;
+    width: 12rem;
+    border-radius: 7px;
+    border: none;
+    padding: 0 10px 0 28px;
+    background: var(--fos-input-bg);
+    color: var(--fos-window-ink);
+    font-size: 12px;
+    outline: none;
+}
+
+.fos-servers-search input::placeholder {
+    color: var(--fos-window-muted);
+}
+
+.fos-servers-search input:focus {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--fos-accent-color) 45%, transparent);
+}
+
+.fos-servers-body {
+    min-height: 0;
+    flex: 1;
+    overflow: auto;
+    background: color-mix(in srgb, var(--fos-content) 92%, transparent);
+}
+
+.fos-servers-body thead {
+    background: color-mix(in srgb, var(--fos-content-soft) 88%, transparent);
+    backdrop-filter: blur(calc(16px * var(--fos-blur-scale, 1)));
 }
 
 .fos-window[data-focused='false'] .fos-titlebar {
@@ -2198,8 +3246,7 @@
 .fos-window aside:not(.fos-finder-sidebar):not(.fos-settings-sidebar) {
     background: color-mix(in oklab, var(--fos-glass) 85%, transparent);
     border-color: color-mix(in oklab, var(--fos-ink) 10%, transparent);
-    backdrop-filter: blur(20px) saturate(150%);
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    backdrop-filter: blur(calc(20px * var(--fos-blur-scale, 1))) saturate(150%);
 }
 
 .fos-control-section,
@@ -2251,38 +3298,22 @@
     color: white;
 }
 
-.fos-switch {
-    appearance: none;
-    width: 36px;
-    height: 22px;
-    flex-shrink: 0;
-    border-radius: 999px;
-    background: #787880;
-    cursor: pointer;
-    padding: 2px;
-}
-
-.fos-switch::after {
-    content: '';
-    display: block;
-    width: 18px;
-    height: 18px;
-    background: white;
-    border-radius: 50%;
-    transition: transform 160ms var(--fos-ease);
-    box-shadow: 0 1px 3px rgb(0 0 0 / 0.28);
-}
-
-.fos-switch:checked {
-    background: #34c759;
-}
-.fos-switch:checked::after {
-    transform: translateX(14px);
-}
-
-.fos-root :is(button, input, select, a):focus-visible {
+/* Text fields are left out: they match :focus-visible on every click. They use .fos-field. */
+.fos-root :is(button, select, a, [role='switch'], [role='tab']):focus-visible {
     outline: 2px solid var(--fos-accent-color);
     outline-offset: 3px;
+}
+
+.fos-root .fos-field {
+    transition:
+        box-shadow 140ms ease,
+        background-color 140ms ease;
+}
+.fos-root .fos-field:focus {
+    outline: none;
+    box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--fos-accent-color) 28%, transparent),
+        inset 0 0 0 1px color-mix(in srgb, var(--fos-accent-color) 65%, transparent);
 }
 
 .fos-glass-menu button {
@@ -2306,8 +3337,7 @@
     background: var(--fos-widget-bg);
     color: var(--fos-ink);
     padding: 18px 20px;
-    backdrop-filter: blur(40px) saturate(180%);
-    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    backdrop-filter: blur(calc(40px * var(--fos-blur-scale, 1))) saturate(180%);
     box-shadow:
         inset 0 0.5px 0 rgb(255 255 255 / 0.35),
         0 16px 40px -16px rgb(0 0 0 / 0.4);
@@ -2540,8 +3570,7 @@
     color: var(--fos-ink);
     background: var(--fos-widget-bg);
     border: 0.5px solid var(--fos-glass-edge);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(calc(24px * var(--fos-blur-scale, 1))) saturate(180%);
     box-shadow:
         inset 0 0.5px 0 rgb(255 255 255 / 0.35),
         0 6px 18px -10px rgb(0 0 0 / 0.4);
@@ -2564,8 +3593,7 @@
     padding: 8px;
     background: var(--fos-widget-bg);
     border: 0.5px solid var(--fos-glass-edge);
-    backdrop-filter: blur(28px) saturate(180%);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    backdrop-filter: blur(calc(28px * var(--fos-blur-scale, 1))) saturate(180%);
     box-shadow: 0 12px 32px -14px rgb(0 0 0 / 0.35);
 }
 
@@ -2604,8 +3632,7 @@
     padding: 0 12px;
     border-bottom: 1px solid color-mix(in oklab, var(--fos-ink) 10%, transparent);
     background: color-mix(in oklab, var(--fos-glass) 70%, transparent);
-    backdrop-filter: blur(18px) saturate(160%);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    backdrop-filter: blur(calc(18px * var(--fos-blur-scale, 1))) saturate(160%);
 }
 
 .fos-app-toolbar select,
@@ -2739,7 +3766,7 @@
 @supports not (backdrop-filter: blur(1px)) {
     .fos-glass-menu,
     .fos-dock-shell,
-    .fos-menubar,
+    .fos-menubar::before,
     .fos-sheet,
     .fos-spotlight,
     .fos-control-center,
@@ -2749,17 +3776,16 @@
         background: var(--fos-glass-thick);
         backdrop-filter: none;
     }
-
-    .fos-spotlight {
-        background: rgb(36 36 40 / 0.94);
-    }
 }
 
 .fos-editor {
-    --editor-canvas: #fff;
-    --editor-chrome: #f6f7fa;
-    --editor-line: rgb(100 116 139 / 0.16);
-    --editor-selected: color-mix(in srgb, var(--fos-accent-color) 10%, transparent);
+    --editor-canvas: #ffffff;
+    --editor-chrome: #f3f3f3;
+    --editor-activity: #2c2c2c;
+    --editor-line: rgb(0 0 0 / 0.1);
+    --editor-selected: rgb(0 0 0 / 0.06);
+    --editor-status: #007acc;
+    --editor-check: #007acc;
     display: flex;
     height: 100%;
     min-width: 0;
@@ -2768,11 +3794,14 @@
     container-type: inline-size;
 }
 
-.dark .fos-editor {
+.fos-root[data-fos-theme='dark'] .fos-editor {
     --editor-canvas: #1e1e1e;
-    --editor-chrome: #24262c;
-    --editor-line: rgb(180 190 210 / 0.12);
-    --editor-selected: color-mix(in srgb, var(--fos-accent-color) 20%, transparent);
+    --editor-chrome: #252526;
+    --editor-activity: #333333;
+    --editor-line: rgb(255 255 255 / 0.08);
+    --editor-selected: rgb(255 255 255 / 0.08);
+    --editor-status: #007acc;
+    --editor-check: #3794ff;
 }
 
 .fos-editor button {
@@ -2792,41 +3821,48 @@
     display: flex;
     flex-shrink: 0;
     align-items: center;
-    gap: 4px;
-    min-height: 46px;
-    padding: 6px 10px;
+    gap: 2px;
+    min-height: 35px;
+    padding: 4px 8px;
     border-bottom: 1px solid var(--editor-line);
-    background: var(--fos-glass);
+    background: var(--editor-chrome);
 }
 
 .fos-editor-toolbar button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    min-height: 30px;
-    min-width: 30px;
-    padding: 5px 8px;
-    border-radius: 7px;
+    gap: 5px;
+    min-height: 26px;
+    min-width: 26px;
+    padding: 3px 7px;
+    border-radius: 3px;
     font-size: 11px;
     white-space: nowrap;
+    color: var(--fos-secondary);
+}
+
+.fos-editor-toolbar button:not(:disabled):hover {
+    color: var(--fos-ink);
+    background: var(--editor-selected);
 }
 
 .fos-editor-toolbar button[aria-pressed='true'] {
+    color: var(--fos-ink);
     background: var(--editor-selected);
 }
 .fos-editor-toolbar-divider {
     width: 1px;
-    height: 17px;
+    height: 14px;
     background: var(--editor-line);
-    margin: 0 5px;
+    margin: 0 4px;
 }
 .fos-editor-toolbar .fos-editor-save:not(:disabled) {
-    background: var(--fos-accent-color);
-    color: white;
+    color: #fff;
+    background: #0e639c;
 }
 .fos-editor-toolbar .fos-editor-save:not(:disabled):hover {
-    filter: brightness(1.1);
+    background: #1177bb;
 }
 
 .fos-editor-workspace {
@@ -2834,14 +3870,42 @@
     min-height: 0;
     flex: 1;
 }
+.fos-editor-activity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    width: 48px;
+    flex-shrink: 0;
+    padding: 0;
+    border-right: 1px solid var(--editor-line);
+    background: var(--editor-activity);
+}
+.fos-editor-activity button {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 0;
+    color: rgb(255 255 255 / 0.45);
+}
+.fos-editor-activity button:not(:disabled):hover {
+    color: rgb(255 255 255 / 0.85);
+    background: transparent;
+}
+.fos-editor-activity button[aria-pressed='true'] {
+    color: #fff;
+    background: transparent;
+    box-shadow: inset 2px 0 0 #fff;
+}
 .fos-editor .fos-editor-sidebar {
     display: flex;
     flex-direction: column;
-    width: 218px;
+    width: 260px;
     flex-shrink: 0;
-    padding: 12px 9px;
+    padding: 0;
     border-right: 1px solid var(--editor-line);
-    background: var(--fos-glass);
+    background: var(--editor-chrome);
 }
 
 .fos-editor-sidebar-heading,
@@ -2849,16 +3913,20 @@
 .fos-editor-location {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 6px;
     min-width: 0;
-    padding: 0 7px;
+    padding: 0 12px;
     font-size: 11px;
 }
 
 .fos-editor-sidebar-heading {
-    margin-bottom: 14px;
+    height: 35px;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--editor-line);
     font-weight: 600;
-    font-size: 12px;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
 }
 .fos-editor-sidebar-heading > span,
 .fos-editor-folder-heading > span {
@@ -2871,12 +3939,12 @@
 .fos-editor-folder-heading button {
     display: grid;
     place-items: center;
-    padding: 5px;
-    border-radius: 5px;
+    padding: 4px;
+    border-radius: 3px;
 }
 .fos-editor-location {
     color: var(--fos-secondary);
-    margin-bottom: 8px;
+    margin: 8px 0 4px;
 }
 .fos-editor-location span {
     overflow: hidden;
@@ -2895,11 +3963,11 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    margin: 10px 3px;
-    padding: 6px 8px;
+    margin: 6px 8px 8px;
+    padding: 4px 8px;
     background: var(--editor-canvas);
     border: 1px solid var(--editor-line);
-    border-radius: 7px;
+    border-radius: 2px;
     color: var(--fos-secondary);
 }
 .fos-editor-filter input {
@@ -2989,28 +4057,28 @@
 .fos-editor-tabs {
     display: flex;
     flex-shrink: 0;
-    min-height: 39px;
+    min-height: 35px;
     overflow-x: auto;
     background: var(--editor-chrome);
     border-bottom: 1px solid var(--editor-line);
-    padding: 4px 5px 0;
-    gap: 3px;
+    padding: 0;
+    gap: 0;
 }
 .fos-editor-tab {
     display: flex;
     align-items: center;
     flex-shrink: 0;
-    max-width: 230px;
-    border: 1px solid transparent;
-    border-bottom: none;
-    border-radius: 8px 8px 0 0;
-    padding-right: 5px;
+    max-width: 220px;
+    border: none;
+    border-right: 1px solid var(--editor-line);
+    border-radius: 0;
+    padding-right: 4px;
     color: var(--fos-secondary);
 }
 .fos-editor-tab.is-active {
     background: var(--editor-canvas);
     color: var(--fos-ink);
-    border-color: var(--editor-line);
+    box-shadow: inset 0 -1px 0 var(--editor-canvas);
 }
 .fos-editor-tab-select {
     display: flex;
@@ -3101,23 +4169,146 @@
 .fos-editor-status {
     display: flex;
     align-items: center;
-    gap: 18px;
-    min-height: 28px;
+    gap: 0;
+    min-height: 22px;
     flex-shrink: 0;
-    padding: 4px 12px;
-    border-top: 1px solid var(--editor-line);
-    background: var(--editor-chrome);
-    color: var(--fos-secondary);
-    font-size: 10px;
+    padding: 0 0 0 10px;
+    border-top: none;
+    background: var(--editor-status);
+    color: rgb(255 255 255 / 0.95);
+    font-size: 12px;
 }
 .fos-editor-save-state {
     display: flex;
     align-items: center;
     gap: 6px;
+    padding-right: 8px;
+}
+.fos-editor-status-action,
+.fos-editor-status-meta,
+.fos-editor-language {
+    display: inline-flex;
+    align-items: center;
+    min-height: 22px;
+    padding: 0 8px;
+    border-radius: 0;
+    color: inherit;
+    white-space: nowrap;
+}
+.fos-editor-status-action:hover {
+    background: rgb(255 255 255 / 0.12);
 }
 .fos-editor-language {
-    padding-left: 14px;
-    border-left: 1px solid var(--editor-line);
+    font-weight: 400;
+    text-transform: lowercase;
+}
+.fos-editor-search-pane {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+    padding: 8px 0;
+}
+.fos-editor-search-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 8px;
+}
+.fos-editor-search-actions button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 28px;
+    padding: 4px 8px;
+    border: 0;
+    border-radius: 3px;
+    font-size: 12px;
+    color: var(--fos-ink);
+    background: transparent;
+}
+.fos-editor-search-actions button:not(:disabled):hover {
+    background: var(--editor-selected);
+}
+.fos-editor-settings {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+    overflow: auto;
+    padding-bottom: 16px;
+}
+.fos-editor-pref-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 14px;
+    padding: 0 4px;
+}
+.fos-editor-pref-group h3 {
+    margin: 0 8px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--fos-secondary);
+}
+.fos-editor-pref-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 24px;
+    padding: 3px 8px;
+    border-radius: 0;
+    cursor: pointer;
+}
+.fos-editor-pref-row:hover {
+    background: var(--editor-selected);
+}
+.fos-editor-pref-row-select {
+    justify-content: space-between;
+    cursor: default;
+}
+.fos-editor-check {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    margin: 0;
+    accent-color: var(--editor-check);
+    cursor: pointer;
+}
+.fos-editor-pref-label {
+    min-width: 0;
+    flex: 1;
+    font-size: 13px;
+    line-height: 1.3;
+    color: var(--fos-ink);
+}
+.fos-editor-pref-select {
+    max-width: 7.5rem;
+    min-height: 22px;
+    padding: 1px 6px;
+    border: 1px solid var(--editor-line);
+    border-radius: 2px;
+    background: var(--editor-canvas);
+    color: var(--fos-ink);
+    font-size: 12px;
+}
+.fos-editor-pref-range {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--fos-secondary);
+    font-variant-numeric: tabular-nums;
+}
+.fos-editor-pref-range input[type='range'] {
+    width: 90px;
+    accent-color: var(--editor-check);
+}
+.fos-editor-pref-value {
+    min-width: 1.5rem;
+    text-align: right;
 }
 
 .fos-editor-welcome {
@@ -3178,8 +4369,11 @@
 }
 
 @container (max-width: 720px) {
+    .fos-editor-activity {
+        width: 40px;
+    }
     .fos-editor .fos-editor-sidebar {
-        width: 172px;
+        width: 200px;
         padding: 10px 5px;
     }
     .fos-editor-toolbar > button > span {
@@ -3202,12 +4396,7 @@
     border-bottom-color: transparent;
 }
 .fos-editor-toolbar {
-    background: rgb(244 246 250 / 0.92);
     padding-top: 0;
-    min-height: 38px;
-}
-.dark .fos-editor-toolbar {
-    background: rgb(38 41 48 / 0.94);
 }
 .fos-editor-document {
     display: flex;
@@ -3297,15 +4486,18 @@
     background: var(--fos-accent-color);
     outline: none;
 }
-.fos-console-session-embedded {
+.fos-editor-console .fos-glass-console,
+.fos-editor-console .fos-glass-terminal [data-slot='card'] {
+    background: transparent;
+}
+.fos-editor-console .fos-glass-terminal [data-slot='card-footer'] {
+    padding: 4px 8px;
+    background: color-mix(in srgb, var(--fos-glass) 35%, transparent);
+    border-color: var(--fos-glass-edge-soft);
+}
+.fos-editor-console .fos-term-embed-bar {
     height: 26px;
     font-size: 10px;
-}
-.fos-editor-console .fos-mac-terminal [data-slot='card-header'] {
-    display: none;
-}
-.fos-editor-console .fos-mac-terminal [data-slot='card-footer'] {
-    padding: 5px 8px;
 }
 @container (max-width: 620px) {
     .fos-editor-toolbar button {
@@ -3328,80 +4520,191 @@
     display: flex;
     align-items: stretch;
     justify-content: center;
-    background: rgb(20 20 24 / 0.42);
-    backdrop-filter: blur(36px) saturate(160%);
-    -webkit-backdrop-filter: blur(36px) saturate(160%);
-    padding: 72px 28px 96px;
+    padding: 64px 28px 110px;
+    background:
+        radial-gradient(120% 90% at 50% 0%, rgb(255 255 255 / 0.08), transparent 60%),
+        rgb(14 14 18 / calc(0.5 * var(--fos-alpha, 1)));
+    backdrop-filter: blur(calc(64px * var(--fos-blur-scale, 1))) saturate(170%) brightness(0.92);
+    animation: fos-launchpad-bg calc(220ms / var(--fos-speed, 1)) ease backwards;
+}
+
+@keyframes fos-launchpad-bg {
+    from {
+        opacity: 0;
+    }
+}
+
+/* macOS-style: windows and widgets get out of the way while Launchpad is up. */
+.fos-root[data-fos-launchpad='true'] .fos-window,
+.fos-root[data-fos-launchpad='true'] .fos-widgets {
+    opacity: 0;
+    transform: scale(0.94);
+    pointer-events: none;
+    transition:
+        opacity 200ms ease,
+        transform 240ms var(--fos-ease);
 }
 
 .fos-launchpad-inner {
     display: flex;
-    width: min(960px, 100%);
+    width: min(1000px, 100%);
+    min-height: 0;
     flex-direction: column;
-    gap: 28px;
+    gap: 36px;
     margin: 0 auto;
 }
 
 .fos-launchpad-search {
     display: flex;
-    width: min(320px, 100%);
+    width: min(280px, 100%);
+    height: 32px;
+    flex-shrink: 0;
     align-items: center;
-    gap: 10px;
+    gap: 7px;
     align-self: center;
-    border: 0.5px solid rgb(255 255 255 / 0.28);
-    border-radius: 12px;
-    background: rgb(255 255 255 / 0.16);
-    padding: 9px 14px;
+    border: 0.5px solid rgb(255 255 255 / 0.18);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.1);
+    padding: 0 10px 0 12px;
+    color: rgb(255 255 255 / 0.65);
+    box-shadow:
+        inset 0 0.5px 0 rgb(255 255 255 / 0.18),
+        0 8px 24px -14px rgb(0 0 0 / 0.6);
+    transition:
+        background 140ms ease,
+        border-color 140ms ease,
+        width 220ms var(--fos-ease);
+    animation: fos-launchpad-search-in calc(260ms / var(--fos-speed, 1)) var(--fos-ease) backwards;
+}
+
+@keyframes fos-launchpad-search-in {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+}
+
+.fos-launchpad-search:focus-within {
+    width: min(340px, 100%);
+    border-color: rgb(255 255 255 / 0.32);
+    background: rgb(255 255 255 / 0.15);
     color: #fff;
-    box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.25);
 }
 
 .fos-launchpad-input {
     flex: 1;
     min-width: 0;
+    height: 100%;
     border: 0;
     background: transparent;
     color: #fff;
-    font-size: 14px;
+    font-size: 13px;
     outline: none;
+    box-shadow: none;
+}
+
+.fos-launchpad-input:focus,
+.fos-launchpad-input:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 .fos-launchpad-input::placeholder {
-    color: rgb(255 255 255 / 0.55);
+    color: rgb(255 255 255 / 0.5);
 }
 
-.fos-launchpad-input::-webkit-search-decoration,
-.fos-launchpad-input::-webkit-search-cancel-button {
-    display: none;
+.fos-launchpad-clear {
+    display: flex;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.28);
+    color: rgb(0 0 0 / 0.7);
 }
 
 .fos-launchpad-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
-    gap: 18px 10px;
+    grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+    align-content: start;
+    gap: 26px 8px;
     justify-items: center;
+    min-height: 0;
     overflow: auto;
-    padding: 4px 8px 24px;
+    /* Room for the lifted, ringed selected icon; overflow: auto would clip it. */
+    margin: -12px -12px 0;
+    padding: 18px 20px 24px;
+    scrollbar-width: none;
+}
+
+.fos-root .fos-launchpad-app:focus-visible {
+    outline: none;
+}
+
+.fos-launchpad-grid::-webkit-scrollbar {
+    display: none;
 }
 
 .fos-launchpad-app {
     position: relative;
     display: flex;
-    width: 112px;
+    width: 116px;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    border-radius: 16px;
-    padding: 10px 6px 8px;
+    gap: 9px;
+    padding: 4px 4px 8px;
     color: #fff;
-    transition:
-        background 120ms ease,
-        transform 120ms ease;
+    outline: none;
+    animation: fos-launchpad-app-in calc(320ms / var(--fos-speed, 1)) var(--fos-ease) backwards;
 }
 
-.fos-launchpad-app:hover {
-    background: rgb(255 255 255 / 0.12);
-    transform: scale(1.04);
+@keyframes fos-launchpad-app-in {
+    from {
+        opacity: 0;
+        transform: scale(1.12);
+    }
+}
+
+.fos-launchpad-icon {
+    position: relative;
+    display: block;
+    border-radius: 22%;
+    transition:
+        transform 180ms var(--fos-ease),
+        filter 180ms ease,
+        box-shadow 180ms ease;
+}
+
+.fos-launchpad-icon::after {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border-radius: 26%;
+    box-shadow: 0 0 0 2px rgb(255 255 255 / 0.85);
+    opacity: 0;
+    transform: scale(0.94);
+    transition:
+        opacity 140ms ease,
+        transform 180ms var(--fos-ease);
+    pointer-events: none;
+}
+
+.fos-launchpad-app.is-selected .fos-launchpad-icon {
+    transform: translateY(-3px) scale(1.06);
+    filter: brightness(1.06) drop-shadow(0 14px 18px rgb(0 0 0 / 0.45));
+}
+
+.fos-launchpad-app.is-selected .fos-launchpad-icon::after {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.fos-launchpad-app:active .fos-launchpad-icon {
+    transform: scale(0.92);
+    filter: brightness(0.85);
+    transition-duration: 60ms;
 }
 
 .fos-launchpad-app-name {
@@ -3409,19 +4712,24 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 12px;
+    font-size: 12.5px;
     font-weight: 500;
-    text-shadow: 0 1px 2px rgb(0 0 0 / 0.55);
+    letter-spacing: -0.01em;
+    text-shadow: 0 1px 3px rgb(0 0 0 / 0.6);
 }
 
 .fos-launchpad-dot {
-    position: absolute;
-    bottom: 2px;
     width: 4px;
     height: 4px;
+    margin-top: -4px;
     border-radius: 999px;
     background: #fff;
-    opacity: 0.85;
+    opacity: 0;
+    box-shadow: 0 0 6px rgb(255 255 255 / 0.6);
+}
+
+.fos-launchpad-dot.is-on {
+    opacity: 0.9;
 }
 
 .fos-launchpad-empty {
@@ -3537,4 +4845,553 @@
 
 .fos-mission-move-btn.is-current {
     opacity: 0.45;
+}
+
+/* ── Snap layouts ─────────────────────────────────────────────── */
+.fos-snap-preview {
+    position: absolute;
+    pointer-events: none;
+    border-radius: var(--fos-radius, 12px);
+    border: 1px solid color-mix(in srgb, var(--fos-accent-color) 70%, white 10%);
+    background: color-mix(in srgb, var(--fos-accent-color) 18%, transparent);
+    backdrop-filter: blur(calc(18px * var(--fos-blur-scale, 1))) saturate(160%);
+    box-shadow:
+        0 24px 60px -20px rgb(0 0 0 / 0.5),
+        inset 0 0 0 1px rgb(255 255 255 / 0.12);
+    animation: fos-snap-preview-in calc(160ms / var(--fos-speed, 1)) var(--fos-ease) backwards;
+    transition:
+        left calc(140ms / var(--fos-speed, 1)) var(--fos-ease),
+        top calc(140ms / var(--fos-speed, 1)) var(--fos-ease),
+        width calc(140ms / var(--fos-speed, 1)) var(--fos-ease),
+        height calc(140ms / var(--fos-speed, 1)) var(--fos-ease);
+}
+@keyframes fos-snap-preview-in {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+}
+
+.fos-snap-pop {
+    position: fixed;
+    z-index: 8800;
+    padding: 10px;
+    border-radius: 16px;
+    border: 0.5px solid var(--fos-glass-edge);
+    background: color-mix(in srgb, var(--fos-glass-thick) 88%, transparent);
+    backdrop-filter: blur(calc(36px * var(--fos-blur-scale, 1))) saturate(190%);
+    box-shadow:
+        0 24px 60px -16px rgb(0 0 0 / 0.55),
+        inset 0 0.5px 0 rgb(255 255 255 / 0.3);
+    transform-origin: 20px 0;
+    animation: fos-switcher-pop calc(150ms / var(--fos-speed, 1)) var(--fos-ease) backwards;
+}
+.fos-snap-pop-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+.fos-snap-layout {
+    position: relative;
+    height: 62px;
+    border-radius: 9px;
+    background: rgb(0 0 0 / 0.18);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+[data-fos-theme='light'] .fos-snap-layout {
+    background: rgb(0 0 0 / 0.06);
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
+}
+.fos-snap-zone {
+    position: absolute;
+    border-radius: 6px;
+    background: rgb(255 255 255 / 0.22);
+    transition:
+        background-color 120ms ease,
+        transform 120ms ease;
+}
+[data-fos-theme='light'] .fos-snap-zone {
+    background: rgb(0 0 0 / 0.14);
+}
+.fos-snap-zone:hover,
+.fos-snap-zone:focus-visible {
+    background: var(--fos-accent-color);
+    outline: none;
+}
+.fos-snap-zone:active {
+    transform: scale(0.94);
+}
+
+.fos-snap-assist {
+    position: fixed;
+    inset: 0;
+    z-index: 8400;
+    background: rgb(0 0 0 / 0.28);
+    animation: fos-fade-in calc(160ms / var(--fos-speed, 1)) ease backwards;
+}
+.fos-snap-assist-zone {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    border-radius: var(--fos-radius, 12px);
+    border: 1px dashed rgb(255 255 255 / 0.25);
+    background: rgb(255 255 255 / 0.04);
+}
+.fos-snap-assist-zone.is-target {
+    border: 1px solid color-mix(in srgb, var(--fos-accent-color) 60%, transparent);
+    background: color-mix(in srgb, var(--fos-glass-thick) 55%, transparent);
+    backdrop-filter: blur(calc(28px * var(--fos-blur-scale, 1))) saturate(170%);
+    box-shadow: 0 30px 80px -24px rgb(0 0 0 / 0.6);
+}
+.fos-snap-assist-panel {
+    display: flex;
+    flex-direction: column;
+    width: min(420px, 100%);
+    max-height: 100%;
+    min-height: 0;
+    animation: fos-switcher-pop calc(180ms / var(--fos-speed, 1)) var(--fos-ease) backwards;
+}
+.fos-snap-assist-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0 4px 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    opacity: 0.85;
+}
+.fos-snap-assist-head button {
+    display: flex;
+    height: 22px;
+    width: 22px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    opacity: 0.7;
+}
+.fos-snap-assist-head button:hover {
+    opacity: 1;
+    background: rgb(255 255 255 / 0.12);
+}
+.fos-snap-assist-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 0;
+    overflow-y: auto;
+}
+.fos-snap-assist-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    background: rgb(255 255 255 / 0.07);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+    transition:
+        background-color 120ms ease,
+        transform 120ms ease;
+}
+[data-fos-theme='light'] .fos-snap-assist-card {
+    background: rgb(255 255 255 / 0.55);
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06);
+}
+.fos-snap-assist-card:hover,
+.fos-snap-assist-card:focus-visible {
+    outline: none;
+    background: color-mix(in srgb, var(--fos-accent-color) 28%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fos-accent-color) 60%, transparent);
+}
+.fos-snap-assist-card:active {
+    transform: scale(0.98);
+}
+.fos-snap-assist-tag {
+    flex-shrink: 0;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    background: rgb(255 255 255 / 0.12);
+    opacity: 0.8;
+}
+
+/* ── Settings: saved themes & workspaces ──────────────────────── */
+.fos-settings-btn.is-secondary {
+    background: rgb(127 127 127 / 0.16);
+    color: inherit;
+    box-shadow: inset 0 0 0 0.5px rgb(127 127 127 / 0.3);
+}
+.fos-settings-icon-btn {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    width: 30px;
+    border-radius: 8px;
+    opacity: 0.7;
+    transition:
+        background-color 120ms ease,
+        opacity 120ms ease;
+}
+.fos-settings-icon-btn:hover {
+    opacity: 1;
+    background: rgb(127 127 127 / 0.16);
+}
+.fos-settings-icon-btn.is-danger:hover {
+    color: #ff453a;
+    background: rgb(255 69 58 / 0.12);
+}
+.fos-settings-nav-icon.is-workspaces {
+    background: #ff9f0a;
+}
+
+.fos-theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    gap: 12px;
+    padding: 14px 14px 4px;
+}
+.fos-theme-card {
+    position: relative;
+}
+.fos-theme-card-hit {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    gap: 6px;
+    border-radius: 12px;
+    text-align: left;
+}
+.fos-theme-card-preview {
+    position: relative;
+    display: block;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border-radius: 10px;
+    background-size: cover !important;
+    background-position: center !important;
+    box-shadow:
+        inset 0 0 0 0.5px rgb(0 0 0 / 0.2),
+        0 6px 16px -10px rgb(0 0 0 / 0.5);
+    transition:
+        transform 160ms var(--fos-ease),
+        box-shadow 160ms ease;
+}
+.fos-theme-card-hit:hover .fos-theme-card-preview {
+    transform: translateY(-2px);
+    box-shadow:
+        inset 0 0 0 0.5px rgb(0 0 0 / 0.2),
+        0 0 0 2px var(--fos-accent-color),
+        0 12px 24px -12px rgb(0 0 0 / 0.6);
+}
+.fos-theme-card-hit:active .fos-theme-card-preview {
+    transform: scale(0.97);
+}
+.fos-theme-card-hit:focus-visible {
+    outline: none;
+}
+.fos-theme-card-hit:focus-visible .fos-theme-card-preview {
+    box-shadow: 0 0 0 2px var(--fos-accent-color);
+}
+.fos-theme-card-window {
+    position: absolute;
+    inset: 22% 18% 16% 14%;
+    display: block;
+    background: rgb(255 255 255 / 0.62);
+    backdrop-filter: blur(calc(8px * var(--fos-blur-scale, 1)));
+    box-shadow: 0 6px 14px -6px rgb(0 0 0 / 0.45);
+}
+.fos-theme-card-window.is-dark {
+    background: rgb(40 40 44 / 0.66);
+}
+.fos-theme-card-dots {
+    position: absolute;
+    top: 5px;
+    left: 6px;
+    display: flex;
+    gap: 3px;
+}
+.fos-theme-card-dots i {
+    height: 5px;
+    width: 5px;
+    border-radius: 999px;
+    background: #ff5f57;
+}
+.fos-theme-card-dots i:nth-child(2) {
+    background: #febc2e;
+}
+.fos-theme-card-dots i:nth-child(3) {
+    background: #28c840;
+}
+.fos-theme-card-accent {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    height: 9px;
+    width: 34%;
+    border-radius: 999px;
+}
+.fos-theme-card-name {
+    padding: 0 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 500;
+}
+.fos-theme-card-actions {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 120ms ease;
+}
+.fos-theme-card:hover .fos-theme-card-actions,
+.fos-theme-card:focus-within .fos-theme-card-actions {
+    opacity: 1;
+}
+.fos-theme-card-actions button {
+    display: flex;
+    height: 22px;
+    width: 22px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    color: #fff;
+    background: rgb(0 0 0 / 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+.fos-theme-card-actions button:hover {
+    background: rgb(0 0 0 / 0.75);
+}
+.fos-theme-toolbar {
+    flex-wrap: wrap;
+}
+
+.fos-workspace-thumb {
+    position: relative;
+    flex-shrink: 0;
+    height: 38px;
+    width: 60px;
+    overflow: hidden;
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--fos-accent-color) 18%, rgb(127 127 127 / 0.18));
+    box-shadow: inset 0 0 0 0.5px rgb(127 127 127 / 0.35);
+}
+.fos-workspace-thumb i {
+    position: absolute;
+    border-radius: 2px;
+    background: rgb(255 255 255 / 0.75);
+    box-shadow:
+        0 1px 3px rgb(0 0 0 / 0.25),
+        inset 0 0 0 0.5px rgb(0 0 0 / 0.15);
+}
+[data-fos-theme='dark'] .fos-workspace-thumb i {
+    background: rgb(90 90 96 / 0.9);
+}
+
+.fos-about-rows {
+    overflow: hidden;
+    border-radius: 10px;
+    background: var(--fos-hover);
+    box-shadow: inset 0 0 0 0.5px var(--fos-hairline);
+}
+.fos-about-rows > div + div {
+    border-top: 0.5px solid var(--fos-hairline);
+}
+
+/* ── Lock screen (macOS Sonoma layout) ── */
+.fos-lock {
+    position: fixed;
+    inset: 0;
+    z-index: 9800;
+    overflow: hidden;
+    cursor: default;
+    user-select: none;
+    color: #fff;
+    font-family:
+        -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI Variable Display', 'Segoe UI',
+        sans-serif;
+    animation: fos-lock-in calc(380ms / var(--fos-speed, 1)) var(--fos-ease) backwards;
+}
+
+.fos-lock-wallpaper {
+    position: absolute;
+    inset: -2%;
+    background-size: cover;
+    animation: fos-lock-wall-in calc(700ms / var(--fos-speed, 1)) var(--fos-ease) backwards;
+}
+
+.fos-lock-shade {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(to bottom, rgb(0 0 0 / 0.28), transparent 38%),
+        linear-gradient(to top, rgb(0 0 0 / 0.34), transparent 34%);
+}
+
+.fos-lock-clock {
+    position: absolute;
+    top: 7vh;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-shadow: 0 1px 24px rgb(0 0 0 / 0.18);
+    animation: fos-lock-drop calc(520ms / var(--fos-speed, 1)) var(--fos-spring, var(--fos-ease)) backwards;
+}
+
+.fos-lock-date {
+    font-size: clamp(1.1rem, 1.7vw, 1.6rem);
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    color: rgb(255 255 255 / 0.86);
+}
+
+.fos-lock-time {
+    margin-top: -0.04em;
+    font-family:
+        ui-rounded,
+        'SF Pro Rounded',
+        -apple-system,
+        BlinkMacSystemFont,
+        'Inter',
+        'Segoe UI',
+        sans-serif;
+    font-size: clamp(5.5rem, 12vw, 10.5rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: rgb(255 255 255 / 0.82);
+}
+
+.fos-lock-user {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 8vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    animation: fos-lock-rise calc(520ms / var(--fos-speed, 1)) var(--fos-ease) 80ms backwards;
+}
+
+.fos-lock-avatar {
+    display: grid;
+    width: 58px;
+    height: 58px;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #a1a1a6, #6e6e73);
+    font-size: 21px;
+    font-weight: 600;
+    color: #fff;
+    box-shadow: 0 6px 22px rgb(0 0 0 / 0.28);
+}
+
+.fos-lock-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.fos-lock-name {
+    font-size: 15px;
+    font-weight: 600;
+    text-shadow: 0 1px 8px rgb(0 0 0 / 0.3);
+}
+
+.fos-lock-pill {
+    display: inline-flex;
+    height: 30px;
+    align-items: center;
+    gap: 10px;
+    margin-top: 2px;
+    padding: 0 4px 0 14px;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.2);
+    box-shadow: inset 0 0 0 0.5px rgb(255 255 255 / 0.28);
+    backdrop-filter: blur(24px) saturate(1.6);
+    font-size: 12px;
+    color: rgb(255 255 255 / 0.78);
+}
+
+.fos-lock-go {
+    display: grid;
+    width: 22px;
+    height: 22px;
+    place-items: center;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.28);
+    color: #fff;
+}
+
+.fos-lock[data-leaving] {
+    pointer-events: none;
+    animation: fos-lock-out calc(420ms / var(--fos-speed, 1)) var(--fos-ease) forwards;
+}
+
+.fos-lock[data-leaving] .fos-lock-clock {
+    animation: fos-lock-lift calc(420ms / var(--fos-speed, 1)) var(--fos-ease) forwards;
+}
+
+.fos-lock[data-leaving] .fos-lock-user {
+    animation: fos-lock-sink calc(420ms / var(--fos-speed, 1)) var(--fos-ease) forwards;
+}
+
+@keyframes fos-lock-in {
+    from {
+        opacity: 0;
+    }
+}
+
+@keyframes fos-lock-wall-in {
+    from {
+        transform: scale(1.06);
+    }
+}
+
+@keyframes fos-lock-drop {
+    from {
+        opacity: 0;
+        transform: translateY(-18px);
+    }
+}
+
+@keyframes fos-lock-rise {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+}
+
+@keyframes fos-lock-out {
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes fos-lock-lift {
+    to {
+        opacity: 0;
+        transform: translateY(-40px);
+    }
+}
+
+@keyframes fos-lock-sink {
+    to {
+        opacity: 0;
+        transform: translateY(24px);
+    }
 }

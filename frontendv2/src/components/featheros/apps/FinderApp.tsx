@@ -944,7 +944,7 @@ export default function FinderApp({ win }: OsAppProps) {
                             dropTarget === `srv:${s.uuidShort}` && 'bg-[#0a84ff]/15 ring-2 ring-[#0a84ff]',
                         )}
                     >
-                        <HardDrive className='h-3.5 w-3.5 shrink-0 text-[#6e6e73]' strokeWidth={1.75} />
+                        <HardDrive className='h-3.5 w-3.5 shrink-0 text-[var(--fos-window-muted)]' strokeWidth={1.75} />
                         <span className='truncate'>{s.name}</span>
                     </button>
                 ))}
@@ -1413,7 +1413,7 @@ export default function FinderApp({ win }: OsAppProps) {
                                 count: String(uploads.length),
                                 percent: String(totalUpload),
                             })}
-                            <span className='h-1 w-28 overflow-hidden rounded-full bg-black/10'>
+                            <span className='h-1 w-28 overflow-hidden rounded-full bg-[var(--fos-hairline)]'>
                                 <span
                                     className='block h-full bg-[#0a84ff] transition-all'
                                     style={{ width: `${totalUpload}%` }}

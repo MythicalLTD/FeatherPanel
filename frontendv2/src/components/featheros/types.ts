@@ -112,6 +112,61 @@ export interface OsSettings {
     reduceMotion: boolean;
     spaceCount: number;
     hotCorners: OsHotCorners;
+    /** 0 = nearly solid, 50 = default, 100 = maximum glass. */
+    glassTransparency: number;
+    /** Backdrop blur strength in percent of the default (0–200). */
+    glassBlur: number;
+    reduceTransparency: boolean;
+    windowRadius: number;
+    focusRing: boolean;
+    dimInactive: boolean;
+    /** Darkens the wallpaper, 0–70 %. */
+    wallpaperDim: number;
+    /** After snapping a window, offer the other windows for the remaining zones. */
+    snapAssist: boolean;
+    /** Minutes of inactivity before the lock screen appears (0 = never). */
+    lockAfterMinutes: number;
+    workspaces: OsWorkspace[];
+    savedThemes: OsSavedTheme[];
+}
+
+export type OsWorkspaceWindow = Omit<OsWindow, 'id' | 'z'>;
+
+/** A saved arrangement of windows that can be reopened later. */
+export interface OsWorkspace {
+    id: string;
+    name: string;
+    savedAt: number;
+    activeSpace: number;
+    windows: OsWorkspaceWindow[];
+}
+
+export const THEME_SETTING_KEYS = [
+    'wallpaper',
+    'customWallpaperUrl',
+    'theme',
+    'accent',
+    'glassTransparency',
+    'glassBlur',
+    'reduceTransparency',
+    'windowRadius',
+    'focusRing',
+    'dimInactive',
+    'wallpaperDim',
+    'menuBarOpaque',
+    'dockSize',
+    'dockMagnification',
+    'dockPosition',
+    'fontScale',
+] as const satisfies readonly (keyof OsSettings)[];
+
+export type OsThemeValues = Partial<Pick<OsSettings, (typeof THEME_SETTING_KEYS)[number]>>;
+
+export interface OsSavedTheme {
+    id: string;
+    name: string;
+    savedAt: number;
+    values: OsThemeValues;
 }
 
 export interface OsPersistedState {
@@ -172,7 +227,37 @@ export const DEFAULT_SETTINGS: OsSettings = {
         bottomLeft: 'desktop',
         bottomRight: 'launchpad',
     },
+    glassTransparency: 50,
+    glassBlur: 100,
+    reduceTransparency: false,
+    windowRadius: 12,
+    focusRing: false,
+    dimInactive: false,
+    wallpaperDim: 0,
+    snapAssist: true,
+    lockAfterMinutes: 0,
+    workspaces: [],
+    savedThemes: [],
 };
+
+export const EFFECT_SETTING_KEYS = [
+    'glassTransparency',
+    'glassBlur',
+    'reduceTransparency',
+    'windowRadius',
+    'focusRing',
+    'dimInactive',
+    'wallpaperDim',
+    'animationSpeed',
+    'fontScale',
+] as const satisfies readonly (keyof OsSettings)[];
+
+/** Maps the transparency slider to the multiplier applied to every glass alpha. */
+export function glassAlphaScale(settings: Pick<OsSettings, 'glassTransparency' | 'reduceTransparency'>) {
+    if (settings.reduceTransparency) return 4;
+    const t = Math.max(0, Math.min(100, settings.glassTransparency ?? 50));
+    return t <= 50 ? 1 + ((50 - t) / 50) * 1.2 : 1 - ((t - 50) / 50) * 0.65;
+}
 
 export const OS_WIDGET_TYPES: OsWidgetType[] = [
     'clock',

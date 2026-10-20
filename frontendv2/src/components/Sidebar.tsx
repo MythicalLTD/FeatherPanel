@@ -44,6 +44,7 @@ import {
     type SidebarTogglePlacement,
     useSidebarPreferences,
 } from '@/hooks/useSidebarPreferences';
+import { useFeatherOsSidebarShortcut } from '@/hooks/useFeatherOsSidebarShortcut';
 import { readSidebarCollapsed, subscribeSidebarCollapsed } from '@/lib/sidebarChrome';
 import { getDesktopSidebarPanelClass, getDesktopSidebarShellClass, getSidebarSurfaceClass } from '@/lib/sidebarLayout';
 import { runPluginJs } from '@/lib/run-plugin-js';
@@ -253,6 +254,9 @@ function SidebarContent({
         (!isBottomDock || sidebarTogglePlacement === 'both');
 
     const gameEnabled = isModuleEnabled(settings, 'game');
+    const { showOsInSidebar } = useFeatherOsSidebarShortcut();
+    const isDashboardArea = pathname === '/dashboard' || pathname.startsWith('/dashboard/');
+    const showOsShortcut = gameEnabled && showOsInSidebar && isDashboardArea;
     const osTitle = `${settings?.app_name || 'FeatherPanel'} OS`;
 
     if (isBottomDock) {
@@ -269,7 +273,7 @@ function SidebarContent({
                 isActive={isActive}
                 unreadTicketCount={unreadTicketCount}
                 adminOpenTicketCount={adminOpenTicketCount}
-                gameEnabled={gameEnabled}
+                gameEnabled={showOsShortcut}
             />
         );
     }
@@ -799,7 +803,7 @@ function SidebarContent({
                 )}
             </nav>
 
-            {gameEnabled && (
+            {showOsShortcut && (
                 <div
                     className={cn(
                         'mt-auto shrink-0 border-t',
@@ -813,14 +817,19 @@ function SidebarContent({
                                 target='_blank'
                                 rel='noopener'
                                 {...collapsedTip(osTitle)}
-                                className='group border-primary/25 bg-primary/10 text-primary hover:border-primary/50 hover:bg-primary/20 focus-visible:ring-primary/50 relative flex h-10 w-10 items-center justify-center rounded-xl border transition-all duration-200 hover:scale-105 focus-visible:ring-2 focus-visible:outline-none'
+                                className={cn(
+                                    'text-muted-foreground hover:text-foreground focus-visible:ring-ring relative flex h-10 w-10 items-center justify-center transition-colors focus-visible:ring-2 focus-visible:outline-none',
+                                    isClassicChrome
+                                        ? 'hover:bg-muted rounded-md'
+                                        : 'hover:bg-muted/55 dark:hover:bg-muted/20 rounded-xl',
+                                )}
                                 aria-label={osTitle}
                             >
                                 <Monitor className='h-5 w-5' aria-hidden />
                             </a>
                         </div>
                     ) : (
-                        <div className={cn(isClassicChrome ? 'p-3 pb-2' : 'p-2 pb-1.5')}>
+                        <div className={cn(isClassicChrome ? 'p-2' : 'p-1.5')}>
                             <a
                                 href='/os'
                                 target='_blank'
@@ -828,25 +837,24 @@ function SidebarContent({
                                 onClick={() => {
                                     if (mobile) setMobileOpen(false);
                                 }}
-                                className='group border-primary/20 bg-primary/5 hover:border-primary/45 hover:bg-primary/10 focus-visible:ring-primary/50 relative flex items-center gap-2.5 rounded-xl border p-2.5 transition-all duration-200 hover:shadow-xs focus-visible:ring-2 focus-visible:outline-none'
+                                className={cn(
+                                    'group focus-visible:ring-ring flex w-full items-center gap-2.5 transition-colors focus-visible:ring-2 focus-visible:outline-none',
+                                    isClassicChrome
+                                        ? 'text-muted-foreground hover:bg-muted hover:text-foreground rounded-md px-2.5 py-2 text-sm font-medium'
+                                        : 'text-muted-foreground hover:bg-muted/55 hover:text-foreground dark:hover:bg-muted/20 rounded-xl px-2.5 py-2 text-sm font-medium',
+                                    isCompact && 'py-1.5',
+                                )}
+                                title={t('featheros.nav_open_hint')}
                             >
-                                <div className='bg-primary/15 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-105'>
-                                    <Monitor className='h-5 w-5' aria-hidden />
-                                </div>
-                                <div className='min-w-0 flex-1'>
-                                    <div className='flex items-center gap-1.5'>
-                                        <span className='text-foreground truncate text-xs font-semibold tracking-tight'>
-                                            {osTitle}
-                                        </span>
-                                        <ArrowUpRight
-                                            className='text-muted-foreground h-3 w-3 shrink-0 opacity-60 transition-opacity group-hover:opacity-100'
-                                            aria-hidden
-                                        />
-                                    </div>
-                                    <p className='text-muted-foreground truncate text-[11px]'>
-                                        {t('featheros.nav_open_hint')}
-                                    </p>
-                                </div>
+                                <Monitor
+                                    className={cn('shrink-0', isCompact ? 'h-4 w-4' : 'h-[1.125rem] w-[1.125rem]')}
+                                    aria-hidden
+                                />
+                                <span className='min-w-0 flex-1 truncate'>{osTitle}</span>
+                                <ArrowUpRight
+                                    className='text-muted-foreground h-3.5 w-3.5 shrink-0 opacity-40 transition-opacity group-hover:opacity-80'
+                                    aria-hidden
+                                />
                             </a>
                         </div>
                     )}
@@ -857,7 +865,7 @@ function SidebarContent({
                 <div
                     className={cn(
                         'shrink-0',
-                        !gameEnabled && 'mt-auto border-t',
+                        !showOsShortcut && 'mt-auto border-t',
                         isClassicChrome ? 'border-border/40' : 'border-border/30',
                     )}
                 >

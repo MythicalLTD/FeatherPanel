@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Minus, Maximize2, X, ChevronsUpDown } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
@@ -23,6 +24,17 @@ import { useFeatherOs } from './FeatherOsContext';
 import { OS_APPS } from './registry';
 import { MENU_BAR_HEIGHT, type OsWindow } from './types';
 import { findDockTargetRect, playGenieMinimize } from './genie';
+import {
+    edgeZoneAt,
+    rememberPreSnap,
+    requestSnapAssist,
+    takePreSnap,
+    workArea,
+    zoneRect,
+    type Rect,
+    type SnapZone,
+} from './snap';
+import { SnapLayoutsPopover } from './SnapLayouts';
 
 interface WindowCtx {
     win: OsWindow;
@@ -67,9 +79,14 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
     const focused = focusedId === win.id;
     const finderChrome = win.app === 'finder';
     const settingsChrome = win.app === 'settings';
-    const unifiedChrome = finderChrome || settingsChrome;
+    const serversChrome = win.app === 'servers';
+    const terminalChrome = win.app === 'terminal';
+    const unifiedChrome = finderChrome || settingsChrome || serversChrome || terminalChrome;
     const [drag, setDrag] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
     const [animateGeometry, setAnimateGeometry] = useState(false);
+    const [snapPreview, setSnapPreview] = useState<Rect | null>(null);
+    const [snapMenu, setSnapMenu] = useState<DOMRect | null>(null);
+    const snapMenuTimer = useRef<number | null>(null);
     const frameRef = useRef<HTMLDivElement>(null);
 
     const server = getServer(win.serverUuid);
@@ -92,12 +109,14 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
     }, []);
     const vpW = viewport.w;
     const vpH = viewport.h;
-    const dockInset = settings.dockAutoHide ? 0 : settings.dockSize + 30;
+    // Dock shell adds ~18px padding around icons; keep a slim gap so maximized
+    // windows don't leave a huge empty band above the dock.
+    const dockInset = settings.dockAutoHide ? 0 : settings.dockSize + 18;
     const bottomInset = settings.dockPosition === 'bottom' ? dockInset : 0;
     const leftInset = settings.dockPosition === 'left' ? dockInset : 0;
     const rightInset = settings.dockPosition === 'right' ? dockInset : 0;
     const rawGeo = win.maximized
-        ? { x: leftInset, y: 0, w: vpW - leftInset - rightInset, h: vpH - bottomInset }
+        ? { x: leftInset, y: 0, w: vpW - leftInset - rightInset, h: Math.max(240, vpH - bottomInset) }
         : (drag ?? { x: win.x, y: win.y, w: win.w, h: win.h });
     const maxW = Math.max(320, vpW - leftInset - rightInset - 16);
     const maxH = Math.max(240, vpH - bottomInset - 16);
@@ -119,15 +138,26 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
             focusWindow(win.id);
             const startX = e.clientX;
             const startY = e.clientY;
-            const origin = win.maximized
+            let origin = win.maximized
                 ? { x: e.clientX - win.w / 2, y: 0, w: win.w, h: win.h }
                 : { x: win.x, y: win.y, w: win.w, h: win.h };
             let moved = false;
             let last = origin;
+            let zone: SnapZone | 'max' | null = null;
+            let zoneKey = '';
+            const area = workArea(settings, vpW, vpH);
             const onMove = (ev: PointerEvent) => {
                 const dx = ev.clientX - startX;
                 const dy = ev.clientY - startY;
                 if (!moved && Math.abs(dx) + Math.abs(dy) < 3) return;
+                if (!moved) {
+                    const pre = takePreSnap(win.id);
+                    if (pre && !win.maximized) {
+                        const grab = (startX - win.x) / Math.max(1, win.w);
+                        origin = { x: startX - pre.w * grab, y: win.y, w: pre.w, h: pre.h };
+                    }
+                    if (win.maximized) setWindowGeometry(win.id, origin);
+                }
                 moved = true;
                 last = {
                     ...origin,
@@ -135,27 +165,38 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
                     y: Math.max(0, Math.min(origin.y + dy, vpH - 32)),
                 };
                 setDrag(last);
+                zone = edgeZoneAt(ev.clientX, ev.clientY);
+                const key = zone ? JSON.stringify(zone) : '';
+                if (key !== zoneKey) {
+                    zoneKey = key;
+                    setSnapPreview(
+                        zone === 'max'
+                            ? { x: leftInset, y: 0, w: vpW - leftInset - rightInset, h: Math.max(240, vpH - bottomInset) }
+                            : zone
+                              ? zoneRect(area, zone)
+                              : null,
+                    );
+                }
             };
-            const onUp = (ev: PointerEvent) => {
+            const onUp = () => {
                 window.removeEventListener('pointermove', onMove);
                 window.removeEventListener('pointerup', onUp);
                 setDrag(null);
+                setSnapPreview(null);
                 if (!moved) return;
-                if (ev.clientX <= 12 || ev.clientX >= vpW - 12) {
-                    const width = (vpW - leftInset - rightInset - 24) / 2;
-                    setWindowGeometry(win.id, {
-                        x: ev.clientX <= 12 ? leftInset + 8 : leftInset + width + 16,
-                        y: 8,
-                        w: width,
-                        h: vpH - bottomInset - 16,
-                    });
-                    return;
-                }
-                if (ev.clientY <= MENU_BAR_HEIGHT + 2) {
+                if (zone === 'max') {
                     setAnimateGeometry(true);
-                    setWindowGeometry(win.id, { x: last.x, y: 0 });
+                    setWindowGeometry(win.id, { x: Math.round(last.x), y: 0, w: last.w, h: last.h });
                     toggleMaximize(win.id);
                     window.setTimeout(() => setAnimateGeometry(false), 300);
+                    return;
+                }
+                if (zone) {
+                    rememberPreSnap(win.id, { w: last.w, h: last.h });
+                    setAnimateGeometry(true);
+                    setWindowGeometry(win.id, zoneRect(area, zone));
+                    window.setTimeout(() => setAnimateGeometry(false), 300);
+                    requestSnapAssist(zone, win.id);
                     return;
                 }
                 setWindowGeometry(win.id, { x: Math.round(last.x), y: Math.round(last.y), w: last.w, h: last.h });
@@ -163,8 +204,31 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
             window.addEventListener('pointermove', onMove);
             window.addEventListener('pointerup', onUp);
         },
-        [win, focusWindow, setWindowGeometry, toggleMaximize, vpH, vpW, leftInset, rightInset, bottomInset],
+        [win, settings, focusWindow, setWindowGeometry, toggleMaximize, vpH, vpW, leftInset, rightInset, bottomInset],
     );
+
+    const clearSnapMenuTimer = () => {
+        if (snapMenuTimer.current !== null) window.clearTimeout(snapMenuTimer.current);
+        snapMenuTimer.current = null;
+    };
+    useEffect(() => clearSnapMenuTimer, []);
+
+    const onZoomHover = (el: HTMLElement | null) => {
+        clearSnapMenuTimer();
+        snapMenuTimer.current = el
+            ? window.setTimeout(() => setSnapMenu(el.getBoundingClientRect()), 420)
+            : window.setTimeout(() => setSnapMenu(null), 220);
+    };
+
+    const snapTo = (zone: SnapZone) => {
+        clearSnapMenuTimer();
+        setSnapMenu(null);
+        rememberPreSnap(win.id, { w: win.w, h: win.h });
+        setAnimateGeometry(true);
+        setWindowGeometry(win.id, zoneRect(workArea(settings, vpW, vpH), zone));
+        window.setTimeout(() => setAnimateGeometry(false), 300);
+        requestSnapAssist(zone, win.id);
+    };
 
     const startResize = useCallback(
         (edge: Edge) => (e: React.PointerEvent) => {
@@ -213,6 +277,8 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
     );
 
     const zoom = () => {
+        clearSnapMenuTimer();
+        setSnapMenu(null);
         setAnimateGeometry(true);
         toggleMaximize(win.id);
         window.setTimeout(() => setAnimateGeometry(false), 300);
@@ -228,11 +294,12 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
                 data-fos-app={win.app}
                 data-focused={focused}
                 data-minimized={win.minimized ? 'true' : 'false'}
+                data-maximized={win.maximized ? 'true' : 'false'}
                 data-anim={animateGeometry ? 'geometry' : undefined}
                 onPointerDownCapture={() => !focused && focusWindow(win.id)}
                 className={cn(
                     'fos-window absolute flex flex-col overflow-visible',
-                    win.maximized ? 'rounded-none' : 'rounded-[12px]',
+                    win.maximized ? 'rounded-none' : 'rounded-[var(--fos-radius,12px)]',
                 )}
                 style={{
                     left: geo.x,
@@ -245,9 +312,10 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
                 <div
                     className={cn(
                         'fos-window-surface flex h-full w-full flex-col overflow-hidden border',
-                        win.maximized ? 'rounded-none' : 'rounded-[12px]',
+                        win.maximized ? 'rounded-none' : 'rounded-[var(--fos-radius,12px)]',
                         finderChrome && 'fos-window-surface--finder',
                         settingsChrome && 'fos-window-surface--settings',
+                        win.app === 'terminal' && 'fos-window-surface--terminal',
                     )}
                 >
                     {unifiedChrome ? (
@@ -259,7 +327,10 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
                             }}
                             className={cn(
                                 'group absolute top-0 left-0 z-20 flex h-[52px] items-center px-[13px] select-none',
-                                finderChrome ? 'fos-finder-traffic w-[13rem]' : 'fos-settings-traffic w-[13.5rem]',
+                                finderChrome && 'fos-finder-traffic w-[13rem]',
+                                settingsChrome && 'fos-settings-traffic w-[13.5rem]',
+                                serversChrome && 'fos-servers-traffic w-[4.75rem]',
+                                terminalChrome && 'fos-term-traffic w-[4.5rem]',
                             )}
                         >
                             <TrafficLights
@@ -277,6 +348,7 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
                                     })();
                                 }}
                                 onZoom={zoom}
+                                onZoomHover={onZoomHover}
                             />
                         </div>
                     ) : (
@@ -303,6 +375,7 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
                                     })();
                                 }}
                                 onZoom={zoom}
+                                onZoomHover={onZoomHover}
                             />
                             <div
                                 className={cn(
@@ -356,6 +429,29 @@ export function OsWindowFrame({ win, children }: { win: OsWindow; children: Reac
                         />
                     ))}
             </div>
+            {snapPreview &&
+                frameRef.current?.parentElement &&
+                createPortal(
+                    <div
+                        className='fos-snap-preview'
+                        style={{
+                            left: snapPreview.x,
+                            top: snapPreview.y,
+                            width: snapPreview.w,
+                            height: snapPreview.h,
+                            zIndex: Math.max(1, win.z - 1),
+                        }}
+                    />,
+                    frameRef.current.parentElement,
+                )}
+            {snapMenu && (
+                <SnapLayoutsPopover
+                    anchor={snapMenu}
+                    onPick={snapTo}
+                    onPointerEnter={clearSnapMenuTimer}
+                    onPointerLeave={() => onZoomHover(null)}
+                />
+            )}
         </WindowContext.Provider>
     );
 }
@@ -366,12 +462,14 @@ function TrafficLights({
     onClose,
     onMinimize,
     onZoom,
+    onZoomHover,
 }: {
     focused: boolean;
     t: (key: string) => string;
     onClose: () => void;
     onMinimize: () => void;
     onZoom: () => void;
+    onZoomHover?: (el: HTMLElement | null) => void;
 }) {
     return (
         <div className='fos-traffic-lights group flex items-center'>
@@ -399,6 +497,7 @@ function TrafficLights({
                 active={focused}
                 label={t('featheros.window.zoom')}
                 onClick={onZoom}
+                onHover={onZoomHover}
             >
                 <Maximize2 className='h-2 w-2' strokeWidth={2.5} />
             </TrafficLight>
@@ -412,6 +511,7 @@ function TrafficLight({
     active,
     label,
     onClick,
+    onHover,
     children,
 }: {
     color: string;
@@ -419,13 +519,16 @@ function TrafficLight({
     active: boolean;
     label: string;
     onClick: () => void;
+    onHover?: (el: HTMLElement | null) => void;
     children: ReactNode;
 }) {
     return (
         <button
             type='button'
             aria-label={label}
-            title={label}
+            title={onHover ? undefined : label}
+            onPointerEnter={onHover ? (e) => e.pointerType === 'mouse' && onHover(e.currentTarget) : undefined}
+            onPointerLeave={onHover ? () => onHover(null) : undefined}
             onClick={(e) => {
                 e.stopPropagation();
                 onClick();

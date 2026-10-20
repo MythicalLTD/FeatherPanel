@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useEffect, useRef } from 'react';
 import { useFeatherOs } from './FeatherOsContext';
 import type { OsHotCornerAction } from './types';
+import { isOsLocked } from './LockScreen';
 
 const CORNER_PX = 6;
 const DWELL_MS = 200;
@@ -93,6 +94,10 @@ export function HotCorners() {
         };
 
         const onMove = (e: PointerEvent) => {
+            if (isOsLocked()) {
+                clearDwell();
+                return;
+            }
             const w = window.innerWidth;
             const h = window.innerHeight;
             const corner = cornerAt(e.clientX, e.clientY, w, h);

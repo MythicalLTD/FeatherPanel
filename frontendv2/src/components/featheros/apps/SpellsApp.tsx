@@ -63,7 +63,7 @@ export default function SpellsApp({ win }: OsAppProps) {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder={t('featheros.spells.search')}
-                        className='bg-muted/70 h-7 w-full rounded-md pr-2 pl-7 text-[12px] outline-none'
+                        className='fos-field bg-muted/70 h-7 w-full rounded-md pr-2 pl-7 text-[12px] outline-none'
                     />
                 </div>
             </div>

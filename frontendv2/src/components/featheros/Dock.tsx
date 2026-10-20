@@ -16,15 +16,17 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Trash2, Plus, X, Pin, PinOff, AppWindow, Search, Command } from 'lucide-react';
+import { Plus, X, Pin, PinOff, AppWindow } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { moveToFeatherOsTrash } from '@/lib/featheros-trash';
 import { cn } from '@/lib/utils';
 import { useFeatherOs } from './FeatherOsContext';
 import { OS_APPS } from './registry';
-import { AppIcon } from './AppIcon';
+import { AppIcon, OsIcon } from './AppIcon';
+import { LAUNCHER_ART } from './appIconArt';
 import { findDockTargetRect, playGenieRestore } from './genie';
+import { dockAppOrder } from './useOsHotkeys';
 import { OS_FILE_DRAG_MIME, type OsAppId, type OsContextMenuItem, type OsFileDragPayload } from './types';
 import { isTextLike, joinPath } from './utils';
 
@@ -55,6 +57,7 @@ export function Dock() {
         focusedId,
         openApp,
         focusWindow,
+        minimizeWindow,
         closeAppWindows,
         settings,
         openContextMenu,
@@ -105,6 +108,7 @@ export function Dock() {
     }, [settings.dockAutoHide, pos]);
 
     const runningApps = Array.from(new Set(windows.map((w) => w.app)));
+    const appOrder = dockAppOrder(dock, windows);
     const pinnedEntries: DockEntry[] = dock.map((app) => ({
         key: `app:${app}`,
         kind: 'app' as const,
@@ -169,10 +173,21 @@ export function Dock() {
             openApp(entry.app);
             return;
         }
-        const visible = appWindows.find((w) => !w.minimized);
-        const target = visible ?? appWindows[0];
-        if (target.minimized) void restore(target.id, entry.app);
-        else focusWindow(target.id);
+        const visible = appWindows.filter((w) => !w.minimized);
+        const top = visible[0] ?? appWindows[0];
+        // Already focused → cycle other windows, or minimize the only one.
+        if (top && !top.minimized && top.id === focusedId) {
+            if (visible.length > 1) {
+                const idx = visible.findIndex((w) => w.id === focusedId);
+                const next = visible[(idx + 1) % visible.length];
+                focusWindow(next.id);
+                return;
+            }
+            minimizeWindow(top.id);
+            return;
+        }
+        if (top.minimized) void restore(top.id, entry.app);
+        else focusWindow(top.id);
     };
 
     const menuFor = (entry: DockEntry, e: React.MouseEvent) => {
@@ -277,8 +292,11 @@ export function Dock() {
     const renderEntry = (entry: DockEntry) => {
         const size = sizeFor(entry.key);
         const scale = base > 0 ? size / base : 1;
-        const running = entry.kind === 'app' && windows.some((w) => w.app === entry.app);
-        const focused = entry.kind === 'app' && windows.some((w) => w.app === entry.app && w.id === focusedId);
+        const appWins = entry.kind === 'app' && entry.app ? windows.filter((w) => w.app === entry.app) : [];
+        const running = entry.kind === 'app' && appWins.length > 0;
+        const focused = entry.kind === 'app' && appWins.some((w) => w.id === focusedId);
+        const openCount = appWins.length;
+        const slot = entry.kind === 'app' && entry.app ? appOrder.indexOf(entry.app) : -1;
         const label =
             entry.kind === 'launcher'
                 ? t('featheros.launchpad.title', { defaultValue: 'Launchpad' })
@@ -346,26 +364,26 @@ export function Dock() {
                         style={{ transform: `scale(${scale})`, transformOrigin: vertical ? 'center' : 'bottom center' }}
                     >
                         {entry.kind === 'launcher' ? (
-                            <div className='fos-dock-launcher-icon'>
-                                <Search className='h-[48%] w-[48%]' strokeWidth={2.3} />
-                                <Command
-                                    className='absolute right-[17%] bottom-[15%] h-[26%] w-[26%]'
-                                    strokeWidth={2.4}
-                                />
-                            </div>
+                            <OsIcon art={LAUNCHER_ART} size={base} />
                         ) : entry.kind === 'trash' ? (
-                            <div
-                                className={cn(
-                                    'flex h-full w-full items-center justify-center bg-zinc-700 text-zinc-100 shadow-[0_4px_10px_-7px_rgba(0,0,0,0.7)] ring-1 ring-white/10 ring-inset',
-                                    dragOver === 'trash' && 'bg-red-600 text-white',
-                                )}
-                                style={{ borderRadius: base * 0.24 }}
-                            >
-                                <Trash2 style={{ width: base * 0.5, height: base * 0.5 }} />
-                            </div>
+                            <AppIcon
+                                app='trash'
+                                size={base}
+                                className={cn('fos-dock-trash-icon', dragOver === 'trash' && 'is-drop-target')}
+                            />
                         ) : (
                             <div className={cn('relative', entry.kind === 'window' && 'opacity-90')}>
                                 <AppIcon app={entry.app!} size={base} />
+                                {slot >= 0 && slot < 9 && (
+                                    <span className='fos-dock-keyhint' aria-hidden>
+                                        {slot + 1}
+                                    </span>
+                                )}
+                                {entry.kind === 'app' && openCount > 1 && (
+                                    <span className='fos-dock-count' aria-hidden>
+                                        {openCount > 9 ? '9+' : openCount}
+                                    </span>
+                                )}
                                 {entry.kind === 'window' && (
                                     <span className='absolute -right-1 -bottom-1 rounded-full bg-black/70 px-1 text-[9px] text-white'>
                                         {(
@@ -380,10 +398,12 @@ export function Dock() {
                 </button>
                 <span
                     className={cn(
-                        'fos-dock-indicator mt-1 h-1 w-1 rounded-full transition-opacity',
-                        running || entry.kind === 'window' ? 'opacity-80' : 'opacity-0',
-                        focused && 'opacity-100',
+                        'fos-dock-indicator mt-1 transition-all',
+                        running || entry.kind === 'window' ? 'is-running' : 'opacity-0',
+                        focused && 'is-focused',
+                        openCount > 1 && 'is-multi',
                     )}
+                    aria-hidden
                 />
             </div>
         );

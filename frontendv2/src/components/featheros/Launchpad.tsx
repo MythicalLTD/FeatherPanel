@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
 import { useFeatherOs } from './FeatherOsContext';
@@ -24,39 +24,41 @@ import { OS_APPS, OS_APP_IDS } from './registry';
 import { AppIcon } from './AppIcon';
 import type { OsAppId } from './types';
 
+function gridColumns(grid: HTMLElement | null) {
+    if (!grid) return 1;
+    return Math.max(1, getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length);
+}
+
 export function Launchpad() {
     const { t } = useTranslation();
     const { launchpadOpen, setLaunchpadOpen, openApp, windows } = useFeatherOs();
     const [query, setQuery] = useState('');
+    const [selected, setSelected] = useState(-1);
     const inputRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        if (!launchpadOpen) return;
-        setQuery('');
-        const tmr = window.setTimeout(() => inputRef.current?.focus(), 40);
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                e.preventDefault();
-                setLaunchpadOpen(false);
-            }
-        };
-        window.addEventListener('keydown', onKey);
-        return () => {
-            window.clearTimeout(tmr);
-            window.removeEventListener('keydown', onKey);
-        };
-    }, [launchpadOpen, setLaunchpadOpen]);
+    const gridRef = useRef<HTMLDivElement>(null);
 
     const apps = useMemo(() => {
         const q = query.trim().toLowerCase();
         return OS_APP_IDS.map((id) => ({
             id,
             name: t(OS_APPS[id].nameKey),
-            running: windows.some((w) => w.app === id && !w.minimized),
+            running: windows.some((w) => w.app === id),
         }))
             .filter((a) => !q || a.name.toLowerCase().includes(q) || a.id.includes(q))
             .sort((a, b) => a.name.localeCompare(b.name));
     }, [query, t, windows]);
+
+    useEffect(() => {
+        if (!launchpadOpen) return;
+        setQuery('');
+        setSelected(-1);
+        const tmr = window.setTimeout(() => inputRef.current?.focus(), 40);
+        return () => window.clearTimeout(tmr);
+    }, [launchpadOpen]);
+
+    useEffect(() => {
+        setSelected(query.trim() ? 0 : -1);
+    }, [query]);
 
     if (!launchpadOpen) return null;
 
@@ -65,28 +67,54 @@ export function Launchpad() {
         openApp(id);
     };
 
+    const onKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            if (query) setQuery('');
+            else setLaunchpadOpen(false);
+            return;
+        }
+        if (apps.length === 0) return;
+        const cols = gridColumns(gridRef.current);
+        const move = (delta: number) => {
+            e.preventDefault();
+            setSelected((cur) => {
+                if (cur < 0) return 0;
+                return Math.max(0, Math.min(apps.length - 1, cur + delta));
+            });
+        };
+        if (e.key === 'ArrowRight') move(1);
+        else if (e.key === 'ArrowLeft') move(-1);
+        else if (e.key === 'ArrowDown') move(cols);
+        else if (e.key === 'ArrowUp') move(-cols);
+        else if (e.key === 'Enter') {
+            e.preventDefault();
+            const app = apps[Math.max(0, selected)];
+            if (app) launch(app.id);
+        }
+    };
+
     return (
         <div
-            className='fos-launchpad fos-fade'
+            className='fos-launchpad'
             role='dialog'
             aria-label={t('featheros.launchpad.title', { defaultValue: 'Launchpad' })}
+            onKeyDown={onKeyDown}
             onMouseDown={(e) => {
                 if (e.target === e.currentTarget) setLaunchpadOpen(false);
             }}
         >
-            <div className='fos-launchpad-inner' onMouseDown={(e) => e.stopPropagation()}>
-                <form
-                    className='fos-launchpad-search'
-                    autoComplete='off'
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        if (apps[0]) launch(apps[0].id);
-                    }}
-                >
-                    <Search className='h-4 w-4 opacity-50' aria-hidden />
+            <div
+                className='fos-launchpad-inner'
+                onMouseDown={(e) => {
+                    if (e.target === e.currentTarget) setLaunchpadOpen(false);
+                }}
+            >
+                <label className='fos-launchpad-search'>
+                    <Search className='h-3.5 w-3.5' aria-hidden />
                     <input
                         ref={inputRef}
-                        type='search'
+                        type='text'
                         name='fos-launchpad-query'
                         autoComplete='off'
                         autoCorrect='off'
@@ -99,21 +127,46 @@ export function Launchpad() {
                         placeholder={t('featheros.launchpad.search', { defaultValue: 'Search apps' })}
                         className='fos-launchpad-input'
                     />
-                </form>
+                    {query && (
+                        <button
+                            type='button'
+                            className='fos-launchpad-clear'
+                            onClick={() => {
+                                setQuery('');
+                                inputRef.current?.focus();
+                            }}
+                            aria-label={t('featheros.common.close')}
+                        >
+                            <X className='h-3 w-3' />
+                        </button>
+                    )}
+                </label>
                 {apps.length === 0 ? (
                     <p className='fos-launchpad-empty'>{t('featheros.spotlight.no_results')}</p>
                 ) : (
-                    <div className='fos-launchpad-grid'>
-                        {apps.map((app) => (
+                    <div
+                        ref={gridRef}
+                        className='fos-launchpad-grid'
+                        onMouseDown={(e) => {
+                            if (e.target === e.currentTarget) setLaunchpadOpen(false);
+                        }}
+                    >
+                        {apps.map((app, i) => (
                             <button
                                 key={app.id}
                                 type='button'
-                                className={cn('fos-launchpad-app', app.running && 'is-running')}
+                                tabIndex={-1}
+                                className={cn('fos-launchpad-app', i === selected && 'is-selected')}
+                                style={{ animationDelay: `${Math.min(i, 24) * 12}ms` }}
                                 onClick={() => launch(app.id)}
+                                onMouseEnter={() => setSelected(i)}
+                                onMouseLeave={() => setSelected((cur) => (cur === i && !query.trim() ? -1 : cur))}
                             >
-                                <AppIcon app={app.id} size={64} />
+                                <span className='fos-launchpad-icon'>
+                                    <AppIcon app={app.id} size={72} />
+                                </span>
                                 <span className='fos-launchpad-app-name'>{app.name}</span>
-                                {app.running && <span className='fos-launchpad-dot' aria-hidden />}
+                                <span className={cn('fos-launchpad-dot', app.running && 'is-on')} aria-hidden />
                             </button>
                         ))}
                     </div>

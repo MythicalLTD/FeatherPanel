@@ -159,7 +159,7 @@ export default function NotesApp({ win }: OsAppProps) {
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder={t('featheros.notes.search')}
-                            className='bg-background/70 h-7 w-full rounded-md pr-2 pl-7 text-[12px] outline-none'
+                            className='fos-field bg-background/70 h-7 w-full rounded-md pr-2 pl-7 text-[12px] outline-none'
                         />
                     </div>
                     <button

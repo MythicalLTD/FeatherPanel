@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useEffect, useMemo, useState } from 'react';
 import { ShieldAlert } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { cn } from '@/lib/utils';
 import { FeatherOsProvider, useFeatherOs } from './FeatherOsContext';
 import { MenuBar } from './MenuBar';
 import { Desktop } from './Desktop';
@@ -34,11 +35,18 @@ import { MissionControl } from './MissionControl';
 import { Launchpad } from './Launchpad';
 import { NotificationCenter } from './NotificationCenter';
 import { HotCorners } from './HotCorners';
+import { AppSwitcher } from './AppSwitcher';
+import { ShortcutsOverlay } from './ShortcutsOverlay';
+import { SnapAssist } from './SnapLayouts';
+import { LockScreen } from './LockScreen';
+import { ImmersivePrompt } from './ImmersivePrompt';
+import { useOsHotkeys } from './useOsHotkeys';
 import { DesktopOnlyGate } from './DesktopOnlyGate';
+import { OsSessionGate } from './OsSessionGate';
 import { OS_APPS } from './registry';
 import { OS_APP_COMPONENTS } from './apps';
 import { resolveWallpaper } from './wallpapers';
-import type { OsWindow } from './types';
+import { glassAlphaScale, type OsWindow } from './types';
 import './featheros.css';
 
 function AppHost({ win }: { win: OsWindow }) {
@@ -108,15 +116,23 @@ function Shell() {
         windows,
         settings,
         isDark,
-        setSpotlightOpen,
-        spotlightOpen,
-        setLaunchpadOpen,
-        launchpadOpen,
         activeSpace,
-        setMissionControlOpen,
         missionControlOpen,
+        launchpadOpen,
     } = os;
+    const wallpaper = resolveWallpaper(settings.wallpaper, isDark, settings.customWallpaperUrl);
+    const dim = Math.max(0, Math.min(70, settings.wallpaperDim ?? 0)) / 100;
     const [bootGone, setBootGone] = useState(false);
+    const {
+        metaHeld,
+        shortcutsOpen,
+        setShortcutsOpen,
+        switcherOpen,
+        switcherIndex,
+        switcherWindows,
+        hoverSwitcher,
+        pickSwitcher,
+    } = useOsHotkeys();
 
     const bootStatus = useMemo(() => {
         if (ready || bootPhase === 'done') {
@@ -141,31 +157,6 @@ function Shell() {
         return () => window.clearTimeout(timer);
     }, [ready]);
 
-    useEffect(() => {
-        const onKey = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && (e.code === 'Space' || e.key === ' ')) {
-                e.preventDefault();
-                e.stopPropagation();
-                setLaunchpadOpen(false);
-                setSpotlightOpen(!spotlightOpen);
-            }
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l' && !e.shiftKey) {
-                const tag = (e.target as HTMLElement)?.tagName;
-                if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) return;
-                e.preventDefault();
-                setSpotlightOpen(false);
-                setLaunchpadOpen(!launchpadOpen);
-            }
-            if (e.key === 'F3' || ((e.ctrlKey || e.metaKey) && e.key === 'ArrowUp')) {
-                e.preventDefault();
-                setLaunchpadOpen(false);
-                setMissionControlOpen(!missionControlOpen);
-            }
-        };
-        window.addEventListener('keydown', onKey, true);
-        return () => window.removeEventListener('keydown', onKey, true);
-    }, [spotlightOpen, setSpotlightOpen, launchpadOpen, setLaunchpadOpen, missionControlOpen, setMissionControlOpen]);
-
     // The panel page behind stays mounted (providers), but the OS owns the whole viewport.
     useEffect(() => {
         const prev = document.body.style.overflow;
@@ -177,14 +168,24 @@ function Shell() {
 
     return (
         <div
-            className='fos-root fixed inset-0 z-[200] flex flex-col overflow-hidden select-none'
+            className={cn('fos-root fixed inset-0 z-[200] flex flex-col overflow-hidden select-none', isDark && 'dark')}
             data-fos-motion={settings.reduceMotion ? 'reduced' : 'full'}
             data-fos-theme={isDark ? 'dark' : 'light'}
+            data-fos-meta-held={metaHeld ? 'true' : undefined}
+            data-fos-launchpad={launchpadOpen ? 'true' : undefined}
+            data-fos-focus-ring={settings.focusRing ? 'true' : undefined}
+            data-fos-dim-inactive={settings.dimInactive ? 'true' : undefined}
+            data-fos-solid={settings.reduceTransparency ? 'true' : undefined}
             style={{
-                background: resolveWallpaper(settings.wallpaper, isDark, settings.customWallpaperUrl),
+                background: dim > 0 ? `linear-gradient(rgb(0 0 0 / ${dim}), rgb(0 0 0 / ${dim})), ${wallpaper}` : wallpaper,
                 fontSize: `${Math.round(15 * (settings.fontScale || 1))}px`,
                 ['--fos-speed' as string]: String(settings.animationSpeed || 1),
                 ['--fos-accent' as string]: settings.accent?.startsWith('#') ? settings.accent : undefined,
+                ['--fos-alpha' as string]: glassAlphaScale(settings).toFixed(3),
+                ['--fos-blur-scale' as string]: settings.reduceTransparency
+                    ? '0'
+                    : String(Math.max(0, Math.min(200, settings.glassBlur ?? 100)) / 100),
+                ['--fos-radius' as string]: `${Math.max(0, Math.min(24, settings.windowRadius ?? 12))}px`,
             }}
             onContextMenu={(e) => {
                 // Keep the native menu (copy / paste / spellcheck) inside text fields and editors.
@@ -212,6 +213,17 @@ function Shell() {
             <Spotlight />
             <Launchpad />
             <MissionControl />
+            <AppSwitcher
+                open={switcherOpen}
+                ordered={switcherWindows}
+                selectedIndex={switcherIndex}
+                onHover={hoverSwitcher}
+                onPick={pickSwitcher}
+            />
+            <SnapAssist />
+            <ShortcutsOverlay open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+            <ImmersivePrompt ready={ready && bootGone} />
+            <LockScreen />
             <NotificationCenter />
             <HotCorners />
             <AboutDialog />
@@ -233,9 +245,11 @@ function Shell() {
 export default function FeatherOS() {
     return (
         <DesktopOnlyGate>
-            <FeatherOsProvider>
-                <Shell />
-            </FeatherOsProvider>
+            <OsSessionGate>
+                <FeatherOsProvider>
+                    <Shell />
+                </FeatherOsProvider>
+            </OsSessionGate>
         </DesktopOnlyGate>
     );
 }
