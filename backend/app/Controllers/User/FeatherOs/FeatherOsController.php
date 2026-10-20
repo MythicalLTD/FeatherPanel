@@ -18,6 +18,7 @@
 namespace App\Controllers\User\FeatherOs;
 
 use App\Chat\FeatherOsNote;
+use App\Chat\FeatherOsSession;
 use App\Chat\FeatherOsState;
 use App\Chat\FeatherOsTrash;
 use App\Chat\Server;
@@ -132,6 +133,125 @@ class FeatherOsController
         FeatherOsState::deleteForUser((int) $user['id']);
 
         return ApiResponse::success([], 'FeatherOS state reset', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/user/featheros/session/acquire',
+        summary: 'Acquire the single FeatherOS session lease',
+        description: 'Only one active FeatherOS instance is allowed per user. Pass force=true to take over another tab or device.',
+        tags: ['User - FeatherOS'],
+        responses: [
+            new OA\Response(response: 200, description: 'Lease acquired'),
+            new OA\Response(response: 409, description: 'Another session is active'),
+        ]
+    )]
+    public function acquireSession(Request $request): Response
+    {
+        $user = $request->attributes->get('user');
+        if (!$user) {
+            return ApiResponse::error('Unauthorized', 'UNAUTHORIZED', 401);
+        }
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            $data = [];
+        }
+        $instanceId = trim((string) ($data['instance_id'] ?? ''));
+        if ($instanceId === '' || strlen($instanceId) > 64 || !preg_match('/^[A-Za-z0-9_-]+$/', $instanceId)) {
+            return ApiResponse::error('Missing or invalid instance_id', 'FEATHEROS_INVALID_INSTANCE', 400);
+        }
+        $force = !empty($data['force']);
+        $label = trim((string) ($data['label'] ?? ''));
+        $userAgent = substr((string) $request->headers->get('User-Agent', ''), 0, 240);
+        if ($label === '') {
+            $label = FeatherOsSession::labelFromUa($userAgent);
+        }
+
+        $result = FeatherOsSession::acquire((int) $user['id'], $instanceId, $userAgent, $label, $force);
+        if (!$result['acquired']) {
+            return ApiResponse::error(
+                'FeatherOS is already open in another tab or device',
+                'FEATHEROS_SESSION_ACTIVE',
+                409,
+                [
+                    'conflict' => $result['conflict'],
+                ]
+            );
+        }
+
+        return ApiResponse::success([
+            'session' => $result['session'],
+            'stolen' => $result['stolen'],
+            'stale_after_seconds' => FeatherOsSession::STALE_AFTER_SECONDS,
+        ], 'FeatherOS session acquired', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/user/featheros/session/heartbeat',
+        summary: 'Renew the FeatherOS session lease',
+        tags: ['User - FeatherOS'],
+        responses: [
+            new OA\Response(response: 200, description: 'Lease renewed'),
+            new OA\Response(response: 409, description: 'Lease owned by another instance'),
+        ]
+    )]
+    public function heartbeatSession(Request $request): Response
+    {
+        $user = $request->attributes->get('user');
+        if (!$user) {
+            return ApiResponse::error('Unauthorized', 'UNAUTHORIZED', 401);
+        }
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            $data = [];
+        }
+        $instanceId = trim((string) ($data['instance_id'] ?? ''));
+        if ($instanceId === '') {
+            return ApiResponse::error('Missing or invalid instance_id', 'FEATHEROS_INVALID_INSTANCE', 400);
+        }
+
+        $result = FeatherOsSession::heartbeat((int) $user['id'], $instanceId);
+        if (!$result['ok']) {
+            return ApiResponse::error(
+                'This FeatherOS session was moved elsewhere',
+                'FEATHEROS_SESSION_STOLEN',
+                409,
+                [
+                    'conflict' => $result['conflict'],
+                ]
+            );
+        }
+
+        return ApiResponse::success([
+            'session' => $result['session'],
+        ], 'FeatherOS session renewed', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/user/featheros/session/release',
+        summary: 'Release the FeatherOS session lease',
+        tags: ['User - FeatherOS'],
+        responses: [
+            new OA\Response(response: 200, description: 'Lease released'),
+        ]
+    )]
+    public function releaseSession(Request $request): Response
+    {
+        $user = $request->attributes->get('user');
+        if (!$user) {
+            return ApiResponse::error('Unauthorized', 'UNAUTHORIZED', 401);
+        }
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            $data = [];
+        }
+        $instanceId = trim((string) ($data['instance_id'] ?? ''));
+        if ($instanceId === '') {
+            return ApiResponse::error('Missing or invalid instance_id', 'FEATHEROS_INVALID_INSTANCE', 400);
+        }
+
+        FeatherOsSession::release((int) $user['id'], $instanceId);
+
+        return ApiResponse::success([], 'FeatherOS session released', 200);
     }
 
     #[OA\Get(

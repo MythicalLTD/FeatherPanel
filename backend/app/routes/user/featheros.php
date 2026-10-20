@@ -61,6 +61,42 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAuthRoute(
         $routes,
+        'user-featheros-session-acquire',
+        '/api/user/featheros/session/acquire',
+        function (Request $request) {
+            return (new FeatherOsController())->acquireSession($request);
+        },
+        ['POST'],
+        Rate::perMinute(60),
+        'user-featheros'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-featheros-session-heartbeat',
+        '/api/user/featheros/session/heartbeat',
+        function (Request $request) {
+            return (new FeatherOsController())->heartbeatSession($request);
+        },
+        ['POST'],
+        Rate::perMinute(120),
+        'user-featheros'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-featheros-session-release',
+        '/api/user/featheros/session/release',
+        function (Request $request) {
+            return (new FeatherOsController())->releaseSession($request);
+        },
+        ['POST'],
+        Rate::perMinute(60),
+        'user-featheros'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
         'user-featheros-notes-list',
         '/api/user/featheros/notes',
         function (Request $request) {
